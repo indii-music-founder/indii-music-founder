@@ -145,7 +145,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
                 isAgentProcessing: false,
                 canvasItems: [{ id: 'mock-item' }],
                 isAgentOpen: false,
-                isBoardroomMode: false,
+                conversationMode: 'direct',
             });
         });
 
@@ -166,8 +166,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         expect(runButton).toBeVisible();
 
         // 3. The mode toggle is always present (indii/agent toggle replaced delegate menu)
-        const modeToggle = screen.queryByRole('button', { name: /switch to indii mode/i })
-            ?? screen.queryByRole('button', { name: /switch to agent mode/i });
+        const modeToggle = screen.queryByRole('button', { name: /change agent mode/i });
         expect(modeToggle).toBeInTheDocument();
 
         // "Attach" button should be hidden on mobile

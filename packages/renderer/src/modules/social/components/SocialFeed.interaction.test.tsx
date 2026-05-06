@@ -66,7 +66,7 @@ describe('SocialFeed Interaction: Send Button', () => {
         render(<SocialFeed userId="user-123" />); // render as owner
 
         // 2. Identify elements
-        const textarea = screen.getByLabelText("What's happening in your studio?");
+        const textarea = screen.getByPlaceholderText("What's happening in your studio?");
         const sendButton = screen.getByText((content, element) => {
             return element?.tagName.toLowerCase() === 'button' &&
                 (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);
@@ -113,7 +113,7 @@ describe('SocialFeed Interaction: Send Button', () => {
     it('lifecycle: Click -> Loading -> Failure -> Preserve Input', async () => {
         // 1. Render
         render(<SocialFeed userId="user-123" />);
-        const textarea = screen.getByLabelText("What's happening in your studio?");
+        const textarea = screen.getByPlaceholderText("What's happening in your studio?");
         const sendButton = screen.getByText((content, element) => {
             return element?.tagName.toLowerCase() === 'button' &&
                 (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);

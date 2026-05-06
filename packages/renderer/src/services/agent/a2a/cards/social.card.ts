@@ -5,7 +5,29 @@ export const SocialCard: AgentCard = {
     agentId: 'social',
     displayName: 'Social Agent',
     description: 'Specialist for social operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "content_calendar_planning",
+        "description": "Content calendar planning",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "platform_engagement",
+        "description": "Platform engagement",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "copywriting",
+        "description": "Copywriting",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

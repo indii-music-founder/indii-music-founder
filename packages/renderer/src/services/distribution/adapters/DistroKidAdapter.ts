@@ -173,7 +173,29 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
+            return 'live'; // Fallback
+        }
+
+        try {
+            // DistroKid usually places status files or uses a specific folder structure
+            // For this implementation, we check if a .live or .published file exists in the outbox
+            const remotePath = `/outgoing/${releaseId}.status`;
+            const result = await window.electronAPI.sftp.listDirectory(`/outgoing/`);
+            
+            if (result.success && result.files) {
+                const statusFile = result.files.find(f => f.name.startsWith(releaseId));
+                if (statusFile) {
+                    if (statusFile.name.endsWith('.live')) return 'live';
+                    if (statusFile.name.endsWith('.failed')) return 'failed';
+                    return 'processing';
+                }
+            }
+        } catch (e) {
+            logger.warn('[DistroKid] Status check failed:', e);
+        }
+
         return 'live';
     }
 
@@ -185,20 +207,57 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        // Production: Return 0 earnings until actual API integration is available.
-        // DO NOT generate random numbers in production.
-        return {
+        const baseEarnings: DistributorEarnings = {
             distributorId: 'distrokid',
             releaseId: releaseId,
             period: period,
             streams: 0,
             downloads: 0,
             grossRevenue: 0,
-            distributorFee: 0, // 100% Payout
+            distributorFee: 0,
             netRevenue: 0,
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };
+
+        if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
+            return baseEarnings;
+        }
+
+        try {
+            // Attempt to fetch DSR from SFTP
+            const remotePath = `/reports/sales_${period.startDate.substring(0, 7)}.tsv`;
+            const fileResult = await window.electronAPI.sftp.readFile(remotePath);
+
+            if (fileResult.success && fileResult.content) {
+                const { dsrService } = await import('@/services/ddex/DSRService');
+                const parsed = await dsrService.ingestFlatFile(fileResult.content);
+                
+                if (parsed.success && parsed.data) {
+                    // Filter transactions for this releaseId (ISRC/UPC)
+                    const txn = parsed.data.transactions.filter(t => 
+                        t.resourceId.isrc === releaseId || (t.resourceId.title && t.resourceId.title.includes(releaseId))
+                    );
+
+                    const streams = txn.filter(t => t.usageType === 'OnDemandStream').reduce((sum, t) => sum + t.usageCount, 0);
+                    const downloads = txn.filter(t => t.usageType === 'Download').reduce((sum, t) => sum + t.usageCount, 0);
+                    const revenue = txn.reduce((sum, t) => sum + t.revenueAmount, 0);
+
+                    return {
+                        ...baseEarnings,
+                        streams,
+                        downloads,
+                        grossRevenue: revenue,
+                        netRevenue: revenue, // DistroKid is 100% payout
+                        lastUpdated: new Date().toISOString()
+                    };
+                }
+            }
+        } catch (e) {
+            logger.warn('[DistroKid] Earnings fetch failed:', e);
+        }
+
+        return baseEarnings;
     }
 
     async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {

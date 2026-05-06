@@ -112,7 +112,7 @@ const statusConfig: Record<WorkflowExecutionStatus, {
     }
 };
 
-const agentIconMap: Record<ValidAgentId, any> = {
+const agentIconMap: Partial<Record<ValidAgentId, any>> = {
     marketing: Megaphone,
     legal: ScaleIcon, // Will use Scale from lucide or fallback
     finance: BarChart3,

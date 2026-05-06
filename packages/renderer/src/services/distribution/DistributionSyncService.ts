@@ -57,6 +57,12 @@ export class DistributionSyncService {
             orderBy('createdAt', 'desc')
         );
 
+        // E2E Mock Bypass: skip real Firestore listeners
+        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+            setTimeout(() => onUpdate([]), 0);
+            return () => { };
+        }
+
         return onSnapshot(q, (snapshot) => {
             const releases = snapshot.docs.map(doc =>
                 this.mapRelease(doc.id, doc.data() as DDEXReleaseRecord)
@@ -72,6 +78,11 @@ export class DistributionSyncService {
      * Fetches releases from Firestore and maps them to DashboardRelease format (One-time fetch)
      */
     static async fetchReleases(orgId: string): Promise<DashboardRelease[]> {
+        // E2E Mock Bypass: skip real Firestore fetches
+        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+            return [];
+        }
+
         try {
             const q = query(
                 collection(db, 'ddexReleases'),

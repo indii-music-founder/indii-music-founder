@@ -28,14 +28,15 @@ import { LivingPlansTracker } from './components/LivingPlansTracker';
  *
  */
 export function BoardroomModule() {
-    const { isBoardroomMode, boardroomMessages, activeAgents, setBoardroomMode } = useStore(
+    const { conversationMode, boardroomMessages, activeAgents, setConversationMode } = useStore(
         useShallow(state => ({
-            isBoardroomMode: state.isBoardroomMode,
+            conversationMode: state.conversationMode,
             boardroomMessages: state.boardroomMessages,
             activeAgents: state.activeAgents,
-            setBoardroomMode: state.setBoardroomMode
+            setConversationMode: state.setConversationMode
         }))
     );
+    const isBoardroomMode = conversationMode === 'boardroom';
 
     const { isAnyPhone } = useMobile();
 
@@ -59,7 +60,7 @@ export function BoardroomModule() {
                 {/* Top Bar */}
                 <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 shrink-0">
                     <button
-                        onClick={() => setBoardroomMode(false)}
+                        onClick={() => setConversationMode('direct')}
                         className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
                         title="Exit Boardroom"
                         aria-label="Back to Studio"

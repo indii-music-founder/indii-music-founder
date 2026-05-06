@@ -5,7 +5,29 @@ export const KeeperCard: AgentCard = {
     agentId: 'keeper',
     displayName: 'Keeper Agent',
     description: 'Specialist for keeper operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "context_integrity",
+        "description": "Context integrity",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "knowledge_retention",
+        "description": "Knowledge retention",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "memory_indexing",
+        "description": "Memory indexing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

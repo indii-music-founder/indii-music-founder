@@ -5,7 +5,29 @@ export const ProducerCard: AgentCard = {
     agentId: 'producer',
     displayName: 'Producer Agent',
     description: 'Specialist for producer operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "beat_making",
+        "description": "Beat making",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "arrangement_planning",
+        "description": "Arrangement planning",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "mix_review",
+        "description": "Mix review",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

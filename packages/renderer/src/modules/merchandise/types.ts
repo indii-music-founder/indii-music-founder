@@ -112,6 +112,8 @@ export const ManufactureRequestSchema = z.object({
     productId: z.string(),
     variantId: z.string(),
     quantity: z.number().min(1),
+    price: z.number().optional(), // Price per unit
+    totalAmount: z.number().optional(), // Total amount for the request
     userId: z.string().optional(),
     status: z.enum(['pending', 'processing', 'completed']).optional(),
     orderId: z.string().optional(),

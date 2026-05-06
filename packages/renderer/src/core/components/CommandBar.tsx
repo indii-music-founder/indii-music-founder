@@ -44,7 +44,7 @@ function CommandBar() {
         setCommandBarCollapsed,
         currentModule,
         commandBarPosition,
-        isBoardroomMode,
+        conversationMode,
         canvasItems
     } = useStore(
         useShallow(state => ({
@@ -53,10 +53,12 @@ function CommandBar() {
             setCommandBarCollapsed: state.setCommandBarCollapsed,
             currentModule: state.currentModule,
             commandBarPosition: state.commandBarPosition,
-            isBoardroomMode: state.isBoardroomMode,
+            conversationMode: state.conversationMode,
             canvasItems: state.canvasItems,
         }))
     );
+
+    const isBoardroomMode = conversationMode === 'boardroom';
 
     // Hide from global shell when Boardroom is active — it renders inside BoardroomModule instead.
     // Also hide when in Dashboard with an empty Agent Workspace to avoid duplicate inputs with EntryOverlay.

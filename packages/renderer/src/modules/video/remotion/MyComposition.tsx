@@ -1,6 +1,41 @@
 import React from 'react';
-import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing, EasingFunction } from 'remotion';
+import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing, EasingFunction, useVideoConfig } from 'remotion';
+import { useAudioData, visualizeAudio } from '@remotion/media-utils';
 import { VideoProject, VideoClip } from '../store/videoEditorStore';
+
+const AudioVisualizer: React.FC<{ src: string, color?: string }> = ({ src, color = 'white' }) => {
+    const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
+    const audioData = useAudioData(src);
+
+    if (!audioData) {
+        return null;
+    }
+
+    const visualization = visualizeAudio({
+        fps,
+        frame,
+        audioData,
+        numberOfSamples: 64,
+    });
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', gap: '4px' }}>
+            {visualization.map((v, i) => (
+                <div
+                    key={i}
+                    style={{
+                        width: '6px',
+                        height: `${Math.max(4, v * 300)}px`,
+                        backgroundColor: color,
+                        borderRadius: '3px',
+                        opacity: 0.8
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
     const frame = useCurrentFrame();
@@ -162,7 +197,12 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             return <Img src={clip.src} style={style} crossOrigin="anonymous" />;
         case 'audio':
             if (!clip.src) return null;
-            return <Audio src={clip.src} volume={volume} />;
+            return (
+                <div style={{ ...style, position: 'relative' }}>
+                    <Audio src={clip.src} volume={volume} />
+                    <AudioVisualizer src={clip.src} color={clip.textColor || 'white'} />
+                </div>
+            );
         default:
             return null;
     }

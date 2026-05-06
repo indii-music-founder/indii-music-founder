@@ -5,7 +5,29 @@ export const MarketingCard: AgentCard = {
     agentId: 'marketing',
     displayName: 'Marketing Agent',
     description: 'Specialist for marketing operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "campaign_strategy",
+        "description": "Campaign strategy",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "ad_generation",
+        "description": "Ad generation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "audience_targeting",
+        "description": "Audience targeting",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

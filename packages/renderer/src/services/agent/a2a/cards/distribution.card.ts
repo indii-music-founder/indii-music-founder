@@ -5,7 +5,29 @@ export const DistributionCard: AgentCard = {
     agentId: 'distribution',
     displayName: 'Distribution Agent',
     description: 'Specialist for distribution operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "dsp_distribution",
+        "description": "DSP distribution",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "release_management",
+        "description": "Release management",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "metadata_validation",
+        "description": "Metadata validation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

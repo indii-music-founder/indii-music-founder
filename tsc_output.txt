@@ -1,11 +1,23 @@
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(73,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(74,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(75,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(76,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(77,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(78,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(79,16): error TS18048: 'added' is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(93,50): error TS2532: Object is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(139,21): error TS2532: Object is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(150,21): error TS2532: Object is possibly 'undefined'.
-packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(178,16): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/modules/creative/components/ShowroomUI.tsx(59,30): error TS2345: Argument of type 'File | undefined' is not assignable to parameter of type 'Blob'.
+  Type 'undefined' is not assignable to type 'Blob'.
+packages/renderer/src/modules/finance/components/RevenueView.tsx(253,20): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/modules/finance/components/RevenueView.tsx(256,21): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/modules/video/editor/hooks/useVideoEditor.ts(167,21): error TS2322: Type '"editor"' is not assignable to type '"generated" | "uploaded" | "canvas-export" | undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(64,17): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/renderer/src/services/creative/ShowroomService.ts(76,17): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(78,18): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(79,21): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(126,17): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(128,18): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/creative/ShowroomService.ts(129,21): error TS18048: 'result' is possibly 'undefined'.
+packages/renderer/src/services/ddex/ERNMapper.ts(260,40): error TS2339: Property 'lyricsFile' does not exist on type 'ReleaseAssets'.
+packages/renderer/src/services/ddex/ERNMapper.ts(283,35): error TS2339: Property 'lyricsFile' does not exist on type 'ReleaseAssets'.
+packages/renderer/src/services/ddex/ERNMapper.ts(287,100): error TS2339: Property 'lyricsFile' does not exist on type 'ReleaseAssets'.
+packages/renderer/src/services/ddex/ERNMapper.ts(288,100): error TS2339: Property 'lyricsFile' does not exist on type 'ReleaseAssets'.
+packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts(182,58): error TS2339: Property 'listDirectory' does not exist on type '{ connect: (config: unknown) => Promise<{ success: boolean; error?: string | undefined; }>; connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string | undefined; }>; uploadDirectory: (localPath: string, remotePath: string) => Promise<...>; disconnect: () => Promise<...>; isConnected:...'.
+packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts(184,54): error TS7006: Parameter 'f' implicitly has an 'any' type.
+packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts(226,62): error TS2339: Property 'readFile' does not exist on type '{ connect: (config: unknown) => Promise<{ success: boolean; error?: string | undefined; }>; connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string | undefined; }>; uploadDirectory: (localPath: string, remotePath: string) => Promise<...>; disconnect: () => Promise<...>; isConnected:...'.
+packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts(185,58): error TS2339: Property 'listDirectory' does not exist on type '{ connect: (config: unknown) => Promise<{ success: boolean; error?: string | undefined; }>; connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string | undefined; }>; uploadDirectory: (localPath: string, remotePath: string) => Promise<...>; disconnect: () => Promise<...>; isConnected:...'.
+packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts(188,54): error TS7006: Parameter 'f' implicitly has an 'any' type.
+packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts(230,62): error TS2339: Property 'readFile' does not exist on type '{ connect: (config: unknown) => Promise<{ success: boolean; error?: string | undefined; }>; connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string | undefined; }>; uploadDirectory: (localPath: string, remotePath: string) => Promise<...>; disconnect: () => Promise<...>; isConnected:...'.

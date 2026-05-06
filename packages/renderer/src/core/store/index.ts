@@ -115,7 +115,7 @@ export const useStore = create<StoreState>()(
                 isSidebarOpen: state.isSidebarOpen,
                 // Add currentModule if we want to remember the last tab
                 currentModule: state.currentModule,
-                isBoardroomMode: state.isBoardroomMode,
+                conversationMode: state.conversationMode,
                 userProfile: state.userProfile,
                 // ISSUE-007: Persist boardroom chat history to survive HMR/soft reloads in dev
                 boardroomMessages: state.boardroomMessages,

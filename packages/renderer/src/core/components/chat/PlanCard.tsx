@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, AlertCircle, Zap } from 'lucide-react';
-import type { LivingPlan } from '@/services/agent/LivingPlanService';
+import type { LivingPlan, PlanStep } from '@/services/agent/LivingPlanService';
+import { getDepartmentOf } from '@/services/agent/departments';
 
 interface PlanCardProps {
   plan: LivingPlan;
@@ -81,14 +82,58 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           {/* Steps / Phases */}
           {draft.shape !== 'timeline' && draft.steps && draft.steps.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-cyan-300">Steps</h4>
-              <ol className="mt-2 space-y-1">
-                {draft.steps.map((step, i) => (
-                  <li key={step.id} className="text-xs text-cyan-200/70">
-                    <span className="font-semibold">{i + 1}.</span> {step.title}
-                  </li>
-                ))}
-              </ol>
+              <h4 className="text-xs font-semibold text-cyan-300">Plan Nodes</h4>
+              <div className="mt-3 space-y-4">
+                {Object.entries(
+                  draft.steps.reduce((acc, step, i) => {
+                    const agentIdRaw = step.agentId || (step.toolName ? step.toolName.split('.')[0] : null);
+                    const agentId = agentIdRaw || 'generalist';
+                    const dept = getDepartmentOf(agentId);
+                    const headId = dept ? dept.headId : 'generalist';
+                    const group = acc[headId] || [];
+                    group.push({ step, index: i });
+                    acc[headId] = group;
+                    return acc;
+                  }, {} as Record<string, { step: PlanStep, index: number }[]>)
+                ).map(([headId, group]) => {
+                  const dept = getDepartmentOf(headId);
+                  const headName = dept ? dept.displayName : (headId === 'generalist' ? 'Indii Conductor' : headId);
+                  return (
+                    <div key={headId} className="space-y-1 bg-black/20 rounded-md p-2 border border-white/5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1 mb-2 pl-1">
+                        {headName} Node
+                      </div>
+                      <ol className="space-y-2">
+                        {group.map(({ step, index }) => {
+                          const agentIdRaw = step.agentId || (step.toolName ? step.toolName.split('.')[0] : null);
+                          const agentId = agentIdRaw || 'generalist';
+                          const isWorkerNode = agentId !== headId && agentId.includes('.');
+                          const workerName = isWorkerNode ? agentId.split('.')[1] : null;
+
+                          return (
+                            <li key={step.id} className="text-xs text-cyan-200/70 pl-1">
+                              <div className="flex items-start gap-2">
+                                <span className="font-semibold text-cyan-500/50 mt-0.5">{index + 1}.</span>
+                                <div className="flex-1">
+                                  <span className="text-white/80">{step.title}</span>
+                                  {isWorkerNode && (
+                                    <div className="mt-1.5 flex items-center gap-1.5 border-l border-cyan-500/30 pl-2 ml-1">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                                      <span className="text-[9px] font-bold uppercase tracking-widest text-cyan-300">
+                                        Worker: {workerName}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

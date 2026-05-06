@@ -4,6 +4,7 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import path from 'path';
 import log from 'electron-log';
 import { app } from 'electron';
+import { existsSync } from 'fs';
 
 export class MCPClientService {
     private localClient: Client | null = null;
@@ -20,9 +21,20 @@ export class MCPClientService {
             return;
         }
 
-        const serverPath = app.isPackaged
-            ? path.join(process.resourcesPath, 'mcp-server-local', 'dist', 'index.js')
-            : path.resolve(__dirname, '../../../../mcp-server-local/dist/index.js');
+        let serverPath;
+        if (app.isPackaged) {
+            serverPath = path.join(process.resourcesPath, 'mcp-server-local', 'dist', 'index.js');
+        } else {
+            const appPath = app.getAppPath();
+            // Try root-relative first (common in some dev runners)
+            const rootRelative = path.resolve(appPath, 'packages', 'mcp-server-local', 'dist', 'index.js');
+            if (existsSync(rootRelative)) {
+                serverPath = rootRelative;
+            } else {
+                // Try package-relative (standard electron-vite structure)
+                serverPath = path.resolve(appPath, '..', 'mcp-server-local', 'dist', 'index.js');
+            }
+        }
 
         this.localTransport = new StdioClientTransport({
             command: 'node',

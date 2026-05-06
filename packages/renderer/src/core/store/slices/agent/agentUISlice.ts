@@ -2,6 +2,18 @@ import { StateCreator } from 'zustand';
 
 export type AgentMode = 'assistant' | 'autonomous' | 'creative' | 'research';
 
+/**
+ * ConversationMode — three-mode hybrid hierarchical agent system.
+ *
+ * - 'direct'     : User ↔ one agent (no delegation)
+ * - 'department' : User ↔ head; head ↔ own workers; cross-dept blocked
+ * - 'boardroom'  : User ↔ seated heads; heads ↔ each other; workers cannot be seated
+ *
+ * Default is 'boardroom' to preserve existing behavior. The picker UI is added
+ * in Phase 2; until then this state is set programmatically.
+ */
+export type ConversationMode = 'direct' | 'department' | 'boardroom';
+
 export interface ApprovalRequest {
     id: string;
     content: string;
@@ -47,6 +59,13 @@ export interface AgentUISlice {
     activeAgentProvider: 'direct' | 'native';
     setActiveAgentProvider: (provider: 'direct' | 'native') => void;
 
+    conversationMode: ConversationMode;
+    activeDepartmentId: string | null;
+    directTargetAgentId: string | null;
+    setConversationMode: (mode: ConversationMode) => void;
+    setActiveDepartmentId: (deptId: string | null) => void;
+    setDirectTargetAgentId: (agentId: string | null) => void;
+
     isKnowledgeBaseEnabled: boolean;
     setKnowledgeBaseEnabled: (enabled: boolean) => void;
 
@@ -72,6 +91,9 @@ export function buildAgentUIState(
         rightPanelView: 'messages',
         chatChannel: 'indii',
         activeAgentProvider: 'direct',
+        conversationMode: 'boardroom',
+        activeDepartmentId: null,
+        directTargetAgentId: null,
         isKnowledgeBaseEnabled: true,
         agentWindowSize: { width: 500, height: 800 },
 
@@ -107,6 +129,9 @@ export function buildAgentUIState(
         setRightPanelView: (view) => set({ rightPanelView: view }),
         setChatChannel: (channel) => set({ chatChannel: channel }),
         setActiveAgentProvider: (provider) => set({ activeAgentProvider: provider }),
+        setConversationMode: (mode) => set({ conversationMode: mode }),
+        setActiveDepartmentId: (deptId) => set({ activeDepartmentId: deptId }),
+        setDirectTargetAgentId: (agentId) => set({ directTargetAgentId: agentId }),
         setKnowledgeBaseEnabled: (enabled) => set({ isKnowledgeBaseEnabled: enabled }),
         setAgentWindowSize: (size) => set({ agentWindowSize: size }),
 

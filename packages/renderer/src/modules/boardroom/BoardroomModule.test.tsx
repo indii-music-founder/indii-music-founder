@@ -96,6 +96,11 @@ describe('BoardroomModule', () => {
             boardroomMessages: [],
             toggleAgent: vi.fn(),
             setBoardroomMode: vi.fn(),
+            setChatChannel: vi.fn(),
+            setCommandBarInput: vi.fn(),
+            currentModule: 'dashboard',
+            chatChannel: 'indii',
+            conversationMode: 'boardroom',
         };
     });
 

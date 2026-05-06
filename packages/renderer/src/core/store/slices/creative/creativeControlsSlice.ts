@@ -130,6 +130,19 @@ export interface CreativeControlsSlice {
     viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release';
     setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
 
+    // Showroom Mode State
+    showroomState: {
+        productAsset: HistoryItem | null;
+        productType: 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
+        placementHint: string;
+        sceneDescription: string;
+        motionDescription: string;
+        mockupResult: HistoryItem | null;
+        isGeneratingMockup: boolean;
+        isGeneratingVideo: boolean;
+    };
+    setShowroomState: (updates: Partial<CreativeControlsSlice['showroomState']>) => void;
+
     prompt: string;
     setPrompt: (prompt: string) => void;
 
@@ -279,6 +292,20 @@ export function buildCreativeControlsState(
 
         viewMode: 'direct',
         setViewMode: (mode) => set({ viewMode: mode }),
+
+        showroomState: {
+            productAsset: null,
+            productType: 'T-Shirt',
+            placementHint: 'Center Chest',
+            sceneDescription: '',
+            motionDescription: '',
+            mockupResult: null,
+            isGeneratingMockup: false,
+            isGeneratingVideo: false,
+        },
+        setShowroomState: (updates) => set((state) => ({
+            showroomState: { ...state.showroomState, ...updates }
+        })),
 
         prompt: '',
         setPrompt: (prompt) => set({ prompt }),

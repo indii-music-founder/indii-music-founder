@@ -76,6 +76,8 @@ export interface ElectronAPI {
         uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; files?: string[]; error?: string }>;
         disconnect: () => Promise<{ success: boolean }>;
         isConnected: () => Promise<boolean>;
+        listDirectory: (remotePath: string) => Promise<{ success: boolean; files?: { name: string; isDirectory: boolean; size: number; modifyTime: number }[]; error?: string }>;
+        readFile: (remotePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
     };
 
     // Agent Capabilities

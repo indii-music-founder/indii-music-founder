@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
@@ -6,26 +6,36 @@ import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag, Ghost } from 'lucide-react';
+import { 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  MoreHorizontal, 
+  Image as ImageIcon, 
+  Send, 
+  ShoppingBag, 
+  Ghost,
+  X,
+  Rocket,
+  Plus
+} from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import ProductPickerModal from './ProductPickerModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SocialFeedProps {
     userId?: string;
 }
 
-// ⚡ Bolt Optimization: Move constants outside component to prevent recreation on every render
 const SHORTCUTS = [
     { label: "Announce Drop", icon: "🚀", text: "New Drop Alert! 🚨 [Product Name] is now live. Cop it before it's gone!" },
     { label: "Behind the Scenes", icon: "🎬", text: "In the lab cooking up something special... 🧪 #StudioFlow" },
     { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
 ];
 
-
-
-// Memoized to prevent re-renders when parent state changes but props don't
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     const {
         posts,
@@ -57,20 +67,17 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     useEffect(() => {
         if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
-            // Wrap in timeout to avoid "synchronous state update" lint error if called improperly
             const timer = setTimeout(() => {
                 void loadArtistProducts();
             }, 0);
             return () => clearTimeout(timer);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile]);
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;
 
         setIsPosting(true);
-        // Pass the selectedProductId to the createPost action
         const success = await createPost(
             newPostContent,
             [],
@@ -85,113 +92,110 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         setIsPosting(false);
     };
 
+    const selectedProduct = artistProducts.find(p => p.id === selectedProductId);
+
     return (
-        <div className="flex flex-col h-full bg-bg-dark text-white">
+        <div className="flex flex-col h-full bg-[#0d1117] text-white">
             {/* Post Input */}
             {(!userId || userId === userProfile?.id) && (
-                <div className="p-4 border-b border-gray-800">
-                    {/* Shortcuts */}
-                    <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                        {SHORTCUTS.map(s => (
-                            <button
-                                key={s.label}
-                                onClick={() => setNewPostContent(s.text)}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-full text-xs font-medium text-gray-300 transition-colors whitespace-nowrap"
-                            >
-                                <span>{s.icon}</span>
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-
+                <div className="p-6 border-b border-gray-800 bg-[#161b22]/50">
                     <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-dept-creative flex-shrink-0 relative overflow-hidden text-black flex items-center justify-center font-bold">
+                        <div className="w-12 h-12 rounded-full bg-dept-creative flex-shrink-0 relative overflow-hidden text-black flex items-center justify-center font-bold shadow-lg shadow-dept-creative/20">
                             {userProfile?.photoURL ? (
                                 <img src={userProfile.photoURL} alt="Me" className="w-full h-full object-cover" />
                             ) : (
                                 <span>{userProfile?.id?.substring(0, 1).toUpperCase() || 'U'}</span>
                             )}
                         </div>
-                        <div className="flex-1">
-                            <textarea
-                                value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
-                                placeholder="What's happening in your studio?"
-                                aria-label="What's happening in your studio?"
-                                className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[80px] focus:outline-none"
-                            />
-
-                            {/* Selected Product Preview */}
-                            {selectedProductId && (
-                                <div className="mb-3 p-2 bg-dept-creative/10 border border-dept-creative/30 rounded-lg flex items-center justify-between">
-                                    <span className="text-sm text-dept-creative/90">
-                                        Attaching: <span className="font-bold">{artistProducts.find(p => p.id === selectedProductId)?.title}</span>
-                                    </span>
-                                    <button
-                                        onClick={() => setSelectedProductId(null)}
-                                        className="text-xs text-dept-creative/70 hover:text-white"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Product Picker */}
-                            {showProductPicker && (
-                                <div className="mb-3 bg-gray-900 border border-gray-700 rounded-lg p-2 absolute z-10 shadow-xl max-h-60 overflow-y-auto w-64">
-                                    <div className="text-xs text-gray-500 uppercase font-bold mb-2">Select Product</div>
-                                    {artistProducts.length === 0 ? (
-                                        <div className="text-sm text-gray-400 p-2">No active products found.</div>
-                                    ) : (
-                                        <div className="space-y-1">
-                                            {artistProducts.map(p => (
-                                                <button
-                                                    key={p.id}
-                                                    onClick={() => {
-                                                        setSelectedProductId(p.id!);
-                                                        setShowProductPicker(false);
-                                                    }}
-                                                    className="w-full text-left p-2 hover:bg-gray-800 rounded text-sm flex justify-between items-center"
-                                                >
-                                                    <span className="truncate">{p.title}</span>
-                                                    <span className="text-green-400 text-xs">{p.currency} {p.price}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center mt-2 border-t border-gray-800 pt-3">
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => { }} // Placeholder for image upload
-                                        className="text-gray-400 hover:text-dept-creative transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
-                                        aria-label="Add image to post"
-                                    >
-                                        <ImageIcon size={20} />
-                                    </button>
-                                    {((userProfile as unknown as Record<string, unknown>)?.accountType === 'artist' || (userProfile as unknown as Record<string, unknown>)?.accountType === 'label') && (
-                                        <button
-                                            onClick={() => setShowProductPicker(!showProductPicker)}
-                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none
-                                                ${selectedProductId ? 'text-dept-creative' : 'text-gray-400 hover:text-dept-creative'}`}
-                                            title="Attach Product (Drop)"
-                                            aria-label={selectedProductId ? "Remove attached product" : "Attach product from store"}
+                        <div className="flex-1 space-y-4">
+                            <div className="bg-black/40 border border-gray-800 rounded-2xl p-4 focus-within:border-dept-creative/50 transition-colors">
+                                <textarea
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    data-testid="social-post-input"
+                                    placeholder="What's happening in your studio?"
+                                    className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[100px] focus:outline-none text-lg"
+                                />
+                                
+                                <AnimatePresence>
+                                    {selectedProduct && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            className="mt-4 p-3 bg-dept-creative/5 border border-dept-creative/20 rounded-xl flex items-center gap-4 relative overflow-hidden"
                                         >
-                                            <ShoppingBag size={20} />
-                                            {artistProducts.length > 0 && (
-                                                <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-                                            )}
+                                            <div className="absolute top-0 right-0 p-1 bg-dept-creative/10 rounded-bl-xl text-[10px] font-bold text-dept-creative uppercase tracking-tighter">
+                                                Active Drop
+                                            </div>
+                                            <div className="w-12 h-12 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
+                                                {selectedProduct.images?.[0] && (
+                                                    <img src={selectedProduct.images[0]} className="w-full h-full object-cover" alt="" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-bold text-white truncate">{selectedProduct.title}</div>
+                                                <div className="text-xs text-dept-creative">{selectedProduct.currency} {selectedProduct.price}</div>
+                                            </div>
+                                            <button 
+                                                onClick={() => setSelectedProductId(null)}
+                                                className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-gray-500 rounded-lg transition-colors"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => { }} 
+                                        className="p-2.5 text-gray-400 hover:text-dept-creative transition-colors rounded-xl hover:bg-dept-creative/5 group"
+                                        title="Add Media"
+                                    >
+                                        <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
+                                    </button>
+                                    {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
+                                        <button
+                                            onClick={() => setShowProductPicker(true)}
+                                            data-testid="social-attach-product-button"
+                                            className={`p-2.5 rounded-xl transition-all group flex items-center gap-2
+                                                ${selectedProductId 
+                                                    ? 'bg-dept-creative text-black font-bold text-xs px-4' 
+                                                    : 'text-gray-400 hover:text-dept-creative hover:bg-dept-creative/5'}`}
+                                            title="Attach Social Drop"
+                                        >
+                                            <ShoppingBag size={20} className={!selectedProductId ? "group-hover:scale-110 transition-transform" : ""} />
+                                            {selectedProductId ? "Product Attached" : ""}
                                         </button>
                                     )}
+                                    
+                                    <div className="h-6 w-[1px] bg-gray-800 mx-2" />
+                                    
+                                    <div className="flex gap-1 overflow-x-auto scrollbar-hide max-w-[300px]">
+                                        {SHORTCUTS.map(s => (
+                                                <button
+                                                key={s.label}
+                                                onClick={() => setNewPostContent(s.text)}
+                                                data-testid={`social-shortcut-${s.label.toLowerCase().replace(/\s+/g, '-')}`}
+                                                className="px-3 py-1.5 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-gray-600 rounded-lg text-[10px] font-bold text-gray-400 hover:text-white transition-all whitespace-nowrap flex items-center gap-1.5"
+                                            >
+                                                <span>{s.icon}</span>
+                                                {s.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+                                
                                 <button
                                     onClick={handleCreatePost}
                                     disabled={!newPostContent.trim() || isPosting}
-                                    className="bg-dept-creative hover:bg-dept-creative/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-4 py-1.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(0,255,102,0.2)]"
+                                    data-testid="social-post-submit"
+                                    className="bg-dept-creative hover:bg-dept-creative/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-dept-creative/20 group"
                                 >
-                                    {isPosting ? 'Posting...' : <>Post <Send size={14} /></>}
+                                    {isPosting ? 'Posting...' : <>Post <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>}
                                 </button>
                             </div>
                         </div>
@@ -199,21 +203,35 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                 </div>
             )}
 
+            {/* Product Picker Modal */}
+            <AnimatePresence>
+                {showProductPicker && (
+                    <ProductPickerModal 
+                        onClose={() => setShowProductPicker(false)}
+                        onSelect={(id) => {
+                            setSelectedProductId(id);
+                            setShowProductPicker(false);
+                        }}
+                        selectedId={selectedProductId}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Feed Tabs */}
-            <div className="flex border-b border-gray-800" role="tablist" aria-label="Feed filter">
+            <div className="flex border-b border-gray-800 px-6 bg-[#0d1117]/80 backdrop-blur-md sticky top-0 z-10">
                 {(['all', 'following', 'mine'] as const).map((f) => (
                     <button
                         key={f}
-                        role="tab"
-                        aria-selected={filter === f}
-                        tabIndex={filter === f ? 0 : -1}
                         onClick={() => setFilter(f)}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dept-creative
-                            ${filter === f ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`py-4 px-6 text-sm font-bold transition-all relative
+                            ${filter === f ? 'text-dept-creative' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                        {f.toUpperCase()}
                         {filter === f && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dept-creative rounded-full mx-12 shadow-[0_0_10px_rgba(0,255,102,0.5)]"></div>
+                            <motion.div 
+                                layoutId="activeTab"
+                                className="absolute bottom-0 left-0 right-0 h-1 bg-dept-creative rounded-t-full shadow-[0_-4px_10px_rgba(0,255,102,0.5)]" 
+                            />
                         )}
                     </button>
                 ))}
