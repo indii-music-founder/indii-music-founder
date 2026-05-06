@@ -80,7 +80,6 @@ jobs:
 
       - name: Audit dependencies for vulnerabilities (Item 252)
         run: npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Run linting checks
         run: npm run lint
@@ -130,12 +129,12 @@ jobs:
 
       - name: Accessibility audit (axe-core)
         run: |
-          npm install -g serve @axe-core/cli
+          npm install -g serve @axe-core/cli browser-driver-manager
           serve -s dist/renderer -l 5000 &
           sleep 3
+          npx browser-driver-manager install chrome
           npx axe --exit http://localhost:5000
           kill %1 || true
-        continue-on-error: true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -288,7 +287,6 @@ jobs:
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
           npm ci --prefer-offline --no-audit
-          npm install --os=linux --cpu=x64 sharp --no-save
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -331,13 +329,11 @@ jobs:
           npm run build -w packages/firebase
           firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:exportSplitSheet,functions:triggerVideoJob,functions:executeVideoJob,functions:inngestApi --project indiios-v-1-1 --non-interactive --force
 
-      # TODO: Once app.indiios.com DNS is live, remove `continue-on-error` to
-      #       make Lighthouse a blocking quality gate again.
+      # NOTE: Replaced app.indiios.com with indiios-v-1-1.web.app until DNS is propagated
       - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
-        continue-on-error: true
         run: |
           npm install -g @lhci/cli
-          echo '{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1,"settings":{"chromeFlags":"--no-sandbox --headless --disable-gpu --ignore-certificate-errors"}},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}' > lighthouserc.json
+          echo '{"ci":{"collect":{"url":["https://indiios-v-1-1.web.app/"],"numberOfRuns":1,"settings":{"chromeFlags":"--no-sandbox --headless --disable-gpu --ignore-certificate-errors"}},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}' > lighthouserc.json
           lhci autorun
 
       - name: Cleanup credentials

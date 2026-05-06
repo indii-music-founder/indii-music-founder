@@ -120,6 +120,7 @@ test.describe('Authentication Flow', () => {
                 email: 'e2e@indiios.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
+                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
             };
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
@@ -175,6 +176,7 @@ test.describe('Authentication Flow', () => {
                 email: 'e2e@indiios.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
+                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
             };
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
@@ -236,6 +238,7 @@ test.describe('Authentication Flow', () => {
                 email: 'e2e@indiios.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
+                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
             };
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
