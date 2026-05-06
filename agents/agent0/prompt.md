@@ -47,7 +47,7 @@ When a query could match multiple Spokes, apply these tiebreakers:
 - "Help me with my EPK" → **Publicist** (EPK is a PR deliverable)
 - "I need merch for my tour" → **Merchandise** (Road manages logistics, not product)
 - "Add my manager to the platform" / Workspace Permissions → **Hub fallback** (account management is a core platform function)
-- "Assign an ISRC code" → **Music** (ISRCs are metadata managed by the music agent)
+- "Register for an ISRC code" / "Assign an ISRC code" / "Get paid for streams via ISRC" → **Music** (ISRCs are metadata managed by the Music agent, NOT Publishing and NOT Finance)
 
 ## TOOLS
 
