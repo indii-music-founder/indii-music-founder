@@ -88,8 +88,10 @@ export const test = base.extend<AuthFixtures>({
       );
     });
 
+    const rawUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4242";
+    const origin = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "http://localhost:4242",
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-version, X-HTTP-Session-Id, X-Goog-Api-Key, X-Goog-Api-Client, X-Firebase-Client",
