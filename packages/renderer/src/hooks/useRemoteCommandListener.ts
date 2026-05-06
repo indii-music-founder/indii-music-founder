@@ -417,8 +417,10 @@ function useFirestoreRelay(enabled: boolean) {
                 }
 
                 // Run through the FULL agent pipeline with targeted agent
-                const historyLengthBefore = useStore.getState().agentHistory.length;
-                writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, agent: targetAgent || 'auto' });
+                const stateBefore = useStore.getState();
+                const historyLengthBefore = stateBefore.agentHistory.length;
+                const boardroomLengthBefore = stateBefore.boardroomMessages?.length || 0;
+                writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, boardroomLengthBefore, agent: targetAgent || 'auto' });
 
                 try {
                     // Race the agent call against a 45s timeout
@@ -446,17 +448,27 @@ function useFirestoreRelay(enabled: boolean) {
                     return; // Skip the response polling — we already sent an error
                 }
 
-                writeDiagnostic('agent_send_complete', { commandId: command.id, historyLengthAfter: useStore.getState().agentHistory.length });
+                writeDiagnostic('agent_send_complete', { 
+                    commandId: command.id, 
+                    historyLengthAfter: useStore.getState().agentHistory.length,
+                    boardroomLengthAfter: useStore.getState().boardroomMessages?.length || 0
+                });
 
                 // Wait for a NEW response to appear (only entries AFTER our send)
                 // Increased to 30 attempts × 1s = 30s max wait
                 let lastResponse: { text?: string; agentId?: string } | undefined;
                 for (let attempt = 0; attempt < 30; attempt++) {
                     const state = useStore.getState();
-                    const newEntries = state.agentHistory.slice(historyLengthBefore);
+                    const newHistoryEntries = state.agentHistory.slice(historyLengthBefore);
+                    const newBoardroomEntries = (state.boardroomMessages || []).slice(boardroomLengthBefore);
+                    
+                    const newEntries = [...newHistoryEntries, ...newBoardroomEntries]
+                        .sort((a, b) => a.timestamp - b.timestamp);
+
                     const candidate = newEntries
                         .filter(m => m.role === 'model' && m.text && !m.isStreaming)
                         .slice(-1)[0];
+                        
                     if (candidate && candidate.text && candidate.text.length > 5) {
                         lastResponse = candidate;
                         break;
@@ -465,7 +477,8 @@ function useFirestoreRelay(enabled: boolean) {
                         writeDiagnostic('response_wait_slow', {
                             commandId: command.id,
                             newEntriesCount: newEntries.length,
-                            totalHistory: state.agentHistory.length
+                            totalHistory: state.agentHistory.length,
+                            totalBoardroom: state.boardroomMessages?.length || 0
                         });
                     }
                     await delay(1000);
