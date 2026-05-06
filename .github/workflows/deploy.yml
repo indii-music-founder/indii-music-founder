@@ -288,6 +288,7 @@ jobs:
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
           npm ci --prefer-offline --no-audit
+          npm install --os=linux --cpu=x64 sharp --no-save
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
