@@ -54,6 +54,7 @@
 ---
 
 ### ISSUE-006: Direct Mode Delegation Block Not Enforced in Agent NLP Response
+- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Injected explicit `delegationScopeSection` into the agent's system prompt to enforce strict scoping bounds. Direct mode now explicitly bans cross-delegation at the NLP instruction layer.
 - **Files:** `AgentPromptBuilder.ts`, `BaseAgent.ts`
@@ -72,6 +73,7 @@
 ---
 
 ### ISSUE-007: Department Mode Cross-Delegation Feedback Missing
+- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Similar to ISSUE-006, Department mode now receives an explicit scope block forbidding coordination with out-of-scope departments, eliminating silent fail-overs and forcing clear NLP rejections.
 - **Files:** `AgentPromptBuilder.ts`, `BaseAgent.ts`
@@ -88,6 +90,7 @@
 ---
 
 ### ISSUE-008: Chat UI JSON Overflow/Overlap in Direct Mode
+- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Added `min-w-0` to the message flex container in `ChatMessage.tsx` so JSON blocks (`overflow-x-auto`) properly wrap and scroll without stretching their flex parent beyond its `max-w-[90%]`.
 - **Files:** `ChatMessage.tsx`
@@ -104,6 +107,7 @@
 ---
 
 ### ISSUE-009: "ONE-SHOT PLAN" Pop-up Layout & zIndex Issues
+- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Removed the absolute `z-50` stacking context from `PlanCard.tsx`. This stops the "One-shot" popups from violently overlaying modals, headers, and the command bar.
 - **Files:** `PlanCard.tsx`
