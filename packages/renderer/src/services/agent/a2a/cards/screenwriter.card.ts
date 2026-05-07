@@ -7,22 +7,15 @@ export const ScreenwriterCard: AgentCard = {
     description: 'Specialist for screenwriter operations.',
     capabilities: [
     {
-        "name": "script_writing",
-        "description": "Script writing",
+        "name": "format_screenplay",
+        "description": "Format raw text into standard screenplay format.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "dialogue_generation",
-        "description": "Dialogue generation",
-        "inputSchemaRef": "#/components/schemas/Empty",
-        "outputSchemaRef": "#/components/schemas/Empty",
-        "streaming": false
-    },
-    {
-        "name": "narrative_arc_planning",
-        "description": "Narrative arc planning",
+        "name": "analyze_script_structure",
+        "description": "Analyze the narrative structure of a script.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

@@ -7,22 +7,50 @@ export const MusicCard: AgentCard = {
     description: 'Specialist for music operations.',
     capabilities: [
     {
-        "name": "audio_analysis",
-        "description": "Audio analysis",
+        "name": "analyze_audio",
+        "description": "Deep technical analysis of an uploaded audio file.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "sonic_dna_extraction",
-        "description": "Sonic DNA extraction",
+        "name": "create_music_metadata",
+        "description": "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "metadata_embedding",
-        "description": "Metadata embedding",
+        "name": "update_track_metadata",
+        "description": "Updates specific metadata fields for a track.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "verify_metadata_golden",
+        "description": "Verifies if a metadata object meets the industrial 'Golden Standard'.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "scrub_id3_tags",
+        "description": "Standardizes and cleans ID3 tags on an audio file.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "inject_splits_to_metadata",
+        "description": "Injects royalty split data into track metadata.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "export_dolby_atmos_stems",
+        "description": "Exports audio stems formatted for Dolby Atmos mixing.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

@@ -7,22 +7,15 @@ export const ProducerCard: AgentCard = {
     description: 'Specialist for producer operations.',
     capabilities: [
     {
-        "name": "beat_making",
-        "description": "Beat making",
+        "name": "create_call_sheet",
+        "description": "Generate a daily call sheet for the production.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "arrangement_planning",
-        "description": "Arrangement planning",
-        "inputSchemaRef": "#/components/schemas/Empty",
-        "outputSchemaRef": "#/components/schemas/Empty",
-        "streaming": false
-    },
-    {
-        "name": "mix_review",
-        "description": "Mix review",
+        "name": "breakdown_script",
+        "description": "Analyze a script for production requirements (props, costumes, etc).",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

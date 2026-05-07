@@ -7,22 +7,22 @@ export const LegalCard: AgentCard = {
     description: 'Specialist for legal operations.',
     capabilities: [
     {
-        "name": "contract_review",
-        "description": "Contract review",
+        "name": "analyze_contract",
+        "description": "Analyze a legal contract for risks and provide a summary.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "rights_management",
-        "description": "Rights management",
+        "name": "draft_contract",
+        "description": "Draft a new legal contract or agreement.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "compliance_checking",
-        "description": "Compliance checking",
+        "name": "generate_nda",
+        "description": "Rapidly generate a standard NDA.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
