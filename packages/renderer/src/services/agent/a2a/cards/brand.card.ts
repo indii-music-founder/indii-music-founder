@@ -7,22 +7,36 @@ export const BrandCard: AgentCard = {
     description: 'Specialist for brand operations.',
     capabilities: [
     {
-        "name": "brand_strategy",
-        "description": "Brand strategy",
+        "name": "verify_output",
+        "description": "Critique and verify generated content against a goal (Brand Bible).",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "identity_formulation",
-        "description": "Identity formulation",
+        "name": "analyze_brand_consistency",
+        "description": "Analyze content for tone, core values, and visual consistency.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "voice_generation",
-        "description": "Voice generation",
+        "name": "generate_brand_guidelines",
+        "description": "Generate structured brand guidelines based on core values.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "audit_visual_assets",
+        "description": "Audit a list of visual assets for compliance.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "analyze_audio",
+        "description": "Analyze an uploaded audio track for BPM, Key, Genre, and Vibe.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

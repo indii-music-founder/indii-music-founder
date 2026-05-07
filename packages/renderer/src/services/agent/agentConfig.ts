@@ -18,6 +18,11 @@ import { DistributionAgent } from './definitions/DistributionAgent';
 import { MusicAgent } from './definitions/MusicAgent';
 import { CreativeAgent } from './definitions/CreativeAgent';
 
+// Phase 3: Finance Workers
+import { FinanceTaxAgent } from '@/agents/finance/workers/tax.config';
+import { FinanceRoyaltyAgent } from '@/agents/finance/workers/royalty.config';
+import { FinanceAccountingAgent } from '@/agents/finance/workers/accounting.config';
+
 export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
     LegalAgent,
@@ -36,7 +41,10 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     SecurityAgent,
     DistributionAgent,
     MusicAgent,
-    CreativeAgent
+    CreativeAgent,
+    FinanceTaxAgent,
+    FinanceRoyaltyAgent,
+    FinanceAccountingAgent
 ];
 
 import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';

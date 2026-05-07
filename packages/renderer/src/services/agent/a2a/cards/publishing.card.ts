@@ -7,22 +7,43 @@ export const PublishingCard: AgentCard = {
     description: 'Specialist for publishing operations.',
     capabilities: [
     {
-        "name": "catalog_management",
-        "description": "Catalog management",
+        "name": "analyze_contract",
+        "description": "Analyze a publishing contract.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "pro_registration",
-        "description": "PRO registration",
+        "name": "register_work",
+        "description": "Register a new musical work with PROs.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "royalty_tracking",
-        "description": "Royalty tracking",
+        "name": "check_pro_catalog",
+        "description": "Queries PROs (ASCAP/BMI) for existing catalog matches to prevent duplicate registration.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "package_release_assets",
+        "description": "Definitively package audio and artwork for DDEX distribution.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "pro_scraper",
+        "description": "Audit public repertories (ASCAP/BMI) for catalog accuracy.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "payment_gate",
+        "description": "Authorize fees for song registration.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
