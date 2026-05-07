@@ -131,12 +131,21 @@ export function AnomalyDetector() {
 
     // Build chart data — optionally filter to anomalous days only
     const chartData = useMemo(() => {
-        if (!showAnomaliesOnly) return STREAM_DATA;
-        return STREAM_DATA.filter((_, i) =>
-            isAnomalousBar(STREAM_DATA, i, 'trackA') ||
-            isAnomalousBar(STREAM_DATA, i, 'trackB') ||
-            isAnomalousBar(STREAM_DATA, i, 'trackC')
-        );
+        const enriched = STREAM_DATA.map((d, i) => {
+            const trackA_spike = isAnomalousBar(STREAM_DATA, i, 'trackA');
+            const trackB_spike = isAnomalousBar(STREAM_DATA, i, 'trackB');
+            const trackC_spike = isAnomalousBar(STREAM_DATA, i, 'trackC');
+            return {
+                ...d,
+                trackA_spike,
+                trackB_spike,
+                trackC_spike,
+                hasAnomaly: trackA_spike || trackB_spike || trackC_spike
+            };
+        });
+
+        if (!showAnomaliesOnly) return enriched;
+        return enriched.filter(d => d.hasAnomaly);
     }, [showAnomaliesOnly]);
 
     return (
@@ -214,23 +223,20 @@ export function AnomalyDetector() {
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="trackA" name="trackA" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackA');
-                                        return <Cell key={`trackA-${index}`} fill={isSpike ? '#ef4444' : '#8b5cf6'} />;
+                                        // @ts-ignore - added dynamically in useMemo
+                                        return <Cell key={`trackA-${index}`} fill={entry.trackA_spike ? '#ef4444' : '#8b5cf6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackB" name="trackB" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackB');
-                                        return <Cell key={`trackB-${index}`} fill={isSpike ? '#ef4444' : '#3b82f6'} />;
+                                        // @ts-ignore - added dynamically in useMemo
+                                        return <Cell key={`trackB-${index}`} fill={entry.trackB_spike ? '#ef4444' : '#3b82f6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackC" name="trackC" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackC');
-                                        return <Cell key={`trackC-${index}`} fill={isSpike ? '#ef4444' : '#10b981'} />;
+                                        // @ts-ignore - added dynamically in useMemo
+                                        return <Cell key={`trackC-${index}`} fill={entry.trackC_spike ? '#ef4444' : '#10b981'} />;
                                     })}
                                 </Bar>
                             </BarChart>
