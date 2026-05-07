@@ -10,6 +10,7 @@ import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoJob } from '@/types/video';
 import { VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export function useDirectGeneration() {
     const {
@@ -175,8 +176,8 @@ export function useDirectGeneration() {
     }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
-        const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-        const { AI_MODELS } = await import('@/core/config/ai-models');
+        const { generateImageDirectly } = await importWithRetry(() => import('@/services/ai/generators/DirectImageGenerator'));
+        const { AI_MODELS } = await importWithRetry(() => import('@/core/config/ai-models'));
 
         const resolvedModel = studioControls.model === 'pro'
             ? AI_MODELS.IMAGE.DIRECT_PRO
