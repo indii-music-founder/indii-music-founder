@@ -7,22 +7,43 @@ export const LicensingCard: AgentCard = {
     description: 'Specialist for licensing operations.',
     capabilities: [
     {
-        "name": "sync_licensing",
-        "description": "Sync licensing",
+        "name": "check_availability",
+        "description": "Check if a piece of content is available for licensing. Can use a URL for deep analysis.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "clearance_processing",
-        "description": "Clearance processing",
+        "name": "analyze_contract",
+        "description": "Analyze a licensing agreement using contract parsing tools.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "rights_negotiation",
-        "description": "Rights negotiation",
+        "name": "draft_license",
+        "description": "Draft a new licensing agreement or contract.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "browser_tool",
+        "description": "Research Music Supervisors or Sync Libraries.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "document_query",
+        "description": "Analyze license agreements for unfair terms.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "payment_gate",
+        "description": "Pay for clearance fees.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
