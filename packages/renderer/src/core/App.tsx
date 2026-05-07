@@ -57,12 +57,14 @@ import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
 
 const lazyWithRetry = (componentImport: () => Promise<any>) => {
+    return lazy(() => importWithRetry(componentImport));
     return lazy(async () => {
         let retries = 3;
         let interval = 500;
