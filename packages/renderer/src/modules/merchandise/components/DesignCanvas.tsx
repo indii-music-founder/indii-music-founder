@@ -8,6 +8,7 @@ import type {
     FabricActiveSelectionWithIterator,
 } from '../types/fabric-extensions';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
 
 // Generate unique IDs
 const generateId = () => `obj-${Date.now()}-${secureRandomAlphanumeric(9)}`;
@@ -183,92 +184,195 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             });
             canvas.on('object:removed', emitLayersChange);
 
-            // Keyboard shortcuts
-            const handleKeyDown = (e: KeyboardEvent) => {
-                const target = e.target as HTMLElement;
-                if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-                    return;
-                }
+            // Keyboard shortcuts via Orchestrator
+            const unregisterShortcuts = [
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-delete',
+                    key: ['Delete', 'Backspace'],
+                    priority: 'normal',
+                    handler: (e) => {
+                        const activeObject = canvas.getActiveObject();
+                        if (activeObject) {
+                            e.preventDefault();
+                            const activeObjects = canvas.getActiveObjects();
 
-                const activeObject = canvas.getActiveObject();
-
-                if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject) {
-                    e.preventDefault();
-                    const activeObjects = canvas.getActiveObjects();
-
-                    // If onRequestDelete callback is provided, use it (allows confirmation dialog)
-                    if (onRequestDelete) {
-                        const canvasObjects = activeObjects.map(convertFabricToCanvasObject);
-                        onRequestDelete(canvasObjects);
-                    } else {
-                        // Fallback to immediate deletion
-                        activeObjects.forEach(obj => canvas.remove(obj));
-                        canvas.discardActiveObject();
-                        canvas.renderAll();
-                    }
-                }
-
-                if ((e.metaKey || e.ctrlKey) && e.key === 'c' && activeObject) {
-                    e.preventDefault();
-                    activeObject.clone().then((cloned: fabric.Object) => {
-                        (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
-                    });
-                }
-
-                if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-                    e.preventDefault();
-                    const canvasWithClip = canvas as FabricCanvasWithClipboard;
-                    const clipboard = canvasWithClip._clipboard;
-                    if (clipboard) {
-                        clipboard.clone().then((cloned: fabric.Object) => {
-                            canvas.discardActiveObject();
-                            cloned.set({
-                                left: (cloned.left || 0) + 10,
-                                top: (cloned.top || 0) + 10,
-                                evented: true,
-                            });
-                            if (cloned.type === 'activeSelection') {
-                                (cloned as fabric.ActiveSelection).canvas = canvas;
-                                const activeWithIterator = cloned as FabricActiveSelectionWithIterator;
-                                activeWithIterator.forEachObject((obj: fabric.Object) => {
-                                    canvas.add(obj);
-                                });
-                                cloned.setCoords();
+                            if (onRequestDelete) {
+                                const canvasObjects = activeObjects.map(convertFabricToCanvasObject);
+                                onRequestDelete(canvasObjects);
                             } else {
-                                canvas.add(cloned);
+                                activeObjects.forEach(obj => canvas.remove(obj));
+                                canvas.discardActiveObject();
+                                canvas.renderAll();
                             }
-                            const clip = canvasWithClip._clipboard;
-                            if (clip) {
-                                clip.top = (clip.top ?? 0) + 10;
-                                clip.left = (clip.left ?? 0) + 10;
-                            }
-                            canvas.setActiveObject(cloned);
-                            canvas.requestRenderAll();
-                        });
+                        }
                     }
-                }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-copy',
+                    key: 'c',
+                    meta: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        const activeObject = canvas.getActiveObject();
+                        if (activeObject) {
+                            e.preventDefault();
+                            activeObject.clone().then((cloned: fabric.Object) => {
+                                (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
+                            });
+                        }
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-paste',
+                    key: 'v',
+                    meta: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        const canvasWithClip = canvas as FabricCanvasWithClipboard;
+                        const clipboard = canvasWithClip._clipboard;
+                        if (clipboard) {
+                            clipboard.clone().then((cloned: fabric.Object) => {
+                                canvas.discardActiveObject();
+                                cloned.set({
+                                    left: (cloned.left || 0) + 10,
+                                    top: (cloned.top || 0) + 10,
+                                    evented: true,
+                                });
+                                if (cloned.type === 'activeSelection') {
+                                    (cloned as fabric.ActiveSelection).canvas = canvas;
+                                    const activeWithIterator = cloned as FabricActiveSelectionWithIterator;
+                                    activeWithIterator.forEachObject((obj: fabric.Object) => {
+                                        canvas.add(obj);
+                                    });
+                                    cloned.setCoords();
+                                } else {
+                                    canvas.add(cloned);
+                                }
+                                const clip = canvasWithClip._clipboard;
+                                if (clip) {
+                                    clip.top = (clip.top ?? 0) + 10;
+                                    clip.left = (clip.left ?? 0) + 10;
+                                }
+                                canvas.setActiveObject(cloned);
+                                canvas.requestRenderAll();
+                            });
+                        }
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-select-all',
+                    key: 'a',
+                    meta: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        canvas.discardActiveObject();
+                        const sel = new fabric.ActiveSelection(canvas.getObjects(), {
+                            canvas: canvas,
+                        });
+                        canvas.setActiveObject(sel);
+                        canvas.requestRenderAll();
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-snap-grid',
+                    key: ';',
+                    meta: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        setSnapToGrid(prev => !prev);
+                    }
+                })
+            ];
 
-                if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
-                    e.preventDefault();
-                    canvas.discardActiveObject();
-                    const sel = new fabric.ActiveSelection(canvas.getObjects(), {
-                        canvas: canvas,
-                    });
-                    canvas.setActiveObject(sel);
-                    canvas.requestRenderAll();
-                }
-
-                // Toggle Snap-to-Grid: Cmd/Ctrl + ;
-                if ((e.metaKey || e.ctrlKey) && e.key === ';') {
-                    e.preventDefault();
-                    setSnapToGrid(prev => !prev);
-                }
-            };
-
-            window.addEventListener('keydown', handleKeyDown);
+            // Note: For Windows/Linux Ctrl mapping, we rely on the macOS metaKey fallback or we can add duplicate registrations for `ctrl: true`.
+            // Wait, I should add ctrl mappings too for copy/paste/all/snap:
+            const unregisterCtrlShortcuts = [
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-copy-ctrl',
+                    key: 'c',
+                    ctrl: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        const activeObject = canvas.getActiveObject();
+                        if (activeObject) {
+                            e.preventDefault();
+                            activeObject.clone().then((cloned: fabric.Object) => {
+                                (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
+                            });
+                        }
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-paste-ctrl',
+                    key: 'v',
+                    ctrl: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        const canvasWithClip = canvas as FabricCanvasWithClipboard;
+                        const clipboard = canvasWithClip._clipboard;
+                        if (clipboard) {
+                            clipboard.clone().then((cloned: fabric.Object) => {
+                                canvas.discardActiveObject();
+                                cloned.set({
+                                    left: (cloned.left || 0) + 10,
+                                    top: (cloned.top || 0) + 10,
+                                    evented: true,
+                                });
+                                if (cloned.type === 'activeSelection') {
+                                    (cloned as fabric.ActiveSelection).canvas = canvas;
+                                    const activeWithIterator = cloned as FabricActiveSelectionWithIterator;
+                                    activeWithIterator.forEachObject((obj: fabric.Object) => {
+                                        canvas.add(obj);
+                                    });
+                                    cloned.setCoords();
+                                } else {
+                                    canvas.add(cloned);
+                                }
+                                const clip = canvasWithClip._clipboard;
+                                if (clip) {
+                                    clip.top = (clip.top ?? 0) + 10;
+                                    clip.left = (clip.left ?? 0) + 10;
+                                }
+                                canvas.setActiveObject(cloned);
+                                canvas.requestRenderAll();
+                            });
+                        }
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-select-all-ctrl',
+                    key: 'a',
+                    ctrl: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        canvas.discardActiveObject();
+                        const sel = new fabric.ActiveSelection(canvas.getObjects(), {
+                            canvas: canvas,
+                        });
+                        canvas.setActiveObject(sel);
+                        canvas.requestRenderAll();
+                    }
+                }),
+                globalKeyboardOrchestrator.register({
+                    id: 'canvas-snap-grid-ctrl',
+                    key: ';',
+                    ctrl: true,
+                    priority: 'normal',
+                    handler: (e) => {
+                        e.preventDefault();
+                        setSnapToGrid(prev => !prev);
+                    }
+                })
+            ];
 
             return () => {
-                window.removeEventListener('keydown', handleKeyDown);
+                unregisterShortcuts.forEach(unreg => unreg());
+                unregisterCtrlShortcuts.forEach(unreg => unreg());
                 canvas.dispose();
                 fabricCanvasRef.current = null;
             };

@@ -45,7 +45,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ data }) => {
                         role="region"
                         aria-labelledby={buttonId}
                     >
-                        <pre className="mt-4 text-[10px] text-gray-500 overflow-x-auto custom-scrollbar p-3 bg-black/60 rounded-xl border border-white/5 font-mono leading-relaxed">
+                        <pre className="mt-4 text-[10px] text-gray-500 overflow-x-auto custom-scrollbar p-3 bg-black/60 rounded-xl border border-white/5 font-mono leading-relaxed whitespace-pre-wrap break-words break-all max-w-full">
                             {JSON.stringify(data, null, 2)}
                         </pre>
                     </motion.div>

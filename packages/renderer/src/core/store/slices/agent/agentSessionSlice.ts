@@ -294,6 +294,8 @@ export function buildAgentSessionState(
         loadSessions: async () => {
             const { sessionService } = await import('@/services/agent/SessionService');
 
+            let hasDoneInitialCleanup = false;
+
             try {
                 const unsubscribe = sessionService.subscribeToSessions((sessions) => {
                     const sessionMap: Record<string, ConversationSession> = {};
@@ -301,8 +303,29 @@ export function buildAgentSessionState(
                     sessions.forEach(s => {
                         // Ensure messages is always an array
                         if (!s.messages) s.messages = [];
+                        
+                        if (!hasDoneInitialCleanup) {
+                            let mutated = false;
+                            s.messages.forEach(msg => {
+                                if (msg.isStreaming) {
+                                    msg.isStreaming = false;
+                                    msg.text = (msg.text || '') + '\n\n*(Generation interrupted by page reload)*';
+                                    mutated = true;
+                                }
+                            });
+                            
+                            // If we fixed broken streams, silently persist the fix back to Firestore
+                            if (mutated) {
+                                sessionService.updateSession(s.id, { messages: s.messages }).catch(e => 
+                                    logger.error('[AgentSlice] Failed to persist stream cleanup:', e)
+                                );
+                            }
+                        }
+
                         sessionMap[s.id] = s;
                     });
+                    
+                    hasDoneInitialCleanup = true;
 
                     set(state => {
                         // If we already have an active session, keep it, otherwise set latest

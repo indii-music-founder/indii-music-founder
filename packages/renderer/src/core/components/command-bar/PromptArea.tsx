@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
@@ -38,6 +39,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [showModePicker, setShowModePicker] = useState(false);
+    const modeButtonRef = useRef<HTMLButtonElement>(null);
+    const [modeButtonRect, setModeButtonRect] = useState<DOMRect | null>(null);
+
+    const handleToggleModePicker = useCallback(() => {
+        if (!showModePicker && modeButtonRef.current) {
+            setModeButtonRect(modeButtonRef.current.getBoundingClientRect());
+        }
+        setShowModePicker(prev => !prev);
+    }, [showModePicker]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const _cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -420,7 +430,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         {/* Hierarchical Agent Mode Picker */}
                         <div className="relative">
                             <button
-                                onClick={() => setShowModePicker(!showModePicker)}
+                                ref={modeButtonRef}
+                                onClick={handleToggleModePicker}
                                 className={cn(
                                     "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isDocked ? "w-7 h-7" : "w-8 h-8",
@@ -437,24 +448,34 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
 
                             <AnimatePresence>
-                                {showModePicker && (
-                                    <>
+                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && createPortal(
+                                    <div className="fixed inset-0 z-[9999]">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            className="fixed inset-0 z-40" 
+                                            className="absolute inset-0 bg-transparent" 
                                             onClick={() => setShowModePicker(false)} 
+                                            onWheel={(e) => e.stopPropagation()}
+                                            onTouchStart={(e) => e.stopPropagation()}
                                         />
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                             animate={{ opacity: 1, scale: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            className="absolute bottom-full right-0 mb-4 z-50"
+                                            className="absolute origin-bottom-right"
+                                            style={{ 
+                                                bottom: window.innerHeight - modeButtonRect.top + 12,
+                                                right: window.innerWidth - modeButtonRect.right,
+                                            }}
+                                            onWheel={(e) => e.stopPropagation()}
+                                            onTouchStart={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
                                         >
                                             <AgentModePicker className="w-80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10" />
                                         </motion.div>
-                                    </>
+                                    </div>,
+                                    document.body
                                 )}
                             </AnimatePresence>
                         </div>

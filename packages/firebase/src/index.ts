@@ -43,6 +43,9 @@ export { setGodMode } from './functions/admin/setGodMode';
 // Auth Handoff Functions (Item 518: Cross-device secure auth)
 export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 
+// Agent Functions (Bug Reporting)
+export { reportBugFn } from './functions/agent/reportBugFn';
+
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
 export { createStripeConnectAccount } from './stripe/createStripeConnectAccount';

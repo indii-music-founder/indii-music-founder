@@ -72,6 +72,8 @@ export interface ToolDefinition {
 export const VALID_AGENT_IDS = [
     'marketing',
     'legal',
+    'legal.contracts',
+    'legal.compliance',
     'finance',
     'finance.accounting',
     'finance.tax',

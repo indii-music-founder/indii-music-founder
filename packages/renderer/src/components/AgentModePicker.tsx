@@ -4,7 +4,7 @@ import { DEPARTMENTS } from '@/services/agent/departments';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
 type ConversationMode = 'direct' | 'department' | 'boardroom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, User, LayoutGrid, ChevronDown, Check } from 'lucide-react';
+import { Users, User, LayoutGrid, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -66,6 +66,9 @@ export function AgentModePicker({
                     return (
                         <button
                             key={mode.id}
+                            data-testid={`agent-mode-${mode.id}`}
+                            data-active={isActive ? 'true' : 'false'}
+                            aria-pressed={isActive}
                             onClick={() => setConversationMode(mode.id)}
                             className={cn(
                                 "flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 relative z-10",
@@ -104,6 +107,8 @@ export function AgentModePicker({
                                 return (
                                     <button
                                         key={dept.id}
+                                        data-testid={`agent-dept-${dept.id}`}
+                                        data-selected={isSelected ? 'true' : 'false'}
                                         onClick={() => setActiveDepartmentId(dept.id)}
                                         className={cn(
                                             "flex flex-col p-2 rounded-xl text-left border transition-all duration-200",
@@ -152,6 +157,8 @@ export function AgentModePicker({
                                                     return (
                                                         <button
                                                             key={agentId}
+                                                            data-testid={`agent-direct-${agentId}`}
+                                                            data-selected={isSelected ? 'true' : 'false'}
                                                             onClick={() => setDirectTargetAgentId(agentId)}
                                                             className={cn(
                                                                 "flex items-center justify-between p-2 rounded-lg border transition-all duration-200",

@@ -34,19 +34,50 @@ export class CanvasOperationsService {
      *     so CORS is irrelevant.
      */
     private async loadImageSafe(url: string): Promise<fabric.Image> {
+        // High-performance async decoding (off main thread) helper
+        const loadOffThread = (sourceUrl: string, crossOrigin?: string): Promise<fabric.Image> => {
+            return new Promise((resolve, reject) => {
+                const htmlImg = new Image();
+                if (crossOrigin) htmlImg.crossOrigin = crossOrigin;
+                
+                htmlImg.onload = async () => {
+                    try {
+                        // This moves image decoding off the main thread to prevent UI stuttering
+                        await htmlImg.decode();
+                        const img = new fabric.Image(htmlImg);
+                        if (img.width && img.width > 0 && img.height && img.height > 0) {
+                            resolve(img);
+                        } else {
+                            reject(new Error('Image has zero dimensions after decode'));
+                        }
+                    } catch (e) {
+                        // Fallback if decode() fails
+                        const img = new fabric.Image(htmlImg);
+                        if (img.width && img.width > 0) {
+                            resolve(img);
+                        } else {
+                            reject(e);
+                        }
+                    }
+                };
+                htmlImg.onerror = reject;
+                htmlImg.src = sourceUrl;
+            });
+        };
+
         // Fast path for data URIs — no CORS issues possible
         if (url.startsWith('data:')) {
-            return fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+            try {
+                return await loadOffThread(url);
+            } catch (e) {
+                logger.warn('[CanvasOps] Off-thread data URI load failed, falling back to fromURL:', e);
+                return fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+            }
         }
 
-        // Attempt 1: Direct load
+        // Attempt 1: Direct load with crossOrigin
         try {
-            const img = await fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
-            // Verify the image actually loaded (width/height > 0)
-            if (img.width && img.width > 0 && img.height && img.height > 0) {
-                return img;
-            }
-            throw new Error('Image loaded but has zero dimensions');
+            return await loadOffThread(url, 'anonymous');
         } catch (directErr: unknown) {
             logger.warn('[CanvasOps] Direct image load failed (likely CORS), attempting blob fallback:', directErr);
         }
@@ -58,59 +89,21 @@ export class CanvasOperationsService {
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
 
-            const img = await fabric.Image.fromURL(blobUrl);
-            if (img.width && img.width > 0 && img.height && img.height > 0) {
-                logger.info('[CanvasOps] Image loaded via blob URL fallback');
-                return img;
-            }
-            throw new Error('Blob-loaded image has zero dimensions');
+            const img = await loadOffThread(blobUrl);
+            logger.info('[CanvasOps] Image loaded via blob URL fallback');
+            return img;
         } catch (blobErr: unknown) {
-            logger.warn('[CanvasOps] Blob fallback also failed, trying Image element:', blobErr);
+            logger.warn('[CanvasOps] Blob fallback also failed, trying no-CORS Image element:', blobErr);
         }
 
-        // Attempt 3: Raw Image element load → canvas → data URL → Fabric
-        return new Promise<fabric.Image>((resolve, reject) => {
-            const htmlImg = new Image();
-            htmlImg.crossOrigin = 'anonymous';
-            htmlImg.onload = async () => {
-                try {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = htmlImg.naturalWidth;
-                    tempCanvas.height = htmlImg.naturalHeight;
-                    const ctx = tempCanvas.getContext('2d');
-                    if (!ctx) throw new Error('Canvas 2D context unavailable');
-                    ctx.drawImage(htmlImg, 0, 0);
-                    const dataUrl = tempCanvas.toDataURL('image/png');
-                    const fabricImg = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
-                    resolve(fabricImg);
-                } catch (canvasErr) {
-                    reject(canvasErr);
-                }
-            };
-            htmlImg.onerror = () => {
-                // Final fallback: try without crossOrigin for display-only (won't be exportable)
-                const fallbackImg = new Image();
-                fallbackImg.onload = async () => {
-                    try {
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = fallbackImg.naturalWidth;
-                        tempCanvas.height = fallbackImg.naturalHeight;
-                        const ctx = tempCanvas.getContext('2d');
-                        if (!ctx) throw new Error('Canvas 2D context unavailable');
-                        ctx.drawImage(fallbackImg, 0, 0);
-                        const dataUrl = tempCanvas.toDataURL('image/png');
-                        const fabricImg = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
-                        logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
-                        resolve(fabricImg);
-                    } catch (e) {
-                        reject(e);
-                    }
-                };
-                fallbackImg.onerror = () => reject(new Error(`All image load strategies failed for: ${url}`));
-                fallbackImg.src = url;
-            };
-            htmlImg.src = url;
-        });
+        // Attempt 3: Final fallback: try without crossOrigin for display-only (won't be exportable)
+        try {
+            const img = await loadOffThread(url);
+            logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
+            return img;
+        } catch (e) {
+            throw new Error(`All image load strategies failed for: ${url}`);
+        }
     }
 
     /**

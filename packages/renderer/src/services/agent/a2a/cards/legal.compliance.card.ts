@@ -1,35 +1,35 @@
 import { AgentCard } from '../AgentCard.schema';
 
-export const FinanceAccountingCard: AgentCard = {
+export const LegalComplianceCard: AgentCard = {
     schemaVersion: '1.0.0',
-    agentId: 'finance.accounting',
-    displayName: 'Accounting Worker',
-    description: 'Ledger operations sub-specialist under the Finance department. Handles bookkeeping, expense categorization, and monthly close.',
+    agentId: 'legal.compliance',
+    displayName: 'Compliance Worker',
+    description: 'Regulatory and IP compliance sub-specialist under the Legal department. Handles trademark, copyright, and platform policy review.',
     capabilities: [
         {
-            name: 'categorize_expense',
-            description: 'Classify a transaction (vendor, amount, memo) into a chart-of-accounts category for bookkeeping.',
+            name: 'check_trademark_clearance',
+            description: 'Search trademark registries for collisions on a proposed artist, release, or merchandise name.',
             inputSchemaRef: '#/components/schemas/Empty',
             outputSchemaRef: '#/components/schemas/Empty',
             streaming: false,
         },
         {
-            name: 'reconcile_ledger',
-            description: 'Match bank-feed transactions against booked entries and surface discrepancies.',
+            name: 'register_copyright',
+            description: 'Prepare and file a copyright registration packet (eCO submission ready) for a sound recording or composition.',
             inputSchemaRef: '#/components/schemas/Empty',
             outputSchemaRef: '#/components/schemas/Empty',
             streaming: false,
         },
         {
-            name: 'generate_pnl',
-            description: 'Build a profit-and-loss statement for a given period from booked transactions.',
+            name: 'audit_platform_compliance',
+            description: 'Audit a release or piece of content against DSP and social-platform policies (sample clearance, explicit flags, age-gating).',
             inputSchemaRef: '#/components/schemas/Empty',
             outputSchemaRef: '#/components/schemas/Empty',
             streaming: false,
         },
         {
-            name: 'monthly_close',
-            description: 'Run the monthly close workflow: reconcile, accrue, post adjusting entries, and freeze the period.',
+            name: 'flag_legal_risk',
+            description: 'Surface legal risk in user-generated material (uncleared samples, defamation exposure, right-of-publicity issues).',
             inputSchemaRef: '#/components/schemas/Empty',
             outputSchemaRef: '#/components/schemas/Empty',
             streaming: false,
@@ -41,7 +41,7 @@ export const FinanceAccountingCard: AgentCard = {
         perTokenInUsd: 0,
         perTokenOutUsd: 0,
     },
-    riskTier: 'write',
+    riskTier: 'read',
     sla: {
         modeSync: {
             p50Ms: 2000,
@@ -53,6 +53,6 @@ export const FinanceAccountingCard: AgentCard = {
     },
     roster: {
         category: 'specialist',
-        departmentId: 'finance',
+        departmentId: 'legal',
     },
 };

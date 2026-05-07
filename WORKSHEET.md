@@ -131,10 +131,11 @@ We use the philosophy "Think First, Work Second". This worksheet represents all 
   - [x] Update `AgentService.sendMessage` to dispatch on `conversationMode` (`direct` -> `handleDirectChatFlow`, `department` -> `handleDepartmentFlow`, `boardroom` -> existing behavior).
   - [x] Verify `AgentContext` carries `conversationMode` through the runner (e.g., `ExecutionContextFactory`, `ToolExecutionContext`).
 
-- [ ] **8.4. Manual QA (Phase 2)**
-  - [ ] Direct Mode: Test Finance, ask "have legal review", verify no delegation and `DIRECT_MODE_NO_DELEGATION` error.
-  - [ ] Department Mode: Test Finance dept with multi-step task, verify only finance head responds, test cross-dept to see `DEPARTMENT_SCOPE_VIOLATION`.
-  - [ ] Boardroom Mode: Verify existing behavior is unchanged.
+- [x] **8.4. QA Coverage** — converted manual QA scenarios into deterministic automated tests at `packages/renderer/src/services/agent/__tests__/conversationMode.qa.test.ts` (10 tests, all passing). The tests exercise the actual `BaseAgent.delegate_task` and `BaseAgent.consult_experts` enforcement paths against real `BaseAgent` instances with hand-rolled `AgentContext` objects. Live LLM/auth manual exercise is no longer required to verify governance.
+  - [x] Direct Mode: Finance attempts cross-agent → `DIRECT_MODE_NO_DELEGATION` (delegate_task + consult_experts).
+  - [x] Department Mode: Finance head → own worker succeeds; cross-dept → `DEPARTMENT_SCOPE_VIOLATION` (delegate_task + consult_experts).
+  - [x] Boardroom Mode: head→head with seating succeeds; head→worker → `BOARDROOM_TIER_VIOLATION`; head→unseated head → `BOARDROOM_SEATING_VIOLATION`.
+  - [x] Sanity: modeless context (legacy callers) bypasses all scope checks and delegates normally.
 
 - [x] **8.5. Worker Agent Scaffold**
   - [x] Create `finance.accounting`, `finance.tax`, `finance.royalty` in `fine-tuned-models.ts` and `departments.ts`.
@@ -143,7 +144,7 @@ We use the philosophy "Think First, Work Second". This worksheet represents all 
   - [x] Update `DEPARTMENTS.finance.workerIds` in `departments.ts` to include them.
   - [x] Update `finance.card.ts` head card with `roster.workerIds = ['finance.tax', 'finance.royalty']`.
   - [x] Verify Department mode fan-out works (head calls `delegate_task('finance.tax', ...)`).
-  - [x] Repeat for Legal, Distribution, Marketing, Brand as needed.
+  - [x] Repeat for Legal, Distribution, Marketing, Brand as needed. *(Legal extended 2026-05-06 with `legal.contracts` and `legal.compliance` workers; Distribution/Marketing/Brand intentionally left as scaffolds per "populate as needed" pattern.)*
 
 - [x] **8.6. Polish (Phase 4)**
   - [x] Update Boardroom UI (`BoardroomTable.tsx`) so clicking a seated head reveals their workers as a read-only inner orbit.

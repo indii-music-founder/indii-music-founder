@@ -19,6 +19,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    environmentMatchGlobs: [
+      ['**/*.test.tsx', 'jsdom'],
+      ['**/*.spec.tsx', 'jsdom'],
+      ['**/*.a11y.test.tsx', 'jsdom'],
+      ['packages/renderer/src/**/*.ts', 'jsdom']
+    ],
     exclude: [
       'dist/**',
       'e2e/**',

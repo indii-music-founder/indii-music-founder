@@ -33,6 +33,24 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
         }
     }, [messages.length]);
 
+    // Auto-cleanup stale streaming states if execution hangs or connection is lost (Issue-022)
+    useEffect(() => {
+        const hasStreaming = messages.some(m => m.isStreaming);
+        if (hasStreaming) {
+            const timeout = setTimeout(() => {
+                import('@/core/store').then(({ useStore }) => {
+                    const state = useStore.getState();
+                    messages.forEach(msg => {
+                        if (msg.isStreaming) {
+                            state.updateBoardroomMessage(msg.id, { isStreaming: false });
+                        }
+                    });
+                });
+            }, 60000); // Max Swarm execution timeout is 60s
+            return () => clearTimeout(timeout);
+        }
+    }, [messages]);
+
     if (messages.length === 0) {
         return (
             <div className="flex-1 flex flex-col min-h-0">
