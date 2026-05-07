@@ -58,21 +58,21 @@ Phase 1 ships infrastructure only — `conversationMode` is set but no caller ye
 
 ---
 
-## Phase 2 — Wiring (NEXT — pick this up)
+## Phase 2 — Wiring ✅ DONE
 
 Goal: make the three modes user-selectable from desktop, propagate `conversationMode` into `AgentContext`, and add the routing dispatch in `AgentService.sendMessage`.
 
 ### Tasks
 
-- [ ] Build `packages/renderer/src/components/AgentModePicker.tsx` — three-segment switch (Direct / Department / Boardroom) plus contextual selector:
+- [x] Build `packages/renderer/src/components/AgentModePicker.tsx` — three-segment switch (Direct / Department / Boardroom) plus contextual selector:
   - Direct: agent dropdown grouped by department (use `DEPARTMENTS` from `departments.ts`)
   - Department: department dropdown
   - Boardroom: opens existing Boardroom module (no extra selector)
   Reads/writes `conversationMode`, `activeDepartmentId`, `directTargetAgentId` from `agentUISlice`.
 
-- [ ] Mount the picker in the desktop CommandBar or sidebar. Reference for styling: existing `packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx` (mobile already has an agent picker — refactor it to use the shared component for parity).
+- [x] Mount the picker in the desktop CommandBar or sidebar. Reference for styling: existing `packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx` (mobile already has an agent picker — refactor it to use the shared component for parity).
 
-- [ ] Add `handleDepartmentFlow` method to `packages/renderer/src/services/agent/AgentService.ts`. Mirrors `handleDirectChatFlow`:
+- [x] Add `handleDepartmentFlow` method to `packages/renderer/src/services/agent/AgentService.ts`. Mirrors `handleDirectChatFlow`:
   ```ts
   case 'department': {
     const dept = DEPARTMENTS[state.activeDepartmentId!];
@@ -81,7 +81,7 @@ Goal: make the three modes user-selectable from desktop, propagate `conversation
   ```
   Inside: force `forcedAgentId = dept.headId`, set `ctx.conversationMode = 'department'`, then run the head agent. The head's existing `delegate_task` calls will now be scope-checked by `sameDepartment`.
 
-- [ ] Update `AgentService.sendMessage` (~line 336) to dispatch on `conversationMode`:
+- [x] Update `AgentService.sendMessage` (~line 336) to dispatch on `conversationMode`:
   ```ts
   switch (state.conversationMode) {
     case 'direct':     return this.handleDirectChatFlow(...);
@@ -90,35 +90,35 @@ Goal: make the three modes user-selectable from desktop, propagate `conversation
   }
   ```
 
-- [ ] Verify `AgentContext` carries `conversationMode` through the runner (`context.runAgent` → child agent must see the mode). Inspect `ExecutionContextFactory` and `ToolExecutionContext` to confirm.
+- [x] Verify `AgentContext` carries `conversationMode` through the runner (`context.runAgent` → child agent must see the mode). Inspect `ExecutionContextFactory` and `ToolExecutionContext` to confirm.
 
-- [ ] Manual QA all three modes via Electron dev:
+- [x] Manual QA all three modes via Electron dev:
   - Direct: pick Finance, ask "have legal review" → trace shows zero delegation, response stays in Finance, console logs `DIRECT_MODE_NO_DELEGATION` if attempted.
   - Department: pick Finance dept, ask multi-step task → only finance head responds today (no workers yet); attempt cross-dept in test → `DEPARTMENT_SCOPE_VIOLATION`.
   - Boardroom: existing behavior unchanged unless you test seating a worker (Phase 3).
 
 ---
 
-## Phase 3 — Workers (incremental, per department)
+## Phase 3 — Workers (incremental, per department) ✅ DONE
 
 Pick one department to seed first. Recommended: Finance.
 
-- [ ] Define worker `RAGAgent` configs (in `agentConfig.ts` or new `agents/finance/workers/*.config.ts`).
-- [ ] Worker IDs use dot notation: `finance.tax`, `finance.royalty`, etc.
-- [ ] Register in `AgentRegistry`. Add to `VALID_AGENT_IDS` in `packages/renderer/src/services/agent/types.ts`.
-- [ ] Add `roster.category = 'specialist'` and `roster.departmentId = 'finance'` to the worker's AgentCard.
-- [ ] Update `DEPARTMENTS.finance.workerIds` in `departments.ts` to include them.
-- [ ] Update `finance.card.ts` head card with `roster.workerIds = ['finance.tax', 'finance.royalty']`.
-- [ ] Verify Department mode fan-out works: head should call `delegate_task('finance.tax', ...)` without scope violation.
-- [ ] Repeat for Legal, Distribution, Marketing, Brand as needed.
+- [x] Define worker `RAGAgent` configs (in `agentConfig.ts` or new `agents/finance/workers/*.config.ts`).
+- [x] Worker IDs use dot notation: `finance.tax`, `finance.royalty`, etc.
+- [x] Register in `AgentRegistry`. Add to `VALID_AGENT_IDS` in `packages/renderer/src/services/agent/types.ts`.
+- [x] Add `roster.category = 'specialist'` and `roster.departmentId = 'finance'` to the worker's AgentCard.
+- [x] Update `DEPARTMENTS.finance.workerIds` in `departments.ts` to include them.
+- [x] Update `finance.card.ts` head card with `roster.workerIds = ['finance.tax', 'finance.royalty']`.
+- [x] Verify Department mode fan-out works: head should call `delegate_task('finance.tax', ...)` without scope violation.
+- [x] Repeat for Legal, Distribution, Marketing, Brand as needed.
 
 ---
 
 ## Phase 4 — Polish (optional)
 
-- [ ] Boardroom UI sub-orbit: clicking a seated head reveals their workers as a read-only inner orbit (`packages/renderer/src/modules/boardroom/components/BoardroomTable.tsx`).
-- [ ] Living Plans tracker shows worker steps under their head's plan node.
-- [ ] Populate the 21 head AgentCards with real `capabilities[]` arrays (currently empty stubs). Source: each agent's `AgentConfig.tools` + system prompt.
+- [x] Boardroom UI sub-orbit: clicking a seated head reveals their workers as a read-only inner orbit (`packages/renderer/src/modules/boardroom/components/BoardroomTable.tsx`).
+- [x] Living Plans tracker shows worker steps under their head's plan node.
+- [x] Populate the 21 head AgentCards with real `capabilities[]` arrays (currently empty stubs). Source: each agent's `AgentConfig.tools` + system prompt.
 
 ---
 

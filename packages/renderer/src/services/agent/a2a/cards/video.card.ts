@@ -7,22 +7,50 @@ export const VideoCard: AgentCard = {
     description: 'Specialist for video operations.',
     capabilities: [
     {
-        "name": "video_editing",
-        "description": "Video editing",
+        "name": "generate_video",
+        "description": "Generate a video from a text prompt or start image.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "vfx_review",
-        "description": "VFX review",
+        "name": "batch_edit_videos",
+        "description": "Edit/grade uploaded videos with an instruction.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "render_management",
-        "description": "Render management",
+        "name": "extend_video",
+        "description": "Extend a video clip forwards or backwards.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "update_keyframe",
+        "description": "Update animation keyframes.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "browser_tool",
+        "description": "Search for stock footage or visual references.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "indii_image_gen",
+        "description": "Generate storyboard keyframes.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "orchestrate_timeline",
+        "description": "Acts as a render supervisor, dynamically breaking down a master script/timeline into sequential 5-second descriptive prompts optimized for Veo generation.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

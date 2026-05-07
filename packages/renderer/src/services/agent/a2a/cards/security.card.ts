@@ -7,22 +7,50 @@ export const SecurityCard: AgentCard = {
     description: 'Specialist for security operations.',
     capabilities: [
     {
-        "name": "risk_assessment",
-        "description": "Risk assessment",
+        "name": "audit_permissions",
+        "description": "Audit permissions for a specific user to detect risks.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "threat_monitoring",
-        "description": "Threat monitoring",
+        "name": "check_api_status",
+        "description": "Checks the status of a managed API gateway (Apigee).",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
     },
     {
-        "name": "vulnerability_scanning",
-        "description": "Vulnerability scanning",
+        "name": "scan_content",
+        "description": "Scans text content for sensitive data or safety violations (Model Armor).",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "rotate_credentials",
+        "description": "Rotates access keys or credentials for a specific service.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "browser_tool",
+        "description": "Scan URLs for threats or verify SSL certificates.",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "credential_vault",
+        "description": "Manage the secure vault (Store/Retrieve).",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "scan_for_vulnerabilities",
+        "description": "Scan a target system, URL, or API for potential security vulnerabilities.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

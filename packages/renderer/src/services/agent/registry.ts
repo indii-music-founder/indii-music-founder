@@ -166,6 +166,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             for (const dept of Object.values(DEPARTMENTS)) {
                 const typedDept = dept as any;
                 for (const workerId of typedDept.workerIds) {
+                    // Skip if the worker was already registered explicitly via AGENT_CONFIGS
+                    if (this.metadata.has(workerId)) continue;
                     try {
                         const workerMeta = {
                             id: workerId,
