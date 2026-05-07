@@ -2,6 +2,53 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.60.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.59.0...v1.60.0) (2026-05-07)
+
+
+### Features
+
+* **agents:** Phase 2 Agent System Expansion completion ([bcbe049](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bcbe0491cc91d682bd86a2489f9f7d152a2b939f))
+* complete Phase 1 & 2.5 chat image interaction gaps ([dd2c1ee](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dd2c1ee54ab432320cebaaaa7759ddaa16ca042f))
+
+
+### Bug Fixes
+
+* add setup-node and npm ci to deploy-production job ([ca58411](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ca584117c24f67a6346cc7d641c8fff88b1ecf64))
+* **agents:** Improve Conductor routing accuracy for ISRC vs Publishing/Finance ([#1688](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1688)) ([3e9523b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3e9523bc838b9bb4597efb30724a4935b4c02770))
+* **auto:** correct agentRegistry import path and countdown type consistency ([561feab](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/561feab64227bd8e6c5cfc6edce53418971a87ee))
+* **auto:** resolve CodeRabbit shadowing issue in AuthSlice ([a34d314](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a34d31461933f3d79df126239585f7aa8b682f24))
+* **boardroom:** sanitize user-facing messages in conversation panel ([37952b5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/37952b5ad78c74329dc8e6ad5193238cea33f2ef))
+* bypass Chrome SSL interstitial in Lighthouse CI ([b54b483](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b54b4837e828a6af8f61b154f295432194d39159))
+* **ci:** exclude root e2e_interop.test.ts from unit test runner ([3794b96](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3794b96c73064fc01775ebab374f8e55c51d8470))
+* **ci:** grant workflow permissions and remove deprecated eslint flag ([961048b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/961048bd5232e861733ea31e14d10e9726b68a2f))
+* **ci:** make axe-core a11y audit non-blocking for SPA login shell ([4a0018f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4a0018fafbd7ab9017672df0bb75d02c2681b07f))
+* **ci:** make Cloud Functions deploy and Lighthouse non-blocking ([98aca24](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/98aca2433127b81aeb1768e2364447c1580109ca))
+* **ci:** make e2e-staging non-blocking, unblock production deploy ([9109ab5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9109ab56303e7afc384f117637c6c7861ae16510))
+* **ci:** make Lighthouse CI non-blocking until app.indiios.com DNS is live ([36a8806](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/36a880692105b22a637abeaab4b0dbbe0d1b5534))
+* **ci:** make npm audit non-blocking for transitive dependency vulns ([9e8e82a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9e8e82afc84d453b24b142e51521e1482fe631f6))
+* **ci:** resolve BugReportTools parsing error and stabilize agent tool integration suite ([cd294ad](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd294ad1d3caa7a628abf9ef8f89182dc332d265))
+* **ci:** Resolve E2E auth token mocking, dynamic CORS headers, Firebase typings, and mobile relay ([0c7264f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0c7264f13af9f6ce1f0a4e75f44126a799651171))
+* **ci:** resolve typing, test, and timeout issues ([369a2bf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/369a2bf50b94589b55ce2c5ab2462e6513934992))
+* correct EditImageWithAnnotationsTool duplicate property syntax ([5b63045](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5b63045c144cbeefac1e22a1ba1f5e06fca1ba5c))
+* explicit sharp installation for linux-x64 runtime ([880152b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/880152bfeb2a1be699b49a264607393644d527d8))
+* resolve EOF merge conflict in BugReportTools.ts ([1f0c218](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1f0c2180b092b2460865c6d922cfc55bfa52dc40))
+* resolve lhci ENOENT in deploy pipeline ([8cddc67](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8cddc678842f313290038d9778745e5c4c187a55))
+* resolve TS errors and merge artifacts in core renderer files ([beb50f2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/beb50f2ad519b918fb1931147a95af26d93983f8))
+* **stability:** resolve 3 production regressions from QA session ([3851a28](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3851a2818ccf780cb65bdfff04661bcb261e7f56))
+* **types:** resolve typecheck errors and parse error from previous session ([f0b87c2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f0b87c2f4f828187b563ce415cc944369c3f5fa8))
+* **ui:** change default conversationMode to direct to fix E2E click interception ([3a3f180](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3a3f1802b73246ab9d53e5e35ced6767b14508a3))
+* update deploy.yml to deploy only exported Cloud Functions ([f7f6e10](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f7f6e103287b62467fe392553560548a6f781026))
+
+
+### Performance
+
+* optimize AnomalyDetector chartData computation ([#1700](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1700)) ([2642f05](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2642f05f1cf46b313e553f7e3885282742c778de))
+
+
+### Documentation
+
+* update CHAT_IMAGE_INTERACTION_PLAN ledger to close out Phase 2.5 ([3d08689](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3d08689985f7c378330deb35a8467a7394183e04))
+
 ## [1.59.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.58.1...v1.59.0) (2026-05-05)
 
 
