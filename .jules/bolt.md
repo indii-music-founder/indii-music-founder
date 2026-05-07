@@ -52,3 +52,7 @@
 
 **Learning:** Initializing sentinel objects or class instances like `admin.firestore.FieldValue.serverTimestamp()` or `Timestamp.now()` inside a loop (e.g. while building a Firestore writeBatch) results in unnecessary object allocations and method calls per iteration.
 **Action:** When building batches or looping to update identical fields across many objects, hoist the instantiation of objects like `Timestamp.now()` or `serverTimestamp()` outside the loop. This minimizes memory allocation, saves CPU cycles, and strictly enforces that all documents in the batch get the exact same timestamp.
+## 2025-05-18 - Nested Map FindIndex Complexity
+
+**Learning:** Calculating `chartData` using `.map()` where each render cycle triggers multiple `findIndex()` lookups across the same initial data set (e.g., `STREAM_DATA.findIndex` 3 times inside `.map()`) introduces O(N^2) complexity that scales poorly with data size. Additionally, re-calculating identical math thresholds (moving average) for each generated bar causes huge redundant overhead.
+**Action:** Pre-calculate the computationally expensive checks (`trackA_spike`, `trackB_spike`, etc.) during the single O(N) array transformation inside the `useMemo` hook, and store them directly in the objects returned in the memoized data structure. This prevents O(N) lookups on every single bar during render.
