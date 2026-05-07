@@ -11,6 +11,7 @@ import {
     CampaignTone,
     Platform
 } from '../types';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface AIGenerateCampaignModalProps {
     onClose: () => void;
@@ -60,12 +61,11 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
     });
 
     // Handle Escape key
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+    useGlobalShortcut({
+        id: 'ai-campaign-modal-escape',
+        key: 'Escape',
+        priority: 'modal',
+        handler: () => onClose()
     }, [onClose]);
 
     const togglePlatform = (platform: Platform) => {

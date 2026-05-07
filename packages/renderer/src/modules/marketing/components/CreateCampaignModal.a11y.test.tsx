@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CreateCampaignModal from './CreateCampaignModal';
 import { useToast } from '@/core/context/ToastContext';
 import { vi } from 'vitest';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
@@ -13,6 +14,10 @@ vi.mock('@/services/marketing/MarketingService', () => ({
     MarketingService: {
         createCampaign: vi.fn()
     }
+}));
+
+vi.mock('@/hooks/useGlobalShortcut', () => ({
+    useGlobalShortcut: vi.fn()
 }));
 
 describe('CreateCampaignModal Accessibility', () => {
@@ -28,6 +33,19 @@ describe('CreateCampaignModal Accessibility', () => {
             updateProgress: vi.fn(),
             promise: vi.fn()
         });
+        
+        // Setup useGlobalShortcut mock to execute handler on escape
+        vi.mocked(useGlobalShortcut).mockImplementation(
+            ({ key, handler }: any) => {
+                React.useEffect(() => {
+                    const handleKeyDown = (e: KeyboardEvent) => {
+                        if (e.key === key) handler(e);
+                    };
+                    window.addEventListener('keydown', handleKeyDown);
+                    return () => window.removeEventListener('keydown', handleKeyDown);
+                }, [key, handler]);
+            }
+        );
     });
 
     it('close button should have aria-label', () => {

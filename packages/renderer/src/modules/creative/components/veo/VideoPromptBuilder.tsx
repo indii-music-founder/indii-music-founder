@@ -7,6 +7,7 @@ import { PromptImproverService } from '@/services/creative/PromptImproverService
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; onClick: () => void; variant?: 'creative' | 'royalties' }) => (
     <button
@@ -144,15 +145,22 @@ export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mod
             if (target.closest?.('[role="menu"]')) return;
             setOpenCategory(null);
         };
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpenCategory(null);
-        };
         document.addEventListener('mousedown', handlePointerDown);
-        document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('mousedown', handlePointerDown);
-            document.removeEventListener('keydown', handleKeyDown);
         };
+    }, [openCategory]);
+
+    useGlobalShortcut({
+        id: 'video-prompt-builder-escape',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (openCategory) {
+                setOpenCategory(null);
+            }
+        }
     }, [openCategory]);
 
     const handleTagClick = useCallback((tag: string) => {

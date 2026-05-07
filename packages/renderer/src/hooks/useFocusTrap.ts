@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 /**
  * Item 271: Focus Trap Hook for Modal Dialogs
@@ -39,24 +40,12 @@ export function useFocusTrap(isActive: boolean = true) {
         return Array.from(containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
     }, []);
 
-    useEffect(() => {
-        if (!isActive || !containerRef.current) return;
-
-        // Save the currently focused element to restore later
-        previousFocusRef.current = document.activeElement as HTMLElement;
-
-        // Focus the first focusable element inside the trap
-        const focusable = getFocusableElements();
-        if (focusable.length > 0) {
-            // Delay to ensure DOM is ready after render
-            requestAnimationFrame(() => {
-                focusable[0]!.focus();
-            });
-        }
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key !== 'Tab') return;
-
+    useGlobalShortcut({
+        id: 'focus-trap-tab',
+        key: 'Tab',
+        ignoreInput: true, // Needs to run even when focus is in an input
+        priority: 'modal',
+        handler: (e) => {
             const elements = getFocusableElements();
             if (elements.length === 0) return;
 
@@ -76,14 +65,25 @@ export function useFocusTrap(isActive: boolean = true) {
                     firstElement.focus();
                 }
             }
-        };
+        }
+    }, [isActive, getFocusableElements]);
 
-        // Handle Escape key to close (optional — caller handles this)
-        document.addEventListener('keydown', handleKeyDown);
+    useEffect(() => {
+        if (!isActive || !containerRef.current) return;
+
+        // Save the currently focused element to restore later
+        previousFocusRef.current = document.activeElement as HTMLElement;
+
+        // Focus the first focusable element inside the trap
+        const focusable = getFocusableElements();
+        if (focusable.length > 0) {
+            // Delay to ensure DOM is ready after render
+            requestAnimationFrame(() => {
+                focusable[0]!.focus();
+            });
+        }
 
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-
             // Restore focus to previously focused element
             if (previousFocusRef.current && previousFocusRef.current.focus) {
                 previousFocusRef.current.focus();

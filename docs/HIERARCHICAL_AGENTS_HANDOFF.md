@@ -37,7 +37,7 @@ These changes are in this branch and are additive/safe:
 
 - [x] `packages/renderer/src/services/agent/departments.ts` — NEW. Registry of 21 departments, one per existing specialist agent. Zero workers in Phase 1; population is incremental in Phase 3.
 - [x] `packages/renderer/src/services/agent/a2a/AgentCard.schema.ts` — added optional `roster` field (`category`, `departmentId`, `workerIds`). AgentCards are now Living Cards. Existing cards still validate (field is optional).
-- [x] `packages/renderer/src/core/store/slices/agent/agentUISlice.ts` — added `conversationMode`, `activeDepartmentId`, `directTargetAgentId` + setters. Default mode `'boardroom'` preserves current behavior.
+- [x] `packages/renderer/src/core/store/slices/agent/agentUISlice.ts` — added `conversationMode`, `activeDepartmentId`, `directTargetAgentId` + setters. **Default mode is `'direct'`** (changed from initial `'boardroom'` in commit `3a3f1802` to fix an E2E click-interception bug — the Boardroom portal was capturing pointer events on app boot and breaking unrelated test clicks).
 - [x] `packages/renderer/src/services/agent/BaseAgent.ts` — `delegate_task` and `consult_experts` now enforce three new violations: `DIRECT_MODE_NO_DELEGATION`, `DEPARTMENT_SCOPE_VIOLATION`, `BOARDROOM_TIER_VIOLATION`. Existing `BOARDROOM_SEATING_VIOLATION` preserved.
 - [x] `packages/renderer/src/services/agent/__tests__/scopeEnforcement.test.ts` — NEW. Unit tests for the registry helpers (`isHead`, `isWorker`, `sameDepartment`, etc.) that drive the enforcement logic.
 - [x] `.agent/skills/error_memory/ERROR_LEDGER.md` — entry added for the three new error codes so future debugging recognizes them as expected governance rejections.
@@ -101,24 +101,33 @@ Goal: make the three modes user-selectable from desktop, propagate `conversation
 
 ## Phase 3 — Workers (incremental, per department) ✅ DONE
 
-Pick one department to seed first. Recommended: Finance.
+Workers are registered generically by `AgentRegistry` looping over `DEPARTMENTS.*.workerIds` (see `registry.ts:164-202`). To add a worker to any department, you only need to: (1) add the ID to `DEPARTMENTS[dept].workerIds`, (2) add it to `VALID_AGENT_IDS`, (3) add it to `FINE_TUNED_MODEL_REGISTRY` (with `undefined` if no endpoint), (4) write the AgentCard, (5) update the head card's `roster.workerIds`. No changes to `registry.ts` are required.
 
-- [x] Define worker `RAGAgent` configs (in `agentConfig.ts` or new `agents/finance/workers/*.config.ts`).
-- [x] Worker IDs use dot notation: `finance.tax`, `finance.royalty`, etc.
-- [x] Register in `AgentRegistry`. Add to `VALID_AGENT_IDS` in `packages/renderer/src/services/agent/types.ts`.
-- [x] Add `roster.category = 'specialist'` and `roster.departmentId = 'finance'` to the worker's AgentCard.
-- [x] Update `DEPARTMENTS.finance.workerIds` in `departments.ts` to include them.
-- [x] Update `finance.card.ts` head card with `roster.workerIds = ['finance.tax', 'finance.royalty']`.
-- [x] Verify Department mode fan-out works: head should call `delegate_task('finance.tax', ...)` without scope violation.
-- [x] Repeat for Legal, Distribution, Marketing, Brand as needed.
+**Populated workers (5 total):**
+
+- **Finance** (3): `finance.accounting`, `finance.tax`, `finance.royalty`
+- **Legal** (2): `legal.contracts`, `legal.compliance`
+
+Each worker has a populated AgentCard with focused sub-specialist capabilities (4–5 each), `roster.category = 'specialist'`, and `roster.departmentId` set. Head cards (`finance.card.ts`, `legal.card.ts`) declare their workers in `roster.workerIds`.
+
+Other departments (Distribution, Marketing, Brand, etc.) still have empty `workerIds` arrays — that's the intentional "scaffold ready, populate as needed" state. Adding workers there is now a 15-minute task per department following the same pattern.
 
 ---
 
-## Phase 4 — Polish (optional)
+## Phase 4 — Polish ✅ DONE
 
-- [x] Boardroom UI sub-orbit: clicking a seated head reveals their workers as a read-only inner orbit (`packages/renderer/src/modules/boardroom/components/BoardroomTable.tsx`).
-- [x] Living Plans tracker shows worker steps under their head's plan node.
-- [x] Populate the 21 head AgentCards with real `capabilities[]` arrays (currently empty stubs). Source: each agent's `AgentConfig.tools` + system prompt.
+- [x] **Boardroom UI sub-orbit** — implemented in `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx` (lines 115–154). Clicking an active seated head toggles `focusedHead` state; the head's workers fan out as a smaller inner orbit using `DEPARTMENTS[focusedHead].workerIds`. Click again to dismiss. Note: the work landed in `ParticipantSelector` (not `BoardroomTable` as originally planned) — `BoardroomTable` is a pure visual ornament; `ParticipantSelector` owns all agent-icon rendering.
+- [x] **Living Plans worker steps** — implemented in `packages/renderer/src/core/components/chat/PlanCard.tsx` (lines 86–137). Steps are grouped by their agent's department head via `getDepartmentOf()`; each group renders a "{Department} Node" header. Worker steps (agent IDs containing `.`) get a "Worker: {workerName}" indicator with a left border. `LivingPlansTracker` itself just renders `PlanCard`s, so the grouping is automatic everywhere a plan is shown.
+- [x] **All 21 head AgentCards populated** with real `capabilities[]` arrays sourced from each agent's `AgentConfig.tools` + system prompt. Counts: brand=5, creative=9, curriculum=2, devops=7, director=13, distribution=15, finance=10, keeper=3, legal=3, licensing=6, marketing=15, merchandise=3, music=7, producer=2, publicist=1, publishing=6, road=12, screenwriter=2, security=7, social=11, video=7. The 5 worker cards (`finance.accounting`, `finance.tax`, `finance.royalty`, `legal.contracts`, `legal.compliance`) are also populated with focused sub-specialist capabilities (4–5 each).
+- [x] **AgentModePicker `data-testid` hooks** — `agent-mode-{boardroom|department|direct}`, `agent-dept-{deptId}`, `agent-direct-{agentId}`, plus `data-active`/`data-selected` mirror states. Active/selected items also carry `aria-pressed` for accessibility. This unlocks Playwright E2E without ever needing to scrape DOM by class.
+
+### Test Coverage (live as of 2026-05-06)
+
+- `__tests__/scopeEnforcement.test.ts` — 16 tests on the registry helpers
+- `__tests__/conversationMode.qa.test.ts` — 10 tests exercising real `BaseAgent.delegate_task` / `consult_experts` enforcement under all three modes (replaces Phase 8.4 manual QA)
+- `components/__tests__/AgentModePicker.test.tsx` — 14 tests on the picker UI behavior (mode switching, contextual selectors, controlled-vs-uncontrolled)
+
+All 40 tests run in <2s combined. Adding manual QA on top is optional polish — the governance and UI invariants are deterministically locked.
 
 ---
 
@@ -162,7 +171,7 @@ Per CLAUDE.md, run `/plat` before pushing. Open a PR; do not push to main direct
 
 ## Risk & Reversibility
 
-- New `conversationMode` defaults to `'boardroom'` (preserves current behavior). No user-visible change until Phase 2 ships the picker.
+- New `conversationMode` defaults to `'direct'` (post-`3a3f1802`). Boardroom is opt-in via the AgentModePicker — the default is a 1:1 conversation with the Generalist Conductor.
 - Enforcement is additive — disabling the new checks reverts to current behavior.
 - AgentCard `roster` field is optional — existing cards still validate.
 - Worker agents are opt-in per department (Phase 3). Empty `workerIds` arrays = no behavioral change.

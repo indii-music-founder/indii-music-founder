@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 export interface DelegateMenuProps {
     isOpen: boolean;
@@ -15,7 +16,21 @@ export interface DelegateMenuProps {
 export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, isIndiiMode, managerAgents, departmentAgents, onSelect, onSelectIndii, onClose }: DelegateMenuProps) => {
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Handle Escape key and initial focus
+    // Handle Escape key
+    useGlobalShortcut({
+        id: 'delegate-menu-escape',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (isOpen) {
+                e.preventDefault();
+                onClose();
+            }
+        }
+    }, [isOpen, onClose]);
+
+    // Handle initial focus
     useEffect(() => {
         if (isOpen) {
             // Move focus to the menu container when opened
@@ -24,20 +39,11 @@ export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, isInd
                 menuRef.current?.focus();
             }, 50);
 
-            const handleKeyDown = (e: KeyboardEvent) => {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    onClose();
-                }
-            };
-
-            document.addEventListener('keydown', handleKeyDown);
             return () => {
-                document.removeEventListener('keydown', handleKeyDown);
                 clearTimeout(timer);
             };
         }
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     return (
         <AnimatePresence>

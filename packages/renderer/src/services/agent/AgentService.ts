@@ -721,131 +721,144 @@ export class AgentService {
 
         let accumulatedContext = '';
 
-        for (let index = 0; index < activeAgents.length; index++) {
-            const agentId = activeAgents[index];
-            if (!agentId) continue;
-            const resId = index === 0 ? initialResponseId : uuidv4();
+        const CHUNK_SIZE = 3;
+        for (let i = 0; i < activeAgents.length; i += CHUNK_SIZE) {
+            const chunkAgents = activeAgents.slice(i, i + CHUNK_SIZE);
+            const chunkPromises = chunkAgents.map(async (agentId, chunkIdx) => {
+                const index = i + chunkIdx;
+                if (!agentId) return { agentId: '', result: null };
+                const resId = index === 0 ? initialResponseId : uuidv4();
 
-            if (index > 0) {
-                useStore.getState().addBoardroomMessage({
-                    id: resId,
-                    role: 'model',
-                    text: '*(Reviewing previous discussion...)*',
-                    timestamp: Date.now() + index,
-                    isStreaming: true,
-                    thoughts: [],
-                    agentId: agentId
-                });
-            } else {
-                useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
-            }
-
-            let currentStreamedText = '';
-
-            // Build the seated-agents manifest so the Conductor knows who is in the room
-            const seatedAgentNames = activeAgents
-                .map(id => agentRegistry.get(id)?.name || id)
-                .join(', ');
-
-            const enhancedText = text + assetContext + 
-                '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-                `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
-                (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
-
-            try {
-                logger.debug(`[AgentService] Boardroom: sequentially executing agent ${agentId}`);
-                // Item: Add a safety timeout for swarm execution to prevent UI hangs
-                const executionPromise = this.executor.execute(
-                    agentId,
-                    enhancedText,
-                    context as PipelineContext,
-                    (event) => {
-                        if (event.type === 'token') {
-                            currentStreamedText += event.content;
-                            useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
-                        }
-                        if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                            const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
-                            const newThought: AgentThought = {
-                                id: uuidv4(),
-                                text: event.content || '',
-                                timestamp: Date.now(),
-                                type: event.type as AgentThought["type"],
-                            };
-                            if (event.type === 'tool' || event.type === 'tool_result') {
-                                if (event.toolName) newThought.toolName = event.toolName;
-                            }
-
-                            if (currentMsg) {
-                                useStore.getState().updateBoardroomMessage(resId, {
-                                    thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
-                                });
-                            }
-                        }
-                    },
-                    undefined,
-                    undefined,
-                    attachments
-                );
-
-                // Race against a 60-second timeout
-                const timeoutPromise = new Promise<never>((_, reject) => 
-                    setTimeout(() => reject(new Error('Agent execution timed out (60s)')), 60000)
-                );
-
-                const result = await Promise.race([executionPromise, timeoutPromise]);
-
-                logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
-
-                if (result?.text) {
-                    accumulatedContext += `\n[${agentId.toUpperCase()}]: ${result.text}`;
-                }
-                let planId: string | undefined = undefined;
-                if (result && result.toolCalls && result.toolCalls.length > 0) {
-                    for (const tc of result.toolCalls) {
-                        if ((tc.name === 'propose_plan' || tc.name === 'get_plan') && tc.result && typeof tc.result !== 'string' && tc.result.success && tc.result.data?.planId) {
-                            planId = tc.result.data.planId;
-                        }
-                    }
-                }
-
-                if (result && result.text) {
-                    useStore.getState().updateBoardroomMessage(resId, {
-                        text: result.text,
-                        thoughtSignature: result.thoughtSignature,
-                        ...(planId ? { planId } : {}),
-                        isStreaming: false
+                if (index > 0) {
+                    useStore.getState().addBoardroomMessage({
+                        id: resId,
+                        role: 'model',
+                        text: '*(Reviewing previous discussion...)*',
+                        timestamp: Date.now() + index,
+                        isStreaming: true,
+                        thoughts: [],
+                        agentId: agentId
                     });
                 } else {
-                    if (currentStreamedText.length > 0) {
+                    useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
+                }
+
+                let currentStreamedText = '';
+
+                // Build the seated-agents manifest so the Conductor knows who is in the room
+                const freshState = useStore.getState();
+                const currentActiveAgents = freshState.activeAgents && freshState.activeAgents.length > 0 ? freshState.activeAgents : [];
+                const seatedAgentNames = currentActiveAgents
+                    .map(id => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`)
+                    .join(', ');
+
+                const enhancedText = text + assetContext + 
+                    '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+                    `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
+                    (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
+
+                try {
+                    logger.debug(`[AgentService] Boardroom: executing agent ${agentId} (chunk ${i/CHUNK_SIZE})`);
+                    // Item: Add a safety timeout for swarm execution to prevent UI hangs
+                    const executionPromise = this.executor.execute(
+                        agentId,
+                        enhancedText,
+                        context as PipelineContext,
+                        (event) => {
+                            if (event.type === 'token') {
+                                currentStreamedText += event.content;
+                                useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                            }
+                            if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                                const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
+                                const newThought: AgentThought = {
+                                    id: uuidv4(),
+                                    text: event.content || '',
+                                    timestamp: Date.now(),
+                                    type: event.type as AgentThought["type"],
+                                };
+                                if (event.type === 'tool' || event.type === 'tool_result') {
+                                    if (event.toolName) newThought.toolName = event.toolName;
+                                }
+
+                                if (currentMsg) {
+                                    useStore.getState().updateBoardroomMessage(resId, {
+                                        thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
+                                    });
+                                }
+                            }
+                        },
+                        undefined,
+                        undefined,
+                        attachments
+                    );
+
+                    // Race against a 300-second (5 min) timeout for heavy swarm operations
+                    const timeoutPromise = new Promise<never>((_, reject) => 
+                        setTimeout(() => reject(new Error('Agent execution timed out (300s)')), 300000)
+                    );
+
+                    const result = await Promise.race([executionPromise, timeoutPromise]);
+
+                    logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
+
+                    let planId: string | undefined = undefined;
+                    if (result && result.toolCalls && result.toolCalls.length > 0) {
+                        for (const tc of result.toolCalls) {
+                            if ((tc.name === 'propose_plan' || tc.name === 'get_plan') && tc.result && typeof tc.result !== 'string' && tc.result.success && tc.result.data?.planId) {
+                                planId = tc.result.data.planId;
+                            }
+                        }
+                    }
+
+                    if (result && result.text) {
                         useStore.getState().updateBoardroomMessage(resId, {
-                            text: currentStreamedText,
-                            thoughtSignature: result?.thoughtSignature,
+                            text: result.text,
+                            thoughtSignature: result.thoughtSignature,
                             ...(planId ? { planId } : {}),
                             isStreaming: false
                         });
                     } else {
-                        const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
-                        useStore.getState().updateBoardroomMessage(resId, {
-                            text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
-                            thoughtSignature: result?.thoughtSignature,
-                            ...(planId ? { planId } : {}),
-                            isStreaming: false
-                        });
+                        if (currentStreamedText.length > 0) {
+                            useStore.getState().updateBoardroomMessage(resId, {
+                                text: currentStreamedText,
+                                thoughtSignature: result?.thoughtSignature,
+                                ...(planId ? { planId } : {}),
+                                isStreaming: false
+                            });
+                        } else {
+                            const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
+                            useStore.getState().updateBoardroomMessage(resId, {
+                                text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
+                                thoughtSignature: result?.thoughtSignature,
+                                ...(planId ? { planId } : {}),
+                                isStreaming: false
+                            });
+                        }
                     }
+                    return { agentId, result };
+                } catch (err) {
+                    logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
+                    useStore.getState().updateBoardroomMessage(resId, {
+                        text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
+                        isStreaming: false,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Execution failed in boardroom swarm dispatch',
+                            timestamp: Date.now(),
+                            type: 'error'
+                        }]
+                    });
+                    return { agentId, result: null };
                 }
-            } catch (err) {
-                logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
-                useStore.getState().updateBoardroomMessage(resId, {
-                    text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
-                    isStreaming: false,
-                    thoughts: [{
-                        id: uuidv4(),
-                        text: 'Execution failed in boardroom swarm dispatch',
-                        timestamp: Date.now(),
-                        type: 'error'
-                    }]
-                });
+            });
+
+            // Wait for the entire chunk to finish before accumulating context and proceeding to the next chunk
+            const chunkResults = await Promise.all(chunkPromises);
+            for (const { agentId, result } of chunkResults) {
+                if (agentId && result?.text) {
+                    accumulatedContext += `\n[${agentId.toUpperCase()}]: ${result.text}`;
+                }
             }
         }
     }

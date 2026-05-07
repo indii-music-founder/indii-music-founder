@@ -72,13 +72,10 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
     async createNode(node: Omit<FileNode, 'id' | 'createdAt' | 'updatedAt'>): Promise<FileNode> {
         try {
-            const docRef = await addDoc(this.collection, {
-                ...node,
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-            });
+            // Use this.add to ensure pruneUndefined is applied, preventing "invalid nested entity" errors
+            const id = await this.add(node);
             return {
-                id: docRef.id,
+                id,
                 ...node,
                 createdAt: Date.now(),
                 updatedAt: Date.now()
@@ -92,8 +89,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
     async updateNode(id: string, updates: Partial<FileNode>): Promise<void> {
         try {
-            const docRef = doc(db, this.collectionPath, id);
-            await updateDoc(docRef, {
+            await this.update(id, {
                 ...updates,
                 updatedAt: Date.now()
             });

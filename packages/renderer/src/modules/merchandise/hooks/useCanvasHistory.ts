@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { logger } from '@/utils/logger';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface CanvasHistoryState {
   json: string;
@@ -188,39 +189,89 @@ export const useCanvasHistory = (
     };
   }, [canvas, debouncedSaveState, saveState, history.states.length]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    if (!canvas) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
-
-      // Undo: Cmd/Ctrl + Z
-      if (ctrlKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+  // Keyboard shortcuts via Orchestrator
+  useGlobalShortcut({
+    id: 'canvas-undo',
+    key: 'z',
+    meta: true,
+    shift: false,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
         e.preventDefault();
         undo();
       }
+    }
+  }, [canvas, undo]);
 
-      // Redo: Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y
-      if (
-        (ctrlKey && e.key.toLowerCase() === 'z' && e.shiftKey) ||
-        (ctrlKey && e.key.toLowerCase() === 'y')
-      ) {
+  useGlobalShortcut({
+    id: 'canvas-redo-shift',
+    key: 'Z',
+    meta: true,
+    shift: true,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
         e.preventDefault();
         redo();
       }
-    };
+    }
+  }, [canvas, redo]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canvas, undo, redo]);
+  useGlobalShortcut({
+    id: 'canvas-redo-y',
+    key: 'y',
+    meta: true,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
+        e.preventDefault();
+        redo();
+      }
+    }
+  }, [canvas, redo]);
+
+  // For Windows/Linux Ctrl mapping (if meta isn't naturally mapped)
+  useGlobalShortcut({
+    id: 'canvas-undo-ctrl',
+    key: 'z',
+    ctrl: true,
+    shift: false,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
+        e.preventDefault();
+        undo();
+      }
+    }
+  }, [canvas, undo]);
+
+  useGlobalShortcut({
+    id: 'canvas-redo-shift-ctrl',
+    key: 'Z',
+    ctrl: true,
+    shift: true,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
+        e.preventDefault();
+        redo();
+      }
+    }
+  }, [canvas, redo]);
+
+  useGlobalShortcut({
+    id: 'canvas-redo-y-ctrl',
+    key: 'y',
+    ctrl: true,
+    priority: 'normal',
+    handler: (e) => {
+      if (canvas) {
+        e.preventDefault();
+        redo();
+      }
+    }
+  }, [canvas, redo]);
 
   return {
     undo,

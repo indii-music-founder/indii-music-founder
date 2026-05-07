@@ -4,6 +4,7 @@ import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface Props {
     onClose: () => void;
@@ -28,12 +29,11 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const startDateRef = useRef<HTMLInputElement>(null);
 
     // UX: Close on Escape key
-    useEffect(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
+    useGlobalShortcut({
+        id: 'create-campaign-modal-escape',
+        key: 'Escape',
+        priority: 'modal',
+        handler: () => onClose()
     }, [onClose]);
 
     // Close on backdrop click
