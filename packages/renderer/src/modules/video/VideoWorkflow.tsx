@@ -11,10 +11,10 @@ import { WhiskService } from '../../services/WhiskService';
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
-// Prompt Builder
 import { VideoPromptBuilder } from '../creative/components/veo/VideoPromptBuilder';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 // Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
 const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
@@ -234,16 +234,30 @@ export default function VideoWorkflow() {
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
     // Keyboard Shortcut for Mode Toggle
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-                e.preventDefault();
-                setViewMode(viewMode === 'director' ? 'editor' : 'director');
-                toast.info(`Switched to ${viewMode === 'director' ? 'Editor' : 'Director'} Mode`);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+    useGlobalShortcut({
+        id: 'video-mode-toggle',
+        key: 'e',
+        meta: true,
+        ignoreInput: true,
+        priority: 'normal',
+        handler: (e) => {
+            e.preventDefault();
+            setViewMode(viewMode === 'director' ? 'editor' : 'director');
+            toast.info(`Switched to ${viewMode === 'director' ? 'Editor' : 'Director'} Mode`);
+        }
+    }, [viewMode, setViewMode, toast]);
+
+    useGlobalShortcut({
+        id: 'video-mode-toggle-ctrl',
+        key: 'e',
+        ctrl: true,
+        ignoreInput: true,
+        priority: 'normal',
+        handler: (e) => {
+            e.preventDefault();
+            setViewMode(viewMode === 'director' ? 'editor' : 'director');
+            toast.info(`Switched to ${viewMode === 'director' ? 'Editor' : 'Director'} Mode`);
+        }
     }, [viewMode, setViewMode, toast]);
 
     // Optimize screen real-estate based on mode

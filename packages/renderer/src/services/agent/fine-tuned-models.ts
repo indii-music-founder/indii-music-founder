@@ -34,6 +34,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'finance.royalty':   undefined,
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
     'legal':           'projects/223837784072/locations/us-central1/endpoints/5559518367884247040',
+    'legal.contracts':  undefined,
+    'legal.compliance': undefined,
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
     'distribution':    'projects/223837784072/locations/us-central1/endpoints/4660346554782056448',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27

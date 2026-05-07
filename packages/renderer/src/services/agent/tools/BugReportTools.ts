@@ -87,34 +87,46 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             // Non-blocking — still return success to the agent
         }
 
-        // 2. Attempt GitHub Issue creation if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env
-        const githubToken = (import.meta.env.VITE_GITHUB_TOKEN ?? '') as string;
-        const githubRepo = (import.meta.env.VITE_GITHUB_REPO ?? '') as string;
-        if (githubToken && githubRepo) {
-            try {
-                const ghResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${githubToken}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github+json',
-                        'X-GitHub-Api-Version': '2022-11-28',
-                    },
-                    body: JSON.stringify({
-                        title: `[${bugReport.severity.toUpperCase()}] ${bugReport.title}`,
-                        body: markdownBody,
-                        labels: ['bug', `severity:${bugReport.severity}`, `module:${bugReport.module}`],
-                    }),
-                });
-                if (ghResponse.ok) {
-                    const issue = await ghResponse.json() as { number: number; html_url: string };
-                    logger.info(`[BugReportTools] GitHub issue #${issue.number} created: ${issue.html_url}`);
-                } else {
-                    logger.warn(`[BugReportTools] GitHub issue creation failed: ${ghResponse.status} ${ghResponse.statusText}`);
-                }
-            } catch (ghErr: unknown) {
-                logger.warn('[BugReportTools] GitHub integration non-blocking error:', ghErr);
-            }
+        // 2. Call Cloud Function for GitHub integration (ISSUE-031 Gap 1: token security)
+        let githubStatus: 'ok' | 'failed' | 'skipped' | 'merged_as_comment' = 'skipped';
+        let issueUrl: string | undefined;
+
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const functions = getFunctions();
+            const reportBug = httpsCallable<{
+                title: string;
+                description: string;
+                stepsToReproduce?: string;
+                expectedBehavior?: string;
+                actualBehavior?: string;
+                severity?: string;
+                module?: string;
+                errorMessage?: string;
+            }, {
+                firestore: 'ok' | 'failed';
+                github: 'ok' | 'failed' | 'skipped' | 'merged_as_comment';
+                issueUrl?: string;
+                message: string;
+            }>(functions, 'reportBugFn');
+
+            const result = await reportBug({
+                title: bugReport.title,
+                description: bugReport.description,
+                stepsToReproduce: bugReport.stepsToReproduce,
+                expectedBehavior: bugReport.expectedBehavior,
+                actualBehavior: bugReport.actualBehavior,
+                severity: bugReport.severity,
+                module: bugReport.module,
+                errorMessage: bugReport.errorMessage,
+            });
+
+            githubStatus = result.data.github;
+            issueUrl = result.data.issueUrl;
+            logger.info(`[BugReportTools] Cloud Function response: ${githubStatus}`, result.data);
+        } catch (cfErr: unknown) {
+            githubStatus = 'failed';
+            logger.warn('[BugReportTools] Cloud Function call failed:', cfErr);
         }
 
         // 3. Save to Agent Memory for context continuity
@@ -141,7 +153,14 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             title: bugReport.title,
             severity: bugReport.severity,
             markdownBody,
-            message: `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker.`
+            firestore: 'ok',
+            github: githubStatus,
+            issueUrl,
+            message: githubStatus === 'merged_as_comment'
+                ? `Bug report merged as comment on existing issue: ${issueUrl}`
+                : githubStatus === 'ok'
+                ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
+                : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`
         };
     }),
 

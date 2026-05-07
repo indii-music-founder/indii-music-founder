@@ -138,7 +138,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                 plans.map(plan => (
                                     <div key={plan.id} className="relative">
                                         {/* Background status indicator bar */}
-                                        <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-md z-10 ${
+                                        <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-md z-10 pointer-events-none ${
                                             plan.status === 'executing' ? 'bg-blue-500' :
                                             plan.status === 'completed' ? 'bg-emerald-500' :
                                             plan.status === 'drafting' || plan.status === 'proposed' ? 'bg-cyan-500' :

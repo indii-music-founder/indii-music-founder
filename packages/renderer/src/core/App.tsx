@@ -62,50 +62,86 @@ import { AgentCanvasPanel } from './components/AgentCanvasPanel';
 // Lazy-loaded Module Components
 // ============================================================================
 
-const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
-const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
-const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
-const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
-const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
-const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
-const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
-const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
-const BrandManager = lazy(() => import('../modules/marketing/components/BrandManager'));
-const CampaignDashboard = lazy(() => import('../modules/marketing/components/CampaignDashboard'));
-const PublicistDashboard = lazy(() => import('../modules/publicist/PublicistDashboard'));
-const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingDashboard'));
-const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
-const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
-const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
-// Showroom integrated into Merchandise
-const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
-const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
+const lazyWithRetry = (componentImport: () => Promise<any>) => {
+    return lazy(async () => {
+        let retries = 3;
+        let interval = 500;
+        while (retries > 0) {
+            try {
+                return await componentImport();
+            } catch (error: any) {
+                const isChunkLoadError = error?.name === 'ChunkLoadError' || 
+                    (error?.message && (
+                        error.message.includes('Failed to fetch dynamically imported module') ||
+                        error.message.includes('Importing a module script failed') ||
+                        error.message.includes('Loading chunk')
+                    ));
 
-const FileDashboard = lazy(() => import('../modules/files/FileDashboard'));
-const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
-const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const ObserverabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
-const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
-const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
-const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
-const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
-const MemoryDashboard = lazy(() => import('../modules/memory/MemoryDashboard'));
-const MarketplaceModule = lazy(() => import('../modules/marketplace'));
-const SelectOrg = lazy(() => import('../modules/select-org/SelectOrg'));
-const SettingsPanel = lazy(() => import('../modules/settings/SettingsPanel'));
-const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'));
-const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
-const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
-const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
-const FoundersPortal = lazy(() => import('../modules/founders/FoundersPortal'));
-const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
-const RegistrationCenter = lazy(() => import('../modules/registration/RegistrationCenter'));
-const MaestroModule = lazy(() => import('../modules/maestro/MaestroModule'));
-const SecurityDashboard = lazy(() => import('../modules/security/SecurityDashboard'));
+                if (isChunkLoadError) {
+                    retries--;
+                    if (retries === 0) {
+                        logger.warn('Chunk load failed after retries, forcing page reload.');
+                        window.location.reload();
+                        // Return a promise that never resolves while the page reloads
+                        return new Promise(() => {}); 
+                    }
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                    interval *= 1.5;
+                } else {
+                    throw error;
+                }
+            }
+        }
+        return await componentImport(); // Should not reach here
+    });
+};
+
+
+
+const CreativeStudio = lazyWithRetry(() => import('../modules/creative/CreativeStudio'));
+const LegalDashboard = lazyWithRetry(() => import('../modules/legal/LegalDashboard'));
+const MarketingDashboard = lazyWithRetry(() => import('../modules/marketing/MarketingDashboard'));
+const VideoStudio = lazyWithRetry(() => import('../modules/video/VideoStudioContainer'));
+const WorkflowLab = lazyWithRetry(() => import('../modules/workflow/WorkflowLab'));
+const Dashboard = lazyWithRetry(() => import('../modules/dashboard/Dashboard'));
+const KnowledgeBase = lazyWithRetry(() => import('../modules/knowledge/KnowledgeBase'));
+const RoadManager = lazyWithRetry(() => import('../modules/touring/RoadManager'));
+const SocialDashboard = lazyWithRetry(() => import('../modules/social/SocialDashboard'));
+const BrandManager = lazyWithRetry(() => import('../modules/marketing/components/BrandManager'));
+const CampaignDashboard = lazyWithRetry(() => import('../modules/marketing/components/CampaignDashboard'));
+const PublicistDashboard = lazyWithRetry(() => import('../modules/publicist/PublicistDashboard'));
+const PublishingDashboard = lazyWithRetry(() => import('../modules/publishing/PublishingDashboard'));
+const FinanceDashboard = lazyWithRetry(() => import('../modules/finance/FinanceDashboard'));
+const LicensingDashboard = lazyWithRetry(() => import('../modules/licensing/LicensingDashboard'));
+const OnboardingPage = lazyWithRetry(() => import('../modules/onboarding/pages/OnboardingPage'));
+// Showroom integrated into Merchandise
+const AgentDashboard = lazyWithRetry(() => import('../modules/agent/components/AgentDashboard'));
+const DistributionDashboard = lazyWithRetry(() => import('../modules/distribution/DistributionDashboard'));
+
+const FileDashboard = lazyWithRetry(() => import('../modules/files/FileDashboard'));
+const MerchStudio = lazyWithRetry(() => import('../modules/merchandise/MerchStudio'));
+const AudioAnalyzer = lazyWithRetry(() => import('../modules/tools/AudioAnalyzer'));
+const ObserverabilityDashboard = lazyWithRetry(() => import('../modules/observability/ObservabilityDashboard'));
+const HistoryDashboard = lazyWithRetry(() => import('../modules/history/HistoryDashboard'));
+const MultimodalGauntlet = lazyWithRetry(() => import('../modules/debug/MultimodalGauntlet'));
+const InvestorPortal = lazyWithRetry(() => import('../modules/investor/InvestorPortal'));
+const GhostCapture = lazyWithRetry(() => import('../modules/capture/GhostCapture'));
+const MemoryDashboard = lazyWithRetry(() => import('../modules/memory/MemoryDashboard'));
+const MarketplaceModule = lazyWithRetry(() => import('../modules/marketplace'));
+const SelectOrg = lazyWithRetry(() => import('../modules/select-org/SelectOrg'));
+const SettingsPanel = lazyWithRetry(() => import('../modules/settings/SettingsPanel'));
+const MobileRemote = lazyWithRetry(() => import('../modules/mobile-remote/MobileRemote'));
+const GrowthIntelligenceDashboard = lazyWithRetry(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
+const DesktopDashboard = lazyWithRetry(() => import('../modules/desktop/DesktopDashboard'));
+const FoundersCheckout = lazyWithRetry(() => import('../modules/founders/FoundersCheckout'));
+const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersPortal'));
+const VideoPopout = lazyWithRetry(() => import('../modules/video/editor/VideoPopout'));
+const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
+const MaestroModule = lazyWithRetry(() => import('../modules/maestro/MaestroModule'));
+const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
-const AudioVisualizer = lazy(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
+const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
 
 // ============================================================================
 // Module Router - Maps module IDs to components

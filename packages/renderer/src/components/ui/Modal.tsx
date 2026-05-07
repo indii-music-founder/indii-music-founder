@@ -18,8 +18,8 @@
  * ```
  */
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect } from 'react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface ModalProps {
     isOpen: boolean;
@@ -37,14 +37,12 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
     const trapRef = useFocusTrap(isOpen);
 
     // Escape key closes modal
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    useGlobalShortcut({
+        id: 'ui-modal-escape',
+        key: 'Escape',
+        priority: 'modal',
+        handler: () => onClose()
+    }, [onClose], isOpen);
 
     return (
         <AnimatePresence>

@@ -184,6 +184,46 @@ class RemoteRelayService {
     }
 
     /**
+     * Listen for ALL commands (phone side — for the full conversation feed).
+     */
+    onAllCommands(callback: (commands: RemoteCommand[]) => void): Unsubscribe {
+        const ref = getCommandsRef();
+        if (!ref) return () => { };
+
+        const q = query(ref, orderBy('timestamp', 'asc'));
+
+        return onSnapshot(q, (snapshot) => {
+            const commands: RemoteCommand[] = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data() as RemoteCommand;
+                data.id = doc.id;
+                commands.push(data);
+            });
+            callback(commands);
+        });
+    }
+
+    /**
+     * Listen for ALL responses (phone side — for the full conversation feed).
+     */
+    onAllResponses(callback: (responses: RemoteResponse[]) => void): Unsubscribe {
+        const ref = getResponsesRef();
+        if (!ref) return () => { };
+
+        const q = query(ref, orderBy('timestamp', 'asc'));
+
+        return onSnapshot(q, (snapshot) => {
+            const responses: RemoteResponse[] = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data() as RemoteResponse;
+                data.id = doc.id;
+                responses.push(data);
+            });
+            callback(responses);
+        });
+    }
+
+    /**
      * Listen for desktop state changes (phone side).
      */
     onDesktopState(callback: (state: DesktopState | null) => void): Unsubscribe {

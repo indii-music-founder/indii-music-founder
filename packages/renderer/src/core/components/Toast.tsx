@@ -21,11 +21,11 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
     const [isHovered, setIsHovered] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const startProgressRef = useRef<number>(0);
-    const remainingTimeRef = useRef<number>(toast.duration || 4000);
+    const remainingTimeRef = useRef<number>(toast.type === 'loading' && !toast.duration ? 60000 : toast.duration || 4000);
 
     useEffect(() => {
         const startTimer = () => {
-            if (toast.type === 'loading') return;
+            // Apply fallback timeout for loading toasts as a safeguard against Ghost Toasts
             startProgressRef.current = Date.now();
             timeoutRef.current = setTimeout(() => {
                 onDismiss(toast.id);

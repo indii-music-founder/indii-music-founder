@@ -228,9 +228,10 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     describe('Registry Completeness Cross-Reference (5 tests)', () => {
         it('registry should contain exactly the expected agent count', () => {
             const registryKeys = Object.keys(FINE_TUNED_MODEL_REGISTRY);
-            // Should match the number of unique agents (including aliases like creative-director, road-manager)
+            // Should match the number of unique agents (heads + workers + legacy aliases like creative-director, road-manager)
+            // Bound bumped 2026-05-06 when Legal workers (legal.contracts, legal.compliance) were added.
             expect(registryKeys.length).toBeGreaterThanOrEqual(18);
-            expect(registryKeys.length).toBeLessThanOrEqual(26);
+            expect(registryKeys.length).toBeLessThanOrEqual(40);
         });
 
         it('no endpoint should be empty string', () => {

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
 
 interface NavItem {
@@ -43,15 +44,17 @@ export const MobileNav = () => {
     }, [isOpen]);
 
     // Handle Escape key
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (isOpen && e.key === 'Escape') {
+    useGlobalShortcut({
+        id: 'mobile-nav-escape',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (isOpen) {
                 setIsOpen(false);
+                e.preventDefault();
             }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        }
     }, [isOpen]);
 
     // Grouped navigation items (mirrored from Sidebar.tsx)

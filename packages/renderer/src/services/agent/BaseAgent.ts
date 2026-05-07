@@ -143,8 +143,13 @@ export class BaseAgent implements SpecializedAgent {
 
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
+                    const errorMsg = `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`;
+                    
+                    const { events } = await import('@/core/events');
+                    events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.` });
+
                     return toolError(
-                        `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`,
+                        errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success. Do NOT say you have sent it over.",
                         'DIRECT_MODE_NO_DELEGATION'
                     );
                 }
@@ -153,8 +158,13 @@ export class BaseAgent implements SpecializedAgent {
                     if (!sameDepartment(this.id, targetAgentId)) {
                         const myDept = getDepartmentOf(this.id);
                         logger.warn(`[BaseAgent] Department-scope violation: ${this.id} (${myDept?.id}) -> ${targetAgentId}`);
+                        const errorMsg = `Cross-department delegation is blocked in Department mode. You may only delegate within '${myDept?.id ?? 'unknown'}'. Cross-department work belongs in Boardroom mode where heads can convene.`;
+
+                        const { events } = await import('@/core/events');
+                        events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} across departments.` });
+
                         return toolError(
-                            `Cross-department delegation is blocked in Department mode. You may only delegate within '${myDept?.id ?? 'unknown'}'. Cross-department work belongs in Boardroom mode where heads can convene.`,
+                            errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success.",
                             'DEPARTMENT_SCOPE_VIOLATION'
                         );
                     }
@@ -229,8 +239,13 @@ export class BaseAgent implements SpecializedAgent {
 
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
+                    const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
+                    
+                    const { events } = await import('@/core/events');
+                    events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult experts in Direct Mode.` });
+
                     return toolError(
-                        `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`,
+                        errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success. Do NOT say you have sent it over.",
                         'DIRECT_MODE_NO_DELEGATION'
                     );
                 }
@@ -241,8 +256,13 @@ export class BaseAgent implements SpecializedAgent {
                         const offIds = offDept.map(u => u.targetAgentId).join(', ');
                         const myDept = getDepartmentOf(this.id);
                         logger.warn(`[BaseAgent] Department-scope violation in consult_experts: ${this.id} -> [${offIds}]`);
+                        const errorMsg = `Cannot consult [${offIds}] in Department mode. They are outside '${myDept?.id ?? 'unknown'}'. Cross-department consultation belongs in Boardroom mode.`;
+
+                        const { events } = await import('@/core/events');
+                        events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult ${offIds} across departments.` });
+
                         return toolError(
-                            `Cannot consult [${offIds}] in Department mode. They are outside '${myDept?.id ?? 'unknown'}'. Cross-department consultation belongs in Boardroom mode.`,
+                            errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success.",
                             'DEPARTMENT_SCOPE_VIOLATION'
                         );
                     }
@@ -611,12 +631,20 @@ export class BaseAgent implements SpecializedAgent {
 
         // BOARDROOM: Seating Manifest Injection
         let boardroomSection = '';
+        let delegationScopeSection = '';
         const ctxRecord = context as Record<string, any>;
+        
         if (ctxRecord?.conversationMode === 'boardroom') {
             const { agentRegistry } = await import('./registry');
             const seated = ctxRecord.seatedAgents || [];
-            const seatedNames = seated.map((id: string) => agentRegistry.get(id)?.name || id).join(', ');
+            const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
             boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
+        } else if (ctxRecord?.conversationMode === 'direct') {
+            delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
+        } else if (ctxRecord?.conversationMode === 'department') {
+            const { getDepartmentOf } = await import('./departments');
+            const dept = getDepartmentOf(this.id);
+            delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DEPARTMENT mode. You can ONLY coordinate with agents in the [${dept?.displayName || 'Unknown'}] department. Do NOT promise to contact other departments. Explicitly refuse external department requests.\n`;
         }
 
         let safeHistory = context?.chatHistoryString || '';
@@ -665,7 +693,8 @@ export class BaseAgent implements SpecializedAgent {
             distributorSection,
             // Layer 5: Big Brain auto-recall block (XML from all 4 memory layers)
             (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined,
-            boardroomSection
+            boardroomSection,
+            delegationScopeSection
         );
 
         // Tool gathering logic via ToolPoolAssembler
@@ -780,7 +809,9 @@ export class BaseAgent implements SpecializedAgent {
 
                 // Prepare request contents
                 const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
-                const armorResult = await ModelArmor.scanInput(fullPrompt, getDefaultPolicy());
+                // Only scan the new task/input to prevent false positives from the agent's own history
+                // (e.g., identity locks repeating "ignore previous instructions")
+                const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
                 if (!armorResult.allowed) {
                     executionContext.rollback();
                     return { text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
@@ -789,7 +820,7 @@ export class BaseAgent implements SpecializedAgent {
                 const requestContents = [{
                     role: 'user' as const,
                     parts: [
-                        { text: armorResult.sanitizedPrompt || fullPrompt },
+                        { text: fullPrompt },
                         ...(attachments || []).map(a => ({
                             inlineData: { mimeType: a.mimeType, data: a.base64 }
                         }))

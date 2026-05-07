@@ -24,6 +24,15 @@ export class ModuleErrorBoundary extends Component<Props, State> {
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         logger.error(`[ModuleErrorBoundary] Error in ${this.props.moduleName || 'Module'}:`, error, errorInfo);
+
+        // Auto-reload once for chunk load errors (Vite lazy loading failures)
+        if (error.message && error.message.includes('Failed to fetch dynamically imported module')) {
+            const hasReloaded = sessionStorage.getItem('chunk_load_error_reloaded');
+            if (!hasReloaded) {
+                sessionStorage.setItem('chunk_load_error_reloaded', 'true');
+                window.location.reload();
+            }
+        }
     }
 
     private handleRetry = () => {
@@ -36,6 +45,14 @@ export class ModuleErrorBoundary extends Component<Props, State> {
             this.setState({ hasError: false, error: null });
         }
     };
+
+    public componentDidMount() {
+        // If we successfully mounted without error, clear the retry flag after a delay
+        // to allow future navigation to recover from temporary network drops
+        setTimeout(() => {
+            sessionStorage.removeItem('chunk_load_error_reloaded');
+        }, 2000);
+    }
 
     public render() {
         if (this.state.hasError) {
