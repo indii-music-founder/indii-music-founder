@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.60.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.60.0...v1.60.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **issue-033:** automatic boardroom context handshake on mode switch ([2eb3b7d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2eb3b7d865cb0dd74f49126ac974507aee492a81))
+
 ## [1.60.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.59.0...v1.60.0) (2026-05-07)
 
 
