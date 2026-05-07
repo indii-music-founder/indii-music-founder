@@ -91,7 +91,7 @@ export function buildAgentUIState(
         rightPanelView: 'messages',
         chatChannel: 'indii',
         activeAgentProvider: 'direct',
-        conversationMode: 'boardroom',
+        conversationMode: 'direct',
         activeDepartmentId: null,
         directTargetAgentId: null,
         isKnowledgeBaseEnabled: true,
