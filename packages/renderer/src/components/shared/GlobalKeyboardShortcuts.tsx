@@ -126,6 +126,9 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
     );
 }
 
+import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+
 /**
  * Hook to globally toggle the shortcuts modal with the "?" key.
  * Install once in the app shell (e.g., App.tsx or Sidebar).
@@ -133,17 +136,23 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
 export function useGlobalShortcutsModal() {
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        const target = e.target as HTMLElement;
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-
-        if (e.key === '?' && !e.ctrlKey && !e.metaKey && !isInput) {
+    useGlobalShortcut({
+        id: 'global-shortcuts-help',
+        key: '?',
+        ctrl: false,
+        meta: false,
+        handler: (e) => {
             e.preventDefault();
             setIsOpen(prev => !prev);
-            return;
         }
+    });
 
-        if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !isInput) {
+    useGlobalShortcut({
+        id: 'global-play-pause',
+        key: 'Space',
+        ctrl: false,
+        meta: false,
+        handler: (e) => {
             const state = useStore.getState();
             if (state.currentTrack) {
                 e.preventDefault();
@@ -153,18 +162,20 @@ export function useGlobalShortcutsModal() {
                     state.resumeTrack();
                 }
             }
-            return;
         }
+    });
 
-        if (e.key === 'Escape' && isOpen) {
-            setIsOpen(false);
+    useGlobalShortcut({
+        id: 'global-shortcuts-close',
+        key: 'Escape',
+        ignoreInput: true, // Escape should close even if typing
+        handler: (e) => {
+            if (isOpen) {
+                setIsOpen(false);
+                e.preventDefault();
+            }
         }
     }, [isOpen]);
-
-    useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleKeyDown]);
 
     return { isOpen, close: () => setIsOpen(false) };
 }

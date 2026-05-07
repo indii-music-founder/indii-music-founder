@@ -7,6 +7,8 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { PromptImproverService } from '@/services/creative/PromptImproverService';
 import { useToast } from '@/core/context/ToastContext';
+import AIGenerateCampaignModal from '@/modules/marketing/components/AIGenerateCampaignModal';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
 
 interface PromptBuilderProps {
@@ -167,16 +169,23 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
             if (target.closest?.('[role="menu"]')) return;
             setOpenCategory(null);
         };
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpenCategory(null);
-        };
 
         document.addEventListener('mousedown', handlePointerDown);
-        document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('mousedown', handlePointerDown);
-            document.removeEventListener('keydown', handleKeyDown);
         };
+    }, [openCategory]);
+
+    useGlobalShortcut({
+        id: 'prompt-builder-escape',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (openCategory) {
+                setOpenCategory(null);
+            }
+        }
     }, [openCategory]);
 
     const handleImprove = useCallback(async () => {

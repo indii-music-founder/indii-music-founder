@@ -7,6 +7,7 @@ import {
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
     Building, ShieldAlert, Cpu, Workflow, Gem
 } from 'lucide-react';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 export function UnifiedCommandMenu() {
     const { isCommandMenuOpen, setCommandMenuOpen, setModule } = useStore(
@@ -18,24 +19,45 @@ export function UnifiedCommandMenu() {
     );
 
     // Toggle the menu when ⌘K is pressed
-    useEffect(() => {
-        const down = (e: KeyboardEvent) => {
-            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                setCommandMenuOpen(!isCommandMenuOpen);
-            }
+    useGlobalShortcut({
+        id: 'cmd-k-menu',
+        key: 'k',
+        meta: true,
+        ignoreInput: true, // Allow opening cmd+k even when typing in input
+        priority: 'high',
+        handler: (e) => {
+            e.preventDefault();
+            setCommandMenuOpen(!isCommandMenuOpen);
+        }
+    }, [isCommandMenuOpen, setCommandMenuOpen]);
 
-            // BUG-005 FIX: Dedicated Escape handler that always force-closes.
-            // Under rapid interaction, the cmdk `onOpenChange` can miss Escape events.
-            if (e.key === 'Escape' && isCommandMenuOpen) {
+    // Also support Ctrl+K for Windows/Linux
+    useGlobalShortcut({
+        id: 'ctrl-k-menu',
+        key: 'k',
+        ctrl: true,
+        ignoreInput: true,
+        priority: 'high',
+        handler: (e) => {
+            e.preventDefault();
+            setCommandMenuOpen(!isCommandMenuOpen);
+        }
+    }, [isCommandMenuOpen, setCommandMenuOpen]);
+
+    // BUG-005 FIX: Dedicated Escape handler that always force-closes.
+    // Under rapid interaction, the cmdk `onOpenChange` can miss Escape events.
+    useGlobalShortcut({
+        id: 'close-cmd-k-menu',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (isCommandMenuOpen) {
                 e.preventDefault();
                 e.stopPropagation();
                 setCommandMenuOpen(false);
             }
-        };
-
-        document.addEventListener('keydown', down, { capture: true });
-        return () => document.removeEventListener('keydown', down, { capture: true });
+        }
     }, [isCommandMenuOpen, setCommandMenuOpen]);
 
     // Run a command and close the menu

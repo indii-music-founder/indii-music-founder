@@ -43,5 +43,9 @@ export const LegalCard: AgentCard = {
         modeStream: {
             firstByteMs: 500
         }
+    },
+    roster: {
+        category: 'department',
+        workerIds: ['legal.contracts', 'legal.compliance']
     }
 };

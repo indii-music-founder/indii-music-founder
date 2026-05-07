@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Keyboard, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface KeyboardShortcutsProps {
     isOpen: boolean;
@@ -118,29 +119,29 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, on
 export const useKeyboardShortcutsHint = () => {
     const [showShortcuts, setShowShortcuts] = useState(false);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Show shortcuts on "?" key (Shift + /)
-            if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
-                // Don't trigger if user is typing in an input
-                if (
-                    e.target instanceof HTMLInputElement ||
-                    e.target instanceof HTMLTextAreaElement
-                ) {
-                    return;
-                }
-                e.preventDefault();
-                setShowShortcuts(prev => !prev);
-            }
+    useGlobalShortcut({
+        id: 'merch-shortcuts-help',
+        key: '?',
+        ctrl: false,
+        meta: false,
+        priority: 'high', // Higher than global shortcuts help
+        handler: (e) => {
+            e.preventDefault();
+            setShowShortcuts(prev => !prev);
+        }
+    });
 
-            // Close on Escape
-            if (e.key === 'Escape' && showShortcuts) {
+    useGlobalShortcut({
+        id: 'merch-shortcuts-escape',
+        key: 'Escape',
+        ignoreInput: true,
+        priority: 'modal',
+        handler: (e) => {
+            if (showShortcuts) {
+                e.preventDefault();
                 setShowShortcuts(false);
             }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        }
     }, [showShortcuts]);
 
     return { showShortcuts, setShowShortcuts };

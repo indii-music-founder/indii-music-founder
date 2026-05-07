@@ -288,8 +288,11 @@ vi.mock('firebase/firestore', () => {
         initializeFirestore: vi.fn(() => mockDb),
         getFirestore: vi.fn(() => mockDb),
         Timestamp,
-        collection: vi.fn(() => ({ id: 'mock-coll-id' })),
-        doc: vi.fn(() => ({ id: crypto.randomUUID() })),
+        collection: vi.fn((_db: any, path: string) => ({ id: path?.split('/').pop() || 'mock-coll-id', type: 'collection' })),
+        doc: vi.fn((_db: any, path: string, id?: string) => {
+            const p = id ? `${path}/${id}` : path;
+            return { type: 'document', id: id || p?.split('/').pop() || crypto.randomUUID(), path: p, firestore: mockDb };
+        }),
         addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
         getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
         getUsageStats: vi.fn(() => Promise.resolve({

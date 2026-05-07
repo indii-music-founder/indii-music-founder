@@ -246,7 +246,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             <div
                 data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
                 aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
-                className={`max-w-[90%] rounded-[1.2rem] ${variant === 'compact' ? 'px-3 py-2 text-xs' : 'px-5 py-4'} relative group transition-all duration-300 ${msg.role === 'user'
+                className={`max-w-[90%] min-w-0 rounded-[1.2rem] ${variant === 'compact' ? 'px-3 py-2 text-xs' : 'px-5 py-4'} relative group transition-all duration-300 ${msg.role === 'user'
                     ? 'bg-linear-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                     : msg.role === 'system'
                         ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[10px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-1.5'

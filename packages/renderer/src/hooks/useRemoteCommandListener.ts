@@ -416,6 +416,32 @@ function useFirestoreRelay(enabled: boolean) {
                     (agentService as unknown as { isProcessing: boolean }).isProcessing = false;
                 }
 
+                // ─── CRITICAL: Override desktop's conversationMode ────────────
+                // The phone's intent (targetAgentId) must drive routing, NOT
+                // whatever mode the desktop UI happens to be in.
+                // Save and restore the desktop state so the local user is unaffected.
+                const storeSnapshot = useStore.getState();
+                const originalMode = storeSnapshot.conversationMode;
+                const originalDeptId = storeSnapshot.activeDepartmentId;
+                const originalAgentId = storeSnapshot.directTargetAgentId;
+                const originalProvider = storeSnapshot.activeAgentProvider;
+
+                // Force 'direct' mode with 'native' provider for remote commands.
+                // 'native' ensures the standard orchestrator routes via forcedAgentId
+                // instead of hitting handleDirectChatFlow (which ignores forcedAgentId).
+                useStore.setState({
+                    conversationMode: 'direct',
+                    activeAgentProvider: 'native',
+                    directTargetAgentId: targetAgent || null,
+                });
+                writeDiagnostic('mode_override_applied', {
+                    commandId: command.id,
+                    originalMode,
+                    overrideMode: 'direct',
+                    overrideProvider: 'native',
+                    targetAgent,
+                });
+
                 // Run through the FULL agent pipeline with targeted agent
                 const stateBefore = useStore.getState();
                 const historyLengthBefore = stateBefore.agentHistory.length;
@@ -446,6 +472,18 @@ function useFirestoreRelay(enabled: boolean) {
                     );
                     await remoteRelayService.markCommandCompleted(command.id);
                     return; // Skip the response polling — we already sent an error
+                } finally {
+                    // ─── RESTORE desktop state after agent call ──────────────
+                    useStore.setState({
+                        conversationMode: originalMode,
+                        activeDepartmentId: originalDeptId,
+                        directTargetAgentId: originalAgentId,
+                        activeAgentProvider: originalProvider,
+                    });
+                    writeDiagnostic('mode_override_restored', {
+                        commandId: command.id,
+                        restoredMode: originalMode,
+                    });
                 }
 
                 writeDiagnostic('agent_send_complete', { 

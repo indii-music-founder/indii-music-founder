@@ -52,4 +52,14 @@ export default defineConfig({
             },
         },
     },
+    test: {
+        environment: 'jsdom',
+        setupFiles: [resolve(__dirname, 'src/test/setup.ts')],
+        globals: true,
+        clearMocks: true,
+        restoreMocks: true,
+        environmentOptions: {
+            url: 'http://localhost/'
+        }
+    }
 });

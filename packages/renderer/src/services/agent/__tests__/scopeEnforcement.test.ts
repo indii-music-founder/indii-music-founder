@@ -24,8 +24,13 @@ describe('Department registry — Phase 1 hierarchical agent system', () => {
             expect(heads).toEqual(expectedHeads.sort());
         });
 
-        it('Phase 1 ships zero workers, Phase 3 population begins with finance workers', () => {
-            expect(listWorkerIds()).toHaveLength(3);
+        it('worker population: 3 finance + 2 legal = 5 total registered workers', () => {
+            // Finance: accounting, tax, royalty. Legal: contracts, compliance.
+            expect(listWorkerIds()).toHaveLength(5);
+            expect(listWorkerIds().sort()).toEqual([
+                'finance.accounting', 'finance.royalty', 'finance.tax',
+                'legal.compliance', 'legal.contracts',
+            ]);
         });
 
         it('every department has exactly one head matching its id', () => {

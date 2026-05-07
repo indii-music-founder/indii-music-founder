@@ -687,10 +687,20 @@ ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${i
         // Build Reference Mixer context (Whisk) - Use static builder
         const whiskContext = context?.whiskState ? AgentPromptBuilder.buildWhiskContext(context.whiskState) : '';
 
+        // Inject [SEATED_AGENTS] manifest for Boardroom Mode parity
+        let boardroomSection = '';
+        if (context?.conversationMode === 'boardroom') {
+            const { agentRegistry } = await import('../registry');
+            const seated = context?.seatedAgents || [];
+            const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
+            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
+        }
+
         const fullSystemPrompt = `${this.systemPrompt}
 ${orgContext}
 ${brandContext}
 ${whiskContext}
+${boardroomSection}
 
 MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
@@ -700,7 +710,7 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
 `;
 
         // Build conversation history
-        const history = useStore.getState().agentHistory;
+        const history = context?.chatHistory || useStore.getState().agentHistory;
         const historyText = history
             .filter(msg => msg.role !== 'system')
             .slice(-10) // Last 10 messages
