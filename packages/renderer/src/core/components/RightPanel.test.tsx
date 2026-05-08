@@ -103,7 +103,6 @@ describe('RightPanel', () => {
     const mockSetRightPanelTab = vi.fn();
     const mockToggleRightPanel = vi.fn();
     const mockSetRightPanelView = vi.fn();
-    const mockToggleAgentWindow = vi.fn();
 
     const defaultState = {
         rightPanelTab: 'context',
@@ -111,7 +110,6 @@ describe('RightPanel', () => {
         isRightPanelOpen: false,
         toggleRightPanel: mockToggleRightPanel,
         isAgentOpen: false,
-        toggleAgentWindow: mockToggleAgentWindow,
         agentHistory: [],
         currentModule: 'dashboard',
         rightPanelView: 'messages' as const,
@@ -194,5 +192,20 @@ describe('RightPanel', () => {
         render(<RightPanel />);
         expect(screen.getByText('Messages')).toBeInTheDocument();
         expect(screen.getByTestId('batching-status')).toBeInTheDocument();
+    });
+
+    it('calls toggleRightPanel when close button is clicked in Agent tab', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'agent',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        
+        // Find the close button (ChevronRight) in the Agent tab header
+        const closeButton = screen.getByLabelText('Close Panel');
+        fireEvent.click(closeButton);
+        
+        expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 });

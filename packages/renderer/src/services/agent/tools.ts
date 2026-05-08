@@ -222,9 +222,10 @@ AVAILABLE TOOLS:
 101. browser_navigate(url) - Navigate to a URL in the background browser.
 102. browser_action(action, selector, value) - Perform a browser action (click, type, select).
 103. browser_snapshot(format) - Take a snapshot of the current browser page.
---- CANVAS (A2UI) ---
+--- CANVAS (A2UI - DETERMINISTIC UI VECTOR DRAWING) ---
 104. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
 105. canvas_clear() - Clear all agent-pushed canvas panels.
+106. draw_shape(shapeType, x, y, width?, height?, radius?, color?, fill?, stroke?, zIndex?, label?) - Draw deterministic UI vector shapes (rect, circle, line, text). NOT for AI media generation.
 --- CODE EXECUTION ---
 106. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
 --- NOTIFICATIONS ---
