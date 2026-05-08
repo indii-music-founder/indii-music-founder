@@ -310,11 +310,14 @@ describe('AlwaysOnMemoryEngine', () => {
 
         it('should handle empty memory store gracefully', async () => {
             mockGetDocs.mockResolvedValue({ docs: [], empty: true });
+            // ISSUE-042: When no memories exist, fallback to LLM general knowledge
+            mockGenerateText.mockResolvedValueOnce(
+                'I can help you based on my general knowledge, though I don\'t have personalized memories stored yet. You can ingest information to build your memory base for future queries.'
+            );
 
             const answer = await engine.query('What do I like?');
-            // ISSUE-042: When no memories exist, fallback to LLM general knowledge
-            // instead of hard-failing. The mocked generateText returns 'Test summary of the content'
-            expect(answer).toContain('Test summary of the content');
+            expect(answer).toContain('general knowledge');
+            expect(answer).toContain('ingest information');
             expect(mockGenerateText).toHaveBeenCalled();
         });
     });
