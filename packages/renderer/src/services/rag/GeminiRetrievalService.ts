@@ -36,7 +36,16 @@ export class GeminiRetrievalService {
         const projectId = env.projectId || env.firebaseProjectId || 'indiios-v-1-1';
         const location = env.location || 'us-central1';
         const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net`;
-        this.baseUrl = env.VITE_RAG_PROXY_URL || `${functionsUrl}/ragProxy/v1beta`;
+
+        // ISSUE-039 Fix: Detect stale localhost URL and fallback to Cloud Functions
+        let configuredUrl = env.VITE_RAG_PROXY_URL;
+        if (configuredUrl && configuredUrl.includes('localhost')) {
+            logger.warn('[GeminiRetrieval] Detected stale localhost URL, falling back to Cloud Functions. ' +
+                'Remove or empty VITE_RAG_PROXY_URL in .env for production use.');
+            configuredUrl = undefined;
+        }
+
+        this.baseUrl = configuredUrl || `${functionsUrl}/ragProxy/v1beta`;
     }
 
     private async fetch(endpoint: string, options: RequestInit = {}) {
