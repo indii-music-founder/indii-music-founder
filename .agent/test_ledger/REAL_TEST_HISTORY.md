@@ -278,3 +278,17 @@
 - **Coverage Delta:**
   - ✅ Final verified state of the Phase 6 Social Commerce and unified Revenue pipeline.
 - **UX Score:** 30/30
+
+---
+
+## 2026-05-08 - Detroit Producer - Mega Stress Test V4.0 (Section 1)
+- **Modules Tested:** Creative Director, Boardroom
+- **Duration:** ~5 minutes
+- **Findings:** 1 HIGH issue filed (system-wide module resolution crash)
+- **Key Issues:**
+  - 🔴 ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
+- **Coverage Delta:**
+  - ✅ Regression test: `generate_image` Single-Image Enforcement (blocked by crash)
+  - ✅ Regression test: Seated-Only Delegation Enforcement (blocked by crash)
+  - ✅ Regression test: Raw JSON Bleed Check (blocked by crash)
+- **UX Score:** NO-GO
