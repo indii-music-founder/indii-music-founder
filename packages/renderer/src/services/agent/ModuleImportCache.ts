@@ -34,10 +34,6 @@ class ModuleImportCache {
         // Cache-hit: attach to the in-flight promise
         if (this.cache.has(moduleId)) {
             const request = this.cache.get(moduleId)!;
-    async import<T = any>(modulePath: string): Promise<T> {
-        // Cache-hit: attach to the in-flight promise
-        if (this.cache.has(modulePath)) {
-            const request = this.cache.get(modulePath)!;
             request.refCount++;
             try {
                 return await request.promise as T;
@@ -46,7 +42,6 @@ class ModuleImportCache {
                 request.refCount--;
                 if (request.refCount === 0) {
                     this.cache.delete(moduleId);
-                    this.cache.delete(modulePath);
                 }
             }
         }
@@ -67,10 +62,6 @@ class ModuleImportCache {
 
         // Fire the import immediately (parallel is correct — no global queue)
         this.importWithRetry<T>(importFn)
-        this.cache.set(modulePath, request);
-
-        // Fire the import immediately (parallel is correct — no global queue)
-        this.importWithRetry<T>(modulePath)
             .then(result => resolveRequest!(result))
             .catch(err => rejectRequest!(err));
 
@@ -81,7 +72,6 @@ class ModuleImportCache {
             request.refCount--;
             if (request.refCount === 0) {
                 this.cache.delete(moduleId);
-                this.cache.delete(modulePath);
             }
         }
     }
