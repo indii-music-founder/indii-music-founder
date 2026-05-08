@@ -637,6 +637,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-042: Memory Agent Lack of General Knowledge Fallback
 - **Status:** ✅ FIXED (884c33b6)
+- **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Module:** Memory Agent
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #32 equivalent)
@@ -644,11 +645,13 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Modified AlwaysOnMemoryEngine.query() to always generate answers via LLM, even with empty memory store. Falls back to general knowledge when no memories exist.
 - **Files:** `AlwaysOnMemoryEngine.ts`
 - **UX Impact:** Agent now smoothly blends user memories with foundational knowledge, answering general questions gracefully.
+- **UX Impact:** The agent feels rigid and overly constrained; it should smoothly blend user memories with its foundational knowledge.
 
 ---
 
 ### ISSUE-043: Sidebar Routing History Inconsistency Under Thrashing
 - **Status:** ✅ FIXED (884c33b6)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** Sidebar Navigation
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #8 equivalent)
@@ -656,12 +659,14 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Added 100ms debouncing to setModule in appSlice to prevent rapid clicks from overwriting history. Implemented navigation history stack tracking to maintain 1:1 mapping of navigation events.
 - **Files:** `appSlice.ts`
 - **UX Impact:** Back button now reliably navigates through all visited routes, no skipping on rapid sidebar clicks.
+- **UX Impact:** Power users rapidly clicking around may find the browser "Back" button behavior unpredictable.
 
 
 ---
 
 ### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
 - **Status:** ✅ FIXED (884c33b6)
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Reliability
 - **Module:** Core App / AgentService / ModuleImportCache
@@ -814,3 +819,11 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7)
 - **Summary:** Detected a `Failed to resolve module specifier '@/core/store'` error in the Boardroom chat logs during execution.
 - **User Impact:** Potential intermittent failures in Boardroom state management or agent chat logic.
+- **Steps to Reproduce:**
+  1. Boot the application in `dev:web` mode.
+  2. Navigate to Creative Director or Boardroom.
+  3. Attempt to interact with any agent (e.g. "generate 5 album covers at once").
+  4. The application crashes/fails the action. Console logs show `TypeError: Failed to resolve module specifier '@/core/store'`.
+- **User Impact:** Agents cannot load necessary modules, rendering all agentic features completely broken.
+- **Screenshot:** See subagent logs `mega_stress_test_sec1_...`
+- **Notes:** Could be related to recent dynamic import caching changes or Vite alias resolution.
