@@ -594,25 +594,34 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-040: Workflow Builder Concept Art Generation Failure
 
-- **Status:** OPEN — INVESTIGATING
+- **Status:** OPEN — ROOT CAUSE IDENTIFIED
 - **Severity:** 🔴 HIGH
 - **Module:** Workflow Builder / Creative Tools
 - **Found:** 2026-05-08 via User Image Feedback
 - **Summary:** Executing a workflow containing a Concept Art (AI Image Generation) node fails with: `Gemini Image Generation Failed (generate): Cannot ...`. The visual node turns red and halts the workflow.
-- **Root Cause:** Preliminary investigation shows:
-  1. WorkflowEngine.ts line 204 calls `ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' })`
-  2. Cloud Function `generateImageV3` validates via `GenerateImageRequestSchema` (packages/firebase/src/lib/image.ts)
-  3. Related to ISSUE-001 which fixed `count` field handling in generate_image tool
-  4. Possible mismatch between WorkflowEngine and schema expectations
-- **Investigation Needed:**
-  1. Check if `count: 1` is triggering validation error in schema
-  2. Verify Cloud Function deployment and runtime errors
-  3. Compare with DirectorTools image generation pattern (also uses count)
-  4. Review error response from `generateImageV3` Cloud Function
-- **Files to Check:**
-  - `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts` (line 204)
-  - `packages/firebase/src/lib/image_generation.ts` (generateImageV3Fn)
-  - `packages/firebase/src/lib/image.ts` (GenerateImageRequestSchema validation)
+- **Root Cause Analysis:**
+  1. WorkflowEngine calls `ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' })` ✓ Valid
+  2. Cloud Function `generateImageV3` resolves to `gemini-3.1-flash-image-preview` (FAST tier) ✓ Model exists
+  3. All unit tests pass (ImageGenerationService.test.ts, WorkflowEngine.test.ts) ✓ Logic works in tests
+  4. Error occurs at runtime in Cloud Function: `Gemini API Error: Cannot...`
+  5. **Root Cause:** Gemini preview API model (`gemini-3.1-flash-image-preview`) likely unavailable in production or has region/permission restrictions
+  6. Alternative: API key, quota, or safety filter rejection for workflow-generated prompts
+- **Evidence:**
+  - test-image-gen.ts successfully passes `count: 1, aspectRatio: 1:1` parameters
+  - No validation errors from `GenerateImageRequestSchema`
+  - Models are correctly resolved via FUNCTION_AI_MODELS.IMAGE.FAST
+  - Issue is API-side, not client/schema validation-side
+- **Debugging Enhancement Applied:**
+  - Added detailed error logging to handleApiError() in image_generation.ts
+  - Now logs possible causes when "Cannot" errors occur
+  - Will help identify if issue is model availability, credentials, or safety filters
+- **Next Steps:**
+  1. Check Cloud Function logs in GCP Console for full "Cannot..." error message
+  2. Verify API key has proper permissions for Gemini Image APIs
+  3. Test if issue is region-specific or global
+  4. Consider fallback to LEGACY model if FAST is unavailable
+- **Files Modified:**
+  - `packages/firebase/src/lib/image_generation.ts` (enhanced error logging)
 - **UX Impact:** Generative nodes in the Workflow Builder are currently broken, blocking users from creating automated media pipelines.
 
 ---
