@@ -403,6 +403,20 @@ export class GeminiImageService {
 
         console.error(`[GeminiImageService:${context}] Extracted Status: ${status} | Message: ${message}`);
 
+        // ISSUE-040: Enhanced error reporting for Workflow Builder debugging
+        // Log full error details to help diagnose model availability issues
+        if (message.includes("Cannot")) {
+            console.error(`[GeminiImageService:${context}] Detailed Error Analysis:`, {
+                originalMessage: message,
+                possibleCauses: [
+                    "Model preview API not available in region",
+                    "API credentials invalid or expired",
+                    "Request configuration incompatible with model",
+                    "Prompt or parameters rejected by safety filters"
+                ]
+            });
+        }
+
         if (status === 400 || message.includes("400")) {
             throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}`);
         }
