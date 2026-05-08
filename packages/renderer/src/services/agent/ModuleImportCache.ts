@@ -24,6 +24,10 @@ class ModuleImportCache {
     private cache = new Map<string, ModuleImportRequest>();
     private readonly maxRetries = 3;
     private readonly retryDelayMs = 100;
+    
+    // Global mutex queue for sequential loading (ISSUE-034)
+    private importQueue: (() => Promise<void>)[] = [];
+    private isProcessingQueue = false;
 
     /**
      * Import a module with automatic deduplication and retry logic.
@@ -49,6 +53,18 @@ class ModuleImportCache {
         // Cache-miss: kick off the import and cache the in-flight promise
         let resolveRequest: (val: T) => void;
         let rejectRequest: (err: unknown) => void;
+     */
+    async import<T = any>(modulePath: string): Promise<T> {
+        // Check cache for in-flight import
+        if (this.cache.has(modulePath)) {
+            const request = this.cache.get(modulePath)!;
+            request.refCount++;
+            return request.promise;
+        }
+
+        // Create a new deferred promise for this import request
+        let resolveRequest: (val: T) => void;
+        let rejectRequest: (err: any) => void;
         const requestPromise = new Promise<T>((res, rej) => {
             resolveRequest = res;
             rejectRequest = rej;
@@ -64,15 +80,55 @@ class ModuleImportCache {
         this.importWithRetry<T>(modulePath)
             .then(result => resolveRequest(result))
             .catch(err => rejectRequest(err));
+        // Cache the in-flight promise BEFORE queueing so simultaneous same-module requests can attach
+        const request: ModuleImportRequest = {
+            promise: requestPromise,
+            refCount: 1
+        };
+        this.cache.set(modulePath, request);
+
+        // Add the import operation to the sequential queue
+        this.importQueue.push(async () => {
+            try {
+                const result = await this.importWithRetry<T>(modulePath);
+                resolveRequest(result);
+            } catch (err) {
+                rejectRequest(err);
+            }
+        });
+
+        // Start processing if not already
+        if (!this.isProcessingQueue) {
+            this.processQueue();
+        }
 
         try {
             return await requestPromise;
         } finally {
+            // Decrement ref count; remove from cache when all requests complete
             request.refCount--;
             if (request.refCount === 0) {
                 this.cache.delete(modulePath);
             }
         }
+    }
+
+    /**
+     * Process the import queue sequentially to avoid browser chunk loading race conditions.
+     */
+    private async processQueue() {
+        if (this.isProcessingQueue || this.importQueue.length === 0) return;
+        
+        this.isProcessingQueue = true;
+        
+        while (this.importQueue.length > 0) {
+            const importTask = this.importQueue.shift();
+            if (importTask) {
+                await importTask();
+            }
+        }
+        
+        this.isProcessingQueue = false;
     }
 
     /**
@@ -106,6 +162,7 @@ class ModuleImportCache {
         return {
             pendingImports: this.cache.size,
             cachedModules: Array.from(this.cache.keys()),
+            cachedModules: Array.from(this.cache.keys())
         };
     }
 }
