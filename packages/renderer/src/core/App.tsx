@@ -65,37 +65,6 @@ import { importWithRetry } from '@/utils/dynamicImport';
 
 const lazyWithRetry = (componentImport: () => Promise<any>) => {
     return lazy(() => importWithRetry(componentImport));
-    return lazy(async () => {
-        let retries = 3;
-        let interval = 500;
-        while (retries > 0) {
-            try {
-                return await componentImport();
-            } catch (error: any) {
-                const isChunkLoadError = error?.name === 'ChunkLoadError' || 
-                    (error?.message && (
-                        error.message.includes('Failed to fetch dynamically imported module') ||
-                        error.message.includes('Importing a module script failed') ||
-                        error.message.includes('Loading chunk')
-                    ));
-
-                if (isChunkLoadError) {
-                    retries--;
-                    if (retries === 0) {
-                        logger.warn('Chunk load failed after retries, forcing page reload.');
-                        window.location.reload();
-                        // Return a promise that never resolves while the page reloads
-                        return new Promise(() => {}); 
-                    }
-                    await new Promise(resolve => setTimeout(resolve, interval));
-                    interval *= 1.5;
-                } else {
-                    throw error;
-                }
-            }
-        }
-        return await componentImport(); // Should not reach here
-    });
 };
 
 
