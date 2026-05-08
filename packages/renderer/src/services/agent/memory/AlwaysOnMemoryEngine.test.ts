@@ -312,7 +312,10 @@ describe('AlwaysOnMemoryEngine', () => {
             mockGetDocs.mockResolvedValue({ docs: [], empty: true });
 
             const answer = await engine.query('What do I like?');
-            expect(answer).toContain("don't have any memories");
+            // ISSUE-042: When no memories exist, fallback to LLM general knowledge
+            // instead of hard-failing. The mocked generateText returns 'Test summary of the content'
+            expect(answer).toContain('Test summary of the content');
+            expect(mockGenerateText).toHaveBeenCalled();
         });
     });
 
