@@ -58,20 +58,20 @@ export function generateOpenAPISpec(): Record<string, unknown> {
       version: '1.0.0',
       contact: {
         name: 'IndiiOS Support',
-        email: 'support@indiios.com',
+        email: 'support@indii.music',
       },
       license: {
         name: 'Proprietary',
-        url: 'https://indiios.com/license',
+        url: 'https://indii.music/license',
       },
     },
     servers: [
       {
-        url: 'https://api.indiios.com',
+        url: 'https://api.indii.music',
         description: 'Production',
       },
       {
-        url: 'https://staging-api.indiios.com',
+        url: 'https://staging-api.indii.music',
         description: 'Staging',
       },
     ],

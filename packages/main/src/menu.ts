@@ -101,7 +101,7 @@ export function setupMenu(mainWindow: BrowserWindow) {
                 {
                     label: 'Learn More',
                     click: async () => {
-                        await shell.openExternal('https://indiios.com');
+                        await shell.openExternal('https://indii.music');
                     }
                 }
             ]

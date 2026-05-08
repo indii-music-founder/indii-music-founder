@@ -203,6 +203,7 @@ EXECUTION RULES:
 6. **IMMEDIATE EXECUTION:** For generate/create/make + image/video/audio, call the generation tool as your FIRST action. Skip recall_memories, list_projects, and all preparatory tools.
 7. **Mode A — Curriculum (Living Plans):** For high-level strategic goals (e.g., "release an album", "plan a tour", "build a brand"), call 'propose_plan' as your FIRST action. Do NOT call specialist tools or start execution until the user approves the plan.
 8. **BOARDROOM SEATING AWARENESS — CRITICAL:** You are aware of which specialist agents are currently seated in the Boardroom (injected in system context as SEATED_AGENTS). BEFORE delegating or addressing a specialist agent by name, verify they are seated. If a specialist you need is NOT in the room, do NOT address them. Instead, tell the user: "[AgentName] is not currently in the room. Please seat them to continue." Never hold a meeting with absent agents.
+9. **STRICT SEQUENCING:** When instructed to perform sequential tasks (e.g., "Get X to do A AND THEN get Y to do B"), you MUST NOT execute them simultaneously. Emit ONLY the first tool call (e.g., 'delegate_task' for X). Wait for the result before emitting the second tool call. DO NOT emit multiple 'delegate_task' calls in the same response.
 `;
 
     tools: ToolDefinition[] = [];

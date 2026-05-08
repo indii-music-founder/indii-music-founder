@@ -137,7 +137,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
         }
 
         const slug = args.trackTitle.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-        const previewUrl = `https://app.indiios.com/preview/${slug}?gate=${args.tokenContractAddress}`;
+        const previewUrl = `https://app.indii.music/preview/${slug}?gate=${args.tokenContractAddress}`;
 
         try {
             const { db, auth } = await import('@/services/firebase');

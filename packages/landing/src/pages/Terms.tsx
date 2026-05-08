@@ -194,8 +194,8 @@ export default function Terms() {
         <div className="text-gray-300 mt-4 space-y-2">
           <p>
             Email:{' '}
-            <a href="mailto:legal@indiios.com" className="text-purple-400 hover:text-purple-300">
-              legal@indiios.com
+            <a href="mailto:legal@indii.music" className="text-purple-400 hover:text-purple-300">
+              legal@indii.music
             </a>
           </p>
           <p>
