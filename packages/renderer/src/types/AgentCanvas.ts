@@ -8,7 +8,7 @@
  */
 
 /** Supported content types for agent-pushed canvas panels. */
-export type CanvasContentType = 'chart' | 'table' | 'card' | 'html' | 'markdown';
+export type CanvasContentType = 'chart' | 'table' | 'card' | 'html' | 'markdown' | 'shape';
 
 /** Chart type hints for structured chart rendering. */
 export type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter' | 'radar';
