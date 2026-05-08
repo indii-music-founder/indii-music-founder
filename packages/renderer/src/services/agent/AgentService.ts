@@ -79,6 +79,10 @@ export class AgentService {
         }
         this.isProcessing = true;
 
+        // ISSUE-045: Sync store's isAgentProcessing with service's processing state
+        const { useStore } = await import('@/core/store');
+        useStore.getState().setAgentProcessing(true);
+
         // Ensure agents are warmed up before processing (non-blocking if already done)
         if (!this.isWarmedUp) {
             await this.warmup();
@@ -103,7 +107,6 @@ export class AgentService {
             attachments,
             source: options?.source || 'desktop',
         };
-        const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const isBoardroomMode = state.conversationMode === 'boardroom';
         logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
@@ -149,6 +152,7 @@ export class AgentService {
                 useStore.getState().addAgentMessage(msgPayload);
             }
             this.isProcessing = false;
+            useStore.getState().setAgentProcessing(false);
             return;
         }
 
@@ -306,6 +310,9 @@ export class AgentService {
             this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
+            // ISSUE-045: Reset store's isAgentProcessing flag
+            const { useStore } = await import('@/core/store');
+            useStore.getState().setAgentProcessing(false);
         }
     }
 
