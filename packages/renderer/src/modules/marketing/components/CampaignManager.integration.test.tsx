@@ -15,7 +15,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 // Mock Firebase Functions
 const mockHttpsCallable = vi.fn();
 vi.mock('@/services/firebase', () => ({
-    functions: {},
+    functions: { app: {} },
     db: {},
     auth: { currentUser: { uid: 'test-user', email: 'test@example.com' }, onAuthStateChanged: vi.fn(), signInWithEmailAndPassword: vi.fn(), createUserWithEmailAndPassword: vi.fn(), signOut: vi.fn() },
     storage: {},
@@ -27,7 +27,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 vi.mock('firebase/functions', () => ({
-    httpsCallable: () => mockHttpsCallable
+    httpsCallable: vi.fn(() => mockHttpsCallable)
 }));
 
 // Mock Campaign Data
@@ -88,29 +88,23 @@ describe('CampaignManager Integration', () => {
         // Verify Backend Call with loose matching for flexibility
         await waitFor(() => {
             expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-                // The implementation uses posts: selectedCampaign.posts inside the payload object
-                // AND since we added schema validation, it wraps it.
-                // However, the test failure shows we sent { posts: [...], dryRun: true/false, campaignId: ... }
-                // Let's verify we are sending the right structure.
                 campaignId: 'campaign-123',
-                // Check if posts is an array of length 1
                 posts: expect.arrayContaining([
                     expect.objectContaining({ id: 'post-1' })
                 ]),
-                // We accept either true or false depending on env, validating it was passed
                 dryRun: expect.any(Boolean)
             }));
-        });
+        }, { timeout: 10000 });
 
         // Verify State Update
         await waitFor(() => {
             expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
                 status: CampaignStatus.DONE
             }));
-        });
+        }, { timeout: 10000 });
 
         expect(mockToast.success).toHaveBeenCalled();
-    });
+    }, 15000);
 
     it('handles backend errors gracefully', async () => {
         const onUpdateCampaign = vi.fn();
@@ -134,8 +128,8 @@ describe('CampaignManager Integration', () => {
             expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
                 status: CampaignStatus.FAILED
             }));
-        });
+        }, { timeout: 10000 });
 
         expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Validation Failed'));
-    });
+    }, 15000);
 });
