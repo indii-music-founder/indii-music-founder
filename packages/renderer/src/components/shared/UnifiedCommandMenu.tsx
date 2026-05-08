@@ -105,7 +105,7 @@ export function UnifiedCommandMenu() {
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('files'))} className="flex items-center gap-3 cursor-pointer">
                             <FolderOpen className="w-4 h-4 text-emerald-400" />
-                            <span>File Explorer</span>
+                            <span>Inbox & Project Files</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('agent'))} className="flex items-center gap-3 cursor-pointer">
                             <Cpu className="w-4 h-4 text-indigo-400" />

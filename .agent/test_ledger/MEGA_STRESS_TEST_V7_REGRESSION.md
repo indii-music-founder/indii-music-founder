@@ -1,6 +1,6 @@
-# Mega Stress Test Plan v4.0 (The Regression Gauntlet)
+# Mega Stress Test Plan v7.0 (The Regression Gauntlet)
 
-Building upon the Tool Gauntlet (v3), Version 4 is a **targeted regression and hardening test**.
+Building upon the previous Gauntlets (v1-v6), Version 7 is a **targeted regression and hardening test**.
 Every routine maps directly to a previously found-and-fixed bug (ISSUE-001 through ISSUE-043) or a
 CodeRabbit security/quality finding from PRs #1707 and #1703.
 
