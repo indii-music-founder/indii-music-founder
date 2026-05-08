@@ -319,7 +319,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
-        const { useStore } = await moduleImportCache.import('@/core/store');
+        const { useStore } = await moduleImportCache.import('@/core/store', () => import('@/core/store'));
         const state = useStore.getState();
         const { updateAgentMessage } = state;
         const conversationMode = state.conversationMode;
@@ -1097,7 +1097,7 @@ The user will see this plan and can approve it to start execution.`;
             if (!context.livingContext) {
                 const { auth } = await import('@/services/firebase');
                 if (auth.currentUser) {
-                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService');
+                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('./living/LivingFileService'));
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
                 }
             }

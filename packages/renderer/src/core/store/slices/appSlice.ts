@@ -56,6 +56,10 @@ export interface AppSlice {
     _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
     _lastRightPanelToggle?: number;
+    /** @internal Navigation history stack for back button tracking (ISSUE-043) */
+    _navigationHistory?: ModuleId[];
+    /** @internal Debounce tracker for rapid module switches (ISSUE-043) */
+    _lastModuleSwitch?: number;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -77,12 +81,28 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     },
     setModule: (module) => {
         const state = get();
+        const now = Date.now();
+
+        // ISSUE-043: Debounce rapid navigation clicks (100ms min between switches)
+        // Prevents history stack from being overwritten by double/triple-clicks
+        if (state._lastModuleSwitch && now - state._lastModuleSwitch < 100) {
+            logger.debug(`[AppSlice] Navigation debounced (${now - state._lastModuleSwitch}ms since last switch)`);
+            return;
+        }
+
         if (state.hasUnsavedChanges && state.currentModule !== module) {
             const confirmLeave = window.confirm("You have unsaved changes that will be lost. Are you sure you want to leave?");
             if (!confirmLeave) {
                 return;
             }
             set({ hasUnsavedChanges: false });
+        }
+
+        // Track navigation history for proper Back button behavior
+        const history = state._navigationHistory ?? [state.currentModule];
+        const shouldAddToHistory = state.currentModule !== module && !history.includes(module);
+        if (shouldAddToHistory && history[history.length - 1] !== module) {
+            history.push(module);
         }
 
         // Aggressively tear down listeners from previous modules
@@ -112,6 +132,8 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
 
         set({
             currentModule: module,
+            _navigationHistory: history,
+            _lastModuleSwitch: now,
         });
     },
     setProject: (id) => set({ currentProjectId: id }),

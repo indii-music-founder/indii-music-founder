@@ -657,7 +657,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Reliability
 - **Module:** Core App / AgentService / ModuleImportCache
