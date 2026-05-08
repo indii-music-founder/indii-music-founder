@@ -79,6 +79,20 @@ export class AgentService {
         }
         this.isProcessing = true;
 
+        // ISSUE-045: Sync store's isAgentProcessing with service's processing state
+
+        let useStore: any = null;
+        try {
+            const imported = await import('@/core/store');
+            useStore = imported.useStore;
+            const state = useStore.getState();
+            if (typeof state.setAgentProcessing === 'function') {
+                state.setAgentProcessing(true);
+            }
+        } catch (_) {
+            // Silently ignore if store import fails or setAgentProcessing doesn't exist
+        }
+
         // Ensure agents are warmed up before processing (non-blocking if already done)
         if (!this.isWarmedUp) {
             await this.warmup();
@@ -103,7 +117,6 @@ export class AgentService {
             attachments,
             source: options?.source || 'desktop',
         };
-        const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const isBoardroomMode = state.conversationMode === 'boardroom';
         logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
@@ -143,10 +156,16 @@ export class AgentService {
                 agentId: cached.agentId
             };
 
-            if (isBoardroomMode) {
-                useStore.getState().addBoardroomMessage(msgPayload);
-            } else {
-                useStore.getState().addAgentMessage(msgPayload);
+            if (useStore) {
+                if (isBoardroomMode) {
+                    useStore.getState().addBoardroomMessage(msgPayload);
+                } else {
+                    useStore.getState().addAgentMessage(msgPayload);
+                }
+                const state = useStore.getState();
+                if (typeof state.setAgentProcessing === 'function') {
+                    state.setAgentProcessing(false);
+                }
             }
             this.isProcessing = false;
             return;
@@ -191,8 +210,8 @@ export class AgentService {
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
                         const currentState = useStore.getState();
                         const resultMsg = isBoardroomMode 
-                            ? currentState.boardroomMessages.find(m => m.id === responseId)
-                            : currentState.agentHistory.find(m => m.id === responseId);
+                            ? currentState.boardroomMessages.find((m: AgentMessage) => m.id === responseId)
+                            : currentState.agentHistory.find((m: AgentMessage) => m.id === responseId);
 
                         // After success, populate cache if not a generation request
                         if (!isGenerationRequest) {
@@ -306,6 +325,17 @@ export class AgentService {
             this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
+            // ISSUE-045: Reset store's isAgentProcessing flag
+            if (useStore) {
+                try {
+                    const state = useStore.getState();
+                    if (typeof state.setAgentProcessing === 'function') {
+                        state.setAgentProcessing(false);
+                    }
+                } catch (_) {
+                    // Silently ignore if reset fails
+                }
+            }
         }
     }
 
@@ -319,7 +349,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
-        const { useStore } = await moduleImportCache.import('@/core/store');
+        const { useStore } = await moduleImportCache.import('@/core/store', () => import('@/core/store'));
         const state = useStore.getState();
         const { updateAgentMessage } = state;
         const conversationMode = state.conversationMode;
@@ -1097,7 +1127,7 @@ The user will see this plan and can approve it to start execution.`;
             if (!context.livingContext) {
                 const { auth } = await import('@/services/firebase');
                 if (auth.currentUser) {
-                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService');
+                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('./living/LivingFileService'));
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
                 }
             }

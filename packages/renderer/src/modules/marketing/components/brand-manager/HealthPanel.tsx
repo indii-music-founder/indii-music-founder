@@ -187,7 +187,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                     >
                         <div className="flex items-center justify-between border-b border-white/5 pb-8">
                             <div>
-                                <h2 className="text-3xl font-black text-white mb-2 tracking-tight flex items-center gap-3">
+                                <h2 className="text-lg font-black text-white mb-2 tracking-tight flex items-center gap-3">
                                     Consistency Report
                                     {analysisResult.isConsistent && <CheckCircle size={24} className="text-emerald-500" />}
                                 </h2>
@@ -195,7 +195,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                             </div>
                             <div className="text-right">
                                 <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Brand Score</div>
-                                <div className={`text-5xl font-black ${analysisResult.score > 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                <div className={`text-base font-black ${analysisResult.score > 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
                                     {analysisResult.score}%
                                 </div>
                             </div>

@@ -45,7 +45,7 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                     </button>
                     <div className="flex-1">
                         <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-white">{campaign.title}</h1>
+                            <h1 className="text-lg font-bold text-white">{campaign.title}</h1>
                             <span
                                 data-testid="campaign-status-badge"
                                 className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
@@ -144,7 +144,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, subtext, icon }) => (
         <div className="flex items-center gap-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
             {icon} {label}
         </div>
-        <div className="text-2xl font-bold text-white">{value}</div>
+        <div className="text-base font-bold text-white">{value}</div>
         {subtext && <div className="text-xs text-green-400 font-medium">{subtext}</div>}
     </div>
 );
