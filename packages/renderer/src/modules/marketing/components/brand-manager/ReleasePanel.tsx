@@ -78,7 +78,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                                 value={release.title}
                                 onChange={(e) => handleUpdateRelease('title', e.target.value)}
                                 onBlur={handleSaveRelease}
-                                className="text-5xl md:text-6xl font-black text-white bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-gray-800 tracking-tight leading-none"
+                                className="text-base md:text-lg font-black text-white bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-gray-800 tracking-tight leading-none"
                                 placeholder="UNTITLED PROJECT"
                             />
                         </div>
