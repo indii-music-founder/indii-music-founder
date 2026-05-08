@@ -2,6 +2,23 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.61.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.61.0...v1.61.1) (2026-05-08)
+
+
+### Bug Fixes
+
+* **agent,test:** refine ISSUE-045 solution with safe store access pattern ([f9ef945](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f9ef945ca0392985ce8b8d8161d93c07c2516f2c))
+* **platinum:** resolve merge conflict residue and duplicate state variable ([52d73f9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/52d73f991278bad85c1f3e5245d3d2bf20852c59))
+* resolve AgentService type errors after ModuleImportCache signature update ([c87a582](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c87a582a97180a11b98b0f62fd9be0cf07854b88))
+* resolve critical syntax errors in AgentService and ModuleImportCache preventing CI build ([ce607b0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ce607b007c7c72f00dfb9fcf90b1c92efa8c7cfb))
+* resolve ModuleImportCache duplicate function signature breaking CI build ([8b2a649](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8b2a649275b4cb79378fa2e6f0252bb5d1570204))
+
+
+### Documentation
+
+* document ISSUE-055 resolution ([2fdce51](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2fdce51e82d0872fe6bc95465b044ac90cfd1327))
+* mark ISSUE-045 and ISSUE-046 as fixed with final details ([76eadbc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/76eadbcc24a1e870f50cb84c39a9abfd48abc24a))
+
 ## [1.61.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.60.1...v1.61.0) (2026-05-08)
 
 
