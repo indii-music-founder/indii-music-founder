@@ -49,17 +49,17 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-lg">{getShapeIcon()}</span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
+            <span className="text-sm">{getShapeIcon()}</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-cyan-400">
               {getShapeLabel()} Plan
             </span>
             {draft.autoApprove && (
-              <span className="text-xs text-green-400">Auto-approve</span>
+              <span className="text-[9px] text-green-400">Auto-approve</span>
             )}
           </div>
-          <h3 className="text-sm font-semibold text-white">{draft.summary}</h3>
+          <h3 className="text-[11px] font-semibold text-white leading-snug">{draft.summary}</h3>
           {draft.durationDays && (
-            <p className="mt-1 text-xs text-cyan-300">
+            <p className="mt-1 text-[10px] text-cyan-300">
               Duration: {draft.durationDays} days
             </p>
           )}
@@ -82,7 +82,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           {/* Steps / Phases */}
           {draft.shape !== 'timeline' && draft.steps && draft.steps.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-cyan-300">Plan Nodes</h4>
+              <h4 className="text-[10px] font-semibold text-cyan-300">Plan Nodes</h4>
               <div className="mt-3 space-y-4">
                 {Object.entries(
                   draft.steps.reduce((acc, step, i) => {
@@ -100,7 +100,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                   const headName = dept ? dept.displayName : (headId === 'generalist' ? 'Indii Conductor' : headId);
                   return (
                     <div key={headId} className="space-y-1 bg-black/20 rounded-md p-2 border border-white/5">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1 mb-2 pl-1">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1 mb-2 pl-1">
                         {headName} Node
                       </div>
                       <ol className="space-y-2">
@@ -111,7 +111,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                           const workerName = isWorkerNode ? agentId.split('.')[1] : null;
 
                           return (
-                            <li key={step.id} className="text-xs text-cyan-200/70 pl-1">
+                            <li key={step.id} className="text-[10px] text-cyan-200/70 pl-1">
                               <div className="flex items-start gap-2">
                                 <span className="font-semibold text-cyan-500/50 mt-0.5">{index + 1}.</span>
                                 <div className="flex-1">
@@ -139,10 +139,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
           {draft.shape === 'timeline' && draft.phases && draft.phases.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-cyan-300">Phases</h4>
+              <h4 className="text-[10px] font-semibold text-cyan-300">Phases</h4>
               <ol className="mt-2 space-y-1">
                 {draft.phases.map((phase, i) => (
-                  <li key={phase.id} className="text-xs text-cyan-200/70">
+                  <li key={phase.id} className="text-[10px] text-cyan-200/70">
                     <span className="font-semibold">{i + 1}.</span> {phase.title} ({phase.days}d)
                   </li>
                 ))}
@@ -154,16 +154,16 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           <div className="grid grid-cols-2 gap-2">
             {draft.estimatedCost && (
               <div className="rounded bg-cyan-500/10 p-2">
-                <p className="text-xs text-cyan-300">Est. Cost</p>
-                <p className="text-xs font-semibold text-white">
+                <p className="text-[9px] text-cyan-300">Est. Cost</p>
+                <p className="text-[10px] font-semibold text-white">
                   ${draft.estimatedCost.dollars.toFixed(2)}
                 </p>
               </div>
             )}
             {draft.risks && draft.risks.length > 0 && (
               <div className="rounded bg-orange-500/10 p-2">
-                <p className="flex items-center gap-1 text-xs text-orange-300">
-                  <AlertCircle size={12} />
+                <p className="flex items-center gap-1 text-[10px] text-orange-300">
+                  <AlertCircle size={10} />
                   {draft.risks.length} Risk{draft.risks.length !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -171,7 +171,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           </div>
 
           {draft.risks && draft.risks.length > 0 && (
-            <div className="text-xs text-orange-200/70">
+            <div className="text-[10px] text-orange-200/70">
               {draft.risks.map((risk, i) => (
                 <p key={i} className="mb-1">
                   • {risk}
@@ -183,14 +183,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex gap-1.5">
         {plan.status === 'drafting' ? (
           <>
             {!draft.autoApprove ? (
               <button
                 onClick={onApprove}
                 disabled={isLoading}
-                className="flex-1 rounded bg-cyan-500/20 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50 transition-colors"
+                className="flex-1 rounded bg-cyan-500/20 px-2 py-1.5 text-[10px] font-semibold text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? 'Running...' : 'Approve & Start'}
               </button>
@@ -198,28 +198,28 @@ export const PlanCard: React.FC<PlanCardProps> = ({
               <button
                 onClick={onApprove}
                 disabled={isLoading}
-                className="flex-1 rounded bg-green-500/20 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                className="flex-1 rounded bg-green-500/20 px-2 py-1.5 text-[10px] font-semibold text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
               >
-                {isLoading ? <Zap size={14} className="animate-pulse inline mr-1" /> : '✓ Start Auto-plan'}
+                {isLoading ? <Zap size={10} className="animate-pulse inline mr-1" /> : '✓ Start Auto-plan'}
               </button>
             )}
             <button
               onClick={onRefine}
               disabled={isLoading}
-              className="rounded bg-white/5 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="rounded bg-white/5 px-2.5 py-1.5 text-[10px] font-semibold text-cyan-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
             >
               Refine
             </button>
             <button
               onClick={onCancel}
               disabled={isLoading}
-              className="rounded bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+              className="rounded bg-red-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
             >
               Cancel
             </button>
           </>
         ) : (
-          <div className="flex-1 rounded bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-400 text-center border border-cyan-500/20">
+          <div className="flex-1 rounded bg-cyan-500/10 px-2 py-1.5 text-[10px] font-semibold text-cyan-400 text-center border border-cyan-500/20">
             {plan.status === 'cancelled' ? 'Plan Cancelled' : 'Plan Active'}
           </div>
         )}

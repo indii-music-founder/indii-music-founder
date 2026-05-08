@@ -24,7 +24,6 @@ export default function RightPanel() {
         toggleRightPanel,
         rightPanelTab,
         setRightPanelTab,
-        toggleAgentWindow,
         agentHistory,
         userProfile,
         isAgentProcessing,
@@ -38,7 +37,6 @@ export default function RightPanel() {
             toggleRightPanel: state.toggleRightPanel,
             rightPanelTab: state.rightPanelTab,
             setRightPanelTab: state.setRightPanelTab,
-            toggleAgentWindow: state.toggleAgentWindow,
             agentHistory: state.agentHistory,
             userProfile: state.userProfile,
             isAgentProcessing: state.isAgentProcessing,
@@ -102,9 +100,9 @@ export default function RightPanel() {
                             </button>
                         </div>
                         <button
-                            onClick={toggleAgentWindow}
+                            onClick={toggleRightPanel}
                             className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            aria-label="Close Chat Window"
+                            aria-label="Close Panel"
                         >
                             <ChevronRight size={16} />
                         </button>
