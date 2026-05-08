@@ -132,7 +132,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                 <div className="text-center p-12 text-white/40">
                                     <Layers className="mx-auto mb-4 opacity-20" size={32} />
                                     <p className="text-xs font-medium text-gray-300">No living plans found.</p>
-                                    <p className="text-[10px] mt-2">Ask indii Conductor to propose a strategy or plan for your project.</p>
+                                    <p className="text-xs mt-2 opacity-80">Ask indii Conductor to propose a strategy or plan for your project.</p>
                                 </div>
                             ) : (
                                 plans.map(plan => (
