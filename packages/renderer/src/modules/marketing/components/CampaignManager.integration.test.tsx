@@ -103,9 +103,6 @@ describe('CampaignManager Integration', () => {
             }));
             expect(mockToast.success).toHaveBeenCalled();
         }, { timeout: 10000 });
-        }, { timeout: 10000 });
-
-        expect(mockToast.success).toHaveBeenCalled();
     }, 15000);
 
     it('handles backend errors gracefully', async () => {
@@ -133,8 +130,5 @@ describe('CampaignManager Integration', () => {
             }));
             expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Validation Failed'));
         }, { timeout: 10000 });
-        }, { timeout: 10000 });
-
-        expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Validation Failed'));
     }, 15000);
 });
