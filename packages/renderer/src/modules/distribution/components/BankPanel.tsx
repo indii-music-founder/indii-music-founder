@@ -87,7 +87,7 @@ export const BankPanel: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex flex-col gap-2">
-                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
+                    <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
                     <p className="text-gray-500 font-medium max-w-xl">
                         Locally processed financial compliance and automated revenue splits.
                         IndiiOS executes all logic via secure-context Python bridges.
@@ -257,11 +257,11 @@ export const BankPanel: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-distribution/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Withholding</span>
-                                        <span data-testid="bank-tax-withholding-rate" className="text-2xl font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
+                                        <span data-testid="bank-tax-withholding-rate" className="text-base font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
                                     </div>
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-licensing/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Payout Node</span>
-                                        <span className="text-2xl font-black text-white italic">{taxReport.payout_status}</span>
+                                        <span className="text-base font-black text-white italic">{taxReport.payout_status}</span>
                                     </div>
                                 </div>
 
@@ -276,7 +276,7 @@ export const BankPanel: React.FC = () => {
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
-                                        <span data-testid="bank-tax-net-disbursable" className="text-3xl font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
+                                        <span data-testid="bank-tax-net-disbursable" className="text-lg font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
                                             ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString()}
                                         </span>
                                     </div>
@@ -318,7 +318,7 @@ export const BankPanel: React.FC = () => {
 
                                 <div className="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
                                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
-                                    <span className="text-3xl font-black text-white italic">${waterfallReport.net_revenue.toLocaleString()}</span>
+                                    <span className="text-lg font-black text-white italic">${waterfallReport.net_revenue.toLocaleString()}</span>
                                 </div>
                             </div>
                         )

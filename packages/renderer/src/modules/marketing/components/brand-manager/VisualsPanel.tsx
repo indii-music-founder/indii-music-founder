@@ -156,7 +156,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                     </div>
                     <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-marketing/30">
                         <div className="absolute top-0 right-0 p-12 bg-purple-500/5 blur-[40px] rounded-full group-hover:bg-purple-500/10 transition-colors" />
-                        <p className="text-5xl font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
+                        <p className="text-base font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
                         <div className="flex items-center gap-2 mt-2">
                             <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 font-mono">{brandKit.fonts || 'Inter'}</span>
                             <span className="text-[10px] text-emerald-500 flex items-center gap-1"><CheckCircle size={8} /> Active</span>

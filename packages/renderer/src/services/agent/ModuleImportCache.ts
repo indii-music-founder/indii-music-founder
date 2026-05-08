@@ -30,6 +30,10 @@ class ModuleImportCache {
      * Multiple simultaneous requests for the same module share the same promise.
      * Unrelated modules are fetched concurrently (no global queue).
      */
+    async import<T = any>(moduleId: string, importFn: () => Promise<T>): Promise<T> {
+        // Cache-hit: attach to the in-flight promise
+        if (this.cache.has(moduleId)) {
+            const request = this.cache.get(moduleId)!;
     async import<T = any>(modulePath: string): Promise<T> {
         // Cache-hit: attach to the in-flight promise
         if (this.cache.has(modulePath)) {
@@ -41,6 +45,7 @@ class ModuleImportCache {
                 // Decrement refCount for cache-hit callers too
                 request.refCount--;
                 if (request.refCount === 0) {
+                    this.cache.delete(moduleId);
                     this.cache.delete(modulePath);
                 }
             }
@@ -58,6 +63,10 @@ class ModuleImportCache {
             promise: requestPromise,
             refCount: 1,
         };
+        this.cache.set(moduleId, request);
+
+        // Fire the import immediately (parallel is correct — no global queue)
+        this.importWithRetry<T>(importFn)
         this.cache.set(modulePath, request);
 
         // Fire the import immediately (parallel is correct — no global queue)
@@ -71,6 +80,7 @@ class ModuleImportCache {
             // Decrement ref count; remove from cache when all requests complete
             request.refCount--;
             if (request.refCount === 0) {
+                this.cache.delete(moduleId);
                 this.cache.delete(modulePath);
             }
         }
@@ -80,14 +90,14 @@ class ModuleImportCache {
      * Import with exponential backoff retry on transient failures.
      * Retries up to 3 times with 100ms, 200ms, 400ms delays.
      */
-    private async importWithRetry<T = any>(modulePath: string, attempt = 1): Promise<T> {
+    private async importWithRetry<T = any>(importFn: () => Promise<T>, attempt = 1): Promise<T> {
         try {
-            return await import(modulePath);
+            return await importFn();
         } catch (error) {
             if (attempt < this.maxRetries) {
                 const delayMs = this.retryDelayMs * Math.pow(2, attempt - 1);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
-                return this.importWithRetry<T>(modulePath, attempt + 1);
+                return this.importWithRetry<T>(importFn, attempt + 1);
             }
             throw error;
         }
