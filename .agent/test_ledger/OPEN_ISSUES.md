@@ -653,3 +653,20 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Summary:** When rapidly double/triple-clicking across multiple tools in the sidebar (e.g., Audio Analyzer -> Workflow Builder -> Knowledge Base), the underlying history stack occasionally drops intermediate routes. Pressing "Back" skips over routes that were double-clicked, suggesting debouncing or overwriting is interfering with a 1:1 history map.
 - **UX Impact:** Power users rapidly clicking around may find the browser "Back" button behavior unpredictable.
 
+
+---
+
+### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Reliability
+- **Module:** Core App / AgentService / ModuleImportCache
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test Section 1)
+- **Steps to Reproduce:**
+  1. Boot the application in `dev:web` mode.
+  2. Navigate to Creative Director or Boardroom.
+  3. Attempt to interact with any agent (e.g. "generate 5 album covers at once").
+  4. The application crashes/fails the action. Console logs show `TypeError: Failed to resolve module specifier '@/core/store'`.
+- **User Impact:** Agents cannot load necessary modules, rendering all agentic features completely broken.
+- **Screenshot:** See subagent logs `mega_stress_test_sec1_...`
+- **Notes:** Could be related to recent dynamic import caching changes or Vite alias resolution.
