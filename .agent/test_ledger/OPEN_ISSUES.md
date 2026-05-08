@@ -827,3 +827,15 @@ Caller can decide whether to retry, surface error, or silently log.
 - **User Impact:** Agents cannot load necessary modules, rendering all agentic features completely broken.
 - **Screenshot:** See subagent logs `mega_stress_test_sec1_...`
 - **Notes:** Could be related to recent dynamic import caching changes or Vite alias resolution.
+
+---
+
+### ISSUE-055: Production CI Build Pipeline Failure (Syntax Error)
+- **Status:** ✅ FIXED (ce607b00)
+- **Severity:** 🔴 CRITICAL
+- **Module:** CI Pipeline / AgentService
+- **Found:** 2026-05-08 by CI Deployment Log (PR #1710/#1712)
+- **Summary:** The `[vite:esbuild]` production build threw an error: `Expected ";" but found "async"` at `private async executeFlow()`. This was caused by two critical syntax errors introduced during previous stability work: 1) a missing closing brace `}` inside an `if (useStore)` block in `sendMessage()`, and 2) a malformed, duplicated method signature inside `ModuleImportCache.ts`.
+- **Root Cause:** A botched regex/AST replacement by a previous agent dropped closing braces and duplicated function definitions. The local test suite did not catch it because of how `tsc` caching worked, but `electron-vite` correctly caught the syntax errors during the production transpilation step.
+- **Fix Applied:** Restored the missing closing brace in `AgentService.ts` and cleanly rewrote the `import` and `importWithRetry` methods in `ModuleImportCache.ts`.
+- **User Impact:** The CI pipeline is now fully unblocked and the production build completes successfully.
