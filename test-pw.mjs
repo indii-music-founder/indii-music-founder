@@ -28,4 +28,13 @@ import { chromium } from '@playwright/test';
     // CodeRabbit (PR #1707): browser.close() must be in finally to prevent process leaks
     await browser.close();
   }
+    
+    console.log(JSON.stringify(inputs, null, 2));
+  } catch(e) {
+    console.error(e);
+    process.exitCode = 1;
+  } finally {
+    // CodeRabbit (PR #1707): browser.close() must be in finally to prevent process leaks
+    await browser.close();
+  }
 })();

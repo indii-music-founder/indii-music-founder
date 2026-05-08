@@ -63,3 +63,6 @@ b54b483	1.0	26	26	baseline	baseline
 b54b483	1.000	26	26	keep	Fix routing ambiguities in Conductor prompt for ISRC vs Publishing/Finance
 8b39c3f	1.0	26	26	baseline	baseline
 8b39c3f	1.000	26	26	keep	Fix routing ambiguities in Conductor prompt for ISRC vs Publishing/Finance
+8c5ef3f0	1.0	26	26	baseline	baseline
+8c5ef3f0	1.0	26	26	baseline	baseline
+8c5ef3f0	1.0000	26	26	keep	Added explicit mechanical royalties and copyright tiebreaker rules
