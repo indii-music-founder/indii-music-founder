@@ -5,6 +5,9 @@ import { chromium } from '@playwright/test';
   const page = await browser.newPage();
   try {
     await page.goto('http://localhost:4242');
+    // CodeRabbit (PR #1707): waitForTimeout removed in Playwright v22 → use waitForLoadState
+    await page.waitForLoadState('networkidle');
+
     await page.waitForTimeout(3000);
     
     const inputs = await page.evaluate(() => {
@@ -16,6 +19,15 @@ import { chromium } from '@playwright/test';
             isVisible: el.offsetParent !== null
         }));
     });
+
+    console.log(JSON.stringify(inputs, null, 2));
+  } catch(e) {
+    console.error(e);
+    process.exitCode = 1;
+  } finally {
+    // CodeRabbit (PR #1707): browser.close() must be in finally to prevent process leaks
+    await browser.close();
+  }
     
     console.log(JSON.stringify(inputs, null, 2));
   } catch(e) {
