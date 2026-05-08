@@ -292,3 +292,104 @@
   - ✅ Regression test: Seated-Only Delegation Enforcement (blocked by crash)
   - ✅ Regression test: Raw JSON Bleed Check (blocked by crash)
 - **UX Score:** NO-GO
+
+---
+
+## 2026-05-08 - Detroit Producer - DEPARTMENTS Mega Stress Test V4.0 (Section 1)
+- **Modules Tested:** Departments Sidebar Menu
+- **Duration:** ~2 minutes
+- **Findings:** No regressions found.
+- **Key Issues:** None.
+- **Coverage Delta:**
+  - ✅ Routine 1: Accordion Thrash (Pass)
+  - ✅ Routine 4 & 5: Active State Desync & Scroll Sabotage (Pass)
+  - ✅ Routine 8: Double-Click Sabotage (Pass)
+- **UX Score:** 10/10
+
+---
+
+## 2026-05-08 - Detroit Producer - DEPARTMENTS Mega Stress Test V4.0 (Section 2)
+- **Modules Tested:** Marketing, Social Media, Omni Agent
+- **Duration:** ~5 minutes
+- **Findings:** 1 HIGH issue filed, 1 MEDIUM issue filed
+- **Key Issues:**
+  - 🔴 ISSUE-045: Omni Agent Message Dispatch Failure in Departments
+  - 🟡 ISSUE-046: Department Module CSS/Typography Scaling
+- **Coverage Delta:**
+  - ✅ Routine 11: Concurrent Social Drafts (Pass)
+  - ❌ Routine 14: Cross-Dept Delegation (Failed due to blocked interaction)
+- **UX Score:** NO-GO
+
+
+### V5: MANAGER'S OFFICE (MEGA STRESS TEST V5)
+*   **Test Date:** 2026-05-08 (Automated)
+*   **Test Target:** Manager's Office Sidebar Navigation & Modules
+*   **Tester:** Agent / Browser Subagent
+*   **Status:** ✅ GO (Section 1) / 🛑 BLOCKED (Section 2+)
+
+**Results:**
+*   **Routine 1, 4, 8 (UI Thrash, Active State Sync, Double/Triple Click):** ✅ PASSED. Sidebar navigation handled rapid toggling, rapid module switching, and history sync perfectly without React crashes or state desyncs.
+*   **Routine 14+ (Cross-Manager Delegation, Chat Interactions):** 🛑 BLOCKED by ISSUE-045 (Omni Agent Dispatch Failure). Chat dispatch logic prevents interactions with specific managers like Brand Manager or Campaign Manager in the right panel.
+
+---
+
+### V6: PROJECTS & INBOX (MEGA STRESS TEST V6)
+*   **Test Date:** 2026-05-08 (Automated)
+*   **Test Target:** Projects Sidebar Navigation & Duplicate Elements
+*   **Tester:** Agent / Browser Subagent
+*   **Status:** ✅ GO (Section 1)
+
+**Results:**
+*   **Routine 2 (Inbox Double-Mount):** ✅ PASSED. Clicked between the two duplicate "Inbox" items rapidly 10 times. No double-mount issues or state desyncs. Note: Duplicate element logged as ISSUE-047.
+*   **Routine 1 (Accordion Thrash):** ✅ PASSED. Rapid toggling of "Projects" group 10 times was smooth.
+*   **Routine 4 & 8 (Active State Sync & Double-Click):** ✅ PASSED. Double/triple-clicking Inbox items worked. Using browser Back/Forward maintained the active state correctly.
+
+---
+
+### V6: PROJECTS & INBOX (MEGA STRESS TEST V6) - Section 2
+*   **Test Date:** 2026-05-08 (Automated)
+*   **Test Target:** Inbox File Ingestion & Routing
+*   **Tester:** Agent / Browser Subagent
+*   **Status:** ✅ RESOLVED (Awaiting Re-Run)
+*   **Findings:** The Inbox module was previously inaccessible due to navigation routing failures. These issues have been fixed. Clicking an "Inbox" link now routes to the FileDashboard, preventing multiple active states, and "Inbox" is searchable in the Command Menu.
+*   **Key Issues:**
+    *   🟢 ISSUE-048: Navigation Routing Failure to Inbox (FIXED)
+    *   🟢 ISSUE-049: Sidebar State Desync (Multiple Active Items) (FIXED)
+    *   🟢 ISSUE-050: Command Menu Search Failure for Inbox (FIXED)
+    *   🟢 ISSUE-047: Duplicate Inbox Sidebar Items (FIXED)
+*   **Coverage Delta:**
+    *   🔄 Routine 10, 12, 14: Ready for re-run.
+
+---
+
+### V7: REGRESSION & HARDENING (MEGA STRESS TEST V7) - Section 9
+*   **Test Date:** 2026-05-08 (Automated)
+*   **Test Target:** Accessibility & Open Issues Verification
+*   **Tester:** Agent / Browser Subagent
+*   **Status:** ✅ PASSED
+*   **Findings:** 
+    *   Routine 133: Observability module correctly displays and functions with the search/query input bar.
+    *   Routine 134: Memory Agent falls back gracefully and provides generalized knowledge without hard-failing when no memories exist.
+    *   Routine 135: Back-button navigation accurately traverses the history stack (Finance → Knowledge Base → Workflow Builder → Audio Analyzer) with no skipped routes.
+*   **Key Issues Verified:**
+    *   ✅ ISSUE-041: Observability Search Bar
+    *   ✅ ISSUE-042: Memory Agent Fallback
+    *   ✅ ISSUE-043: Navigation History
+
+---
+
+### V7: REGRESSION & HARDENING (MEGA STRESS TEST V7) - Sections 1, 3, & 5 (Partial)
+*   **Test Date:** 2026-05-08 (Automated)
+*   **Test Target:** Core Agent Delegation, UI Layout & Canvas Integrity, Rapid State Switching
+*   **Tester:** Agent / Browser Subagent
+*   **Status:** ❌ PARTIAL FAIL
+*   **Findings:**
+    *   **Section 1:** Routines 102, 103, 104, 105 passed. Routine 101 failed (Agent sequential delegation failed).
+    *   **Section 3:** Routines 109, 110 passed. Routine 111 failed (Search modal doesn't close on backdrop click). Routine 115 failed (CanvasTools draw_shape executes but renders nothing).
+    *   **Section 5:** Routine 122 (Boardroom seat spam) passed without crash.
+    *   **General:** Discovered `Failed to resolve module specifier '@/core/store'` in Boardroom logs. Social Media agent response partially blocked by Model Armor.
+*   **Key Issues Logged:**
+    *   🔴 ISSUE-051: Boardroom Agent Sequential Delegation Failure
+    *   🟢 ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
+    *   🔴 ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
+    *   🟡 ISSUE-054: Boardroom Import Error (@/core/store)
