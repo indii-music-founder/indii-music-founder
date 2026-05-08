@@ -5,6 +5,13 @@ import type { CanvasContentType, CanvasData, CanvasPushPayload } from '@/types/A
 import { secureRandomHex } from '@/utils/crypto-random';
 
 /**
+ * ISSUE-035 Fix: Z-Index Ceiling for Canvas Shapes
+ * Prevents agents from rendering shapes with excessively high z-index
+ * that could obscure interactive UI elements and lock users out.
+ */
+const MAX_Z_INDEX = 1000;
+
+/**
  * CanvasTools — Agent-to-UI Push (A2UI)
  *
  * Allows agents to push structured visual content (charts, tables, cards,
@@ -82,6 +89,98 @@ export const CanvasTools = {
         } catch (error: unknown) {
             logger.error('[CanvasTools] canvas_clear error:', error);
             return toolError(`Failed to clear canvas: ${String(error)}`, 'CANVAS_CLEAR_ERROR');
+        }
+    }),
+
+    /**
+     * Draw a shape on the canvas with validated z-index (ISSUE-035 Fix).
+     * Prevents agents from rendering shapes with excessively high z-index
+     * that could obscure interactive UI elements.
+     */
+    draw_shape: wrapTool('draw_shape', async (args: {
+        shapeType: 'rect' | 'circle' | 'line' | 'text';
+        x: number;
+        y: number;
+        width?: number;
+        height?: number;
+        radius?: number;
+        color?: string;
+        fill?: boolean;
+        stroke?: string;
+        zIndex?: number;
+        label?: string;
+    }) => {
+        try {
+            const { shapeType, x, y, width, height, radius, color = '#000', fill = true, stroke, label, zIndex = 0 } = args;
+
+            // ISSUE-035: Validate and clamp z-index to prevent UI sabotage
+            if (zIndex < 0) {
+                return toolError(
+                    `Invalid z-index: ${zIndex}. Z-index must be >= 0.`,
+                    'CANVAS_INVALID_Z_INDEX'
+                );
+            }
+
+            if (zIndex > MAX_Z_INDEX) {
+                return toolError(
+                    `Z-index ${zIndex} exceeds maximum allowed value of ${MAX_Z_INDEX}. ` +
+                    `Shapes are constrained to prevent obscuring UI elements. ` +
+                    `Please use z-index <= ${MAX_Z_INDEX}.`,
+                    'CANVAS_Z_INDEX_CEILING'
+                );
+            }
+
+            const validShapes = ['rect', 'circle', 'line', 'text'];
+            if (!validShapes.includes(shapeType)) {
+                return toolError(
+                    `Invalid shape type "${shapeType}". Must be one of: ${validShapes.join(', ')}`,
+                    'CANVAS_INVALID_SHAPE'
+                );
+            }
+
+            // Validate dimensions based on shape type
+            if (shapeType === 'rect' && (!width || !height)) {
+                return toolError('Rectangle requires width and height', 'CANVAS_MISSING_DIMS');
+            }
+            if (shapeType === 'circle' && !radius) {
+                return toolError('Circle requires radius', 'CANVAS_MISSING_DIMS');
+            }
+
+            const shapeData = {
+                id: secureRandomHex(8),
+                shapeType,
+                x,
+                y,
+                width,
+                height,
+                radius,
+                color,
+                fill,
+                stroke,
+                zIndex,
+                label,
+                createdAt: Date.now(),
+            };
+
+            // Push to the store
+            const { useStore } = await import('@/core/store');
+            useStore.getState().pushCanvas({
+                id: shapeData.id,
+                type: 'shape',
+                title: label || `${shapeType} shape`,
+                data: shapeData,
+                agentId: 'conductor',
+                createdAt: shapeData.createdAt,
+            });
+
+            logger.info(`[CanvasTools] Drew ${shapeType} shape at (${x}, ${y}) with z-index ${zIndex}`);
+            return toolSuccess(
+                { shapeId: shapeData.id, shapeType, zIndex },
+                `Shape "${shapeType}" drawn successfully at (${x}, ${y}) with z-index ${zIndex}.`
+            );
+        } catch (error: unknown) {
+            logger.error('[CanvasTools] draw_shape error:', error);
+            return toolError(`Failed to draw shape: ${String(error)}`, 'CANVAS_DRAW_ERROR');
         }
     }),
 } satisfies Record<string, AnyToolFunction>;

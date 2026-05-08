@@ -256,6 +256,50 @@ EXECUTION RULES:
         // with proper schemas for native function calling
         const functionDeclarations: FunctionDeclaration[] = [
             {
+                name: 'canvas_push',
+                description: 'Push structured visual content (chart, table, card, markdown) to the user\'s workspace canvas for dashboard visualization.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        type: { type: 'STRING', enum: ['chart', 'table', 'card', 'html', 'markdown'], description: 'Type of content to push.' },
+                        title: { type: 'STRING', description: 'Title of the panel.' },
+                        data: { type: 'OBJECT', description: 'Data for the panel matching the type.' },
+                        agentId: { type: 'STRING', description: 'Optional agent ID to associate with the push.' }
+                    },
+                    required: ['type', 'title', 'data']
+                }
+            },
+            {
+                name: 'canvas_clear',
+                description: 'Clear all agent-pushed canvas panels from the user\'s workspace.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'draw_shape',
+                description: 'Draw a deterministic vector shape (rectangle, circle, line, text) directly on the workspace UI canvas. Use this strictly for UI and diagrammatic drawing, not for generative image creation.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        shapeType: { type: 'STRING', enum: ['rect', 'circle', 'line', 'text'], description: 'Type of shape to draw.' },
+                        x: { type: 'NUMBER', description: 'X coordinate.' },
+                        y: { type: 'NUMBER', description: 'Y coordinate.' },
+                        width: { type: 'NUMBER', description: 'Width for rect.' },
+                        height: { type: 'NUMBER', description: 'Height for rect.' },
+                        radius: { type: 'NUMBER', description: 'Radius for circle.' },
+                        color: { type: 'STRING', description: 'Color hex or name.' },
+                        fill: { type: 'BOOLEAN', description: 'Whether to fill the shape.' },
+                        stroke: { type: 'STRING', description: 'Stroke color.' },
+                        zIndex: { type: 'NUMBER', description: 'Z-index for layering. Maximum allowed value is 1000 to prevent obscuring UI.' },
+                        label: { type: 'STRING', description: 'Optional text label.' }
+                    },
+                    required: ['shapeType', 'x', 'y']
+                }
+            },
+            {
                 name: 'generate_image',
                 description: 'Generate images based on a text prompt. Use this when the user asks to create, generate, or make any visual content.',
                 parameters: {
