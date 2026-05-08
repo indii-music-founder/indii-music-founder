@@ -162,9 +162,9 @@ export class AgentService {
                 } else {
                     useStore.getState().addAgentMessage(msgPayload);
                 }
-                const state = useStore.getState();
-                if (typeof state.setAgentProcessing === 'function') {
-                    state.setAgentProcessing(false);
+                const cacheHitState = useStore.getState();
+                if (typeof cacheHitState.setAgentProcessing === 'function') {
+                    cacheHitState.setAgentProcessing(false);
                 }
             }
             this.isProcessing = false;
