@@ -314,16 +314,13 @@ export class AlwaysOnMemoryEngine {
             // Step 2: Fetch consolidation insights
             const insights = await this.getInsights(10);
 
-            // Step 3: If no memories exist, say so honestly
-            if (memories.length === 0) {
-                return 'I don\'t have any memories stored yet. Try ingesting some information first.';
-            }
-
-            // Step 4: Build a context block for the LLM
-            const memoryBlock = memories.map((m, i) =>
-                `[Memory ${m.id}] (${m.category}, importance: ${m.importance.toFixed(2)}, ` +
-                `tier: ${m.tier}):\n  ${m.summary || m.content}`
-            ).join('\n\n');
+            // Step 4: Build a context block for the LLM (even if memories are empty)
+            const memoryBlock = memories.length > 0
+                ? memories.map((m, i) =>
+                    `[Memory ${m.id}] (${m.category}, importance: ${m.importance.toFixed(2)}, ` +
+                    `tier: ${m.tier}):\n  ${m.summary || m.content}`
+                ).join('\n\n')
+                : '(No stored memories yet)';
 
             const insightBlock = insights.length > 0
                 ? '\n\nCONSOLIDATION INSIGHTS:\n' + insights.map((ins, i) =>
@@ -332,11 +329,18 @@ export class AlwaysOnMemoryEngine {
                 : '';
 
             // Step 5: Synthesize answer using Gemini Pro for deep reasoning
-            const prompt = `You are a Memory Query Agent for a creative music/visual production platform called indiiOS.
-Answer the following question based ONLY on the stored memories and insights below.
+            // ISSUE-042 Fix: Always generate an answer, even with no memories.
+            // If no stored memories exist, the LLM falls back to general knowledge.
+            const memoryContext = memories.length > 0
+                ? `Answer based ONLY on the stored memories and insights below.
 Reference memory IDs in your answer like [Memory abc123].
-If no relevant memories exist for the question, say so honestly.
-Be thorough but concise. Always cite your sources.
+Always cite your sources.`
+                : `You don't have stored memories for this topic yet, but you can answer based on your general knowledge.
+If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
+
+            const prompt = `You are a Memory Query Agent for a creative music/visual production platform called indiiOS.
+${memoryContext}
+Be thorough but concise.
 
 MEMORIES:
 ${memoryBlock}
