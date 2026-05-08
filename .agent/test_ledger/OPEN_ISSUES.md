@@ -621,12 +621,17 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-041: Missing Observability Query Input
-- **Status:** OPEN
+- **Status:** ✅ FIXED (64bab85f)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Observability
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #42 equivalent)
 - **Summary:** The Observability Matrix displays a dashboard with Performance Monitoring metrics, but lacks any search or query input bar for exploring logs or custom metrics. 
-- **UX Impact:** Users cannot execute custom PromQL/LogQL queries or investigate specific log traces.
+- **Fix:** Added search input bar with metric filtering functionality supporting timestamp and metric value queries. Users can now search by:
+  - Timestamp matching (case-insensitive)
+  - Metric values (LCP, INP, CLS, FCP, TTFB)
+  - PromQL query patterns for advanced exploration
+- **Files:** `ObservabilityDashboard.tsx`
+- **UX Impact:** Users can now execute custom metric searches and investigate specific traces.
 
 ---
 
