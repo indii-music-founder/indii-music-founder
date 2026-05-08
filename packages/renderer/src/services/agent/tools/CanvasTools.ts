@@ -145,6 +145,13 @@ export const CanvasTools = {
             if (shapeType === 'circle' && !radius) {
                 return toolError('Circle requires radius', 'CANVAS_MISSING_DIMS');
             }
+            // CodeRabbit (PR #1707): validate line and text required fields
+            if (shapeType === 'text' && !label) {
+                return toolError('Text shape requires a label', 'CANVAS_MISSING_DIMS');
+            }
+            if (shapeType === 'line' && !width && !height) {
+                return toolError('Line shape requires width or height to define its extent', 'CANVAS_MISSING_DIMS');
+            }
 
             const shapeData = {
                 id: secureRandomHex(8),

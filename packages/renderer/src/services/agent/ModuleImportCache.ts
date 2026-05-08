@@ -7,6 +7,12 @@
  *
  * Without this: Promise.all([import(A), import(A), import(A)]) → 3 parallel fetches
  * With this: All three requests await the same cached promise → 1 fetch
+ *
+ * CodeRabbit fixes (PR #1707):
+ * - refCount on cache-hit path now properly decremented via finally block
+ * - Removed global sequential queue: it serialised UNRELATED modules behind
+ *   each other (5× latency for 5-module delegation). Promise deduplication
+ *   already solves the same-module race condition.
  */
 
 interface ModuleImportRequest {
@@ -18,80 +24,55 @@ class ModuleImportCache {
     private cache = new Map<string, ModuleImportRequest>();
     private readonly maxRetries = 3;
     private readonly retryDelayMs = 100;
-    
-    // Global mutex queue for sequential loading (ISSUE-034)
-    private importQueue: (() => Promise<void>)[] = [];
-    private isProcessingQueue = false;
 
     /**
      * Import a module with automatic deduplication and retry logic.
      * Multiple simultaneous requests for the same module share the same promise.
+     * Unrelated modules are fetched concurrently (no global queue).
      */
     async import<T = any>(modulePath: string): Promise<T> {
-        // Check cache for in-flight import
+        // Cache-hit: attach to the in-flight promise
         if (this.cache.has(modulePath)) {
             const request = this.cache.get(modulePath)!;
             request.refCount++;
-            return request.promise;
+            try {
+                return await request.promise as T;
+            } finally {
+                // Decrement refCount for cache-hit callers too
+                request.refCount--;
+                if (request.refCount === 0) {
+                    this.cache.delete(modulePath);
+                }
+            }
         }
 
-        // Create a new deferred promise for this import request
+        // Cache-miss: kick off the import and cache the in-flight promise
         let resolveRequest: (val: T) => void;
-        let rejectRequest: (err: any) => void;
+        let rejectRequest: (err: unknown) => void;
         const requestPromise = new Promise<T>((res, rej) => {
             resolveRequest = res;
             rejectRequest = rej;
         });
 
-        // Cache the in-flight promise BEFORE queueing so simultaneous same-module requests can attach
         const request: ModuleImportRequest = {
             promise: requestPromise,
-            refCount: 1
+            refCount: 1,
         };
         this.cache.set(modulePath, request);
 
-        // Add the import operation to the sequential queue
-        this.importQueue.push(async () => {
-            try {
-                const result = await this.importWithRetry<T>(modulePath);
-                resolveRequest(result);
-            } catch (err) {
-                rejectRequest(err);
-            }
-        });
-
-        // Start processing if not already
-        if (!this.isProcessingQueue) {
-            this.processQueue();
-        }
+        // Fire the import immediately (no queue — parallel is correct here)
+        this.importWithRetry<T>(modulePath)
+            .then(result => resolveRequest(result))
+            .catch(err => rejectRequest(err));
 
         try {
             return await requestPromise;
         } finally {
-            // Decrement ref count; remove from cache when all requests complete
             request.refCount--;
             if (request.refCount === 0) {
                 this.cache.delete(modulePath);
             }
         }
-    }
-
-    /**
-     * Process the import queue sequentially to avoid browser chunk loading race conditions.
-     */
-    private async processQueue() {
-        if (this.isProcessingQueue || this.importQueue.length === 0) return;
-        
-        this.isProcessingQueue = true;
-        
-        while (this.importQueue.length > 0) {
-            const importTask = this.importQueue.shift();
-            if (importTask) {
-                await importTask();
-            }
-        }
-        
-        this.isProcessingQueue = false;
     }
 
     /**
@@ -124,7 +105,7 @@ class ModuleImportCache {
     stats(): { pendingImports: number; cachedModules: string[] } {
         return {
             pendingImports: this.cache.size,
-            cachedModules: Array.from(this.cache.keys())
+            cachedModules: Array.from(this.cache.keys()),
         };
     }
 }
