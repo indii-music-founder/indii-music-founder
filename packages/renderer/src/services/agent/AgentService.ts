@@ -17,6 +17,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
+import { moduleImportCache } from './ModuleImportCache';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -318,7 +319,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await moduleImportCache.import('@/core/store');
         const state = useStore.getState();
         const { updateAgentMessage } = state;
         const conversationMode = state.conversationMode;
@@ -396,7 +397,7 @@ export class AgentService {
                             if (planId) {
                                 logger.info(`[AgentService] Detected planId: ${planId}`);
                                 // Update message metadata
-                                const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
+                                const currentMsg = useStore.getState().agentHistory.find((m: AgentMessage) => m.id === responseId);
                                 updateAgentMessage(responseId, {
                                     metadata: { ...(currentMsg?.metadata || {}), planId }
                                 });
@@ -412,7 +413,7 @@ export class AgentService {
                     }
                 }
 
-                const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
+                const currentMsg = useStore.getState().agentHistory.find((m: AgentMessage) => m.id === responseId);
                 const newThought: AgentThought = {
                     id: uuidv4(),
                     text: event.content || '',
@@ -1096,7 +1097,7 @@ The user will see this plan and can approve it to start execution.`;
             if (!context.livingContext) {
                 const { auth } = await import('@/services/firebase');
                 if (auth.currentUser) {
-                    const { livingFileService } = await import('./living/LivingFileService');
+                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService');
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
                 }
             }
