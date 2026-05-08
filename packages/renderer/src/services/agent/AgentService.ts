@@ -162,9 +162,9 @@ export class AgentService {
                 } else {
                     useStore.getState().addAgentMessage(msgPayload);
                 }
-                const state = useStore.getState();
-                if (typeof state.setAgentProcessing === 'function') {
-                    state.setAgentProcessing(false);
+                const cacheHitState = useStore.getState();
+                if (typeof cacheHitState.setAgentProcessing === 'function') {
+                    cacheHitState.setAgentProcessing(false);
                 }
             }
             this.isProcessing = false;
@@ -210,8 +210,8 @@ export class AgentService {
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
                         const currentState = useStore.getState();
                         const resultMsg = isBoardroomMode 
-                            ? currentState.boardroomMessages.find((m: AgentMessage) => m.id === responseId)
-                            : currentState.agentHistory.find((m: AgentMessage) => m.id === responseId);
+                            ? (currentState.boardroomMessages as any[]).find(m => m.id === responseId)
+                            : (currentState.agentHistory as any[]).find(m => m.id === responseId);
 
                         // After success, populate cache if not a generation request
                         if (!isGenerationRequest) {

@@ -1,4 +1,4 @@
-# Mega Stress Test Plan: Tools Menu (50 Routines)
+# Mega Stress Test Plan v3.5 (Tools Menu Gauntlet)
 
 To ensure absolute resilience of the TOOLS sidebar navigation and the individual modules it contains, we will execute a gauntlet of 50 distinct stress routines. These tests cover UI thrashing, memory leaks, invalid payloads, concurrency limits, and state corruption.
 
