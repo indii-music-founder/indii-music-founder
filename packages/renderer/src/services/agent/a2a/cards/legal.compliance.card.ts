@@ -41,7 +41,7 @@ export const LegalComplianceCard: AgentCard = {
         perTokenInUsd: 0,
         perTokenOutUsd: 0,
     },
-    riskTier: 'read',
+    riskTier: 'write', // CodeRabbit (PR #1703): register_copyright is a write-capable action
     sla: {
         modeSync: {
             p50Ms: 2000,

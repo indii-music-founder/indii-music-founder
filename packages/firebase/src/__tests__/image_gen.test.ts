@@ -165,7 +165,7 @@ describe('Image and Content Generation Functions', () => {
 
             expect(mocks.generateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: 'gemini-3.1-flash-image-preview',
+                    model: 'gemini-3.1-flash-image',
                     contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
                     config: expect.objectContaining({
                         candidateCount: 2,
