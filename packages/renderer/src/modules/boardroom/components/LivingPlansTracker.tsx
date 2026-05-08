@@ -114,8 +114,8 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-2">
-                                <Layers className="text-cyan-400" size={20} />
-                                <h2 className="text-lg font-bold tracking-tight text-gray-100">Living Plans</h2>
+                                <Layers className="text-cyan-400" size={18} />
+                                <h2 className="text-base font-bold tracking-tight text-gray-100">Living Plans</h2>
                             </div>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
                                 <X size={20} />
@@ -130,9 +130,9 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                 </div>
                             ) : plans.length === 0 ? (
                                 <div className="text-center p-12 text-white/40">
-                                    <Layers className="mx-auto mb-4 opacity-20" size={40} />
-                                    <p className="text-sm font-medium text-gray-300">No living plans found.</p>
-                                    <p className="text-xs mt-2">Ask indii Conductor to propose a strategy or plan for your project.</p>
+                                    <Layers className="mx-auto mb-4 opacity-20" size={32} />
+                                    <p className="text-xs font-medium text-gray-300">No living plans found.</p>
+                                    <p className="text-[10px] mt-2">Ask indii Conductor to propose a strategy or plan for your project.</p>
                                 </div>
                             ) : (
                                 plans.map(plan => (
