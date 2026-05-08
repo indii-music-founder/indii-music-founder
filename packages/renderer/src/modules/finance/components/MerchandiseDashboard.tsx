@@ -49,7 +49,7 @@ export const MerchandiseDashboard: React.FC = () => {
                             <ShoppingBag size={28} />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
                                 Merchandise <span className="text-dept-royalties">Sales</span>
                             </h2>
                             <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mt-1">Global Commerce Operations</p>
@@ -59,7 +59,7 @@ export const MerchandiseDashboard: React.FC = () => {
                     <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl backdrop-blur-md">
                         <div className="text-right">
                             <div className="text-xs text-gray-500 font-bold uppercase tracking-tighter mb-1">Total Net Revenue</div>
-                            <div className="text-4xl font-black text-white leading-none">
+                            <div className="text-xl font-black text-white leading-none">
                                 {earningsLoading ? '...' : merchRevenue > 0 ? formatCurrency(merchRevenue) : formatCurrency(0)}
                             </div>
                         </div>

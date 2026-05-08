@@ -75,7 +75,7 @@ export default function MarketingAssetGeneratorUI() {
                         </div>
                     </div>
                     <div>
-                        <h1 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tighter">
+                        <h1 className="text-base lg:text-lg font-black text-white uppercase tracking-tighter">
                             Short-Form Asset Generator
                         </h1>
                         <div className="flex items-center gap-4 mt-1">
@@ -261,7 +261,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <Video className="text-dept-marketing animate-pulse" size={40} />
                                     </div>
                                 </div>
-                                <h2 className="text-2xl font-black text-white mb-3">Synthesizing Visuals</h2>
+                                <h2 className="text-base font-black text-white mb-3">Synthesizing Visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
                                     Rendering highly-detailed frames synced with your audio. This normally takes a few minutes via background job...
                                 </p>

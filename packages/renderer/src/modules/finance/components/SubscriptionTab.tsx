@@ -54,7 +54,7 @@ export const SubscriptionTab = () => {
                             }`}>
                             {currentTierConfig.name}
                         </span>
-                        <h2 className="text-4xl font-black text-white mt-4 mb-2 tracking-tight">Active</h2>
+                        <h2 className="text-xl font-black text-white mt-4 mb-2 tracking-tight">Active</h2>
                         <div className="space-y-1 mb-6">
                             <p className="text-sm text-gray-500">Subscription Status</p>
                             {subscription?.cancelAtPeriodEnd && (
@@ -143,7 +143,7 @@ export const SubscriptionTab = () => {
             </div>
 
             {/* Plan Comparison Integration */}
-            <h3 className="text-2xl font-black text-white mt-12 mb-6 ml-1 tracking-tight">Available Systems</h3>
+            <h3 className="text-base font-black text-white mt-12 mb-6 ml-1 tracking-tight">Available Systems</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {getTierOrder().map((tierId, index) => {
                     const config = getTierConfig(tierId);
@@ -172,9 +172,9 @@ export const SubscriptionTab = () => {
                                     }`}>
                                     {isStudio ? <Rocket size={24} /> : (tierId === SubscriptionTier.FREE ? <Package size={24} /> : <Shield size={24} />)}
                                 </div>
-                                <h4 className="text-2xl font-black text-white mb-2">{config.name}</h4>
+                                <h4 className="text-base font-black text-white mb-2">{config.name}</h4>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-black text-white">${config.price}</span>
+                                    <span className="text-xl font-black text-white">${config.price}</span>
                                     <span className="text-gray-500 text-sm font-medium">/{config.billingPeriod}</span>
                                 </div>
                                 <p className="text-sm text-gray-400 mt-4 leading-relaxed line-clamp-2">{config.description}</p>
