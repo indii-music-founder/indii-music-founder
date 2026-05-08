@@ -2,7 +2,7 @@
   "name": "indiios-monorepo",
   "version": "1.61.1",
   "description": "The Operating System for Independent Artists — npm Workspace Monorepo",
-  "author": "New Detroit Music LLC <info@indiios.com>",
+  "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
   "private": true,
   "main": "dist/main/index.js",

@@ -63,7 +63,7 @@ export default function FoundersCheckout() {
                         <h3 className="text-xl font-bold text-white mb-2">Wire Transfer</h3>
                         <p className="text-gray-400 text-sm mb-6 h-12">Standard institutional transfer. Domestic or international routes available.</p>
                         <a 
-                            href="mailto:founders@indiios.com?subject=Wire Transfer Request - Founders Seat"
+                            href="mailto:founders@indii.music?subject=Wire Transfer Request - Founders Seat"
                             className="block w-full text-center bg-white/5 hover:bg-white/10 text-white p-4 rounded-xl border border-white/10 transition-colors text-sm font-semibold"
                         >
                             Request Wire Instructions

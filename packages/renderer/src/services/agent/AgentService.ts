@@ -83,7 +83,7 @@ export class AgentService {
 
         let useStore: any = null;
         try {
-            const imported = await import('@/core/store');
+            const imported = await import('../../core/store');
             useStore = imported.useStore;
             const state = useStore.getState();
             if (typeof state.setAgentProcessing === 'function') {

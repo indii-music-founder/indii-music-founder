@@ -42,8 +42,8 @@ export const createStripeConnectAccount = functions
             // Generate the onboarding link (return in response)
             const accountLink = await stripe.accountLinks.create({
                 account: account.id,
-                refresh_url: "https://app.indiios.com/finance/stripe/refresh",
-                return_url: "https://app.indiios.com/finance/stripe/success",
+                refresh_url: "https://app.indii.music/finance/stripe/refresh",
+                return_url: "https://app.indii.music/finance/stripe/success",
                 type: "account_onboarding",
             });
 

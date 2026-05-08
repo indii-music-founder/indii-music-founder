@@ -8,8 +8,6 @@ import { chromium } from '@playwright/test';
     // CodeRabbit (PR #1707): waitForTimeout removed in Playwright v22 → use waitForLoadState
     await page.waitForLoadState('networkidle');
 
-    await page.waitForTimeout(3000);
-
     const inputs = await page.evaluate(() => {
         return Array.from(document.querySelectorAll('input[type="text"], textarea')).map(el => ({
             tag: el.tagName,
@@ -20,15 +18,6 @@ import { chromium } from '@playwright/test';
         }));
     });
 
-    console.log(JSON.stringify(inputs, null, 2));
-  } catch(e) {
-    console.error(e);
-    process.exitCode = 1;
-  } finally {
-    // CodeRabbit (PR #1707): browser.close() must be in finally to prevent process leaks
-    await browser.close();
-  }
-    
     console.log(JSON.stringify(inputs, null, 2));
   } catch(e) {
     console.error(e);

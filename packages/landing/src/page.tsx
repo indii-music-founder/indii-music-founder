@@ -349,7 +349,7 @@ export default function Home() {
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
           <a href="/terms" className="hover:text-white transition-colors font-medium">Terms of Service</a>
-          <a href="mailto:invest@indiios.com" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>
+          <a href="mailto:invest@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>
         </div>
       </footer>
 
