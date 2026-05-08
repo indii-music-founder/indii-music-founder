@@ -7,6 +7,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { getRealUserMonitoringService, getCoreWebVitalsReporter, getRequestTracingService, getBundleAnalysisService } from '@/services/observability';
 import type { RUMSnapshot, VitalsReport } from '@/services/observability';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Search } from 'lucide-react';
 
 interface MetricPoint {
   timestamp: string;
@@ -29,6 +30,8 @@ export const ObservabilityDashboard: React.FC = () => {
   const [metricHistory, setMetricHistory] = useState<MetricPoint[]>([]);
   const [requestMetrics, setRequestMetrics] = useState<RequestMetrics>({ totalTraces: 0, errorCount: 0, avgDuration: 0 });
   const [bundleMetrics, setBundleMetrics] = useState<{ jsSize: number; cssSize: number; totalSize: number } | null>(null);
+  const [queryInput, setQueryInput] = useState('');
+  const [filteredMetrics, setFilteredMetrics] = useState<MetricPoint[]>([]);
 
   const handleMetricsUpdate = useCallback((snapshot: RUMSnapshot) => {
     const reporter = getCoreWebVitalsReporter();
@@ -47,6 +50,28 @@ export const ObservabilityDashboard: React.FC = () => {
     };
     setMetricHistory(prev => [...prev.slice(-20), point]);
   }, []);
+
+  const handleQuery = useCallback((query: string) => {
+    setQueryInput(query);
+    if (!query.trim()) {
+      setFilteredMetrics([]);
+      return;
+    }
+
+    // Filter metrics based on query (supports timestamp or metric value matching)
+    const lowerQuery = query.toLowerCase();
+    const filtered = metricHistory.filter(metric => {
+      const matchesTimestamp = metric.timestamp.toLowerCase().includes(lowerQuery);
+      const matchesMetrics =
+        metric.lcp?.toString().includes(query) ||
+        metric.inp?.toString().includes(query) ||
+        metric.cls?.toString().includes(query) ||
+        metric.fcp?.toString().includes(query) ||
+        metric.ttfb?.toString().includes(query);
+      return matchesTimestamp || matchesMetrics;
+    });
+    setFilteredMetrics(filtered);
+  }, [metricHistory]);
 
   useEffect(() => {
     const rum = getRealUserMonitoringService();
@@ -94,6 +119,28 @@ export const ObservabilityDashboard: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Performance Monitoring</h1>
         <p className="text-slate-400">Real User Monitoring (RUM) Dashboard</p>
+      </div>
+
+      {/* ISSUE-041: Query Input for Custom PromQL/LogQL Queries */}
+      <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <label className="block text-sm font-medium text-slate-300 mb-2">
+          Search Metrics & Logs
+        </label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search by timestamp, metric value, or enter PromQL queries (e.g., 'LCP > 2500')"
+            value={queryInput}
+            onChange={(e) => handleQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        {queryInput && (
+          <div className="mt-2 text-xs text-slate-400">
+            Found {filteredMetrics.length} matching metric(s)
+          </div>
+        )}
       </div>
 
       {vitalsReport && (
