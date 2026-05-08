@@ -80,8 +80,8 @@ export class AgentService {
         this.isProcessing = true;
 
         // ISSUE-045: Sync store's isAgentProcessing with service's processing state
-        // @ts-expect-error - useStore type varies in test contexts
-        let useStore = null;
+
+        let useStore: any = null;
         try {
             const imported = await import('@/core/store');
             useStore = imported.useStore;
@@ -210,8 +210,8 @@ export class AgentService {
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
                         const currentState = useStore.getState();
                         const resultMsg = isBoardroomMode 
-                            ? currentState.boardroomMessages.find(m => m.id === responseId)
-                            : currentState.agentHistory.find(m => m.id === responseId);
+                            ? currentState.boardroomMessages.find((m: AgentMessage) => m.id === responseId)
+                            : currentState.agentHistory.find((m: AgentMessage) => m.id === responseId);
 
                         // After success, populate cache if not a generation request
                         if (!isGenerationRequest) {
