@@ -29,7 +29,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-3xl font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
+                <div className="text-lg font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
                 <p className="text-xs text-dept-royalties flex items-center gap-1 mt-1">
                     <TrendingUp size={12} />
                     {data.totalNetRevenue > 0 ? 'Revenue from all sources' : 'No revenue data yet'}
@@ -46,7 +46,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-3xl font-bold text-white mt-2">{(data.totalStreams / 1000000).toFixed(2)}M</div>
+                <div className="text-lg font-bold text-white mt-2">{(data.totalStreams / 1000000).toFixed(2)}M</div>
                 <p className="text-xs text-gray-500 mt-1">Across all platforms</p>
             </div>
         </div>
@@ -70,12 +70,12 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
 
                     return topTerritory ? (
                         <>
-                            <div className="text-3xl font-bold text-white mt-2">{topTerritory.territoryCode || 'N/A'}</div>
+                            <div className="text-lg font-bold text-white mt-2">{topTerritory.territoryCode || 'N/A'}</div>
                             <p className="text-xs text-gray-500 mt-1">{percentage}% of total revenue</p>
                         </>
                     ) : (
                         <>
-                            <div className="text-3xl font-bold text-white mt-2">--</div>
+                            <div className="text-lg font-bold text-white mt-2">--</div>
                             <p className="text-xs text-gray-500 mt-1">No data available</p>
                         </>
                     );
@@ -92,7 +92,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-3xl font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString()}</div>
+                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString()}</div>
                 <p className="text-xs text-gray-500 mt-1">Across all stores</p>
             </div>
         </div>

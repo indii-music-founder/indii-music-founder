@@ -35,10 +35,10 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
             {/* Section Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                        Active Campaigns <span className="text-sm font-normal text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">{campaigns.length}</span>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        Active Campaigns <span className="text-xs font-normal text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">{campaigns.length}</span>
                     </h2>
-                    <p className="text-gray-400 mt-1">Manage and track your ongoing marketing efforts.</p>
+                    <p className="text-sm text-gray-400 mt-1">Manage and track your ongoing marketing efforts.</p>
                 </div>
             </div>
 
@@ -60,8 +60,8 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                                 <Sparkles size={32} className="text-dept-marketing group-hover:text-white" />
                             </div>
                             <div className="text-center">
-                                <h3 className="font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with AI</h3>
-                                <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Create a complete campaign from a brief</p>
+                                <h3 className="text-sm font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with AI</h3>
+                                <p className="text-xs text-gray-500 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
                             </div>
 
                             {/* Decorative Sparkles */}
@@ -82,8 +82,8 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                             <Plus size={32} className="text-gray-600 group-hover:text-dept-creative" />
                         </div>
                         <div className="text-center">
-                            <h3 className="font-semibold text-gray-300 group-hover:text-dept-creative transition-colors">New Campaign</h3>
-                            <p className="text-sm text-gray-600 group-hover:text-gray-500 mt-1 max-w-[200px]">Create manually from scratch</p>
+                            <h3 className="text-sm font-semibold text-gray-300 group-hover:text-dept-creative transition-colors">New Campaign</h3>
+                            <p className="text-xs text-gray-600 group-hover:text-gray-500 mt-1 max-w-[160px]">Create manually from scratch</p>
                         </div>
 
                         {/* Decorative AI Sparkles */}
