@@ -16,7 +16,7 @@ export function TermsOfService() {
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <Scale className="w-8 h-8 text-purple-400" />
-                <h1 className="text-3xl font-bold text-white">Terms of Service</h1>
+                <h1 className="text-lg font-bold text-white">Terms of Service</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
                 Last updated: March 2026 · Effective date: April 15, 2026
@@ -109,7 +109,7 @@ export function PrivacyPolicy() {
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <Shield className="w-8 h-8 text-purple-400" />
-                <h1 className="text-3xl font-bold text-white">Privacy Policy</h1>
+                <h1 className="text-lg font-bold text-white">Privacy Policy</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
                 Last updated: March 2026 · Effective date: April 15, 2026
@@ -216,7 +216,7 @@ export function DMCAPolicy() {
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <FileText className="w-8 h-8 text-purple-400" />
-                <h1 className="text-3xl font-bold text-white">DMCA Policy</h1>
+                <h1 className="text-lg font-bold text-white">DMCA Policy</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
                 Last updated: March 2026

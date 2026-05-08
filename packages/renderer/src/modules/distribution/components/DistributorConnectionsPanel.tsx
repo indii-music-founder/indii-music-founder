@@ -52,7 +52,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
     return (
         <div className="animate-in fade-in duration-700" data-testid="distro-connections-list">
             <div className="mb-12">
-                <h2 className="text-3xl font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
+                <h2 className="text-lg font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
                 <p className="text-gray-500 font-medium max-w-2xl">
                     Bridge your existing distribution accounts with indiiOS. Real-time sync for metadata, deliveries, and high-fidelity reporting.
                 </p>
@@ -82,7 +82,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
             <div className="mt-16 p-10 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md relative overflow-hidden group">
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div>
-                        <h3 className="text-2xl font-black text-white mb-3 uppercase italic">Scale Up Your Reach</h3>
+                        <h3 className="text-base font-black text-white mb-3 uppercase italic">Scale Up Your Reach</h3>
                         <p className="text-gray-500 mb-0 font-medium max-w-xl">
                             Looking for better metadata handling or higher royalty splits? indiiOS power partners offer exclusive terms for our users.
                         </p>
