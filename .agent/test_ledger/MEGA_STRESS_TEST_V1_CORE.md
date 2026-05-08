@@ -1,4 +1,4 @@
-# Mega 25-Routine Stress Test Plan
+# Mega Stress Test Plan v1.0 (Core Architecture)
 To ensure absolute resilience of the hierarchical agent system (v1.59.0), we will execute 25 distinct stress routines. 
 These routines target Conductor state synchronization, Model Armor robustness, UI layer overlaps, and concurrency limits.
 

@@ -779,6 +779,46 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Root Cause:** The `UnifiedCommandMenu.tsx` component mapped the `files` module to the label "File Explorer", meaning terms like "Inbox" and "Projects" didn't match.
 - **Fix Applied:** Renamed the `files` module command menu entry to "Inbox & Project Files" so the search indices natively match the user's intent.
 - **User Impact:** Keyboard-driven navigation to the Inbox works perfectly.
+
+---
+
+### ISSUE-051: Boardroom Agent Sequential Delegation Failure
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Boardroom / Agent Conductor
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 101)
+- **Summary:** The indii Conductor fails to maintain strict sequencing when instructed to perform sequential tasks (e.g., "Get X to do A AND THEN get Y to do B"). It either attempts both simultaneously or fragments the execution.
+- **User Impact:** Users cannot chain complex workflows reliably.
+
+---
+
+### ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** UI / Command Menu
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 111)
+- **Summary:** The Search (Global Command Menu) modal does not close when clicking the backdrop overlay.
+- **User Impact:** Standard UX modal behavior is broken, requiring explicit close button clicks or ESC key.
+
+---
+
+### ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Director / Canvas
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 115)
+- **Summary:** The Creative Director agent confirms execution of the `draw_shape` command via `CanvasTools`, but the fabric.js canvas remains empty. The tool logic appears disconnected from the rendering layer.
+- **User Impact:** Users cannot generate native canvas shapes via agent prompts.
+
+---
+
+### ISSUE-054: Boardroom Import Error (@/core/store)
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7)
+- **Summary:** Detected a `Failed to resolve module specifier '@/core/store'` error in the Boardroom chat logs during execution.
+- **User Impact:** Potential intermittent failures in Boardroom state management or agent chat logic.
 - **Steps to Reproduce:**
   1. Boot the application in `dev:web` mode.
   2. Navigate to Creative Director or Boardroom.
@@ -787,3 +827,15 @@ Caller can decide whether to retry, surface error, or silently log.
 - **User Impact:** Agents cannot load necessary modules, rendering all agentic features completely broken.
 - **Screenshot:** See subagent logs `mega_stress_test_sec1_...`
 - **Notes:** Could be related to recent dynamic import caching changes or Vite alias resolution.
+
+---
+
+### ISSUE-055: Production CI Build Pipeline Failure (Syntax Error)
+- **Status:** ✅ FIXED (ce607b00)
+- **Severity:** 🔴 CRITICAL
+- **Module:** CI Pipeline / AgentService
+- **Found:** 2026-05-08 by CI Deployment Log (PR #1710/#1712)
+- **Summary:** The `[vite:esbuild]` production build threw an error: `Expected ";" but found "async"` at `private async executeFlow()`. This was caused by two critical syntax errors introduced during previous stability work: 1) a missing closing brace `}` inside an `if (useStore)` block in `sendMessage()`, and 2) a malformed, duplicated method signature inside `ModuleImportCache.ts`.
+- **Root Cause:** A botched regex/AST replacement by a previous agent dropped closing braces and duplicated function definitions. The local test suite did not catch it because of how `tsc` caching worked, but `electron-vite` correctly caught the syntax errors during the production transpilation step.
+- **Fix Applied:** Restored the missing closing brace in `AgentService.ts` and cleanly rewrote the `import` and `importWithRetry` methods in `ModuleImportCache.ts`.
+- **User Impact:** The CI pipeline is now fully unblocked and the production build completes successfully.

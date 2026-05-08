@@ -129,7 +129,13 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
-  const projectArray = Array.from(projects.values());
+  // Filter out duplicate Inbox entries if the backend hasn't cleaned them up yet
+  const uniqueProjects = new Map();
+  projects.forEach((p: any) => {
+    if (p.name === 'Inbox' && uniqueProjects.has('Inbox')) return;
+    uniqueProjects.set(p.name === 'Inbox' ? 'Inbox' : p.id, p);
+  });
+  const projectArray = Array.from(uniqueProjects.values());
 
   return (
     <div className="mb-2">
@@ -168,7 +174,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
             ) : projectArray.length === 0 ? (
               <div className="px-4 py-2 text-xs text-gray-500">No projects</div>
             ) : (
-              projectArray.map((project) => {
+              projectArray.map((project: any) => {
                 const isActive = selectedProjectId === project.id;
                 return (
                   <div
@@ -176,6 +182,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
                     onClick={() => {
                       setSelectedProject(project);
                       syncProject(project.id);
+                      useStore.getState().setModule('files');
                     }}
                     className={cn(
                       "w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 relative group overflow-hidden mb-0.5 cursor-pointer",
