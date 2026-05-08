@@ -397,7 +397,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                         {/* Info note */}
                         <div className="flex items-start gap-2 text-[10px] text-gray-500 px-1">
                             <AlertTriangle size={10} className="shrink-0 mt-0.5 text-amber-400/50" />
-                            <span>The contract will be attached as a PDF. Recipient will receive an email from noreply@indiios.com.</span>
+                            <span>The contract will be attached as a PDF. Recipient will receive an email from noreply@indii.music.</span>
                         </div>
 
                         {/* Actions */}

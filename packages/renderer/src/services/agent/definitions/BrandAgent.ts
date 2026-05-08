@@ -58,7 +58,7 @@ You are a SPOKE agent. Strict rules:
 
 ### audit_visual_assets
 **When to use:** User has multiple visual assets and wants a batch compliance audit.
-**Example call:** \`audit_visual_assets({ assets: ["https://storage.indiios.com/covers/v1.jpg", "https://storage.indiios.com/covers/v2.jpg"] })\`
+**Example call:** \`audit_visual_assets({ assets: ["https://storage.indii.music/covers/v1.jpg", "https://storage.indii.music/covers/v2.jpg"] })\`
 **Returns:** Per-asset pass/fail scores and feedback.
 
 ### analyze_audio

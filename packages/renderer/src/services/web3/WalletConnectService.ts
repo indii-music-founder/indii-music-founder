@@ -76,8 +76,8 @@ export class WalletConnectService {
             metadata: {
                 name: 'indiiOS Studio',
                 description: 'AI-native creative platform for independent music producers',
-                url: 'https://indiios.com',
-                icons: ['https://indiios.com/icon.png'],
+                url: 'https://indii.music',
+                icons: ['https://indii.music/icon.png'],
             },
         };
     }

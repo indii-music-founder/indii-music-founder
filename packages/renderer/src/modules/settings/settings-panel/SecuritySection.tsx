@@ -222,7 +222,7 @@ const SecuritySection: React.FC = () => {
                                     <button
                                         className="text-xs bg-red-500 hover:bg-red-400 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
                                         onClick={() => {
-                                            showToast('Account deletion is handled by support. Contact help@indiios.com', 'info');
+                                            showToast('Account deletion is handled by support. Contact help@indii.music', 'info');
                                             setShowDeleteConfirm(false);
                                         }}
                                     >

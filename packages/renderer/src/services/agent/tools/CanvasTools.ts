@@ -145,7 +145,6 @@ export const CanvasTools = {
             if (shapeType === 'circle' && !radius) {
                 return toolError('Circle requires radius', 'CANVAS_MISSING_DIMS');
             }
-            // CodeRabbit (PR #1707): validate line and text required fields
             if (shapeType === 'text' && !label) {
                 return toolError('Text shape requires a label', 'CANVAS_MISSING_DIMS');
             }
@@ -153,37 +152,54 @@ export const CanvasTools = {
                 return toolError('Line shape requires width or height to define its extent', 'CANVAS_MISSING_DIMS');
             }
 
-            const shapeData = {
-                id: secureRandomHex(8),
-                shapeType,
-                x,
-                y,
-                width,
-                height,
-                radius,
-                color,
-                fill,
-                stroke,
-                zIndex,
-                label,
-                createdAt: Date.now(),
-            };
+            // Fix ISSUE-053: Directly render to fabric.js canvas via canvasOps
+            const { canvasOps } = await import('@/modules/creative/services/CanvasOperationsService');
+            const fabric = await import('fabric');
+            const canvas = canvasOps.getCanvas();
 
-            // Push to the store
-            const { useStore } = await import('@/core/store');
-            useStore.getState().pushCanvas({
-                id: shapeData.id,
-                type: 'shape',
-                title: label || `${shapeType} shape`,
-                data: shapeData,
-                agentId: 'conductor',
-                createdAt: shapeData.createdAt,
-            });
+            if (!canvas) {
+                // If CreativeDirector canvas is not initialized, fallback to pushing to store
+                const { useStore } = await import('@/core/store');
+                const shapeData = {
+                    id: secureRandomHex(8), shapeType, x, y, width, height, radius, color, fill, stroke, zIndex, label, createdAt: Date.now()
+                };
+                useStore.getState().pushCanvas({
+                    id: shapeData.id, type: 'shape', title: label || `${shapeType} shape`, data: shapeData, agentId: 'conductor', createdAt: shapeData.createdAt
+                });
+                return toolSuccess({ shapeId: shapeData.id, shapeType, zIndex }, `Fabric canvas not active. Fallback: Shape pushed to data store.`);
+            }
+
+            // Fabric.js canvas is active, draw directly
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let fabricObj: any = null;
+            const commonProps = { left: x, top: y, fill: fill ? color : 'transparent', stroke: stroke || (fill ? undefined : color), data: { zIndex } };
+
+            if (shapeType === 'rect') {
+                fabricObj = new fabric.Rect({ ...commonProps, width, height });
+            } else if (shapeType === 'circle') {
+                fabricObj = new fabric.Circle({ ...commonProps, radius: radius! });
+            } else if (shapeType === 'line') {
+                fabricObj = new fabric.Line([x, y, x + (width || 0), y + (height || 0)], { ...commonProps, fill: undefined, stroke: color });
+            } else if (shapeType === 'text') {
+                fabricObj = new fabric.Text(label!, { ...commonProps, fontSize: 24, fill: color });
+            }
+
+            if (fabricObj) {
+                canvas.add(fabricObj);
+                // Simple zIndex sorting (Fabric doesn't natively auto-sort by a custom zIndex property without manual reordering)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                canvas.getObjects().sort((a: any, b: any) => {
+                    const zA = (a.data?.zIndex as number) || 0;
+                    const zB = (b.data?.zIndex as number) || 0;
+                    return zA - zB;
+                });
+                canvas.renderAll();
+            }
 
             logger.info(`[CanvasTools] Drew ${shapeType} shape at (${x}, ${y}) with z-index ${zIndex}`);
             return toolSuccess(
-                { shapeId: shapeData.id, shapeType, zIndex },
-                `Shape "${shapeType}" drawn successfully at (${x}, ${y}) with z-index ${zIndex}.`
+                { shapeType, zIndex },
+                `Shape "${shapeType}" drawn successfully at (${x}, ${y}) with z-index ${zIndex} directly onto the creative canvas.`
             );
         } catch (error: unknown) {
             logger.error('[CanvasTools] draw_shape error:', error);
