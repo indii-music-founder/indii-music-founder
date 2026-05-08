@@ -289,7 +289,7 @@ Only return valid JSON.
                                     analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
                                         'bg-red-500/10 text-red-400 border border-red-500/20'
                                     }`}>
-                                    <span className="text-2xl font-bold">{analysisResult.score}</span>
+                                    <span className="text-base font-bold">{analysisResult.score}</span>
                                     <span className="text-xs uppercase font-bold tracking-wider">Safety Score</span>
                                 </div>
                             </div>
@@ -465,7 +465,7 @@ function RiskScoresPanel({ result }: { result: { score: number; risks: string[] 
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Risk Assessment</h3>
             <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-white/[0.02] text-center">
-                    <p className="text-3xl font-black text-white mb-1">{result.score}</p>
+                    <p className="text-lg font-black text-white mb-1">{result.score}</p>
                     <p className={`text-xs font-bold ${color}`}>{level}</p>
                     <div className="w-full h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
                         <div className={`h-full ${bgColor} rounded-full`} style={{ width: `${result.score}%` }} />

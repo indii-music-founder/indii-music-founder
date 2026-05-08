@@ -251,6 +251,9 @@ vi.mock('@/core/store', () => {
         setActiveSessionId: vi.fn(),
         registerSubscription: vi.fn(() => () => { }),
         setHasUnsavedChanges: vi.fn(),
+        // Agent UI slice — required by AgentService.sendMessage (ISSUE-045)
+        isAgentProcessing: false,
+        setAgentProcessing: vi.fn(),
         // Agent task slice — required by BatchingStatus & TaskTracker
         batchingTasks: [],
         clearCompletedBatchTasks: vi.fn(),

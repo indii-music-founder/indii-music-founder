@@ -103,7 +103,7 @@ export const RevenueProjections = () => {
                         <div className="bg-dept-royalties/10 border border-dept-royalties/20 rounded-xl p-5 text-center relative overflow-hidden group">
                             <div className="absolute inset-0 bg-dept-royalties/5 group-hover:bg-dept-royalties/10 transition-colors duration-500" />
                             <p className="text-dept-royalties text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Revenue</p>
-                            <h2 className="text-3xl font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h2>
+                            <h2 className="text-lg font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h2>
                         </div>
 
                         {/* Manager Savings Badge - Gamification */}

@@ -636,32 +636,149 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-042: Memory Agent Lack of General Knowledge Fallback
+- **Status:** ✅ FIXED (884c33b6)
 - **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Module:** Memory Agent
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #32 equivalent)
 - **Summary:** When queried with general questions (e.g., "Tell me a story about Detroit"), the Memory Agent hard-fails with "I don't have any memories stored yet. Try ingesting some information first" instead of falling back to its base LLM general knowledge capabilities.
+- **Fix:** Modified AlwaysOnMemoryEngine.query() to always generate answers via LLM, even with empty memory store. Falls back to general knowledge when no memories exist.
+- **Files:** `AlwaysOnMemoryEngine.ts`
+- **UX Impact:** Agent now smoothly blends user memories with foundational knowledge, answering general questions gracefully.
 - **UX Impact:** The agent feels rigid and overly constrained; it should smoothly blend user memories with its foundational knowledge.
 
 ---
 
 ### ISSUE-043: Sidebar Routing History Inconsistency Under Thrashing
+- **Status:** ✅ FIXED (884c33b6)
 - **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** Sidebar Navigation
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #8 equivalent)
 - **Summary:** When rapidly double/triple-clicking across multiple tools in the sidebar (e.g., Audio Analyzer -> Workflow Builder -> Knowledge Base), the underlying history stack occasionally drops intermediate routes. Pressing "Back" skips over routes that were double-clicked, suggesting debouncing or overwriting is interfering with a 1:1 history map.
+- **Fix:** Added 100ms debouncing to setModule in appSlice to prevent rapid clicks from overwriting history. Implemented navigation history stack tracking to maintain 1:1 mapping of navigation events.
+- **Files:** `appSlice.ts`
+- **UX Impact:** Back button now reliably navigates through all visited routes, no skipping on rapid sidebar clicks.
 - **UX Impact:** Power users rapidly clicking around may find the browser "Back" button behavior unpredictable.
 
 
 ---
 
 ### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
+- **Status:** ✅ FIXED (884c33b6)
 - **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Reliability
 - **Module:** Core App / AgentService / ModuleImportCache
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test Section 1)
+- **Root Cause:** ModuleImportCache.ts had duplicate/conflicting code: both a parallel deduplication path AND a sequential queue path. The sequential queue (lines 27-28, 88-100, 110-125) was never removed when refactoring from serial to parallel imports, causing malformed module loading.
+- **Fix:** Cleaned up ModuleImportCache.ts to remove duplicate code and sequential queue entirely. Kept only the correct promise deduplication logic (parallel imports with ref counting).
+- **Files:** `ModuleImportCache.ts`
+- **Verification:** Full test suite passes (605 test files, 3827 tests).
+- **User Impact:** Agents can now load modules correctly in dev:web mode. Resolves "Failed to resolve module specifier '@/core/store'" errors.
+
+---
+
+### ISSUE-045: Omni Agent Message Dispatch Failure in Departments
+- **Status:** ✅ FIXED (f9ef945c)
+- **Severity:** 🔴 HIGH
+- **Module:** Marketing Department / Omni Agent
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V4 - Routine 14)
+- **Root Cause:** The `PromptArea.tsx` component checks `isAgentProcessing` from the Zustand store to show/hide the Send button, but `AgentService.ts` had an internal `isProcessing` flag that was never synchronized with the store. This caused a mismatch: the service would be blocking message processing internally while the UI showed the Send button as active, leading to silent failures and unresponsive UI.
+- **Fix Applied:**
+  1. Imported store using `await import('@/core/store')` with proper error handling
+  2. Added safe call to `setAgentProcessing(true)` at method start (with type check)
+  3. Added safe call to `setAgentProcessing(false)` for cache-hit early return
+  4. Added safe call to `setAgentProcessing(false)` in finally block for cleanup
+  5. Updated test mock in `packages/renderer/src/test/setup.ts` to include `isAgentProcessing` and `setAgentProcessing`
+  6. All calls are wrapped with defensive checks to handle test contexts where store might not be fully initialized
+  7. This synchronizes the service-level `isProcessing` flag with the store's `isAgentProcessing`, ensuring the UI correctly reflects the actual processing state.
+- **Files Modified:**
+  - `packages/renderer/src/services/agent/AgentService.ts` (store sync + error handling)
+  - `packages/renderer/src/test/setup.ts` (mock update)
+- **Test Results:** All 605 test files pass (3827 tests) ✓
+- **UX Impact:** The Send button now correctly disables during message processing and re-enables when complete. Department chat is fully functional.
+
+---
+
+### ISSUE-046: Department Module CSS/Typography Scaling
+- **Status:** ✅ FIXED (1c359d23)
+- **Severity:** 🟡 MEDIUM
+- **Module:** UI / Departments (All)
+- **Found:** 2026-05-08 by Visual Inspection
+- **Summary:** There are CSS alignment issues across department modules. The font sizes are too large and overpowering, causing layout constraints.
+- **Root Cause:** Department module component templates had oversized Tailwind typography classes (`text-6xl`, `text-5xl`, `text-4xl`, `text-3xl`, `text-2xl`) that were causing visual hierarchy issues and layout constraints. These classes were leftover from initial UI scaffolding and never downsized for production layouts.
+- **Fix Applied:** Applied systematic proportional font size reductions across all 13 affected department components:
+  - `text-6xl` → `text-3xl` (reduced 3 levels)
+  - `text-5xl` → `text-2xl` (reduced 3 levels)
+  - `text-4xl` → `text-xl` (reduced 3 levels)
+  - `text-3xl` → `text-lg` (reduced 2 levels)
+  - `text-2xl` → `text-base` (reduced 2 levels)
+
+  **Affected Files:**
+  - `packages/renderer/src/modules/distribution/components/BankPanel.tsx`
+  - `packages/renderer/src/modules/distribution/components/DistributorConnectionsPanel.tsx`
+  - `packages/renderer/src/modules/finance/components/EarningsDashboard.tsx`
+  - `packages/renderer/src/modules/finance/components/MerchandiseDashboard.tsx`
+  - `packages/renderer/src/modules/finance/components/RevenueProjections.tsx`
+  - `packages/renderer/src/modules/finance/components/SubscriptionTab.tsx`
+  - `packages/renderer/src/modules/legal/LegalDashboard.tsx`
+  - `packages/renderer/src/modules/legal/pages/LegalPages.tsx`
+  - `packages/renderer/src/modules/marketing/components/CampaignDetail.tsx`
+  - `packages/renderer/src/modules/marketing/components/MarketingAssetGeneratorUI.tsx`
+  - `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx`
+  - `packages/renderer/src/modules/marketing/components/brand-manager/ReleasePanel.tsx`
+  - `packages/renderer/src/modules/marketing/components/brand-manager/VisualsPanel.tsx`
+
+- **UX Impact:** Department UIs now display with proper visual hierarchy and no layout constraints. Typography is balanced and professional.
+
+---
+
+### ISSUE-047: Duplicate Inbox Sidebar Items
+- **Status:** ✅ FIXED
+- **Severity:** 🟢 LOW
+- **Module:** Projects / Sidebar Navigation
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V6 - Routine 2)
+- **Summary:** The sidebar displays two identical "Inbox" entries under the PROJECTS group. Rapid clicking between them does not crash the app, but creates visual confusion and redundant navigation history.
+- **Root Cause:** Concurrent execution of `ensureInbox` on app startup caused multiple Inbox projects to be created in Firestore.
+- **Fix Applied:** Added an asynchronous lock `inboxCreationPromise` in `ProjectService.ts` to block duplicate creations, added backend cleanup logic, and added frontend filtering in `ProjectList.tsx`.
+- **User Impact:** Visual clutter eliminated.
+
+---
+
+### ISSUE-048: Navigation Routing Failure to Inbox
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** Projects / Inbox
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V6 - Section 2)
+- **Summary:** Clicking on either "Inbox" item in the sidebar updates the visual "active" highlight but fails to trigger a route change or load the module content. The main content area remains stuck on the previously active module.
+- **Root Cause:** Clicking a Project item in `ProjectList.tsx` only updated the scoped `selectedProjectId` but did not change the global `currentModule` state to the file vault module.
+- **Fix Applied:** Added `useStore.getState().setModule('files')` to the `onClick` handler for Project items, properly routing the user to the FileDashboard.
+- **User Impact:** Inbox module is fully accessible via the sidebar.
+
+---
+
+### ISSUE-049: Sidebar State Desync (Multiple Active Items)
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Module:** Sidebar Navigation
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V6 - Section 2)
+- **Summary:** Multiple sidebar items can appear active simultaneously (e.g., "Brand Manager" highlighted in yellow while an "Inbox" item is highlighted in blue).
+- **Root Cause:** Because the module didn't change when clicking an Inbox item (Issue 48), the previously active module remained highlighted alongside the project item.
+- **Fix Applied:** Resolved implicitly via Issue 48's fix. When `currentModule` shifts to `files`, all sidebar modules correctly lose their active highlight.
+- **User Impact:** Accurate and coherent navigation state.
+
+---
+
+### ISSUE-050: Command Menu Search Failure for Inbox
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** Command Menu
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V6 - Section 2)
+- **Summary:** Searching for "Inbox" or "Projects" in the Command Menu (⌘K) returns "No results found," despite these items being visible in the sidebar.
+- **Root Cause:** The `UnifiedCommandMenu.tsx` component mapped the `files` module to the label "File Explorer", meaning terms like "Inbox" and "Projects" didn't match.
+- **Fix Applied:** Renamed the `files` module command menu entry to "Inbox & Project Files" so the search indices natively match the user's intent.
+- **User Impact:** Keyboard-driven navigation to the Inbox works perfectly.
 - **Steps to Reproduce:**
   1. Boot the application in `dev:web` mode.
   2. Navigate to Creative Director or Boardroom.
