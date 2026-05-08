@@ -101,7 +101,7 @@ export function EmptyState({
             <h3
                 className={cn(
                     'font-semibold text-white',
-                    compact ? 'text-base mb-1' : 'text-lg mb-2'
+                    compact ? 'text-sm mb-1' : 'text-base mb-2'
                 )}
             >
                 {title}
@@ -112,7 +112,7 @@ export function EmptyState({
                 <p
                     className={cn(
                         'text-gray-400 max-w-sm leading-relaxed',
-                        compact ? 'text-xs mb-4' : 'text-sm mb-6'
+                        compact ? 'text-[10px] mb-4' : 'text-xs mb-6'
                     )}
                 >
                     {description}
@@ -126,7 +126,8 @@ export function EmptyState({
                         <button
                             onClick={action.onClick}
                             className={cn(
-                                'px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+                                'font-medium rounded-lg transition-all duration-200',
+                                compact ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-sm',
                                 action.variant === 'secondary'
                                     ? 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white'
                                     : 'bg-white text-black hover:bg-gray-200 shadow-lg shadow-white/5'
@@ -138,7 +139,10 @@ export function EmptyState({
                     {secondaryAction && (
                         <button
                             onClick={secondaryAction.onClick}
-                            className="px-5 py-2.5 text-sm font-medium rounded-lg bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className={cn(
+                                'font-medium rounded-lg bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200',
+                                compact ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-sm'
+                            )}
                         >
                             {secondaryAction.label}
                         </button>

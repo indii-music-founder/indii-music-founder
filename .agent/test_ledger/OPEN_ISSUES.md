@@ -774,3 +774,43 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Root Cause:** The `UnifiedCommandMenu.tsx` component mapped the `files` module to the label "File Explorer", meaning terms like "Inbox" and "Projects" didn't match.
 - **Fix Applied:** Renamed the `files` module command menu entry to "Inbox & Project Files" so the search indices natively match the user's intent.
 - **User Impact:** Keyboard-driven navigation to the Inbox works perfectly.
+
+---
+
+### ISSUE-051: Boardroom Agent Sequential Delegation Failure
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Boardroom / Agent Conductor
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 101)
+- **Summary:** The indii Conductor fails to maintain strict sequencing when instructed to perform sequential tasks (e.g., "Get X to do A AND THEN get Y to do B"). It either attempts both simultaneously or fragments the execution.
+- **User Impact:** Users cannot chain complex workflows reliably.
+
+---
+
+### ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** UI / Command Menu
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 111)
+- **Summary:** The Search (Global Command Menu) modal does not close when clicking the backdrop overlay.
+- **User Impact:** Standard UX modal behavior is broken, requiring explicit close button clicks or ESC key.
+
+---
+
+### ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Director / Canvas
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 115)
+- **Summary:** The Creative Director agent confirms execution of the `draw_shape` command via `CanvasTools`, but the fabric.js canvas remains empty. The tool logic appears disconnected from the rendering layer.
+- **User Impact:** Users cannot generate native canvas shapes via agent prompts.
+
+---
+
+### ISSUE-054: Boardroom Import Error (@/core/store)
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7)
+- **Summary:** Detected a `Failed to resolve module specifier '@/core/store'` error in the Boardroom chat logs during execution.
+- **User Impact:** Potential intermittent failures in Boardroom state management or agent chat logic.

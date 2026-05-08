@@ -117,12 +117,43 @@ export class ProjectService {
     await deleteDoc(docRef);
   }
 
+  private static inboxCreationPromise: Promise<Project> | null = null;
+
   /** Create or get the default "Inbox" project for a user */
   static async ensureInbox(userId: string): Promise<Project> {
-    const existing = await ProjectService.listByUser(userId);
-    const inbox = existing.find((p) => p.name === 'Inbox');
-    if (inbox) return inbox;
+    if (this.inboxCreationPromise) {
+      return this.inboxCreationPromise;
+    }
 
-    return ProjectService.create(userId, 'Inbox', 'Default workspace');
+    const promise = (async () => {
+      try {
+        const existing = await ProjectService.listByUser(userId);
+        let inbox = existing.find((p) => p.name === 'Inbox');
+        
+        // Cleanup duplicates if they exist (keep the oldest one)
+        const allInboxes = existing.filter(p => p.name === 'Inbox').sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeA - timeB;
+        });
+        
+        if (allInboxes.length > 1) {
+            inbox = allInboxes[0];
+            for (let i = 1; i < allInboxes.length; i++) {
+                const dupId = allInboxes[i]?.id;
+                if (dupId) await ProjectService.delete(dupId);
+            }
+        }
+        
+        if (inbox) return inbox;
+
+        return await ProjectService.create(userId, 'Inbox', 'Default workspace');
+      } finally {
+        this.inboxCreationPromise = null;
+      }
+    })();
+
+    this.inboxCreationPromise = promise;
+    return promise;
   }
 }
