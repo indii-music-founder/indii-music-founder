@@ -42,7 +42,7 @@ const microsoftClientSecret = defineSecret("MICROSOFT_CLIENT_SECRET");
 
 function getRedirectUri(provider: string): string {
     // In production, these should come from environment config
-    const baseUrl = process.env.APP_URL || 'https://studio.indiios.com';
+    const baseUrl = process.env.APP_URL || 'https://studio.indii.music';
     return `${baseUrl}/auth/${provider}/callback`;
 }
 

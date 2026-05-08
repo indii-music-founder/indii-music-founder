@@ -42,7 +42,7 @@ export const SovereignTools = {
             };
 
             const docRef = await addDoc(collection(db, 'marketplace_drops'), dropData);
-            const dropUrl = `https://indiios.com/drop/${docRef.id}`;
+            const dropUrl = `https://indii.music/drop/${docRef.id}`;
 
             return toolSuccess({
                 dropId: docRef.id,

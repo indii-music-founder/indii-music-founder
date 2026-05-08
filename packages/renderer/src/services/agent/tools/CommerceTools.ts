@@ -67,7 +67,7 @@ export const CommerceTools = {
             logger.warn('[CommerceTools] createStripePaymentLinks not available, returning staged preview');
             return toolSuccess({
                 campaignName: args.campaignName,
-                storefrontUrl: `https://app.indiios.com/store/${slug}`,
+                storefrontUrl: `https://app.indii.music/store/${slug}`,
                 paymentLinks: [],
                 status: 'staged',
                 note: 'Stripe Payment Links require the createStripePaymentLinks Cloud Function to be deployed. Items saved to merch module for manual link creation.',

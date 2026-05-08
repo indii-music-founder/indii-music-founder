@@ -133,7 +133,7 @@ function getEmailTemplate(
                 </p>
             </div>
             <div class="footer">
-                <p>Powered by <a href="https://indiios.com">indiiOS</a> — The Creative Operating System</p>
+                <p>Powered by <a href="https://indii.music">indiiOS</a> — The Creative Operating System</p>
                 <p style="margin-top: 8px;">© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
             </div>
         </div>
@@ -214,7 +214,7 @@ function getEmailTemplate(
             <div class="body">
                 <h2>You're Invited!</h2>
                 <p>${data.inviterName || 'Someone'} has invited you to join their team on indiiOS.</p>
-                <a href="${data.inviteLink || 'https://indiios.com'}" class="cta">Accept Invitation</a>
+                <a href="${data.inviteLink || 'https://indii.music'}" class="cta">Accept Invitation</a>
                 <p style="font-size: 13px; color: #64748b;">This invitation expires in 7 days.</p>
             </div>
             <div class="footer">
@@ -224,7 +224,7 @@ function getEmailTemplate(
     </div>
 </body>
 </html>`,
-                text: `You're Invited!\n\n${data.inviterName || 'Someone'} has invited you to join their team on indiiOS.\n\nAccept: ${data.inviteLink || 'https://indiios.com'}\n\nThis invitation expires in 7 days.`
+                text: `You're Invited!\n\n${data.inviterName || 'Someone'} has invited you to join their team on indiiOS.\n\nAccept: ${data.inviteLink || 'https://indii.music'}\n\nThis invitation expires in 7 days.`
             };
 
         default:

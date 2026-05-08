@@ -525,7 +525,7 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 /* ================================================================== */
 
 // Featured Attorney Booking URL
-const FEATURED_ATTORNEY_BOOKING_URL = 'https://indiios.com/legal/counsel-booking';
+const FEATURED_ATTORNEY_BOOKING_URL = 'https://indii.music/legal/counsel-booking';
 const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indiios&utm_medium=platform&utm_campaign=legal_partner`;
 
 function FindCounselPanel() {
@@ -641,7 +641,7 @@ function FindCounselPanel() {
                                 </div>
                             </div>
                             <a
-                                href="mailto:legal@indiios.com?subject=Attorney%20Directory%20Listing%20Application"
+                                href="mailto:legal@indii.music?subject=Attorney%20Directory%20Listing%20Application"
                                 className="text-[10px] text-blue-400 hover:text-blue-300 font-medium whitespace-nowrap"
                                 rel="noopener noreferrer"
                             >
@@ -653,7 +653,7 @@ function FindCounselPanel() {
 
                 <p className="text-center text-[10px] text-gray-600 pt-2">
                     Attorney directory expanding at launch. <br />
-                    Interested in a listing? Contact <a href="mailto:legal@indiios.com" className="text-blue-400 hover:underline">legal@indiios.com</a>
+                    Interested in a listing? Contact <a href="mailto:legal@indii.music" className="text-blue-400 hover:underline">legal@indii.music</a>
                 </p>
             </div>
         </div>

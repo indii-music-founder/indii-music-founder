@@ -72,6 +72,7 @@ export function UnifiedCommandMenu() {
             onOpenChange={setCommandMenuOpen}
             label="Global Command Menu"
             className="fixed inset-0 z-[1000] flex items-start justify-center pt-[15vh] pb-[20vh] px-4 backdrop-blur-sm bg-black/50"
+            onClick={() => setCommandMenuOpen(false)}
         >
             <div
                 className="w-full max-w-2xl bg-[#0f1115]/95 border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden transition-all flex flex-col"

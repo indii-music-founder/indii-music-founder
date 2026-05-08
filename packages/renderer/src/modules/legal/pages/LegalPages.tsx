@@ -89,7 +89,7 @@ export function TermsOfService() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">11. Contact</h2>
-                    <p>For questions about these Terms, contact us at <a href="mailto:legal@indiios.com" className="text-purple-400 hover:underline">legal@indiios.com</a>.</p>
+                    <p>For questions about these Terms, contact us at <a href="mailto:legal@indii.music" className="text-purple-400 hover:underline">legal@indii.music</a>.</p>
                 </section>
             </div>
 
@@ -196,7 +196,7 @@ export function PrivacyPolicy() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">8. Contact</h2>
-                    <p>Data Protection Officer: <a href="mailto:privacy@indiios.com" className="text-purple-400 hover:underline">privacy@indiios.com</a></p>
+                    <p>Data Protection Officer: <a href="mailto:privacy@indii.music" className="text-purple-400 hover:underline">privacy@indii.music</a></p>
                 </section>
             </div>
 
@@ -234,7 +234,7 @@ export function DMCAPolicy() {
                         <p><strong className="text-white">Name:</strong> Legal Department, DMCA Agent</p>
                         <p><strong className="text-white">Organization:</strong> New Detroit Music LLC</p>
                         <p><strong className="text-white">Address:</strong> 123 Innovation Drive, Suite 400, Detroit, MI 48226</p>
-                        <p><strong className="text-white">Email:</strong> <a href="mailto:dmca@indiios.com" className="text-purple-400 hover:underline">dmca@indiios.com</a></p>
+                        <p><strong className="text-white">Email:</strong> <a href="mailto:dmca@indii.music" className="text-purple-400 hover:underline">dmca@indii.music</a></p>
                         <p><strong className="text-white">Phone:</strong> (313) 555-0199</p>
                     </div>
                 </section>

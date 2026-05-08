@@ -215,6 +215,10 @@ const getAllowedOrigins = (): string[] => {
         'https://indiios-v-1-1.firebaseapp.com',
         'https://studio.indiios.com',
         'https://indiios.com',
+        'https://indii.music',
+        'https://www.indii.music',
+        'https://app.indii.music',
+        'https://studio.indii.music',
         'app://.',  // Electron app
         'http://localhost:4242' // Electron Studio (Vite)
     ];

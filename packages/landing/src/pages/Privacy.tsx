@@ -156,8 +156,8 @@ export default function Privacy() {
         <div className="text-gray-300 mt-4 space-y-2">
           <p>
             Email:{' '}
-            <a href="mailto:privacy@indiios.com" className="text-purple-400 hover:text-purple-300">
-              privacy@indiios.com
+            <a href="mailto:privacy@indii.music" className="text-purple-400 hover:text-purple-300">
+              privacy@indii.music
             </a>
           </p>
           <p>

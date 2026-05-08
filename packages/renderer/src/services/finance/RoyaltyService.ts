@@ -161,7 +161,7 @@ export class RoyaltyService {
 
             if (labelAmount > 0) {
                 payouts.push({
-                    userId: 'label_hq@indiios.com',
+                    userId: 'label_hq@indii.music',
                     amount: Number(labelAmount.toFixed(4)),
                     currency: item.currency,
                     sourceTrackIsrc: item.isrc,

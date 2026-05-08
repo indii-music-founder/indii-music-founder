@@ -783,7 +783,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-051: Boardroom Agent Sequential Delegation Failure
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom / Agent Conductor
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 101)
@@ -793,7 +793,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** UI / Command Menu
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 111)
@@ -803,7 +803,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Director / Canvas
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7 - Routine 115)
@@ -813,12 +813,11 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-054: Boardroom Import Error (@/core/store)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Boardroom
 - **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test V7)
 - **Summary:** Detected a `Failed to resolve module specifier '@/core/store'` error in the Boardroom chat logs during execution.
-- **User Impact:** Potential intermittent failures in Boardroom state management or agent chat logic.
 - **Steps to Reproduce:**
   1. Boot the application in `dev:web` mode.
   2. Navigate to Creative Director or Boardroom.
@@ -839,3 +838,23 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Root Cause:** A botched regex/AST replacement by a previous agent dropped closing braces and duplicated function definitions. The local test suite did not catch it because of how `tsc` caching worked, but `electron-vite` correctly caught the syntax errors during the production transpilation step.
 - **Fix Applied:** Restored the missing closing brace in `AgentService.ts` and cleanly rewrote the `import` and `importWithRetry` methods in `ModuleImportCache.ts`.
 - **User Impact:** The CI pipeline is now fully unblocked and the production build completes successfully.
+
+---
+
+### ISSUE-057: Playwright Test Script Syntax Error
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** E2E Tests / Playwright
+- **Found:** 2026-05-08 by Mega Stress Test V7 - Routine 130
+- **Summary:** Executing `node test-pw.mjs` fails immediately with `SyntaxError: Unexpected token 'catch'`. The test script is syntactically invalid and broken.
+- **User Impact:** E2E pipeline is blocked.
+
+---
+
+### ISSUE-058: Puppeteer Test Script Syntax Error
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** E2E Tests / Puppeteer
+- **Found:** 2026-05-08 by Mega Stress Test V7 - Routine 131
+- **Summary:** Executing `node test-puppeteer.cjs` fails with `SyntaxError: Unexpected token 'catch'`. Additionally, it still contains `waitForTimeout` which was supposedly removed in PR #1707.
+- **User Impact:** E2E pipeline is blocked.

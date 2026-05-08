@@ -197,7 +197,7 @@ export default function LoginForm() {
                                                 type="email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
-                                                placeholder="artist@indiios.com"
+                                                placeholder="artist@indii.music"
                                                 autoComplete="email"
                                                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                                 required
@@ -277,7 +277,7 @@ export default function LoginForm() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="artist@indiios.com"
+                                            placeholder="artist@indii.music"
                                             autoComplete="email"
                                             className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                             required
