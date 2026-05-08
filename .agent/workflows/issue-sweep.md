@@ -1,15 +1,21 @@
 ---
-description: End-to-end issue sweep — commit uncommitted work to a branch, fix all CodeRabbit and Sentry issues, validate, and generate the next version of the Regression Gauntlet mega test plan. Run after any significant block of work.
+description: >-
+  End-to-end issue sweep — branch uncommitted work → fix all CodeRabbit and Sentry issues →
+  validate → generate the next Regression Gauntlet mega test plan → execute it via /mega-test →
+  report. A complete closed-loop quality cycle. Run after any significant block of work.
 ---
+
+// turbo-all
 
 # /issue-sweep — The End-to-End Issue Sweep Protocol
 
-> This workflow was distilled from a full session that covered: branching uncommitted work,
-> fetching and fixing 10 CodeRabbit review comments across 2 PRs, validating with typecheck + lint,
-> committing, and generating a targeted regression test plan (v4.0) based on the full OPEN_ISSUES
-> ledger.
+> **Distilled from:** A full session covering: branching uncommitted work, fetching and fixing
+> 10 CodeRabbit review comments across 2 PRs (#1707 and #1703), running typecheck + lint,
+> committing all fixes, generating Mega Stress Test V4.0 (35 targeted regression routines), and
+> executing all routines against the live application using the browser subagent.
 >
-> Run this workflow at the end of any sprint, after merging large PRs, or before a release seal.
+> **This is a closed loop.** It ends with browser-verified proof that every fix held.
+> Run at the end of any sprint, after merging large PRs, or before a release seal.
 
 ---
 
@@ -297,11 +303,89 @@ git push
 
 ---
 
-## Phase 7: Final Report
+## Phase 7b (Optional): Generate E2E Playwright Spec
 
-### Step 18 — Produce the sweep summary
+If the fixes involved new behavioral contracts (e.g., a resource-leak fix, a validation boundary,
+a governance riskTier change), generate a Playwright E2E spec to permanently lock the behavior.
 
-Output a structured summary with:
+### Step 17b — Create spec file
+
+Create a new file at `e2e/mega-stress-test-vN.spec.ts`. It should:
+
+1. Import `test` and `expect` from `@playwright/test`.
+2. Group tests by section matching the mega test plan sections.
+3. For each `❌ FAIL` or `⚠️ PARTIAL` routine found during execution (Phase 8), add a `test.skip()` block noting the open issue number — this makes regressions visible in CI.
+4. For each `✅ PASS` routine, write a lightweight smoke test covering the PASS condition.
+
+Minimal spec skeleton:
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Mega Stress Test V<N> — <Title>', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:4242');
+    await page.waitForLoadState('networkidle');
+  });
+
+  // Section 1: <Theme>
+  test('Routine <N>: <Title> (ISSUE-XXX regression)', async ({ page }) => {
+    // <PASS condition translated into Playwright assertions>
+    await page.locator('<selector>').click();
+    await expect(page.locator('<result>')).toBeVisible();
+  });
+
+  // Skipped until ISSUE-NNN is resolved
+  test.skip('Routine <N>: <Title> — OPEN ISSUE-NNN', async () => {});
+});
+```
+
+Commit the spec:
+
+```bash
+git add e2e/mega-stress-test-vN.spec.ts && \
+git commit -m "test(e2e): add Playwright spec for Mega Stress Test V<N>" && \
+git push
+```
+
+---
+
+## Phase 8: Execute the New Test Plan (Closed Loop)
+
+This is the proof step. Do not skip it. The sweep is not complete until the newly generated
+test plan has been executed and its results have confirmed the fixes held.
+
+### Step 18 — Invoke /mega-test on the new plan
+
+Read `.agent/workflows/mega-test.md` and follow that workflow exactly, targeting the
+newly created plan version:
+
+```
+/mega-test v<N>
+```
+
+The `/mega-test` workflow will:
+1. Confirm the dev server is running at `localhost:4242`.
+2. Execute each routine using the browser subagent (5–10 routines per call).
+3. Record PASS / PARTIAL / FAIL / OPEN per routine.
+4. File any new regressions to `OPEN_ISSUES.md` as `[REGRESSION]` entries.
+5. Produce a test execution report artifact.
+
+**Minimum acceptable result:** Zero `❌ FAIL [REGRESSION]` verdicts.
+Any newly discovered bugs (not regressions) are logged as OPEN and deferred to next sweep.
+
+### Step 19 — Append to REAL_TEST_HISTORY.md
+
+```bash
+echo "## $(date +%Y-%m-%d) — issue-sweep + Mega Test V<N> — <PASS>✅ <FAIL>❌ <NEW> new issues" >> .agent/test_ledger/REAL_TEST_HISTORY.md
+git add .agent/test_ledger/REAL_TEST_HISTORY.md && git commit -m "docs: update test history after issue-sweep" && git push
+```
+
+---
+
+## Phase 9: Final Report
+
+### Step 20 — Produce the full sweep + test summary
 
 ```
 ## Issue Sweep Report — <date>
@@ -328,6 +412,11 @@ Output a structured summary with:
 - Routines: <X>–<Y> (<count> total)
 - File: .agent/test_ledger/MEGA_STRESS_TEST_V<N>_*.md
 
+### Test Execution Results
+- Routines run: <N>
+- PASS: <N> | PARTIAL: <N> | FAIL: <N> | REGRESSION: <N>
+- New issues filed: ISSUE-NNN through ISSUE-MMM
+
 ### OPEN_ISSUES Ledger
 - Issues newly fixed: <N>
 - Issues still open: <N>
@@ -337,6 +426,7 @@ Output a structured summary with:
 - Branch: <branch-name>
 - Commits: <N>
 - Status: pushed ✅
+- Ready for PR: YES / NO (if regressions exist, NO)
 ```
 
 ---
@@ -350,12 +440,41 @@ The sweep is **complete** when ALL of the following are true:
 | Uncommitted work captured on a named branch | ✅ |
 | Sentry: zero unresolved issues (or all actioned) | ✅ |
 | CodeRabbit: all Critical/Major comments fixed | ✅ |
-| typecheck passes (exit 0) | ✅ |
-| lint passes (exit 0) | ✅ |
+| `typecheck` passes (exit 0) | ✅ |
+| `lint` passes (exit 0) | ✅ |
 | All fixes committed and pushed | ✅ |
-| New Mega Stress Test version generated | ✅ |
-| OPEN_ISSUES.md updated | ✅ |
-| Sweep report produced | ✅ |
+| New Mega Stress Test version generated and committed | ✅ |
+| `/mega-test` executed — zero REGRESSION verdicts | ✅ |
+| `OPEN_ISSUES.md` updated with new fix statuses | ✅ |
+| `REAL_TEST_HISTORY.md` updated | ✅ |
+| Sweep + test report produced | ✅ |
 
 > **When all criteria are met, the sweep is sealed.** 🧹
-> The branch is ready for PR review or direct merge into `main`.
+> The branch is production-ready. Open a PR or merge to `main`.
+
+---
+
+## Workflow Relationships
+
+```
+/issue-sweep  ──────────────────────────────────────────────────────────┐
+│                                                                        │
+│  Phase 1: Branch uncommitted work                                      │
+│  Phase 2: Fix Sentry issues                                            │
+│  Phase 3: Fix CodeRabbit PR comments                                   │
+│  Phase 4: Validate (typecheck + lint)                                  │
+│  Phase 5: Generate next Mega Stress Test plan ──→ MEGA_STRESS_TEST_VN  │
+│  Phase 6: Update OPEN_ISSUES.md ledger                                 │
+│  Phase 7b: Generate E2E Playwright spec (optional)                     │
+│  Phase 8: /mega-test vN ──→ browser execution of all new routines      │
+│  Phase 9: Final sweep + test report                                    │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+
+Related workflows:
+  /mega-test   → Execute a specific test plan version using browser subagent
+  /real        → Freeform real-user scenario testing (discovery mode)
+  /1percent    → Production seal — repo metadata, CI, branch protection
+  /auto-fix    → Lightweight version of Phase 2+3 only (no test plan)
+  /ci-validate → Run all 4 test shards locally before pushing to main
+```
