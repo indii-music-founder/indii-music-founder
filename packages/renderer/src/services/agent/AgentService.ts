@@ -165,6 +165,9 @@ export class AgentService {
                 const cacheHitState = useStore.getState();
                 if (typeof cacheHitState.setAgentProcessing === 'function') {
                     cacheHitState.setAgentProcessing(false);
+                const state = useStore.getState();
+                if (typeof state.setAgentProcessing === 'function') {
+                    state.setAgentProcessing(false);
                 }
             }
             this.isProcessing = false;

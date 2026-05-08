@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.61.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.60.1...v1.61.0) (2026-05-08)
+
+
+### Features
+
+* **agents:** optimize Conductor routing tiebreakers ([#1709](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1709)) ([3e60d7c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3e60d7c13b53055d0dd5f67df3ac9895bc75a421))
+
 ## [1.60.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.60.0...v1.60.1) (2026-05-07)
 
 
