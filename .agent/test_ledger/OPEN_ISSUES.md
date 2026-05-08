@@ -593,11 +593,26 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-040: Workflow Builder Concept Art Generation Failure
-- **Status:** OPEN
+
+- **Status:** OPEN — INVESTIGATING
 - **Severity:** 🔴 HIGH
 - **Module:** Workflow Builder / Creative Tools
 - **Found:** 2026-05-08 via User Image Feedback
 - **Summary:** Executing a workflow containing a Concept Art (AI Image Generation) node fails with: `Gemini Image Generation Failed (generate): Cannot ...`. The visual node turns red and halts the workflow.
+- **Root Cause:** Preliminary investigation shows:
+  1. WorkflowEngine.ts line 204 calls `ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' })`
+  2. Cloud Function `generateImageV3` validates via `GenerateImageRequestSchema` (packages/firebase/src/lib/image.ts)
+  3. Related to ISSUE-001 which fixed `count` field handling in generate_image tool
+  4. Possible mismatch between WorkflowEngine and schema expectations
+- **Investigation Needed:**
+  1. Check if `count: 1` is triggering validation error in schema
+  2. Verify Cloud Function deployment and runtime errors
+  3. Compare with DirectorTools image generation pattern (also uses count)
+  4. Review error response from `generateImageV3` Cloud Function
+- **Files to Check:**
+  - `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts` (line 204)
+  - `packages/firebase/src/lib/image_generation.ts` (generateImageV3Fn)
+  - `packages/firebase/src/lib/image.ts` (GenerateImageRequestSchema validation)
 - **UX Impact:** Generative nodes in the Workflow Builder are currently broken, blocking users from creating automated media pipelines.
 
 ---
@@ -619,4 +634,14 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #32 equivalent)
 - **Summary:** When queried with general questions (e.g., "Tell me a story about Detroit"), the Memory Agent hard-fails with "I don't have any memories stored yet. Try ingesting some information first" instead of falling back to its base LLM general knowledge capabilities.
 - **UX Impact:** The agent feels rigid and overly constrained; it should smoothly blend user memories with its foundational knowledge.
+
+---
+
+### ISSUE-043: Sidebar Routing History Inconsistency Under Thrashing
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Sidebar Navigation
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #8 equivalent)
+- **Summary:** When rapidly double/triple-clicking across multiple tools in the sidebar (e.g., Audio Analyzer -> Workflow Builder -> Knowledge Base), the underlying history stack occasionally drops intermediate routes. Pressing "Back" skips over routes that were double-clicked, suggesting debouncing or overwriting is interfering with a 1:1 history map.
+- **UX Impact:** Power users rapidly clicking around may find the browser "Back" button behavior unpredictable.
 
