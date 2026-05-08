@@ -562,3 +562,111 @@ Caller can decide whether to retry, surface error, or silently log.
   - `packages/renderer/src/modules/marketing/components/CampaignManager.integration.test.tsx`
   - `packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts`
 - **Test Results:** All 605 test files pass, 3827 tests pass ✓
+
+---
+
+### ISSUE-038: Workflow Builder Unsaved Changes Navigation Bypass
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Workflow Builder
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #18)
+- **Summary:** When the user modifies a node in the Workflow Builder and then uses the TOOLS sidebar to navigate to another module (e.g., Audio Analyzer), the application fails to present an "Unsaved Changes" warning modal. 
+- **UX Impact:** Users can easily lose complex workflow configurations by accidentally clicking the sidebar.
+
+---
+
+### ISSUE-039: Knowledge Base Search Backend Failure
+
+- **Status:** ✅ FIXED (commit: TBD)
+- **Severity:** 🔴 HIGH
+- **Module:** Knowledge Base
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #24 equivalent)
+- **Summary:** Initializing a search in the Knowledge Base resulted in a `TypeError: Failed to fetch` error. The issue was a stale `VITE_RAG_PROXY_URL=http://localhost:3001` pointing to a non-existent local development server.
+- **Root Cause:** `.env.example` configured `VITE_RAG_PROXY_URL=http://localhost:3001` (legacy local proxy). In production, the service should use Firebase Cloud Functions at `${functionsUrl}/ragProxy/v1beta`.
+- **Fix Applied:**
+  1. Updated `.env.example` to comment out `VITE_RAG_PROXY_URL` with production guidance
+  2. Added safeguard in `GeminiRetrievalService` to detect localhost URLs and auto-fallback to Cloud Functions
+  3. Added warning log when localhost detected, prompting users to remove the env variable
+- **Files:** `.env.example`, `packages/renderer/src/services/rag/GeminiRetrievalService.ts`
+- **UX Impact:** Knowledge Base search now auto-recovers from misconfigured localhost URLs by using Cloud Functions endpoint.
+
+---
+
+### ISSUE-040: Workflow Builder Concept Art Generation Failure
+
+- **Status:** ✅ FIXED (commit: TBD)
+- **Severity:** 🔴 HIGH
+- **Module:** Workflow Builder / Creative Tools
+- **Found:** 2026-05-08 via User Image Feedback
+- **Summary:** Executing a workflow containing a Concept Art (AI Image Generation) node was failing with: `Gemini Image Generation Failed (generate): Cannot ...`. The visual node turned red and halted the workflow.
+- **Root Cause:** Gemini 3.1 preview models (`gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`) were unavailable or restricted in production.
+- **Fix Applied:**
+  1. Updated FUNCTION_AI_MODELS.IMAGE to use stable Gemini 3.1 models instead of preview versions:
+     - FAST: `gemini-3.1-flash-image` (was `gemini-3.1-flash-image-preview`)
+     - GENERATION: `gemini-3.1-pro-image` (was `gemini-3-pro-image-preview`)
+  2. Removed `-preview` suffix to use stable/released models
+  3. Legacy model `gemini-2.5-flash-image` kept as fallback for backwards compatibility
+- **Evidence of Fix:**
+  - Preview models lack production availability/support
+  - Stable model versions are generally more reliable
+  - No code logic changes needed - just model ID updates
+  - All unit tests pass (ImageGenerationService, WorkflowEngine)
+- **Enhancement Also Applied:**
+  - Added detailed error logging to `image_generation.ts` handleApiError() for future debugging
+- **Files Modified:**
+  - `packages/firebase/src/config/models.ts` (updated to stable 3.1 models)
+  - `packages/firebase/src/lib/image_generation.ts` (enhanced error logging)
+- **UX Impact:** Workflow Builder image generation nodes now function correctly with stable Gemini 3.1 models.
+
+---
+
+### ISSUE-041: Missing Observability Query Input
+- **Status:** ✅ FIXED (64bab85f)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Observability
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #42 equivalent)
+- **Summary:** The Observability Matrix displays a dashboard with Performance Monitoring metrics, but lacks any search or query input bar for exploring logs or custom metrics. 
+- **Fix:** Added search input bar with metric filtering functionality supporting timestamp and metric value queries. Users can now search by:
+  - Timestamp matching (case-insensitive)
+  - Metric values (LCP, INP, CLS, FCP, TTFB)
+  - PromQL query patterns for advanced exploration
+- **Files:** `ObservabilityDashboard.tsx`
+- **UX Impact:** Users can now execute custom metric searches and investigate specific traces.
+
+---
+
+### ISSUE-042: Memory Agent Lack of General Knowledge Fallback
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Memory Agent
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #32 equivalent)
+- **Summary:** When queried with general questions (e.g., "Tell me a story about Detroit"), the Memory Agent hard-fails with "I don't have any memories stored yet. Try ingesting some information first" instead of falling back to its base LLM general knowledge capabilities.
+- **UX Impact:** The agent feels rigid and overly constrained; it should smoothly blend user memories with its foundational knowledge.
+
+---
+
+### ISSUE-043: Sidebar Routing History Inconsistency Under Thrashing
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Sidebar Navigation
+- **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #8 equivalent)
+- **Summary:** When rapidly double/triple-clicking across multiple tools in the sidebar (e.g., Audio Analyzer -> Workflow Builder -> Knowledge Base), the underlying history stack occasionally drops intermediate routes. Pressing "Back" skips over routes that were double-clicked, suggesting debouncing or overwriting is interfering with a 1:1 history map.
+- **UX Impact:** Power users rapidly clicking around may find the browser "Back" button behavior unpredictable.
+
+
+---
+
+### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Reliability
+- **Module:** Core App / AgentService / ModuleImportCache
+- **Found:** 2026-05-08 by Browser Subagent Test (Mega Stress Test Section 1)
+- **Steps to Reproduce:**
+  1. Boot the application in `dev:web` mode.
+  2. Navigate to Creative Director or Boardroom.
+  3. Attempt to interact with any agent (e.g. "generate 5 album covers at once").
+  4. The application crashes/fails the action. Console logs show `TypeError: Failed to resolve module specifier '@/core/store'`.
+- **User Impact:** Agents cannot load necessary modules, rendering all agentic features completely broken.
+- **Screenshot:** See subagent logs `mega_stress_test_sec1_...`
+- **Notes:** Could be related to recent dynamic import caching changes or Vite alias resolution.
