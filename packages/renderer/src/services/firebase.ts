@@ -8,7 +8,7 @@ import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -239,9 +239,10 @@ if (typeof window !== 'undefined') {
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
-    // Debug token for local development - only set if explicitly configured
-    if (env.DEV && env.appCheckDebugToken) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+    // Debug token for local development
+    // If we have a token in .env, use it. Otherwise set to true so Firebase generates one and logs it.
+    if (env.DEV) {
+        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken || true;
     }
 
     // SECURITY: Warn in production if App Check is not configured
@@ -253,33 +254,47 @@ if (typeof window !== 'undefined') {
 
     // Initialize App Check if we have a valid key
     // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
-    // Or skip in development for bypass
-    // Initialize App Check if we have a valid key
-    // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
-    // ALLOW in DEV if debug token is present (Fixes localhost "Permission Denied")
+    // ALLOW in DEV if key is present to trigger the Firebase SDK's local debug token logging
     const isElectron = !!window.electronAPI;
-    const shouldInitAppCheck = env.appCheckKey &&
-        (!isElectron || env.appCheckDebugToken) &&
-        (!env.DEV || env.appCheckDebugToken);
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    // Logic: 
+    // 1. Must have a key.
+    // 2. If Electron, must have a debug token (unless in DEV, where we want to trigger the prompt).
+    // 3. If in DEV, we initialize even without a debug token so the SDK logs the "Missing debug token" message to the console.
+    const shouldInitAppCheck = !!env.appCheckKey && (
+        !isElectron || env.appCheckDebugToken || env.DEV
+    );
 
     if (shouldInitAppCheck) {
+        if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
+            console.warn(
+                '[indiiOS][AppCheck] Running on localhost without a debug token.\n' +
+                'Google Maps and other protected services will fail until you:\n' +
+                '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
+                '2. Add this token to your .env as VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN\n' +
+                '3. Register this token in the Firebase Console under App Check > Manage Debug Tokens.'
+            );
+        }
+
         if (isElectron && env.appCheckDebugToken) {
             logger.debug('[App Check] Initializing in Electron with Debug Token');
         }
 
         try {
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
+                provider: new ReCaptchaV3Provider(env.appCheckKey!),
                 isTokenAutoRefreshEnabled: true
             });
+            logger.info('[App Check] Initialized successfully');
         } catch (e: unknown) {
             // CRITICAL: Do NOT re-throw here. A failed App Check must not crash
             // the entire app (killing React before it mounts). Firestore/Storage
             // Security Rules still enforce authorization even without App Check.
-            // Incident 2026-03-11: blocked API key caused App Check re-throw → 
-            // JS bundle death → infinite CSS spinner on production.
             logger.error('[App Check] Initialization failed — app running without App Check:', e);
         }
+    } else if (env.appCheckKey) {
+        logger.debug('[App Check] Skipping initialization (Electron/Dev constraints not met)');
     }
 }
 export { appCheck };
