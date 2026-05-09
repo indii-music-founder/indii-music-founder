@@ -146,7 +146,7 @@ export class PersistentMemoryService {
           break;
 
         case 'rag-index':
-          // TODO: Implement vector embedding and semantic indexing
+          // FUTURE: Implement vector embedding and semantic indexing
           if (!this.db) throw new Error('IndexedDB not initialized');
           await this.db.add('memories', memory);
           break;
