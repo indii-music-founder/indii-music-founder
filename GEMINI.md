@@ -110,7 +110,6 @@ indiiOS-Alpha-Electron/
 ├── agents/                     # AI agent definitions (hub-and-spoke architecture)
 ├── execution/                  # Deterministic scripts for agent tools (Layer 3)
 ├── directives/                 # AI agent SOPs (Layer 1)
-├── python/                     # Python agent tools and API handlers
 ├── e2e/                        # Playwright E2E tests (60+ spec files)
 ├── docs/                       # Documentation (specs, plans, design, testing)
 ├── .agent/                     # Agent system configuration and error memory
@@ -307,7 +306,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `packages/renderer/src/test/setup.ts` prevents import errors
+- indii Conductor replaced AgentZeroService (Native Node.js/TypeScript orchestrator) — see `src/services/agent/orchestration/AgentGraphService.ts`
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
@@ -358,10 +357,9 @@ The `build` script runs three steps sequentially:
   [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
 ```
 
-- **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
+- **indii Conductor** (`agents/conductor/`) - Central hub, routes tasks to specialists
 - **Specialist Agents** - Domain experts with focused capabilities
-- **AI Sidecar** - Dockerized Python runtime (`docker-compose.yml`) on `localhost:50080`
-- **Python Tools** (`python/tools/`) - 20+ execution tools (image gen, video gen, audio analysis, browser automation, DDEX, payment gate, etc.)
+- **Native Execution** - All tools run natively within the Node.js/TypeScript environment
 
 ---
 
@@ -474,8 +472,7 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | `packages/firebase/storage.rules` | Cloud Storage security rules |
 | `packages/main/src/main.ts` | Electron main process |
 | `packages/main/src/preload.ts` | Electron IPC bridge |
-| `docker-compose.yml` | AI Sidecar + Ollama containers |
-| `.env.example` | Environment variable template |
+| .env.example | Environment variable template |
 | `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 | `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |

@@ -1,4 +1,7 @@
 # NotebookLM Extraction: OpenClaw Architecture
+> [!WARNING]
+> This document is for historical reference and contains deprecated architectural concepts.
+> **Agent Zero (Docker-based sidecar)** has been replaced by the native **indii Conductor** orchestration model.
 
 **(Notebook Location: NotebookLM / "OpenClaw Architecture: The Mechanics of Autonomous AI Agents")**
 
