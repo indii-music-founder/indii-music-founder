@@ -36,7 +36,7 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 | Purpose                      | Model ID                        | Notes                                  |
 | ---------------------------- | ------------------------------- | -------------------------------------- |
-| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks        |
+| **Text/Reasoning (Complex)** | `gemini-3.1-pro-preview`          | Agents, analysis, complex tasks        |
 | **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput |
 | **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)  |
 | **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis          |
@@ -90,7 +90,7 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 const response = await AI.generateContent({
-    model: AI_MODELS.TEXT.AGENT,  // gemini-3-pro-preview
+    model: AI_MODELS.TEXT.AGENT,  // gemini-3.1-pro-preview
     contents: [...],
     config: AI_CONFIG.THINKING.HIGH
 });
@@ -112,7 +112,7 @@ const response = await AI.generateContent({
 
 | Task Type                 | Use This                       | Model ID                       |
 | ------------------------- | ------------------------------ | ------------------------------ |
-| Agent reasoning           | `AI_MODELS.TEXT.AGENT`         | `gemini-3-pro-preview`         |
+| Agent reasoning           | `AI_MODELS.TEXT.AGENT`         | `gemini-3.1-pro-preview`         |
 | Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`          | `gemini-3-flash-preview`       |
 | Image generation          | `AI_MODELS.IMAGE.GENERATION`   | `gemini-3-pro-image-preview`   |
 | Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`          | `gemini-2.5-pro-tts`           |

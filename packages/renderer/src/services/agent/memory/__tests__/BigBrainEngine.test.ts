@@ -33,7 +33,7 @@ vi.mock('@/services/ai/GenAI', () => ({
 }));
 
 vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: { TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3-pro-preview' } },
+    AI_MODELS: { TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3.1-pro-preview' } },
 }));
 
 // Layer 4 — Captain's Log
