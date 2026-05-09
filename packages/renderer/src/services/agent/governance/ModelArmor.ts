@@ -135,12 +135,31 @@ export class ModelArmor {
         logger.debug('[ModelArmor] Scanning input...');
         const violations: ArmorViolation[] = [];
 
+        // Isolate user input from system instructions/context to prevent "context-poisoning" loops.
+        // Boardroom mode appends systemic metadata (SEATED_AGENTS, PRIOR CONTEXT) to the task.
+        // If a prior agent mention a blocked word (even defensively), it kills all subsequent agents.
+        // We truncate the scan at the first injection of a known systemic delimiter.
+        const systemDelimiters = [
+            '\n\n(SYSTEM NOTE):',
+            '\n\n[SEATED_AGENTS]:',
+            '\n\n(PRIOR CONTEXT):'
+        ];
+        
+        let userContent = prompt;
+        for (const delimiter of systemDelimiters) {
+            const index = prompt.indexOf(delimiter);
+            if (index !== -1 && index < userContent.length) {
+                userContent = prompt.substring(0, index);
+            }
+        }
+
         for (const pattern of policy.blockedInputPatterns) {
             // CRITICAL: Reset lastIndex before every test to avoid /g state leakage.
             // Even though input patterns currently don't use /g, this is defensive.
             pattern.lastIndex = 0;
 
-            if (pattern.test(prompt)) {
+            if (pattern.test(userContent)) {
+                logger.warn(`[ModelArmor] 🛡️ BLOCKED: ${pattern.toString()}. Prompt Snippet: "${userContent.substring(0, 500)}..."`);
                 const violation: ArmorViolation = {
                     category: 'prompt_injection',
                     pattern: pattern.toString(),

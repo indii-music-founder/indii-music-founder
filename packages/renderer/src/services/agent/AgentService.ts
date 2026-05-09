@@ -783,10 +783,22 @@ export class AgentService {
                     .map(id => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`)
                     .join(', ');
 
-                const enhancedText = text + assetContext + 
-                    '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-                    `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
-                    (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
+        // Sanitize incoming text to prevent spoofing of systemic delimiters
+        const systemicDelimiters = [
+            /\(SYSTEM NOTE\):/g,
+            /\[SEATED_AGENTS\]:/g,
+            /\(PRIOR CONTEXT\):/g,
+            /<<<SYSTEM_ORCHESTRATION>>>/g
+        ];
+        let sanitizedText = text;
+        for (const pattern of systemicDelimiters) {
+            sanitizedText = sanitizedText.replace(pattern, '[REDACTED_SPOOF]');
+        }
+
+        const enhancedText = sanitizedText + assetContext + 
+            '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+            `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
+            (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
                 try {
                     logger.debug(`[AgentService] Boardroom: executing agent ${agentId} (chunk ${i/CHUNK_SIZE})`);
