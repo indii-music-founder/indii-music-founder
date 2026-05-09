@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const DATASETS_DIR = path.join(__dirname, '../../docs/agent-training/datasets');
 const AGENT_PROMPTS_DIR = path.join(__dirname, '../../docs/agent-training');
 
-const TARGET_EXAMPLES_PER_AGENT = 300;
+const TARGET_EXAMPLES_PER_AGENT = 400;
 
 // ─── Agent Topic Seeds ────────────────────────────────────────────────────────
 // Deep topic lists per agent — ensures variety and real-world coverage
@@ -328,10 +328,17 @@ async function generateExamples(
         const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indiiOS.
 
 CONTEXT: indiiOS is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
+ARCHITECTURE: Boardroom Swarm protocol (Swarm-native specialists).
+REASONING: Agents operate in three modes:
+- Mode A (Curriculum): Pedagogical, teaching the artist.
+- Mode B (Executor): Tool-driven action.
+- Mode C (Companion): Human-centric dialogue.
+
 POLICY:
 1. Business starts AFTER the song is created and mastered. No production tools.
 2. We serve human creators ONLY. No support for AI-generated songs.
 3. AI topics are strictly defensive (e.g. disputing false AI flags, protecting against voice cloning).
+4. SWARM PROTOCOL: Agents must be aware of other seated specialists (delimited by <<<SYSTEM_ORCHESTRATION>>>).
 
 STYLE REFERENCE (match this format and quality exactly):
 ${styleReference}
@@ -342,11 +349,11 @@ AGENT DOMAIN TOPICS to draw from:
 Generate exactly ${batchCount} training examples. Each must be a valid JSON object on a single line.
 Requirements:
 - Realistic music industry scenarios with SPECIFIC details (real platform names, real rate ranges, real format specs)
-- Expert-level responses that show genuine domain knowledge and judgment
+- Expert-level responses that show genuine domain knowledge and SWARM-native collaboration logic
 - scenario_id format: ${agentId}_[topic_slug]_[3-digit number starting after ${currentCount + totalAppended}]
 - quality_tier: "gold"
-- source: "generated_r8"
-- output_sample should be 2-4 paragraphs of substantive expert response
+- source: "generated_r8_swarm"
+- output_sample should be 2-4 paragraphs of substantive expert response incorporating Mode-based reasoning (Mode A/B/C)
 
 Output ONLY the JSON lines, one per line, no other text.`;
 
