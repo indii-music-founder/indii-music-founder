@@ -33,18 +33,17 @@ async function triggerTuningJob(agentId: string) {
     const datasetGcsUri = `gs://indiios-training-data/ft_export/r8/${agentId}_train.jsonl`;
     const evalDatasetGcsUri = `gs://indiios-training-data/ft_export/r8/${agentId}_eval.jsonl`;
 
-    const url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/tuningJobs`;
+    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/tuningJobs`;
 
     const body = {
-        baseModel: "projects/google/locations/us-central1/publishers/google/models/gemini-3.1-flash-lite-preview",
+        baseModel: "publishers/google/models/gemini-2.5-flash-lite",
         tunedModelDisplayName: tunedModelDisplayName,
         supervisedTuningSpec: {
             trainingDatasetUri: datasetGcsUri,
             validationDatasetUri: evalDatasetGcsUri,
             hyperParameters: {
                 epochCount: 3,
-                learningRateMultiplier: 1.0,
-                adapterSize: 16
+                learningRateMultiplier: 1.0
             }
         },
         description: `Round 8 Swarm-Native Training for ${agentId} agent`
