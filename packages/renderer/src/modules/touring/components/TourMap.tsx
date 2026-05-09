@@ -21,8 +21,8 @@ const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' 
             detail: 'Add VITE_GOOGLE_MAPS_API_KEY to your environment to enable real-time satellite routing.',
         },
         auth_failure: {
-            title: 'Map Temporarily Unavailable',
-            detail: 'The Google Maps API key needs to be configured. Tour planning features remain fully operational.',
+            title: 'Map Authentication Failed',
+            detail: 'The Google Maps handshake failed. This usually indicates a missing App Check / reCAPTCHA key in the development environment.',
         },
         load_failure: {
             title: 'Map Could Not Load',
