@@ -21,7 +21,7 @@ export const FUNCTION_AI_MODELS = {
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
-        PRO: 'gemini-3-pro-preview',
+        PRO: 'gemini-3.1-pro-preview',
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-preview',
@@ -32,7 +32,7 @@ export const FUNCTION_AI_MODELS = {
         GENERATION: 'gemini-2.5-pro-tts',
     },
     AUDIO: {
-        ANALYSIS: 'gemini-3-pro-preview', // Multimodal audio support
+        ANALYSIS: 'gemini-3.1-pro-preview', // Multimodal audio support
     }
 } as const;
 

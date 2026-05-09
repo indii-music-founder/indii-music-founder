@@ -856,7 +856,7 @@ export const generateContentStream = functions
 
             try {
                 const { model, contents, config } = req.body;
-                const modelId = model || "gemini-3-pro-preview";
+                const modelId = model || "gemini-3.1-pro-preview";
 
                 // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
                 // Only allow approved models for streaming text generation.
@@ -864,7 +864,7 @@ export const generateContentStream = functions
                 // - Gemini 2.5 models: retained for Vertex AI fine-tuned model endpoints
                 const ALLOWED_MODELS = [
                     // Gemini 3 — current policy (APPROVED_MODELS)
-                    "gemini-3-pro-preview",
+                    "gemini-3.1-pro-preview",
                     "gemini-3-flash-preview",
                     // Gemini 2.5 — Vertex AI fine-tuned model support
                     "gemini-2.5-pro",

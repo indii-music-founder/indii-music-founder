@@ -226,7 +226,7 @@ describe('Image and Content Generation Functions', () => {
                 method: 'POST',
                 headers: { authorization: 'Bearer token', origin: 'http://localhost:4242' },
                 body: {
-                    model: 'gemini-3-pro-preview',
+                    model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
                 }
             };
