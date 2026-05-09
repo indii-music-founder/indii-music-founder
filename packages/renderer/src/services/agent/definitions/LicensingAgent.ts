@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
-import systemPrompt from '@/agents/licensing/prompt.md?raw';
+import systemPrompt from '@agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { GenAI } from '@/services/ai/GenAI';

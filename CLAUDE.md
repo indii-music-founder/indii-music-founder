@@ -484,6 +484,7 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | `.agent/skills/error_memory/ERROR_LEDGER.md` | Living log of past regressions — MANDATORY check before debug |
 | `.claude/commands/plat.md` | `/plat` slash command — platinum finishing touches before every push |
 | `docs/CHAT_IMAGE_INTERACTION_PLAN.md` | **Living plan** — chat image annotator + Studio handoff + visual verification loop. Update Section 5 (Current State) before ending any session that touches this work. |
+| `docs/GEMINI_FILE_SEARCH_MULTIMODAL_PLAN.md` | **Living plan** — Gemini File Search multimodal RAG gap analysis. Decisions locked: augment stores with metadata, near-term image ingestion (`gemini-embedding-2`), no legacy backfill. Impl order: citations → images → metadata. |
 
 ---
 

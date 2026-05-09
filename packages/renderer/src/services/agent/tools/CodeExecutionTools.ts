@@ -5,8 +5,8 @@ import { logger } from '@/utils/logger';
 /**
  * CodeExecutionTools — Computer-as-a-Tool
  *
- * Enables agents to write and execute arbitrary Python scripts via the
- * Python sidecar. This is the Agent Zero "computer as a tool" capability
+ * Enables agents to write and execute arbitrary Python scripts via a
+ * native execution layer. This is the indii Conductor "computer as a tool" capability
  * adapted for indiiOS — the agent writes its own code when no pre-built
  * tool exists for a task.
  *

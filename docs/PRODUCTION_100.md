@@ -54,7 +54,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **33. Real-time Firestore Sync:** Implement live listeners for critical data like Distribution pipeline statuses so the user never has to manual-refresh.
 - [x] **34. Secure Local Storage:** Utilize Keytar (OS Keychain) or encrypted storage for sensitive tokens rather than standard `localStorage`.
 - [x] **35. Form Validation (Zod):** Comprehensive client-side validation for complex objects like DDEX metadata to block invalid submissions early.
-- [x] **36. Caching API Responses:** Implement SWR or custom caching for the Agent Zero interactions to avoid redundant API hits for unchanged queries.
+- [x] **36. Caching API Responses:** Implement SWR or custom caching for the indii Conductor interactions to avoid redundant API hits for unchanged queries.
 - [x] **37. Image Lazy Loading:** Use standard intersection observers or modern `loading="lazy"` attributes across all creative/marketing views.
 - [x] **38. Background Job Status UI:** Present clear visual indicators for long-running workflows (e.g., "Generative Video Rendering... 45%").
 - [x] **39. Paginated Tables:** Data tables for finance/royalties must leverage efficient pagination rather than rendering 1000+ rows instantly.
@@ -88,17 +88,17 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **55. Citation Injection:** Ensure all RAG responses include source citations linking back to knowledge base documents.
 - [x] **56. Hybrid Search Implementation:** Combine File Search RAG with live web search for current information. (Implemented natively via Google Search Grounding)
 - [x] **57. RAG Agent Base Class:** Abstract `RAGAgent` class that all specialized agents inherit from.
-- [x] **58. Query Routing Logic:** Agent Zero routes queries to appropriate corpora based on intent detection.
+- [x] **58. Query Routing Logic:** indii Conductor routes queries to appropriate corpora based on intent detection.
 - [x] **59. RAG Cost Monitoring:** Track File Search indexing and query costs; alert if exceeding $50/month budget. (Implemented budget circuit breaker in GeminiRetrievalService).
 - [x] **60. Knowledge Base Versioning:** Git-track all knowledge base docs with semantic versioning for corpus updates. (Using checksums and git-sync for RAG files).
 
 ### Agent Orchestration & MCP (61-70)
 
-- [x] **61. Agent Zero Router:** Implement central orchestrator that routes user queries to correct specialized agent (Implemented in AgentOrchestrator.ts).
+- [x] **61. indii Conductor Router:** Implement central orchestrator that routes user queries to correct specialized agent (Implemented in AgentOrchestrator.ts).
 - [x] **62. MCP Server Stability:** Harden MCP server against crashes; implement auto-restart with exponential backoff. (Implemented in docker-compose.yml via healthchecks and restart policies)
 - [x] **63. Agent Handoff Protocol:** Define clear handoff mechanism between conversational agents and tool-enabled execution agents (Implemented in BaseAgent.ts via delegation tools).
 - [x] **64. Shared Memory Integration:** All agents read/write to shared memory for context persistence across sessions. (Implemented via UserMemoryService and UserMemoryTools targeting semantic shared memory)
-- [x] **65. Agent Capability Registry:** Dynamic registry where agents advertise their capabilities to Agent Zero. (Implemented in registry.ts via metadata and listCapabilities)
+- [x] **65. Agent Capability Registry:** Dynamic registry where agents advertise their capabilities to indii Conductor. (Implemented in registry.ts via metadata and listCapabilities)
 - [x] **66. Multi-Agent Workflows:** Support chained agent workflows (e.g., Publishing Agent → Legal Agent → Finance Agent). (Implemented in WorkflowRegistry.ts and WorkflowCoordinator.ts)
 - [x] **67. Agent Performance Metrics:** Track response latency, accuracy, and user satisfaction per agent. (Implemented in TraceService.ts and integrated into AgentExecutor)
 - [x] **68. Fallback Agent:** Default agent handles out-of-scope queries gracefully with helpful redirection. (Logic implemented in AgentExecutor.ts with generalist fallback)

@@ -1,4 +1,7 @@
 # Hybrid Agentic Architecture - Technical Review
+> [!WARNING]
+> This document records the history of the Docker-to-Native transition.
+> **The Hybrid (Docker Sidecar) model is officially deprecated.** indiiOS now operates on a 100% native Node.js/TypeScript orchestration model (indii Conductor).
 
 > **Date:** 2025-01-29
 > **Scope:** Moltbot & Agent Zero Blueprint vs. indiiOS Codebase

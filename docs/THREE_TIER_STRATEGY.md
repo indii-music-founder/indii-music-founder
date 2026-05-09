@@ -42,7 +42,7 @@ This blueprint implements a three-tier product strategy to serve the entire musi
 │  Tier 3: indiiOS Studio (Desktop)                             │
 │  ┌─────────────────────┐    ┌─────────────────────┐          │
 │  │  Variant 3A         │    │  Variant 3B         │          │
-│  │  TypeScript Native  │    │  Docker Agent Zero  │          │
+│  │  TypeScript Native  │    │  Docker indii Conductor  │          │
 │  │  • Hybrid AI        │    │  • Python Ecosystem │          │
 │  │  • Local+Cloud      │    │  • A0T Token Econ  │          │
 │  └─────────────────────┘    └─────────────────────┘          │
@@ -1789,7 +1789,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 # Create workspace directory
 RUN mkdir -p /a0/usr/projects /a0/usr/instruments /a0/usr/memory
 
-# Copy Agent Zero runtime
+# Copy indii Conductor runtime
 COPY agent-zero/ /opt/agent-zero/
 
 # Set working directory
@@ -1798,7 +1798,7 @@ WORKDIR /a0/usr
 # Expose API port
 EXPOSE 8080
 
-# Start Ollama and Agent Zero
+# Start Ollama and indii Conductor
 CMD ["sh", "-c", "ollama serve > /dev/null 2>&1 & python /opt/agent-zero/main.py"]
 ```
 
@@ -1843,7 +1843,7 @@ volumes:
 
 ```python
 # requirements.txt
-# Agent Zero Framework
+# indii Conductor Framework
 agent-zero==1.0.0
 
 # AI/ML
@@ -1913,7 +1913,7 @@ export const ProductComparison: React.FC = () => {
 
 ---
 
-## Phase 4: Foundation for Future Docker Agent Zero
+## Phase 4: Foundation for Future Docker indii Conductor
 
 ### Objectives
 - Create Docker-ready architecture
@@ -1927,7 +1927,7 @@ export const ProductComparison: React.FC = () => {
 # docker/instruments/image_generation.py
 """
 Instrument wrapper for image generation
-Can be called from Agent Zero
+Can be called from indii Conductor
 """
 
 class ImageGenerationInstrument:
@@ -2236,12 +2236,12 @@ class A0TTokenService:
         }
 ```
 
-### 4.3 Agent Zero Integration
+### 4.3 indii Conductor Integration
 
 ```python
 # docker/agent_zero_integration.py
 """
-Integration layer between Agent Zero and indiiOS instruments
+Integration layer between indii Conductor and indiiOS instruments
 """
 
 from typing import Dict, List, Any
@@ -2256,7 +2256,7 @@ from image_generation import ImageGenerationInstrument
 from video_editing import VideoEditingInstrument
 
 class IndiiOSAgentZeroBridge:
-    """Bridge between Agent Zero and indiiOS ecosystem"""
+    """Bridge between indii Conductor and indiiOS ecosystem"""
 
     def __init__(self):
         self.instruments: Dict[str, Any] = {
@@ -2403,10 +2403,10 @@ class IndiiOSAgentZeroBridge:
 - [ ] Week 13: Docker configuration for variant 3B
 - [ ] Week 14: Marketing materials and documentation
 
-### Phase 4 (Weeks 15-20): Docker Agent Zero Foundation
+### Phase 4 (Weeks 15-20): Docker indii Conductor Foundation
 - [ ] Week 15-16: Python instrument ecosystem
 - [ ] Week 17-18: A0T token integration (optional)
-- [ ] Week 19: Agent Zero integration layer
+- [ ] Week 19: indii Conductor integration layer
 - [ ] Week 20: Documentation and migration guide
 
 ---

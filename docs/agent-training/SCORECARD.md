@@ -77,10 +77,10 @@ Score each dimension 0–5. Document baseline before changes, rescore after rewr
 - `screenwriter`: Only 2 tools (format_screenplay, analyze_script_structure) — same
 - `curriculum`: Tool documentation thin (indii_oracle call examples missing)
 
-## Agent Zero Audit Notes (2026-03-19 — Baseline)
+## indii Conductor Audit Notes (2026-03-19 — Baseline)
 
 **Files reviewed:**
-- `agents/agent0/prompts/agent.system.main.role.md` — 14 lines, very thin (legacy/unused)
+- `agents/conductor/prompt.md` — central orchestrator mission
 - `src/services/agent/specialists/GeneralistAgent.ts` — richer, has Mode A/B/C structure
 
 **Baseline score: 15/35** (Clarity:3, Specificity:3, ToolAlign:4, FewShot:1, EdgeCase:2, Routing:2, GuardRails:0)
