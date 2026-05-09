@@ -811,7 +811,7 @@ export class BaseAgent implements SpecializedAgent {
                 const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
                 // Only scan the new task/input to prevent false positives from the agent's own history
                 // (e.g., identity locks repeating "ignore previous instructions")
-                const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
+                const armorResult = await ModelArmor.scanInput(fullPrompt, getDefaultPolicy());
                 if (!armorResult.allowed) {
                     executionContext.rollback();
                     return { text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };

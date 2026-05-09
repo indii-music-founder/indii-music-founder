@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger';
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',
-    TEXT_FAST: 'gemini-3-flash-preview',
+    TEXT_FAST: 'gemini-3.1-flash-lite',
     TEXT_LITE: 'gemini-3.1-flash-lite',
     IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
     IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
