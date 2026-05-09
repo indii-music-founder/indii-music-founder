@@ -19,7 +19,7 @@ import { logger } from '@/utils/logger';
 /**
  * Model name mapping for the Gemini Developer API fallback path.
  *
- * Some model IDs (e.g. gemini-3-pro-preview) are only available via Vertex AI
+ * Some model IDs (e.g. gemini-3.1-pro-preview) are only available via Vertex AI
  * or Firebase AI SDK endpoints. When we fall back to the direct @google/genai
  * SDK (generativelanguage.googleapis.com), we must translate these to model
  * IDs that the Developer API actually supports.
@@ -29,7 +29,7 @@ import { logger } from '@/utils/logger';
  */
 const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
     // Gemini 3 preview → Developer API stable equivalents
-    'gemini-3-pro-preview': 'gemini-2.5-pro',
+    'gemini-3.1-pro-preview': 'gemini-2.5-pro',
     'gemini-3-flash-preview': 'gemini-2.5-flash',
     'gemini-3-pro-image-preview': 'gemini-2.5-pro',
     'gemini-3.1-flash-image-preview': 'gemini-2.5-flash',

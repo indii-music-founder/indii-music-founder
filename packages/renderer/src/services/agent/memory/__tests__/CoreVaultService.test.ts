@@ -47,7 +47,7 @@ vi.mock('@/services/ai/GenAI', () => ({
 
 vi.mock('@/core/config/ai-models', () => ({
     AI_MODELS: {
-        TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3-pro-preview' },
+        TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3.1-pro-preview' },
     },
 }));
 

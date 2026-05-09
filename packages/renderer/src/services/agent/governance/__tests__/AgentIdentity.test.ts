@@ -16,7 +16,7 @@ describe('AgentIdentity', () => {
                 'Creative Director',
                 'You are a creative director specializing in visual arts.',
                 ['generate_image', 'search_knowledge'],
-                'gemini-3-pro-preview'
+                'gemini-3.1-pro-preview'
             );
 
             expect(card.instanceId).toBeDefined();

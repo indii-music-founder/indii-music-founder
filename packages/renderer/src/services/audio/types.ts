@@ -80,7 +80,7 @@ export interface AudioIntelligenceProfile {
     technical: DeepAudioFeatures; // BPM, Key, Energy — from Essentia.js WASM
     semantic: AudioSemanticData; // Mood, Genre, Imagery, Prompts — from Gemini 3 Pro
     analyzedAt: number;
-    modelVersion: string;   // e.g., "gemini-3-pro-preview"
+    modelVersion: string;   // e.g., "gemini-3.1-pro-preview"
 }
 // Note: Render directives (image/veo prompts) are retrieved via NeuralCortexService.
 // Call neuralCortex.processAndDirect(profile, label) after analyze() to get directives.

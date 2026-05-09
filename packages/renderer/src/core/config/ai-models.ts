@@ -10,7 +10,7 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3-pro-preview',
+    TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
     IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
     IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
@@ -18,14 +18,14 @@ export const APPROVED_MODELS = {
     DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
     DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
     DIRECT_LEGACY: 'gemini-2.5-flash-image',        // Nano Banana OG — high-volume, low-latency
-    AUDIO_PRO: 'gemini-3-pro-preview',
+    AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
     VIDEO_FAST: 'veo-3.1-fast-generate-preview',   // Fast mode — lower latency, lower cost
     VIDEO_LITE: 'veo-3.1-lite-generate-preview',   // Lite mode — lowest cost, good quality
     VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
-    BROWSER_AGENT: 'gemini-3-pro-preview',
+    BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
@@ -122,7 +122,7 @@ export const AI_CONFIG = {
 export const MODEL_PRICING = {
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
-    'gemini-3-pro-preview': { input: 1.25, output: 10.00 },
+    'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'veo-3.1-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
