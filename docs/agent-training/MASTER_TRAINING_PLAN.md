@@ -351,7 +351,7 @@ See MEMORY.md for R5 job IDs. Steps: query endpoint IDs → update `fine-tuned-m
 
 | Issue | Agent | Severity | Status |
 |-------|-------|----------|--------|
-| `agents/agent0/prompts/agent.system.main.role.md` is legacy/unused — real prompt is in GeneralistAgent.ts | generalist | Medium | Documented |
+| `agents/conductor/prompt.md` is the authoritative mission | generalist | High | Production |
 | No runtime tool authorization enforcement in `registry.ts` | All | High | TODO — Phase 4 |
 | `indii_oracle.py` not wired to score dev responses | All | Medium | TODO — Phase 4 |
 | specialist .md files now fully rewritten (director, producer, screenwriter, curriculum, licensing) | Multiple | High | ✅ FIXED |

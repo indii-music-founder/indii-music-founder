@@ -866,6 +866,7 @@ export const generateContentStream = functions
                     // Gemini 3 — current policy (APPROVED_MODELS)
                     "gemini-3.1-pro-preview",
                     "gemini-3-flash-preview",
+                    "gemini-3.1-flash-lite",
                     // Gemini 2.5 — Vertex AI fine-tuned model support
                     "gemini-2.5-pro",
                     "gemini-2.5-flash",

@@ -116,7 +116,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **183. Long-Polling Resiliency:** Harden connection logic for long Node automations (e.g., rendering video for 30 mins) with WebSocket keep-alives. *(Wired: Cloud Function 'configureWebSocketKeepalive' in DevOpsTools.ts)*
 - [x] **184. Firestore Lock Contention Testing:** Ensure simultaneous agent writing doesn't cause transaction locks or overwrite conflicts in `memories`. *(Wired: Cloud Function 'runContentionTest' in DevOpsTools.ts)*
 - [x] **185. Electron Crash Reporting:** Sentry native crash reporting catching hard C++ / V8 crashes under load. *(Wired: Cloud Function + Electron IPC detection in DevOpsTools.ts)*
-- [x] **186. "Stressed Agent" Recovery:** Tests proving that if Agent Zero loops infinitely, a watchdog terminates and re-primes the context. *(Wired: Cloud Function 'triggerWatchdogRecovery' in DevOpsTools.ts)*
+- [x] **186. "Stressed Agent" Recovery:** Tests proving that if indii Conductor loops infinitely, a watchdog terminates and re-primes the context. *(Wired: Cloud Function 'triggerWatchdogRecovery' in DevOpsTools.ts)*
 - [x] **187. Storage Bucket Scrubbing:** Cron jobs automatically deleting orphaned temp media the AI generated but the user never saved. *(Wired: Cloud Function 'scrubOrphanedMedia' in StorageTools.ts)*
 - [x] **188. Database Sharding Prep:** Setup logical partitioning strategies in Firestore for when users hit 10k+ events per user. *(Wired: Cloud Function 'configureLogicalSharding' in DevOpsTools.ts)*
 - [x] **189. Sandbox QA Environment:** A one-click reproducible database script to spin up and tear down a full test ecosystem. *(Wired: Cloud Function 'provisionQASandbox' in DevOpsTools.ts)*
@@ -127,7 +127,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **191. Agent Voice Interactions:** Integrate `gemini-2.5-pro-tts` and STT to allow users to verbally converse with their publicist while driving.
 - [x] **192. Spatial/Dolby Atmos Preparation:** Interface for tagging stems with spatial coordinates for Atmos mix exportation. *(Wired: Spatial coordinate mapping + Firestore persistence in MusicTools.ts)*
 - [x] **193. Generative UI Morphing:** The app's UI dynamically shapes its layout based on if you are currently acting as an Artist vs. a Manager.
-- [x] **194. Vision API Workspace Sync:** Give Agent Zero vision access to a user's DAW (Ableton) screen via Electron to provide live production feedback.
+- [x] **194. Vision API Workspace Sync:** Give indii Conductor vision access to a user's DAW (Ableton) screen via Electron to provide live production feedback.
 - [x] **195. Biometric Auth Enforcement:** TouchID/FaceID enforcement before releasing highly sensitive financial holds.
 - [x] **196. Cinematic App Transitions:** Next-level Framer Motion orchestration replacing component mounts with seamless path morphing.
 - [x] **197. Augmented Reality Asset Viewing:** View physical merch mockups in AR directly via browser WebXR API.

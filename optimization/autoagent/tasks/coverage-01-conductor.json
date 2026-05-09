@@ -1,6 +1,6 @@
 {
     "type": "coverage",
-    "agent": "agent0",
+    "agent": "conductor",
     "required_concepts": [
         "hub-and-spoke",
         "route",
