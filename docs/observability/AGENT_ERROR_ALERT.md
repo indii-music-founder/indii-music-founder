@@ -108,6 +108,6 @@ When this alert fires:
 
 1. Check recent agent logs: `gcloud logging read 'jsonPayload.errorCode="AGENT_TASK_FAILURE"' --limit=50 --project={PROJECT_ID}`
 2. Cross-reference with `.agent/skills/error_memory/ERROR_LEDGER.md`
-3. Check Agent Zero sidecar health: `curl http://localhost:50080/health`
-4. If sidecar is down, restart: `docker-compose restart agent0`
+3. Check indii Conductor health: Verify the native Node.js/TypeScript orchestration layer is active in the production environment.
+4. If Conductor is unresponsive, check the Cloud Run revision status and container logs for fatal exceptions.
 5. If Gemini API errors: check quota at `https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas`

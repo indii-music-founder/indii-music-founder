@@ -109,7 +109,7 @@ The **indii Conductor** (Layer 2) reads this SOP and orchestrates the agent flee
 
 ### Hub Function: indii Conductor
 
-**Location:** `src/services/agent/AgentService.ts` + `agents/agent0/` definitions
+**Location:** `src/services/agent/AgentService.ts` + `agents/conductor/` definitions
 
 **Responsibilities:**
 1. Parse user intent (chat message or API call)

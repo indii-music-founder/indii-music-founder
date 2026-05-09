@@ -25,7 +25,7 @@ RESULTS_FILE = Path(__file__).resolve().parent / "results.tsv"
 # ── Agent Fleet ──────────────────────────────────────────────────────────────
 
 AGENT_NAMES = [
-    "agent0", "analytics", "brand", "creative", "default",
+    "conductor", "analytics", "brand", "creative", "default",
     "distribution", "finance", "generalist", "indii_curriculum",
     "indii_executor", "legal", "licensing", "marketing", "merchandise",
     "music", "publicist", "publishing", "road", "social", "video",
@@ -140,7 +140,7 @@ def eval_routing_task(task: dict) -> tuple[float, str]:
     Scores 1.0 if the Conductor's routing table contains keywords that would
     match this request to the expected agent. Scores 0.0 otherwise.
     """
-    conductor_prompt = load_agent_prompt("agent0")
+    conductor_prompt = load_agent_prompt("conductor")
     user_input = task["input"].lower()
     expected = task["expected_agent"]
 

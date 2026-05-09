@@ -1,1 +1,0 @@
-{"plaintext":"Hello from TypeScript! This is the TS to Py test payload."}
