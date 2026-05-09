@@ -240,9 +240,9 @@ if (typeof window !== 'undefined') {
 let appCheck = null;
 if (typeof window !== 'undefined') {
     // Debug token for local development
-    // If we have a token in .env, use it. Otherwise set to true so Firebase generates one and logs it.
-    if (env.DEV) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken || true;
+    // Set global debug token if provided in env
+    if (env.DEV && env.appCheckDebugToken) {
+        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 
     // SECURITY: Warn in production if App Check is not configured
