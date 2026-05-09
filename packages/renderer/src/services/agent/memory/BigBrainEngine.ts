@@ -83,7 +83,7 @@ const DEFAULT_CONFIG: BigBrainConfig = {
  */
 const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
     // Agent folder names
-    'agent0': ['artist_identity', 'goals', 'preferences', 'team'],
+    'conductor': ['artist_identity', 'goals', 'preferences', 'team'],
     'brand': ['artist_identity', 'goals', 'contacts'],
     'distribution': ['distribution', 'legal', 'financial'],
     'finance': ['financial', 'business_model', 'legal'],
@@ -98,8 +98,7 @@ const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
     'video': ['artist_identity', 'preferences', 'technical'],
 
     // Module ID aliases (ContextPipeline passes activeModule, not agent folder name)
-    'agent': ['artist_identity', 'goals', 'preferences', 'team'],       // alias for agent0
-    'generalist': ['artist_identity', 'goals', 'preferences', 'team'],  // alias for indii Conductor
+    'generalist': ['artist_identity', 'goals', 'preferences', 'team'],  // indii Conductor (Hub)
     'creative': ['artist_identity', 'preferences', 'technical'],        // alias for creative-director
     'dashboard': ['artist_identity', 'goals', 'preferences'],           // overview module
 };

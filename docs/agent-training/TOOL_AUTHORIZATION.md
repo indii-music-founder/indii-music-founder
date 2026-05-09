@@ -10,7 +10,7 @@ Authorization is enforced at two levels:
 | Symbol | Meaning |
 |--------|---------|
 | ✅ | Authorized — tool is listed in agent's prompt and accessible |
-| 🔒 | Hub only — only `generalist` (Agent Zero) may call this |
+| 🔒 | Hub only — only `generalist` (indii Conductor) may call this |
 | ❌ | Blocked — agent must not call; route to authorized agent instead |
 | 📖 | Read-only — agent can query but not mutate |
 

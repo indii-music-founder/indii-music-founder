@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const DATASETS_DIR = path.join(__dirname, '../../docs/agent-training/datasets');
 const AGENT_PROMPTS_DIR = path.join(__dirname, '../../docs/agent-training');
 
-const TARGET_EXAMPLES_PER_AGENT = 100;
+const TARGET_EXAMPLES_PER_AGENT = 400;
 
 // ─── Agent Topic Seeds ────────────────────────────────────────────────────────
 // Deep topic lists per agent — ensures variety and real-world coverage
@@ -62,9 +62,11 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'sync license vs master license — what each grants',
         'trademark registration for artist names and logos',
         'social media IP ownership when content goes viral',
-        'NFT rights — what an artist actually owns',
         'termination rights under US copyright law (35-year rule)',
         'contract red flags — what clauses should always be negotiated',
+        'disputing false AI-flagging by DSPs to prove human creation',
+        'protecting human artists against unauthorized AI voice cloning',
+        'opting human catalogs out of AI training datasets',
     ],
     distribution: [
         'DDEX ERN 4.3 required fields for a single release',
@@ -77,6 +79,8 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'release scheduling — Friday release windows and delivery lead times',
         'territorial restrictions in distribution agreements',
         'explicit content flagging requirements per DSP',
+        'proving human authorship to DSPs following false AI-flags',
+        'catalog migration between distributors — avoiding gaps in availability',
     ],
     marketing: [
         'Spotify editorial playlist pitch strategy and timing',
@@ -87,8 +91,9 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'superfan identification and direct-to-fan monetization',
         'data-driven release strategy using streaming analytics',
         'cross-platform content strategy for an album cycle',
-        'TikTok organic strategy for music promotion',
-        'press release timing relative to release date',
+        'TikTok organic strategy and Creator Marketplace registration',
+        'YouTube Shorts monetization strategy — 45% RPM share',
+        'micro-budget ad deployment — $10/day strategies with measurable ROI',
     ],
     brand: [
         'building a Show Bible for a new artist project',
@@ -115,16 +120,16 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'AI image generation prompts for consistent artist imagery',
     ],
     producer: [
-        'low-end frequency management in modern trap production',
-        'sidechain compression techniques for pump effect',
-        'parallel compression on drums — when and how',
-        'vocal processing chain for commercial R&B',
-        'sample-based production — chopping vs replaying',
-        'stem mastering vs traditional mastering for streaming',
-        'loudness targets by DSP — LUFS standards',
-        'genre-blending production — keeping coherence across sounds',
-        'arrangement psychology — building tension and release',
-        'working with live musicians in a DAW-first workflow',
+        'call sheet generation for a single-day music video shoot',
+        'script breakdown — identifying props, wardrobe, locations, extras',
+        'crew coordination — gaffer, grip, AC, hair/makeup day rates',
+        'location scouting — permit requirements by city and state',
+        'production budget estimation for a $15K music video',
+        'SAG-AFTRA compliance for background performers in music videos',
+        'equipment procurement — camera packages, lighting rental houses',
+        'production insurance requirements — certificates of insurance for locations',
+        'weather contingency planning and cover sets',
+        'production timeline — pre-pro through wrap and delivery',
     ],
     video: [
         'music video treatment writing — narrative vs performance vs concept',
@@ -149,18 +154,20 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'genre classification ambiguity — how to handle cross-genre tracks',
         'stem analysis for remix licensing decisions',
         'audio quality forensics — lossy vs lossless detection',
+        'mix and master review for business-ready releases (technical check)',
     ],
     social: [
         'Instagram Reels content strategy for music releases',
         'TikTok sound strategy — organic vs paid amplification',
-        'Twitter/X community management for artists',
-        'YouTube Shorts vs long-form — content strategy decisions',
+        'X (Twitter) community management for artists',
+        'YouTube Shorts monetization — 45% RPM share and vertical-first content',
         'content calendar building for a 6-week release campaign',
         'community engagement — responding to comments at scale',
-        'social media crisis management — negative press cycles',
+        'social media crisis management — coordinated harassment response',
         'fan-generated content — how to leverage UGC legally',
         'platform algorithm changes and adapting strategy',
         'social media metrics that actually matter vs vanity metrics',
+        'Discord and Telegram community webhook management',
     ],
     publicist: [
         'writing a press release for an album announcement',
@@ -259,16 +266,16 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'cost optimization for GCP services in a music platform',
     ],
     curriculum: [
-        'designing a training curriculum for a new music distribution agent',
-        'measuring RIG (Relative Information Gain) for agent responses',
-        'identifying knowledge gaps through eval set failure analysis',
-        'structuring adversarial test sets for agent robustness',
-        'curriculum design for agents with overlapping domains',
-        'progression from bronze to gold quality training examples',
-        'feedback loop design between production usage and training data',
-        'benchmark design for music industry AI agents',
-        'when to retrain vs when to refine the prompt',
-        'quality scoring rubric for agent training examples',
+        'music distribution 101 — how DSPs work, release timelines, and delivery formats',
+        'copyright fundamentals — composition vs master recording ownership',
+        'royalty types explained — mechanical, performance, sync, and print',
+        'PRO registration walkthrough — ASCAP vs BMI vs SESAC for a first-time artist',
+        'label deal structures — indie vs signed, 360 deals, and what to negotiate',
+        'first release strategy — single vs EP vs album for a debut',
+        'touring 101 — booking your first show, building a routing strategy',
+        'sync licensing basics — what artists need to know to get placements',
+        'building a team — when to get a manager, lawyer, and accountant',
+        'understanding streaming economics — per-stream rates, save rates, and discovery algorithms',
     ],
 };
 
@@ -290,8 +297,10 @@ async function generateExamples(
         return;
     }
 
-    const toGenerate = Math.min(count, TARGET_EXAMPLES_PER_AGENT - currentCount);
-    console.log(`\n🧠 ${agentId}: generating ${toGenerate} examples (current: ${currentCount})...`);
+    const toGenerateTotal = Math.min(count, TARGET_EXAMPLES_PER_AGENT - currentCount);
+    if (toGenerateTotal <= 0) return;
+
+    console.log(`\n🧠 ${agentId}: generating ${toGenerateTotal} examples in batches (current: ${currentCount})...`);
 
     const { GoogleGenAI } = await import('@google/genai');
     const apiKey = process.env.VITE_API_KEY || process.env.GEMINI_API_KEY;
@@ -306,10 +315,30 @@ async function generateExamples(
         ? [topicOverride]
         : (AGENT_TOPICS[agentId] || [`music industry ${agentId} specialist tasks`]);
 
-    const styleReference = existing.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
-    const agentTopicList = topics.join('\n- ');
+    const BATCH_SIZE = 20;
+    let totalAppended = 0;
 
-    const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indiiOS.
+    for (let i = 0; i < toGenerateTotal; i += BATCH_SIZE) {
+        const batchCount = Math.min(BATCH_SIZE, toGenerateTotal - totalAppended);
+        console.log(`  → Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(toGenerateTotal / BATCH_SIZE)} (${batchCount} examples)...`);
+
+        const styleReference = existing.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
+        const agentTopicList = topics.join('\n- ');
+
+        const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indiiOS.
+
+CONTEXT: indiiOS is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
+ARCHITECTURE: Boardroom Swarm protocol (Swarm-native specialists).
+REASONING: Agents operate in three modes:
+- Mode A (Curriculum): Pedagogical, teaching the artist.
+- Mode B (Executor): Tool-driven action.
+- Mode C (Companion): Human-centric dialogue.
+
+POLICY:
+1. Business starts AFTER the song is created and mastered. No production tools.
+2. We serve human creators ONLY. No support for AI-generated songs.
+3. AI topics are strictly defensive (e.g. disputing false AI flags, protecting against voice cloning).
+4. SWARM PROTOCOL: Agents must be aware of other seated specialists (delimited by <<<SYSTEM_ORCHESTRATION>>>).
 
 STYLE REFERENCE (match this format and quality exactly):
 ${styleReference}
@@ -317,46 +346,50 @@ ${styleReference}
 AGENT DOMAIN TOPICS to draw from:
 - ${agentTopicList}
 
-Generate exactly ${toGenerate} training examples. Each must be a valid JSON object on a single line.
+Generate exactly ${batchCount} training examples. Each must be a valid JSON object on a single line.
 Requirements:
 - Realistic music industry scenarios with SPECIFIC details (real platform names, real rate ranges, real format specs)
-- Expert-level responses that show genuine domain knowledge and judgment
-- Mix of difficulty: common cases, edge cases, and expert-level queries
-- Include at least 2 adversarial examples (prompt injection or out-of-scope requests) where adversarial=true
-- scenario_id format: ${agentId}_[topic_slug]_[3-digit number starting after ${currentCount}]
-- quality_tier: "gold" for all
-- source: "generated"
-- output_sample should be 2-4 paragraphs of substantive expert response
+- Expert-level responses that show genuine domain knowledge and SWARM-native collaboration logic
+- scenario_id format: ${agentId}_[topic_slug]_[3-digit number starting after ${currentCount + totalAppended}]
+- quality_tier: "gold"
+- source: "generated_r8_swarm"
+- output_sample should be 2-4 paragraphs of substantive expert response incorporating Mode-based reasoning (Mode A/B/C)
 
 Output ONLY the JSON lines, one per line, no other text.`;
 
-    const result = await genAI.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: { temperature: 0.8 }
-    });
+        const result = await genAI.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: { temperature: 0.8 }
+        });
 
-    const text = result.text || '';
-    const lines = text.split('\n').filter(l => l.trim().startsWith('{'));
+        const text = result.text || '';
+        const lines = text.split('\n').filter(l => l.trim().startsWith('{'));
 
-    let appended = 0;
-    const writeStream = fs.createWriteStream(datasetPath, { flags: 'a' });
+        const writeStream = fs.createWriteStream(datasetPath, { flags: 'a' });
+        let batchAppended = 0;
 
-    for (const line of lines) {
-        try {
-            JSON.parse(line); // validate
-            writeStream.write('\n' + line.trim());
-            appended++;
-        } catch {
-            console.warn(`  ⚠️  Skipping invalid JSON line`);
+        for (const line of lines) {
+            try {
+                JSON.parse(line); // validate
+                writeStream.write('\n' + line.trim());
+                batchAppended++;
+            } catch {
+                // skip invalid
+            }
+        }
+        writeStream.end();
+        totalAppended += batchAppended;
+
+        // Small delay to avoid rate limits
+        if (i + BATCH_SIZE < toGenerateTotal) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
     }
 
-    writeStream.end();
-
-    const newTotal = currentCount + appended;
+    const newTotal = currentCount + totalAppended;
     const roundTwoReady = newTotal >= TARGET_EXAMPLES_PER_AGENT;
-    console.log(`  ✅ ${agentId}: +${appended} examples → total: ${newTotal} ${roundTwoReady ? '🎓 ROUND 2 READY' : `(need ${TARGET_EXAMPLES_PER_AGENT - newTotal} more)`}`);
+    console.log(`  ✅ ${agentId}: +${totalAppended} examples → total: ${newTotal} ${roundTwoReady ? '🎓 R8 READY' : `(need ${TARGET_EXAMPLES_PER_AGENT - newTotal} more)`}`);
 }
 
 async function readJsonl(filePath: string): Promise<object[]> {

@@ -17,7 +17,7 @@ This directive codifies the architectural patterns synthesized from OpenClaw's p
 
 ## 1. Gateway Control Plane (indii Conductor as Secure Router)
 
-indii Conductor (`agents/agent0/`) is the **single secure router** for all 17+ specialist agents.
+indii Conductor (`agents/conductor/`) is the **single secure router** for all 17+ specialist agents.
 
 ### Responsibilities
 - Accept all inbound messages via the WebSocket Control Plane (`src/services/agent/WebSocketControlPlane.ts`)

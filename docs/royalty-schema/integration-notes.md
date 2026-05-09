@@ -22,7 +22,7 @@ This document describes how the royalty collection schema fits into the existing
 | **Finance Agent** | Budget analysis, metadata auditing, receipt scanning | **Primary owner** of royalty tracking, payments, statements |
 | **Legal Agent** | Contract review, rights management | Copyright registration, sync licensing |
 | **Marketing Agent** | Campaigns, release coordination | Release gating, "sell before you stream" enforcement |
-| **Agent Zero** | Hub coordination, task routing | Orchestrates cross-agent royalty workflows |
+| **indii Conductor** | Hub coordination, task routing | Orchestrates cross-agent royalty workflows |
 
 ### 1.2 Existing Data Models
 
