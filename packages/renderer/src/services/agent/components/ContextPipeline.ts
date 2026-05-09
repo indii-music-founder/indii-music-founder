@@ -52,7 +52,7 @@ export class ContextPipeline {
                 const recentContext = this.extractRecentContext(chatHistoryString);
 
                 // Determine active agent ID
-                const agentId = stateContext.activeModule || 'agent0';
+                const agentId = stateContext.activeModule || 'generalist';
 
                 // Assemble context from all 4 layers in parallel
                 const bigBrainContext = await bigBrainEngine.assembleContext(

@@ -76,6 +76,15 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     // Not yet fine-tuned
     'creative':      undefined,
     'keeper':        undefined,
+
+    // === ROUND 8 (SWARM-NATIVE BURST) ===
+    // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
+    // Status: Training in progress...
+    // 'generalist':   'PENDING_R8_ENDPOINT',
+    // 'finance':      'PENDING_R8_ENDPOINT',
+    // 'legal':        'PENDING_R8_ENDPOINT',
+    // 'distribution': 'PENDING_R8_ENDPOINT',
+    // 'marketing':    'PENDING_R8_ENDPOINT',
 };
 
 /**

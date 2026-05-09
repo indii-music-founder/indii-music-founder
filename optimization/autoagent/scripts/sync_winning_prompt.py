@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """sync_winning_prompt.py — extract the meta-agent's winning SYSTEM_PROMPT
 from optimization/autoagent/agent.py and write it into the canonical
-indii Conductor prompt file at agents/agent0/prompt.md.
+indii Conductor prompt file at agents/conductor/prompt.md.
 
 Run by the nightly GH Actions workflow AFTER `harbor run` finishes. The
 workflow then creates a PR with the diff so a human reviews every prompt
@@ -17,7 +17,7 @@ Usage:
     python scripts/sync_winning_prompt.py [--dry-run]
 
 Exit codes:
-    0  = prompt was changed and written to agents/agent0/prompt.md
+    0  = prompt was changed and written to agents/conductor/prompt.md
     1  = error (couldn't parse, couldn't read/write)
     2  = no change (prompt identical to current Conductor prompt) — workflow
          should treat this as "skip PR" and not as a failure
@@ -34,12 +34,12 @@ from pathlib import Path
 # it's invoked from. The repo layout is:
 #   <repo>/optimization/autoagent/scripts/sync_winning_prompt.py
 #   <repo>/optimization/autoagent/agent.py
-#   <repo>/agents/agent0/prompt.md
+#   <repo>/agents/conductor/prompt.md
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUTOAGENT_DIR = SCRIPT_DIR.parent
 REPO_ROOT = AUTOAGENT_DIR.parent.parent
 AGENT_PY = AUTOAGENT_DIR / "agent.py"
-CONDUCTOR_PROMPT = REPO_ROOT / "agents" / "agent0" / "prompt.md"
+CONDUCTOR_PROMPT = REPO_ROOT / "agents" / "conductor" / "prompt.md"
 
 
 def extract_system_prompt(agent_py_path: Path) -> str:

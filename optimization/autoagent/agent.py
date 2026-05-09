@@ -47,8 +47,8 @@ class AutoAgent:
     def _load_system_prompt(self) -> str:
         """Loads the system prompt for the specified agent."""
         folder_map = {
-            "generalist": "agent0",
-            "conductor": "agent0",
+            "generalist": "conductor",
+            "conductor": "conductor",
             "brand": "brand",
             "road": "road",
             "publicist": "publicist",
