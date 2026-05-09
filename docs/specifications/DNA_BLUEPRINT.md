@@ -2,7 +2,7 @@
 
 ## 1. Vision
 
-Transform indiiOS from a tool-suite into a self-orchestrating operating system. The "Best of Both Worlds" hybrid merges OpenClaw's stable system/browser integration with Agent Zero's autonomous "Zero-Data" reasoning.
+Transform indiiOS from a tool-suite into a self-orchestrating operating system. The "Best of Both Worlds" hybrid merges OpenClaw's stable system/browser integration with indii Conductor's autonomous "Zero-Data" reasoning.
 
 ## 2. Component Integration
 
@@ -10,7 +10,7 @@ Transform indiiOS from a tool-suite into a self-orchestrating operating system. 
 
 - **Source:** Graft `agent-zero_src/agent.py` logic into `indiiOS/src/services/agent/AgentOrchestrator.ts`.
 - **Function:** Replace the current timeout-prone cognitive logic with a state-machine that handles long-running tasks across multiple "Turns."
-- **Self-Correction:** Implement Agent Zero's "Self-Verifying" loop so that if a Gemini call fails (like the 403 we saw), the agent automatically tries a fallback model or prompts the user for intervention.
+- **Self-Correction:** Implement indii Conductor's "Self-Verifying" loop so that if a Gemini call fails (like the 403 we saw), the agent automatically tries a fallback model or prompts the user for intervention.
 
 ### 🧤 The "Ghost Hands" (Browser Controller)
 

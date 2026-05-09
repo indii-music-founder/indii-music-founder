@@ -21,6 +21,7 @@ export const FUNCTION_AI_MODELS = {
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
+        LITE: 'gemini-3.1-flash-lite',
         PRO: 'gemini-3.1-pro-preview',
     },
     VIDEO: {

@@ -12,6 +12,7 @@ import { logger } from '@/utils/logger';
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
+    TEXT_LITE: 'gemini-3.1-flash-lite',
     IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
     IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
@@ -33,6 +34,7 @@ export const AI_MODELS = {
     TEXT: {
         AGENT: APPROVED_MODELS.TEXT_AGENT,
         FAST: APPROVED_MODELS.TEXT_FAST,
+        LITE: APPROVED_MODELS.TEXT_LITE,
     },
     IMAGE: {
         GENERATION: APPROVED_MODELS.IMAGE_GEN,
@@ -78,6 +80,8 @@ export const AI_CONFIG = {
         MAX_OUTPUT_TOKENS_AGENT: 8192,
         /** Default maxOutputTokens for Flash model — lower cap for fast tasks */
         MAX_OUTPUT_TOKENS_FAST: 4096,
+        /** Default maxOutputTokens for Flash-Lite model — budget cap for high-volume tasks */
+        MAX_OUTPUT_TOKENS_LITE: 4096,
         /** Default maxOutputTokens applied to all calls unless overridden */
         MAX_OUTPUT_TOKENS_DEFAULT: 8192,
     },
@@ -124,6 +128,7 @@ export const MODEL_PRICING = {
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
+    'gemini-3.1-flash-lite': { input: 0.04, output: 0.20 },
     'veo-3.1-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
@@ -204,6 +209,7 @@ export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
 export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
 export type AudioModel = typeof AI_MODELS.AUDIO[keyof typeof AI_MODELS.AUDIO];
 export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
+export type LiteModel = typeof AI_MODELS.TEXT.LITE;
 export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];
 
 /**
