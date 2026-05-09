@@ -33,7 +33,7 @@ All primary agents are configured with the **Gemini API Docs MCP** server (`gemi
 
 - **MCP server:** `@google/gemini-api-docs-mcp@latest`
 - **Reference:** [ai.google.dev/gemini-api/docs/coding-agents](https://ai.google.dev/gemini-api/docs/coding-agents)
-- **Skill:** `agents/agent0/skills/gemini_api/SKILL.md` — invoke before writing any Gemini API code
+- **Skill:** `agents/conductor/skills/gemini_api/SKILL.md` — invoke before writing any Gemini API code
 
 ---
 

@@ -75,7 +75,7 @@ class AutoOptimizer:
             print(final_test.stdout)
 
     def _get_agent_prompt_path(self) -> Path:
-        folder_map = {"conductor": "agent0", "agent0": "agent0"}
+        folder_map = {"conductor": "conductor", "generalist": "conductor"}
         folder = folder_map.get(self.agent_id, self.agent_id)
         return self.project_root / "agents" / folder / "prompt.md"
 

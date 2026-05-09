@@ -36,8 +36,9 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 | Purpose                      | Model ID                        | Notes                                    |
 | ---------------------------- | ------------------------------- | ---------------------------------------- |
-| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks          |
+| **Text/Reasoning (Complex)** | `gemini-3.1-pro-preview`        | Agents, analysis, complex tasks          |
 | **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput   |
+| **Text/Reasoning (Lite)**    | `gemini-3.1-flash-lite`         | Budget tier, high-volume, fine-tuning    |
 | **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)    |
 | **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis            |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis             |
@@ -112,8 +113,9 @@ const response = await AI.generateContent({
 
 | Task Type                 | Use This                     | Model ID                     |
 | ------------------------- | ---------------------------- | ---------------------------- |
-| Agent reasoning           | `AI_MODELS.TEXT.AGENT`       | `gemini-3-pro-preview`       |
+| Agent reasoning           | `AI_MODELS.TEXT.AGENT`       | `gemini-3.1-pro-preview`     |
 | Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`        | `gemini-3-flash-preview`     |
+| Budget/high-volume tasks  | `AI_MODELS.TEXT.LITE`        | `gemini-3.1-flash-lite`      |
 | Image generation          | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
 | Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`        | `gemini-2.5-pro-tts`         |
 | Video generation          | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview`   |
@@ -182,6 +184,7 @@ Before submitting any code that uses AI models, verify:
 
 | Date       | Issue                                | Cause                                         | Resolution                           |
 | ---------- | ------------------------------------ | --------------------------------------------- | ------------------------------------ |
+| 2026-05-09 | Added `gemini-3.1-flash-lite`        | GA release (May 7) — budget tier for agents   | Added as `TEXT_LITE` tier            |
 | 2025-12-24 | `gemini-1.5-flash` in `ai-models.ts` | AI agent "downgraded" for debugging reasoning | Reverted to `gemini-3-flash-preview` |
 
 **Pattern:** AI agents often suggest using older models because their training data may be outdated. **ALWAYS REFUSE** such suggestions.
@@ -192,4 +195,4 @@ Before submitting any code that uses AI models, verify:
 
 If you believe this policy should be changed, contact the project owner. Do not make exceptions unilaterally.
 
-### This policy was last updated: 2025-12-24
+### This policy was last updated: 2026-05-09
