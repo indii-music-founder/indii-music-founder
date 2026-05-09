@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
     serverTimestamp: vi.fn(), name: 'mock-app', options: {}
   })),
   initializeAppCheck: vi.fn(),
-  ReCaptchaEnterpriseProvider: vi.fn(),
+  ReCaptchaV3Provider: vi.fn(),
 }));
 
 vi.mock('firebase/app', () => ({
@@ -23,7 +23,7 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/app-check', () => ({
   serverTimestamp: vi.fn(),
   initializeAppCheck: mocks.initializeAppCheck,
-  ReCaptchaEnterpriseProvider: mocks.ReCaptchaEnterpriseProvider
+  ReCaptchaV3Provider: mocks.ReCaptchaV3Provider
 }));
 
 // Mock other firebase modules to avoid errors during import
@@ -108,7 +108,7 @@ describe('Firebase App Check Initialization', () => {
     await import('./firebase');
 
     expect(mocks.initializeAppCheck).toHaveBeenCalled();
-    expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
+    expect(mocks.ReCaptchaV3Provider).toHaveBeenCalledWith('test-key');
   });
 
   it('should NOT initialize App Check in Electron environment (no debug token)', async () => {
@@ -144,6 +144,6 @@ describe('Firebase App Check Initialization', () => {
     await import('./firebase');
 
     expect(mocks.initializeAppCheck).toHaveBeenCalled();
-    expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
+    expect(mocks.ReCaptchaV3Provider).toHaveBeenCalledWith('test-key');
   });
 });
