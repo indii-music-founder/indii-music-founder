@@ -27,12 +27,12 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     if (decodedToken.email?.endsWith('@indii.music')) {
-      (req as any).user = decodedToken;
+      Object.assign(req, { user: decodedToken });
       next();
     } else {
       res.status(403).json({ error: 'Forbidden: Requires indii.music admin identity' });
     }
-  } catch (error) {
+  } catch {
     res.status(401).json({ error: 'Invalid token' });
   }
 };
