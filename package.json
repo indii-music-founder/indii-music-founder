@@ -174,8 +174,6 @@
   },
   "dependencies": {
     "express": "4.22.1",
-    "firebase-admin": "10.1.0",
-    "firebase-functions": "4.9.0",
     "jspdf": "^4.2.1",
     "react-router-dom": "7.14.2",
     "resend": "6.1.3",
