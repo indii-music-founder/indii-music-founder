@@ -11,6 +11,10 @@ import {
   BarChart3,
   Bell
 } from 'lucide-react';
+import { NexusMonitor } from './components/modules/NexusMonitor';
+import { EmailManager } from './components/modules/EmailManager';
+import { DDEXTracker } from './components/modules/DDEXTracker';
+import { FoundersPortal } from './components/modules/FoundersPortal';
 
 const AdminDashboard: React.FC = () => {
   const [activeModule, setActiveModule] = useState('Nexus Monitor');
@@ -104,52 +108,21 @@ const AdminDashboard: React.FC = () => {
         {/* Module Content */}
         <div className="flex-1 overflow-y-auto p-10 z-10">
           <div className="max-w-6xl mx-auto space-y-10">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-4 gap-6">
-              {[
-                { label: 'Domain Propagation', value: '88%', trend: '+12%', sub: 'Global Average' },
-                { label: 'Email Aliases', value: '14 Active', trend: 'Stable', sub: 'Workspace Sync' },
-                { label: 'Build Success', value: '99.4%', trend: 'High', sub: 'Blacksmith Runners' },
-                { label: 'Agent Webhooks', value: 'Active', trend: 'Listening', sub: 'agent@indii.music' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-[#121214] border border-white/5 p-6 rounded-3xl hover:border-white/10 transition-colors group">
-                  <p className="text-[11px] text-white/30 uppercase tracking-widest font-bold mb-3 group-hover:text-white/50 transition-colors">{stat.label}</p>
-                  <div className="flex items-baseline gap-3">
-                    <h3 className="text-3xl font-bold tracking-tight">{stat.value}</h3>
-                    <span className="text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md">{stat.trend}</span>
-                  </div>
-                  <p className="text-[11px] text-white/20 mt-2">{stat.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Dynamic View (Mock) */}
-            <div className="bg-[#121214] border border-white/5 rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xl font-bold tracking-tight">System Logs</h4>
-                  <p className="text-sm text-white/40 mt-1">Real-time infrastructure activity feed.</p>
-                </div>
-                <button className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all">
-                  Export Audit Log
-                </button>
+            {activeModule === 'Nexus Monitor' ? (
+              <NexusMonitor />
+            ) : activeModule === 'Email Manager' ? (
+              <EmailManager />
+            ) : activeModule === 'DDEX Tracker' ? (
+              <DDEXTracker />
+            ) : activeModule === 'Founders Portal' ? (
+              <FoundersPortal />
+            ) : (
+              <div className="flex items-center justify-center h-64 border border-white/5 bg-white/[0.02] rounded-3xl border-dashed">
+                <p className="text-white/40 text-sm font-medium tracking-wide">
+                  {activeModule} module is currently under construction.
+                </p>
               </div>
-              <div className="p-8 space-y-6">
-                {[
-                  { time: '2 mins ago', type: 'DNS', msg: 'TXT record verified for indii.music propagation check.', status: 'Success' },
-                  { time: '14 mins ago', type: 'BUILD', msg: 'Blacksmith runner initialized for indiiOS-Clean release v1.61.1.', status: 'Pending' },
-                  { time: '1 hour ago', type: 'AUTH', msg: 'Google Identity Platform integration handshake successful.', status: 'Success' },
-                  { time: '2 hours ago', type: 'ALIASES', msg: 'New alias provisioned: agent@indii.music', status: 'Success' },
-                ].map((log, i) => (
-                  <div key={i} className="flex items-center gap-6 group">
-                    <div className="w-20 text-[11px] text-white/20 font-mono">{log.time}</div>
-                    <div className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-bold text-white/40 w-16 text-center group-hover:bg-white/10 transition-colors">{log.type}</div>
-                    <div className="flex-1 text-sm text-white/70 group-hover:text-white transition-colors">{log.msg}</div>
-                    <div className={`text-[11px] font-bold ${log.status === 'Success' ? 'text-green-500' : 'text-orange-500'}`}>{log.status}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </main>
