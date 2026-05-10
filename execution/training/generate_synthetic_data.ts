@@ -13,6 +13,7 @@
  * Minimum target: 100 examples per agent before Round 2 fine-tuning.
  */
 
+import 'dotenv/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';

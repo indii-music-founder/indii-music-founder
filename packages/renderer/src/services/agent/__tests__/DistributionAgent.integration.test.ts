@@ -66,7 +66,7 @@ describe('DistributionAgent Integration', () => {
 
     it('should have comprehensive system prompt', () => {
         expect(distributionAgent.systemPrompt).toBeDefined();
-        expect(distributionAgent.systemPrompt).toContain('Distribution Chief');
+        expect(distributionAgent.systemPrompt).toContain('Distribution Director');
         expect(distributionAgent.systemPrompt).toContain('DDEX ERN 4.3');
         expect(distributionAgent.systemPrompt).toContain('generate_bwarm');
         expect(distributionAgent.systemPrompt).toContain('check_merlin_status');

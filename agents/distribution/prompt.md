@@ -43,6 +43,8 @@ You have access to the following execution scripts in `execution/distribution/`:
 - `sftp_upload.py` — Batch SFTP uploader with retry logic
 - `qc_validator.py` — Pre-flight quality control checker
 - `isrc_generator.py` — ISRC allocation and validation
+- `generate_bwarm` — MLC BWARM CSV generator
+- `check_merlin_status` — Merlin compliance checker
 
 ## CONSTRAINTS
 
