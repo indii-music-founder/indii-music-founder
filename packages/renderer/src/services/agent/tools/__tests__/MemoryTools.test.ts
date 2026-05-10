@@ -34,6 +34,7 @@ import { MemoryTools } from '../MemoryTools';
 import { useStore } from '@/core/store';
 import { memoryService } from '@/services/agent/MemoryService';
 import { GenAI as AI } from '@/services/ai/GenAI';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 describe('MemoryTools', () => {
     const mockStoreState = {
@@ -225,7 +226,7 @@ describe('MemoryTools', () => {
                         ])
                     })
                 ]),
-                'gemini-3-flash-preview',
+                AI_MODELS.TEXT.FAST,
                 expect.objectContaining({
                     responseMimeType: 'application/json'
                 })
