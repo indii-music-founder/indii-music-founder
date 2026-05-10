@@ -58,6 +58,8 @@ import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { useSubscription } from '@/modules/finance/hooks/useSubscription';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -430,6 +432,24 @@ function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
     );
 }
 
+function UpgradeGate({ onUpgrade }: { onUpgrade: () => void }) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
+            <div className="text-5xl">⭐</div>
+            <div className="text-xl font-semibold text-gray-200">Premium feature</div>
+            <p className="text-sm text-gray-500 max-w-xs">
+                This feature requires a subscription. Upgrade to Pro or Studio to unlock distribution, finance, licensing, and more.
+            </p>
+            <button
+                onClick={onUpgrade}
+                className="px-6 py-2.5 bg-dept-creative hover:bg-dept-creative-glow text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+                Upgrade Now
+            </button>
+        </div>
+    );
+}
+
 function ModuleRenderer({ moduleId }: ModuleRendererProps) {
     const location = useLocation();
     const subPath = useMemo(() => {
@@ -440,6 +460,9 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
     const { user, setModule } = useStore(
         useShallow(s => ({ user: s.user, setModule: s.setModule }))
     );
+
+    // Call subscription hook unconditionally per React Rules of Hooks
+    const { subscription, loading: subLoading } = useSubscription();
 
     const ModuleComponent = MODULE_COMPONENTS[moduleId];
 
@@ -477,6 +500,13 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
     // Gate commercial modules for anonymous/guest users — bypass in dev/E2E if onboarding is skipped
     if (user?.isAnonymous && COMMERCIAL_MODULES.has(moduleId) && !env.skipOnboarding) {
         return <GuestGate onUpgrade={() => setModule('onboarding')} />;
+    }
+
+    // Gate commercial modules for free-tier authenticated users
+    if (!user?.isAnonymous && !subLoading && COMMERCIAL_MODULES.has(moduleId) && !env.skipOnboarding) {
+        if (subscription?.tier === SubscriptionTier.FREE) {
+            return <UpgradeGate onUpgrade={() => setModule('finance')} />;
+        }
     }
 
     // Special case for creative studio which needs initialMode prop
