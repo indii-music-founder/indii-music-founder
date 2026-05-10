@@ -88,7 +88,12 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     // Status: Training COMPLETE — 2026-05-10
     'generalist':      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
     'finance':         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
+    'finance.accounting': undefined,
+    'finance.tax':       undefined,
+    'finance.royalty':   undefined,
     'legal':           'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
+    'legal.contracts':  undefined,
+    'legal.compliance': undefined,
     'distribution':    'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
     'marketing':       'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
     'social':          'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
