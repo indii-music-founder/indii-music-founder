@@ -13,7 +13,8 @@
     "packages/shared",
     "packages/landing",
     "packages/sdk",
-    "packages/mcp-server-local"
+    "packages/mcp-server-local",
+    "packages/admin-dashboard"
   ],
   "scripts": {
     "dev": "electron-vite dev",
