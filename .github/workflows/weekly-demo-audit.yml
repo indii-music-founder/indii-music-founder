@@ -25,7 +25,7 @@ concurrency:
 jobs:
   audit:
     name: Hours 1, 2, 4 (Hour 3 is human-only)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 90
 
     env:
@@ -47,7 +47,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-            libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+            libgbm1 libasound2 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
 
       - name: Synthesize minimal .env from secrets (so dev:web can boot)
         env:
