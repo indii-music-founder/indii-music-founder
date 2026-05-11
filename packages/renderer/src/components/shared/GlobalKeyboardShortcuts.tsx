@@ -72,7 +72,7 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
                         </div>
                         <div>
                             <h2 className="text-sm font-bold text-white">Keyboard Shortcuts</h2>
-                            <p className="text-xs text-neutral-400">All available shortcuts across indiiOS</p>
+                            <p className="text-xs text-neutral-400">All available shortcuts across indii.music</p>
                         </div>
                     </div>
                     <button

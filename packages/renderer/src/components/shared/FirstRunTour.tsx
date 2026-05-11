@@ -14,14 +14,14 @@ import { env } from '@/config/env';
  *   4. Quick actions — context-sensitive right panel
  *
  * Tour is shown once per browser profile, stored in localStorage under
- * `indiiOS_tour_completed_v1`. Skipping also sets the flag.
+ * `indii_tour_completed_v1`. Skipping also sets the flag.
  *
  * Usage:
  *   Mount <FirstRunTour /> once in App.tsx after the main layout renders.
  *   It self-manages its own lifecycle.
  */
 
-const TOUR_KEY = 'indiiOS_tour_completed_v1';
+const TOUR_KEY = 'indii_tour_completed_v1';
 const TOUR_DELAY_MS = 2_000; // wait for layout to settle
 
 export function FirstRunTour() {
@@ -41,7 +41,7 @@ export function FirstRunTour() {
                 overlayColor: 'rgba(0, 0, 0, 0.75)',
                 stagePadding: 6,
                 stageRadius: 10,
-                popoverClass: 'indiiOS-tour-popover',
+                popoverClass: 'indii-tour-popover',
                 nextBtnText: 'Next →',
                 prevBtnText: '← Back',
                 doneBtnText: 'Get Started',
@@ -56,7 +56,7 @@ export function FirstRunTour() {
                         popover: {
                             title: 'Your Creative OS',
                             description:
-                                'indiiOS is your all-in-one platform. Use the sidebar to navigate between 20+ departments — Creative, Distribution, Finance, Marketing, Legal, and more.',
+                                'indii.music is your all-in-one platform. Use the sidebar to navigate between 20+ departments — Creative, Distribution, Finance, Marketing, Legal, and more.',
                             side: 'right',
                             align: 'start',
                         },

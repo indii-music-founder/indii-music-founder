@@ -51,7 +51,7 @@ function DataExportSection() {
                 <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-white">Export My Data</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                        Download a complete copy of all your indiiOS data as a JSON file.
+                        Download a complete copy of all your indii.music data as a JSON file.
                         Includes your profile, releases, contracts, campaigns, and analytics.
                         Required under GDPR Article 20 (Right to Data Portability).
                     </p>
@@ -117,7 +117,7 @@ function AccountDeletionSection() {
                     <div>
                         <p className="text-sm font-semibold text-white">Account deletion complete</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                            Your data has been permanently removed from indiiOS systems.
+                            Your data has been permanently removed from indii.music systems.
                             You have been signed out.
                         </p>
                     </div>
@@ -135,7 +135,7 @@ function AccountDeletionSection() {
                 <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-white">Delete My Account</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                        Permanently delete your indiiOS account and all associated data.
+                        Permanently delete your indii.music account and all associated data.
                         This action is irreversible. Required under GDPR Article 17
                         (Right to Erasure).
                     </p>

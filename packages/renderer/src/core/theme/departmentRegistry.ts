@@ -13,7 +13,7 @@
  */
 
 /**
- * Core department types in indiiOS
+ * Core department types in indii.music
  */
 export type DepartmentType =
     | 'royalties'

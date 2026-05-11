@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 /**
- * Comprehensive Firebase Mock Factory for indiiOS
+ * Comprehensive Firebase Mock Factory for indii.music
  * Follows Platinum Polish standards for type safety and completeness.
  */
 
