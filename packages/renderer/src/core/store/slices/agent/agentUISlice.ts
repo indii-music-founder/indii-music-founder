@@ -81,7 +81,7 @@ export function buildAgentUIState(
         isAgentOpen: false,
         isCommandBarDetached: false,
         isCommandBarCollapsed: false,
-        commandBarPosition: (typeof window !== 'undefined' && (['left', 'center', 'right'].includes(localStorage.getItem('indiiOS_commandBarPosition') || '') ? localStorage.getItem('indiiOS_commandBarPosition') as 'left' | 'center' | 'right' : 'center')) || 'center',
+        commandBarPosition: (typeof window !== 'undefined' && (['left', 'center', 'right'].includes(localStorage.getItem('indii_commandBarPosition') || '') ? localStorage.getItem('indii_commandBarPosition') as 'left' | 'center' | 'right' : 'center')) || 'center',
         commandBarInput: '',
         commandBarAttachments: [],
         agentMode: 'assistant',
@@ -102,7 +102,7 @@ export function buildAgentUIState(
         setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
         setCommandBarPosition: (position) => {
             if (typeof window !== 'undefined') {
-                localStorage.setItem('indiiOS_commandBarPosition', position);
+                localStorage.setItem('indii_commandBarPosition', position);
             }
             set({ commandBarPosition: position });
         },
