@@ -35,7 +35,7 @@ try {
 }
 
 logger.debug("Indii OS Studio v1.2.6-manual-redeploy");
-document.title = "indiiOS - Studio (v1.2.6)";
+document.title = "indii.music — Studio (v1.2.6)";
 
 try {
     ReactDOM.createRoot(document.getElementById('root')!).render(
