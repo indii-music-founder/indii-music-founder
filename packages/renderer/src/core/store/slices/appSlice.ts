@@ -3,6 +3,43 @@ import { type ModuleId, isValidModule } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
 
+// Migration: Support old indiiOS_ localStorage keys from before rebranding to indii.music
+// This function is called once on app startup to preserve existing user preferences
+function migrateStorageKeys(): void {
+    if (typeof window === 'undefined') return;
+
+    const keysToMigrate = [
+        'indiiOS_entryAssistantDismissed',
+        'indiiOS_sidebarOpen',
+        'indiiOS_commandBarPosition',
+    ];
+
+    const migrationVersion = 'indii_migration_v1';
+    const hasMigrated = localStorage.getItem(migrationVersion) === 'true';
+
+    if (hasMigrated) return; // Only run once per browser
+
+    try {
+        for (const oldKey of keysToMigrate) {
+            const value = localStorage.getItem(oldKey);
+            if (value !== null) {
+                const newKey = oldKey.replace('indiiOS_', 'indii_');
+                localStorage.setItem(newKey, value);
+                localStorage.removeItem(oldKey);
+                logger.debug(`[AppSlice] Migrated ${oldKey} → ${newKey}`);
+            }
+        }
+        localStorage.setItem(migrationVersion, 'true');
+    } catch (err) {
+        logger.error('[AppSlice] Storage migration failed:', err);
+    }
+}
+
+// Run migration on module load
+if (typeof window !== 'undefined') {
+    migrateStorageKeys();
+}
+
 // Helper to get initial module from URL
 const getInitialModule = (): ModuleId => {
     if (typeof window === 'undefined') return 'dashboard';
@@ -68,13 +105,13 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     projects: [],
     hasUnsavedChanges: false,
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
-    isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_entryAssistantDismissed') === 'true' : false,
+    isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indii_entryAssistantDismissed') === 'true' : false,
     setEntryAssistantDismissed: (dismissed) => {
         if (typeof window !== 'undefined') {
             if (dismissed) {
-                localStorage.setItem('indiiOS_entryAssistantDismissed', 'true');
+                localStorage.setItem('indii_entryAssistantDismissed', 'true');
             } else {
-                localStorage.removeItem('indiiOS_entryAssistantDismissed');
+                localStorage.removeItem('indii_entryAssistantDismissed');
             }
         }
         set({ isEntryAssistantDismissed: dismissed });
@@ -187,7 +224,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
-    isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_sidebarOpen') !== 'false' : true,
+    isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indii_sidebarOpen') !== 'false' : true,
     isRightPanelOpen: false,
     rightPanelTab: 'context',
     toggleSidebar: () => {
@@ -198,7 +235,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         const newState = !state.isSidebarOpen;
         if (typeof window !== 'undefined') {
-            localStorage.setItem('indiiOS_sidebarOpen', String(newState));
+            localStorage.setItem('indii_sidebarOpen', String(newState));
         }
         set({ isSidebarOpen: newState, _lastSidebarToggle: now });
     },
