@@ -42,7 +42,7 @@ concurrency:
 jobs:
   optimize:
     name: Hill-climb Conductor system prompt
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 360  # 6 hour hard backstop
 
     env:
