@@ -209,7 +209,7 @@ export class GeminiRetrievalService {
      * Finds or creates a FileSearchStore for a specific project.
      * @param projectId Optional Project ID for isolation. Defaults to global default.
      */
-    async ensureFileSearchStore(projectId?: string): Promise<string> {
+    async ensureFileSearchStore(projectId?: string, embeddingModel?: string): Promise<string> {
         const cacheKey = projectId || 'default';
         if (this.storeCache.has(cacheKey)) return this.storeCache.get(cacheKey)!;
 
@@ -234,7 +234,7 @@ export class GeminiRetrievalService {
         try {
             const createRes = await this.fetch('fileSearchStores', {
                 method: 'POST',
-                body: JSON.stringify({ displayName })
+                body: JSON.stringify({ displayName, ...(embeddingModel ? { embeddingModel } : {}) })
             });
             const newStoreName = createRes.name;
             this.storeCache.set(cacheKey, newStoreName);
@@ -251,7 +251,7 @@ export class GeminiRetrievalService {
      * Imports an existing file (uploaded via files API) into the File Search Store.
      * @param fileUri The resource name of the file (e.g. "files/123...")
      */
-    async importFileToStore(fileUri: string, storeName: string): Promise<void> {
+    async importFileToStore(fileUri: string, storeName: string, customMetadata?: Array<{key: string, stringValue?: string, numericValue?: number}>): Promise<void> {
         // Ensure format is just "files/ID" for import
         let resourceName = fileUri;
         if (resourceName.startsWith('https://')) {
@@ -272,7 +272,8 @@ export class GeminiRetrievalService {
             const res = await this.fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
-                    fileName: resourceName
+                    fileName: resourceName,
+                    ...(customMetadata ? { customMetadata } : {})
                 })
             });
             logger.info("Import Operation started:", res.name);
@@ -310,7 +311,7 @@ export class GeminiRetrievalService {
      * If fileUri is provided, it ensures that file is present in the store.
      * If fileUri is null/empty, it searches the entire store.
      */
-    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string) {
+    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any) {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
@@ -334,7 +335,8 @@ export class GeminiRetrievalService {
                 tools = [
                     {
                         fileSearch: {
-                            fileSearchStoreNames: [storeName]
+                            fileSearchStoreNames: [storeName],
+                            ...(metadataFilter ? { customMetadataFilters: metadataFilter } : {})
                         }
                     },
                     {
@@ -379,7 +381,7 @@ export class GeminiRetrievalService {
     /**
      * Streams query responses using the Gemini API.
      */
-    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string): AsyncGenerator<string> {
+    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any): AsyncGenerator<string> {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
@@ -388,7 +390,7 @@ export class GeminiRetrievalService {
                 const storeName = await this.ensureFileSearchStore(projectId);
                 if (fileUri) await this.importFileToStore(fileUri, storeName);
                 tools = [
-                    { fileSearch: { fileSearchStoreNames: [storeName] } },
+                    { fileSearch: { fileSearchStoreNames: [storeName], ...(metadataFilter ? { customMetadataFilters: metadataFilter } : {}) } },
                     { googleSearchRetrieval: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC', dynamicThreshold: 0.3 } } }
                 ];
             } catch (e: unknown) {

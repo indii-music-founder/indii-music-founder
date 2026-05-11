@@ -37,7 +37,22 @@ export class RAGAgent extends BaseAgent {
             const queryResponse = await GeminiRetrieval.query(null, probeQuery, undefined, undefined, targetCorpus);
 
             // Extract the generated text
-            const ragText = queryResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+            const ragTextRaw = queryResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+            const groundingMetadata = queryResponse?.candidates?.[0]?.groundingMetadata || queryResponse?.candidates?.[0]?.grounding_metadata;
+            let ragText = ragTextRaw;
+            if (ragTextRaw && groundingMetadata?.groundingChunks) {
+                const chunks = groundingMetadata.groundingChunks;
+                const citations = chunks.map((chunk: any) => {
+                    const ctx = chunk.retrievedContext;
+                    if (ctx) {
+                        return `[Source: ${ctx.title || ctx.uri || 'Unknown'}${ctx.pageNumber ? ` - Page ${ctx.pageNumber}` : ''}]`;
+                    }
+                    return '';
+                }).filter(Boolean).join(', ');
+                if (citations) {
+                    ragText += `\n\nCitations: ${citations}`;
+                }
+            }
 
             if (ragText && !ragText.includes("NONE") && !signal?.aborted) {
                 // Ensure context exists
