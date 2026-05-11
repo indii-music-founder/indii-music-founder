@@ -23,10 +23,13 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  */
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
     // === MANAGER'S OFFICE ===
+/*
     // R5 — gemini-2.5-pro base (100 examples) — 2026-04-27
     'generalist':      'projects/223837784072/locations/us-central1/endpoints/6477549004426051584',
+*/
 
     // === DEPARTMENTS ===
+/*
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
     'finance':         'projects/223837784072/locations/us-central1/endpoints/969646660151934976',
     'finance.accounting': undefined,
@@ -46,8 +49,10 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'publishing':      'projects/223837784072/locations/us-central1/endpoints/649891086608629760',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
     'licensing':       'projects/223837784072/locations/us-central1/endpoints/3386953760143048704',
+*/
 
     // === SPECIALISTS ===
+/*
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
     'brand':           'projects/223837784072/locations/us-central1/endpoints/8196798162174738432',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
@@ -72,6 +77,7 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/2194625758796709888',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
+*/
 
     // Not yet fine-tuned
     'creative':      undefined,
@@ -79,12 +85,27 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
 
     // === ROUND 8 (SWARM-NATIVE BURST) ===
     // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
-    // Status: Training in progress...
-    // 'generalist':   'PENDING_R8_ENDPOINT',
-    // 'finance':      'PENDING_R8_ENDPOINT',
-    // 'legal':        'PENDING_R8_ENDPOINT',
-    // 'distribution': 'PENDING_R8_ENDPOINT',
-    // 'marketing':    'PENDING_R8_ENDPOINT',
+    // Status: Training COMPLETE — 2026-05-10
+    'generalist':      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+    'finance':         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
+    'legal':           'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
+    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
+    'marketing':       'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
+    'social':          'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
+    'publishing':      'projects/223837784072/locations/us-central1/endpoints/8962594816781189120',
+    'licensing':       'projects/223837784072/locations/us-central1/endpoints/1071443844697948160',
+    'brand':           'projects/223837784072/locations/us-central1/endpoints/1396547442798755840',
+    'road':            'projects/223837784072/locations/us-central1/endpoints/6548665416510603264',
+    'publicist':       'projects/223837784072/locations/us-central1/endpoints/6584694213529567232',
+    'music':           'projects/223837784072/locations/us-central1/endpoints/6646900183382622208',
+    'video':           'projects/223837784072/locations/us-central1/endpoints/4778750762953998336',
+    'devops':          'projects/223837784072/locations/us-central1/endpoints/4200038210836889600',
+    'security':        'projects/223837784072/locations/us-central1/endpoints/3481714070271295488',
+    'producer':        'projects/223837784072/locations/us-central1/endpoints/8255529675284021248',
+    'director':        'projects/223837784072/locations/us-central1/endpoints/8584292448082067456',
+    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
+    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
+    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
 };
 
 /**
