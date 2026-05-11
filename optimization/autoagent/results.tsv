@@ -70,3 +70,5 @@ a99dcd19	1.0	26	26	baseline	baseline
 a99dcd19	1.0	26	26	baseline	manual run
 a99dcd19	1.0	26	26	keep	Added explicit ISRC keyword synonyms to tiebreaker rules
 a99dcd19	1.0	26	26	baseline	manual run
+85847724	0.9595	25	26	baseline	baseline
+85847724	1.0	26	26	keep	Added Analytics to routing table
