@@ -12,6 +12,8 @@ function migrateStorageKeys(): void {
         'indiiOS_entryAssistantDismissed',
         'indiiOS_sidebarOpen',
         'indiiOS_commandBarPosition',
+        'indiiOS_first_run_tips',
+        'indiiOS_tour_completed_v1',
     ];
 
     const migrationVersion = 'indii_migration_v1';

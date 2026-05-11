@@ -2,7 +2,7 @@
  * Always-On Memory Agent Types
  *
  * Extended type system for the Always-On Memory Agent — an active memory system
- * inspired by Google's ADK reference implementation, improved for indiiOS with
+ * inspired by Google's ADK reference implementation, improved for indii.music with
  * tiered memory, cross-cutting insights, multimodal ingestion, and importance decay.
  *
  * @see https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent
@@ -122,7 +122,7 @@ export interface AlwaysOnMemory {
 }
 
 /**
- * Extended memory categories for indiiOS creative workflows
+ * Extended memory categories for indii.music creative workflows
  */
 export type AlwaysOnMemoryCategory =
     | 'preference'      // User preferences (e.g., "prefers dark mode", "likes Lo-Fi beats")
@@ -353,7 +353,7 @@ export const DEFAULT_ENGINE_CONFIG: Omit<AlwaysOnMemoryConfig, 'userId'> = {
     consolidation: DEFAULT_CONSOLIDATION_CONFIG,
     tiers: DEFAULT_TIER_CONFIG,
     inboxWatcherEnabled: false,
-    inboxPath: '~/indiiOS/memory-inbox',
+    inboxPath: '~/indii.music/memory-inbox',
     apiPort: 0,
 };
 

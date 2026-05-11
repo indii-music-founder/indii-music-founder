@@ -137,3 +137,6 @@ graphify-out/
 # Accidentally cloned external repos (CI checkout breaks on stale gitlinks)
 /graphify/
 /graphify-repo/
+actionlint
+jobs.json
+run.json

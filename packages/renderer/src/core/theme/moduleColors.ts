@@ -8,7 +8,7 @@ import { type ModuleId } from '@/core/constants';
  * This file maps modules to their official brand colors defined in index.css.
  * The CSS variables (--color-dept-*) are the Single Source of Truth.
  *
- * Color Assignments (from indiiOS Brand Guide):
+ * Color Assignments (from indii.music Brand Guide):
  * - Royalties/Finance: Gold #FFC107 - Wealth, precision
  * - Distribution: Electric Blue #2196F3 - Data flow, logistics
  * - Marketing/PR: Magenta #E91E63 - Energy, attention
