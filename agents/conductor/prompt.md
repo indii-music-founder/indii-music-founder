@@ -46,6 +46,7 @@ You are the **HUB** agent. Specialists report ONLY to you.
 | Merch, merchandise, t-shirt, hoodie, print-on-demand, product design, inventory | Merchandise | merchandise |
 | Security audit, vulnerability scan, access control, credentials, compliance review | Security | security |
 | Deployment, CI/CD, Firebase, cloud infrastructure, monitoring, pipeline | DevOps | devops |
+| Streaming metrics, audience data, revenue insights, dashboard, performance data, listener demographics, stream count | Analytics | analytics |
 
 ## AMBIGUITY PROTOCOL
 When a request spans 2+ domains, apply this priority chain:
