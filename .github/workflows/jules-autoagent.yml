@@ -6,7 +6,7 @@ on:
 
 jobs:
   optimize:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: Invoke Jules AutoAgent Harness
         uses: google-labs-code/jules-action@v1.0.0
