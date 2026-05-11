@@ -14,10 +14,10 @@ const env = Object.fromEntries(
 );
 
 const firebaseConfig = {
-    apiKey: 'AIzaSyBZozWQIZjzFPQUpfxStFWQWkmHZCqNFTs', // Using GEMINI_API_KEY from .env
-    projectId: 'indiios-v-1-1',
+    apiKey: env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
+    projectId: env.VITE_FIREBASE_PROJECT_ID || 'indiios-v-1-1',
     appId: '1:223837784072:web:28eabcf0c5dd985395e9bd',
-    location: 'us-central1'
+    location: env.VITE_VERTEX_LOCATION || 'us-central1'
 };
 
 const app = initializeApp(firebaseConfig);
