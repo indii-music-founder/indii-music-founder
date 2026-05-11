@@ -22,7 +22,7 @@ import { useState, useEffect, useCallback } from 'react';
  *   );
  */
 
-const STORAGE_KEY = 'indiiOS_first_run_tips';
+const STORAGE_KEY = 'indii_first_run_tips';
 
 interface TipState {
     [tipId: string]: boolean; // true = dismissed
