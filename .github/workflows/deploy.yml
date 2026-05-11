@@ -11,7 +11,7 @@ permissions:
   checks: write
   pull-requests: read
   actions: read
-ff
+
 jobs:
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
   unit-tests:
@@ -67,7 +67,7 @@ jobs:
           cache: 'npm'
 
       - name: Scan for secrets (gitleaks)
-              continue-on-error: true
+        continue-on-error: true
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
