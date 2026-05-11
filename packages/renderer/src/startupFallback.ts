@@ -7,7 +7,7 @@ export function renderStartupFallback(reason: string): void {
   root.innerHTML = `
     <div class="startup-fallback" data-startup-fallback="true">
       <div class="startup-fallback__card">
-        <h1 class="startup-fallback__title">indiiOS</h1>
+        <h1 class="startup-fallback__title">indii.music</h1>
         <p class="startup-fallback__message">The app took too long to start.</p>
         <p class="startup-fallback__reason">${reason}</p>
         <button id="startup-reload" class="startup-fallback__reload" type="button">Reload App</button>
