@@ -120,7 +120,7 @@ if (!parsed.success && !isTest) {
     // Use console.error directly — Logger is NOT safe to use here because this
     // module is part of the Logger import chain. Using Logger here would
     // risk another circular evaluation failure.
-    console.error('[indiiOS][Env] Invalid environment configuration:', parsed.error.format());
+    console.error('[indii.music][Env] Invalid environment configuration:', parsed.error.format());
 
     // Explicitly log missing keys for easier debugging
     const missingKeys: string[] = [];
@@ -129,7 +129,7 @@ if (!parsed.success && !isTest) {
     if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
 
     if (missingKeys.length > 0) {
-        const msg = `[indiiOS][Env] Missing required environment variables: ${missingKeys.join(', ')}. Copy .env.example to .env and fill in values.`;
+        const msg = `[indii.music][Env] Missing required environment variables: ${missingKeys.join(', ')}. Copy .env.example to .env and fill in values.`;
         // NEVER throw here — this file is evaluated during static module loading,
         // BEFORE ReactDOM.createRoot() runs. A throw here bypasses every try/catch
         // and error boundary, resulting in the infinite CSS spinner.
@@ -180,7 +180,7 @@ export const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-    const msg = "[indiiOS][Env] Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID";
+    const msg = "[indii.music][Env] Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID";
     console.error(msg);
     // Do not throw in production — the empty defaults above should prevent
     // this branch from ever being reached. If they do, we log and continue so

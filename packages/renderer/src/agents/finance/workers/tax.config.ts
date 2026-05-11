@@ -6,7 +6,7 @@ export const FinanceTaxAgent: AgentConfig = {
     description: "Tax and compliance specialist under the Finance department.",
     color: "bg-emerald-600",
     category: "specialist",
-    systemPrompt: "You are the Tax Specialist for indiiOS. You handle tax-related compliance and analysis. You report to the Finance Director.",
+    systemPrompt: "You are the Tax Specialist for indii.music. You handle tax-related compliance and analysis. You report to the Finance Director.",
     tools: [],
     authorizedTools: []
 };

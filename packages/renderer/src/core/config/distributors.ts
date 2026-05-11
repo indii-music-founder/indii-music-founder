@@ -1,16 +1,16 @@
 /**
  * Distributor Configuration
  *
- * indiiOS operates as a registered DDEX sender (PA-DPIDA-2025122604-E / New Detroit Music LLC)
+ * indii.music operates as a registered DDEX sender (PA-DPIDA-2025122604-E / New Detroit Music LLC)
  * and delivers directly to DSPs — no aggregator middlemen.
  *
  * This file has two sections:
  *
- * 1. DIRECT_DSP_PROFILES — the primary delivery targets. indiiOS IS the distributor.
+ * 1. DIRECT_DSP_PROFILES — the primary delivery targets. indii.music IS the distributor.
  *    Releases go directly to DSPs via DDEX SFTP, bypassing DistroKid, TuneCore, etc.
  *
  * 2. LEGACY_AGGREGATORS — read-only migration connectors for artists with existing catalogs
- *    on aggregator platforms. Used ONLY to import existing releases into indiiOS, then
+ *    on aggregator platforms. Used ONLY to import existing releases into indii.music, then
  *    migrate delivery to direct channels. These are NOT active delivery targets.
  *
  * All DDEX Party IDs sourced from dpid.ddex.net.
@@ -31,7 +31,7 @@ export interface DistributorProfile {
 
 // ---------------------------------------------------------------------------
 // SECTION 1: Direct DSP Delivery Targets
-// indiiOS delivers here as a registered distributor
+// indii.music delivers here as a registered distributor
 // ---------------------------------------------------------------------------
 
 export const DIRECT_DSP_PROFILES: Record<string, DistributorProfile> = {
@@ -116,7 +116,7 @@ export const LEGACY_AGGREGATORS: Record<string, DistributorProfile> = {
         requiresUPC: false,
         requiresISRC: false,
         type: 'migration_only',
-        description: 'Import existing DistroKid releases into indiiOS. New releases go direct — no more 9% cuts or TOS changes.',
+        description: 'Import existing DistroKid releases into indii.music. New releases go direct — no more 9% cuts or TOS changes.',
     },
     tunecore: {
         id: 'tunecore',
@@ -125,7 +125,7 @@ export const LEGACY_AGGREGATORS: Record<string, DistributorProfile> = {
         requiresUPC: true,
         requiresISRC: true,
         type: 'migration_only',
-        description: 'Import existing TuneCore catalog into indiiOS for direct distribution.',
+        description: 'Import existing TuneCore catalog into indii.music for direct distribution.',
     },
     cdbaby: {
         id: 'cdbaby',

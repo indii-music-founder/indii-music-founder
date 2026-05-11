@@ -1,5 +1,5 @@
 /**
- * Standard asynchronous utilities for the indiiOS ecosystem.
+ * Standard asynchronous utilities for the indii.music ecosystem.
  */
 
 /**
