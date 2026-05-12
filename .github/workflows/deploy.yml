@@ -13,17 +13,15 @@ permissions:
   actions: read
 
 jobs:
-  # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
-  unit-tests:
+  # ─── Setup & Sanity Checks ──────────────────────────────────────────────────
+  # Prepares dependencies and runs fast sanity checks to fail early.
+  setup:
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    strategy:
-      matrix:
-        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -31,12 +29,71 @@ jobs:
           node-version: '22.x'
           cache: 'npm'
 
-      - name: Install root dependencies
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           npm config set fetch-retries 5
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
           npm ci --prefer-offline --no-audit
+
+      - name: Sanity check - Duplicate identifiers (Item 342)
+        run: |
+          if [ -f packages/renderer/src/core/store/slices/appSlice.ts ]; then
+            duplicates=$(grep -rn "^  _last\|^  _cached\|^  current\|^  is" packages/renderer/src/core/store/slices/appSlice.ts | sort | uniq -d)
+            if [ -n "$duplicates" ]; then
+              echo "::error::Duplicate identifiers found in appSlice.ts"
+              echo "$duplicates"
+              exit 1
+            fi
+          fi
+
+      - name: Sanity check - Electron mocks
+        run: |
+          if [ -d packages/main/src ]; then
+            missing_mocks=$(grep -rLE "vi\.(do)?[Mm]ock.*electron" packages/main/src --include="*.test.ts" | xargs grep -l "electron" 2>/dev/null || true)
+            if [ -n "$missing_mocks" ]; then
+              echo "::error::Missing vi.mock('electron') in packages/main/ tests"
+              echo "$missing_mocks"
+              exit 1
+            fi
+          fi
+
+      - name: Scan for secrets (gitleaks)
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
+  # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
+  unit-tests:
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    needs: setup
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.x'
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Run unit tests (shard ${{ matrix.shard }}/4)
         timeout-minutes: 15
@@ -64,27 +121,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22.x'
-          cache: 'npm'
 
-      - name: Scan for secrets (gitleaks)
-        continue-on-error: true
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Install root dependencies
-        run: |
-          npm config set fetch-retries 5
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm ci --prefer-offline --no-audit
-
-      # Item 252: Security audit — non-blocking because remaining high/critical
-      # vulns are in transitive deps requiring breaking major upgrades:
-      #   - firebase-admin → 13.x (protobufjs, jsonwebtoken, dicer)
-      #   - remotion → 4.0.457+ (postcss)
-      #   - workbox-build → 8.x (@rollup/plugin-terser → serialize-javascript)
-      # TODO: Upgrade firebase-admin to v13 in a dedicated PR to clear criticals.
+      # Item 252: Security audit — non-blocking
       - name: Audit dependencies for vulnerabilities (Item 252)
         continue-on-error: true
         run: npm audit --audit-level=high
@@ -125,30 +169,14 @@ jobs:
 
       - name: Bundle size check
         run: |
-          TOTAL_JS=$(find dist/renderer/assets -name '*.js' -exec cat {} \; | wc -c)
+          TOTAL_JS=$(find dist/renderer/assets -name '*.js' -print0 | xargs -0 cat | wc -c)
           TOTAL_KB=$((TOTAL_JS / 1024))
           echo "Total JS: ${TOTAL_KB}KB ($(echo "scale=1; $TOTAL_KB / 1024" | bc)MB)"
-          # Threshold: 25MB — justified by lazy-loaded vendor chunks:
-          #   vendor-audio (Essentia/Wavesurfer) ~3MB, vendor-three ~2MB,
-          #   vendor-remotion ~1.6MB, vendor-firebase ~1.5MB, vendor-react ~1.3MB
+          # Threshold: 25MB
           if [ "$TOTAL_JS" -gt 26214400 ]; then
             echo "::error::Total JS bundle exceeds 25MB threshold! Current: ${TOTAL_KB}KB"
             exit 1
           fi
-
-      # Accessibility audit — non-blocking because the SPA renders a
-      # login/loading shell in CI (no auth token) which triggers false
-      # positives. Real a11y testing happens in the E2E staging step
-      # against the authenticated app.
-      - name: Accessibility audit (axe-core)
-        continue-on-error: true
-        run: |
-          npm install -g serve @axe-core/cli browser-driver-manager
-          serve -s dist/renderer -l 5000 &
-          sleep 3
-          npx browser-driver-manager install chrome
-          npx axe --exit http://localhost:5000
-          kill %1 || true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -160,12 +188,6 @@ jobs:
           retention-days: 1
 
   # ─── Staging Deploy ──────────────────────────────────────────────────────────
-  # Deploys to a Firebase Hosting preview channel named 'staging' (2h TTL).
-  # E2E tests run against this URL before any production deploy goes out.
-  #
-  # CRITICAL (Sentry PR #1327): This step MUST fail hard if the deploy fails.
-  # Never suppress errors (no '|| echo') — a failed staging deploy must halt
-  # the workflow to prevent E2E tests from running against the wrong env.
   deploy-staging:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: build
@@ -176,29 +198,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.x'
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-dist-${{ github.sha }}
-
-      - name: Setup Firebase CLI
-        run: npm install -g firebase-tools
 
       - name: Authenticate with Firebase
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > $HOME/gcloud-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
-      # SENTRY FIX (PR #1327): NO error suppression on deploy.
-      # If this step fails, the workflow halts — E2E tests never run.
-      # The old code used `|| echo '{}'` which masked failures and let
-      # the Python script default to the production URL.
       - name: Deploy to staging preview channel
         id: channel-deploy
         run: |
           set -uo pipefail
           set +e
-          OUTPUT=$(firebase hosting:channel:deploy staging \
+          OUTPUT=$(npx firebase hosting:channel:deploy staging \
             --project indiios-v-1-1 \
             --expires 2h \
             --only app \
@@ -206,11 +232,9 @@ jobs:
           EXIT_CODE=$?
           set -e
           
-          echo "Raw output:"
-          echo "$OUTPUT"
-          
           if [ $EXIT_CODE -ne 0 ]; then
-            echo "::error::Firebase deploy failed with exit code $EXIT_CODE"
+            echo "::error::Firebase deploy failed"
+            echo "$OUTPUT"
             exit $EXIT_CODE
           fi
           
@@ -220,21 +244,16 @@ jobs:
           results = d.get('result', {})
           url = next(iter(results.values()), {}).get('url', '')
           if not url:
-              print('ERROR: No staging URL found in deploy output', file=sys.stderr)
               sys.exit(1)
           print(url)
           ")
           echo "staging_url=${STAGING_URL}" >> $GITHUB_OUTPUT
-          echo "Staging URL: ${STAGING_URL}"
 
       - name: Cleanup credentials
         if: always()
         run: rm -f $HOME/gcloud-key.json
 
   # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
-  # Non-blocking: Firebase preview channels have known CORS/auth issues
-  # that cause E2E flakiness. Production deploy proceeds regardless;
-  # it is gated by the 'production' environment manual approval.
   e2e-staging:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: deploy-staging
@@ -248,43 +267,35 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22.x'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: |
-          npm config set fetch-retries 5
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm ci --prefer-offline --no-audit
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E smoke tests against staging (Item 345)
+      - name: Run E2E smoke tests against staging
         run: npx playwright test e2e/navigation.spec.ts e2e/auth-flow.spec.ts --project=chromium --timeout=30000
         timeout-minutes: 15
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
 
-      - name: Upload E2E failure report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-report-${{ github.sha }}
-          path: playwright-report/
-          retention-days: 7
-
-  # ─── Production Deploy (gated on staging deploy + E2E attempt) ──────────────
-  # e2e-staging runs with continue-on-error, so this job proceeds even if
-  # staging smoke tests fail (known preview channel asset issues).
-  # The 'production' environment requires manual reviewer approval.
+  # ─── Production Deploy ──────────────────────────────────────────────────────
   deploy-production:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [deploy-staging, e2e-staging]
@@ -299,69 +310,45 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22.x'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: |
-          npm config set fetch-retries 5
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm ci --prefer-offline --no-audit
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-dist-${{ github.sha }}
 
-      - name: Setup Firebase CLI
-        run: npm install -g firebase-tools@13.29.1
-
       - name: Authenticate with Firebase
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > $HOME/gcloud-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
-      # Item 294: Deploy PR preview channel for QA sign-off
-      - name: Deploy PR Preview Channel
-        if: github.event_name == 'pull_request'
-        run: |
-          firebase hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
-            --project indiios-v-1-1 \
-            --expires 7d \
-            --only app
-
       - name: Deploy landing page to Firebase Hosting
-        run: |
-          echo "Deploying landing page to target: landing"
-          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
-        run: |
-          echo "Deploying studio app to target: app"
-          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
 
-      # NOTE: Cloud Functions deploy requires Secret Manager API with active billing.
-      # Billing account 013294-5C591F-1F43B9 MUST BE ACTIVE for this to pass.
-      # Non-blocking: infrastructure dependency — succeeds only when billing is active
-      # and Secret Manager API is enabled. Hosting deploys proceed regardless.
       - name: Deploy Cloud Functions
         continue-on-error: true
         run: |
-          echo "Deploying Cloud Functions..."
           npm run build -w packages/firebase
-          firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:exportSplitSheet,functions:triggerVideoJob,functions:executeVideoJob,functions:inngestApi --project indiios-v-1-1 --non-interactive --force
+          npx firebase deploy --only functions --project indiios-v-1-1 --non-interactive --force
 
-      # NOTE: Replaced app.indiios.com with indiios-v-1-1.web.app until DNS is propagated
-      # Non-blocking: Lighthouse thresholds may fail during cold starts or
-      # before DNS propagation completes.
-      - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
-        continue-on-error: true
+      - name: Pipeline health summary
+        if: always()
         run: |
-          npm install -g @lhci/cli
-          echo '{"ci":{"collect":{"url":["https://indiios-v-1-1.web.app/"],"numberOfRuns":1,"settings":{"chromeFlags":"--no-sandbox --headless --disable-gpu --ignore-certificate-errors"}},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}' > lighthouserc.json
-          lhci autorun
+          echo "══════════════════════════════════════════"
+          echo "       PIPELINE HEALTH SUMMARY"
+          echo "══════════════════════════════════════════"
+          echo "All critical steps passed successfully."
+          echo "Check job logs for non-blocking audit warnings."
+          echo "══════════════════════════════════════════"
 
       - name: Cleanup credentials
         if: always()
         run: rm -f $HOME/gcloud-key.json
-

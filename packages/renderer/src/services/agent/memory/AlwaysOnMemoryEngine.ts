@@ -13,6 +13,7 @@ import {
     getCountFromServer,
 } from 'firebase/firestore';
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
+import { cleanPrompt } from '@/utils/prompt';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
@@ -48,7 +49,7 @@ import {
  * 3. Entity graph for cross-memory connections
  * 4. Domain-aware categories for creative workflows
  * 5. Firestore persistence with cloud sync
- * 6. Integrated with indiiOS agent architecture
+ * 6. Integrated with indii agent architecture
  *
  * @example
  * ```typescript
@@ -338,17 +339,19 @@ Always cite your sources.`
                 : `You don't have stored memories for this topic yet, but you can answer based on your general knowledge.
 If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
 
-            const prompt = `You are a Memory Query Agent for a creative music/visual production platform called indiiOS.
-${memoryContext}
-Be thorough but concise.
+            const prompt = cleanPrompt(`
+                You are a Memory Query Agent for a creative music/visual production platform called indii.
+                ${memoryContext}
+                Be thorough but concise.
 
-MEMORIES:
-${memoryBlock}
-${insightBlock}
+                MEMORIES:
+                ${memoryBlock}
+                ${insightBlock}
 
-QUESTION: ${question}
+                QUESTION: ${question}
 
-ANSWER:`;
+                ANSWER:
+            `);
 
             const answer = await AIService.getInstance().generateText(
                 prompt,
