@@ -93,7 +93,7 @@ Examples:
 
 - [ ] All 20 agents at ≥60% expert density
 - [ ] Run `npx tsx execution/training/export_ft_dataset.ts` → `./ft_export_r7/`
-- [ ] `gcloud storage cp ft_export_r7/*.jsonl gs://indiios-training-data/ft_export/r7/`
+- [ ] `gcloud storage cp ft_export_r7/*.jsonl gs://indii-training-data/ft_export/r7/`
 - [ ] Submit 20 tuning jobs (`indii-{agent}-r7`)
 - [ ] Base models: generalist → `gemini-2.5-pro`; finance/legal/distribution/marketing/publishing/licensing/music → `gemini-2.5-flash`; rest → `gemini-2.5-flash-lite`
 - [ ] Wire endpoints into `fine-tuned-models.ts`

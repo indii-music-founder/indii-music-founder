@@ -1,4 +1,4 @@
-# indiiOS Build Plan
+# indii Build Plan
 
 **Date:** 2026-03-15
 **Scope:** Distribution Execution Layer + Docker-Free Desktop Sidecar

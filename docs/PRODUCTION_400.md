@@ -1,4 +1,4 @@
-# indiiOS: The 400-Point Production Readiness Checklist (Part 6)
+# indii: The 400-Point Production Readiness Checklist (Part 6)
 
 This document contains **Part 6** of the master production readiness checklist (Items 316–415). These items represent **real, identified gaps** discovered through a systematic static audit of the existing codebase — not aspirational features. Each item references the specific file, line number, or architectural concern it addresses.
 

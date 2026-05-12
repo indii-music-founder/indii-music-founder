@@ -62,7 +62,7 @@ export default function LoginBridge() {
                     timedOutAfterMs: DEEP_LINK_TIMEOUT_MS,
                 };
                 console.warn('Deep link redirect timeout', timeoutEvent);
-                window.dispatchEvent(new CustomEvent('indiios:deep-link-timeout', { detail: timeoutEvent }));
+                window.dispatchEvent(new CustomEvent('indii:deep-link-timeout', { detail: timeoutEvent }));
                 setStatus('deepLinkFallback');
             }, DEEP_LINK_TIMEOUT_MS);
         } catch (err) {
@@ -152,7 +152,7 @@ export default function LoginBridge() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
             <div className="p-8 border border-neutral-800 rounded-xl bg-neutral-900/50 text-center max-w-md w-full">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold mb-2">indiiOS</h1>
+                    <h1 className="text-2xl font-bold mb-2">indii</h1>
                     <p className="text-neutral-400 text-sm">Sign in to continue to the app</p>
                 </div>
 
@@ -197,7 +197,7 @@ export default function LoginBridge() {
                     </div>
                 )}
 
-                <div className="mt-6 pt-6 border-t border-neutral-800"><p className="text-neutral-500 text-xs">This page authenticates you with Google and redirects back to the indiiOS desktop app.</p></div>
+                <div className="mt-6 pt-6 border-t border-neutral-800"><p className="text-neutral-500 text-xs">This page authenticates you with Google and redirects back to the indii desktop app.</p></div>
 
             </div>
         </div>

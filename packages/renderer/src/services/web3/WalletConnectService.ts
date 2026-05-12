@@ -74,7 +74,7 @@ export class WalletConnectService {
             projectId: this.projectId,
             chains: DEFAULT_CHAINS,
             metadata: {
-                name: 'indiiOS Studio',
+                name: 'indii Studio',
                 description: 'AI-native creative platform for independent music producers',
                 url: 'https://indii.music',
                 icons: ['https://indii.music/icon.png'],

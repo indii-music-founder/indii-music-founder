@@ -1,7 +1,7 @@
 # Session State: 2026-04-27
 
 ## Active Context
-- **Workspace:** indiiOS-Clean
+- **Workspace:** indii-Clean
 - **Branch:** `main` (assumed)
 - **Phase:** Substrate Initialization
 - **Last Action:** Bootstrapped `AgentGraphService` and defined core types.

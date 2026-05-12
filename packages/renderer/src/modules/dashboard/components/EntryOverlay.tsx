@@ -28,7 +28,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
 
     const [input, setInput] = useState('');
     const [isDismissed, setIsDismissed] = useState(() => {
-        return localStorage.getItem('indiiOS_entryOverlay_dismissed') === 'true';
+        return localStorage.getItem('indii_entryOverlay_dismissed') === 'true';
     });
     const [isCollapsed, setIsCollapsed] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +49,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     };
 
     const getGreeting = () => {
-        if (scenario === 'new-user') return `Welcome to indiiOS, ${userName}.`;
+        if (scenario === 'new-user') return `Welcome to indii, ${userName}.`;
         if (scenario === 'returning-active') return `Welcome back, ${userName}.`;
         return `Good to see you, ${userName}.`;
     };
@@ -64,7 +64,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
 
     const handleDismiss = () => {
         setIsDismissed(true);
-        localStorage.setItem('indiiOS_entryOverlay_dismissed', 'true');
+        localStorage.setItem('indii_entryOverlay_dismissed', 'true');
     };
 
     if (isBoardroomMode || isDismissed) {
@@ -74,7 +74,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                     <button 
                         onClick={() => {
                             setIsDismissed(false);
-                            localStorage.removeItem('indiiOS_entryOverlay_dismissed');
+                            localStorage.removeItem('indii_entryOverlay_dismissed');
                         }}
                         className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1 uppercase tracking-widest font-bold"
                     >

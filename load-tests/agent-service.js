@@ -14,7 +14,7 @@ export const options = {
 };
 
 export default function () {
-    const url = 'http://127.0.0.1:5001/indiios-v-1-1/us-central1/creativeDirectorAgent';
+    const url = 'http://127.0.0.1:5001/indii-v-1-1/us-central1/creativeDirectorAgent';
     const payload = JSON.stringify({
         prompt: 'Create a futuristic city concept',
     });

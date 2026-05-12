@@ -32,7 +32,7 @@ const workflowToGraph = (workflow: WorkflowDefinition): AgentGraph => {
         entryNodeId: entryNode?.id || workflow.steps[0]?.id || '',
         metadata: {
             version: '1.0.0',
-            author: 'indiiOS',
+            author: 'indii',
             createdAt: Date.now()
         }
     };

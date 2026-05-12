@@ -1,10 +1,10 @@
 # Hybrid Agentic Architecture - Technical Review
 > [!WARNING]
 > This document records the history of the Docker-to-Native transition.
-> **The Hybrid (Docker Sidecar) model is officially deprecated.** indiiOS now operates on a 100% native Node.js/TypeScript orchestration model (indii Conductor).
+> **The Hybrid (Docker Sidecar) model is officially deprecated.** indii now operates on a 100% native Node.js/TypeScript orchestration model (indii Conductor).
 
 > **Date:** 2025-01-29
-> **Scope:** Moltbot & Agent Zero Blueprint vs. indiiOS Codebase
+> **Scope:** Moltbot & Agent Zero Blueprint vs. indii Codebase
 > **Status:** ✅ Implementation Complete
 
 ---
@@ -39,7 +39,7 @@
 
 ## Executive Summary
 
-The indiiOS codebase demonstrates **significant architectural alignment** with the Hybrid Agentic Architecture blueprint. Core security patterns including R2A2 input scanning, ephemeral secrets brokerage, and the Architect-Sentinel dual-model system are already implemented in the Python execution layer.
+The indii codebase demonstrates **significant architectural alignment** with the Hybrid Agentic Architecture blueprint. Core security patterns including R2A2 input scanning, ephemeral secrets brokerage, and the Architect-Sentinel dual-model system are already implemented in the Python execution layer.
 
 **Critical finding (RESOLVED):** Docker container exposure has been fixed. Ports are now bound to `127.0.0.1`, preventing external network access.
 
@@ -49,7 +49,7 @@ The indiiOS codebase demonstrates **significant architectural alignment** with t
 
 ### 1.1 Three-Layer Architecture
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
+| Blueprint Requirement | indii Implementation | Location | Status |
 |----------------------|------------------------|----------|--------|
 | Layer 1: Directive (SOPs) | Natural language procedures | `directives/` | ✅ Complete |
 | Layer 2: Orchestration | AI reasoning & routing | `src/services/agent/AgentOrchestrator.ts` | ✅ Complete |
@@ -57,7 +57,7 @@ The indiiOS codebase demonstrates **significant architectural alignment** with t
 
 ### 1.2 Agent Zero Sidecar
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
+| Blueprint Requirement | indii Implementation | Location | Status |
 |----------------------|------------------------|----------|--------|
 | Dockerized runtime | Container config | `docker-compose.yml` | ✅ Complete |
 | HTTP API dispatch | TypeScript client | `src/services/agent/AgentZeroService.ts` | ✅ Complete |
@@ -66,7 +66,7 @@ The indiiOS codebase demonstrates **significant architectural alignment** with t
 
 ### 1.3 R2A2 Reflective Risk-Awareness Layer
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
+| Blueprint Requirement | indii Implementation | Location | Status |
 |----------------------|------------------------|----------|--------|
 | Input pre-scanning | `scan_instruction()` | `python/api/indii_task.py` | ✅ Complete |
 | Injection detection | 10 pattern checks | `python/api/indii_task.py:28-44` | ✅ Complete |
@@ -91,7 +91,7 @@ suspicious_patterns = [
 
 ### 1.4 Ephemeral Secrets Broker
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
+| Blueprint Requirement | indii Implementation | Location | Status |
 |----------------------|------------------------|----------|--------|
 | Opaque handle generation | `generate_handle` action | `python/api/auth_broker.py` | ✅ Complete |
 | Session zeroization | `zeroize_session` action | `python/api/auth_broker.py` | ✅ Complete |
@@ -101,7 +101,7 @@ suspicious_patterns = [
 
 ### 1.5 Architect-Sentinel Dual Model
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
+| Blueprint Requirement | indii Implementation | Location | Status |
 |----------------------|------------------------|----------|--------|
 | Architect (high reasoning) | Gemini 3 Pro | `agents/providers.yaml` | ✅ Configured |
 | Sentinel (fast execution) | Gemini 3 Flash | `agents/providers.yaml` | ✅ Configured |

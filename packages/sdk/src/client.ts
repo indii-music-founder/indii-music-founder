@@ -1,5 +1,5 @@
 /**
- * IndiiOS SDK Client — Official TypeScript SDK for indiiOS REST API
+ * indii SDK Client — Official TypeScript SDK for indii REST API
  *
  * Provides type-safe access to:
  * - Track management
@@ -9,8 +9,8 @@
  * - User account operations
  */
 
-import type { Track, CreateTrack, UpdateTrack, Distribution, CreateDistribution, AnalyticsEvent } from '@indiios/shared';
-import { TrackSchema, CreateTrackSchema, UpdateTrackSchema, DistributionSchema, CreateDistributionSchema } from '@indiios/shared';
+import type { Track, CreateTrack, UpdateTrack, Distribution, CreateDistribution, AnalyticsEvent } from '@indii/shared';
+import { TrackSchema, CreateTrackSchema, UpdateTrackSchema, DistributionSchema, CreateDistributionSchema } from '@indii/shared';
 
 export interface ClientConfig {
   apiUrl: string;
@@ -28,7 +28,7 @@ export interface PaginationParams {
   offset?: number;
 }
 
-export class IndiiOSClient {
+export class indiiClient {
   private apiUrl: string;
   private apiKey: string;
   private timeout: number;
@@ -41,7 +41,7 @@ export class IndiiOSClient {
     this.baseHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.apiKey}`,
-      'User-Agent': `indiiOS-sdk/0.1.0`,
+      'User-Agent': `indii-sdk/0.1.0`,
     };
   }
 
@@ -68,7 +68,7 @@ export class IndiiOSClient {
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({ error: response.statusText }));
-          throw new IndiiOSError(`API error: ${response.status}`, response.status, error);
+          throw new indiiError(`API error: ${response.status}`, response.status, error);
         }
 
         const data = await response.json();
@@ -165,20 +165,20 @@ export class IndiiOSClient {
 }
 
 // Error class
-export class IndiiOSError extends Error {
+export class indiiError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
     public details?: unknown
   ) {
     super(message);
-    this.name = 'IndiiOSError';
+    this.name = 'indiiError';
   }
 }
 
 // Retry logic
 function isRetryableError(error: Error): boolean {
-  if (error instanceof IndiiOSError) {
+  if (error instanceof indiiError) {
     // Retry on 5xx and specific 4xx errors
     return (error.statusCode ?? 0) >= 500 || [408, 429].includes(error.statusCode ?? 0);
   }
@@ -188,8 +188,8 @@ function isRetryableError(error: Error): boolean {
 }
 
 // Export singleton factory
-export function createClient(config: ClientConfig): IndiiOSClient {
-  return new IndiiOSClient(config);
+export function createClient(config: ClientConfig): indiiClient {
+  return new indiiClient(config);
 }
 
-export default IndiiOSClient;
+export default indiiClient;

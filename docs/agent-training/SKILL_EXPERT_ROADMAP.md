@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-03-26
 **Status:** Phase 4c COMPLETE — 21 final expert examples added; ALL gaps filled. 2,090 total examples, 734 expert.
-**Owner:** indiiOS Training Program
+**Owner:** indii Training Program
 
 ---
 
@@ -480,7 +480,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Short film script | ✅ HAS EXPERT | — | — |
 | Premise development / logline | ✅ HAS EXPERT | — | — |
 | Query letter / pitch document | 🟡 ENTRY/INT | 🟢 LOW | "I've written a 24-page short film script about a touring musician confronting their estranged parent backstage after a show. Walk me through writing the query letter for submission to Sundance Short Film Fund: the correct logline format (character + inciting incident + stakes), how to position the script's theme against the fund's current focus areas, what to include vs. exclude in the writer's bio section for a first-time short filmmaker, and the follow-up timeline after submission." |
-| Series bible creation | 🟡 ENTRY/INT | 🟢 LOW | "I want to develop a docuseries concept following 5 independent artists through their first year with indiiOS. Walk me through writing a 10-page series bible: the format sections (logline, format/tone, episode structure, character overviews, season arc, sample episode beats), the difference between a pitch bible and a production bible, and what streaming platforms are actively acquiring music-themed docuseries formats in 2026 and what their acquisition criteria look like." |
+| Series bible creation | 🟡 ENTRY/INT | 🟢 LOW | "I want to develop a docuseries concept following 5 independent artists through their first year with indii. Walk me through writing a 10-page series bible: the format sections (logline, format/tone, episode structure, character overviews, season arc, sample episode beats), the difference between a pitch bible and a production bible, and what streaming platforms are actively acquiring music-themed docuseries formats in 2026 and what their acquisition criteria look like." |
 
 ---
 

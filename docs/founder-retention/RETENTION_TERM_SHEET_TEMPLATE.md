@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This term sheet outlines the retention package for William Roberts upon acquisition of New Detroit Music LLC (indiiOS) by [Acquirer Name]. The package incentivizes knowledge transfer, product continuity, and successor engineer onboarding over a 24-month period.
+This term sheet outlines the retention package for William Roberts upon acquisition of New Detroit Music LLC (indii) by [Acquirer Name]. The package incentivizes knowledge transfer, product continuity, and successor engineer onboarding over a 24-month period.
 
 **Key Components:**
 1. **Cash Component** — Base salary + signing bonus
@@ -46,7 +46,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 - **Vesting:** 4-year vest, 1-year cliff
   - Year 1: 25% vests on anniversary
   - Years 2–4: 25% vests annually
-- **Double-Trigger Acceleration:** If William is terminated without cause OR if indiiOS product is shut down, remaining equity accelerates (100% vests immediately)
+- **Double-Trigger Acceleration:** If William is terminated without cause OR if indii product is shut down, remaining equity accelerates (100% vests immediately)
 - **Exercise Window:** 90 days post-vest (standard)
 
 ### Option B: Earnout (RECOMMENDED)
@@ -59,7 +59,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
   
 | Milestone | Trigger | Release Amount | Timeline |
 |-----------|---------|-----------------|----------|
-| Artist Count | Reach 200 active artists on indiiOS | 25% of earnout | Month 6 |
+| Artist Count | Reach 200 active artists on indii | 25% of earnout | Month 6 |
 | Platform GMV | Achieve $50K GMV through distribution rail | 25% of earnout | Month 12 |
 | Fine-Tune Fleet Uptime | Maintain 99.5% endpoint availability | 25% of earnout | Month 18 |
 | Successor Handoff | Onboard and pair-program with 2 successor engineers | 25% of earnout | Month 24 |
@@ -76,23 +76,23 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 ## 3. Role & Scope Clause
 
 ### Title
-- **Position:** VP Engineering, indiiOS Product Unit (or equivalent)
+- **Position:** VP Engineering, indii Product Unit (or equivalent)
 - **Reporting Line:** [Acquirer CEO or Chief Product Officer — direct report, not embedded in larger team]
 
 ### Responsibilities
-- **Ownership:** Full technical decision authority over indiiOS product roadmap
+- **Ownership:** Full technical decision authority over indii product roadmap
 - **Decision Rights:**
   - ✅ Architecture changes
   - ✅ Technology stack changes
   - ✅ Feature prioritization (within acquirer's product strategy)
-  - ✅ Hiring for indiiOS team (up to [X] headcount)
+  - ✅ Hiring for indii team (up to [X] headcount)
 - **Veto Rights:**
-  - ✅ Rebranding or sunsetting the indiiOS distribution rail (24-month veto)
-  - ✅ Shutdown of indiiOS product (must be mutual decision)
+  - ✅ Rebranding or sunsetting the indii distribution rail (24-month veto)
+  - ✅ Shutdown of indii product (must be mutual decision)
 
 ### Successor Onboarding Requirement
 - **Deliverable:** Identify and onboard 2 successor engineers by month 12
-- **Criteria:** Each must be capable of independently running production indiiOS systems by month 18
+- **Criteria:** Each must be capable of independently running production indii systems by month 18
 - **Method:** Pair programming, architecture docs, runbooks (see Knowledge Transfer section)
 
 ---
@@ -155,7 +155,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 - Training plan (pair programming schedule, doc reviews, lead responsibilities)
 - By month 12: each successor has independently handled at least one production incident
 
-**Success Metric:** Successors are capable of running indiiOS without William (no on-call fallback to William)
+**Success Metric:** Successors are capable of running indii without William (no on-call fallback to William)
 
 ---
 
@@ -165,7 +165,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 
 **Duration:** 24 months post-acquisition closing  
 **Restricted Activities:**
-- ❌ Direct-to-DSP music distribution platforms (competes with indiiOS rail)
+- ❌ Direct-to-DSP music distribution platforms (competes with indii rail)
 - ❌ AI-orchestrated artist tooling (SaaS tools for creators using agentic AI)
 
 **Permitted Activities:**
@@ -209,7 +209,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 |----------|-------------------|---------|------------|
 | Voluntary resignation (William quits) | Base salary to date + signing bonus | Forfeited (partial at acquirer discretion) | Full 24 months applies |
 | Involuntary termination (acquirer fires without cause) | Base salary + severance (see below) + earnout | Accelerates (100% released) | Waived (William can compete immediately) |
-| Constructive termination (indiiOS shut down or rebranded against William's will) | Base salary + severance + earnout | Accelerates (100% released) | Waived |
+| Constructive termination (indii shut down or rebranded against William's will) | Base salary + severance + earnout | Accelerates (100% released) | Waived |
 | Termination for cause (negligence, fraud) | Base salary to date | Forfeited | Full 24 months applies |
 
 **Severance Definition:** 6 months of base salary (if terminated without cause)
@@ -232,7 +232,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 - If acquirer delays hiring beyond month 3, William's knowledge transfer milestones are extended accordingly (not a breach by William)
 
 ### Condition 3: Product Continuity
-- Acquirer commits to maintaining the indiiOS distribution rail for minimum 24 months post-closing
+- Acquirer commits to maintaining the indii distribution rail for minimum 24 months post-closing
 - If acquirer shuts down the product before month 24, earnout is accelerated and William can exit without non-compete
 
 ---
@@ -249,7 +249,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 
 **By signing below, both parties agree to the terms outlined above, subject to final legal review and integration into the Acquisition Agreement.**
 
-**For New Detroit Music LLC / indiiOS:**
+**For New Detroit Music LLC / indii:**
 
 William Roberts (Founder)  
 Signature: ________________________  

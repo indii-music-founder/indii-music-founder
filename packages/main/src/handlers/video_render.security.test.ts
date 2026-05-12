@@ -109,15 +109,15 @@ describe('🛡️ Shield: Video Render Security Test', () => {
     it('should BLOCK disallowed extensions', async () => {
         const config = {
             compositionId: 'test-comp',
-            outputLocation: '/mock/documents/IndiiOS/malware.exe'
+            outputLocation: '/mock/documents/indii/malware.exe'
         };
 
         await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
             .rejects.toThrow(/File type .* is not allowed/i);
     });
 
-    it('should ALLOW valid output paths in IndiiOS folder', async () => {
-        const validPath = '/mock/documents/IndiiOS/my-video.mp4';
+    it('should ALLOW valid output paths in indii folder', async () => {
+        const validPath = '/mock/documents/indii/my-video.mp4';
         const config = {
             compositionId: 'test-comp',
             outputLocation: validPath

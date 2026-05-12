@@ -1,4 +1,4 @@
-# indiiOS Acquisition Data Room
+# indii Acquisition Data Room
 
 **Purpose:** Single, locked, version-controlled repository for acquisition diligence.
 
@@ -71,7 +71,7 @@ docs/data-room/
 ### 02_ENTITY_STRUCTURE.md ✅
 
 **Status:** Committed 2026-04-26 (commit `d1023b0b`)  
-**Content:** Clarification that New Detroit Music LLC is the legal owner, indiiOS is the product name
+**Content:** Clarification that New Detroit Music LLC is the legal owner, indii is the product name
 
 ---
 
@@ -229,7 +229,7 @@ docs/data-room/
 
 ### How to Access
 
-1. **GitHub Invite:** William sends GitHub invite to `github.com/the-walking-agency-det/indiiOS-Alpha-Electron` as read-only collaborator
+1. **GitHub Invite:** William sends GitHub invite to `github.com/the-walking-agency-det/indii-Alpha-Electron` as read-only collaborator
 2. **Data Room Path:** All diligence docs are in `docs/data-room/` (this directory)
 3. **NDA:** Sign standard tech-industry NDA before access
 4. **Timeline:** Access expires [DATE] (standard 30 days per diligence phase)

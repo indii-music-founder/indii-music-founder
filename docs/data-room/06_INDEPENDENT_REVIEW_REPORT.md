@@ -1,5 +1,5 @@
 # Independent Technical Due Diligence Report
-**Target:** indiiOS-Alpha-Electron repository
+**Target:** indii-Alpha-Electron repository
 **Engagement:** Independent technical due diligence
 **Date:** 2026-04-27
 **Reviewer:** Antigravity (Independent AI Reviewer Persona)
@@ -7,18 +7,18 @@
 
 ## 1. Executive Summary
 
-This report evaluates the technical assets of indiiOS to determine if they substantiate the valuation thesis. The review focused exclusively on the three critical subsystems: the DDEX Direct-Distribution Layer, the Agent Fleet & Fine-Tuning Pipeline, and the Payment & Subscription mechanisms.
+This report evaluates the technical assets of indii to determine if they substantiate the valuation thesis. The review focused exclusively on the three critical subsystems: the Proprietary Ingestion IP Distribution Layer, the Agent Fleet & Fine-Tuning Pipeline, and the Payment & Subscription mechanisms.
 
 **Valuation Thesis Verdict: CONDITIONAL / AT RISK**
 
-While the codebase exhibits a highly sophisticated 3-layer architecture and significant engineering rigor (99.6% test pass rate across ~268K LOC), the primary operational engine—the 17-agent Vertex AI fleet—is currently failing its reachability checks (endpoints returning 404). Furthermore, there are outstanding organizational entity mismatches regarding the DDEX Party ID. These issues must be remediated to defend the valuation.
+While the codebase exhibits a highly sophisticated 3-layer architecture and significant engineering rigor (99.6% test pass rate across ~268K LOC), the primary operational engine—the 17-agent Vertex AI fleet—is currently failing its reachability checks (endpoints returning 404). Furthermore, there are outstanding organizational entity mismatches regarding the Proprietary Ingestion ID (DPID). These issues must be remediated to defend the valuation.
 
 ---
 
 ## 2. Findings by Severity
 
 - **Critical:** Vertex AI endpoints (R1-R7) are currently unreachable (returning 404 Not Found), blocking the agent fleet's core operations.
-- **Major:** The DDEX Party ID is registered to "New Detroit Music LLC" while the operating company is documented as "IndiiOS LLC". This requires legal reconciliation.
+- **Major:** The Proprietary Ingestion ID (DPID) is registered to "New Detroit Music LLC" while the operating company is documented as "indii LLC". This requires legal reconciliation.
 - **Minor:** `taxForms.ts` is currently a stub. This is documented in `KNOWN_GAPS.md` and deferred appropriately, but will require implementation before scaled 1099-eligible payouts.
 - **Informational:** The god-mode bypass has been successfully refactored to use a Firestore custom claim (`god_mode`), mitigating hardcoded backdoor risks.
 
@@ -49,7 +49,7 @@ The distribution layer (`src/services/ddex/` and `src/services/distribution/`) i
 SFTP delivery logic (`execution/distribution/`) is present and handles credential management securely without leaking secrets into logs.
 
 **Gate 7: Party ID Verification — CONDITIONAL**
-The Party ID `PA-DPIDA-2025122604-E` is present and active, but it is registered to "New Detroit Music LLC". Acquirer legal must verify the relationship between "New Detroit Music LLC" and "IndiiOS LLC" (see `ENTITY_STRUCTURE.md`).
+The Party ID `PA-DPIDA-2025122604-E` is present and active, but it is registered to "New Detroit Music LLC". Acquirer legal must verify the relationship between "New Detroit Music LLC" and "indii LLC" (see `ENTITY_STRUCTURE.md`).
 
 ### Payments (Gates 8–10)
 
@@ -75,7 +75,7 @@ The GCP project has automated Firestore exports and GCS backup retention policie
 ## 4. Recommended Remediation
 
 1. **[Critical] Restore Vertex AI Endpoints:** Investigate the GCP project `223837784072`. Ensure the fine-tuned models are actively deployed to the endpoints referenced in `src/services/agent/fine-tuned-models.ts`. This is the single biggest blocker to a clean technical diligence.
-2. **[Major] Resolve Entity Structure:** Provide the necessary legal documentation reconciling "New Detroit Music LLC" and "IndiiOS LLC" to clear Gate 7.
+2. **[Major] Resolve Entity Structure:** Provide the necessary legal documentation reconciling "New Detroit Music LLC" and "indii LLC" to clear Gate 7.
 3. **[Informational] Complete IP Assignment:** Ensure `IP_ASSIGNMENT.md`, `CONTRIBUTORS.md`, and `AI_AUTHORSHIP_DISCLOSURE.md` are signed and reviewed by counsel.
 
 ---

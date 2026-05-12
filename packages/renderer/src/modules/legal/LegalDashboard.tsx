@@ -526,7 +526,7 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 
 // Featured Attorney Booking URL
 const FEATURED_ATTORNEY_BOOKING_URL = 'https://indii.music/legal/counsel-booking';
-const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indiios&utm_medium=platform&utm_campaign=legal_partner`;
+const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indii&utm_medium=platform&utm_campaign=legal_partner`;
 
 function FindCounselPanel() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -559,7 +559,7 @@ function FindCounselPanel() {
                                     {[...Array(5)].map((_, i) => (
                                         <Star key={i} size={10} className="fill-yellow-400 text-yellow-400" />
                                     ))}
-                                    <span className="text-[10px] text-gray-500 ml-1">indiiOS Verified Partner</span>
+                                    <span className="text-[10px] text-gray-500 ml-1">indii Verified Partner</span>
                                 </div>
                             </div>
                         </div>

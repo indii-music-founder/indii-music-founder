@@ -157,7 +157,7 @@ export class DigitalSignatureService {
                 totalSplits: String(collaborators.length),
                 collaboratorList: collaborators.map(c => `${c.name} (${c.role}): ${c.splitPercentage}%`).join('\n'),
             },
-            metadata: { source: 'indiiOS', type: 'split_sheet' },
+            metadata: { source: 'indii', type: 'split_sheet' },
         });
 
         await pandaDoc.sendDocument(doc.id, `Please review and sign the split sheet for "${trackName}".`);

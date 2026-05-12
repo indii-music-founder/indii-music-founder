@@ -1,4 +1,4 @@
-# indiiOS: Cost & Valuation — Real Assessment
+# indii: Cost & Valuation — Real Assessment
 **Date:** 2026-05-10 | **State:** Pre-Launch (website live, no customers) | **Branch:** main
 
 ---
@@ -24,7 +24,7 @@ You're launching a fully-built product with zero traction. Not vaporware. Not in
 
 | What | LOC | Verdict |
 | --- | --- | --- |
-| **DDEX Distribution Rail** | ERNMapper (493) + DDEXParser (598) + 8 DSP adapters | Industry-grade. DDEX Party ID `PA-DPIDA-2025122604-E` live in GCP. Real spec compliance. |
+| **DDEX Distribution Rail** | ERNMapper (493) + DDEXParser (598) + 8 DSP adapters | Industry-grade. Proprietary ingestion IP interfaces directly with the Global DDEX network. Real spec compliance. |
 | **Stripe Integration** | Split escrow, webhook verification, Connect account routing | Real. 913 LOC. Executes actual transfers between artist accounts. |
 | **Firestore + Rules** | 647 lines of rules, per-collection auth, audit trails | Real, if overly permissive in some spots (fixable). |
 | **Creative Module** | InfiniteCanvas.tsx (1,168 LOC), WhiskService, composition pipeline | Real canvas state, actually wired to Firebase AI. |

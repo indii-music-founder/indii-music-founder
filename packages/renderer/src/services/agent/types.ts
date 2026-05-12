@@ -511,7 +511,7 @@ export interface WorkflowExecution {
 // ============================================================================
 
 /**
- * The 5 memory layers in the IndiiOS Persistent Memory hierarchy.
+ * The 5 memory layers in the indii Persistent Memory hierarchy.
  * Each layer has different persistence, TTL, and authority semantics.
  */
 export type MemoryLayer = 'scratchpad' | 'session' | 'vault' | 'captains_log' | 'rag_index';

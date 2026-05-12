@@ -110,7 +110,7 @@ export const ProtocolAuth = ({ architectName, onAuthenticated }: ProtocolAuthPro
                     Secure Biometric Gate
                 </div>
                 <h2 className="text-2xl font-bold text-[#00FF00] drop-shadow-[0_0_10px_rgba(0,255,0,0.8)]">
-                    {progress === 100 ? 'SOVEREIGN NODE AUTHORIZED' : scanning ? 'DECRYPTING BIOMETRICS...' : 'AWAITING INPUT'}
+                    {progress === 100 ? 'independent NODE AUTHORIZED' : scanning ? 'DECRYPTING BIOMETRICS...' : 'AWAITING INPUT'}
                 </h2>
                 <p className="text-[#00FF00]/80 font-mono tracking-widest">
                     {architectName}

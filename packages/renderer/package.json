@@ -1,5 +1,5 @@
 {
-    "name": "@indiios/renderer",
+    "name": "@indii/renderer",
     "version": "0.0.1",
     "private": true,
     "type": "module",
@@ -14,7 +14,7 @@
         "@emotion/is-prop-valid": "1.4.0",
         "@google/genai": "^1.48.0",
         "@googlemaps/react-wrapper": "1.2.0",
-        "@indiios/shared": "*",
+        "@indii/shared": "*",
         "@mastra/core": "0.13.1",
         "@mastra/mcp": "0.10.12",
         "@radix-ui/react-context-menu": "^2.2.16",

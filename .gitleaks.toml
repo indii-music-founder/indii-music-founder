@@ -5,7 +5,7 @@
 # Firestore Security Rules and API restrictions in the GCP Console.
 # See: https://firebase.google.com/docs/projects/api-keys
 
-title = "indiiOS Gitleaks Config"
+title = "indii Gitleaks Config"
 
 [extend]
 # Extend the default gitleaks rules
@@ -16,7 +16,7 @@ useDefault = true
 # ─────────────────────────────────────────────────────────────────────────────
 
 [allowlist]
-description = "Known safe patterns per indiiOS API Credentials Policy"
+description = "Known safe patterns per indii API Credentials Policy"
 
 paths = [
     # Environment variable files — Firebase API keys are IDENTIFIERS, not secrets.

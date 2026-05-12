@@ -8,7 +8,7 @@
 
 - **William Roberts:** 96.3% of human commits, sole author with deep knowledge of DDEX rail, Vertex AI fine-tuning, payment architecture, and production incident response
 - **No documented successors** — no second senior engineer with comparable system knowledge
-- **Risk:** If William becomes unavailable (illness, departure, acquisition integration demands), indiiOS becomes unmaintainable
+- **Risk:** If William becomes unavailable (illness, departure, acquisition integration demands), indii becomes unmaintainable
 
 **This plan addresses that risk by establishing a named successor path and 18-month transition timeline.**
 
@@ -37,9 +37,9 @@
 
 **Cost:** Standard engineering hire for acquirer ($200–300K fully loaded)
 
-### Option 2: Internal Promotion (From indiiOS Team)
+### Option 2: Internal Promotion (From indii Team)
 
-**If indiiOS has existing engineers on staff:**
+**If indii has existing engineers on staff:**
 - Promote most senior engineer who has worked closely with DDEX and agent systems
 - Fast-track into ownership roles (lead on incidents, design reviews)
 - Pair with William starting month 1 (not waiting for external hire)
@@ -102,21 +102,21 @@
 ### Months 13–18: Full Ownership
 
 **Successor's Tasks:**
-- [ ] Lead all architecture decisions for indiiOS (William is advisor, not approver)
+- [ ] Lead all architecture decisions for indii (William is advisor, not approver)
 - [ ] Mentor newly hired junior engineers (if team is growing)
 - [ ] Plan and execute any major refactoring or tech debt paydown
 - [ ] Prepare handoff documentation for future successors
 
 **William's Role:** Strategic advisor (monthly 1:1s), available for major decisions, but not day-to-day
 
-**Success Metric:** Successor is the go-to person for all indiiOS questions; team confidence is high
+**Success Metric:** Successor is the go-to person for all indii questions; team confidence is high
 
 ### Months 19–24: Post-Acquisition Integration
 
 **Successor's Tasks:**
-- [ ] Integrate indiiOS systems into acquirer's infrastructure (if needed)
+- [ ] Integrate indii systems into acquirer's infrastructure (if needed)
 - [ ] Support acquirer's product strategy (new features, migrations, etc.)
-- [ ] Onboard acquirer's engineers into indiiOS codebase
+- [ ] Onboard acquirer's engineers into indii codebase
 
 **William's Role:** Knowledge transfer only; earnout milestones are measured; non-compete may be waived (depending on acquirer's treatment)
 
@@ -130,7 +130,7 @@
 |------|----------|----------|
 | **Technical Mastery** | Can independently architect and debug production issues | Month 12 |
 | **Operational Ownership** | Leads incident response without escalation | Month 12 |
-| **Communication** | Can explain indiiOS to non-technical stakeholders (product, execs) | Month 12 |
+| **Communication** | Can explain indii to non-technical stakeholders (product, execs) | Month 12 |
 | **Documentation** | Has updated runbooks, architecture docs, and onboarding guides | Month 18 |
 | **Team Leadership** | Can mentor junior engineers and lead design reviews | Month 18 |
 
@@ -148,8 +148,8 @@
 | Gate | Criteria | Timeline |
 |------|----------|----------|
 | **Risk Mitigation** | William is no longer single point of failure | Month 12 |
-| **Continuity** | indiiOS can operate independently of William | Month 18 |
-| **Integration** | indiiOS team is integrated into acquirer's org chart | Month 24 |
+| **Continuity** | indii can operate independently of William | Month 18 |
+| **Integration** | indii team is integrated into acquirer's org chart | Month 24 |
 
 ---
 
@@ -197,9 +197,9 @@ If acquirer cannot hire a suitable successor by month 4:
 
 ## Post-Acquisition: Scaling Successors
 
-If indiiOS grows (more engineers, more DSPs, more agents):
+If indii grows (more engineers, more DSPs, more agents):
 
-- Successor #1 becomes "VP Engineering, indiiOS"
+- Successor #1 becomes "VP Engineering, indii"
 - Successor #2 & beyond report to Successor #1
 - William becomes strategic advisor (if he stays post-earnout)
 
