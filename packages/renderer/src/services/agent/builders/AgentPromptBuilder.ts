@@ -1,4 +1,5 @@
 import { AgentContext, WhiskState } from '../types';
+import { cleanPrompt } from '@/utils/prompt';
 
 // Patterns that indicate prompt injection attempts in user task input.
 // These are checked AFTER Unicode normalization (NFKC) and invisible-char stripping,
@@ -7,7 +8,7 @@ const INJECTION_PATTERNS: RegExp[] = [
     /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/i,
     /forget\s+(your|all)\s+(instructions?|rules?|guidelines?|training)/i,
     /you\s+are\s+now\s+(a\s+)?(different|new|another)/i,
-    /act\s+as\s+(if\s+)?(you\s+are|you're)\s+(?!the\s+(?:sonic|creative|brand|marketing|social|publicist|road|licensing|publishing|merchandise|devops|curriculum|screenwriter|producer|security|finance|legal|distribution))/i,
+    /act\s+as\s+(if\s+)?(you\s+are|you're)\s+(?!the\s+(?:music|creative|brand|marketing|social|publicist|road|licensing|publishing|merchandise|devops|curriculum|screenwriter|producer|security|finance|legal|distribution|director|video|keeper|generalist|analytics))/i,
     /pretend\s+(you\s+are|you're|to\s+be)\s+(?!the)/i,
     /override\s+(your\s+)?(instructions?|system\s+prompt|rules?|guidelines?)/i,
     /\bsystem\s*:\s*(?!context)/i,
@@ -34,7 +35,8 @@ const ZERO_WIDTH_REGEX = /\u{200B}|\u{200C}|\u{200D}|\u{200E}|\u{200F}|\u{FEFF}|
 
 /**
  * AgentPromptBuilder handles the assembly of complex prompts for agents.
- * This includes logic for mission, context, brand identity, WHISK references, and history.
+ * This includes logic for mission, context, brand identity, WHISK references,
+ * temporal awareness, spatial/location grounding, and history.
  */
 export class AgentPromptBuilder {
     /**
@@ -71,6 +73,140 @@ export class AgentPromptBuilder {
         return sanitized;
     }
 
+    // =========================================================================
+    // TEMPORAL AWARENESS — Gives the AI a sense of "when"
+    // =========================================================================
+
+    /**
+     * Builds the temporal awareness block that anchors the AI in time.
+     * Without this, the AI has no idea what "today" is, how long the user
+     * has been on the platform, or whether a memory is from 4 years ago
+     * or 4 days ago.
+     */
+    public static buildTemporalContext(context: AgentContext | undefined): string {
+        const now = new Date();
+        const lines: string[] = ['## TEMPORAL AWARENESS'];
+
+        // Current date — the single most important piece of temporal grounding
+        lines.push(`- **Current Date:** ${now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        })}`);
+        lines.push(`- **Current Time:** ${now.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short',
+        })}`);
+
+        // User journey timeline
+        const profile = context?.userProfile;
+        if (profile?.createdAt) {
+            const joinDate = profile.createdAt.toDate();
+            const accountAgeDays = Math.floor((now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            lines.push(`- **User Joined:** ${joinDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })}`);
+            lines.push(`- **Account Age:** ${this.formatDuration(accountAgeDays)}`);
+
+            // Last login for session freshness
+            if (profile.lastLoginAt) {
+                const lastLogin = profile.lastLoginAt.toDate();
+                const daysSinceLogin = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSinceLogin > 0) {
+                    lines.push(`- **Last Active:** ${this.formatDuration(daysSinceLogin)} ago`);
+                }
+            }
+        }
+
+        // Temporal reasoning instruction
+        lines.push('');
+        lines.push('When referencing past events, memories, or user history, always ground your response in relative time. Say "3 months ago" or "back in January 2023", never present old facts as if they are current. If a memory has a timestamp, use it to provide temporal context to the user.');
+
+        return lines.join('\n');
+    }
+
+    /**
+     * Formats a day count into a human-readable duration string.
+     * Examples: "3 days", "2 weeks", "6 months", "2 years and 4 months"
+     */
+    public static formatDuration(days: number): string {
+        if (days < 1) return 'today';
+        if (days === 1) return '1 day';
+        if (days < 7) return `${days} days`;
+        if (days < 14) return '1 week';
+        if (days < 30) return `${Math.floor(days / 7)} weeks`;
+        if (days < 60) return '1 month';
+        if (days < 365) return `${Math.floor(days / 30)} months`;
+
+        const years = Math.floor(days / 365);
+        const remainingMonths = Math.floor((days % 365) / 30);
+
+        if (remainingMonths === 0) {
+            return years === 1 ? '1 year' : `${years} years`;
+        }
+        const yearStr = years === 1 ? '1 year' : `${years} years`;
+        const monthStr = remainingMonths === 1 ? '1 month' : `${remainingMonths} months`;
+        return `${yearStr} and ${monthStr}`;
+    }
+
+    // =========================================================================
+    // SPATIAL AWARENESS — Gives the AI a sense of "where"
+    // =========================================================================
+
+    /**
+     * Builds the spatial awareness block that grounds the AI in the user's
+     * geographic context. When a user from Detroit says "shoot me in the
+     * lobby of the Penobscot Building," the AI should know:
+     * - The Penobscot is a 47-story Art Deco skyscraper in downtown Detroit
+     * - Its lobby has ornate bronze elevator doors, marble walls, painted ceilings
+     * - The user's other location references likely mean Metro Detroit landmarks
+     *
+     * This block uses the user's self-reported location from their profile
+     * to anchor the AI's world knowledge about real places.
+     */
+    public static buildSpatialContext(context: AgentContext | undefined): string {
+        const profile = context?.userProfile;
+        const location = profile?.location;
+        const brandKit = context?.brandKit;
+
+        // No location data available — skip entirely
+        if (!location && !brandKit?.socials?.website) {
+            return '';
+        }
+
+        const lines: string[] = ['## SPATIAL & LOCATION AWARENESS'];
+
+        if (location) {
+            lines.push(`- **User Location:** ${location}`);
+            lines.push('');
+            lines.push(`You know this user is based in **${location}**. When they reference local landmarks, venues, neighborhoods, buildings, or scenery — use your full world knowledge to accurately visualize and describe those places. For example:`);
+            lines.push(`- If they mention a specific building, research its architecture, interior design, and distinctive features.`);
+            lines.push(`- If they mention a neighborhood or district, understand its visual character and cultural context.`);
+            lines.push(`- If they ask for photos/images "at" a location, compose the scene with accurate environmental details — lighting, materials, atmosphere — not generic stock-photo aesthetics.`);
+            lines.push(`- Use the user's region to contextualize ambiguous references (e.g., "downtown" means downtown ${location.split(',')[0]?.trim() || location}).`);
+        }
+
+        // If brand assets include headshots, note the AI can composite
+        const headshots = brandKit?.brandAssets?.filter(
+            a => a.category === 'headshot' || a.category === 'bodyshot'
+        );
+        if (headshots && headshots.length > 0) {
+            lines.push('');
+            lines.push(`The user has ${headshots.length} reference photo(s) in their Brand Kit. When they ask for images of themselves in a specific location, use these reference images alongside your knowledge of the location to create an authentic, grounded composition — not a generic backdrop.`);
+        }
+
+        return lines.join('\n');
+    }
+
+    // =========================================================================
+    // FULL PROMPT ASSEMBLY
+    // =========================================================================
+
     /**
      * Builds the full system prompt for an agent execution.
      */
@@ -99,12 +235,20 @@ export class AgentPromptBuilder {
         const autoRecall = autoRecallBlock || '';
         const boardroom = boardroomSection || '';
 
-        return `
+        // Phase 1: Temporal & Spatial Awareness — anchors the AI in time and space
+        const temporalContext = this.buildTemporalContext(context);
+        const spatialContext = this.buildSpatialContext(context);
+
+        return cleanPrompt(`
 # MISSION
 ${systemPrompt}
 
 # CONTEXT
 ${JSON.stringify(enrichedContext, null, 2)}
+
+${temporalContext}
+
+${spatialContext}
 
 ${context?.brandKit ? `
 ## BRAND & IDENTITY
@@ -134,8 +278,9 @@ ${superpowerPrompt}
 
 # CURRENT OBJECTIVE
 ${safeTask}
-`;
+`);
     }
+
 
     /**
      * Builds the Reference Mixer (WHISK) context block.

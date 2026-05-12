@@ -416,7 +416,7 @@ describe('GeneralistAgent Routing Logic', () => {
             const { TOOL_REGISTRY } = await import('../tools');
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
-            await agent.execute('I want to move my catalog from DistroKid to indiiOS. How do I start the takeover?');
+            await agent.execute('I want to move my catalog from DistroKid to indii. How do I start the takeover?');
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'distribution'
@@ -488,12 +488,12 @@ describe('GeneralistAgent Routing Logic', () => {
         });
 
         it('routes Native Platform actions to Social Agent', async () => {
-            mockDelegationResponse('social', 'Post exclusive update to indiiOS feed');
+            mockDelegationResponse('social', 'Post exclusive update to indii feed');
             
             const { TOOL_REGISTRY } = await import('../tools');
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
-            await agent.execute('Post an exclusive update to my indiiOS feed.');
+            await agent.execute('Post an exclusive update to my indii feed.');
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'social'

@@ -5,7 +5,7 @@ import { AgentCard, AgentCardSchema } from './AgentCard';
 import { z } from 'zod';
 
 const SIDECAR_URL = 'http://localhost:50080/a2a';
-const MY_AGENT_ID = 'indiiOS-conductor'; // This could be dynamic later
+const MY_AGENT_ID = 'indii-conductor'; // This could be dynamic later
 
 export class A2AClient {
   private isInitialized = false;

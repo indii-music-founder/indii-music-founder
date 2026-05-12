@@ -36,7 +36,7 @@ export const FinanceAgent: AgentConfig = {
             };
         },
         search_knowledge: async (args: { query: string }) => {
-            const prompt = `Answer the following financial query based on standard music industry economics and the 'indiiOS Dividend' knowledge base.
+            const prompt = `Answer the following financial query based on standard music industry economics and the 'indii Dividend' knowledge base.
             Query: ${args.query}`;
 
             try {
@@ -100,7 +100,7 @@ export const FinanceAgent: AgentConfig = {
         forecast_revenue: async (args: { current_monthly_streams: number; growth_rate_percent: number; months: number }) => {
             /**
              * Pillar 2 — Agent CFO: Proactive forecast showing revenue trajectory +
-             * the cumulative indiiOS Dividend (fees saved vs. external 20% management).
+             * the cumulative indii Dividend (fees saved vs. external 20% management).
              * Gamification: shows compound savings, not just a number.
              */
             const SPOTIFY_RATE = 0.004;                // avg blended per-stream rate
@@ -141,7 +141,7 @@ export const FinanceAgent: AgentConfig = {
                         months,
                     },
                     projections,
-                    message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indiiOS Dividend.`
+                    message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indii Dividend.`
                 }
             };
         },
@@ -183,7 +183,7 @@ export const FinanceAgent: AgentConfig = {
         functionDeclarations: [
             {
                 name: "analyze_budget",
-                description: "Analyze a project budget and calculate the 'indiiOS Dividend' savings.",
+                description: "Analyze a project budget and calculate the 'indii Dividend' savings.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -304,7 +304,7 @@ export const FinanceAgent: AgentConfig = {
             },
             {
                 name: "forecast_revenue",
-                description: "Forecast revenue and the indiiOS Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
+                description: "Forecast revenue and the indii Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

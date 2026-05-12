@@ -83,6 +83,8 @@ To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a
 
 **The Multiplier Effect:** By pushing complexity into deterministic execution layers, we avoid the "compound error" trap (where 90% accuracy over 5 biological steps leads to 59% overall success). Determinism at the base allows for reliability at the peak.
 
+**Omni-Aware Routing:** The orchestration layer is built with "Context-First" routing. Agents intelligently prioritize current conversation intent and user specific requests over the active document, preventing target collisions and ensuring a focused execution loop even in complex, multi-file workspaces.
+
 ---
 
 ## 🤖 indii: The Hub-and-Spoke Agent System
@@ -182,14 +184,14 @@ User Input / Files / Sessions
 
 | Feature | Description |
 |---------|-------------|
-| **4-Tier Memory** | Memories move through `working → shortTerm → longTerm → archived` based on age, access frequency, and importance |
-| **Importance Decay** | Memories lose importance over time unless accessed (reinforcement learning) |
-| **Entity Graph** | Extracted entities (people, companies, products) are linked across memories |
-| **Multimodal Ingestion** | Supports 27 file types: text, images, audio, video, and PDFs |
-| **Cross-Cutting Insights** | Background consolidation discovers patterns and generates insights with confidence scores |
-| **Semantic Search** | Multi-signal ranking: semantic similarity + importance + recency + tier bonus |
-| **Electron Inbox** | File watcher via IPC polls `~/indiiOS/memory-inbox/` for new files (desktop only) |
-| **Dashboard UI** | Premium React dashboard with memory timeline, insight cards, and query interface |
+| **Longitudinal Timeline** | Tracks facts over years with semantic supersession chains (`supersedes` / `supersededBy`). The system knows what was true 4 years ago vs. what is true today. |
+| **Temporal Search** | Multi-mode retrieval: switch between `Recency-Weighted` (latest news) and `Temporal-Aware` (deep historical context) modes. |
+| **Performance Lookback** | $O(1)$ write performance at scale. Semantic dedup only audits the last 30 days of high-density facts, maintaining speed even as history grows to 10k+ records. |
+| **Metadata Preservation** | Automated consolidation preserves original categories. The system explicitly distinguishes between a raw `fact`, a system-generated `insight`, and a high-level `summary`. |
+| **Tiered Memory Store** | Memories move through `working → shortTerm → longTerm → archived` based on importance decay and reinforcement on access. |
+| **Semantic Supersession** | Detects when new information makes an old fact obsolete. Links the timeline automatically while preserving the archived "original" fact for provenance. |
+| **Entity Graph** | Extracted entities (people, companies, products) are linked across memories to build a global relationship graph. |
+| **Dashboard UI** | Premium React dashboard with a visual memory timeline, insight cards, and temporal query interface. |
 
 ### Usage
 
