@@ -8,7 +8,7 @@ However, the `CommandBar` is reserved for a significant future feature: **The Bo
 
 ## Core Concept: The Oval Table
 
-This feature will provide a clean, distraction-free "ChatGPT-style" interface that takes over the main stage content area, allowing the user to engage in direct conversational AI sessions without the heavy visual chrome of the typical indiiOS modules. At its heart is **The Virtual Boardroom Table**.
+This feature will provide a clean, distraction-free "ChatGPT-style" interface that takes over the main stage content area, allowing the user to engage in direct conversational AI sessions without the heavy visual chrome of the typical indii modules. At its heart is **The Virtual Boardroom Table**.
 
 ### Key Capabilities
 

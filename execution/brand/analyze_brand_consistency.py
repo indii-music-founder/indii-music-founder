@@ -67,7 +67,7 @@ class AnalyzeBrandConsistency(Tool):
             brand_summary = json.dumps(brand_kit, indent=2)
             
             prompt = f"""
-            You are the indiiOS Brand Manager. Your task is to analyze the consistency of the provided visual asset against the artist's official Brand Kit.
+            You are the indii Brand Manager. Your task is to analyze the consistency of the provided visual asset against the artist's official Brand Kit.
             
             ### Artist Brand Kit Guidelines:
             {brand_summary}

@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0  
 **Date:** 2026-03-05  
-**For:** indiiOS Platform
+**For:** indii Platform
 
 ---
 
@@ -368,7 +368,7 @@ Day +45: First MLC statement
 
 ---
 
-## 7. Integration Points with indiiOS Agents
+## 7. Integration Points with indii Agents
 
 ### 7.1 Publishing Agent
 - Creates split sheets
@@ -410,7 +410,7 @@ RoyaltyProfile
     └── has many: RoyaltyStream
 
 SplitSheet
-    ├── belongs to: Work (indiiOS track)
+    ├── belongs to: Work (indii track)
     ├── has many: SplitContributor
     └── requires: All contributors signed before PRO registration
 

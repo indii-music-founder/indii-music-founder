@@ -1,6 +1,6 @@
 # Independent Code Reviewer Selection
 
-**Decision Point:** Choose a technical reviewer to validate the indiiOS valuation thesis before acquirer engagement.
+**Decision Point:** Choose a technical reviewer to validate the indii valuation thesis before acquirer engagement.
 
 ---
 

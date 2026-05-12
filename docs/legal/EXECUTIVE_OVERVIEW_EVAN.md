@@ -1,18 +1,18 @@
-# 💠 indiiOS: Executive Overview
-**The Operating System for the Sovereign Artist**
+# 💠 indii: Executive Overview
+**The Operating System for the Independent Artist**
 
 ### 🩺 The Problem: "Creative Fragmentation"
 In the medical world, a doctor is most effective when they are with a patient. However, many doctors spend 40% of their time on paperwork, billing, and insurance compliance. 
 
 Independent music artists suffer from the same "Administrative Burnout." To release one song, an artist has to juggle 20 different apps for cover art, social media, contract law, royalty tracking, and technical distribution. **They are so busy being "administrators" that they lose the time to be "artists."**
 
-### 🚀 The Solution: indiiOS
-indiiOS is the first **AI-Native Operating System** built to handle the "Business of Music" automatically. It is a sovereign workspace where the artist owns their infrastructure, their data, and their future—we call this the **"Digital Handshake."**
+### 🚀 The Solution: indii
+indii is the first **AI-Native Operating System** built to handle the "Business of Music" automatically. It is a independent workspace where the artist owns their infrastructure, their data, and their future—we call this the **"Digital Handshake."**
 
 ---
 
 ### 🧠 How it Works: The "Hospital" Analogy
-Think of indiiOS not as a single app, but as a **Highly Automated Digital Hospital** for an artist’s career.
+Think of indii not as a single app, but as a **Highly Automated Digital Hospital** for an artist’s career.
 
 #### 1. The Chief of Staff (Agent Zero)
 At the center is **indii**, our primary AI. Like a Chief of Staff, indii manages the "patient's" (artist's) entire history. She remembers their brand, their past releases, and their goals. When a task comes in, she doesn't do it all herself—she delegates to specialized departments.
@@ -24,13 +24,13 @@ At the center is **indii**, our primary AI. Like a Chief of Staff, indii manages
 
 ---
 
-### 📦 The "Sovereign" Core Modules
+### 📦 The "Independent" Core Modules
 
 #### 🧪 The Lab (Creative & Video Studios)
 This is where the "cells" of a project are grown. Using the world's most advanced AI (Google’s Gemini 3.1 Pro), artists can generate professional-grade artwork and cinematic music videos. The system ensures that the visuals always match the "vibe" of the music it heard in the diagnostic phase.
 
-#### 📁 The Pharmacy (Distribution & DDEX)
-In medicine, a prescription must be precise to be filled. In music, "DDEX" is the universal language used to send music to Spotify and Apple Music. indiiOS has a built-in **Industrial Engine** that translates an artist's creative work into this strict technical language automatically. This removes the "middleman" distributors who often take a cut of the artist's heart.
+#### 📁 The Pharmacy (Proprietary Ingestion & Distribution)
+In medicine, a prescription must be precise to be filled. In music, a sophisticated, proprietary ingestion IP is the language used to interface directly with global infrastructure (Spotify, Apple Music). indii has a built-in **Industrial Engine** that translates an artist's creative work into this strict technical language automatically. This removes the "middleman" distributors who often take a cut of the artist's heart.
 
 #### 💰 The Ledger (Finance & Royalties)
 This is the "Billing Department." It tracks every stream and every cent. Because the system handled the legal contracts and the distribution, it knows exactly how to split the money between the artist, the producer, and the investors—instantly and transparently.
@@ -40,7 +40,7 @@ This is the "Billing Department." It tracks every stream and every cent. Because
 ### 🛡️ Why This Matters (The "Evan" Stake)
 Most tech platforms (like Spotify or Instagram) are "Landlords"—they let the artist live there, but they own the land. 
 
-**indiiOS is "Sovereignty."** By building this infrastructure, we are giving the artist the keys to their own building. Your participation in the **"Genesis Block"** funded the development of the **Merlin/BWARM integration**—the high-security "pipe" that allows independent artists to talk directly to big tech as equals.
+**indii is "Independence."** By building this infrastructure, we are giving the artist the keys to their own building. Your participation in the **"Genesis Block"** funded the development of the **Merlin/BWARM integration**—the high-security "pipe" that allows independent artists to talk directly to big tech as equals.
 
 **In short: We are building the "Electronic Health Record" and "Autonomous Surgical Suite" for the next generation of the music industry.**
 

@@ -181,7 +181,7 @@ The following agents currently exist as definitions but lack specialized tool im
 
 # --- ARCHIVED docs/FEATURE_COMPLETION_PLAN.md ---
 
-# indiiOS Feature Completion Plan
+# indii Feature Completion Plan
 
 **Date:** 2025-12-26
 **Scope:** Distribution System, Agent Implementations, Video Backend, Social Drops + Revenue
@@ -190,7 +190,7 @@ The following agents currently exist as definitions but lack specialized tool im
 
 ## Overview
 
-This plan addresses 4 major gaps in the indiiOS platform plus additional overlooked items discovered during a comprehensive codebase audit. Each section is self-contained and can be executed independently.
+This plan addresses 4 major gaps in the indii platform plus additional overlooked items discovered during a comprehensive codebase audit. Each section is self-contained and can be executed independently.
 
 ---
 
@@ -909,7 +909,7 @@ src/modules/dashboard/**
 
 ## Overview
 
-Implement full authentication (email/password + Google OAuth) for indiiOS, with auth UI on the landing page and protected access to the studio app.
+Implement full authentication (email/password + Google OAuth) for indii, with auth UI on the landing page and protected access to the studio app.
 
 ---
 
@@ -917,7 +917,7 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 
 | Component | Status |
 |-----------|--------|
-| Firebase Project | `indiios-v-1-1` (configured) |
+| Firebase Project | `indii-v-1-1` (configured) |
 | Current Auth | Email/Pass + Google + Anon |
 | User Profiles | Firestore (`users` collection) |
 | Organizations | Firestore with `members[]` |
@@ -1003,7 +1003,7 @@ match /users/{userId} {
 
 # --- ARCHIVED docs/knowledge/MASTER_IMPLEMENTATION_PLAN.md ---
 
-# ⚡ MAXIMUM EFFICIENCY ARTIFACT: The IndiiOS Dividend Protocol
+# ⚡ MAXIMUM EFFICIENCY ARTIFACT: The indii Dividend Protocol
 
 > **Objective:** Systematically eliminate the "Artist Economy Leakage" identified in research (approx. $11k/yr lost).
 > **Method:** 4-Pillar Implementation Strategy.

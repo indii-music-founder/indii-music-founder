@@ -1,6 +1,6 @@
 {
-  "description": "indiiOS Studio",
-  "name": "indiiOS-8.1",
+  "description": "indii Studio",
+  "name": "indii-8.1",
   "requestFramePermissions": [
     "camera"
   ]

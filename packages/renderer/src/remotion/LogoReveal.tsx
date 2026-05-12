@@ -9,7 +9,7 @@ import {
 } from 'remotion';
 
 /**
- * indiiOS Animated Logo Reveal
+ * indii Animated Logo Reveal
  * 
  * Timeline (at 30fps, 150 frames = 5 seconds):
  * - 0-30:   Dark void, subtle particle glow fades in
@@ -18,8 +18,8 @@ import {
  * - 50-80:  Left "i" bar slides up from below + left dot drops from above
  * - 60-90:  Right "i" bar slides up from below + right dot drops from above
  * - 80-110: Glow pulse radiates outward
- * - 100-140: "indiiOS" text fades in letter by letter
- * - 110-150: Tagline "The Sovereign Creative Engine" fades in
+ * - 100-140: "indii" text fades in letter by letter
+ * - 110-150: Tagline "The Independent Creative Engine" fades in
  */
 
 const TEAL_START = '#00E5CC';
@@ -114,7 +114,7 @@ export const LogoReveal: React.FC = () => {
     extrapolateRight: 'clamp',
   });
 
-  // — "indiiOS" text —
+  // — "indii" text —
   const textOpacity = interpolate(frame, [100, 120], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
@@ -291,7 +291,7 @@ export const LogoReveal: React.FC = () => {
           />
         </svg>
 
-        {/* "indiiOS" text */}
+        {/* "indii" text */}
         <div
           style={{
             opacity: textOpacity,
@@ -302,7 +302,7 @@ export const LogoReveal: React.FC = () => {
             letterSpacing: -2,
           }}
         >
-          indiiOS
+          indii
         </div>
 
         {/* Tagline */}
@@ -317,7 +317,7 @@ export const LogoReveal: React.FC = () => {
             textTransform: 'uppercase',
           }}
         >
-          The Sovereign Creative Engine
+          The Independent Creative Engine
         </div>
       </div>
     </AbsoluteFill>

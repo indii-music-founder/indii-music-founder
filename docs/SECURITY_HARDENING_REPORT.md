@@ -1,4 +1,4 @@
-# Security Hardening Report: Project indiiOS
+# Security Hardening Report: Project indii
 
 **Date:** December 7, 2025
 **Status:** Commercial Grade Hardening Complete

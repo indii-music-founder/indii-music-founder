@@ -1,6 +1,6 @@
-# indiiOS: The 100-Point Production Readiness Checklist
+# indii: The 100-Point Production Readiness Checklist
 
-This document serves as the absolute master checklist to get indiiOS out of alpha/beta and into a true, rock-solid production state. The list is divided into two halves covering the complete stack.
+This document serves as the absolute master checklist to get indii out of alpha/beta and into a true, rock-solid production state. The list is divided into two halves covering the complete stack.
 
 ---
 
@@ -125,7 +125,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **83. Input Sanitization:** Strict sanitization of all user inputs to prevent injection attacks (Implemented via InputSanitizer utility).
 - [x] **84. Rate Limiting:** Implement per-user rate limiting on all API endpoints to prevent abuse (Implemented via Token Bucket RateLimiter in services/ai).
 - [x] **85. Audit Logging:** Log all sensitive operations (auth, data export, agent executions) with immutable storage (Implemented via TokenUsageService and logger).
-- [x] **86. CORS Configuration:** Strict CORS rules allowing only indiiOS domains; no wildcard origins. (Implemented in functions/src/index.ts with strict origin whitelisting)
+- [x] **86. CORS Configuration:** Strict CORS rules allowing only indii domains; no wildcard origins. (Implemented in functions/src/index.ts with strict origin whitelisting)
 - [x] **87. Content Security Policy:** CSP headers prevent XSS; no inline scripts; strict resource loading rules (Implemented in firebase.json).
 - [x] **88. Dependency Scanning:** Automated Snyk/Dependabot scans; block merges with high-severity vulnerabilities. (Managed via GitHub Dependabot and nightly CI builds)
 - [x] **89. GDPR Compliance:** Data export and deletion endpoints; privacy policy; cookie consent management. (Implemented in functions/src/index.ts via data export and deletion endpoints)

@@ -12,7 +12,7 @@ app.use(cors({ origin: true }));
 
 const server = new Server(
     {
-        name: 'indiios-remote-mcp-server',
+        name: 'indii-remote-mcp-server',
         version: '0.1.0',
     },
     {

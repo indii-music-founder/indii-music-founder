@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
+const QUEUE_KEY = 'indii_pendingMetadataSaves';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({

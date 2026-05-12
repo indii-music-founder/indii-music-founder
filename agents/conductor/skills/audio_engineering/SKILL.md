@@ -28,7 +28,7 @@ description: Mastering specs, mixing critiques, frequency analysis, LUFS targeti
 - **Binaural Rendering:** Atmos mixes must translate back to headphones via binaural rendering. Always check the binaural metadata.
 - **The Center Channel:** Keep the lead vocal anchored in the center (Phantom Center or discrete C channel). Don't spread the low end too wide; keep the sub isolated to the LFE channel.
 
-## 4. indiiOS App Integration (Audio Intelligence)
+## 4. indii App Integration (Audio Intelligence)
 
 - Ingest `Essentia.js` readouts (BPM, Key, energy levels, tonal balance).
-- Provide users with actionable feedback on their masters inside the indiiOS audio lab before they submit to distribution. Let them know if their LUFS is dangerously low (-18) or dangerously high (-6) compared to industry norms for their genre.
+- Provide users with actionable feedback on their masters inside the indii audio lab before they submit to distribution. Let them know if their LUFS is dangerously low (-18) or dangerously high (-6) compared to industry norms for their genre.

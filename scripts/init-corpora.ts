@@ -44,7 +44,7 @@ async function main() {
     }
 
     for (const corpus of corpora) {
-        const displayName = `indiiOS Store - ${corpus}`;
+        const displayName = `indii Store - ${corpus}`;
 
         try {
             const match = existingStores.find((s: any) => s.displayName === displayName);

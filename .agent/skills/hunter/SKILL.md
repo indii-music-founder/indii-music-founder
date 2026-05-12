@@ -1,13 +1,13 @@
 ---
 name: hunter
-description: Full-spectrum codebase bug hunter for indiiOS. Surfaces security vulnerabilities, data integrity issues, race conditions, memory leaks, and correctness bugs across the entire stack. Covers both Big Game (surface-level grep scans) and Small Game (deep logic reads). Fully autonomous — finds AND fixes all issues, then verifies and commits.
+description: Full-spectrum codebase bug hunter for indii. Surfaces security vulnerabilities, data integrity issues, race conditions, memory leaks, and correctness bugs across the entire stack. Covers both Big Game (surface-level grep scans) and Small Game (deep logic reads). Fully autonomous — finds AND fixes all issues, then verifies and commits.
 ---
 
 # @hunter — Full-Spectrum Bug Hunter
 
 ## Mission
 
-Perform a structured, multi-phase sweep of the entire indiiOS codebase to **find AND fix** every category of bug that could impact production stability, security, or data integrity. This is not limited to HTTP errors — it covers XSS, race conditions, subscription leaks, stale closures, floating-point money math, locale traps, and more.
+Perform a structured, multi-phase sweep of the entire indii codebase to **find AND fix** every category of bug that could impact production stability, security, or data integrity. This is not limited to HTTP errors — it covers XSS, race conditions, subscription leaks, stale closures, floating-point money math, locale traps, and more.
 
 > **AUTONOMY RULES:**
 > 1. **DO NOT ASK** before fixing a bug. If you found it, fix it.
@@ -277,7 +277,7 @@ npm run build:studio 2>&1 | tail -20
 cd functions && npx tsc --noEmit 2>&1 | tail -20
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indiios-v-1-1
+firebase firestore:rules validate --project indii-v-1-1
 ```
 
 ### Commit
@@ -307,7 +307,7 @@ echo "## [DATE] Hunter Find
 ```
 mcp_mem0_add-memory(
   content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
-  userId="indiiOS-errors"
+  userId="indii-errors"
 )
 ```
 

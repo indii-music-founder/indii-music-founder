@@ -34,8 +34,8 @@ def submit_job():
         payload = {
             "baseModel": base_model,
             "supervisedTuningSpec": {
-                "trainingDatasetUri": f"gs://indiios-training-data/{agent}/{agent}_train.jsonl",
-                "validationDatasetUri": f"gs://indiios-training-data/{agent}/{agent}_eval.jsonl",
+                "trainingDatasetUri": f"gs://indii-training-data/{agent}/{agent}_train.jsonl",
+                "validationDatasetUri": f"gs://indii-training-data/{agent}/{agent}_eval.jsonl",
                 "hyperParameters": {
                     "epochCount": "3"
                 }

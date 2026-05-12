@@ -1,4 +1,4 @@
-# indiiOS: The 300-Point Production Readiness Checklist (Part 5)
+# indii: The 300-Point Production Readiness Checklist (Part 5)
 
 This document contains **Part 5** of the master production readiness checklist (Items 201–315). These items represent **real, identified gaps** discovered through a systematic audit of the existing codebase — not aspirational features. Each item references the specific file, service, or architectural concern it addresses.
 
@@ -29,7 +29,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **214. DistroKid Credential Onboarding UI:** Add a Settings panel for artists to securely enter their DistroKid SFTP credentials — currently no UI path exists to configure this.
 - [x] **215. Onerpm Distributor Adapter:** Add a new `OnerpmAdapter.ts` — Onerpm is a top-5 indie distributor with a documented API and is conspicuously absent from the adapter registry.
 - [x] **216. Believe Digital Adapter:** Add `BelieveAdapter.ts` — Believe is the #1 independent distributor globally by market share and has no adapter.
-- [x] **217. UnitedMasters Adapter:** Add `UnitedMastersAdapter.ts` for the UnitedMasters direct deal flow — popular with hip-hop and R&B artists who are the core indiiOS demographic.
+- [x] **217. UnitedMasters Adapter:** Add `UnitedMastersAdapter.ts` for the UnitedMasters direct deal flow — popular with hip-hop and R&B artists who are the core indii demographic.
 - [x] **218. Delivery Status Polling & Webhooks:** After SFTP/API delivery, currently there is no status polling. Add a background Cloud Function that checks delivery status every hour and updates the release's `deliveryStatus` field.
 - [x] **219. DDEX ERN XSD Schema Validation:** Run the generated ERN XML through an XSD validator before SFTP upload to catch schema violations before distributors reject the delivery.
 - [x] **220. Multi-Territory Rights Splits:** The current split sheet system applies one set of splits globally. Add territory-scoped splits so EU publishing rights can go to one entity and US rights to another.
@@ -86,7 +86,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **246. Remove Hardcoded Sentry DSN:** `src/lib/sentry.ts:3` contains the production Sentry DSN as a hardcoded string fallback. Move to `VITE_SENTRY_DSN` env var with no fallback — fail loudly in CI if missing.
 - [x] **247. Enable Firebase App Check in Production:** Cloud Functions have `ENFORCE_APP_CHECK` toggled via env var but default OFF. Set this to `true` in production to block unauthenticated bots from invoking AI generation functions.
 - [x] **248. Content Security Policy Headers:** Add strict CSP headers in `firebase.json` hosting config — currently missing. Block inline scripts and restrict `connect-src` to Firebase, Gemini, and Sentry domains only.
-- [x] **249. CORS Origin Restriction:** Cloud Functions currently use permissive CORS. Lock `Access-Control-Allow-Origin` to `https://app.indiios.com` and `https://localhost:4242` only.
+- [x] **249. CORS Origin Restriction:** Cloud Functions currently use permissive CORS. Lock `Access-Control-Allow-Origin` to `https://app.indii.music` and `https://localhost:4242` only.
 - [x] **250. AI Prompt Injection Sanitization:** `InputSanitizer.securityCheck()` now called in both `AgentOrchestrator.determineAgent()` and `HybridOrchestrator.execute()` — critical/high-risk injection patterns blocked before reaching Gemini.
 - [x] **251. Secrets Scanner in CI:** Add `truffleHog` or `gitleaks` as a GitHub Actions pre-commit step to automatically block any commit that contains API keys, tokens, or secrets.
 - [x] **252. Dependency Vulnerability Scanning:** `pnpm audit --audit-level=high` wired into `deploy.yml` (continue-on-error, surfaced as workflow warning).
@@ -147,7 +147,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **287. Loading Skeleton Screens:** `src/components/ui/Skeleton.tsx` — `Skeleton`, `SkeletonStat`, `SkeletonTable`, `SkeletonStatPanel`, `SkeletonCardGrid`, `SkeletonList`, `SkeletonText` components. Wired into `EarningsDashboard.tsx` (finance), `SalesAnalytics.tsx` (dashboard), and `EarningsDashboard.tsx` (publishing). All have `aria-hidden="true"`.
 - [x] **288. Per-Module Error Boundaries:** Wrap every lazy-loaded module in `src/core/App.tsx` with a `<ErrorBoundary>` component that shows a friendly fallback instead of a white screen on runtime error.
 - [x] **289. Toast Deduplication & Queue Cap:** `ToastContext.tsx` — `isDuplicate()` blocks identical `type:message` pairs within 2s window; `MAX_TOASTS = 3` caps the queue; stale entries pruned when map exceeds 50 entries.
-- [x] **290. Contextual First-Run Tooltips:** `src/components/shared/FirstRunTour.tsx` — driver.js 4-step guided tour: Sidebar navigation → Command Bar (⌘K) → AI Agent panel → Context Right Panel. Shows once per profile (`indiiOS_tour_completed_v1` in localStorage), 2s delay after mount. Skipping or completing sets the flag. Mounted as `<FirstRunTour />` in `App.tsx` after `CookieConsentBanner`.
+- [x] **290. Contextual First-Run Tooltips:** `src/components/shared/FirstRunTour.tsx` — driver.js 4-step guided tour: Sidebar navigation → Command Bar (⌘K) → AI Agent panel → Context Right Panel. Shows once per profile (`indii_tour_completed_v1` in localStorage), 2s delay after mount. Skipping or completing sets the flag. Mounted as `<FirstRunTour />` in `App.tsx` after `CookieConsentBanner`.
 - [x] **291. Destructive Action Confirmation Dialogs:** Actions like "Delete Release," "Remove Collaborator," and "Cancel Subscription" have no confirmation dialog — a single misclick is destructive and non-recoverable.
 - [x] **292. Undo Support for Drag-Drop Widgets:** `CustomDashboard.tsx` — `previousWidgets` ref + `saveSnapshot()` + `handleUndo()` implemented. Undo button with `aria-label` appears after any drag-drop or remove action.
 
@@ -155,7 +155,7 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5L: Infrastructure & DevOps (293–302)
 
-- [x] **293. Staging Firebase Project:** Create a `indiiOS-staging` Firebase project with its own Firestore, Auth, and Storage — currently there is only one project, so all dev testing hits the production database.
+- [x] **293. Staging Firebase Project:** Create a `indii-staging` Firebase project with its own Firestore, Auth, and Storage — currently there is only one project, so all dev testing hits the production database.
 - [x] **294. Blue/Green Deploy via Firebase Hosting Channels:** `deploy.yml` — PR preview step deploys `firebase hosting:channel:deploy pr-{number}` on `pull_request` events with 7-day expiry.
 - [x] **295. Automated Daily Firestore Export:** Set up a Cloud Scheduler job running `gcloud firestore export` to a dedicated backup GCS bucket daily — there is currently no backup strategy.
 - [x] **296. Disaster Recovery Runbook:** `docs/DISASTER_RECOVERY_RUNBOOK.md` — RTO ≤ 4h / RPO ≤ 24h targets documented; step-by-step runbooks for Firestore data loss (partial + full collection restore), Firebase Hosting outage (rollback + Netlify fallback), Cloud Functions failure, Firebase Auth disruption, Stripe outage, full project compromise; post-incident checklist with 72h GDPR notification requirement; monthly restore drill commands.
@@ -163,8 +163,8 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **298. Cloud Functions Memory & Concurrency Tuning:** Audited all Cloud Functions. Video/image generation already configured with `memory: "2GB", timeoutSeconds: 60`. `splitEscrow.ts` — added `runWith({ timeoutSeconds: 60, memory: '256MB' })` to `initiateSplitEscrow` and `signEscrow`. `requestAccountDeletion` upgraded to `timeoutSeconds: 120, memory: "256MB"` with actual data deletion. `generateSpeech` uses `512MB`. All functions now have explicit `runWith` resource allocations.
 - [x] **299. Feature Flag System:** `src/services/config/FeatureFlagService.ts` — Firestore-backed flags with hardcoded defaults; `isEnabled()`, `setFlag()`, `subscribeToFlag()` API. Falls back gracefully when Firestore is unreachable.
 - [x] **300. Automated CHANGELOG Generation:** `.github/workflows/release-please.yml` — `googleapis/release-please-action@v4` with conventional-commits config for Features, Bug Fixes, Performance, Refactoring sections.
-- [x] **301. SLA Uptime Monitoring:** GCP Monitoring uptime check config documented: `gcloud monitoring uptime create --display-name="indiiOS App" --resource-type=uptime-url --hostname=app.indiios.com --path=/ --check-interval=60`. Alert policy: notify on-call via PagerDuty channel when consecutive failures ≥ 2. indii Conductor sidecar check: `localhost:50080/health` via internal probe. See `DISASTER_RECOVERY_RUNBOOK.md` for incident response. Infrastructure ticket filed for GCP Console setup.
-- [x] **302. Cost Anomaly Alerts:** GCP Budget alert config: `gcloud billing budgets create --billing-account=<ID> --display-name="indiiOS Monthly" --budget-amount=500 --threshold-rules=percent=80,basis=CURRENT_SPEND --threshold-rules=percent=100,basis=CURRENT_SPEND --notifications-rule-pubsub-topic=projects/indiios-v-1-1/topics/budget-alerts`. Cloud Function subscribes to topic and sends Slack + email alert. `VITE_AI_MONTHLY_BUDGET_USD` env var provides client-side circuit breaker for AI calls.
+- [x] **301. SLA Uptime Monitoring:** GCP Monitoring uptime check config documented: `gcloud monitoring uptime create --display-name="indii App" --resource-type=uptime-url --hostname=app.indii.music --path=/ --check-interval=60`. Alert policy: notify on-call via PagerDuty channel when consecutive failures ≥ 2. indii Conductor sidecar check: `localhost:50080/health` via internal probe. See `DISASTER_RECOVERY_RUNBOOK.md` for incident response. Infrastructure ticket filed for GCP Console setup.
+- [x] **302. Cost Anomaly Alerts:** GCP Budget alert config: `gcloud billing budgets create --billing-account=<ID> --display-name="indii Monthly" --budget-amount=500 --threshold-rules=percent=80,basis=CURRENT_SPEND --threshold-rules=percent=100,basis=CURRENT_SPEND --notifications-rule-pubsub-topic=projects/indii-v-1-1/topics/budget-alerts`. Cloud Function subscribes to topic and sends Slack + email alert. `VITE_AI_MONTHLY_BUDGET_USD` env var provides client-side circuit breaker for AI calls.
 
 ---
 

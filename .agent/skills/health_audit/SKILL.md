@@ -2,7 +2,7 @@
 name: health-audit
 version: 1.1.0
 description: |
-  Full-spectrum engineering health audit for indiiOS. Scans build health,
+  Full-spectrum engineering health audit for indii. Scans build health,
   tests, module completeness, service layer, agent fleet, security posture,
   dependencies, CI/CD, and tech debt. Produces a ship readiness report
   with prioritized action items. Self-upgrading: appends new scan
@@ -11,7 +11,7 @@ description: |
   "what's the state of the codebase", or "what needs to get finished".
 ---
 
-# indiiOS Health Audit
+# indii Health Audit
 
 Comprehensive engineering health and ship readiness audit. Run from the
 project root. Produces an artifact report with prioritized action items.
@@ -148,7 +148,7 @@ echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' src/ --include
 After all scans complete, produce a markdown artifact at:
 
 ```
-{artifact_dir}/indiios_health_report.md
+{artifact_dir}/indii_health_report.md
 ```
 
 The report MUST include:

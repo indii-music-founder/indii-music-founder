@@ -3,7 +3,7 @@ import sys
 import os
 
 # Ensure we can import from the python directory
-sys.path.append(os.path.abspath("indiiOS-Alpha-Electron"))
+sys.path.append(os.path.abspath("indii-Alpha-Electron"))
 
 from python.tools.browser_tool import BrowserTool
 

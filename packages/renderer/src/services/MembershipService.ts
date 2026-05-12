@@ -125,6 +125,9 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
 
 
 class MembershipServiceImpl {
+    private sessionSpend: number = 0;
+    private readonly MAX_SESSION_SPEND = 10.00; // $10 hard cap per request/swarm session
+
     /**
      * Check if the current user is a builder/dev account.
      * Checks for the god_mode custom claim on Firebase Auth.
@@ -152,7 +155,9 @@ class MembershipServiceImpl {
 
             return false;
         } catch {
-            return (import.meta.env && import.meta.env.DEV && !import.meta.env.VITEST) || false;
+            // STRICT SAFETY: No automatic bypass in DEV mode anymore.
+            // Requires explicit opt-in via .env flag for high-cost testing.
+            return (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') || false;
         }
     }
 
@@ -416,6 +421,9 @@ class MembershipServiceImpl {
         const usageRef = doc(db, 'users', userId, 'usage', dateKey);
 
         try {
+            // Phase 4: Track session-wide spend for immediate circuit breaking
+            this.sessionSpend += amount;
+
             // Atomic update or create with merge to prevent race conditions
             await setDoc(usageRef, {
                 date: dateKey,
@@ -457,6 +465,12 @@ class MembershipServiceImpl {
 
         const remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
         const allowed = (currentSpendFixed + estimatedCostFixed) <= maxSpendFixed;
+
+        // EMERGENCY CIRCUIT BREAKER: Check session-wide limit
+        if (this.sessionSpend + estimatedCost > this.MAX_SESSION_SPEND) {
+            logger.error(`[MembershipService] EMERGENCY KILL: Session spend ($${this.sessionSpend.toFixed(2)}) + estimate ($${estimatedCost.toFixed(2)}) exceeds session safety limit ($${this.MAX_SESSION_SPEND.toFixed(2)})`);
+            return { allowed: false, remainingBudget: 0, requiresApproval: false };
+        }
 
         // Ledger Policy: User must approve every charge over $0.50
         const requiresApproval = estimatedCost > 0.50;

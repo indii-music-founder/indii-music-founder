@@ -1,5 +1,5 @@
 /**
- * Subscription Tier Definitions for indiiOS
+ * Subscription Tier Definitions for indii
  *
  * Defines all available subscription tiers with their feature limits and capabilities.
  *
@@ -91,7 +91,7 @@ export interface TierLimits {
  */
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
-    name: 'indiiOS Free',
+    name: 'indii Free',
     description: 'Perfect for beginners to explore AI-powered creativity',
     price: 0,
     billingPeriod: 'once',
@@ -129,7 +129,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.PRO_MONTHLY]: {
-    name: 'indiiOS Pro',
+    name: 'indii Pro',
     description: 'Professional tools for serious creators',
     price: 19,
     billingPeriod: 'month',
@@ -167,7 +167,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.PRO_YEARLY]: {
-    name: 'indiiOS Pro (Yearly)',
+    name: 'indii Pro (Yearly)',
     description: 'Save 17% with annual billing',
     price: 190,
     billingPeriod: 'year',
@@ -205,7 +205,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.STUDIO]: {
-    name: 'indiiOS Studio',
+    name: 'indii Studio',
     description: 'Desktop-native with local computing and unlimited creativity',
     price: 49,
     billingPeriod: 'month',
@@ -242,7 +242,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     maxTeamMembers: 25
   },
   [SubscriptionTier.FOUNDER]: {
-    name: 'indiiOS Founder',
+    name: 'indii Founder',
     description: 'Lifetime founding access. One-time $2,500. Limited to 10 seats. API costs billed at pass-through cost.',
     price: 2500,
     billingPeriod: 'once',

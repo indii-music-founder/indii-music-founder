@@ -1,7 +1,7 @@
 # Item 392: Agent Error Rate Alert — Cloud Monitoring Configuration
 
 This document defines the Cloud Monitoring alert policy for high agent task
-failure rates in indiiOS production.
+failure rates in indii production.
 
 ## Alert Policy: High Agent Error Rate
 
@@ -13,7 +13,7 @@ Deploy this policy via `gcloud` CLI or the Cloud Console:
 
 ```json
 {
-  "displayName": "indiiOS: High Agent Error Rate",
+  "displayName": "indii: High Agent Error Rate",
   "documentation": {
     "content": "Agent task failure rate exceeded 10% in a 5-minute window. Check agent logs at https://console.cloud.google.com/logs and the `.agent/skills/error_memory/ERROR_LEDGER.md` for known patterns.",
     "mimeType": "text/markdown"
@@ -80,7 +80,7 @@ Create a log-based metric in Cloud Monitoring to count these:
 
 ```bash
 gcloud logging metrics create agent_task_failure_rate \
-  --description="Agent task failure rate for indiiOS" \
+  --description="Agent task failure rate for indii" \
   --log-filter='resource.type="cloud_run_revision"
     jsonPayload.errorCode="AGENT_TASK_FAILURE"' \
   --project={PROJECT_ID}
@@ -99,7 +99,7 @@ Set up a Slack notification channel in the GCP Console:
 For on-call escalation:
 
 1. Go to **Monitoring** → **Edit notification channels** → **PagerDuty**
-2. Enter your PagerDuty integration key from the `indiiOS` service
+2. Enter your PagerDuty integration key from the `indii` service
 3. Add the PagerDuty channel ID to `notificationChannels` in the policy
 
 ## Runbook

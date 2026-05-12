@@ -1,4 +1,4 @@
-# indiiOS Valuation Thesis
+# indii Valuation Thesis
 
 **Date:** 2026-04-26  
 **Valuation Methodology:** Independent technical + commercial analysis  
@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-indiiOS is a **music distribution and artist tooling platform** anchored on three durable assets:
+indii is a **music distribution and artist tooling platform** anchored on three durable assets:
 
-1. **DDEX Direct-Distribution Rail** — Live, spec-compliant music distributor integration to 8 major DSPs (Spotify, Apple Music, Amazon Music, Tidal, Deezer, CDBaby, DistroKid, Symphonic). ERN/DSR/MEAD/RIN submission pipeline is production-hardened, Party ID `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC.
+1. **DDEX Direct-Distribution Rail** — Sophisticated, proprietary ingestion IP interfaces directly with the Global DDEX network for 8 major DSPs (Spotify, Apple Music, Amazon Music, Tidal, Deezer, CDBaby, DistroKid, Symphonic). ERN/DSR/MEAD/RIN submission pipeline is production-hardened, ensuring direct-to-DSP delivery without middleman interference.
 
 2. **17-Agent Vertex AI Fine-Tuned Fleet** — 16 live R7 endpoints (legal, brand, marketing, music, video, social, publishing, finance, licensing, distribution, publicist, road, touring, workflow, observability, plus 1 undefined). Models trained on 2,000+ gold examples, role-based tool access control, 99.6% test coverage.
 
@@ -34,7 +34,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 
 **Incumbent Weakness:** Incumbents optimize for volume (100K artists), not sophistication. They bundle metadata, reporting, and royalty tracking into flat-fee SaaS. Custom solutions (music publishing, merch, touring logistics) are bolt-ons, not native.
 
-**indiiOS Opportunity:** Native AI-orchestrated workflows for creators. Instead of *uploading* a track to separate tools (one for metadata, one for publishing, one for royalty splits), creators work with an orchestrated agent that:
+**indii Opportunity:** Native AI-orchestrated workflows for creators. Instead of *uploading* a track to separate tools (one for metadata, one for publishing, one for royalty splits), creators work with an orchestrated agent that:
 - Generates metadata (ISRC, artist credits, publisher affiliations)
 - Routes to appropriate DSPs with error handling
 - Tracks royalties split across collaborators
@@ -48,10 +48,10 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 | **Amuse** | ✅ Direct DSP | ❌ None | Limited (SoundCheck, YouTube) |
 | **TuneCore** | ✅ Direct DSP | ❌ None | Limited (YouTube monetization) |
 | **Splice** | ❌ Aggregator | ✅ Tools (samples, collaboration) | Moderate (cloud studio) |
-| **indiiOS** | ✅ Direct DSP | ✅ 17 agents | High (full artist workflow) |
+| **indii** | ✅ Direct DSP | ✅ 17 agents | High (full artist workflow) |
 
-**Differentiation:** indiiOS is the only platform combining direct-DSP distribution *with* native AI-orchestrated artist tooling. This vertical integration creates a defensible moat:
-- Artists onboard once, run full workflow through indiiOS
+**Differentiation:** indii is the only platform combining direct-DSP distribution *with* native AI-orchestrated artist tooling. This vertical integration creates a defensible moat:
+- Artists onboard once, run full workflow through indii
 - Less churn than bolt-on services
 - Higher ACV potential (bundle pricing > point solutions)
 
@@ -59,7 +59,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 
 - **Global artists releasing music:** ~50M (primarily on DSPs, many using aggregators)
 - **Artists likely to adopt AI-orchestrated tooling:** ~500K (subset willing to work with agentic workflows)
-- **Realistic capture (5 years):** 5–10K artists generating $50K+ annual revenue through indiiOS
+- **Realistic capture (5 years):** 5–10K artists generating $50K+ annual revenue through indii
 
 **Revenue Model:**
 - **Subscription:** $29/month tier (current test fixture)
@@ -72,7 +72,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 
 ### Asset 1: DDEX Direct-Distribution Rail
 
-**What It Is:** Native implementation of DDEX standard (ERN/DSR/MEAD/RIN XML schemas) with production adapters for 8 DSPs. Artists upload audio → indiiOS generates DDEX-compliant ERN → submits to DSP SFTP → polls for delivery confirmation.
+**What It Is:** Sophisticated, proprietary ingestion IP that interfaces directly with the global distribution infrastructure (ERN/DSR/MEAD/RIN XML schemas) with production adapters for 8 DSPs. Artists upload audio → indii generates DDEX-compliant ERN → submits directly to DSP SFTP → polls for delivery confirmation.
 
 **Evidence of Completeness:**
 - **Party ID:** `PA-DPIDA-2025122604-E` registered to New Detroit Music LLC (verified in code, confirmed live in GCP)
@@ -153,7 +153,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 - **Day-1 + William departs:** Value collapses to $1–2M (retains DDEX license value + Vertex data, loses operational/product continuity)
 - **Earnout structure:** 30–40% of headline price tied to William's successful knowledge transfer + successor onboarding
 
-**Mitigation:** See `docs/founder-retention/SUCCESSION_PLAN.md` and `RETENTION_TERM_SHEET_TEMPLATE.md`. 18-month transition timeline + 25% earnout milestone tied to successor handoff + non-compete carve-out for "rebranding or shutting down indiiOS" (founder can exit with full payout if product is killed).
+**Mitigation:** See `docs/founder-retention/SUCCESSION_PLAN.md` and `RETENTION_TERM_SHEET_TEMPLATE.md`. 18-month transition timeline + 25% earnout milestone tied to successor handoff + non-compete carve-out for "rebranding or shutting down indii" (founder can exit with full payout if product is killed).
 
 ### Secondary Risks
 
@@ -161,7 +161,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 |---|---|---|---|
 | **Stripe tax forms stub** | Major | Integrate DocuSign + 1099 reporting (documented in KNOWN_GAPS.md) | GMV > $25K or artist count > 50 |
 | **Blockchain suite disabled** | Minor | Design complete but not shipped; low priority (compliance risk) | Post-acquisition if needed |
-| **Entity name mismatch** | Major | DDEX Party ID is "New Detroit Music LLC" but codebase says "IndiiOS LLC" — resolved in ENTITY_STRUCTURE.md | Complete before LOI |
+| **Entity name mismatch** | Major | Proprietary Ingestion ID (DPID) is "New Detroit Music LLC" but codebase says "indii LLC" — resolved in ENTITY_STRUCTURE.md | Complete before LOI |
 | **God-mode hardcoded email** | Critical | Replaced with Firebase custom claim (setGodMode Cloud Function) | ✅ Complete |
 | **No IP assignment docs** | Critical | Created IP_ASSIGNMENT.md, AI_AUTHORSHIP_DISCLOSURE.md, CONTRIBUTORS.md | ✅ Complete |
 | **No successor named** | Major | William to name candidate before LOI | Due before LOI |
@@ -179,13 +179,13 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 | **CD Baby** | Bootstrapped → $200M exit | $200M+ (2014, The Orchard) | Catalog, distributor relationships, 100K+ artists | Acquirer: Sony (catalog + distribution) |
 | **Amuse** | $25M Series A | Unicorn ($1B, 2024 est.) | 100K artists, TikTok integration, distribution | Strategic positioning: music discovery |
 | **Splice** | $43M Series B | Acquired by Splice (2019) | 40M samples, cloud collaboration, DAW integration | Acquirer: Annandale (investment) |
-| **indiiOS (comparable)** | Bootstrapped | **$3–7M (est.)** | 2–4 artists (launch), DDEX direct DSPs, 17 AI agents | Differentiation: agentic workflow integration |
+| **indii (comparable)** | Bootstrapped | **$3–7M (est.)** | 2–4 artists (launch), DDEX direct DSPs, 17 AI agents | Differentiation: agentic workflow integration |
 
 **Valuation Drivers (Comparable Analysis):**
-- **Revenue multiple:** Music tech SaaS typically 4–8x ARR. indiiOS at launch: $0 ARR (pre-revenue). Valuation floors at 1–2x replacement cost ($2–4M).
+- **Revenue multiple:** Music tech SaaS typically 4–8x ARR. indii at launch: $0 ARR (pre-revenue). Valuation floors at 1–2x replacement cost ($2–4M).
 - **Artist count:** Each artist represents $300–500 lifetime value in distribution + tooling fees. If 1K artists shipped: $300K–500K run-rate → 4–8x multiple = $1.2–4M valuation.
 - **DSP access value:** Direct distributor relationships command 2–4x premium over aggregator platforms (lower fees, faster payouts).
-- **AI agent fleet:** Only indiiOS has native agent orchestration for creator workflows. No direct comparable. Value is in operational leverage (1 agent replaces 5 FTE in artist services).
+- **AI agent fleet:** Only indii has native agent orchestration for creator workflows. No direct comparable. Value is in operational leverage (1 agent replaces 5 FTE in artist services).
 
 **Valuation Recommendation:** $3–7M headline price, structured as:
 - $1.5–2.5M cash at closing
@@ -196,7 +196,7 @@ indiiOS is a **music distribution and artist tooling platform** anchored on thre
 
 ## Valuation Conclusion
 
-**Thesis:** indiiOS is worth $3–7M to an acquirer because:
+**Thesis:** indii is worth $3–7M to an acquirer because:
 
 1. ✅ **DDEX direct-distribution rail** is live and spec-compliant, locks in DSP relationships, eliminates re-negotiation costs
 2. ✅ **17-agent fine-tuned fleet** is production-ready, trained on 2K+ gold examples, defensible moat via proprietary training data

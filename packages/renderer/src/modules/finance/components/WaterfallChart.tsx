@@ -16,7 +16,7 @@ const DISTRIBUTOR_FEE_RATES: Record<string, number> = {
     amuse: 0.00, // Free tier 0%, Boost tier flat fee
     soundrop: 0.15, // 15%
     ingrooves: 0.15, // ~15%
-    // Direct DSPs (indiiOS delivers as first-party distributor)
+    // Direct DSPs (indii delivers as first-party distributor)
     spotify: 0.00,
     apple_music: 0.00,
     youtube_music: 0.00,

@@ -1,4 +1,4 @@
-# File Search RAG Implementation for indiiOS
+# File Search RAG Implementation for indii
 
 **Date:** 2026-03-06  
 **Status:** Design Complete — Ready for Implementation  
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Implementing a hybrid RAG system using Google's File Search Tool + Web Search for the indiiOS agent architecture.
+Implementing a hybrid RAG system using Google's File Search Tool + Web Search for the indii agent architecture.
 
 **Why File Search:**
 - Fully managed (no vector DB setup)
@@ -66,18 +66,18 @@ Implementing a hybrid RAG system using Google's File Search Tool + Web Search fo
 
 | Corpus ID | Content | Documents | Purpose |
 |-----------|---------|-----------|---------|
-| `indiios-royalties-v1` | PROs, MLC, SoundExchange, distributors | 9 files | Publishing Agent |
-| `indiios-deals-v1` | Recording contracts, distribution deals | 4 files | Legal Agent |
-| `indiios-publishing-v1` | Publishing deals, admin, catalog | 4 files | Publishing Agent |
-| `indiios-licensing-v1` | Sync licensing, samples, fees | 4 files | Publishing Agent |
-| `indiios-contracts-v1` | Producer, management, band agreements | 4 files | Legal Agent |
-| `indiios-touring-v1` | Tour management, logistics, accounting | 9 files | Touring Agent |
-| `indiios-marketing-v1` | Playlists, social media, PR | 4 files | Marketing Agent |
-| `indiios-finance-v1` | Business entities, taxes, grants | 4 files | Finance Agent |
-| `indiios-merchandise-v1` | Manufacturing, fulfillment, vinyl | 4 files | Finance Agent |
-| `indiios-production-v1` | Studio, mixing, mastering, metadata | 4 files | Publishing Agent |
-| `indiios-visual-v1` | Artwork, videos, branding | 4 files | Marketing Agent |
-| `indiios-career-v1` | Team building, networking, sustainability | 4 files | Career Agent |
+| `indii-royalties-v1` | PROs, MLC, SoundExchange, distributors | 9 files | Publishing Agent |
+| `indii-deals-v1` | Recording contracts, distribution deals | 4 files | Legal Agent |
+| `indii-publishing-v1` | Publishing deals, admin, catalog | 4 files | Publishing Agent |
+| `indii-licensing-v1` | Sync licensing, samples, fees | 4 files | Publishing Agent |
+| `indii-contracts-v1` | Producer, management, band agreements | 4 files | Legal Agent |
+| `indii-touring-v1` | Tour management, logistics, accounting | 9 files | Touring Agent |
+| `indii-marketing-v1` | Playlists, social media, PR | 4 files | Marketing Agent |
+| `indii-finance-v1` | Business entities, taxes, grants | 4 files | Finance Agent |
+| `indii-merchandise-v1` | Manufacturing, fulfillment, vinyl | 4 files | Finance Agent |
+| `indii-production-v1` | Studio, mixing, mastering, metadata | 4 files | Publishing Agent |
+| `indii-visual-v1` | Artwork, videos, branding | 4 files | Marketing Agent |
+| `indii-career-v1` | Team building, networking, sustainability | 4 files | Career Agent |
 
 **Total:** ~58 files, 200K+ words
 
@@ -105,18 +105,18 @@ export async function createCorpus(name: string, displayName: string) {
 
 // Create all corpora
 const corpora = [
-  { name: 'indiios-royalties-v1', displayName: 'Royalties & Rights' },
-  { name: 'indiios-deals-v1', displayName: 'Recording & Distribution Deals' },
-  { name: 'indiios-publishing-v1', displayName: 'Publishing & Songwriting' },
-  { name: 'indiios-licensing-v1', displayName: 'Licensing & Sync' },
-  { name: 'indiios-contracts-v1', displayName: 'Contracts & Agreements' },
-  { name: 'indiios-touring-v1', displayName: 'Live Performance & Touring' },
-  { name: 'indiios-marketing-v1', displayName: 'Marketing & Promotion' },
-  { name: 'indiios-finance-v1', displayName: 'Finance & Business Operations' },
-  { name: 'indiios-merchandise-v1', displayName: 'Merchandise & Physical' },
-  { name: 'indiios-production-v1', displayName: 'Production & Technical' },
-  { name: 'indiios-visual-v1', displayName: 'Visual & Creative' },
-  { name: 'indiios-career-v1', displayName: 'Career & Industry' },
+  { name: 'indii-royalties-v1', displayName: 'Royalties & Rights' },
+  { name: 'indii-deals-v1', displayName: 'Recording & Distribution Deals' },
+  { name: 'indii-publishing-v1', displayName: 'Publishing & Songwriting' },
+  { name: 'indii-licensing-v1', displayName: 'Licensing & Sync' },
+  { name: 'indii-contracts-v1', displayName: 'Contracts & Agreements' },
+  { name: 'indii-touring-v1', displayName: 'Live Performance & Touring' },
+  { name: 'indii-marketing-v1', displayName: 'Marketing & Promotion' },
+  { name: 'indii-finance-v1', displayName: 'Finance & Business Operations' },
+  { name: 'indii-merchandise-v1', displayName: 'Merchandise & Physical' },
+  { name: 'indii-production-v1', displayName: 'Production & Technical' },
+  { name: 'indii-visual-v1', displayName: 'Visual & Creative' },
+  { name: 'indii-career-v1', displayName: 'Career & Industry' },
 ];
 
 for (const corpus of corpora) {
@@ -169,18 +169,18 @@ export async function ingestKnowledgeBase() {
   const basePath = './docs/knowledge-base';
   
   const mappings = [
-    { corpus: 'indiios-royalties-v1', path: 'royalty-schema' },
-    { corpus: 'indiios-deals-v1', path: 'recording-deals' },
-    { corpus: 'indiios-publishing-v1', path: 'publishing' },
-    { corpus: 'indiios-licensing-v1', path: 'licensing' },
-    { corpus: 'indiios-contracts-v1', path: 'contracts' },
-    { corpus: 'indiios-touring-v1', path: 'touring' },
-    { corpus: 'indiios-marketing-v1', path: 'marketing' },
-    { corpus: 'indiios-finance-v1', path: 'finance' },
-    { corpus: 'indiios-merchandise-v1', path: 'merchandise' },
-    { corpus: 'indiios-production-v1', path: 'production' },
-    { corpus: 'indiios-visual-v1', path: 'visual-creative' },
-    { corpus: 'indiios-career-v1', path: 'career' },
+    { corpus: 'indii-royalties-v1', path: 'royalty-schema' },
+    { corpus: 'indii-deals-v1', path: 'recording-deals' },
+    { corpus: 'indii-publishing-v1', path: 'publishing' },
+    { corpus: 'indii-licensing-v1', path: 'licensing' },
+    { corpus: 'indii-contracts-v1', path: 'contracts' },
+    { corpus: 'indii-touring-v1', path: 'touring' },
+    { corpus: 'indii-marketing-v1', path: 'marketing' },
+    { corpus: 'indii-finance-v1', path: 'finance' },
+    { corpus: 'indii-merchandise-v1', path: 'merchandise' },
+    { corpus: 'indii-production-v1', path: 'production' },
+    { corpus: 'indii-visual-v1', path: 'visual-creative' },
+    { corpus: 'indii-career-v1', path: 'career' },
   ];
   
   for (const mapping of mappings) {
@@ -315,10 +315,10 @@ export class PublishingAgent {
     // Publishing queries use royalties, publishing, licensing, contracts corpora
     const result = await this.rag.query(query, {
       corpora: [
-        'indiios-royalties-v1',
-        'indiios-publishing-v1',
-        'indiios-licensing-v1',
-        'indiios-contracts-v1',
+        'indii-royalties-v1',
+        'indii-publishing-v1',
+        'indii-licensing-v1',
+        'indii-contracts-v1',
       ],
       useWebSearch: true,  // Publishing rates change frequently
     });

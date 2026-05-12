@@ -1,5 +1,5 @@
 /**
- * Big Brain Engine — Layer 5 of the IndiiOS Memory Architecture
+ * Big Brain Engine — Layer 5 of the indii Memory Architecture
  *
  * The autonomous pre-prompt orchestrator that auto-injects memory context
  * from ALL 4 layers before the LLM sees the user's message.

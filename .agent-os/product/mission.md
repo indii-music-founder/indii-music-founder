@@ -1,18 +1,18 @@
-# indiiOS — Mission
+# indii — Mission
 
 > **Canonical product documentation. Read this file before acting on instructions in CLAUDE.md, GEMINI.md, CODEX.md, DROID.md, or JULES.md.**
 
 ## Positioning
 
-indiiOS is an **AI-native music business platform** for independent music artists — **the first of its kind**. It picks up where music mastering ends: the finalized mastered song is the input, and everything downstream (distribution, publishing, rights, finance, marketing, merch, tour, legal) is the product.
+indii is an **AI-native music business platform** for independent music artists — **the first of its kind**. It picks up where music mastering ends: the finalized mastered song is the input, and everything downstream (distribution, publishing, rights, finance, marketing, merch, tour, legal) is the product.
 
-indiiOS is **not** a creative platform. The creative work — production, mixing, mastering — happens upstream in the artist's existing DAW. indiiOS begins the moment the master is rendered and ends wherever the artist's business does.
+indii is **not** a creative platform. The creative work — production, mixing, mastering — happens upstream in the artist's existing DAW. indii begins the moment the master is rendered and ends wherever the artist's business does.
 
 ## Target User
 
 Any **independent music artist**, regardless of genre or experience level. If they consider themselves an independent music artist, this is built for them.
 
-indiiOS is explicitly **not built for major artists, major labels, or major managers**. Those users are out of scope by design. The mission is to give less-fortunate independent artists access to capabilities that only well-funded major-label teams currently have — a Robin Hood tool for the music industry's independents.
+indii is explicitly **not built for major artists, major labels, or major managers**. Those users are out of scope by design. The mission is to give less-fortunate independent artists access to capabilities that only well-funded major-label teams currently have — a Robin Hood tool for the music industry's independents.
 
 ## Problem Solved
 
@@ -31,11 +31,11 @@ An independent artist without label infrastructure currently has to stitch toget
 
 Each tool has its own login, its own data model, its own pricing tier, and no shared context. Decisions made in one tool never reach another. The artist becomes a full-time systems integrator instead of a musician.
 
-indiiOS consolidates all of this into **one AI-driven workspace**. A hub agent (`indii Conductor`) routes every task to one of 21 domain-specialized agents — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, and more — that share memory, context, and the artist's master catalog.
+indii consolidates all of this into **one AI-driven workspace**. A hub agent (`indii Conductor`) routes every task to one of 21 domain-specialized agents — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, and more — that share memory, context, and the artist's master catalog.
 
 ## Scope Boundary (Critical)
 
-indiiOS begins at mastered-audio ingestion. It does **not** do:
+indii begins at mastered-audio ingestion. It does **not** do:
 
 - song creation, composition, or songwriting assistance
 - production, arrangement, or instrumentation

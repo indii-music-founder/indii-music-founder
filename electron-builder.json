@@ -45,10 +45,10 @@
       "teamId": "${APPLE_TEAM_ID}"
     }
   },
-  "productName": "indiiOS",
+  "productName": "indii",
   "protocols": [
     {
-      "name": "indiiOS Auth Protocol",
+      "name": "indii Auth Protocol",
       "schemes": [
         "indii-os"
       ]
@@ -57,7 +57,7 @@
   "publish": {
     "provider": "github",
     "owner": "the-walking-agency-det",
-    "repo": "indiiOS-Clean",
+    "repo": "indii-music",
     "releaseType": "release"
   },
   "win": {

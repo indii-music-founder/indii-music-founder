@@ -4,7 +4,7 @@
 
 ### Overview
 
-This document provides the procedure for rotating API keys and secrets used by the indiiOS platform. Each section covers a specific credential, the rotation steps, and which services need redeployment.
+This document provides the procedure for rotating API keys and secrets used by the indii platform. Each section covers a specific credential, the rotation steps, and which services need redeployment.
 
 ---
 
@@ -21,7 +21,7 @@ This document provides the procedure for rotating API keys and secrets used by t
 
 1. **Generate new key** in GCP Console → APIs & Services → Credentials
 2. **Apply restrictions** to the new key:
-   - Application restriction: HTTP referrers (`app.indiios.com`, `localhost:4242`)
+   - Application restriction: HTTP referrers (`app.indii.music`, `localhost:4242`)
    - API restriction: Identity Toolkit, Cloud Firestore, Cloud Storage, Firebase Cloud Messaging
 3. **Update environment variables:**
 
@@ -135,7 +135,7 @@ This document provides the procedure for rotating API keys and secrets used by t
 
 ### Steps
 
-1. **Find new DSN** in Sentry → Settings → Projects → indiiOS → Client Keys → DSN
+1. **Find new DSN** in Sentry → Settings → Projects → indii → Client Keys → DSN
 2. **Update environment variables:**
 
    ```bash

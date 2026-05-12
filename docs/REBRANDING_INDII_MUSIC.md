@@ -1,4 +1,4 @@
-# Rebranding: indiiOS → indii.music
+# Rebranding: indii → indii.music
 **Status:** In Progress
 **Start Date:** 2026-05-11
 **Ownership:** William Roberts (will@indii.music)
@@ -6,7 +6,7 @@
 ---
 
 ## Vision
-Rebrand from "indiiOS" (a technical/OS naming) to **"indii.music"** — positioning the platform as an independence operating system **for music creators**, not just a technical product.
+Rebrand from "indii" (a technical/OS naming) to **"indii.music"** — positioning the platform as an independence operating system **for music creators**, not just a technical product.
 
 ### Catchphrase / Tagline
 > **"indii.music, your independence operating system"**
@@ -40,20 +40,20 @@ Central source of truth for all brand messaging, email addresses, and organizati
 
 | Item | File | Old | New | Status |
 |------|------|-----|-----|--------|
-| Page title | `packages/renderer/src/main.tsx:38` | `indiiOS - Studio` | `indii.music — Studio` | ✅ |
-| Startup fallback | `packages/renderer/src/startupFallback.ts:10` | `indiiOS` | `indii.music` | ✅ |
-| Push notifications | `packages/renderer/src/service-worker.ts:88` | `indiiOS` | `indii.music` | ✅ |
-| Auth gate message | `packages/renderer/src/core/components/auth/BiometricGate.tsx:112` | `indiiOS` | `indii.music` | ✅ |
+| Page title | `packages/renderer/src/main.tsx:38` | `indii - Studio` | `indii.music — Studio` | ✅ |
+| Startup fallback | `packages/renderer/src/startupFallback.ts:10` | `indii` | `indii.music` | ✅ |
+| Push notifications | `packages/renderer/src/service-worker.ts:88` | `indii` | `indii.music` | ✅ |
+| Auth gate message | `packages/renderer/src/core/components/auth/BiometricGate.tsx:112` | `indii` | `indii.music` | ✅ |
 
 ### 📋 PHASE 2: Configuration & Constants (Not Started)
 **Scope:** Update all app-level configuration files
 
 | Item | File | Change | Impact |
 |------|------|--------|--------|
-| Agent guidelines | `packages/renderer/src/core/agent-guidelines.json` | Update `"platform": "indiiOS"` → `"indii.music"` | Affects agent system prompts |
-| i18n localStorage key | `packages/renderer/src/core/i18n.ts` | Update key from `indiiOS_language` → `indii_language` | Language preferences |
-| DDEX trading name | `packages/renderer/src/core/config/ddex.ts:TRADING_NAME` | `indiiOS` → `indii.music` | Legal/distribution |
-| Storage keys (app state) | `packages/renderer/src/core/store/slices/appSlice.ts` | Replace all `indiiOS_` prefixes with `indii_` | App persistence |
+| Agent guidelines | `packages/renderer/src/core/agent-guidelines.json` | Update `"platform": "indii"` → `"indii.music"` | Affects agent system prompts |
+| i18n localStorage key | `packages/renderer/src/core/i18n.ts` | Update key from `indii_language` → `indii_language` | Language preferences |
+| DDEX trading name | `packages/renderer/src/core/config/ddex.ts:TRADING_NAME` | `indii` → `indii.music` | Legal/distribution |
+| Storage keys (app state) | `packages/renderer/src/core/store/slices/appSlice.ts` | Replace all `indii_` prefixes with `indii_` | App persistence |
 | Agent UI config | `packages/renderer/src/core/store/slices/agent/agentUISlice.ts` | Update localStorage keys | UI preferences |
 
 **Note:** Need to create migration path for existing users' localStorage to preserve preferences when renaming keys.
@@ -63,13 +63,13 @@ Central source of truth for all brand messaging, email addresses, and organizati
 
 | Category | Files | Changes |
 |----------|-------|---------|
-| Code comments | All files | Update references from "indiiOS" to "indii.music" in docs/comments |
+| Code comments | All files | Update references from "indii" to "indii.music" in docs/comments |
 | Documentation | `docs/**/*.md` | Rebrand all documentation titles/descriptions |
-| Type comments | `packages/renderer/src/types/AlwaysOnMemory.ts` | Update comments mentioning "indiiOS" |
-| Contract/legal text | `packages/renderer/src/core/components/ContractRenderer.tsx:48` | Update "Drafted by indiiOS Legal Agent" |
-| Call sheets | `packages/renderer/src/core/components/CallSheetRenderer.tsx` | Update "Produced by indiiOS Studio" |
+| Type comments | `packages/renderer/src/types/AlwaysOnMemory.ts` | Update comments mentioning "indii" |
+| Contract/legal text | `packages/renderer/src/core/components/ContractRenderer.tsx:48` | Update "Drafted by indii Legal Agent" |
+| Call sheets | `packages/renderer/src/core/components/CallSheetRenderer.tsx` | Update "Produced by indii Studio" |
 | Comments | `packages/renderer/src/core/components/CallSheetRenderer.tsx` | Review and update attributions |
-| Distributor descriptions | `packages/renderer/src/core/config/distributors.ts` | Update all references to indiiOS |
+| Distributor descriptions | `packages/renderer/src/core/config/distributors.ts` | Update all references to indii |
 | Theme/brand guide | `packages/renderer/src/core/theme/moduleColors.ts` | Update brand guide reference |
 
 ### 📋 PHASE 4: Email & Contact Setup (Not Started)
@@ -89,7 +89,7 @@ Central source of truth for all brand messaging, email addresses, and organizati
 | Item | File | Change |
 |------|------|--------|
 | Firebase console | Firebase Console | Rename project/app references if applicable |
-| Cloud Functions | `packages/firebase/src/**/*` | Update error messages, logs mentioning indiiOS |
+| Cloud Functions | `packages/firebase/src/**/*` | Update error messages, logs mentioning indii |
 | Environment variables | `.env.example` | Document new branding |
 | README | `README.md` | Update project description |
 
@@ -117,14 +117,14 @@ Central source of truth for all brand messaging, email addresses, and organizati
 ## Storage Key Migration Strategy
 
 ### Problem
-Existing users have preferences stored with `indiiOS_` prefix. Renaming to `indii_` breaks existing preferences.
+Existing users have preferences stored with `indii_` prefix. Renaming to `indii_` breaks existing preferences.
 
 ### Solution
 Create migration function in `appSlice.ts`:
 
 ```typescript
 function migrateStorageKeys() {
-  const oldPrefix = 'indiiOS_';
+  const oldPrefix = 'indii_';
   const newPrefix = 'indii_';
   
   for (let i = 0; i < localStorage.length; i++) {
@@ -169,7 +169,7 @@ Call in `App.tsx` on first load (check version in localStorage).
 - [ ] All 4 Phase 1 UI items updated
 - [ ] All configuration constants using `BRANDING` module
 - [ ] Storage key migration tested with existing data
-- [ ] No hardcoded "indiiOS" in public-facing UI
+- [ ] No hardcoded "indii" in public-facing UI
 - [ ] Firebase/Cloud Functions logs updated
 - [ ] Landing page displays new branding
 - [ ] Email setup complete (will@indii.music working)

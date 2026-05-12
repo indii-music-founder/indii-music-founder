@@ -28,7 +28,7 @@ import { githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 
 const GITHUB_REPO_OWNER = 'the-walking-agency-det';
-const GITHUB_REPO_NAME = 'indiiOS-Clean';
+const GITHUB_REPO_NAME = 'indii-Clean';
 const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
 const MAX_FOUNDER_SEATS = 10;
 const AGREEMENT_VERSION = '1.0.0';
@@ -181,7 +181,7 @@ async function commitFounderToGitHub(
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nFounder seat activated. This entry is permanent per the IndiiOS Founders Agreement.\nSee ${FOUNDERS_FILE_PATH} for agreement terms.\n\n[founders-program]`,
+            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nFounder seat activated. This entry is permanent per the indii Founders Agreement.\nSee ${FOUNDERS_FILE_PATH} for agreement terms.\n\n[founders-program]`,
             content: encodedContent,
             sha: fileSha,
             branch: 'main',
@@ -328,7 +328,7 @@ export const activateFounderPass = onCall({
 
     const message = githubCommitPending
         ? `Founder #${seat} activated. The agreement hash is stored in Firestore; the repository commit is pending and will be completed shortly.`
-        : `Founder #${seat} activated. The agreement hash has been committed to the indiiOS repository.`;
+        : `Founder #${seat} activated. The agreement hash has been committed to the indii repository.`;
 
     return {
         seat,

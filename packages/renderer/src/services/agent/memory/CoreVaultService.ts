@@ -1,5 +1,5 @@
 /**
- * CORE Vault Service — Layer 3 of the IndiiOS Memory Architecture
+ * CORE Vault Service — Layer 3 of the indii Memory Architecture
  *
  * The inspectable, authoritative source of truth for durable knowledge.
  * When in conflict with other memory layers, the CORE Vault ALWAYS wins.

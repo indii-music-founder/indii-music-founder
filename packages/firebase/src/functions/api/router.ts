@@ -7,7 +7,7 @@
 
 import { onRequest, Request, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import type { CreateTrack, CreateDistribution } from '@indiios/shared';
+import type { CreateTrack, CreateDistribution } from '@indii/shared';
 import type * as express from 'express';
 
 const db = admin.firestore();

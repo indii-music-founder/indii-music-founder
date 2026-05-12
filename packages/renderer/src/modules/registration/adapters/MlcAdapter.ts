@@ -79,7 +79,7 @@ export const MlcAdapter: OrgAdapter = {
         requiresManualStep: true,
         manualStepUrl: 'https://portal.themlc.com',
         manualStepInstructions: isWebSession
-          ? 'MLC registration requires the indiiOS desktop app or manual login at themlc.com.'
+          ? 'MLC registration requires the indii desktop app or manual login at themlc.com.'
           : 'MLC browser automation failed. Please complete registration manually at themlc.com.',
       };
     }

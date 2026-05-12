@@ -163,7 +163,7 @@ const agents: AgentDef[] = [
   {
     id: 'governance',
     name: 'Operations',
-    title: 'Sovereign Command',
+    title: 'Independent Command',
     tagline: 'CEO Status.',
     description:
       'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
@@ -592,7 +592,7 @@ export default function AgentGrid() {
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
           No labels. No gatekeepers. Your music, your rules. Take control 
           of your career with global distribution, smart audio 
-          analysis, and individually trained agents organized to perform specialized tasks for your team. indiiOS is your <strong>independent creative engine</strong>.
+          analysis, and individually trained agents organized to perform specialized tasks for your team. indii is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 

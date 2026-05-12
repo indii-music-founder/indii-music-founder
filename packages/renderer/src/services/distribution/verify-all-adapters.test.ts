@@ -90,7 +90,7 @@ describe('All Distribution Adapters Integration', () => {
 
     beforeAll(() => {
         // Setup Mock Assets
-        tempDir = path.join(os.tmpdir(), 'indiiOS_verify_assets');
+        tempDir = path.join(os.tmpdir(), 'indii_verify_assets');
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
         audioPath = path.join(tempDir, 'test_audio.wav');

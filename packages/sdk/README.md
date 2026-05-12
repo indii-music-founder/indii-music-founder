@@ -1,22 +1,22 @@
-# @indiios/sdk
+# @indii/sdk
 
-Official TypeScript SDK for indiiOS REST API.
+Official TypeScript SDK for indii REST API.
 
 ## Installation
 
 ```bash
-npm install @indiios/sdk
+npm install @indii/sdk
 # or
-yarn add @indiios/sdk
+yarn add @indii/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { createClient } from '@indiios/sdk';
+import { createClient } from '@indii/sdk';
 
 const client = createClient({
-  apiUrl: 'https://api.indiios.com',
+  apiUrl: 'https://api.indii.music',
   apiKey: 'your-api-key'
 });
 
@@ -36,7 +36,7 @@ const tracks = await client.listTracks({ limit: 10, offset: 0 });
 
 ## Features
 
-- **Fully typed** - Full TypeScript support with types from `@indiios/shared`
+- **Fully typed** - Full TypeScript support with types from `@indii/shared`
 - **Error handling** - Built-in retry logic with exponential backoff
 - **Validation** - Request validation using Zod schemas
 - **ESM & CommonJS** - Works with both module systems
@@ -114,12 +114,12 @@ const updated = await client.updateProfile({
 ## Error Handling
 
 ```typescript
-import { IndiiOSClient, IndiiOSError } from '@indiios/sdk';
+import { indiiClient, indiiError } from '@indii/sdk';
 
 try {
   const track = await client.getTrack('invalid-id');
 } catch (error) {
-  if (error instanceof IndiiOSError) {
+  if (error instanceof indiiError) {
     console.log('Status:', error.statusCode);
     console.log('Details:', error.details);
   }
@@ -130,7 +130,7 @@ try {
 
 ```typescript
 const client = createClient({
-  apiUrl: 'https://api.indiios.com',
+  apiUrl: 'https://api.indii.music',
   apiKey: 'your-api-key',
   timeout: 30000 // Default: 30000ms
 });

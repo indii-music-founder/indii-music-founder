@@ -69,7 +69,7 @@ export const SesacAdapter: OrgAdapter = {
         requiresManualStep: true,
         manualStepUrl: 'https://www.sesac.com',
         manualStepInstructions: isWebSession
-          ? 'SESAC registration requires the indiiOS desktop app or manual login at sesac.com.'
+          ? 'SESAC registration requires the indii desktop app or manual login at sesac.com.'
           : 'SESAC browser automation failed. Please complete registration manually at sesac.com.',
       };
     }

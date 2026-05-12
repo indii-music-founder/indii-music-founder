@@ -134,7 +134,7 @@
         "owner": "the-walking-agency-det",
         "private": true,
         "provider": "github",
-        "repo": "indiiOS-Clean",
+        "repo": "indii-Clean",
         "releaseType": "release"
       }
     ],
@@ -171,7 +171,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "https://github.com/the-walking-agency-det/indiiOS-Clean.git"
+    "url": "https://github.com/the-walking-agency-det/indii-Clean.git"
   },
   "dependencies": {
     "express": "4.22.1",

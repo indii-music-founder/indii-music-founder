@@ -11,7 +11,7 @@ import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'fireba
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
-import type { AnalyticsEvent } from '@indiios/shared';
+import type { AnalyticsEvent } from '@indii/shared';
 
 const db = admin.firestore();
 const bigquery = new BigQuery({

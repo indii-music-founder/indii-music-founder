@@ -27,7 +27,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:4242
 
 # Verify Cloud Function is deployed
 curl -s -o /dev/null -w "%{http_code}" \
-  https://us-west1-indiios-v-1-1.cloudfunctions.net/generateImageV3
+  https://us-west1-indii-v-1-1.cloudfunctions.net/generateImageV3
 # Must return: 405 (Method Not Allowed — correct, it's a POST-only onCall)
 ```
 
@@ -94,7 +94,7 @@ Test 5: Error resilience
 
 ```bash
 # Check Cloud Function logs
-firebase functions:log --project indiios-v-1-1 \
+firebase functions:log --project indii-v-1-1 \
   --only generateImageV3 --limit 20
 
 # Check frontend service

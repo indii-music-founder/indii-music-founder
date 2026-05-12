@@ -1,6 +1,6 @@
 # Social Media Namespace Allocation Strategy
 
-**Brand:** indiiOS / indii.music
+**Brand:** indii / indii.music
 **Date:** May 10, 2026
 
 As part of Phase 5 of the provisioning plan, securing consistent namespace across all major social networks is critical for brand integrity and SEO visibility.
@@ -23,7 +23,7 @@ These platforms represent the primary acquisition and engagement channels for th
 ### Instagram
 * **Target Handle:** `@indii.music` or `@indiimusic`
 * **Status:** Action Required
-* **Action Item:** Log in to the current `@thewalkingagency` or `@indiios` account and initiate a handle change. Meta sometimes locks previous handles for 14 days; ensure the old handle is retained on a burner account if you wish to prevent squatting.
+* **Action Item:** Log in to the current `@thewalkingagency` or `@indii` account and initiate a handle change. Meta sometimes locks previous handles for 14 days; ensure the old handle is retained on a burner account if you wish to prevent squatting.
 
 ### TikTok
 * **Target Handle:** `@indii.music`
@@ -44,7 +44,7 @@ These platforms serve community-building, real-time updates, and technical suppo
 ### X (Twitter)
 * **Target Handle:** `@indiimusic` (X does not support periods in handles)
 * **Status:** Action Required
-* **Action Item:** Migrate the existing X account to `@indiimusic`. If taken, use `@indii_music` or `@indiiOS`. Update the display name to `indii.music`.
+* **Action Item:** Migrate the existing X account to `@indiimusic`. If taken, use `@indii_music` or `@indii`. Update the display name to `indii.music`.
 
 ### Discord
 * **Target Handle:** `discord.gg/indiimusic` (Vanity URL)
@@ -62,7 +62,7 @@ These platforms serve community-building, real-time updates, and technical suppo
 
 To ensure a unified brand presence across all namespaces, the following assets and configurations must be applied to every profile:
 
-1. **Profile Avatar:** Use the official, high-resolution vector logo (`indiiOS-Clean/docs/assets/logo.svg` equivalent). The background should be `#0A0A0B` (the app's primary dark theme) to maintain consistency with the Admin Dashboard and Studio UI.
+1. **Profile Avatar:** Use the official, high-resolution vector logo (`indii-Clean/docs/assets/logo.svg` equivalent). The background should be `#0A0A0B` (the app's primary dark theme) to maintain consistency with the Admin Dashboard and Studio UI.
 2. **Bio / Description:** *"The AI-native music business platform for independent music artists."*
 3. **Primary Link:** `https://indii.music` (Ensure SSL is fully provisioned before publishing the link).
 4. **Link-in-Bio:** Avoid third-party tools like Linktree if possible; instead, use an `indii.music/links` routed page built into the Next.js landing page to preserve domain authority.

@@ -22,7 +22,7 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
                 </div>
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2.5">
-                        <h2 className="text-xl font-semibold text-white tracking-wide">indiiOS</h2>
+                        <h2 className="text-xl font-semibold text-white tracking-wide">indii</h2>
                         {isOffline ? (
                             <div className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 flex items-center gap-1.5" title="No Internet Connection">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-400" />

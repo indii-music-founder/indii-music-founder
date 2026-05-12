@@ -15,7 +15,7 @@ export default function VideoPopout() {
         // Only set up BroadcastChannel in the browser environment
         if (typeof window === 'undefined') return;
 
-        const channel = new BroadcastChannel('indiiOS-video-editor-sync');
+        const channel = new BroadcastChannel('indii-video-editor-sync');
         channel.onmessage = (event) => {
             if (event.data?.type === 'SYNC_PROJECT') {
                 setProject(event.data.project);
@@ -67,7 +67,7 @@ export default function VideoPopout() {
                 }}
             >
                 <div className="absolute top-4 left-4 z-50 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-mono ring-1 ring-white/20 select-none">
-                    indiiOS Popout Director ({project.width}x{project.height})
+                    indii Popout Director ({project.width}x{project.height})
                 </div>
 
                 <Player

@@ -43,7 +43,7 @@ export const generateReleaseDownloadUrl = functions
             );
         }
 
-        const fileName = platform === 'mac' ? 'indiiOS-Installer.dmg' : 'indiiOS-Setup.exe';
+        const fileName = platform === 'mac' ? 'indii-Installer.dmg' : 'indii-Setup.exe';
         const filePath = `founders/releases/${fileName}`;
 
         try {
