@@ -1,6 +1,6 @@
 /**
  * Safety settings for AI model generation.
- * Enforces strict content safety policies for the IndiiOS ecosystem.
+ * Enforces strict content safety policies for the indii ecosystem.
  */
 import { SafetySetting } from '@/shared/types/ai.dto';
 

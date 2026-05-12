@@ -121,7 +121,7 @@ export const LocAdapter: OrgAdapter = {
           requiresManualStep: true,
           manualStepUrl: 'https://eco.copyright.gov',
           manualStepInstructions:
-            'Automatic submission requires the indiiOS desktop app. Your pre-filled registration details are ready below — you can download them and complete submission on eco.copyright.gov.',
+            'Automatic submission requires the indii desktop app. Your pre-filled registration details are ready below — you can download them and complete submission on eco.copyright.gov.',
         };
       }
 

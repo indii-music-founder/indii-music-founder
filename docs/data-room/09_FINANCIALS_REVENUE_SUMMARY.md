@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-indiiOS operates on a **freemium + DSP revenue model**. Currently pre-monetized (0 active paying artists), but distribution rail is live and generating material test revenue (~$15.3K Q4 2025). The company is bootstrapped with zero external funding and minimal operating costs (~$2K/month GCP + hosting).
+indii operates on a **freemium + DSP revenue model**. Currently pre-monetized (0 active paying artists), but distribution rail is live and generating material test revenue (~$15.3K Q4 2025). The company is bootstrapped with zero external funding and minimal operating costs (~$2K/month GCP + hosting).
 
 ### Key Metrics (As of 2026-04-26)
 
@@ -31,7 +31,7 @@ indiiOS operates on a **freemium + DSP revenue model**. Currently pre-monetized 
 
 ### Stream 1: DSP Distribution Royalties
 
-**Model:** Artist uploads release → indiiOS distributes to 8 DSPs → royalties flow back
+**Model:** Artist uploads release → indii distributes to 8 DSPs → royalties flow back
 
 **Current Performance (Q4 2025):**
 
@@ -58,8 +58,8 @@ Average per release: $7,647
 
 **Revenue Recognition:**
 - DSP deposits occur monthly, 30–90 days in arrears
-- Stripe Connect account holds funds; indiiOS takes 0% cut in beta (100% to artists)
-- Post-monetization: indiiOS takes 10–15% platform fee (market standard for music tech)
+- Stripe Connect account holds funds; indii takes 0% cut in beta (100% to artists)
+- Post-monetization: indii takes 10–15% platform fee (market standard for music tech)
 
 ### Stream 2: Subscription Tier (Planned)
 
@@ -111,7 +111,7 @@ Total MRR (full penetration): $244.5K/month ($2.93M annual)
 | **GCP (Vertex AI + BigQuery + Cloud Run)** | $800 | Fine-tuned model hosting + data pipeline |
 | **Firebase (Firestore + Storage + Functions)** | $400 | Database, file storage, backend APIs |
 | **Stripe (transaction fees)** | $0* | Currently 0 revenue; fees scale with DSP deposits |
-| **Domain + SSL** | $50 | indiiOS.com, SSL certificates |
+| **Domain + SSL** | $50 | indii.com, SSL certificates |
 | **Electron code-signing + distribution** | $100 | Apple Developer account, code signing cert |
 | **Hosting (Netlify/Vercel fallback)** | $50 | Backup CDN if Firebase Hosting has issues |
 | **Miscellaneous (APIs, monitoring, backup)** | $200 | LogRocket, Sentry, backup storage |
@@ -304,7 +304,7 @@ Remaining burn: $700 - $435 = $265/month (nearly break-even)
   - $500K annual recurring revenue by month 18 ($625K release)
   - Successful integration with acquirer's platform ($500K release)
 
-**Post-Acquisition:** indiiOS becomes artist tooling vertical within acquirer's platform
+**Post-Acquisition:** indii becomes artist tooling vertical within acquirer's platform
 
 ---
 
@@ -322,7 +322,7 @@ Remaining burn: $700 - $435 = $265/month (nearly break-even)
   - Zero-loss transition (0 artist churn) ($500K release)
   - Successor handoff milestone ($500K release)
 
-**Post-Acquisition:** indiiOS becomes distribution + tooling arm of acquirer
+**Post-Acquisition:** indii becomes distribution + tooling arm of acquirer
 
 ---
 
@@ -340,7 +340,7 @@ Remaining burn: $700 - $435 = $265/month (nearly break-even)
   - AI agent fleet open-sourced or licensed to acquirer ($1M release)
   - Successor fully independent by month 24 ($1M release)
 
-**Post-Acquisition:** indiiOS becomes core artist onboarding + support infrastructure
+**Post-Acquisition:** indii becomes core artist onboarding + support infrastructure
 
 ---
 

@@ -40,8 +40,8 @@
 - **Status:** ✅ FIXED (ad903c25) + ⏳ AWAITING CONFIGURATION
 - **Fix:** `BugReportTools.ts` creates GitHub Issues when `VITE_GITHUB_TOKEN` + `VITE_GITHUB_REPO` are set.
 - **Action Required (founders):**
-  1. Generate a GitHub fine-grained PAT with `Issues: Read & Write` on `new-detroit-music-llc/indiiOS-Alpha-Electron`
-  2. Add to `.env`: `VITE_GITHUB_TOKEN=ghp_...` and `VITE_GITHUB_REPO=new-detroit-music-llc/indiiOS-Alpha-Electron`
+  1. Generate a GitHub fine-grained PAT with `Issues: Read & Write` on `new-detroit-music-llc/indii-Alpha-Electron`
+  2. Add to `.env`: `VITE_GITHUB_TOKEN=ghp_...` and `VITE_GITHUB_REPO=new-detroit-music-llc/indii-Alpha-Electron`
   3. Create labels in the repo: `bug`, `severity:critical`, `severity:major`, `severity:minor`, `module:boardroom`, `module:creative`, `module:distribution`, etc.
 - **Files:** `BugReportTools.ts`, `.env.example`
 
@@ -49,7 +49,7 @@
 
 ### ISSUE-005: Scratchpad "malformed edit" in browser subagent
 - **Status:** 🔵 INTERNAL — Not a product bug
-- **Notes:** Browser subagent model sometimes fails to write to its internal scratchpad. Does not affect the indiiOS product. Low priority.
+- **Notes:** Browser subagent model sometimes fails to write to its internal scratchpad. Does not affect the indii product. Low priority.
 
 ---
 

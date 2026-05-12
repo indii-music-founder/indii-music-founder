@@ -26,7 +26,7 @@ interface OfflineConfig {
  * - Exponential backoff retry
  */
 export class OfflineFirstService {
-  private dbName = 'indiiOS_offline';
+  private dbName = 'indii_offline';
   private db: IDBDatabase | null = null;
   private syncQueue: Map<string, SyncItem> = new Map();
   private isOnline = navigator.onLine;

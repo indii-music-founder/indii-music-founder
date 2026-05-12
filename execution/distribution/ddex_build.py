@@ -167,9 +167,9 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="indiiOS DDEX Build Orchestrator")
+    parser = argparse.ArgumentParser(description="indii DDEX Build Orchestrator")
     parser.add_argument("release_json", help="JSON string containing release metadata")
-    parser.add_argument("--storage-path", default=os.path.join(tempfile.gettempdir(), "indiiOS-dist"),
+    parser.add_argument("--storage-path", default=os.path.join(tempfile.gettempdir(), "indii-dist"),
                         help="Working directory for output files")
     parser.add_argument("--dry-run", action="store_true",
                         help="Run all steps but skip SFTP upload")

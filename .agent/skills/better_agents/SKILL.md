@@ -1,13 +1,13 @@
 ---
 name: better_agents
-description: How to use Better Agents (LangWatch) to scaffold and test new specialist agents for the indiiOS hub-and-spoke architecture.
+description: How to use Better Agents (LangWatch) to scaffold and test new specialist agents for the indii hub-and-spoke architecture.
 ---
 
 # @better_agents — Build New Agents Fast
 
 ## Purpose
 
-Scaffold, configure, and test new specialist agents using the `@langwatch/better-agents` CLI. Use this when the indiiOS agent roster needs a new domain expert (e.g. a Sync Licensing agent, a Merchandise agent, etc.).
+Scaffold, configure, and test new specialist agents using the `@langwatch/better-agents` CLI. Use this when the indii agent roster needs a new domain expert (e.g. a Sync Licensing agent, a Merchandise agent, etc.).
 
 ## When to Invoke
 
@@ -33,7 +33,7 @@ npx @langwatch/better-agents init [agent-name]
 
 When the CLI wizard runs, answer:
 
-| Prompt | indiiOS Standard Answer |
+| Prompt | indii Standard Answer |
 |--------|------------------------|
 | Language | TypeScript |
 | Stack | Mastra or Agno |
@@ -90,7 +90,7 @@ Manual verification:
 
 ---
 
-## indiiOS Agent Architecture Reference
+## indii Agent Architecture Reference
 
 ```
 agents/

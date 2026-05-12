@@ -51,13 +51,13 @@ describe('RoyaltyService', () => {
             isrc: 'US-RC1-23-00001',
             explicit: false,
             genre: 'Electronic',
-            labelName: 'IndiiOS',
+            labelName: 'indii',
             splits: [
                 { legalName: 'Producer B', role: 'producer', percentage: 50, email: 'producer@example.com' },
                 { legalName: 'Artist A', role: 'songwriter', percentage: 50, email: 'artist@example.com' }
             ],
             pro: 'ASCAP',
-            publisher: 'IndiiOS Publishing',
+            publisher: 'indii Publishing',
             containsSamples: false,
             isGolden: true,
             releaseType: 'Single',

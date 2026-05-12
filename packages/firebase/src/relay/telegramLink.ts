@@ -1,7 +1,7 @@
 /**
  * generateTelegramLinkCode — Creates a one-time code for linking Telegram
  *
- * Called from the indiiOS frontend (Settings → Integrations → Link Telegram).
+ * Called from the indii frontend (Settings → Integrations → Link Telegram).
  * Generates a random 8-character code, stores it in Firestore with a 10-minute TTL,
  * and returns the code to the user who then sends it to the Telegram bot via /link.
  *
@@ -43,7 +43,7 @@ export const generateTelegramLinkCode = functions
         return {
             code,
             expiresInMinutes: 10,
-            instructions: "Send /link " + code + " to the indiiOS bot on Telegram",
+            instructions: "Send /link " + code + " to the indii bot on Telegram",
         };
     });
 

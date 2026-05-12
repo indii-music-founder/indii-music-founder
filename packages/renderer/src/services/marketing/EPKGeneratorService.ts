@@ -44,7 +44,7 @@ export class EPKGeneratorService {
 
         const epk: EPKData = {
             artistName: profile.displayName || 'Anonymous Artist',
-            bio: profile.bio || 'Independent Artist on indiiOS.',
+            bio: profile.bio || 'Independent Artist on indii.',
             profileImage: profile.photoURL || '',
             brandColors: brandKit?.colors || ['#000000', '#ffffff'],
             fonts: brandKit?.fonts || 'Inter',

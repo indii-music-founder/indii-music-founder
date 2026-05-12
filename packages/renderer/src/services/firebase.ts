@@ -269,7 +269,7 @@ if (typeof window !== 'undefined') {
     if (shouldInitAppCheck) {
         if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
             console.warn(
-                '[indiiOS][AppCheck] Running on localhost without a debug token.\n' +
+                '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
                 '2. Add this token to your .env as VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN\n' +

@@ -1,4 +1,4 @@
-# indiiOS Production Work Order
+# indii Production Work Order
 
 **Phase 1 — Ship Blockers + Critical Quality**
 
@@ -208,7 +208,7 @@ Replace each `placeholder` with contextually appropriate default text, hint text
 | `TimelineTools.ts` | Timeline event creation/retrieval |
 | `ScreenwriterTools.ts` / `ProducerTools.ts` | Video production pipeline |
 | `NarrativeTools.ts` | Story/content generation |
-| `HiveTools.ts` / `SovereignTools.ts` / `SqueezerTools.ts` | Specialized agent capabilities |
+| `HiveTools.ts` / `IndependentTools.ts` / `SqueezerTools.ts` | Specialized agent capabilities |
 | `UniversalTools.ts` | Cross-cutting utility operations |
 | `ToolValidator.ts` | Tool validation framework (internal) |
 | `CoreTools.ts` | Core agent operations |

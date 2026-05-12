@@ -272,7 +272,7 @@ describe('🛡️ Shield: Distribution Security Test', () => {
 
         expect(result.success).toBe(true);
         expect(mocks.fs.writeFile).toHaveBeenCalled();
-        const expectedPath = path.resolve('/mock/tmp/indiiOS-releases', validUUID, 'metadata.xml');
+        const expectedPath = path.resolve('/mock/tmp/indii-releases', validUUID, 'metadata.xml');
         expect(mocks.fs.writeFile).toHaveBeenCalledWith(expectedPath, '<xml></xml>', 'utf-8');
     });
 

@@ -1,20 +1,20 @@
-# indiiOS DNA BLUEPRINT: Sovereign Agentic OS for Music
+# indii DNA BLUEPRINT: Independent Agentic OS for Music
 
 ## 1. Vision
 
-Transform indiiOS from a tool-suite into a self-orchestrating operating system. The "Best of Both Worlds" hybrid merges OpenClaw's stable system/browser integration with indii Conductor's autonomous "Zero-Data" reasoning.
+Transform indii from a tool-suite into a self-orchestrating operating system. The "Best of Both Worlds" hybrid merges OpenClaw's stable system/browser integration with indii Conductor's autonomous "Zero-Data" reasoning.
 
 ## 2. Component Integration
 
 ### 🧠 The "Hybrid Brain" (Orchestrator)
 
-- **Source:** Graft `agent-zero_src/agent.py` logic into `indiiOS/src/services/agent/AgentOrchestrator.ts`.
+- **Source:** Graft `agent-zero_src/agent.py` logic into `indii/src/services/agent/AgentOrchestrator.ts`.
 - **Function:** Replace the current timeout-prone cognitive logic with a state-machine that handles long-running tasks across multiple "Turns."
 - **Self-Correction:** Implement indii Conductor's "Self-Verifying" loop so that if a Gemini call fails (like the 403 we saw), the agent automatically tries a fallback model or prompts the user for intervention.
 
 ### 🧤 The "Ghost Hands" (Browser Controller)
 
-- **Source:** Port `openclaw_src/src/browser` (CDP Bridge) into `indiiOS/src/services/agent/BrowserAgentDriver.ts`.
+- **Source:** Port `openclaw_src/src/browser` (CDP Bridge) into `indii/src/services/agent/BrowserAgentDriver.ts`.
 - **Purpose:**
   - **Library of Congress:** Automated copyright form completion.
   - **PRO Registration:** Automated ASCAP/BMI work registration.
@@ -35,8 +35,8 @@ Transform indiiOS from a tool-suite into a self-orchestrating operating system. 
 
 ### Phase 2: The Core Graft (DONE)
 
-- [x] Implement the `Agent-Zero` style multi-turn loop in the indiiOS HybridOrchestrator.
-- [x] Bridge the indiiOS "Knowledge Base" to the Agent's internal memory via system tools.
+- [x] Implement the `Agent-Zero` style multi-turn loop in the indii HybridOrchestrator.
+- [x] Bridge the indii "Knowledge Base" to the Agent's internal memory via system tools.
 - [x] Integrate the Chrome DevTools Protocol (CDP) bridge for browser automation (`BrowserTools`).
 
 ### Phase 3: External Hands (IN PROGRESS)

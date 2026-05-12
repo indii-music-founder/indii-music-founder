@@ -1,4 +1,4 @@
-# indiiOS Health Report
+# indii Health Report
 **Date:** 2026-04-04  
 **Branch:** `claude/build-insights-dashboard-NZ1np`  
 **Version:** 1.46.0  

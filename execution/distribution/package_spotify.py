@@ -74,7 +74,7 @@ def generate_manifest(batch_id: str, releases: List[Dict[str, Any]]) -> str:
         datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
-    # Sender (indiiOS)
+    # Sender (indii)
     sender = ET.SubElement(header, "MessageSender")
     sender_dpid = os.environ.get("DDEX_SENDER_DPID", "PA-DPIDA-2025122604-E")
     ET.SubElement(sender, "PartyId").text = sender_dpid

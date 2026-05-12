@@ -1,6 +1,6 @@
 # Observability & Debug Module (RC1)
 
-The Observability module provides real-time insights into the health, performance, and behavior of the indiiOS ecosystem. It is designed for engineers and power users to monitor AI execution, track costs, and debug complex agent interactions.
+The Observability module provides real-time insights into the health, performance, and behavior of the indii ecosystem. It is designed for engineers and power users to monitor AI execution, track costs, and debug complex agent interactions.
 
 ## 🔍 Key Features
 

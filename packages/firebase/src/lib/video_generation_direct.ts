@@ -86,7 +86,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             : FUNCTION_AI_MODELS.VIDEO.PRO;
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indiios-v-1-1';
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
         const ai = new GoogleGenAI({
             vertexai: true,
             project: projectId,
@@ -237,7 +237,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indiios-alpha-electron.appspot.com').replace('.appspot.com', '');
+        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-alpha-electron.appspot.com').replace('.appspot.com', '');
 
         // Check for bytesBase64Encoded or videoBytes inline first
         const videoObj = video as Record<string, unknown>;

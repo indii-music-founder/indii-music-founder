@@ -4,7 +4,7 @@ description: 10,000-click full-app stress test using the browser subagent
 
 # 10,000-Click Full-App Stress Test
 
-A comprehensive browser agent stress test that exercises every module, interaction surface, and user flow in indiiOS. The test simulates a real power-user session — from onboarding through production workflow.
+A comprehensive browser agent stress test that exercises every module, interaction surface, and user flow in indii. The test simulates a real power-user session — from onboarding through production workflow.
 
 ## Test Asset Inventory
 
@@ -21,7 +21,7 @@ All test assets live in the repo. **Never use the generate_image tool for album 
 | Max Portrait 1-5 | `cypress/fixtures/persona/max_*.png` | Alternate persona photos |
 | App Screenshot 1 | `public/brand/screenshot-agent.png` | Style reference upload |
 | App Screenshot 2 | `public/brand/screenshot-creative.png` | Style reference upload |
-| Banner | `docs/assets/indiios-banner-v3-teal-square.png` | Brand asset upload |
+| Banner | `docs/assets/indii-banner-v3-teal-square.png` | Brand asset upload |
 
 ### Audio
 | Asset | Path | Use Case |

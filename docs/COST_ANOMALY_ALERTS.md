@@ -4,7 +4,7 @@
 
 ## Overview
 
-GCP Budget Alerts notify stakeholders when Cloud spend crosses defined thresholds. This is critical for indiiOS because Gemini API calls (image/video generation) can spike unpredictably.
+GCP Budget Alerts notify stakeholders when Cloud spend crosses defined thresholds. This is critical for indii because Gemini API calls (image/video generation) can spike unpredictably.
 
 ---
 
@@ -16,7 +16,7 @@ GCP Budget Alerts notify stakeholders when Cloud spend crosses defined threshold
 # Via gcloud CLI
 gcloud billing budgets create \
   --billing-account=YOUR_BILLING_ACCOUNT_ID \
-  --display-name="indiiOS Monthly Budget" \
+  --display-name="indii Monthly Budget" \
   --budget-amount=500USD \
   --threshold-rules=percent=0.8,basis=CURRENT_SPEND \
   --threshold-rules=percent=1.0,basis=CURRENT_SPEND \

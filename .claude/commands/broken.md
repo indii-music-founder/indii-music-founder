@@ -1,6 +1,6 @@
 # /broken — Known Issues & Error Memory Audit
 
-You are performing a comprehensive audit of known broken items and error patterns in the indiiOS codebase.
+You are performing a comprehensive audit of known broken items and error patterns in the indii codebase.
 
 ## Steps
 

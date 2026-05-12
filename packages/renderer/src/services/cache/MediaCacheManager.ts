@@ -15,7 +15,7 @@ interface StorageStats {
 }
 
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB (safe limit for most browsers)
-const DB_NAME = 'indiiOS_media_cache';
+const DB_NAME = 'indii_media_cache';
 const STORE_NAME = 'media';
 
 /**

@@ -58,13 +58,13 @@ This worksheet consolidates all pending roadmaps and implementation plans into a
 ## Step 4: Musical Independence Branding
 *Source: `implementation_plan.md`*
 
-**Objective:** Overhaul the landing page copy to pivot away from technical jargon towards "Musical Independence" and "Sovereign Command".
+**Objective:** Overhaul the landing page copy to pivot away from technical jargon towards "Musical Independence" and "Independent Command".
 
 - [ ] **4.1 Copy Realignment:** Edit `packages/landing/src/page.tsx`, `AgentGrid.tsx`, and `ConductorSection.tsx`.
-  - Replace extraction/technical terms with "Togetherness", "Independence", and "Sovereign Command".
+  - Replace extraction/technical terms with "Togetherness", "Independence", and "Independent Command".
   - Rename the Conductor section to the "Independence Hub".
   - Update the pipeline steps to: Sonic Identity, Crew Deployment, Global Impact.
-- [ ] **4.2 Asset Integration:** Capture real screenshots of the IndiiOS studio (port 4242) and inject them into `AgentGrid.tsx`, maintaining the glowing 2026 aesthetic.
+- [ ] **4.2 Asset Integration:** Capture real screenshots of the indii studio (port 4242) and inject them into `AgentGrid.tsx`, maintaining the glowing 2026 aesthetic.
 - [ ] **4.3 Validation:** Restart dev servers and verify the landing page (port 3000) looks correct.
 
 ---

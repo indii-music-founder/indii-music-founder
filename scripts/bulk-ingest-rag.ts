@@ -66,7 +66,7 @@ async function main() {
 
     const storeMap: Record<string, string> = {};
     for (const s of stores) {
-        const match = s.displayName.match(/indiiOS Store - (.*)/);
+        const match = s.displayName.match(/indii Store - (.*)/);
         if (match) {
             storeMap[match[1]] = s.name;
         }

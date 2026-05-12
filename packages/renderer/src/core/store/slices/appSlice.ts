@@ -3,17 +3,17 @@ import { type ModuleId, isValidModule } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
 
-// Migration: Support old indiiOS_ localStorage keys from before rebranding to indii.music
+// Migration: Support old indii_ localStorage keys from before rebranding to indii.music
 // This function is called once on app startup to preserve existing user preferences
 function migrateStorageKeys(): void {
     if (typeof window === 'undefined') return;
 
     const keysToMigrate = [
-        'indiiOS_entryAssistantDismissed',
-        'indiiOS_sidebarOpen',
-        'indiiOS_commandBarPosition',
-        'indiiOS_first_run_tips',
-        'indiiOS_tour_completed_v1',
+        'indii_entryAssistantDismissed',
+        'indii_sidebarOpen',
+        'indii_commandBarPosition',
+        'indii_first_run_tips',
+        'indii_tour_completed_v1',
     ];
 
     const migrationVersion = 'indii_migration_v1';
@@ -25,7 +25,7 @@ function migrateStorageKeys(): void {
         for (const oldKey of keysToMigrate) {
             const value = localStorage.getItem(oldKey);
             if (value !== null) {
-                const newKey = oldKey.replace('indiiOS_', 'indii_');
+                const newKey = oldKey.replace('indii_', 'indii_');
                 localStorage.setItem(newKey, value);
                 localStorage.removeItem(oldKey);
                 logger.debug(`[AppSlice] Migrated ${oldKey} → ${newKey}`);

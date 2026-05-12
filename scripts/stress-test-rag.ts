@@ -57,7 +57,7 @@ class GeminiRetrievalService {
         return response.json();
     }
 
-    async createCorpus(displayName: string = "indiiOS Knowledge Base") {
+    async createCorpus(displayName: string = "indii Knowledge Base") {
         return this.fetch('corpora', {
             method: 'POST',
             body: JSON.stringify({ displayName })
@@ -71,7 +71,7 @@ class GeminiRetrievalService {
     async initCorpus() {
         const list = await this.listCorpora();
         // @ts-expect-error retrieval API returns loosely typed corpus objects
-        const existing = list.corpora?.find(c => c.displayName === "indiiOS Knowledge Base");
+        const existing = list.corpora?.find(c => c.displayName === "indii Knowledge Base");
 
         if (existing) {
             return existing.name;
@@ -154,7 +154,7 @@ async function runStressTest() {
         console.time("Stress Test Ingestion");
 
         // Create a dedicated corpus for the test
-        const testCorpusName = `indiiOS Stress Test ${Date.now()}`;
+        const testCorpusName = `indii Stress Test ${Date.now()}`;
         const corpus = await GeminiRetrieval.createCorpus(testCorpusName);
         console.log("   DEBUG: createCorpus response:", JSON.stringify(corpus, null, 2));
 

@@ -49,7 +49,7 @@ test.describe('Video Producer UX Hardening', () => {
         const sidebarVideoItem = page.locator('[data-testid="sidebar-item-video"]');
         
         // The active item usually has specific styling or classes indicating selection
-        // In indiiOS, it typically uses text-white or bg-white/10
+        // In indii, it typically uses text-white or bg-white/10
         await expect(sidebarVideoItem).toBeVisible();
         const className = await sidebarVideoItem.getAttribute('class');
         

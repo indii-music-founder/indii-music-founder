@@ -44,7 +44,7 @@ export class MCPClientService {
 
         this.localClient = new Client(
             {
-                name: 'indiiOS-main-mcp-client-local',
+                name: 'indii-main-mcp-client-local',
                 version: '0.1.0',
             },
             {
@@ -68,7 +68,7 @@ export class MCPClientService {
 
         this.remoteClient = new Client(
             {
-                name: 'indiiOS-main-mcp-client-remote',
+                name: 'indii-main-mcp-client-remote',
                 version: '0.1.0',
             },
             {

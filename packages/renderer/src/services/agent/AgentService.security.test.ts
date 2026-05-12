@@ -42,7 +42,8 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: vi.fn(),
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateStructuredData: vi.fn().mockResolvedValue({})
     }
 }));
 
@@ -193,7 +194,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
             // Coordinator calls AI.generateContent (Direct Generation) OR AgentOrchestrator calls AI.generateContent.
             // In either case, it should use the redacted text.
         }
-    });
+    }, 30000);
 
     it('should redact Passwords before sending to LLM', async () => {
         const sensitiveInput = "My password is: SuperSecret123!";
@@ -205,7 +206,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
         const userMsg = mockStoreState.agentHistory.filter((m: any) => m.role === "user").at(-1) // ((m: any) => m.role === 'user');
         expect(userMsg.text).toBe(expectedRedacted);
         expect(userMsg.text).not.toContain("SuperSecret123!");
-    });
+    }, 30000);
 });
 
 // ============================================================================

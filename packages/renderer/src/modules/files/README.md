@@ -1,6 +1,6 @@
 # Asset Library & Files Module (RC1)
 
-The Asset Library is the centralized storage and management system for all binary files within indiiOS. It provides a high-performance interface for organizing audio tracks, artwork, and promotional videos across different organizations and projects.
+The Asset Library is the centralized storage and management system for all binary files within indii. It provides a high-performance interface for organizing audio tracks, artwork, and promotional videos across different organizations and projects.
 
 ## 📁 Key Features
 - **Organization Scoping:** Files are strictly scoped to organizations to ensure multi-tenant security.

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-03-19
 
-This directory contains detailed architectural and technical documentation for indiiOS.
+This directory contains detailed architectural and technical documentation for indii.
 
 ---
 
@@ -48,7 +48,7 @@ This directory contains detailed architectural and technical documentation for i
 |----------|-------------|
 | [component-kit-research.md](./component-kit-research.md) | UI library analysis |
 | [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
-| [DDEX_IMPLEMENTATION_PLAN.md](./DDEX_IMPLEMENTATION_PLAN.md) | Distribution infrastructure |
+| [DDEX_IMPLEMENTATION_PLAN.md](./DDEX_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |
 
 ## 🗄️ Archive
 

@@ -8,7 +8,7 @@
 **🔬 The Vibe Check:** Makes the dashboard feel more 'Alpha-to-Prod' ready by adhering to the Single Source of Truth.
 # Bolt UI Journal
 
-## Mission: Unify IndiiOS Interface
+## Mission: Unify indii Interface
 
 ### 2024-05-22 - Unified Campaign Card
 **Identified Friction:** The Marketing Campaign Card was using hardcoded `purple-500` and `pink-500` values instead of the defined Department Tokens.
@@ -18,7 +18,7 @@
 
 ## Mission Log
 **Architect:** Bolt ⚡
-**Objective:** Unify indiiOS interface -> Single Source of Truth.
+**Objective:** Unify indii interface -> Single Source of Truth.
 
 ## Daily Polish Archive
 

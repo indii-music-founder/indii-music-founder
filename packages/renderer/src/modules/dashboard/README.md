@@ -1,6 +1,6 @@
 # Dashboard & Unified Command Module (RC1)
 
-The Dashboard is the "Nervous System" of indiiOS. It serves as the primary entry point for creators, providing a unified, high-level overview of their entire creative and business ecosystem.
+The Dashboard is the "Nervous System" of indii. It serves as the primary entry point for creators, providing a unified, high-level overview of their entire creative and business ecosystem.
 
 ## 📊 Key Features
 - **Neural Overview:** Real-time metrics for current projects, active releases, and financial status.

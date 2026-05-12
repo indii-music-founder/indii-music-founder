@@ -1,7 +1,7 @@
 {
-    "name": "@indiios/mcp-server-local",
+    "name": "@indii/mcp-server-local",
     "version": "0.1.0",
-    "description": "Local MCP server for indiiOS providing direct file operations securely",
+    "description": "Local MCP server for indii providing direct file operations securely",
     "private": true,
     "main": "dist/index.js",
     "scripts": {

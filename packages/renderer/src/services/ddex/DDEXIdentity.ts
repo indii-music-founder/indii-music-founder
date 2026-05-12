@@ -2,7 +2,7 @@ import { DDEX_CONFIG } from '@/core/config/ddex';
 
 /**
  * DDEX Identity Service
- * Manages DPIDs and Party IDs for the indiiOS distribution pipeline.
+ * Manages DPIDs and Party IDs for the indii distribution pipeline.
  *
  * DPIDs (DDEX Party IDs) are registered at https://dpid.ddex.net/
  * Each DSP has a unique DPID that must be used as the MessageRecipient.
@@ -55,7 +55,7 @@ const DSP_REGISTRY: Record<string, { dpid: string; name: string; protocol: 'sftp
 
 export class DDEXIdentity {
     /**
-     * Get the sender DPID (indiiOS / New Detroit Music LLC)
+     * Get the sender DPID (indii / New Detroit Music LLC)
      * This is the registered DPID from dpid.ddex.net
      */
     static getSenderDPID(): string {

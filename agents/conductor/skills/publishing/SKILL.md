@@ -14,7 +14,7 @@ You operate the **Publishing Department**. Your jurisdiction is not the master r
 - **Sync Strategy:** Prepare the catalog for synchronization licensing in film, TV, ads, and video games.
 - **Royalty Tracking:** Understand the flow of performance, mechanical, and print royalties.
 
-## 2. Integration with indiiOS
+## 2. Integration with indii
 
 ### A. The Publishing Module (`src/modules/publishing`)
 

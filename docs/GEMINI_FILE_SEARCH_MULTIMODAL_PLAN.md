@@ -5,7 +5,7 @@
 
 ## Context
 
-Google expanded the Gemini API File Search tool with three new capabilities: native multimodal embedding/search, custom metadata filtering, and page-level citations. indiiOS already ships a fully-deployed File Search RAG stack (`GeminiRetrievalService`, `RAGAgent`, `bulk-ingest-rag.ts`). This document defines the deltas to adopt.
+Google expanded the Gemini API File Search tool with three new capabilities: native multimodal embedding/search, custom metadata filtering, and page-level citations. indii already ships a fully-deployed File Search RAG stack (`GeminiRetrievalService`, `RAGAgent`, `bulk-ingest-rag.ts`). This document defines the deltas to adopt.
 
 ---
 
@@ -36,7 +36,7 @@ Google expanded the Gemini API File Search tool with three new capabilities: nat
 
 ---
 
-## What indiiOS Already Has
+## What indii Already Has
 
 - `packages/renderer/src/services/rag/GeminiRetrievalService.ts` — full FileSearchStore lifecycle (`ensureFileSearchStore`, `uploadFile`, `importFileToStore`, `query`, `streamQuery`).
 - `packages/renderer/src/services/agent/RAGAgent.ts` — preconditions agent tasks with KB retrieval.

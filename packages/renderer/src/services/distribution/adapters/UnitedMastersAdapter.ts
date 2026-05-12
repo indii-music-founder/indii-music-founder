@@ -94,7 +94,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
                         headers: {
                             'Authorization': `Bearer ${this.credentials.apiKey}`,
                             'Content-Type': 'application/json',
-                            'X-UM-Partner': 'indiiOS',
+                            'X-UM-Partner': 'indii',
                         },
                         body: JSON.stringify({
                             title: metadata.trackTitle,
