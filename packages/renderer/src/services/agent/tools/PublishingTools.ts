@@ -30,7 +30,7 @@ export const PublishingTools = {
                             existingRecords.push({
                                 workId: data.proWorkId || data.isrc || doc.id,
                                 registeredWriters: data.writers || args.writers || [],
-                                status: data.proStatus || 'Registered in indiiOS catalog',
+                                status: data.proStatus || 'Registered in indii catalog',
                                 isrc: data.isrc,
                             });
                         }
@@ -47,7 +47,7 @@ export const PublishingTools = {
                 proQueried: pro,
                 trackTitle: args.trackTitle,
                 existingRecords,
-                note: 'Match found in indiiOS catalog. Verify with official PRO portal before re-registering.'
+                note: 'Match found in indii catalog. Verify with official PRO portal before re-registering.'
             }, `Found ${existingRecords.length} existing catalog match(es) for "${args.trackTitle}". Verify at ${pro} before filing a new registration.`);
         }
 

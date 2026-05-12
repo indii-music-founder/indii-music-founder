@@ -434,13 +434,13 @@ export const FinanceTools = {
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
                 normalizationAnalysis: analysisText,
-                status: 'Normalized into standard indiiOS ledger format'
+                status: 'Normalized into standard indii ledger format'
             }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
-                status: 'Normalized into standard indiiOS ledger format (basic mode)'
+                status: 'Normalized into standard indii ledger format (basic mode)'
             }, `Successfully ingested ${args.csvFiles.length} CSV statements. AI-enhanced normalization unavailable.`);
         }
     })

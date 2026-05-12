@@ -121,6 +121,14 @@ class UserMemoryService {
     // Generate embedding for semantic search
     const embedding = await this.getEmbedding(content);
 
+    // Supersession Detection: Detect if this is an update to an existing fact
+    const supersededMemoryId = await this.detectSupersession(
+      existingMemories,
+      category,
+      embedding,
+      content
+    );
+
     const now = Timestamp.now();
     const memory: Omit<UserMemory, 'id'> = {
       userId,
@@ -139,6 +147,7 @@ class UserMemoryService {
       relatedMemoryIds: options?.relatedMemoryIds || [],
       embedding: embedding.length > 0 ? embedding : undefined,
       embeddingModel: embedding.length > 0 ? this.embeddingModel : undefined,
+      supersedes: supersededMemoryId,
     };
 
     let memoryId = '';
@@ -146,6 +155,20 @@ class UserMemoryService {
       memoryId = await service.add(memory);
     } catch (e: unknown) {
       logger.error('[UserMemoryService] Failed to save memory: (Non-blocking)', e);
+    }
+
+    // If we superseded an old memory, mark it as inactive and link back
+    if (supersededMemoryId && memoryId) {
+      try {
+        await service.update(supersededMemoryId, {
+          isActive: false,
+          supersededBy: memoryId,
+          updatedAt: now,
+        });
+        logger.info(`[UserMemoryService] Marked memory ${supersededMemoryId} as superseded by ${memoryId}`);
+      } catch (e: unknown) {
+        logger.warn('[UserMemoryService] Failed to mark superseded memory (non-blocking):', e);
+      }
     }
 
     // Update user context asynchronously
@@ -218,7 +241,11 @@ class UserMemoryService {
    * Search memories with semantic and metadata filtering
    */
   async searchMemories(query: MemorySearchQuery): Promise<MemorySearchResult[]> {
-    const { userId, categories, importance, tags, projectId, isActive = true, limit = 10, minRelevanceScore = 0.6 } = query;
+    const {
+      userId, categories, importance, tags, projectId,
+      isActive = true, limit = 10, minRelevanceScore = 0.6,
+      temporalMode = false,
+    } = query;
     const service = this.getService(userId);
 
     try {
@@ -232,7 +259,8 @@ class UserMemoryService {
 
       // Apply metadata filters
       memories = memories.filter((m) => {
-        if (isActive !== undefined && m.isActive !== isActive) return false;
+        // In temporal mode, include superseded memories (isActive check is bypassed)
+        if (!temporalMode && isActive !== undefined && m.isActive !== isActive) return false;
         if (categories && !categories.includes(m.category)) return false;
         if (importance && !importance.includes(m.importance)) return false;
         if (projectId && m.sourceProjectId !== projectId) return false;
@@ -250,6 +278,9 @@ class UserMemoryService {
       if (!query.query) {
         const sorted = memories
           .sort((a, b) => {
+            // In temporal mode, sort chronologically (oldest first = timeline)
+            if (temporalMode) return a.createdAt.toMillis() - b.createdAt.toMillis();
+
             const importanceOrder = { critical: 4, high: 3, medium: 2, low: 1 };
             const aScore = importanceOrder[a.importance] + (a.accessCount * 0.01);
             const bScore = importanceOrder[b.importance] + (b.accessCount * 0.01);
@@ -281,9 +312,14 @@ class UserMemoryService {
           // Importance boost
           const importanceBoost = { critical: 0.3, high: 0.2, medium: 0.1, low: 0 }[m.importance];
 
-          // Recency score (decay over 90 days)
-          const daysOld = (Date.now() - m.createdAt.toMillis()) / (1000 * 60 * 60 * 24);
-          const recencyScore = 1 / (1 + 0.05 * daysOld);
+          // Recency score — DISABLED in temporal mode so 4-year-old memories score equally
+          let recencyScore: number;
+          if (temporalMode) {
+            recencyScore = 1.0; // No decay — all memories equally weighted by time
+          } else {
+            const daysOld = (Date.now() - m.createdAt.toMillis()) / (1000 * 60 * 60 * 24);
+            recencyScore = 1 / (1 + 0.05 * daysOld);
+          }
 
           // Access frequency boost
           const frequencyBoost = Math.min(m.accessCount * 0.01, 0.1);
@@ -316,7 +352,23 @@ class UserMemoryService {
         });
       }
 
-      // Sort by relevance and filter by minimum score
+      // Sort and filter
+      if (temporalMode) {
+        // Temporal mode: filter by relevance, then sort chronologically
+        const results = scored
+          .filter((s) => s.relevanceScore >= (minRelevanceScore * 0.5)) // Lower threshold for temporal
+          .sort((a, b) => a.memory.createdAt.toMillis() - b.memory.createdAt.toMillis())
+          .slice(0, limit);
+
+        this.updateAccessStats(
+          userId,
+          results.map((r) => r.memory)
+        ).catch((e) => logger.error('[UserMemoryService] Failed to update access stats:', e));
+
+        return results;
+      }
+
+      // Standard mode: sort by relevance score
       const results = scored
         .filter((s) => s.relevanceScore >= minRelevanceScore)
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
@@ -627,25 +679,45 @@ JSON FORMAT:
       const responseText = result.response.text() || '{}';
       const parsed = JSON.parse(responseText) as { consolidated: string[]; idsToDelete: string[] };
 
-      // Delete redundant memories
+      // Soft-archive redundant memories (NEVER hard-delete — preserve the timeline)
       if (parsed.idsToDelete && parsed.idsToDelete.length > 0) {
-        const deletePromises = parsed.idsToDelete.map(async (id) => {
+        // First, save consolidated summaries so we have IDs to link back to
+        const consolidatedIds: string[] = [];
+        if (parsed.consolidated && parsed.consolidated.length > 0) {
+          const addPromises = parsed.consolidated.map(async (content) => {
+            try {
+              // Summaries are stored with category 'summary' to distinguish from raw facts
+              const id = await this.saveMemory(userId, content, 'summary', 'medium');
+              consolidatedIds.push(id);
+            } catch (error) {
+              errors.push({ memoryId: 'new', error: String(error) });
+            }
+          });
+          await Promise.all(addPromises);
+        }
+
+        const consolidatedIntoId = consolidatedIds[0] || 'consolidated';
+
+        const archivePromises = parsed.idsToDelete.map(async (id) => {
           if (candidates.some((c) => c.id === id)) {
             try {
-              await service.delete(id);
+              // Soft-archive: mark inactive, link to summary, preserve timestamp
+              await service.update(id, {
+                isActive: false,
+                consolidatedInto: consolidatedIntoId,
+                updatedAt: Timestamp.now(),
+              });
               processedCount++;
             } catch (error: unknown) {
               errors.push({ memoryId: id, error: String(error) });
             }
           }
         });
-        await Promise.all(deletePromises);
-      }
-
-      // Add new consolidated memories
-      if (parsed.consolidated && parsed.consolidated.length > 0) {
+        await Promise.all(archivePromises);
+      } else if (parsed.consolidated && parsed.consolidated.length > 0) {
+        // No deletions but we still have new summaries
         const addPromises = parsed.consolidated.map((content) =>
-          this.saveMemory(userId, content, 'fact', 'medium').catch((error) => {
+          this.saveMemory(userId, content, 'summary', 'medium').catch((error) => {
             errors.push({ memoryId: 'new', error: String(error) });
           })
         );
@@ -816,6 +888,51 @@ JSON FORMAT:
       averageMemoryLifespan,
       topTags,
     };
+  }
+
+  /**
+   * Detect if new content semantically supersedes an existing active memory.
+   * Returns the ID of the superseded memory if found.
+   */
+  private async detectSupersession(
+    existingMemories: UserMemory[],
+    category: string,
+    embedding: number[],
+    content: string
+  ): Promise<string | undefined> {
+    if (embedding.length === 0) return undefined;
+
+    // We only check the last 30 days for performance.
+    // Over a 4-year timeline, users typically "update" facts in clusters.
+    const thirtyDaysAgo = Date.now() - 1000 * 60 * 60 * 24 * 30;
+    
+    const candidates = existingMemories.filter(
+      (m) =>
+        m.isActive !== false &&
+        m.category === category &&
+        m.embedding &&
+        m.embedding.length > 0 &&
+        m.createdAt.toMillis() > thirtyDaysAgo
+    );
+
+    for (const existing of candidates) {
+      // Defensive check for malformed embeddings
+      if (!existing.embedding || existing.embedding.length !== embedding.length) continue;
+
+      const similarity = cosineSimilarity(embedding, existing.embedding);
+      
+      // 0.85 threshold: high enough to avoid false positives,
+      // low enough to catch genuine updates.
+      if (similarity >= 0.85) {
+        logger.info(
+          `[UserMemoryService] Supersession detected (similarity=${similarity.toFixed(3)}): ` +
+          `"${existing.content.substring(0, 50)}" -> "${content.substring(0, 50)}"`
+        );
+        return existing.id;
+      }
+    }
+
+    return undefined;
   }
 }
 

@@ -1,5 +1,5 @@
 /**
- * electron.vite.config.ts — Build orchestrator for the indiiOS monorepo.
+ * electron.vite.config.ts — Build orchestrator for the indii monorepo.
  *
  * Three build targets:
  *   - Main:     packages/main/src/main.ts     → Node.js, CJS output

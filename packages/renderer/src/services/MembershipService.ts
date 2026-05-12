@@ -134,7 +134,8 @@ class MembershipServiceImpl {
     private async isBuilderAccount(): Promise<boolean> {
         // ALWAYS bypass limits in local development so the team can test without hitting budget caps
         // IMPORTANT: Do NOT bypass in Vitest test runs — tests need to exercise real limit enforcement
-        if (import.meta.env && import.meta.env.DEV && !import.meta.env.VITEST) {
+        // OPTIONAL: Bypass via explicit environment variable if the developer chooses
+        if (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
             return true;
         }
 

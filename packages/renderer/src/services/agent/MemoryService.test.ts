@@ -248,9 +248,18 @@ describe('MemoryService', () => {
             // Check if AI was called
             expect(AI.generateContent).toHaveBeenCalled();
 
-            // Check if old memories were deleted
-            expect(mockDelete).toHaveBeenCalledWith('old-0');
-            expect(mockDelete).toHaveBeenCalledWith('old-1');
+            // Check if old memories were soft-archived (NOT deleted — preserve timeline)
+            expect(mockUpdate).toHaveBeenCalledWith('old-0', expect.objectContaining({
+                isActive: false,
+                consolidatedInto: expect.any(String),
+            }));
+            expect(mockUpdate).toHaveBeenCalledWith('old-1', expect.objectContaining({
+                isActive: false,
+                consolidatedInto: expect.any(String),
+            }));
+
+            // Hard delete should NOT be called — we preserve history now
+            expect(mockDelete).not.toHaveBeenCalled();
 
             // Check if new summary was saved
             // saveMemory calls getService().add()

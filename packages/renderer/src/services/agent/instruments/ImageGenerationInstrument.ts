@@ -28,7 +28,7 @@ export class ImageGenerationInstrument implements Instrument {
     description: 'Generate AI images using text prompts with support for various aspect ratios and styles',
     category: 'generation',
     version: '1.0.0',
-    author: 'indiiOS Core Team',
+    author: 'indii Core Team',
     isAsync: true,
     timeoutMs: 120000, // 2 minutes timeout
     cost: {

@@ -136,7 +136,8 @@ export type AlwaysOnMemoryCategory =
     | 'creative'        // Creative decisions (e.g., "album art should use dark blue palette")
     | 'business'        // Business intel (e.g., "Spotify pays $0.003/stream", "distributor deadline March 15")
     | 'technical'       // Technical preferences (e.g., "master at -14 LUFS", "export as WAV 24-bit")
-    | 'insight';        // System-generated cross-cutting insights
+    | 'insight'         // System-generated cross-cutting insights
+    | 'summary';        // Consolidated memory summary
 
 /**
  * Memory source — where the memory came from
