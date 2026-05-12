@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Item 312: Label Deal Recoupment Tracking
  *
  * Tracks label advance amounts, recoupment thresholds, and royalty rate
- * escalators for artists on label deals who use indiiOS. Critical for
+ * escalators for artists on label deals who use indii. Critical for
  * artists to understand when they've recouped and start earning royalties.
  *
  * Data model:

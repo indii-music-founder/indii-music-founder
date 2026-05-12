@@ -70,7 +70,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.1 }}
                 className="text-3xl font-semibold text-white tracking-wide text-center leading-none"
             >
-                indiiOS
+                indii
             </motion.h2>
 
             <motion.p

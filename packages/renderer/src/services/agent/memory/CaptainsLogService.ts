@@ -1,5 +1,5 @@
 /**
- * Captain's Logs Service — Layer 4 of the IndiiOS Memory Architecture
+ * Captain's Logs Service — Layer 4 of the indii Memory Architecture
  *
  * The operational timeline and execution log. Captures daily tasks, errors,
  * heartbeat check results, and execution decisions in sequential order.

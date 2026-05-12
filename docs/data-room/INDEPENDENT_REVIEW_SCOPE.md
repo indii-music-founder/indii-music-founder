@@ -1,8 +1,8 @@
 # Independent Code Review Scope
 
-**Purpose:** Define the boundaries and focus areas for a third-party technical review of indiiOS.
+**Purpose:** Define the boundaries and focus areas for a third-party technical review of indii.
 
-**Valuation Thesis Being Tested:** indiiOS is worth $X because it owns (1) a DDEX direct-distribution rail, (2) a 17-agent Vertex AI fine-tuned fleet, and (3) 99.6% test pass rate across 268K LOC.
+**Valuation Thesis Being Tested:** indii is worth $X because it owns (1) a Proprietary Ingestion IP Distribution Layer, (2) a 17-agent Vertex AI fine-tuned fleet, and (3) 99.6% test pass rate across 268K LOC.
 
 ---
 
@@ -10,7 +10,7 @@
 
 The reviewer should focus on these three subsystems, which are the basis of valuation:
 
-### 1. DDEX Distribution Layer (Priority: CRITICAL)
+### 1. Proprietary Ingestion IP Distribution Layer (Priority: CRITICAL)
 
 **Why:** Direct-to-DSP music distribution is the primary business asset. Acquirer needs to verify this is real, spec-compliant, and operationally sound.
 
@@ -24,7 +24,7 @@ The reviewer should focus on these three subsystems, which are the basis of valu
 - [ ] ERN XML structure matches published DDEX XSD (at least one sample generation)
 - [ ] SFTP delivery mechanism is hardened (no creds in logs, proper error handling)
 - [ ] DSP onboarding adapters are real, not mocks (confirm each has actual API integration, not stubs)
-- [ ] DDEX Party ID `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC
+- [ ] Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC
 - [ ] Delivery receipt/acknowledgment handling is idempotent (no duplicate submissions on retry)
 - [ ] No hardcoded DSP API keys in `src/` (should be Firestore/Cloud Secrets)
 
@@ -103,11 +103,11 @@ The reviewer must explicitly verify and sign off on these 12 gates:
 3. **Fallback Logic** — Simulate Vertex outage; confirm requests automatically route to free Gemini API without user-facing errors
 4. **Prompt Injection** — Submit test payloads (Unicode escapes, zero-width chars, "ignore above" prompts); confirm all are neutralized before reaching model
 
-### DDEX (Gates 5–7)
+### Proprietary Ingestion IP (Gates 5–7)
 
 5. **ERN Spec Compliance** — Generate one ERN per configured DSP, validate against published XSD, confirm structure matches DDEX standard (not a custom format)
 6. **SFTP Delivery** — Deliver a test ERN to a test SFTP target; confirm file arrives intact, no creds in logs, retry logic works
-7. **Party ID Verification** — Contact DDEX Inc. or verify via DDEX portal that Party ID `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC and active
+7. **Proprietary Ingestion ID Verification** — Contact DDEX Inc. or verify via DDEX portal that the Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC and active
 
 ### Payments (Gates 8–10)
 
@@ -133,7 +133,7 @@ The reviewer produces a PDF report with:
 - Recommended remediation (if any) with effort estimates
 - Sign-off and date
 
-**Audience:** New Detroit Music LLC (dba indiiOS) and any prospective acquirer
+**Audience:** New Detroit Music LLC (dba indii) and any prospective acquirer
 
 **Timing:** 2–3 weeks from engagement date (depending on access latency and parallel execution)
 

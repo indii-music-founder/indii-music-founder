@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Physical Media Designer** is a specialized workspace within IndiiOS for creating print-ready artwork for music formats (CD, Vinyl, Cassette, Posters). It combines a precision layout engine with generative AI capabilities.
+The **Physical Media Designer** is a specialized workspace within indii for creating print-ready artwork for music formats (CD, Vinyl, Cassette, Posters). It combines a precision layout engine with generative AI capabilities.
 
 ## User Interface Layout
 
@@ -18,7 +18,7 @@ The **Physical Media Designer** is a specialized workspace within IndiiOS for cr
 - **Tabs**:
   - **Templates**: Grid view of available formats (CD Front, Vinyl Jacket, etc.).
     - *Interaction*: Clicking a template loads it onto the canvas.
-    - *Premium Content*: Pro/Enterprise templates are marked with a "Sovereign" gold badge.
+    - *Premium Content*: Pro/Enterprise templates are marked with a "Independent" gold badge.
   - **Assets**: User's uploaded images, logos, and generated assets.
   - **Layers**: Simple list of regions (e.g., "Front Cover", "Spine").
 
@@ -82,7 +82,7 @@ When a user on a restricted tier attempts a Pro-only action or hits a daily quot
 ## Visual Style
 
 - **Theme**: "Dark Mode" professional suite.
-- **Accents**: IndiiOS brand colors (Black/White minimal).
+- **Accents**: indii brand colors (Black/White minimal).
 - **Feedback**: Loading states for AI generation (e.g., a "developing" animation).
 
 ## Accessibility

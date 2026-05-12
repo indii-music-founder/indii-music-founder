@@ -104,9 +104,9 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/[0.04]">
         <div className="flex items-center gap-3 group cursor-pointer">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500">
-            <span className="text-amber-500 font-black text-[10px] tracking-tighter">iOS</span>
+            <span className="text-amber-500 font-black text-[10px] tracking-tighter">indii</span>
           </div>
-          <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indiiOS</span>
+          <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii</span>
         </div>
 
         <div className="flex items-center gap-8">
@@ -169,7 +169,7 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indiiOS is your personal tech collective. A specialist team of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
+          indii is your personal tech collective. A specialist team of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
           <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
@@ -211,13 +211,13 @@ export default function Home() {
             </div>
             <div className="mx-auto flex items-center gap-2 bg-[#1A1A1A] border border-white/5 rounded-md px-32 py-1.5 shadow-inner">
               <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indiios.studio/independence-hub</span>
+              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/independence-hub</span>
             </div>
           </div>
           <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
             <img
               src="/studio-hero.png"
-              alt="indiiOS Dashboard Interface"
+              alt="indii Dashboard Interface"
               className="w-full h-[150%] object-cover object-top opacity-90 transition-opacity duration-1000 hover:opacity-100"
               style={{ filter: 'contrast(1.05) brightness(0.95)' }}
             />
@@ -304,7 +304,7 @@ export default function Home() {
               The Founders Agreement
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
+              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
@@ -314,7 +314,7 @@ export default function Home() {
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>
-                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indiiOS infrastructure forever. You are part of the engine.</p>
+                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indii infrastructure forever. You are part of the engine.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Team</h4>
@@ -344,7 +344,7 @@ export default function Home() {
           <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-center items-center shadow-[0_0_10px_rgba(245,158,11,0.2)]">
             <Zap size={12} className="text-amber-500" />
           </div>
-          <span className="font-medium tracking-wide">© 2026 indiiOS Inc. The operating system for your musical independence.</span>
+          <span className="font-medium tracking-wide">© 2026 indii Inc. The operating system for your musical independence.</span>
         </div>
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>

@@ -92,8 +92,8 @@ export class ContractPDFService {
         doc.setProperties({
             title: options.title,
             subject: options.subtitle ?? 'Legal Contract',
-            creator: 'indiiOS Legal Department',
-            author: 'indiiOS',
+            creator: 'indii Legal Department',
+            author: 'indii',
         });
 
         let y = MARGIN_TOP;
@@ -116,7 +116,7 @@ export class ContractPDFService {
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(9);
         doc.setFont(FONT_BODY, 'bold');
-        doc.text('indiiOS LEGAL DEPARTMENT', MARGIN_LEFT, 12);
+        doc.text('indii LEGAL DEPARTMENT', MARGIN_LEFT, 12);
         doc.setFontSize(7);
         doc.setFont(FONT_BODY, 'normal');
         doc.text('AI-Powered Contract Analysis', PAGE_WIDTH - MARGIN_RIGHT, 12, { align: 'right' });
@@ -311,7 +311,7 @@ function addFooter(doc: jsPDF, page: number) {
     doc.setFont(FONT_BODY, 'normal');
     doc.setTextColor(160, 160, 160);
     doc.text(
-        `indiiOS Legal Department — Page ${page} — CONFIDENTIAL`,
+        `indii Legal Department — Page ${page} — CONFIDENTIAL`,
         PAGE_WIDTH / 2,
         PAGE_HEIGHT - 15,
         { align: 'center' }

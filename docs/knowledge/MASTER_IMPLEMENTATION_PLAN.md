@@ -1,5 +1,5 @@
 
-# ⚡ MAXIMUM EFFICIENCY ARTIFACT: The IndiiOS Dividend Protocol
+# ⚡ MAXIMUM EFFICIENCY ARTIFACT: The indii Dividend Protocol
 
 > **Objective:** Systematically eliminate the "Artist Economy Leakage" identified in research (approx. $11k/yr lost).
 > **Method:** 4-Pillar Implementation Strategy.

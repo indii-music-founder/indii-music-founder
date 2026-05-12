@@ -1,7 +1,7 @@
 # Independent Reviewer Briefing Pack
 
 **For:** Third-party technical reviewer (Embedded, SIG, or equivalent)  
-**From:** William Roberts, New Detroit Music LLC (indiiOS)  
+**From:** William Roberts, New Detroit Music LLC (indii)  
 **Engagement:** Independent code review for acquisition readiness  
 **Timeline:** 2–3 weeks from this briefing
 
@@ -11,7 +11,7 @@
 
 **Valuation Thesis:**
 
-indiiOS is worth $X because it owns three durable assets:
+indii is worth $X because it owns three durable assets:
 
 1. **DDEX Direct-Distribution Rail** — Real, spec-compliant music distribution to 8 DSPs (Spotify, Apple Music, Amazon Music, Tidal, Deezer, CDBaby, DistroKid, Symphonic, etc.) via ERN/DSR/MEAD/RIN submission. Party ID `PA-DPIDA-2025122604-E` is active and registered to New Detroit Music LLC.
 
@@ -25,7 +25,7 @@ indiiOS is worth $X because it owns three durable assets:
 
 ## Context: 3-Layer Architecture
 
-indiiOS operates on a proven separation of concerns:
+indii operates on a proven separation of concerns:
 
 ### Layer 1: Directive (Determinism at the Peak)
 
@@ -45,7 +45,7 @@ Python/TypeScript scripts in `execution/` handle API interactions, data processi
 
 ## The Repository
 
-**Location:** `https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron`  
+**Location:** `https://github.com/the-walking-agency-det/indii-Alpha-Electron`  
 **Branch:** `main`  
 **Tech Stack:**
 - Frontend: React 18 + Vite 6.4 + Tailwind 4.1 + Zustand
@@ -122,11 +122,11 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 ## Access & Logistics
 
 **GitHub Access:**
-- You will be added as a read-only collaborator to `the-walking-agency-det/indiiOS-Alpha-Electron`
+- You will be added as a read-only collaborator to `the-walking-agency-det/indii-Alpha-Electron`
 - All code is public-facing (standard practice for early-stage startups)
 
 **GCP Project Access:**
-- Firebase Project ID: `indiios-v-1-1`
+- Firebase Project ID: `indii-v-1-1`
 - GCP Project: `223837784072`
 - You will receive Viewer IAM role (read-only)
 - Can inspect: Firestore rules, Storage rules, Cloud Functions, Vertex AI endpoints, billing
@@ -184,7 +184,7 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 
 5. Sign-Off (1 page)
    - Your name, firm, date
-   - Statement: "I have reviewed the indiiOS codebase and confirm/contradict the claims in the valuation thesis."
+   - Statement: "I have reviewed the indii codebase and confirm/contradict the claims in the valuation thesis."
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Objective
 
-Execute the UI/UX polish identified during the `indiiOS_design_review` to ensure a $100M "Antigravity" premium aesthetic for the Founders Release.
+Execute the UI/UX polish identified during the `indii_design_review` to ensure a $100M "Antigravity" premium aesthetic for the Founders Release.
 
 ## Target Files & Required Changes
 

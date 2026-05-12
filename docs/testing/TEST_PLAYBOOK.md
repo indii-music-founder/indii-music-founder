@@ -1,6 +1,6 @@
-# 🧪 indiiOS Test Playbook (Agent Persona Edition)
+# 🧪 indii Test Playbook (Agent Persona Edition)
 
-This document defines the named stress test protocols used to validate indiiOS. Each test is defined as an autonomous "Agent" with a specific mission, boundaries, and philosophy.
+This document defines the named stress test protocols used to validate indii. Each test is defined as an autonomous "Agent" with a specific mission, boundaries, and philosophy.
 
 ---
 

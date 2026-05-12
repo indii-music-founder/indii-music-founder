@@ -36,7 +36,7 @@ description: Press releases, EPK development, blog outreach, crisis management, 
   3. Draft a precise, empathetic statement (avoid generic PR jargon).
   4. Release the statement via owned channels (Twitter, IG Story, Discord) before relying on press outlets.
 
-## 4. indiiOS App Integration (Publicist Dept)
+## 4. indii App Integration (Publicist Dept)
 
 - Automatically generate tailored Pitch Emails based on the user's inputted "Target Blogs" (e.g., Pitchfork, FADER, Pigeons & Planes).
 - Audit user-uploaded EPKs to ensure all links are active and high-res photos are present.

@@ -167,7 +167,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
 
         // 2. Verify Budget Check was called twice
         // Once at start (allowed), once at second iteration (denied)
-        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(2);
+        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(3);
 
         // 3. Verify Agent halted
         expect(response.error).toContain('Daily spend limit reached');

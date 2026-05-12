@@ -1,12 +1,12 @@
 # Gemini 3 Technical Specifications (BETA RELEASE V5.0)
 
-This document outlines the technical parameters and best practices for utilizing **Gemini 3** series models within the indiiOS ecosystem. Version 5.0 marks the shift to **High-Fidelity Production** standards.
+This document outlines the technical parameters and best practices for utilizing **Gemini 3** series models within the indii ecosystem. Version 5.0 marks the shift to **High-Fidelity Production** standards.
 
 ---
 
 ## 🏗️ Model Selection & Capabilities
 
-All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/MODEL_POLICY.md).
+All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/MODEL_POLICY.md).
 
 | Capability | Model ID | Recommended Thinking |
 | :--- | :--- | :--- |

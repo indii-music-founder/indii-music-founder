@@ -90,7 +90,7 @@ magick -size 512x512 xc:"#6366f1" icon-512.png
 magick -size 180x180 xc:"#6366f1" apple-touch-icon.png
 
 # Add text label (optional)
-magick icon-192.png -gravity center -pointsize 48 -fill white -annotate +0+0 "indiiOS" icon-192.png
+magick icon-192.png -gravity center -pointsize 48 -fill white -annotate +0+0 "indii" icon-192.png
 ```
 
 ## Maskable Icon Safe Area Guide
@@ -148,7 +148,7 @@ file public/apple-touch-icon.png
 
 ## Recommended Icon Design
 
-For **indiiOS branding:**
+For **indii branding:**
 - Background: `#0f0f0f` (matches theme)
 - Logo/Text: White or `#6366f1` (neon blue)
 - Style: Modern, clean, recognizable at small sizes

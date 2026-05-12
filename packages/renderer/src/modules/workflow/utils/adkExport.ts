@@ -68,8 +68,8 @@ export function generateADKManifest(
     });
 
     return {
-        name: name || 'indiiOS Workflow',
-        description: description || 'Exported ADK Graph from indiiOS Workflow Lab',
+        name: name || 'indii Workflow',
+        description: description || 'Exported ADK Graph from indii Workflow Lab',
         nodes: adkNodes,
         edges: adkEdges,
         version: '1.0'

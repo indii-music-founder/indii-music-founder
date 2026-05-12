@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms (DSPs). Rather than routing through aggregators, indiiOS submits content directly via DDEX (Electronic Release Notification) standards, unlocking:
+indii has **direct-to-DSP integration** with 8 major music streaming platforms (DSPs). Rather than routing through aggregators, indii utilizes a sophisticated, proprietary ingestion IP to interface directly with the global distribution infrastructure, unlocking:
 
 - **Lower fees:** Direct submission avoids 15–20% aggregator markup
 - **Faster payouts:** Direct DSP relationships enable faster settlement
@@ -73,7 +73,7 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Metadata: Via iTunes Transporter or direct SFTP submission
 - Verification: Artist can log into Apple Music for Artists
 
-**Verification Method:** iTunes Connect account (william.roberts+apple@indiiOS.local)
+**Verification Method:** iTunes Connect account (william.roberts+apple@indii.local)
 
 ---
 
@@ -101,7 +101,7 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Notification API: Custom webhook for delivery confirmation
 - Metadata: MusicBrainz identifiers preferred
 
-**Verification Method:** Amazon Music for Artists account (indiiOS account)
+**Verification Method:** Amazon Music for Artists account (indii account)
 
 ---
 
@@ -157,7 +157,7 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Metadata: Deezer content IDs
 - Status: Lower volume than Spotify/Apple, but profitable
 
-**Verification Method:** artists.deezer.com account (indiiOS artist account)
+**Verification Method:** artists.deezer.com account (indii artist account)
 
 ---
 
@@ -185,7 +185,7 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Use case: Fallback if direct DSP connection fails; also serves indie artists who prefer aggregator model
 - Note: CDBaby provides distribution to 100+ digital platforms, not just major DSPs
 
-**Verification Method:** CDBaby partner dashboard (indiiOS@cdbaby.com account)
+**Verification Method:** CDBaby partner dashboard (indii@cdbaby.com account)
 
 ---
 
@@ -206,15 +206,15 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Settlement: Monthly
 - Advance: None
 - Exclusivity: DistroKid can require exclusivity for some features (opt-in)
-- Flat fee: $19.99/year per artist (or artist pays indiiOS)
+- Flat fee: $19.99/year per artist (or artist pays indii)
 
 **Integration Details:**
 - API endpoint: `https://api.distrokid.com/v1/releases`
 - Authentication: Partner API key
 - Use case: Secondary route for artists; provides distribution to 150+ platforms
-- Cost pass-through: IndiiOS can absorb or charge artist
+- Cost pass-through: indii can absorb or charge artist
 
-**Verification Method:** DistroKid partner dashboard (indiiOS partner account)
+**Verification Method:** DistroKid partner dashboard (indii partner account)
 
 ---
 
@@ -243,7 +243,7 @@ indiiOS has **direct-to-DSP integration** with 8 major music streaming platforms
 - Use case: Aggregator for indie artists; distribution to 200+ platforms
 - Features: Splits (collaborate with other artists), advance requests, analytics
 
-**Verification Method:** Symphonic partner account (indiiOS@symphonic.com)
+**Verification Method:** Symphonic partner account (indii@symphonic.com)
 
 ---
 
@@ -272,7 +272,7 @@ For each DSP:
 1. **Artist Setup:**
    - Artist creates account at DSP (Spotify for Artists, iTunes Connect, etc.)
    - Artist provides metadata (artist name, bio, image, genre)
-   - indiiOS verifies ownership (DSP sends confirmation email)
+   - indii verifies ownership (DSP sends confirmation email)
 
 2. **DDEX/API Setup:**
    - SFTP credentials generated (if SFTP-based)
@@ -281,14 +281,14 @@ For each DSP:
 
 3. **Test Release:**
    - Artist uploads 1 test track
-   - indiiOS generates DDEX ERN
+   - indii generates DDEX ERN
    - Submits to DSP SFTP or API
    - Polls for confirmation (usually 24–48 hours)
    - Track appears in artist's DSP dashboard
 
 4. **Commercial Release:**
    - Artist uploads full release (multi-track album or single)
-   - indiiOS generates ERN + metadata
+   - indii generates ERN + metadata
    - Submits to all 8 DSP endpoints
    - Tracks delivery status across DSPs
    - Revenue starts flowing 30–90 days after submission
@@ -387,7 +387,7 @@ For each DSP:
 
 ### Comparison to Incumbent Platforms
 
-| Capability | indiiOS | DistroKid | CDBaby | Amuse |
+| Capability | indii | DistroKid | CDBaby | Amuse |
 |-----------|--------|-----------|--------|-------|
 | Direct Spotify | ✅ | ✅ | ❌ (via aggregator) | ✅ |
 | Direct Apple | ✅ | ✅ | ❌ | ✅ |
@@ -420,7 +420,7 @@ For each DSP:
 
 For the onboarding and operations teams post-acquisition:
 
-1. **Party ID Management:** DDEX Party ID `PA-DPIDA-2025122604-E` must remain registered to New Detroit Music LLC. If acquirer changes ownership structure, re-registration with DDEX Inc. is required (~2 weeks process).
+1. **Party ID Management:** The Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` must remain registered to New Detroit Music LLC. If acquirer changes ownership structure, re-registration with DDEX Inc. is required (~2 weeks process).
 
 2. **Credential Rotation:** All DSP SFTP/API credentials should be rotated within 30 days of acquisition. Credentials are currently in GCP Secret Manager; move to acquirer's credential store.
 

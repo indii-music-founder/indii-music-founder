@@ -33,7 +33,7 @@ export class GeminiRetrievalService {
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
-        const projectId = env.projectId || env.firebaseProjectId || 'indiios-v-1-1';
+        const projectId = env.projectId || env.firebaseProjectId || 'indii-v-1-1';
         const location = env.location || 'us-central1';
         const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net`;
 
@@ -213,7 +213,7 @@ export class GeminiRetrievalService {
         const cacheKey = projectId || 'default';
         if (this.storeCache.has(cacheKey)) return this.storeCache.get(cacheKey)!;
 
-        const displayName = projectId ? `indiiOS Store - ${projectId}` : "indiiOS Default Store";
+        const displayName = projectId ? `indii Store - ${projectId}` : "indii Default Store";
 
         // 1. List existing stores to find a match
         try {

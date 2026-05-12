@@ -283,7 +283,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
     const netIncome = totalRevenue - totalExpenses;
     const pendingCount = earningsSummary?.byPlatform?.filter(p => p.revenue === 0).length ?? 0;
 
-    // indiiOS Dividend — 20% management fee saved by using indiiOS instead of an external manager
+    // indii Dividend — 20% management fee saved by using indii instead of an external manager
     const MANAGEMENT_FEE_RATE = 0.20;
     const dividendSaved = totalRevenue * MANAGEMENT_FEE_RATE;
 
@@ -313,7 +313,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
                         </div>
                     ))}
 
-                    {/* indiiOS Dividend Widget — Fees Saved vs. External Management */}
+                    {/* indii Dividend Widget — Fees Saved vs. External Management */}
                     {totalRevenue > 0 && (
                         <motion.div
                             initial={{ opacity: 0, y: 4 }}
@@ -325,7 +325,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-emerald-400 truncate">{formatCurrency(dividendSaved)}</p>
-                                <p className="text-[10px] text-gray-500">Fees Saved (indiiOS Dividend)</p>
+                                <p className="text-[10px] text-gray-500">Fees Saved (indii Dividend)</p>
                             </div>
                             <span className="text-[10px] font-bold text-emerald-400/70">20% saved</span>
                         </motion.div>

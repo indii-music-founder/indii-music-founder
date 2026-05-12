@@ -31,7 +31,7 @@ async function main() {
     const input = args[0];
     const datasetName = args[1] || "Default Knowledge Set";
 
-    console.log(`\n🧠 IndiiOS Unified Ingestion System`);
+    console.log(`\n🧠 indii Unified Ingestion System`);
     console.log(`===================================`);
     console.log(`Input: ${input}`);
 

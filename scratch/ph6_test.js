@@ -30,7 +30,7 @@ import { chromium } from 'playwright';
         console.log('Finance: Aggregate Revenue widget NOT found.');
     }
     
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/ph6_finance_detail.png', fullPage: true });
+    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/indii-Clean/ph6_finance_detail.png', fullPage: true });
   } else {
     console.log('Finance button NOT found in sidebar.');
   }
@@ -83,7 +83,7 @@ import { chromium } from 'playwright';
         }
     }
     
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/ph6_social_final.png', fullPage: true });
+    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/indii-Clean/ph6_social_final.png', fullPage: true });
   }
 
   await browser.close();

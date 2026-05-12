@@ -1,6 +1,6 @@
 # Task Instruction: Finance Routing
 
-An indiiOS artist asks:
+An indii artist asks:
 > "How do royalty splits work if I co-wrote a song with a producer?"
 
 You should identify that this is a royalty and payout question.

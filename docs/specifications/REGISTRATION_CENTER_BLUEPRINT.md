@@ -9,12 +9,12 @@
 
 ## The Vision (One Paragraph)
 
-indiiOS is the last interface the artist ever needs. That means they should never have to visit
+indii is the last interface the artist ever needs. That means they should never have to visit
 eco.copyright.gov, ASCAP.com, BMI.com, SoundExchange.org, or any other rights/registration
-website — ever. indiiOS already holds their catalog, splits, metadata, and contributor info.
+website — ever. indii already holds their catalog, splits, metadata, and contributor info.
 It knows enough to fill out ~85% of every registration form automatically. The Registration
 Center is the module that does this: a single, AI-co-piloted panel where artists register their
-works with every major organization through an indiiOS-native skin. The external sites are
+works with every major organization through an indii-native skin. The external sites are
 invisible backend plumbing. The user experience is: "Here are the 2 things I need from you.
 Everything else is done."
 
@@ -106,7 +106,7 @@ export interface OrgAdapter {
   name: string;                        // display name: "Library of Congress"
   shortName: string;                   // "LoC"
   category: 'copyright' | 'pro' | 'digital' | 'mechanical';
-  fields: RegistrationField[];         // the full form schema, in indiiOS language
+  fields: RegistrationField[];         // the full form schema, in indii language
   fee?: { amount: number; currency: string; notes?: string };
   timeline?: string;                   // "3–9 months"
   submit: (data: FormData, track: CatalogTrack) => Promise<SubmissionResult>;
@@ -138,7 +138,7 @@ export interface SubmissionResult {
 - **File:** `src/modules/registration/adapters/LocAdapter.ts`
 - **Submission:** BrowserAgentService (no public API — Playwright pilots eco.copyright.gov)
 - **Fee:** $45 single work / $65 group of unpublished works
-- **Fields indiiOS auto-fills:** Title, year of creation, author names, copyright claimant, nature of authorship, publication status, nation of first publication
+- **Fields indii auto-fills:** Title, year of creation, author names, copyright claimant, nature of authorship, publication status, nation of first publication
 - **Fields user must provide:** Claimant's legal name (if different from profile), date of birth (for copyright term calculation), work-for-hire status
 - **Estimated user input:** 2–3 fields
 
@@ -146,7 +146,7 @@ export interface SubmissionResult {
 - **File:** `src/modules/registration/adapters/AscapAdapter.ts`
 - **Submission:** REST API — `api.ascap.com/v1/works/register` (already stubbed in PRORightsService)
 - **Fee:** None (free to register works once member)
-- **Fields indiiOS auto-fills:** Title, ISWC, contributors + roles, shares, ISRC
+- **Fields indii auto-fills:** Title, ISWC, contributors + roles, shares, ISRC
 - **Fields user must provide:** IPI number (if not in profile), co-writer IPI numbers
 - **Estimated user input:** 0–2 fields (if profile is complete, zero)
 
@@ -154,7 +154,7 @@ export interface SubmissionResult {
 - **File:** `src/modules/registration/adapters/BmiAdapter.ts`
 - **Submission:** Works Express API — `worksexpress.bmi.com/api` (already stubbed in PRORightsService)
 - **Fee:** None
-- **Fields indiiOS auto-fills:** Same as ASCAP
+- **Fields indii auto-fills:** Same as ASCAP
 - **Fields user must provide:** Publisher number (if applicable)
 - **Estimated user input:** 0–1 fields
 
@@ -167,14 +167,14 @@ export interface SubmissionResult {
 - **File:** `src/modules/registration/adapters/SoundExchangeAdapter.ts`
 - **Submission:** REST API — `api.soundexchange.com/v1/enrollments` (already stubbed)
 - **Fee:** None
-- **Fields indiiOS auto-fills:** ISRC, performer name, recording title
+- **Fields indii auto-fills:** ISRC, performer name, recording title
 - **Fields user must provide:** Sound Recording copyright ownership percentage
 
 ### 6. MLC (The Mechanical Licensing Collective)
 - **File:** `src/modules/registration/adapters/MlcAdapter.ts`
 - **Submission:** MLC portal (BrowserAgentService fallback, API if available)
 - **Fee:** None
-- **Fields indiiOS auto-fills:** ISWC, title, contributors, shares
+- **Fields indii auto-fills:** ISWC, title, contributors, shares
 
 ---
 

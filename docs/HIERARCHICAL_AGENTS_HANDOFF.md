@@ -180,4 +180,4 @@ Per CLAUDE.md, run `/plat` before pushing. Open a PR; do not push to main direct
 
 ## Contact / Notes
 
-If you find the in-flight work has rotted or context is lost, the canonical reference is the plan file at `~/.claude/plans/https-www-philschmid-de-subagent-pattern-elegant-thompson.md`. The Schmid article that inspired this is at https://www.philschmid.de/subagent-patterns-2026 — but the conclusion is that indiiOS already implements all four patterns in-process; this work adds the *scoping* (tier + department membership) that the existing flat seating model lacks.
+If you find the in-flight work has rotted or context is lost, the canonical reference is the plan file at `~/.claude/plans/https-www-philschmid-de-subagent-pattern-elegant-thompson.md`. The Schmid article that inspired this is at https://www.philschmid.de/subagent-patterns-2026 — but the conclusion is that indii already implements all four patterns in-process; this work adds the *scoping* (tier + department membership) that the existing flat seating model lacks.

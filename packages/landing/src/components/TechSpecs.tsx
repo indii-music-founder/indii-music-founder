@@ -62,7 +62,7 @@ export default function TechSpecs() {
                         <span className="text-white/40">Antigravity Protocol.</span>
                     </h3>
                     <p className="text-gray-400 text-lg">
-                        indiiOS isn't just an app; it's a self-maintaining ecosystem powered by autonomous agents that ensure code quality and production parity 24/7.
+                        indii isn't just an app; it's a self-maintaining ecosystem powered by autonomous agents that ensure code quality and production parity 24/7.
                     </p>
                 </motion.div>
 

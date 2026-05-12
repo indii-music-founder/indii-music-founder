@@ -1,4 +1,4 @@
-# 🚀 Developer Experience (DX) Review: indiiOS-Clean
+# 🚀 Developer Experience (DX) Review: indii-Clean
 
 **Date:** May 2, 2026  
 **Auditor:** Antigravity (Gemini 3 Pro)  

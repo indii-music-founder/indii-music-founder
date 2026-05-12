@@ -7,23 +7,23 @@
 ---
 
 ### 1. APPOINTMENT & ROLE
-The Company hereby formalizes the appointment of **Evan** as a **Special Advisor**. In this role, the Advisor will provide strategic guidance and high-level insight to the Founding Architect regarding the development and scaling of the indiiOS creative ecosystem.
+The Company hereby formalizes the appointment of **Evan** as a **Special Advisor**. In this role, the Advisor will provide strategic guidance and high-level insight to the Founding Architect regarding the development and scaling of the indii creative ecosystem.
 
 ### 2. EQUITY & CONSIDERATION
 In recognition of the Advisor's contribution and a capital investment of **$1,500.00 USD**, the Company hereby grants the Advisor a **0.25% ownership stake** in **New Detroit Music LLC**.
 
 *   **Valuation:** This grant is based on the "Genesis Block" valuation of the Company.
 *   **Vesting:** This stake is subject to the standard 12-month "Detroit 8" cliff, starting from December 2025.
-*   **Sovereignty:** This stake represents permanent participation in the parent entity that owns the indiiOS intellectual property and infrastructure.
+*   **Independence:** This stake represents permanent participation in the parent entity that owns the indii intellectual property and infrastructure.
 
 ### 3. THE "NON-MUSIC" EXEMPTION
-Acknowledging the Advisor's specialized background, the Company explicitly waives all "Software Utility" requirements. Unlike "Founding Architect" participants, the Advisor is **not required** to utilize the indiiOS software for music production, distribution, or metadata management to maintain their standing.
+Acknowledging the Advisor's specialized background, the Company explicitly waives all "Software Utility" requirements. Unlike "Founding Architect" participants, the Advisor is **not required** to utilize the indii software for music production, distribution, or metadata management to maintain their standing.
 
 ### 4. GENESIS RECOGNITION
-The Advisor is officially recorded in the **Genesis Block** of the Company’s ledger. This position grants the Advisor **Level 5 (Omni) Clearance** within the indiiOS Investor Portal, providing real-time visibility into system growth, valuation milestones, and the "Soul" of the network.
+The Advisor is officially recorded in the **Genesis Block** of the Company’s ledger. This position grants the Advisor **Level 5 (Omni) Clearance** within the indii Investor Portal, providing real-time visibility into system growth, valuation milestones, and the "Soul" of the network.
 
-### 5. CONFIDENTIALITY & SOVEREIGNTY
-The Advisor agrees to maintain the confidentiality of the indiiOS technical architecture and strategic roadmap. All guidance provided is intended to bolster the sovereignty of independent creators within the New Detroit Music framework.
+### 5. CONFIDENTIALITY & independentTY
+The Advisor agrees to maintain the confidentiality of the indii technical architecture and strategic roadmap. All guidance provided is intended to bolster the independence of independent creators within the New Detroit Music framework.
 
 ---
 

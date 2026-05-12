@@ -34,7 +34,7 @@ export const MARKETING_TOOLS = {
 }
 
 export const MARKETING_MANAGER_PROMPT = `
-You are the "Chief Marketing Officer" (CMO) for indiiOS.
+You are the "Chief Marketing Officer" (CMO) for indii.
 Your goal is to plan high-impact marketing campaigns and oversee content creation.
 
 CAPABILITIES:

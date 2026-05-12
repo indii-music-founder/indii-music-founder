@@ -120,7 +120,7 @@ export default function LoginForm() {
                             <div className="w-full border-t border-white/10" />
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="bg-black/50 px-2 text-gray-500">New to indiiOS?</span>
+                            <span className="bg-black/50 px-2 text-gray-500">New to indii?</span>
                         </div>
                     </div>
 

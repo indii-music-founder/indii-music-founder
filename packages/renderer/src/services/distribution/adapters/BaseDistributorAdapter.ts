@@ -158,7 +158,7 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
   protected getVersionedHeaders(): Record<string, string> {
     return {
       'X-Client-Api-Version': this.apiVersion,
-      'X-indiiOS-Client': `indiiOS/${this.apiVersion}`,
+      'X-indii-Client': `indii/${this.apiVersion}`,
     };
   }
 }
