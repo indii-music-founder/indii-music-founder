@@ -740,7 +740,7 @@ export class BaseAgent implements SpecializedAgent {
 
         const _accumulatedResponse = '';
         let iterations = 0;
-        const MAX_ITERATIONS = 15;
+        const MAX_ITERATIONS = 8; // Lowered from 15 for safety against runaway costs
         const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];
         let lastToolResult: ToolFunctionResult | undefined = undefined;
         let currentThoughtSignature: string | undefined = undefined;
@@ -765,7 +765,8 @@ export class BaseAgent implements SpecializedAgent {
         try {
             while (iterations < MAX_ITERATIONS) {
                 // LEDGER: Circuit Breaker - Check daily spend limit before execution
-                const budgetCheck = await MembershipService.checkBudget(0);
+                // Passing a small non-zero value (0.01) to ensure the check validates headroom
+                const budgetCheck = await MembershipService.checkBudget(0.01);
                 if (!budgetCheck.allowed) {
                     const tier = await MembershipService.getCurrentTier();
                     const tierName = MembershipService.getTierDisplayName(tier);

@@ -31,7 +31,7 @@ export class WikiLinter {
                 return { passed: true, confidence: 1.0, issues: [], contradicts: false };
             }
 
-            const prompt = `You are the Wiki Context QA Linter for the indiiOS AI Agent system.
+            const prompt = `You are the Wiki Context QA Linter for the indii AI Agent system.
 Your job is to read an EXISTING markdown document, and a PROPOSED updated version of it.
 You must determine if the PROPOSED version introduces any factual contradictions or hallucinations compared to the EXISTING version.
 Adding NEW facts is allowed. Changing facts directly contradicts the core knowledge base and must be flagged.

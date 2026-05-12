@@ -159,7 +159,7 @@ export class AgentGraphService {
         let running = true;
         let lastOutput = '';
         let iteration = 0;
-        const MAX_ITERATIONS = 1000; // Safety break
+        const MAX_ITERATIONS = 50; // Safety break - lowered from 1000 to prevent expensive runaways
 
         // Preserve initial input in state for resumption
         if (initialInput) {

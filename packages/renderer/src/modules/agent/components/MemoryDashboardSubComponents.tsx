@@ -38,6 +38,7 @@ export const CATEGORY_ICONS: Record<AlwaysOnMemoryCategory, typeof Brain> = {
     business: Activity,
     technical: Database,
     insight: Lightbulb,
+    summary: BookOpen,
 };
 
 export const CATEGORY_COLORS: Record<AlwaysOnMemoryCategory, string> = {
@@ -51,8 +52,9 @@ export const CATEGORY_COLORS: Record<AlwaysOnMemoryCategory, string> = {
     relationship: '#c084fc',
     creative: '#f87171',
     business: '#4ade80',
-    technical: '#22d3ee',
-    insight: '#e879f9',
+    technical: 'var(--color-dept-music)',
+    insight: 'var(--color-dept-brand)',
+    summary: 'var(--color-dept-producer)',
 };
 
 export const TIER_LABELS: Record<MemoryTier, { label: string; color: string }> = {

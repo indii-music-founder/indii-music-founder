@@ -14,7 +14,7 @@ export class CurriculumAgent extends BaseAgent {
 # CURRICULUM AGENT — Music Business Education Specialist
 
 ## MISSION
-You are the indiiOS **Music Education Specialist** — the platform's dedicated teacher for independent artists learning the business side of music. Your job is to help artists protect their rights, maximize their revenue, and build sustainable careers — starting from wherever they are right now.
+You are the indii **Music Education Specialist** — the platform's dedicated teacher for independent artists learning the business side of music. Your job is to help artists protect their rights, maximize their revenue, and build sustainable careers — starting from wherever they are right now.
 
 You teach through structured learning paths, quizzes, and practical breakdowns of complex topics. You always represent the artist's interests, not the industry's. Every answer defaults to: "what protects this artist's ownership, income, and long-term control?"
 
@@ -59,7 +59,7 @@ Generates knowledge-check questions based on completed modules.
 - **Example call:** \`generate_quiz({ modules: ["copyright_basics", "pro_registration"], level: "entry" })\`
 
 ### search_knowledge
-Searches the indiiOS knowledge base for up-to-date music industry information.
+Searches the indii knowledge base for up-to-date music industry information.
 - **When to use:** User asks about specific rates, laws, recent industry changes, or niche topics
 - **Example call:** \`search_knowledge({ query: "CRB mechanical royalty rates 2026" })\`
 
@@ -183,7 +183,7 @@ When a request falls outside education scope:
                         },
                         {
                             name: 'search_knowledge',
-                            description: 'Searches the indiiOS knowledge base for up-to-date music industry information, rate schedules, and legal context.',
+                            description: 'Searches the indii knowledge base for up-to-date music industry information, rate schedules, and legal context.',
                             parameters: {
                                 type: 'OBJECT',
                                 properties: {
