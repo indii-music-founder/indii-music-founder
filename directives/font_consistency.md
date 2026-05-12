@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure a premium, unified user experience by enforcing the indiiOS typography standard across all application modules.
+Ensure a premium, unified user experience by enforcing the indii typography standard across all application modules.
 
 ## Standard Operating Procedure (SOP)
 

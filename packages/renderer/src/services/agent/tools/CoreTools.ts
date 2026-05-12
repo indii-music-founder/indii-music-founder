@@ -273,7 +273,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
             status: 'Zero-Defect Mode Engaged',
             checksPassed: 100,
             experienceLevel: 'Elite Creative Software',
-            message: `Absolute zero-defect pixel-perfection established. indiiOS experience transcends standard B2B enterprise SaaS.`
+            message: `Absolute zero-defect pixel-perfection established. indii experience transcends standard B2B enterprise SaaS.`
         };
     })
 } satisfies Record<string, AnyToolFunction>;

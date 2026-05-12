@@ -30,7 +30,7 @@ interface InboxFile {
 }
 
 interface InboxWatcherConfig {
-    /** Path to watch (default: ~/indiiOS/memory-inbox/) */
+    /** Path to watch (default: ~/indii/memory-inbox/) */
     inboxPath: string;
     /** Polling interval in ms (default: 5000) */
     pollIntervalMs: number;
@@ -39,7 +39,7 @@ interface InboxWatcherConfig {
 }
 
 const DEFAULT_INBOX_CONFIG: InboxWatcherConfig = {
-    inboxPath: '~/indiiOS/memory-inbox',
+    inboxPath: '~/indii/memory-inbox',
     pollIntervalMs: 5000,
     maxFileSizeBytes: 20 * 1024 * 1024,
 };
