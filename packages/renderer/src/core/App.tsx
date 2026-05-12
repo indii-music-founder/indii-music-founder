@@ -57,6 +57,7 @@ import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
+import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { useSubscription } from '@/modules/finance/hooks/useSubscription';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
@@ -192,147 +193,6 @@ function DevPortWarning() {
 // ============================================================================
 // Custom Hooks
 // ============================================================================
-
-function useAppInitialization() {
-    // ⚡ Bolt Optimization: useShallow
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects } = useStore(
-        useShallow(state => ({
-            initializeAuthListener: state.initializeAuthListener,
-            loadUserProfile: state.loadUserProfile,
-            user: state.user,
-            userProfile: state.userProfile,
-            initializeHistory: state.initializeHistory,
-            loadProjects: state.loadProjects
-        }))
-    );
-
-    // 1. Initialize Auth Listener (Firebase)
-    useEffect(() => {
-        // Log removed (Platinum Polish)
-        const unsubscribe = initializeAuthListener();
-
-        return () => {
-            unsubscribe();
-        };
-    }, [initializeAuthListener]);
-
-    // Auth session health: periodically refreshes the ID token
-    // to catch expired sessions before they cause silent failures
-    useAuthHealth();
-
-
-    // 2. Load User Profile when User is Authenticated
-    useEffect(() => {
-        if (user?.uid) {
-            loadUserProfile(user.uid);
-        }
-    }, [user, loadUserProfile]);
-
-    // 3. Load Application Data (Projects, History) when Profile is ready
-    useEffect(() => {
-        if (user) {
-            let isMounted = true;
-
-            initializeHistory();
-            loadProjects();
-
-            // Re-enable Agent if needed, but keep closed by default
-            useStore.setState({ isAgentOpen: false });
-
-            // Initialize Proactive Service (Start Polling) — requires auth
-            import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                if (isMounted) proactiveService.start();
-            }).catch(err => logger.error('Failed to load ProactiveService', err));
-
-            // Initialize Asset Observer — requires auth for Firestore subscriptions
-            import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                if (isMounted) assetObserver.initialize();
-            }).catch(err => logger.error('Failed to load AssetObserver', err));
-
-            // Initialize Always-On Memory Engine — starts background consolidation
-            import('@/services/agent/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
-                if (isMounted) alwaysOnMemoryEngine.start(user.uid);
-            }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
-
-            // Initialize Push Notification foreground listener — shows toasts for incoming push messages
-            let pushUnsub: (() => void) | null = null;
-            import('@/services/notifications/PushNotificationService').then(({ pushNotificationService }) => {
-                if (isMounted) {
-                    pushUnsub = pushNotificationService.onForegroundMessage((payload) => {
-                        logger.info('[App] Push notification received in foreground:', payload?.notification?.title);
-                    });
-                }
-            }).catch(err => logger.warn('Push notifications unavailable:', err));
-
-            // Initialize Cross-Device Handoff — syncs active route to Firestore
-            let handoffUnsub: (() => void) | null = null;
-            import('@/services/collaboration/HandoffService').then(({ handoffService }) => {
-                if (isMounted) {
-                    // Sync initial state
-                    const currentModule = useStore.getState().currentModule;
-                    handoffService.syncState({ activeRoute: currentModule });
-
-                    // Listen for remote handoff from another device
-                    handoffUnsub = handoffService.listenForRemoteHandoff((state) => {
-                        logger.info('[App] Remote handoff detected:', state.activeRoute);
-                        // Could show a toast here to let user resume from another device
-                    });
-                }
-            }).catch(err => logger.warn('Handoff service unavailable:', err));
-
-            return () => {
-                isMounted = false;
-                if (pushUnsub) pushUnsub();
-                if (handoffUnsub) handoffUnsub();
-                import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                    proactiveService.dispose();
-                }).catch(() => { /* module already unloaded */ });
-                import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                    assetObserver.stop();
-                }).catch(() => { /* module already unloaded */ });
-            };
-        }
-    }, [user, initializeHistory, loadProjects]);
-
-    // Sync Auto-Update Channel preference with Electron Main Process
-    useEffect(() => {
-        if (userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
-            const channel = userProfile.preferences.updateChannel || 'stable';
-            window.electronAPI.updater.setChannel(channel).catch((err: Error) => {
-                logger.warn('[App] Failed to sync update channel:', err);
-            });
-        }
-    }, [userProfile?.preferences]);
-
-    // 4. Sidecar Health Listener (Electron only)
-    useEffect(() => {
-        const { setSidecarStatus } = useStore.getState();
-
-        // window.electronAPI is only available in the Electron environment
-        if (window.electronAPI?.sidecar?.onStatusUpdate) {
-            const removeListener = window.electronAPI.sidecar.onStatusUpdate((status) => {
-                setSidecarStatus(status as import('@/core/store/slices/sidecarSlice').SidecarStatus);
-            });
-            return () => removeListener();
-        }
-    }, []);
-
-    // 5. Network Status Listener
-    useEffect(() => {
-        const { setIsOffline } = useStore.getState();
-        const handleOnline = () => setIsOffline(false);
-        const handleOffline = () => setIsOffline(true);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-}
-
 
 // Modules that require a verified (non-anonymous) account
 const COMMERCIAL_MODULES = new Set<ModuleId>([
@@ -534,9 +394,6 @@ export default function App() {
     // Defer non-critical startup work to avoid blocking FCP
     useEffect(() => { cleanupLocalStorage(); }, []);
 
-    // Initialize app
-    useAppInitialization();
-    useOnboardingRedirect();
     // URL sync: self-guards on authLoading internally, safe to call unconditionally here
     useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
@@ -562,139 +419,137 @@ export default function App() {
     }, [isAnyPhone, currentModule]);
 
     // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
-    // This prevents the app from flashing <LoginForm/> on page reload before the user\'s
+    // This prevents the app from flashing <LoginForm/> on page reload before the user's
     // IndexedDB session is re-hydrated. authLoading starts as `true` and is set to `false`
-    // exactly once by initializeAuthListener\'s onAuthStateChanged callback.
-    if (authLoading) {
-        return <LoadingFallback />;
-    }
+    // exactly once by initializeAuthListener's onAuthStateChanged callback.
+    return (
+        <AppInitializationProvider>
+            {authLoading ? (
+                <LoadingFallback />
+            ) : !user ? (
+                <LoginForm />
+            ) : (
+                <MotionConfig reducedMotion="user">
+                    <ResponsiveLayoutProvider>
+                        <VoiceProvider>
+                            <ThemeProvider>
+                                <ToastProvider>
+                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                </ToastProvider>
+                            </ThemeProvider>
+                        </VoiceProvider>
+                    </ResponsiveLayoutProvider>
+                </MotionConfig>
+            )}
+        </AppInitializationProvider>
+    );
+}
 
-    if (!user) {
-        return <LoginForm />;
-    }
+/**
+ * AppContent — The main UI shell rendered once authenticated.
+ * Extracted to keep the top-level App component clean and focused on initialization.
+ */
+function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
+    useOnboardingRedirect();
 
     return (
-        // Item 276: MotionConfig reducedMotion="user" causes all Framer Motion
-        // animations to respect the OS prefers-reduced-motion setting globally.
-        <MotionConfig reducedMotion="user">
-            <ResponsiveLayoutProvider>
-                <VoiceProvider>
-                    <ThemeProvider>
-                        <ToastProvider>
-                            <OfflineBanner />
-                            <SyncQueueIndicator className="fixed top-4 right-4 z-40" />
-                        <SessionTimeoutOverlay />
-                        {/* Skip to content link for keyboard accessibility */}
-                        <a
-                            href="#main-content"
-                            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-dept-creative focus:text-white focus:rounded-lg focus:shadow-lg"
-                        >
-                            Skip to content
-                        </a>
+        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+            <GlobalDropZone>
+                <ShareTargetHandler />
+                <BiometricGate>
+                    <div className="flex w-full h-full">
+                        {/* Left Sidebar - Hidden for standalone modules */}
+                        {showChrome && (
+                            <div className="hidden md:block h-full">
+                                <ErrorBoundary>
+                                    <Sidebar />
+                                </ErrorBoundary>
+                            </div>
+                        )}
 
-                        {/* AuthWrapper handles session persistence */}
-                        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
-                            <GlobalDropZone>
-                                <ShareTargetHandler />
-                                <BiometricGate>
-                                    <div className="flex w-full h-full">
-                                        {/* Left Sidebar - Hidden for standalone modules */}
-                                        {showChrome && (
-                                            <div className="hidden md:block h-full">
-                                                <ErrorBoundary>
-                                                    <Sidebar />
-                                                </ErrorBoundary>
-                                            </div>
-                                        )}
+                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
+                            {/* Module Ambient Background */}
+                            <ModuleAmbientBackground />
 
-                                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
-                                            {/* Module Ambient Background */}
-                                            <ModuleAmbientBackground />
+                            {/* Audio Visualizer (Background Wave Mesh) — lazy-loaded to defer Three.js init */}
+                            <Suspense fallback={null}>
+                                <AudioVisualizer />
+                            </Suspense>
 
-                                            {/* Audio Visualizer (Background Wave Mesh) — lazy-loaded to defer Three.js init */}
-                                            <Suspense fallback={null}>
-                                                <AudioVisualizer />
-                                            </Suspense>
+                            {/* Mobile Header — phone only */}
+                            {showChrome && (
+                                <MobileHeader />
+                            )}
 
-                                            {/* Mobile Header — phone only */}
-                                            {showChrome && (
-                                                <MobileHeader />
-                                            )}
-
-                                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
-                                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
-                                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
-                                                    <Suspense fallback={<LoadingFallback />}>
-                                                        <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                                    </Suspense>
-                                                </ModuleErrorBoundary>
-                                            </div>
-                                        </main>
-
-                                        {/* Right Panel - Hidden for standalone modules and mobile */}
-                                        {showChrome && isDesktop && (
-                                            <ErrorBoundary>
-                                                <RightPanel />
-                                            </ErrorBoundary>
-                                        )}
-                                    </div>
-                                </BiometricGate>
-
-                                {/* Mobile Tab Bar — replaces MobileNav FAB on phone viewports */}
-                                {showChrome && (
-                                    <ErrorBoundary>
-                                        <MobileTabBar />
-                                    </ErrorBoundary>
-                                )}
-
-                                {/* DevTools HUD - Only in Development */}
-                                {import.meta.env.DEV && (
-                                    <Suspense fallback={null}>
-                                        <DevPortWarning />
+                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
+                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
+                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
+                                    <Suspense fallback={<LoadingFallback />}>
+                                        <ModuleRenderer moduleId={currentModule as ModuleId} />
                                     </Suspense>
-                                )}
+                                </ModuleErrorBoundary>
+                            </div>
+                        </main>
 
-                                {/* Global Modals */}
-                                <ApprovalModal />
-                                <ApprovalManager />
-                                <PWAInstallPrompt />
-                                <TransmissionMonitor />
-                                <UpdaterMonitor />
+                        {/* Right Panel - Hidden for standalone modules and mobile */}
+                        {showChrome && isDesktop && (
+                            <ErrorBoundary>
+                                <RightPanel />
+                            </ErrorBoundary>
+                        )}
+                    </div>
+                </BiometricGate>
 
-                                {/* Global Command Menu (CMD+K) */}
-                                <UnifiedCommandMenu />
+                {/* Mobile Tab Bar — replaces MobileNav FAB on phone viewports */}
+                {showChrome && (
+                    <ErrorBoundary>
+                        <MobileTabBar />
+                    </ErrorBoundary>
+                )}
 
-                                {/* The Boardroom (Zen Mode) */}
-                                <BoardroomModule />
+                {/* DevTools HUD - Only in Development */}
+                {import.meta.env.DEV && (
+                    <Suspense fallback={null}>
+                        <DevPortWarning />
+                    </Suspense>
+                )}
 
-                                {/* Global Upload Manager Queue */}
-                                <UploadQueueMonitor />
-                                <BackgroundJobMonitor />
-                                <AudioPIPPlayer />
+                {/* Global Modals */}
+                <ApprovalModal />
+                <ApprovalManager />
+                <PWAInstallPrompt />
+                <TransmissionMonitor />
+                <UpdaterMonitor />
 
-                                {/* Global Keyboard Shortcuts Help (press ?) */}
-                                <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
+                {/* Global Command Menu (CMD+K) */}
+                <UnifiedCommandMenu />
 
-                                {/* GDPR Cookie Consent Banner (Item 303) */}
-                                <CookieConsentBanner />
+                {/* The Boardroom (Zen Mode) */}
+                <BoardroomModule />
 
-                                {/* Item 290: First-Run Guided Tour */}
-                                <FirstRunTour />
+                {/* Global Upload Manager Queue */}
+                <UploadQueueMonitor />
+                <BackgroundJobMonitor />
+                <AudioPIPPlayer />
 
-                                {/* Agent Alignment Steering Widget */}
-                                <AgentFeedbackWidget />
+                {/* Global Keyboard Shortcuts Help (press ?) */}
+                <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
 
-                                {/* Agent Progress Updates (P0) — floating checklist */}
-                                <TaskPlanWidget />
+                {/* GDPR Cookie Consent Banner (Item 303) */}
+                <CookieConsentBanner />
 
-                                {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
-                                <AgentCanvasPanel />
-                            </GlobalDropZone>
-                        </div>
-                    </ToastProvider>
-                </ThemeProvider>
-            </VoiceProvider>
-            </ResponsiveLayoutProvider>
-        </MotionConfig>
+                {/* Item 290: First-Run Guided Tour */}
+                <FirstRunTour />
+
+                {/* Agent Alignment Steering Widget */}
+                <AgentFeedbackWidget />
+
+                {/* Agent Progress Updates (P0) — floating checklist */}
+                <TaskPlanWidget />
+
+                {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
+                <AgentCanvasPanel />
+            </GlobalDropZone>
+        </div>
     );
 }

@@ -26,7 +26,7 @@ export class VideoGenerationInstrument implements Instrument {
     description: 'Generate AI videos from text prompts using Veo 3.1. Supports multiple aspect ratios and durations.',
     category: 'generation',
     version: '1.0.0',
-    author: 'indiiOS Core Team',
+    author: 'indii Core Team',
     isAsync: true,
     timeoutMs: 300000, // 5 minutes timeout
     cost: {

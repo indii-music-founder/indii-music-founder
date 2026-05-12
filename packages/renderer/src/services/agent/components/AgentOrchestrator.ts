@@ -54,7 +54,7 @@ export class AgentOrchestrator {
         ];
 
         const prompt = `
-        You are indii, the AI agent orchestration system for indiiOS (the operating system for your musical independence).
+        You are indii, the AI agent orchestration system for indii (the operating system for your musical independence).
         Your goal is to accurately route user requests to the most appropriate specialist agent and determine the most relevant knowledge base corpus to query.
 
         AVAILABLE AGENTS:
@@ -205,7 +205,7 @@ export class AgentOrchestrator {
         }));
 
         const prompt = `
-        You are indii, the AI orchestration system for indiiOS.
+        You are indii, the AI orchestration system for indii.
         Analyze this user request and determine if it contains INDEPENDENT subtasks
         that can be executed simultaneously by different specialist agents.
 
