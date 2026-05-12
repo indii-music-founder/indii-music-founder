@@ -154,7 +154,7 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
         exportedAt: result.exportedAt,
         userId,
         version: '1.0',
-        format: 'indiiOS-GDPR-export',
+        format: 'indii-GDPR-export',
         storageFileCount: result.storageFileUrls.length,
         collections: Object.keys(result.data).filter(k => k !== '_export_metadata'),
     };
@@ -189,7 +189,7 @@ export function downloadExport(result: DataExportResult, filename?: string): voi
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename || `indiiOS-data-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = filename || `indii-data-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

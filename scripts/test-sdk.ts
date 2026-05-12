@@ -8,7 +8,7 @@ async function testSDK() {
 
   const ai = new GoogleGenAI({
     vertexai: {
-      project: 'indiios-v-1-1',
+      project: 'indii-v-1-1',
       location: 'us-central1',
     }
   });

@@ -1,18 +1,18 @@
-# indiiOS × [Attorney Name] — Partnership Proposal
+# indii × [Attorney Name] — Partnership Proposal
 ### Platform Legal Partner Program · Confidential · March 2026
 
 ---
 
 ## The Opportunity in One Sentence
 
-> **Your audience is already our users — indiiOS turns them into your
+> **Your audience is already our users — indii turns them into your
 > paying clients the moment they're ready to protect their work.**
 
 ---
 
-## What indiiOS Is
+## What indii Is
 
-indiiOS is the all-in-one creative platform built specifically for
+indii is the all-in-one creative platform built specifically for
 independent music producers, visual artists, and creators. We handle:
 
 - **AI-powered music & image creation** — generate, edit, and export
@@ -30,7 +30,7 @@ the business owners they are.
 
 ## Why Legal Is Central to What We Do
 
-Every indiiOS user eventually hits a legal moment:
+Every indii user eventually hits a legal moment:
 
 | User action | Legal need |
 |---|---|
@@ -54,13 +54,13 @@ without leaving the app.
 ### What We're Offering
 
 **A "Platform Legal Partner" slot** — the featured, default attorney
-across the entire indiiOS platform:
+across the entire indii platform:
 
 - Your name, firm, bio, and photo on the **Find Counsel** screen — the
   first result every user sees, every time
 - **"Platform Legal Partner" badge** across all legal pages, the AI
   agent's responses, and user onboarding
-- A **UTM-tagged booking link** so every referral from indiiOS is
+- A **UTM-tagged booking link** so every referral from indii is
   tracked — you'll know exactly how many clients came from the platform
 - As the user base scales, your placement scales with it at zero
   additional cost
@@ -68,7 +68,7 @@ across the entire indiiOS platform:
 ### What You Get
 
 1. **Inbound client pipeline at scale.** Your current audience can't
-   all afford you today. indiiOS is where they come back when they have
+   all afford you today. indii is where they come back when they have
    a release, a deal, or a dispute and genuinely need a lawyer.
 
 2. **Zero cold outreach for these clients.** They arrive mid-workflow —
@@ -77,7 +77,7 @@ across the entire indiiOS platform:
    right headspace when they click "Book Consultation."
 
 3. **A real content angle.** This isn't a paid sponsorship. It's a
-   working partnership — you can demo indiiOS to your audience as a
+   working partnership — you can demo indii to your audience as a
    tool you actually use and endorse. That's more authentic than any
    ad read.
 
@@ -99,7 +99,7 @@ We are flexible. Three models to choose from:
 
 | Model | Structure | Best if |
 |---|---|---|
-| **Revenue Share** | indiiOS receives a percentage of client fees from referred users. You get placement at zero upfront cost. | You want no financial risk while the platform grows |
+| **Revenue Share** | indii receives a percentage of client fees from referred users. You get placement at zero upfront cost. | You want no financial risk while the platform grows |
 | **Flat Retainer** | Monthly fee for the featured slot. You keep 100% of client fees. | Client volume is high enough to justify a fixed cost |
 | **Hybrid** *(recommended)* | Low/zero monthly fee at launch + revenue share after a mutually agreed threshold. You hold the "Founding Partner Attorney" title and co-marketing rights. | Both parties want skin in the game from day one |
 
@@ -122,7 +122,7 @@ Here is what users see when they click "Find Counsel" anywhere in the app:
 │                                                         │
 │  [Photo]  [Attorney Name]                               │
 │           Entertainment Law · Music IP · Contracts      │
-│           indiiOS Verified Partner                      │
+│           indii Verified Partner                      │
 │                                                         │
 │  [Bio — 2 sentences]                                    │
 │                                                         │
@@ -143,7 +143,7 @@ it is ready for you.
 ## The Co-Announcement Opportunity
 
 At launch, we co-announce:
-- indiiOS publishes: "We're proud to have [Attorney Name] as our
+- indii publishes: "We're proud to have [Attorney Name] as our
   Platform Legal Partner"
 - You publish to your audience: "Here's the platform I'm partnering
   with and why independent artists need it"
@@ -166,6 +166,6 @@ lift.
 
 **Contact**
 New Detroit Music LLC · Detroit, MI
-legal@indiios.com
+legal@indii.music
 
 *This document is confidential and intended solely for the recipient.*

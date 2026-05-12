@@ -1,6 +1,6 @@
 # Sell Before You Stream: The Release Strategy That Protects Your Royalties
 
-**For:** indiiOS Artists  
+**For:** indii Artists  
 **Reading Time:** 6 minutes  
 **Last Updated:** March 2026
 
@@ -225,7 +225,7 @@ When you release music directly to Spotify, Apple Music, and other streaming pla
 
 ---
 
-## How indiiOS Helps
+## How indii Helps
 
 ### Registration Tracking
 - Checklist of all required registrations

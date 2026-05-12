@@ -1,7 +1,7 @@
 {
-  "name": "@indiios/sdk",
+  "name": "@indii/sdk",
   "version": "0.1.0-beta.1",
-  "description": "Official TypeScript SDK for indiiOS REST API",
+  "description": "Official TypeScript SDK for indii REST API",
   "author": "New Detroit Music LLC",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
     "prepublishOnly": "npm run build && npm run test"
   },
   "dependencies": {
-    "@indiios/shared": "*",
+    "@indii/shared": "*",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -35,7 +35,7 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "indiiOS",
+    "indii",
     "api",
     "sdk",
     "typescript",

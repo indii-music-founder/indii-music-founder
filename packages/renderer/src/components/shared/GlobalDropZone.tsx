@@ -34,7 +34,7 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
                     if (sampleRate < 44100 || bitsPerSample < 16) {
                         return resolve({
                             valid: false,
-                            error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below IndiiOS minimums (44.1kHz 16-bit).`
+                            error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below indii minimums (44.1kHz 16-bit).`
                         });
                     }
                 } catch (err: unknown) {

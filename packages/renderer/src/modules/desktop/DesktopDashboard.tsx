@@ -85,7 +85,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Power}
                                 title="Run on System Startup"
-                                description="Launch indiiOS automatically in the background when your computer starts."
+                                description="Launch indii automatically in the background when your computer starts."
                                 enabled={settings.runOnStartup}
                                 onClick={() => toggleSetting('runOnStartup')}
                             />

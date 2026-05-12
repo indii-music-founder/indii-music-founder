@@ -225,7 +225,7 @@ jobs:
           set -uo pipefail
           set +e
           OUTPUT=$(npx firebase hosting:channel:deploy staging \
-            --project indiios-v-1-1 \
+            --project indii-v-1-1 \
             --expires 2h \
             --only app \
             --json 2>&1)
@@ -328,16 +328,16 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Deploy landing page to Firebase Hosting
-        run: npx firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:landing --project indii-v-1-1 --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
-        run: npx firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:app --project indii-v-1-1 --non-interactive
 
       - name: Deploy Cloud Functions
         continue-on-error: true
         run: |
           npm run build -w packages/firebase
-          npx firebase deploy --only functions --project indiios-v-1-1 --non-interactive --force
+          npx firebase deploy --only functions --project indii-v-1-1 --non-interactive --force
 
       - name: Pipeline health summary
         if: always()

@@ -1,4 +1,4 @@
-// Royalty Collection Data Models for indiiOS
+// Royalty Collection Data Models for indii
 // Version: 1.0
 // Date: 2026-03-05
 
@@ -8,11 +8,11 @@
 
 /**
  * Master profile tracking all royalty-related registrations and statuses
- * for an artist/user in the indiiOS system.
+ * for an artist/user in the indii system.
  */
 export interface RoyaltyProfile {
   id: string;                          // UUID
-  userId: string;                      // Link to indiiOS user
+  userId: string;                      // Link to indii user
   createdAt: Date;
   updatedAt: Date;
   
@@ -143,7 +143,7 @@ export interface MlcStatus {
 
 export interface CopyrightRegistration {
   id: string;
-  workId: string;                      // Link to indiiOS work/track
+  workId: string;                      // Link to indii work/track
   workType: 'single' | 'album' | 'collection';
   
   // Registration Details
@@ -271,7 +271,7 @@ export interface Deduction {
 
 export interface SplitSheet {
   id: string;
-  workId: string;                      // Link to indiiOS work
+  workId: string;                      // Link to indii work
   workTitle: string;
   
   // Parties
@@ -297,7 +297,7 @@ export interface SplitSheet {
 
 export interface SplitContributor {
   id: string;
-  userId: string | null;               // If indiiOS user
+  userId: string | null;               // If indii user
   name: string;
   email: string;
   role: 'songwriter' | 'producer' | 'featured_artist' | 'publisher';

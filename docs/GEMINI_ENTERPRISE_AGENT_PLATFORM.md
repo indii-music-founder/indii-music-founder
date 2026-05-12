@@ -1,4 +1,4 @@
-# Gemini Enterprise Agent Platform (GEAP) — indiiOS Integration
+# Gemini Enterprise Agent Platform (GEAP) — indii Integration
 
 > **Status:** Phases 1–3 COMPLETE ✅ | Phase 4 PENDING
 > **Date:** 2026-04-23
@@ -28,14 +28,14 @@
 
 The Gemini Enterprise Agent Platform is Google's productization of Vertex AI into an **"agents as the primary unit of compute"** operating system. It has four pillars:
 
-| Pillar | Key Capabilities | indiiOS Relevance |
+| Pillar | Key Capabilities | indii Relevance |
 |--------|-----------------|-------------------|
 | **Build** | Agent Development Kit (ADK), graph-based multi-agent networks, sandboxed code execution | Our `BaseAgent` hierarchy + Python Sidecar already mirrors this |
 | **Scale** | Agent Runtime (sub-second cold starts), Memory Bank (persistent long-term context) | Our `BigBrainEngine` 5-layer memory + `WorkflowStateService` persistence |
 | **Govern** | Agent Identity (cryptographic IDs), Agent Registry, Agent Gateway, Model Armor | **Phase 1 done.** Identity is live. Gateway + Model Armor = Phases 2–3 |
 | **Optimize** | Agent Simulation, multi-turn autoraters, Agent Optimizer | Our E2E + torture tests partially cover this. Autoraters = gap |
 
-**Bottom line:** indiiOS is ~70% aligned with GEAP out of the box. The remaining 30% is high-value governance and evaluation infrastructure.
+**Bottom line:** indii is ~70% aligned with GEAP out of the box. The remaining 30% is high-value governance and evaluation infrastructure.
 
 ---
 
@@ -607,7 +607,7 @@ All use `type` imports where possible to avoid circular dependency issues.
 
 ```bash
 # 1. Verify current state
-cd /Volumes/X\ SSD\ 2025/Users/narrowchannel/Desktop/indiiOS-Clean
+cd /Volumes/X\ SSD\ 2025/Users/narrowchannel/Desktop/indii-Clean
 npx tsc --noEmit --pretty          # Should be 0 errors
 
 # 2. Key files to read before starting Phase 3

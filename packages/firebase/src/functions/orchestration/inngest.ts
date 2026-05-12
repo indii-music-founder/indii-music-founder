@@ -17,8 +17,8 @@ const db = admin.firestore();
  * Inngest client
  */
 export const inngest = new Inngest({
-  id: 'indiios-api',
-  name: 'IndiiOS Analytics & Distribution API',
+  id: 'indii-api',
+  name: 'indii Analytics & Distribution API',
 });
 
 interface DistributionJobPayload {

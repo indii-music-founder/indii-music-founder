@@ -1,6 +1,6 @@
 # Contributors
 
-Public-facing contributor list for indiiOS. All contributors have assigned their work to New Detroit Music LLC per the IP Assignment policy.
+Public-facing contributor list for indii. All contributors have assigned their work to New Detroit Music LLC per the IP Assignment policy.
 
 ---
 

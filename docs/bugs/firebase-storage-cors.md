@@ -4,7 +4,7 @@
 **Severity:** CRITICAL
 **Status:** RESOLVED — `cors.json` at repo root has correct config. Apply with:
 ```bash
-gsutil cors set cors.json gs://indiios-v-1-1.firebasestorage.app
+gsutil cors set cors.json gs://indii-v-1-1.firebasestorage.app
 ```
 
 ## Summary

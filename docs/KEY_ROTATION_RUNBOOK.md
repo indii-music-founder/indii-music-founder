@@ -10,7 +10,7 @@ Firebase API keys are **identifiers** (not secrets). They restrict which APIs th
 
 ### Steps:
 1. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
-2. Select the existing Browser Key for `indiiOS`
+2. Select the existing Browser Key for `indii`
 3. Click **Regenerate Key** (old key remains valid during propagation)
 4. Update `VITE_FIREBASE_API_KEY` in:
    - Vercel/Firebase Hosting environment variables

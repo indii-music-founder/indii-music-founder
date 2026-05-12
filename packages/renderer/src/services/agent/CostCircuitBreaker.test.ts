@@ -133,17 +133,21 @@ describe('BaseAgent Cost Circuit Breaker', () => {
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         // Mock Budget Check
-        // Iteration 1 check: Allowed
+        // Iteration 1 check: Start
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.90 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
-        // Iteration 2 check: Allowed
+        // Iteration 1 check: Loop Detect
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.85 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
+        // Iteration 2 check: Start
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.40 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
-        // Iteration 3 check: FAILED
+        // Iteration 2 check: Loop Detect
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.35 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
+        // Iteration 3 check: Start (FAILED)
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: false, remainingBudget: -0.10 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
 
         const response = await agent.execute('Run expensive task');
 
         // Assertions
-        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(3);
+        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(5);
         expect(response.error).toContain('Daily spend limit reached');
         expect(response.text).toContain('paused');
 

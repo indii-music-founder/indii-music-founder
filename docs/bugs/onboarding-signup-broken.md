@@ -5,7 +5,7 @@
 **Status:** CONFIRMED
 
 ## Summary
-New users cannot sign up for indiiOS. The onboarding flow is completely inaccessible.
+New users cannot sign up for indii. The onboarding flow is completely inaccessible.
 
 ## Issues Found
 

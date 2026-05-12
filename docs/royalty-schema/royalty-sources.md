@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0  
 **Date:** 2026-03-05  
-**For:** indiiOS Platform
+**For:** indii Platform
 
 ---
 
@@ -201,7 +201,7 @@ Distributors pay you for the MASTER RECORDING (the actual audio file). PROs pay 
 
 ---
 
-## Integration with indiiOS
+## Integration with indii
 
 **Publishing Agent** should handle:
 - PRO registration guidance

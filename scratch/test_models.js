@@ -15,7 +15,7 @@ const env = Object.fromEntries(
 
 const firebaseConfig = {
     apiKey: env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
-    projectId: env.VITE_FIREBASE_PROJECT_ID || 'indiios-v-1-1',
+    projectId: env.VITE_FIREBASE_PROJECT_ID || 'indii-v-1-1',
     appId: '1:223837784072:web:28eabcf0c5dd985395e9bd',
     location: env.VITE_VERTEX_LOCATION || 'us-central1'
 };

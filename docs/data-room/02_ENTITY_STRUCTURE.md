@@ -1,7 +1,7 @@
 # Entity Structure & Ownership
 
 **Legal Entity:** New Detroit Music LLC  
-**Product Name:** indiiOS (Doing Business As)  
+**Product Name:** indii (Doing Business As)  
 **Jurisdiction:** Michigan, USA  
 **Owner:** William Roberts  
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-New Detroit Music LLC is the parent company and legal owner of all assets, IP, and contracts related to the **indiiOS** platform. indiiOS is the consumer-facing brand and product name.
+New Detroit Music LLC is the parent company and legal owner of all assets, IP, and contracts related to the **indii** platform. indii is the consumer-facing brand and product name.
 
 ## 2. Ownership Chain
 
@@ -19,7 +19,7 @@ New Detroit Music LLC is the parent company and legal owner of all assets, IP, a
 
 ## 3. Registered DBA
 
-indiiOS is registered as a "Doing Business As" (DBA) name for New Detroit Music LLC in the state of Michigan. This allows the company to operate commercially under the product name while maintaining legal liability and financial records under the LLC.
+indii is registered as a "Doing Business As" (DBA) name for New Detroit Music LLC in the state of Michigan. This allows the company to operate commercially under the product name while maintaining legal liability and financial records under the LLC.
 
 ---
 

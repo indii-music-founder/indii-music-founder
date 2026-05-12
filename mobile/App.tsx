@@ -5,7 +5,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 
 /**
  * Requirement 162: React Native "On-the-go" Companion
- * Basic scaffold pointing to the critical paths of indiiOS mobile.
+ * Basic scaffold pointing to the critical paths of indii mobile.
  */
 
 export default function App() {
@@ -32,7 +32,7 @@ export default function App() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>indiiOS Mobile</Text>
+                <Text style={styles.title}>indii Mobile</Text>
             </View>
 
             <View style={styles.content}>
@@ -55,7 +55,7 @@ export default function App() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000', // indiiOS dark theme
+        backgroundColor: '#000', // indii dark theme
         justifyContent: 'center',
     },
     header: {

@@ -154,7 +154,7 @@ If the user is unavailable, default to the assumptions above and flag them in th
 
 ## How to verify work on this branch
 
-From `/home/user/indiiOS-Clean`:
+From `/home/user/indii-Clean`:
 
 ```bash
 # Type safety

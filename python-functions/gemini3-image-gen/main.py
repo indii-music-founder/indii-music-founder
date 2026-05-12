@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 
 # --- Configuration ---
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "indiios-v-1-1")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "indii-v-1-1")
 LOCATION = "us-central1"
 MODEL_ID = "gemini-3-pro-image-preview"
 

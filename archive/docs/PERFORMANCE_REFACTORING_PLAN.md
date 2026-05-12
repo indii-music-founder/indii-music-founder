@@ -8,7 +8,7 @@
 
 ## Summary
 
-This document outlines 5 high-impact performance refactoring opportunities identified in the indiiOS codebase. Each section includes the problem, specific line numbers, and exact implementation steps.
+This document outlines 5 high-impact performance refactoring opportunities identified in the indii codebase. Each section includes the problem, specific line numbers, and exact implementation steps.
 
 ---
 

@@ -1,6 +1,6 @@
-# indiiOS AutoAgent
+# indii AutoAgent
 
-AutoAgent is an optimization framework for indiiOS agent system prompts. It uses a "Meta-Agent" to iteratively refine specialist prompts based on performance against a library of tasks.
+AutoAgent is an optimization framework for indii agent system prompts. It uses a "Meta-Agent" to iteratively refine specialist prompts based on performance against a library of tasks.
 
 ## Directory Structure
 - `agent.py`: Python wrapper for agents.

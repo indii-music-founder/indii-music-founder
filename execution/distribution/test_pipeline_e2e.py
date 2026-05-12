@@ -56,7 +56,7 @@ def create_mock_cover_art(path: str, size_bytes: int = 2048) -> str:
 MOCK_RELEASE = {
     "title": "Test EP - Pipeline Validation",
     "artist": "Pipeline Test Artist",
-    "label": "indiiOS Test Label",
+    "label": "indii Test Label",
     "genre": "Electronic",
     "release_date": (datetime.datetime.now() + datetime.timedelta(days=14)).strftime("%Y-%m-%d"),
     "tracks": [
@@ -104,7 +104,7 @@ class TestFullPipeline(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary staging directory with mock files."""
-        self.staging_dir = tempfile.mkdtemp(prefix="indiiOS_pipeline_test_")
+        self.staging_dir = tempfile.mkdtemp(prefix="indii_pipeline_test_")
         self.release_data = json.loads(json.dumps(MOCK_RELEASE))  # Deep copy
 
         # Create mock audio files

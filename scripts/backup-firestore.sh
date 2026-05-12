@@ -4,8 +4,8 @@
 # Part of PRODUCTION_100 Item 65
 
 # Configuration
-PROJECT_ID="indiios-v-1-1"
-BUCKET_NAME="gs://indiios-alpha-electron-backups"
+PROJECT_ID="indii-v-1-1"
+BUCKET_NAME="gs://indii-alpha-electron-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_PATH="${BUCKET_NAME}/${TIMESTAMP}"
 

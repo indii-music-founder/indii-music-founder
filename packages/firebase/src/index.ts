@@ -1,4 +1,4 @@
-// indiiOS Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
+// indii Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
@@ -31,7 +31,7 @@ import { generateThumbnail } from "./lib/image_resizing";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
-    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-v-1-1";
 }
 
 // Initialize Firebase Admin
@@ -209,12 +209,12 @@ const requireAdmin = (context: functions.https.CallableContext) => {
  */
 const getAllowedOrigins = (): string[] => {
     const origins = [
-        'https://indiios-studio.web.app',
-        'https://indiios-studio.firebaseapp.com',
-        'https://indiios-v-1-1.web.app',
-        'https://indiios-v-1-1.firebaseapp.com',
-        'https://studio.indiios.com',
-        'https://indiios.com',
+        'https://indii.music',
+        'https://indii-studio.firebaseapp.com',
+        'https://indii-v-1-1.web.app',
+        'https://indii-v-1-1.firebaseapp.com',
+        'https://studio.indii.music',
+        'https://indii.music',
         'https://indii.music',
         'https://www.indii.music',
         'https://app.indii.music',

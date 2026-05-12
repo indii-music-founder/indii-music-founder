@@ -1,7 +1,7 @@
 /**
- * Mobile Remote — Phone Control Interface for indiiOS
+ * Mobile Remote — Phone Control Interface for indii
  *
- * A glassmorphism-styled, phone-optimized remote control for the indiiOS studio.
+ * A glassmorphism-styled, phone-optimized remote control for the indii studio.
  * Functions as a companion device — not a full app rebuild.
  *
  * Features:
@@ -63,9 +63,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
   const [qrUrl] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-      return isDev ? window.location.origin + '/mobile-remote' : 'https://indiios-studio.web.app/mobile-remote';
+      return isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
     }
-    return 'https://indiios-studio.web.app/mobile-remote';
+    return 'https://indii.music/mobile-remote';
   });
 
   return (
@@ -110,7 +110,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
 
         <div className="mt-6 flex items-center gap-2 text-[#636366] text-[10px] font-medium uppercase tracking-[0.2em]">
           <span className="w-1 h-1 rounded-full bg-[#636366]" />
-          Powered by indiiOS Cloud Relay
+          Powered by indii Cloud Relay
           <span className="w-1 h-1 rounded-full bg-[#636366]" />
         </div>
       </motion.div>
@@ -348,7 +348,7 @@ export default function MobileRemote() {
               
               <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">Studio Disconnected</h2>
               <p className="text-base text-[#a1a1a6] mb-10 leading-relaxed px-6 font-medium">
-                Your indiiOS studio is currently offline. Please launch the app on your desktop to resume control.
+                Your indii studio is currently offline. Please launch the app on your desktop to resume control.
               </p>
               
               <motion.button

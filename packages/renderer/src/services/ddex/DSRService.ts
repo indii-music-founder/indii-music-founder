@@ -62,7 +62,7 @@ export class DSRService {
             platformFeePercent: 0
         });
 
-        // indiiOS Phase 4: Persist processed earnings to Firestore
+        // indii Phase 4: Persist processed earnings to Firestore
         const { earningsService } = await import('@/services/distribution/EarningsService');
 
         // Find distributorId from mapping

@@ -171,7 +171,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
                     </div>
                     <div className="overflow-hidden">
                         <p className="text-sm font-medium text-white truncate">Marketing Studio</p>
-                        <p className="text-xs text-gray-500">indiiOS</p>
+                        <p className="text-xs text-gray-500">indii</p>
                     </div>
                 </div>
             </div>

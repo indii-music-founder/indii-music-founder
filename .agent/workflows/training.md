@@ -13,8 +13,8 @@ This workflow manages the full lifecycle of agent training data: generation, val
 ## Prerequisites
 
 - gcloud CLI authenticated (`gcloud auth login`)
-- Project: `indiios-v-1-1` (Project Number: `223837784072`)
-- GCS bucket: `gs://indiios-training-data/`
+- Project: `indii-v-1-1` (Project Number: `223837784072`)
+- GCS bucket: `gs://indii-training-data/`
 - Training datasets at `docs/agent-training/datasets/*.jsonl`
 
 ---
@@ -70,7 +70,7 @@ wc -l ft_export_r4/*.jsonl | tail -5
 ## Phase 4: Upload to GCS
 
 ```bash
-gsutil -m cp ft_export_r4/*.jsonl gs://indiios-training-data/r4/
+gsutil -m cp ft_export_r4/*.jsonl gs://indii-training-data/r4/
 ```
 
 ---
@@ -88,8 +88,8 @@ curl -s -X POST \
   -d '{
     "baseModel": "gemini-2.5-flash-lite",
     "supervisedTuningSpec": {
-      "trainingDatasetUri": "gs://indiios-training-data/r4/<agent_id>_train.jsonl",
-      "validationDatasetUri": "gs://indiios-training-data/r4/<agent_id>_eval.jsonl",
+      "trainingDatasetUri": "gs://indii-training-data/r4/<agent_id>_train.jsonl",
+      "validationDatasetUri": "gs://indii-training-data/r4/<agent_id>_eval.jsonl",
       "hyperParameters": {
         "epochCount": 3,
         "learningRateMultiplier": 1.0,

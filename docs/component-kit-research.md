@@ -1,6 +1,6 @@
 # Component Kit Research & Implementation Guide
 
-This document provides a detailed analysis of three modern UI component libraries—**Prompt Kit**, **Motion Primitives**, and **Kokonut UI**—and outlines how they can be leveraged to enhance the **indiiOS** application.
+This document provides a detailed analysis of three modern UI component libraries—**Prompt Kit**, **Motion Primitives**, and **Kokonut UI**—and outlines how they can be leveraged to enhance the **indii** application.
 
 ## Executive Summary
 
@@ -32,7 +32,7 @@ npx shadcn@latest add "https://prompt-kit.com/c/prompt-input.json"
 * `shadcn/ui` configured (Already present in project)
 * `tailwindcss` (Already present)
 
-### Key Components for indiiOS
+### Key Components for indii
 
 
 #### `PromptInput`
@@ -75,7 +75,7 @@ npm install motion clsx tailwind-merge lucide-react
 npx motion-primitives@latest add text-effect
 ```
 
-### Key Components for indiiOS
+### Key Components for indii
 
 #### `TextEffect`
 
@@ -123,7 +123,7 @@ npx shadcn@latest add @kokonutui/ai-input-search
 * Tailwind CSS v4 (Project uses v4)
 * `lucide-react`
 
-### Key Components for indiiOS
+### Key Components for indii
 
 #### `AI Input Search`
 

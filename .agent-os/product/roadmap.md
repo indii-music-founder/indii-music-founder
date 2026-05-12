@@ -1,4 +1,4 @@
-# indiiOS — Roadmap
+# indii — Roadmap
 
 > **Current release:** v1.55.3 (2026-04-23)
 > **Next milestone:** Investor-weekend handoff to 10 potential founders

@@ -2,13 +2,13 @@
 
 **Date:** 2026-03-06  
 **Status:** Partially Implemented (Bug: Missing UI Switch)  
-**Related:** indiiOS Agent System, DNA Hybridization
+**Related:** indii Agent System, DNA Hybridization
 
 ---
 
 ## Overview
 
-The indiiOS agent system uses a two-phase approach:
+The indii agent system uses a two-phase approach:
 
 1. **Planning Mode (Conversational)** — Human + AI collaborate to refine ideas
 2. **Execution Mode (Agent Mode)** — AI uses tools to execute the finalized plan

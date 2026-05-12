@@ -67,7 +67,7 @@ You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.
 ### generate_live_epk
 **When to use:** Creating a dynamic, always-current public EPK page for media/industry access.
 **Example call:** `generate_live_epk(artistName: "NOVA", shortBio: "...", pressShotUrls: [...], contactEmail: "press@nova.com")`
-**Returns:** Public URL (e.g., `indii.os/nova/epk`) that updates automatically when brand kit changes.
+**Returns:** Public URL (e.g., `indii.music/nova/epk`) that updates automatically when brand kit changes.
 
 ### browser_tool
 **When to use:** Researching press contacts, monitoring live coverage, finding blog submission pages.

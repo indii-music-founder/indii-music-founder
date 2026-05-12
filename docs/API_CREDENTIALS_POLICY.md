@@ -32,7 +32,7 @@
 | Property | Value |
 | --- | --- |
 | **Key ID** | `Gemini Developer API key` |
-| **Project** | `indiios-v-1-1` |
+| **Project** | `indii-v-1-1` |
 | **Restrictions** | ✅ Restricted to **Generative Language API** |
 | **Used In** | `.env` (VITE_API_KEY), `functions/.env` (GEMINI_API_KEY) |
 
@@ -41,7 +41,7 @@
 | Property | Value |
 | --- | --- |
 | **Key ID** | `Browser key (auto created by Firebase)` |
-| **Project** | `indiios-v-1-1` |
+| **Project** | `indii-v-1-1` |
 | **Restrictions** | ✅ Restricted to 24 Firebase APIs (Identity Toolkit, etc.) |
 | **Used In** | `.env` (VITE_FIREBASE_API_KEY) |
 
@@ -50,7 +50,7 @@
 | Property | Value |
 | --- | --- |
 | **Key ID** | `Google Maps Platform Key` |
-| **Project** | `indiios-v-1-1` |
+| **Project** | `indii-v-1-1` |
 | **Restrictions** | ✅ Restricted to Maps JavaScript API and Places API |
 | **Used In** | `.env` (VITE_GOOGLE_MAPS_API_KEY) |
 | **Notes** | Migrated from deprecated Client IDs (sunset 2026) |
@@ -70,7 +70,7 @@
 
 | Key Name | Issue | Recommended Action |
 | --- | --- | --- |
-| `indiiOS-Studio-Primary-2025` | ⚠️ Unrestricted | Add API restrictions |
+| `indii-Studio-Primary-2025` | ⚠️ Unrestricted | Add API restrictions |
 | `API key 2` | ⚠️ Unrestricted | Add API restrictions or delete if unused |
 
 ---
@@ -94,7 +94,7 @@ GEMINI_API_KEY=<Gemini Developer API Key>
 
 Before modifying API keys, verify:
 
-- [ ] New key is from project `indiios-v-1-1` (NOT a different project)
+- [ ] New key is from project `indii-v-1-1` (NOT a different project)
 - [ ] Key has appropriate API restrictions (not unrestricted)
 - [ ] Key is not expired or about to expire
 - [ ] Both `.env` AND `functions/.env` are updated together
@@ -162,7 +162,7 @@ The following secrets must be maintained in **GitHub Repo Settings > Secrets and
 | --- | --- |
 | `VITE_API_KEY` | `Gemini Developer API key` (Restricted) |
 | `VITE_FIREBASE_API_KEY` | `Browser key` (from Firebase) |
-| `VITE_VERTEX_PROJECT_ID` | `indiios-v-1-1` |
+| `VITE_VERTEX_PROJECT_ID` | `indii-v-1-1` |
 | `VITE_VERTEX_LOCATION` | `us-central1` |
 
 > [!WARNING]
@@ -175,11 +175,11 @@ The following secrets must be maintained in **GitHub Repo Settings > Secrets and
 If AI stops working due to key issues:
 
 1. **Check the error message** — look for project ID mismatch or "key expired"
-2. **Go to GCP Console:** <https://console.cloud.google.com/apis/credentials?project=indiios-v-1-1>
+2. **Go to GCP Console:** <https://console.cloud.google.com/apis/credentials?project=indii-v-1-1>
 3. **Use the "Gemini Developer API key"** (already restricted)
 4. **Update both files:**
-   - `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/.env`
-   - `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/functions/.env`
+   - `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Alpha-Electron/.env`
+   - `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Alpha-Electron/functions/.env`
 
 ```bash
 # lsof -ti:4242 | xargs kill -9 2>/dev/null; sleep 1; npm run dev

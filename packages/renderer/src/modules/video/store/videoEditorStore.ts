@@ -172,7 +172,7 @@ const resetHeartbeatExpiry = () => {
 };
 
 if (typeof window !== 'undefined') {
-    syncChannel = new BroadcastChannel('indiiOS-video-editor-sync');
+    syncChannel = new BroadcastChannel('indii-video-editor-sync');
     syncChannel.onmessage = (event) => {
         if (event.data?.type === 'POPOUT_OPENED') {
             useVideoEditorStore.getState().setIsPopoutActive(true);

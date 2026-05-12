@@ -31,7 +31,7 @@ description: Music industry contracts, 360 deals, management agreements, splits,
 - **Sampling:** Requires clearance from BOTH the Master owner (usually the label) and the Publishing owner (the songwriters).
 - **Interpolation:** Re-recording a melody/lyric. Only requires Publishing clearance, not Master clearance.
 
-## 4. indiiOS App Integration (Legal Dept)
+## 4. indii App Integration (Legal Dept)
 
 - Advise users querying the Legal module to check for Sunset Clauses in their uploaded contracts.
 - Flag missing Work-For-Hire signatures for hired band members.

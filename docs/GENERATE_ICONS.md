@@ -8,7 +8,7 @@ The PWA manifest references 3 icon files that **must be generated before deploym
 - `public/icon-512.png` (512×512px, maskable)
 - `public/apple-touch-icon.png` (180×180px)
 
-**Source logo provided:** `public/indiiOS-logo.svg`
+**Source logo provided:** `public/indii-logo.svg`
 
 ---
 
@@ -41,7 +41,7 @@ npm run generate:icons
 ### Option 3: Online Generator (No Installation)
 
 1. Visit: https://progressier.com/pwa-icons-and-ios-splash-screen-generator
-2. Upload `public/indiiOS-logo.svg`
+2. Upload `public/indii-logo.svg`
 3. Download generated icons
 4. Move to `public/` directory:
    - `icon-192.png`
@@ -52,7 +52,7 @@ npm run generate:icons
 
 Use Figma, Photoshop, or any image editor:
 
-1. Open `public/indiiOS-logo.svg`
+1. Open `public/indii-logo.svg`
 2. Export as PNG:
    - **192×192px** → `icon-192.png` (with 20% padding for maskable)
    - **512×512px** → `icon-512.png` (with 20% padding for maskable)
@@ -105,7 +105,7 @@ Test in browser:
 - Visit: `http://localhost:4242/icon-512.png`
 - Visit: `http://localhost:4242/apple-touch-icon.png`
 
-All should display the indiiOS logo.
+All should display the indii logo.
 
 ---
 

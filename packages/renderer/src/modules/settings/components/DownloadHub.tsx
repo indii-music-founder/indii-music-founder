@@ -16,7 +16,7 @@ export default function DownloadHub() {
                         <Monitor size={18} className="text-cyan-400" />
                     </div>
                     <div>
-                        <h3 className="text-cyan-50 text-sm font-bold tracking-wide">indiiOS Studio Desktop</h3>
+                        <h3 className="text-cyan-50 text-sm font-bold tracking-wide">indii Studio Desktop</h3>
                         <p className="text-cyan-400/70 text-xs mt-0.5">Founder Exclusive Offline Access</p>
                     </div>
                 </div>
@@ -30,7 +30,7 @@ export default function DownloadHub() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                     {/* Mac (Apple Silicon) */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indiiOS-Clean/releases/latest"
+                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
@@ -48,7 +48,7 @@ export default function DownloadHub() {
 
                     {/* Windows */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indiiOS-Clean/releases/latest"
+                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
@@ -66,7 +66,7 @@ export default function DownloadHub() {
 
                     {/* Linux */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indiiOS-Clean/releases/latest"
+                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
