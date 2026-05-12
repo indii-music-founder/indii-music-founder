@@ -1,14 +1,14 @@
-# Contributing to indiiOS
+# Contributing to indii
 
-Thank you for your interest in contributing to **indiiOS**! This document explains the workflow, conventions, and quality standards that keep the codebase stable and maintainable.
+Thank you for your interest in contributing to **indii**! This document explains the workflow, conventions, and quality standards that keep the codebase stable and maintainable.
 
 ---
 
 ## ⚡ Quick Setup
 
 ```bash
-git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
-cd indiiOS-Alpha-Electron
+git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
+cd indii-Alpha-Electron
 make prime          # installs deps + runs health check
 cp .env.example .env  # fill in your API keys
 make dev-web        # fastest iteration loop (Vite only, :4243)
@@ -197,4 +197,4 @@ If a fix fails verification **twice**:
 
 ---
 
-*Thank you for contributing. Together we're building the sovereign creative engine for independent artists.* 🎵
+*Thank you for contributing. Together we're building the independent creative engine for independent artists.* 🎵

@@ -1,15 +1,15 @@
 #!/bin/bash
 # ==============================================================================
-# indiiOS .env Guardian
+# indii .env Guardian
 # Backs up and restores the .env file from a safe location outside the repo.
 # Run this script whenever the .env file goes missing.
-# Safe location: ~/.config/indiios/.env
+# Safe location: ~/.config/indii/.env
 # ==============================================================================
 
-SAFE_COPY="$HOME/.config/indiios/.env"
+SAFE_COPY="$HOME/.config/indii/.env"
 set -euo pipefail
 
-SAFE_COPY="$HOME/.config/indiios/.env"
+SAFE_COPY="$HOME/.config/indii/.env"
 if ! GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
   echo "❌ Not inside a git repository."
   exit 1
@@ -54,8 +54,8 @@ case "$1" in
   *)
     echo "Usage: bash scripts/env-guardian.sh [backup|restore|check]"
     echo ""
-    echo "  backup   Copy project .env to ~/.config/indiios/.env"
-    echo "  restore  Copy ~/.config/indiios/.env back to project root"
+    echo "  backup   Copy project .env to ~/.config/indii/.env"
+    echo "  restore  Copy ~/.config/indii/.env back to project root"
     echo "  check    Verify .env exists; auto-restore if missing"
     ;;
 esac

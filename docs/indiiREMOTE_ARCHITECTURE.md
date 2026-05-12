@@ -6,7 +6,7 @@ The indiiREMOTE feature transforms your desktop into a globally accessible, priv
 
 We previously relied on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. Both are slow or restrictive. We have now moved to **Global Edge Computing**.
 
-Instead of relying on cloud databases to relay commands, the indiiOS Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+Instead of relying on cloud databases to relay commands, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
 
 ## Core Components
 

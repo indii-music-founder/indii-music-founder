@@ -56,7 +56,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
    * DEPARTMENT COLOR SYSTEM
-   * These colors represent the "vibe" of each department in indiiOS.
+   * These colors represent the "vibe" of each department in indii.
    * Update ONLY here when rebranding. All components derive from these tokens.
    * ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -115,7 +115,7 @@
   --color-dept-campaign-muted: #FF704333;
   --color-dept-campaign-glow: #FF704380;
 
-  /* Neutral Fallback - indiiOS Green */
+  /* Neutral Fallback - indii Green */
   --color-dept-default: #00ff66;
   --color-dept-default-muted: #00ff6633;
 

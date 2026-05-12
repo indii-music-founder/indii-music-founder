@@ -1,7 +1,7 @@
 # Music Industry Knowledge Base — Scope Definition
 
 **Date:** 2026-03-06  
-**Request:** Comprehensive music industry knowledge for indiiOS  
+**Request:** Comprehensive music industry knowledge for indii  
 **Status:** Scoping
 
 ---
@@ -99,7 +99,7 @@ Each topic will include:
 - **Process** — How it works step-by-step
 - **Costs** — Typical fees, percentages
 - **Pitfalls** — Common mistakes
-- **Integration** — How it fits into indiiOS
+- **Integration** — How it fits into indii
 - **Resources** — Links, further reading
 
 ---

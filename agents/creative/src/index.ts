@@ -49,7 +49,7 @@ const searchKnowledgeTool = createTool({
   }),
   execute: async ({ context }: any) => {
     try {
-      // Import knowledge tools from indiiOS system
+      // Import knowledge tools from indii system
       const { KnowledgeTools } = await import('@/services/agent/tools/KnowledgeTools');
       const result = await KnowledgeTools.search_knowledge!(context);
       return {
@@ -128,7 +128,7 @@ const mcpClient = new MCPClient({
 export const creativeDirector = new Agent({
   name: 'Creative Director',
   instructions: `
-    You are the Creative Director for the indiiOS platform.
+    You are the Creative Director for the indii platform.
     Your role is to oversee the creation of visual assets (images and videos) for independent artists.
 
     CRITICAL WORKFLOW FOR IMAGE GENERATION:

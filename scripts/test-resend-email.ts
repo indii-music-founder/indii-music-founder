@@ -51,7 +51,7 @@ async function sendTestEmail() {
             <div class="body">
                 <h2>Email Pipeline Active</h2>
                 <p>
-                    Your indiiOS email delivery system is now fully operational. 
+                    Your indii email delivery system is now fully operational. 
                     This is a live test confirming the Resend integration is working end-to-end.
                 </p>
                 
@@ -91,12 +91,12 @@ async function sendTestEmail() {
                 </table>
 
                 <p style="color: #64748b; font-size: 13px;">
-                    This email was sent by the indiiOS platform at
+                    This email was sent by the indii platform at
                     ${new Date().toLocaleString('en-US', { timeZone: 'America/Detroit', dateStyle: 'full', timeStyle: 'long' })}.
                 </p>
             </div>
             <div class="footer">
-                <p>Powered by <a href="https://indiios.com">indiiOS</a> — The Creative Operating System</p>
+                <p>Powered by <a href="https://indii.music">indii</a> — The Creative Operating System</p>
                 <p style="margin-top: 8px;">© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
             </div>
         </div>
@@ -111,11 +111,11 @@ async function sendTestEmail() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            from: 'indiiOS <onboarding@resend.dev>',
+            from: 'indii <onboarding@resend.dev>',
             to: [TARGET_EMAIL],
-            subject: '🚀 indiiOS Email Pipeline — Live & Operational',
+            subject: '🚀 indii Email Pipeline — Live & Operational',
             html: html,
-            text: `indiiOS Email Pipeline — Live & Operational\n\nYour email delivery system is now fully operational. This confirms the Resend integration is working end-to-end.\n\nCapabilities:\n- Contract Delivery (NDA, IP, Performance PDFs)\n- Notifications (Distribution, releases, alerts)\n- Team Invitations\n- DMCA Notices\n\nSent at: ${new Date().toISOString()}\n\n© ${new Date().getFullYear()} New Detroit Music LLC`,
+            text: `indii Email Pipeline — Live & Operational\n\nYour email delivery system is now fully operational. This confirms the Resend integration is working end-to-end.\n\nCapabilities:\n- Contract Delivery (NDA, IP, Performance PDFs)\n- Notifications (Distribution, releases, alerts)\n- Team Invitations\n- DMCA Notices\n\nSent at: ${new Date().toISOString()}\n\n© ${new Date().getFullYear()} New Detroit Music LLC`,
         }),
     });
 
@@ -125,7 +125,7 @@ async function sendTestEmail() {
         console.log('✅ Email sent successfully!');
         console.log(`   Message ID: ${result.id}`);
         console.log(`   Recipient:  ${TARGET_EMAIL}`);
-        console.log(`   Subject:    🚀 indiiOS Email Pipeline — Live & Operational`);
+        console.log(`   Subject:    🚀 indii Email Pipeline — Live & Operational`);
         console.log(`\n   Check your inbox! 📬\n`);
     } else {
         console.error('❌ Email send failed:');

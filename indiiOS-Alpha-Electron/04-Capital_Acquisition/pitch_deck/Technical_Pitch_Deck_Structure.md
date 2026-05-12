@@ -1,7 +1,7 @@
 # Pitch Deck Text Framework
 
 **Slide 1: Vision & Concept**
-* **Product:** indiiOS-Alpha-Electron.
+* **Product:** indii-Alpha-Electron.
 * **Vision:** A robust digital infrastructure empowering the modern music industry entity.
 
 **Slide 2: Traction & Proof of Concept**

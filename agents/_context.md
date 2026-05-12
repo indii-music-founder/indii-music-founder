@@ -1,12 +1,12 @@
-# indiiOS — Global Agent Context
+# indii — Global Agent Context
 
 ## Project
 
-- **App:** indiiOS Alpha (multi-tenant AI creative platform for independent artists)
+- **App:** indii Alpha (multi-tenant AI creative platform for independent artists)
 - **Stack:** React 18 + Vite + Electron | Firebase | Gemini 3 | Zustand
 - **Dev Server:** `http://localhost:4242` (Vite) | `http://localhost:3000` (Landing)
-- **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
-- **Firebase Project:** `indiios-v-1-1`
+- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
+- **Firebase Project:** `indii-v-1-1`
 
 ---
 

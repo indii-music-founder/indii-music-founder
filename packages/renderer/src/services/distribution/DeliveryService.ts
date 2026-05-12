@@ -6,7 +6,7 @@ import { transcodingService } from '@/services/audio/TranscodingService';
 import { logger } from '@/utils/logger';
 
 // DSPs transcode audio themselves from the master file delivered in the DDEX package.
-// indiiOS delivers the original WAV/FLAC — do NOT pre-transcode to OGG or MP3.
+// indii delivers the original WAV/FLAC — do NOT pre-transcode to OGG or MP3.
 
 export interface DeliveryResult {
     success: boolean;

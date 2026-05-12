@@ -1,6 +1,6 @@
 # Firestore Schema Migration Strategy
 
-> **indiiOS-Alpha-Electron** — Database migration approach for Firestore
+> **indii-Alpha-Electron** — Database migration approach for Firestore
 
 ---
 
@@ -134,17 +134,17 @@ Before any destructive migration:
 
 ```bash
 # Export entire Firestore database
-gcloud firestore export gs://indiios-v-1-1-backups/$(date +%Y%m%d_%H%M%S)
+gcloud firestore export gs://indii-v-1-1-backups/$(date +%Y%m%d_%H%M%S)
 
 # Export specific collection
-gcloud firestore export gs://indiios-v-1-1-backups/users_backup \
+gcloud firestore export gs://indii-v-1-1-backups/users_backup \
   --collection-ids=users
 ```
 
 Verify backup integrity:
 
 ```bash
-gcloud firestore operations list --filter="metadata.outputUriPrefix:gs://indiios-v-1-1-backups"
+gcloud firestore operations list --filter="metadata.outputUriPrefix:gs://indii-v-1-1-backups"
 ```
 
 ---

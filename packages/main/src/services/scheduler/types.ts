@@ -1,5 +1,5 @@
 /**
- * indiiOS Built-in Task Scheduler — Shared Types
+ * indii Built-in Task Scheduler — Shared Types
  * These types are used by both the Electron main process (SchedulerService)
  * and the React renderer (SchedulerClientService).
  */

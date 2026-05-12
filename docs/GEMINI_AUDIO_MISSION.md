@@ -1,7 +1,7 @@
 # GEMINI_AUDIO_MISSION.md - The Sonic Cortex
 
 ## 🎯 OBJECTIVE
-Integrate **Gemini 3 Pro**'s native audio-understanding capabilities into the indiiOS "Sovereign Engine." Move beyond simple metadata to **Deep Sonic Reasoning**.
+Integrate **Gemini 3 Pro**'s native audio-understanding capabilities into the indii "Independent Engine." Move beyond simple metadata to **Deep Sonic Reasoning**.
 
 ## 🧠 CORE RESEARCH: GEMINI 3 AUDIO MODALITY
 Gemini 3 Pro (and the 2.5 TTS/Audio variants) does not just "transcribe" audio; it **hears** it. 

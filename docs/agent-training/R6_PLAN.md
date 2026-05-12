@@ -102,7 +102,7 @@ When the uplift is complete:
 
 - [x] Run fleet audit: all 20 agents expert count ≥50 — **DONE** (2026-03-26, see Batch 1 status below)
 - [x] Re-run `npx tsx execution/training/export_ft_dataset.ts` → `./ft_export_r6/` — **DONE** (40 files, 2395 total examples)
-- [ ] `gsutil -m cp ft_export_r6/*.jsonl gs://indiios-training-data/ft_export/r6/` — **BLOCKED** (see R6b note)
+- [ ] `gsutil -m cp ft_export_r6/*.jsonl gs://indii-training-data/ft_export/r6/` — **BLOCKED** (see R6b note)
 - [ ] Submit 20 tuning jobs (same curl batch as R5, change `r5` → `r6` in names + GCS URIs)
 - [ ] Use **gemini-2.5-flash-lite** for all 20 agents (R5 base) — upgrade generalist to **gemini-2.5-flash** if budget allows
 - [ ] Monitor with `execution/training/check_r4_status.sh` (update path refs for r6)

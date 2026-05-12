@@ -1,4 +1,4 @@
-# indiiOS Stress Testing Plan
+# indii Stress Testing Plan
 
 **Status:** Complete ✅
 **Completed:** 2025-12-27

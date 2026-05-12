@@ -1,7 +1,7 @@
 [project]
-name = "indiios-autoagent"
+name = "indii-autoagent"
 version = "0.1.0"
-description = "System prompt optimization for indiiOS agents"
+description = "System prompt optimization for indii agents"
 requires-python = ">=3.11"
 dependencies = [
     "google-genai>=1.73.1",

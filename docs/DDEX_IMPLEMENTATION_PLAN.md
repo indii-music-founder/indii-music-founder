@@ -8,9 +8,9 @@
 
 ## Executive Summary
 
-This plan architects the metadata and supply chain infrastructure to transform indiiOS into a fully autonomous music platform. By implementing DDEX (Digital Data Exchange) standards, we enable:
+This plan architects the metadata and supply chain infrastructure to transform indii into a fully autonomous music platform. By implementing DDEX (Digital Data Exchange) standards, we enable:
 
-- **Direct DSP delivery** (Spotify, Apple Music, etc.) without intermediaries
+- **Proprietary ingestion IP** for direct DSP delivery (Spotify, Apple Music, etc.) without intermediaries
 - **Automated royalty processing** with DSR (Digital Sales Reporting)
 - **Rights management** at creation (studio) through distribution
 - **AI-generated content flagging** (ERN 4.3 support)
@@ -42,9 +42,9 @@ This plan architects the metadata and supply chain infrastructure to transform i
 - Required to use DDEX intellectual property
 - No cost, but legally required for compliance
 
-### 1.3 Acquire DDEX Party Identifier (DPID)
+### 1.3 Secure Proprietary System Identifier (DPID)
 **Action:** Apply at dpid.ddex.net
-- Unique identifier for indiiOS as sender/recipient
+- Unique identifier for indii as sender/recipient
 - Format: `PADPIDA{10-digit-code}`
 - Required for all DDEX message exchanges
 

@@ -1,5 +1,5 @@
 {
-    "name": "@indiios/main",
+    "name": "@indii/main",
     "version": "0.0.1",
     "private": true,
     "main": "src/main.ts",
@@ -7,7 +7,7 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@indiios/shared": "*",
+        "@indii/shared": "*",
         "@modelcontextprotocol/sdk": "^1.25.2",
         "@ngrok/ngrok": "^1.7.0",
         "bufferutil": "^4.1.0",

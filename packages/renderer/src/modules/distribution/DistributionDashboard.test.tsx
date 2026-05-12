@@ -35,7 +35,7 @@ vi.mock('react-i18next', () => ({
         t: (key: string) => {
             const translations: Record<string, string> = {
                 'distribution.title': 'Distribution',
-                'distribution.subtitle': 'Sovereign Command',
+                'distribution.subtitle': 'Independent Command',
                 'distribution.tabs.new': 'New Release',
                 'distribution.tabs.catalogue': 'Catalogue',
                 'distribution.tabs.analytics': 'Analytics',
@@ -117,7 +117,7 @@ describe('DistributionDashboard', () => {
     it('renders the title and subtitle', () => {
         render(<DistributionDashboard />);
         expect(screen.getByText('Distribution')).toBeInTheDocument();
-        expect(screen.getByText('Sovereign Command')).toBeInTheDocument();
+        expect(screen.getByText('Independent Command')).toBeInTheDocument();
     });
 
     it('renders the Live System badge', () => {

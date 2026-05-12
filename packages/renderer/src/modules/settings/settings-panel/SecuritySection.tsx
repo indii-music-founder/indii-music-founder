@@ -87,7 +87,7 @@ const SecuritySection: React.FC = () => {
             const link = document.createElement('a');
             link.href = url;
             const isoDate = new Date().toISOString();
-            link.download = `indiios-data-export-${isoDate.substring(0, isoDate.indexOf('T'))}.json`;
+            link.download = `indii-data-export-${isoDate.substring(0, isoDate.indexOf('T'))}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

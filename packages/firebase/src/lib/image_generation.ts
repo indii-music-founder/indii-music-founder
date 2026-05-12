@@ -513,7 +513,7 @@ export class GeminiImageService {
                     isFullyAIGenerated: true,
                     isPartiallyAIGenerated: false,
                     aiToolsUsed: [modelId],
-                    humanContributionDescription: `Generated via indiiOS ${tier} using prompt: "${data.prompt.substring(0, 100)}..."`,
+                    humanContributionDescription: `Generated via indii ${tier} using prompt: "${data.prompt.substring(0, 100)}..."`,
                 },
             };
         } catch (error) {

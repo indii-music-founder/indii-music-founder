@@ -29,7 +29,7 @@ const getStoragePath = (): string => {
         return path.join(app.getPath('userData'), 'distribution');
     } catch {
         // Fallback for development/testing
-        return path.join(os.tmpdir(), 'indiiOS-distribution');
+        return path.join(os.tmpdir(), 'indii-distribution');
     }
 };
 
@@ -41,7 +41,7 @@ export const setupDistributionHandlers = () => {
             const validated = DistributionStageReleaseSchema.parse({ releaseId, files });
 
             const tempDir = os.tmpdir();
-            const stagingPath = path.join(tempDir, 'indiiOS-releases', validated.releaseId);
+            const stagingPath = path.join(tempDir, 'indii-releases', validated.releaseId);
             const _resolvedStagingPath = path.resolve(stagingPath) + path.sep; // Ensure trailing slash for security check
 
             // cleaned up previous staging if exists
@@ -146,7 +146,7 @@ export const setupDistributionHandlers = () => {
 
             // Resolve the staging path (using the same logic as stage-release)
             const tempDir = os.tmpdir();
-            const stagingPath = path.join(tempDir, 'indiiOS-releases', releaseId);
+            const stagingPath = path.join(tempDir, 'indii-releases', releaseId);
 
             // Execute Python Script
             const storagePath = getStoragePath();

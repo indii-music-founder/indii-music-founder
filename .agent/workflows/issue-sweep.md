@@ -97,7 +97,7 @@ If Sentry returns zero issues, note "Sentry: clean slate ✅" and proceed.
 ```bash
 export GITHUB_TOKEN="$(grep '^GITHUB_TOKEN=' .env | cut -d= -f2)"
 curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/pulls?state=all&per_page=10" \
+  "https://api.github.com/repos/the-walking-agency-det/indii-Clean/pulls?state=all&per_page=10" \
   | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -112,7 +112,7 @@ For each PR number discovered in Step 5 (focus on the 5 most recent):
 
 ```bash
 curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/pulls/<PR_NUMBER>/comments?per_page=100" \
+  "https://api.github.com/repos/the-walking-agency-det/indii-Clean/pulls/<PR_NUMBER>/comments?per_page=100" \
   | python3 -c "
 import sys, json
 comments = json.load(sys.stdin)
@@ -130,7 +130,7 @@ Also fetch the top-level review body for each PR:
 
 ```bash
 curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/pulls/<PR_NUMBER>/reviews" \
+  "https://api.github.com/repos/the-walking-agency-det/indii-Clean/pulls/<PR_NUMBER>/reviews" \
   | python3 -c "
 import sys, json
 reviews = json.load(sys.stdin)

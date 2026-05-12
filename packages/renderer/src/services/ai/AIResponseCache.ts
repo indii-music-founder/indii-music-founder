@@ -20,7 +20,7 @@ interface MockDatabase {
     clear: (storeName: string) => Promise<void>;
 }
 
-const DB_NAME = 'indiiOS-AI-Cache';
+const DB_NAME = 'indii-AI-Cache';
 const STORE_NAME = 'responses';
 const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
 

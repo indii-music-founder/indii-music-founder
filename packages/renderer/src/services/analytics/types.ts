@@ -1,5 +1,5 @@
 // ============================================================================
-// IndiiOS Music Growth Intelligence Engine — Core Types
+// indii Music Growth Intelligence Engine — Core Types
 // ============================================================================
 
 export type Platform =

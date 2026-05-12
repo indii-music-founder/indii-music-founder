@@ -11,7 +11,7 @@ import type { DateRange, ValidationResult, ValidationError } from '@/services/dd
 export type { ValidationResult, ValidationError, DateRange };
 
 /**
- * Direct DSP delivery targets — indiiOS delivers as a registered distributor.
+ * Direct DSP delivery targets — indii delivers as a registered distributor.
  * These bypass aggregators entirely.
  */
 export type DirectDSPId =
@@ -24,7 +24,7 @@ export type DirectDSPId =
 
 /**
  * Legacy aggregator connectors — migration/import only.
- * Used to pull existing catalogs into indiiOS. NOT active delivery targets.
+ * Used to pull existing catalogs into indii. NOT active delivery targets.
  */
 export type LegacyAggregatorId =
   | 'distrokid'

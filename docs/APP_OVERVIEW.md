@@ -1,10 +1,10 @@
-# indiiOS Application & Code Overview
+# indii Application & Code Overview
 
-This document bridges the product vision of indiiOS with how the codebase is organized. It is meant to help new contributors quickly understand what the platform offers, which surfaces deliver those capabilities, and where to look in the repository when implementing changes.
+This document bridges the product vision of indii with how the codebase is organized. It is meant to help new contributors quickly understand what the platform offers, which surfaces deliver those capabilities, and where to look in the repository when implementing changes.
 
 ## Product definition
 
-- **Creative operating system:** indiiOS unifies image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), campaign ops, and automation into one multi-tenant workspace.
+- **Creative operating system:** indii unifies image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), campaign ops, and automation into one multi-tenant workspace.
 - **Hub-and-spoke AI agents:** The generalist **indii** (Agent Zero) delegates to specialists (Legal, Marketing, Brand, Road, Music) with context about the active organization/project/brand kit.
 - **Intelligence Layer (Gemini 3.0):** Powered exclusively by Gemini 3.0 Pro (High Thinking) and Flash (Preview models). Model policy is strictly enforced in `src/core/config/ai-models.ts`.
 - **Enterprise posture:** Firebase-backed persistence, scoped data isolation, and cloud-hosted AI workloads (Vertex AI for video/image) support scale and quota controls.

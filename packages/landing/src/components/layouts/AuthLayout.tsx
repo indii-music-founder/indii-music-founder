@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                 <div className="mb-8 text-center">
                     <a href="/" className="inline-block group">
                         <h1 className="text-3xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 group-hover:to-white transition-all">
-                            indiiOS
+                            indii
                         </h1>
                     </a>
                 </div>
@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
             {/* Footer */}
             <div className="mt-8 text-center text-xs text-gray-600 relative z-10">
-                <p>&copy; 2026 indiiOS Inc. All rights reserved.</p>
+                <p>&copy; 2026 indii Inc. All rights reserved.</p>
             </div>
         </div>
     );

@@ -15,7 +15,7 @@ export type RegistrationStatus =
 
 export type FieldType = 'text' | 'date' | 'select' | 'boolean' | 'multiselect' | 'textarea';
 
-// A single field in an org's registration form, in indiiOS language
+// A single field in an org's registration form, in indii language
 export interface RegistrationField {
   id: string;
   label: string;             // artist-friendly label
