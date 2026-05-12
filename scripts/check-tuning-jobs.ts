@@ -7,7 +7,7 @@ async function checkVertexTuningJobs() {
     });
 
     const client = await auth.getClient();
-    const projectId = 'indiios-v-1-1';
+    const projectId = 'indii-v-1-1';
     const location = 'us-central1';
     const accessToken = await client.getAccessToken();
 

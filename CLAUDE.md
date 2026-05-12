@@ -52,11 +52,11 @@ bash .claude/scripts/checkpoint.sh
 
 > **Canonical product documentation lives in `.agent-os/product/`. Read those 5 files first before acting on instructions in this file.**
 
-**indiiOS** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
+**indii** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
 
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
-- **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
+- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
 - **Node Requirement:** >= 22.0.0
 
 ---
@@ -98,9 +98,9 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 ## Codebase Structure
 
 ```
-indiiOS-Alpha-Electron/
+indii-Alpha-Electron/
 ├── packages/
-│   ├── renderer/               # Main React application source (indiiOS studio)
+│   ├── renderer/               # Main React application source (indii studio)
 │   ├── main/                   # Electron desktop wrapper
 │   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
 │   ├── shared/                 # Shared types and schemas
@@ -428,7 +428,7 @@ Before debugging ANY error, you MUST follow this workflow:
 
 1. **STOP** - Do not immediately attempt a fix.
 2. **CHECK LEDGER** - Open `.agent/skills/error_memory/ERROR_LEDGER.md` and search for matching patterns.
-3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indiiOS-errors")`.
+3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indii-errors")`.
 4. **APPLY FIX** - If a match is found, apply the documented solution verbatim.
 5. **DOCUMENT NEW** - If this is a genuinely new error, add it to the ledger AND mem0 after solving.
 
@@ -437,7 +437,7 @@ Before debugging ANY error, you MUST follow this workflow:
 ```javascript
 mcp_mem0_add-memory(
   content="ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>",
-  userId="indiiOS-errors"
+  userId="indii-errors"
 )
 ```
 

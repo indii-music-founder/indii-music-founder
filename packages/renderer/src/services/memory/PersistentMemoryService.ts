@@ -85,7 +85,7 @@ export class PersistentMemoryService {
 
     try {
       // Initialize IndexedDB for session layer
-      this.db = await openDB<SessionMemoryDB>('indiiOS_agent_memory', 1, {
+      this.db = await openDB<SessionMemoryDB>('indii_agent_memory', 1, {
         upgrade(db) {
           if (!db.objectStoreNames.contains('memories')) {
             const store = db.createObjectStore('memories', { keyPath: 'id' });

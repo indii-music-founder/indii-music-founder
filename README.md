@@ -1,15 +1,15 @@
 <div align="center">
-  <img width="1280" height="560" alt="indiiOS Banner" src="docs/assets/indiios-banner.png" />
+  <img width="1280" height="560" alt="indii Banner" src="docs/assets/indii-banner.png" />
 </div>
 
-# indiiOS: The Sovereign Creative Engine
+# indii: The Independent Creative Engine
 
 **The First AI-Native Operating System for Independent Artists & Producers.**
 
-indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
+indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indii enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron)
-[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/new-detroit-music-llc/indii-Alpha-Electron)
+[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
@@ -25,8 +25,8 @@ indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-ten
 
 ```bash
 # 1. Clone (1 min)
-git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
-cd indiiOS-Alpha-Electron
+git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
+cd indii-Alpha-Electron
 
 # 2. Bootstrap environment (5 min)
 make prime                  # installs deps, runs health check
@@ -55,15 +55,15 @@ make dev                    # Full Electron + Vite on :4242
 
 ## 💠 The Vision
 
-indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
+indii solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
 
-**indiiOS is the distributor.** We hold a registered DDEX Party ID and deliver directly to DSPs. The aggregator middleman layer doesn't exist here. Your masters stay yours, your royalties stay yours, and your data stays yours.
+**indii is the distributor.** We utilize a sophisticated, proprietary ingestion IP to interface directly with the global distribution infrastructure. By bypassing the traditional aggregator middleman layer, indii delivers your assets directly to DSPs—ensuring your masters, royalties, and creative data remain entirely in your control.
 
 ---
 
 ## 🏗️ 3-Layer Architecture
 
-To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a rigorous 3-layer system:
+To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a rigorous 3-layer system:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -89,7 +89,7 @@ To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a
 
 ## 🤖 indii: The Hub-and-Spoke Agent System
 
-The core of indiiOS is **indii**, an intelligent orchestration hub with **17 specialist agents**.
+The core of indii is **indii**, an intelligent orchestration hub with **17 specialist agents**.
 
 ```
               ┌─────────────────────┐
@@ -133,7 +133,7 @@ The core of indiiOS is **indii**, an intelligent orchestration hub with **17 spe
 
 ## 📱 indiiREMOTE Edge Infrastructure
 
-**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indiiOS desktop mainframe from any mobile device, instantly and securely.
+**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indii desktop mainframe from any mobile device, instantly and securely.
 
 Instead of routing sensitive, unreleased creative assets through a public cloud server, indiiREMOTE provisions a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process.
 
@@ -144,7 +144,7 @@ Instead of routing sensitive, unreleased creative assets through a public cloud 
 3. **End-to-End Encryption:** After entering the PIN, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
 4. **Live Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) without being physically present at their computer.
 
-By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indiiOS enables true untethered mobility without compromising data sovereignty or relying on external cloud storage.
+By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indii enables true untethered mobility without compromising data independence or relying on external cloud storage.
 
 ---
 
@@ -218,7 +218,7 @@ await engine.runConsolidation('user-123');
 
 ## ⏱️ Timeline Orchestrator (Autonomous Campaign Engine)
 
-The **Timeline Orchestrator** is indiiOS's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
+The **Timeline Orchestrator** is indii's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
 
 ### How It Works
 
@@ -302,7 +302,7 @@ functions/src/timeline/
 
 ## 📊 Growth Intelligence Engine
 
-The **Growth Intelligence Engine** is indiiOS's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
+The **Growth Intelligence Engine** is indii's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
 
 ### How It Works
 
@@ -389,7 +389,7 @@ indiiREMOTE transforms your desktop into a globally accessible, private edge ser
 
 ### How It Works
 
-Instead of relying on cloud databases to relay commands, the indiiOS Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+Instead of relying on cloud databases to relay commands, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
 
 ```
 📱 Phone (Anywhere on Earth)
@@ -408,7 +408,7 @@ Instead of relying on cloud databases to relay commands, the indiiOS Electron ap
                    │
                    ▼ (IPC Bus)
 ┌───────────────────────────────────────────┐
-│  indiiOS Desktop React App                │
+│  indii Desktop React App                │
 │  Mainframe Execution                      │
 └───────────────────────────────────────────┘
 ```
@@ -427,7 +427,7 @@ Instead of relying on cloud databases to relay commands, the indiiOS Electron ap
 
 ## 📦 Core Modules (36)
 
-indiiOS ships with 36 lazy-loaded modules organized across four domains:
+indii ships with 36 lazy-loaded modules organized across four domains:
 
 ### 🎨 Creative Studios
 
@@ -580,8 +580,8 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ### Installation
 
 ```bash
-git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
-cd indiiOS-Alpha-Electron
+git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
+cd indii-Alpha-Electron
 make prime                 # installs deps + runs health check
 ```
 
@@ -682,7 +682,7 @@ The project includes a rich catalog of 20+ automation scripts for environment se
 
 ## 🧪 Testing & Quality
 
-indiiOS maintains a **"Zero-Regression"** policy with multi-layer testing:
+indii maintains a **"Zero-Regression"** policy with multi-layer testing:
 
 ```bash
 npm test                   # Vitest in watch mode
@@ -733,7 +733,7 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 ## 📂 Project Structure
 
 ```
-indiiOS-Alpha-Electron/
+indii-Alpha-Electron/
 ├── src/                    # React application source
 │   ├── core/               # App infrastructure (store, contexts, themes)
 │   ├── modules/            # 36 lazy-loaded feature modules
@@ -889,7 +889,7 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 **Remote Relay Hardening & Telegram Bot Adapter**
 
-- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indiios-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
+- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indii-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
 - **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
 - **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
 

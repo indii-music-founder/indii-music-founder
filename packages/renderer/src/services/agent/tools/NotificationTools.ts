@@ -47,7 +47,7 @@ export const NotificationTools = {
                     const notif = new Notification(title.trim(), {
                         body: body.trim(),
                         icon: '/favicon.ico',
-                        tag: `indiios-${urgency}`,
+                        tag: `indii-${urgency}`,
                     });
 
                     if (action_url) {

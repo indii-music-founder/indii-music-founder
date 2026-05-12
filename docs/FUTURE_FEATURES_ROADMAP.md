@@ -1,13 +1,13 @@
-# indiiOS Future Features Roadmap
+# indii Future Features Roadmap
 
 > **Status:** High-level vision — not yet in development.
-> These features extend the indiiOS ecosystem beyond the core studio/distribution platform.
+> These features extend the indii ecosystem beyond the core studio/distribution platform.
 
 ---
 
 ## 1. Social Music Platform — "Music 4.0 Community"
 
-**Philosophy:** Based on the **1,000 True Fans theory**. Most music artists will never reach superstardom — indiiOS is about building a *career*. The social platform extends that thesis by giving artists a direct relationship with their audience.
+**Philosophy:** Based on the **1,000 True Fans theory**. Most music artists will never reach superstardom — indii is about building a *career*. The social platform extends that thesis by giving artists a direct relationship with their audience.
 
 **Concept:**
 
@@ -28,7 +28,7 @@
 **Concept:**
 
 - Transparent, upfront licensing deals — no Content ID surprises
-- **Business model:** If a creator licenses a track for $1,000, they pay $1,100. The artist gets their *full* $1,000, indiiOS takes a flat $100 service fee on top
+- **Business model:** If a creator licenses a track for $1,000, they pay $1,100. The artist gets their *full* $1,000, indii takes a flat $100 service fee on top
 - Targets YouTube creators, TikTok creators, and other content producers
 - Easy deal placement → collection → done. No chasing, no disputes
 - AI-driven matching: creator describes their video/content mood, DNA pipeline matches tracks from the artist catalog
@@ -39,11 +39,11 @@
 
 ## 3. Professional Services Marketplace
 
-**Concept:** A music-industry-specific Fiverr — but curated and within the indiiOS network.
+**Concept:** A music-industry-specific Fiverr — but curated and within the indii network.
 
 **How it works:**
 
-- indiiOS members who offer professional services can list themselves:
+- indii members who offer professional services can list themselves:
   - Mastering engineers
   - Music attorneys
   - Session musicians
@@ -51,7 +51,7 @@
   - Producers who offer mix/production services
   - PR specialists
 - When AI-driven tools aren't enough, users can find a vetted human professional through the platform
-- Booking, payment, and delivery all happen within the indiiOS ecosystem
+- Booking, payment, and delivery all happen within the indii ecosystem
 - Trust scores, portfolio verification, and member ratings
 
 **Philosophy:** If we can do it with AI, we offer it. If you need a human, we connect you to one in our network.

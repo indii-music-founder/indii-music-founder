@@ -42,7 +42,7 @@ This timeline puts everything in the right order.
 | W-5 Mon | Confirm estimated turnaround time (usually 2-3 weeks for ToS + Privacy) | 15 min | `[ ]` |
 | W-5 Tue | Start DistroKid API/SFTP credential process | Doc 04 §A1 | 15 min | `[ ]` |
 | W-5 Wed | Register at DDEX Knowledge Base + sign implementation license | Doc 04 §B1 | 15 min | `[ ]` |
-| W-5 Wed | Apply for DDEX Party ID (DPID) | Doc 04 §B1 | 15 min | `[ ]` |
+| W-5 Wed | Apply for Proprietary Ingestion ID (DPID) | Doc 04 §B1 | 15 min | `[ ]` |
 | W-5 Thu | Register App Check in Firebase Console (monitor-only mode) | Doc 03 §B6 | 15 min | `[ ]` |
 | W-5 Fri | Choose ASCAP or BMI — apply as publisher | Doc 04 | 20 min | `[ ]` |
 

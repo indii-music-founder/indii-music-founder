@@ -12,7 +12,7 @@ SYSTEM_PROMPT: Optional[str] = None
 
 class AutoAgent:
     """
-    Wrapper for indiiOS agents during optimization.
+    Wrapper for indii agents during optimization.
     Proxies calls to the Gemini API using actual system prompts from the codebase.
     """
     
@@ -37,7 +37,7 @@ class AutoAgent:
             self.system_prompt = self._load_system_prompt()
 
     def _find_project_root(self) -> Path:
-        """Finds the root directory of the indiiOS-Clean project."""
+        """Finds the root directory of the indii-Clean project."""
         current = Path(__file__).resolve()
         for parent in current.parents:
             if (parent / "package.json").exists() or (parent / "GEMINI.md").exists():
@@ -84,7 +84,7 @@ class AutoAgent:
                 return path.read_text(encoding="utf-8")
                 
         print(f"Warning: No system prompt found for {self.agent_id}, using fallback.")
-        return f"You are the {self.agent_id} specialist agent within the indiiOS creative platform."
+        return f"You are the {self.agent_id} specialist agent within the indii creative platform."
 
     def execute(self, user_goal: str, history: Optional[list] = None) -> Dict[str, Any]:
         """

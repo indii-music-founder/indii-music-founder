@@ -13,6 +13,12 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
+vi.mock('../MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue(true)
+    }
+}));
+
 describe('Phase 3: Architectural Improvements', () => {
 
     describe('LoopDetector', () => {
@@ -22,27 +28,27 @@ describe('Phase 3: Architectural Improvements', () => {
             detector = new LoopDetector();
         });
 
-        it('should detect immediate repetition', () => {
+        it('should detect immediate repetition', async () => {
             detector.recordToolCall('test_tool', { arg: 1 });
-            const result = detector.detectLoop('test_tool', { arg: 1 });
+            const result = await detector.detectLoop('test_tool', { arg: 1 });
             expect(result.isLoop).toBe(true);
             expect(result.reason).toContain('consecutively');
         });
 
-        it('should detect alternating patterns (A-B-A-B)', () => {
+        it('should detect alternating patterns (A-B-A-B)', async () => {
             detector.recordToolCall('tool_a', {});
             detector.recordToolCall('tool_b', {});
             detector.recordToolCall('tool_a', {});
 
-            const result = detector.detectLoop('tool_b', {});
+            const result = await detector.detectLoop('tool_b', {});
             expect(result.isLoop).toBe(true);
             expect(result.reason).toContain('Alternating pattern');
         });
 
-        it('should allow non-looping sequences', () => {
+        it('should allow non-looping sequences', async () => {
             detector.recordToolCall('tool_a', {});
             detector.recordToolCall('tool_b', {});
-            const result = detector.detectLoop('tool_c', {});
+            const result = await detector.detectLoop('tool_c', {});
             expect(result.isLoop).toBe(false);
         });
     });

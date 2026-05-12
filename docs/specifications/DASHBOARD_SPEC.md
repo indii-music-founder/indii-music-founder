@@ -1,8 +1,8 @@
-# Feature Specification: indiiOS Dashboard & Settings Hub
+# Feature Specification: indii Dashboard & Settings Hub
 
 ## 1. Overview
 
-indiiOS operates as a "Studio-First" application with multi-tenant support (Organizations/Projects). The **Dashboard** serves as the **"Home Screen"** or **"Headquarters"** of the application, handling meta-management of data, projects, and global configurations.
+indii operates as a "Studio-First" application with multi-tenant support (Organizations/Projects). The **Dashboard** serves as the **"Home Screen"** or **"Headquarters"** of the application, handling meta-management of data, projects, and global configurations.
 
 **Current Architecture:** React 19 + Vite, Zustand state management, Firebase (Firestore + Storage).
 
@@ -122,4 +122,4 @@ src/modules/dashboard/
 - [ ] Analytics/Stats gamification view
 
 ---
-*This specification defines the UX vision for the indiiOS Dashboard.*
+*This specification defines the UX vision for the indii Dashboard.*

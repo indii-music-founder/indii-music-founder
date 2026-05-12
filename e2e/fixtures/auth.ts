@@ -376,7 +376,7 @@ export const test = base.extend<AuthFixtures>({
               fileSearchStores: [
                 {
                   name: "fileSearchStores/mock-e2e-store",
-                  displayName: "indiiOS Default Store",
+                  displayName: "indii Default Store",
                 },
               ],
             }),
@@ -485,7 +485,7 @@ export const test = base.extend<AuthFixtures>({
           fileSearchStores: [
             {
               name: "fileSearchStores/mock-e2e-store",
-              displayName: "indiiOS Default Store",
+              displayName: "indii Default Store",
             },
           ],
         }),
@@ -510,7 +510,7 @@ export const test = base.extend<AuthFixtures>({
           contentType: "application/json",
           body: JSON.stringify({
             localId: "test-user-uid-e2e",
-            email: "e2e@indiios.test",
+            email: "e2e@indii.test",
             displayName: "E2E Test User",
             idToken: "mock-id-token-e2e",
             refreshToken: "mock-refresh-token-e2e",
@@ -530,7 +530,7 @@ export const test = base.extend<AuthFixtures>({
             users: [
               {
                 localId: "test-user-uid-e2e",
-                email: "e2e@indiios.test",
+                email: "e2e@indii.test",
                 displayName: "E2E Test User",
                 emailVerified: true,
               },
@@ -696,7 +696,7 @@ export const test = base.extend<AuthFixtures>({
       w.FIREBASE_E2E_MOCK = true;
       w.FIREBASE_USER_MOCK = {
         uid: "test-user-uid-e2e",
-        email: "e2e@indiios.test",
+        email: "e2e@indii.test",
         displayName: "E2E Test User",
         isAnonymous: false,
         getIdToken: () => Promise.resolve("mock-id-token-e2e"),
@@ -708,10 +708,10 @@ export const test = base.extend<AuthFixtures>({
         // Prevent onboarding wizard from hijacking navigation
         localStorage.setItem("onboarding_dismissed", "true");
         // Dismiss the first-run guided tour overlay
-        localStorage.setItem("indiiOS_tour_completed_v1", "true");
+        localStorage.setItem("indii_tour_completed_v1", "true");
         // Dismiss cookie consent banner so it doesn't overlay test targets
         // IMPORTANT: Must match ConsentPreferences interface exactly (requires version >= 1)
-        localStorage.setItem("indiiOS_cookie_consent", JSON.stringify({
+        localStorage.setItem("indii_cookie_consent", JSON.stringify({
           essential: true,
           analytics: false,
           errorTracking: false,

@@ -1,7 +1,7 @@
 /**
  * Synthetic Training Data Generator
  *
- * Uses Gemini Pro to generate high-quality training examples for each indiiOS agent.
+ * Uses Gemini Pro to generate high-quality training examples for each indii agent.
  * Appends directly to docs/agent-training/datasets/<agent_id>.jsonl
  *
  * Usage:
@@ -326,9 +326,9 @@ async function generateExamples(
         const styleReference = existing.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
         const agentTopicList = topics.join('\n- ');
 
-        const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indiiOS.
+        const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indii.
 
-CONTEXT: indiiOS is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
+CONTEXT: indii is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
 ARCHITECTURE: Boardroom Swarm protocol (Swarm-native specialists).
 REASONING: Agents operate in three modes:
 - Mode A (Curriculum): Pedagogical, teaching the artist.
@@ -427,7 +427,7 @@ async function main(): Promise<void> {
         ? KNOWN_AGENTS
         : agentArg.split(',').map(s => s.trim()).filter(id => KNOWN_AGENTS.includes(id));
 
-    console.log(`\n📚 indiiOS Synthetic Training Data Generator`);
+    console.log(`\n📚 indii Synthetic Training Data Generator`);
     console.log(`   Target: ${TARGET_EXAMPLES_PER_AGENT} examples/agent | Generating: ${countArg} per agent`);
     console.log(`   Agents: ${agents.join(', ')}\n`);
 

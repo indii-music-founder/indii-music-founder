@@ -1,8 +1,8 @@
-# 🚀 Welcome to indiiOS: Engineer Onboarding
+# 🚀 Welcome to indii: Engineer Onboarding
 
 *“Our MVP is someone else’s Beta test.”*
 
-If you are reading this, you are joining the engineering team behind **indiiOS**, the Operating System for Creators. This document is your Day 1 guide to taking ownership of a 190,000+ line codebase spanning advanced React, Firebase Cloud Functions, Electron, and a fleet of 20 highly specialized, fine-tuned AI Agents.
+If you are reading this, you are joining the engineering team behind **indii**, the Operating System for Creators. This document is your Day 1 guide to taking ownership of a 190,000+ line codebase spanning advanced React, Firebase Cloud Functions, Electron, and a fleet of 20 highly specialized, fine-tuned AI Agents.
 
 ---
 
@@ -24,7 +24,7 @@ Keep these boundaries sacred.
 
 1. **Node.js**: `v22.x` minimum.
 2. **Python**: `3.11+` for the AI Sidecar tools.
-3. **API Keys**: Request access to the `indiiOS-Alpha` `.env` credentials from the Lead Architect. (You will need Vertex AI, Stripe, and Firebase keys).
+3. **API Keys**: Request access to the `indii-music` `.env` credentials from the Lead Architect. (You will need Vertex AI, Stripe, and Firebase keys).
 
 ### Getting Started
 

@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
  *   - marketing: Third-party marketing pixels (future)
  */
 
-const CONSENT_STORAGE_KEY = 'indiiOS_cookie_consent';
+const CONSENT_STORAGE_KEY = 'indii_cookie_consent';
 
 export interface ConsentPreferences {
     essential: boolean; // Always true, cannot be toggled

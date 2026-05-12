@@ -125,10 +125,10 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 // Phase 2: Check for delegation loops
-                const traceId = context?.traceId || 'unknown';
-                const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
+                const swarmId = context?.swarmId || context?.traceId || 'unknown';
+                const delegationCheck = DelegationLoopDetector.recordDelegation(swarmId, targetAgentId);
                 if (delegationCheck.isLoop) {
-                    logger.warn(`[BaseAgent] Delegation loop detected: ${traceId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
+                    logger.warn(`[BaseAgent] Delegation loop detected in swarm ${swarmId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
                     return toolError(
                         `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
                         'DELEGATION_LOOP'
@@ -196,7 +196,7 @@ export class BaseAgent implements SpecializedAgent {
                         this.identityCard,
                         'delegate_task',
                         targetAgentId,
-                        traceId
+                        context?.traceId
                     );
                 }
 
@@ -921,7 +921,7 @@ export class BaseAgent implements SpecializedAgent {
                     const { name, args } = functionCall;
 
                     // Phase 2: Advanced loop detection
-                    const loopCheck = this.loopDetector.detectLoop(name, args);
+                    const loopCheck = await this.loopDetector.detectLoop(name, args);
                     if (loopCheck.isLoop) {
                         logger.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
                         logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);

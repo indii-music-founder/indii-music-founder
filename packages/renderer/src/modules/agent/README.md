@@ -1,6 +1,6 @@
 # Agent Module
 
-The Agent module is the core orchestration hub for indiiOS. It provides the interface for interacting with various AI agents (hub-and-spoke architecture) and managing complex creative workflows.
+The Agent module is the core orchestration hub for indii. It provides the interface for interacting with various AI agents (hub-and-spoke architecture) and managing complex creative workflows.
 
 ## Key Components
 - `AgentInterface`: The main chat/command interface.

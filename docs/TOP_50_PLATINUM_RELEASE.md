@@ -1,6 +1,6 @@
 # Top 50: Platinum-Standard Production Release Priorities
 
-> **indiiOS-Alpha-Electron v0.1.0-beta.2**
+> **indii-Alpha-Electron v0.1.0-beta.2**
 > Generated from production-readiness audit. Track progress here.
 
 ---

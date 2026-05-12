@@ -210,7 +210,7 @@ export const ERNMessageSchema = z.object({
 
 /**
  * Validates a DDEX ERN object against the schema.
- * Returns a ValidationResult compatible with indiiOS internal types.
+ * Returns a ValidationResult compatible with indii internal types.
  */
 export function validateERN(data: unknown) {
     const result = ERNMessageSchema.safeParse(data);

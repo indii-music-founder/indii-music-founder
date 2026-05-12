@@ -81,11 +81,11 @@ gemini-api-docs: get_migration_notes("@google/genai")
 
 ---
 
-## 4. indiiOS-Specific Patterns
+## 4. indii-Specific Patterns
 
 ### AI Service Layer
 
-All Gemini calls in indiiOS route through the service layer. When updating:
+All Gemini calls in indii route through the service layer. When updating:
 
 | Service | Location |
 |---------|----------|

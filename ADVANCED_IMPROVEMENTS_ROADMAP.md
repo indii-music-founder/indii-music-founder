@@ -22,7 +22,7 @@
 
 ## Executive Summary
 
-indiiOS has achieved **100% TOP_50 Platinum Release completion** with all CI/CD checks passing. This roadmap outlines four sequential phases to extend the platform with enterprise-grade capabilities:
+indii has achieved **100% TOP_50 Platinum Release completion** with all CI/CD checks passing. This roadmap outlines four sequential phases to extend the platform with enterprise-grade capabilities:
 
 1. **Phase 1 (Weeks 1-2):** Mobile-first PWA with offline-capable workflows, adaptive layouts, background sync
 2. **Phase 2 (Weeks 3-5):** Persistent memory layer, streaming agent responses, multi-turn reasoning loops
@@ -573,7 +573,7 @@ export default {
 - ✅ BigQuery event pipeline (stream events, batching, sampling)
 - ✅ REST API endpoints (/api/agents, /api/workflows, /api/analytics)
 - ✅ Webhook system (event subscriptions, retry logic, signature verification)
-- ✅ TypeScript SDK (@indiios/sdk npm package)
+- ✅ TypeScript SDK (@indii/sdk npm package)
 - ✅ OpenAPI schema (auto-generated API docs)
 - ✅ Analytics query builder (pre-built BigQuery queries)
 
@@ -629,11 +629,11 @@ export async function dispatchWebhook(
 
 **Package:** `packages/sdk/` (New)
 
-Publish as `@indiios/sdk` on npm.
+Publish as `@indii/sdk` on npm.
 
 ```typescript
 // packages/sdk/src/client.ts
-export class IndiiOSClient {
+export class indiiClient {
   async invokeAgent(agentId: string, input: string): Promise<Response>
   async createWorkflow(definition: WorkflowDefinition): Promise<Workflow>
   async queryAnalytics(query: AnalyticsQuery): Promise<AnalyticsResult>
@@ -733,7 +733,7 @@ Modify to publish all state changes to EventBusService.
 - `EventBusService.test.ts` - event publishing, batching
 - `APIRouter.test.ts` - endpoint routing, validation
 - `WebhookDispatcher.test.ts` - delivery, retry, signature verification
-- `IndiiOSClient.test.ts` (SDK) - request building, error handling
+- `indiiClient.test.ts` (SDK) - request building, error handling
 
 **E2E Tests:**
 - `api-endpoints.spec.ts` - all /api/* routes return correct data

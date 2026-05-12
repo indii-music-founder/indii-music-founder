@@ -209,7 +209,7 @@ class EventLoggerService {
     if (typeof window === 'undefined') return;
 
     try {
-      const key = `indiiOS_events_${record.sessionId}`;
+      const key = `indii_events_${record.sessionId}`;
       // Scrub sensitive data before persisting
       const scrubbed = { ...record, text: this._scrub(record.text) };
       if (scrubbed.meta) {

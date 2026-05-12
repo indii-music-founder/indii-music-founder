@@ -241,7 +241,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                     set({
                         user: {
                             uid: 'founder-demo-uid',
-                            email: 'founder@indiios.local',
+                            email: 'founder@indii.local',
                             displayName: 'Founder Demo',
                             isAnonymous: true,
                             getIdToken: async () => 'mock-token'

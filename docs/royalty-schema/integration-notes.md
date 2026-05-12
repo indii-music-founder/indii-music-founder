@@ -2,17 +2,17 @@
 
 **Document Version:** 1.0  
 **Date:** 2026-03-05  
-**For:** indiiOS Platform Integration
+**For:** indii Platform Integration
 
 ---
 
 ## Overview
 
-This document describes how the royalty collection schema fits into the existing indiiOS architecture, including agent responsibilities, data flow, and implementation priorities.
+This document describes how the royalty collection schema fits into the existing indii architecture, including agent responsibilities, data flow, and implementation priorities.
 
 ---
 
-## 1. Current indiiOS Architecture
+## 1. Current indii Architecture
 
 ### 1.1 Existing Agents
 

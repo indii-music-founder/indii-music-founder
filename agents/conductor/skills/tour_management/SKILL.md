@@ -31,8 +31,8 @@ description: Comprehensive knowledge base for tour routing, budgeting, advancing
 - **Hospitality Rider:** Green room requirements, dietary restrictions, buyout vs. provided meals (Buyout is often preferred: $20-$30 per traveling member).
 - **Settlement:** The process of getting paid at the end of the night. Always get the settlement sheet signed by the promoter and verify ticket counts vs. capacity.
 
-## 4. indiiOS App Integration (Road Manager)
+## 4. indii App Integration (Road Manager)
 
-- Use this knowledge when analyzing a user's Tour Itinerary data in indiiOS.
+- Use this knowledge when analyzing a user's Tour Itinerary data in indii.
 - Warn users if their routing shows negative profitability before they leave.
 - Suggest "buyouts" if hospitality requests are too complex for smaller venues.

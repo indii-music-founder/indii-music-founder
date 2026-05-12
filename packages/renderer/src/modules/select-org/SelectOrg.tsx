@@ -59,7 +59,7 @@ export default function SelectOrg() {
                             {isSwitching ? 'SWITCH\nSTUDIOS' : 'SELECT\nYOUR STUDIO'}
                         </h1>
                         <p className="text-gray-400 text-sm leading-relaxed">
-                            Welcome {userProfile?.displayName ? 'back, ' + userProfile.displayName : 'to indiiOS'}.
+                            Welcome {userProfile?.displayName ? 'back, ' + userProfile.displayName : 'to indii'}.
                             <br /><br />
                             Select an existing organization to orchestrate your creative agents, or establish a new studio to begin your journey.
                         </p>
@@ -195,7 +195,7 @@ export default function SelectOrg() {
                                             type="text"
                                             value={newOrgName}
                                             onChange={e => setNewOrgName(e.target.value)}
-                                            placeholder="e.g. IndiiOS Records, My Agency"
+                                            placeholder="e.g. indii Records, My Agency"
                                             autoFocus
                                             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
                                             className="w-full bg-black/40 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-4 focus:ring-purple-500/20 transition-all"

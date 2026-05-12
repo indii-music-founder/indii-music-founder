@@ -1,6 +1,6 @@
 # Video Studio Implementation Plan
 
-This document outlines the roadmap for completing the **Video Studio** in `indiiOS`, covering both the backend export infrastructure and advanced editing features.
+This document outlines the roadmap for completing the **Video Studio** in `indii`, covering both the backend export infrastructure and advanced editing features.
 
 ## Overview
 

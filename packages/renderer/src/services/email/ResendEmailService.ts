@@ -103,7 +103,7 @@ class ResendEmailServiceImpl {
     }): Promise<SendEmailResult> {
         return this.send({
             to: params.to,
-            subject: `[indiiOS] ${params.contractType} — Ready for Review`,
+            subject: `[indii] ${params.contractType} — Ready for Review`,
             template: 'contract',
             templateData: {
                 title: params.contractType,
@@ -133,7 +133,7 @@ class ResendEmailServiceImpl {
     }): Promise<SendEmailResult> {
         return this.send({
             to: params.to,
-            subject: `[indiiOS] ${params.title}`,
+            subject: `[indii] ${params.title}`,
             template: 'notification',
             templateData: {
                 title: params.title,
@@ -152,7 +152,7 @@ class ResendEmailServiceImpl {
     }): Promise<SendEmailResult> {
         return this.send({
             to: params.to,
-            subject: `[indiiOS] ${params.inviterName} invited you to collaborate`,
+            subject: `[indii] ${params.inviterName} invited you to collaborate`,
             template: 'invitation',
             templateData: {
                 inviterName: params.inviterName,

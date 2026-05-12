@@ -1,8 +1,8 @@
 import keytar from 'keytar';
 import { safeStorage } from 'electron';
 
-const SERVICE_NAME = 'IndiiOS_Auth';
-const TOKEN_ACCOUNT = 'IndiiOS_RefreshToken';
+const SERVICE_NAME = 'indii_Auth';
+const TOKEN_ACCOUNT = 'indii_RefreshToken';
 
 export class AuthStorage {
     async saveToken(token: string): Promise<void> {

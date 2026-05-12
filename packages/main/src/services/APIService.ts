@@ -28,7 +28,7 @@ export class APIService {
 
         // In a real app, use the token to query Firestore:
         /*
-        const url = `https://firestore.googleapis.com/v1/projects/indiios-v-1-1/databases/(default)/documents/songs?where=hash=${hash}`;
+        const url = `https://firestore.googleapis.com/v1/projects/indii-v-1-1/databases/(default)/documents/songs?where=hash=${hash}`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         const data = await response.json();
         */

@@ -20,7 +20,7 @@ ffmpeg.setFfprobePath(ffprobeStatic.path);
 
 const server = new Server(
     {
-        name: 'indiiOS-local-mcp',
+        name: 'indii-local-mcp',
         version: '0.1.0',
     },
     {
@@ -180,7 +180,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'indiiOS-MCP'
+                    'User-Agent': 'indii-MCP'
                 }
             });
 
@@ -195,7 +195,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'indiiOS-MCP'
+                    'User-Agent': 'indii-MCP'
                 }
             });
             const comments = commentsResponse.ok ? await commentsResponse.json() : [];
@@ -265,7 +265,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function run() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('MCP Server indiiOS-local-mcp running on stdio');
+    console.error('MCP Server indii-local-mcp running on stdio');
 }
 
 run().catch(console.error);

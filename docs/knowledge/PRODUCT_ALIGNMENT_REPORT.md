@@ -1,14 +1,14 @@
 
-# Product Alignment: The IndiiOS Dividend
+# Product Alignment: The indii Dividend
 >
-> **Goal:** Ensure the IndiiOS platform features directly capture the value identified in the *Artist Economics Deep Dive*.
+> **Goal:** Ensure the indii platform features directly capture the value identified in the *Artist Economics Deep Dive*.
 
-This document maps the **economic leaks** (Problems) to **IndiiOS solutions** (Features), confirming current status and identifying gaps.
+This document maps the **economic leaks** (Problems) to **indii solutions** (Features), confirming current status and identifying gaps.
 
 ## 1. The "Manager Tax" (20% Leak)
 
 * **Problem:** Artists pay ~20% of gross for coordination, negotiation, and strategy.
-* **IndiiOS Solution:** The **Central Intelligence Stack (Agents)**.
+* **indii Solution:** The **Central Intelligence Stack (Agents)**.
 * **Current Status:**
   * `GeneralistAgent` (The Coordinator) ✅
   * `FinanceAgent` (The CFO) ✅
@@ -20,7 +20,7 @@ This document maps the **economic leaks** (Problems) to **IndiiOS solutions** (F
 ## 2. The "Black Box" Loss (10-15% Leak)
 
 * **Problem:** Bad metadata leads to unclaimed royalties.
-* **IndiiOS Solution:** **Protocol-Level Metadata Hygiene**.
+* **indii Solution:** **Protocol-Level Metadata Hygiene**.
 * **Current Status:**
   * `Publishing` module exists.
   * `Licensing` module exists.
@@ -31,7 +31,7 @@ This document maps the **economic leaks** (Problems) to **IndiiOS solutions** (F
 ## 3. The "Fragmented Distribution" Tax (High Fees/Admin)
 
 * **Problem:** Paying separate fees to DistroKid, CD Baby, TuneCore, etc.
-* **IndiiOS Solution:** **Unified Distribution Pipeline**.
+* **indii Solution:** **Unified Distribution Pipeline**.
 * **Current Status:**
   * `PublishingAgent` implies this, but specific distribution integration is likely TBD.
 * **The Execution Gap:**
@@ -41,7 +41,7 @@ This document maps the **economic leaks** (Problems) to **IndiiOS solutions** (F
 ## 4. The "PR & Marketing" Bloat (Millions per 'Breakout')
 
 * **Problem:** Hiring PR firms ($3k/mo) and Designers ($500/art).
-* **IndiiOS Solution:** **Generative Publicist & Creative Studio**.
+* **indii Solution:** **Generative Publicist & Creative Studio**.
 * **Current Status:**
   * `PublicistAgent` exists.
   * `MarketingAgent` exists.

@@ -1,6 +1,6 @@
 # Founders Module
 
-The Founders module manages the exclusive Founder's Pass program, providing early access benefits and special privileges for founding members of the indiiOS platform.
+The Founders module manages the exclusive Founder's Pass program, providing early access benefits and special privileges for founding members of the indii platform.
 
 ## 👑 Key Features
 

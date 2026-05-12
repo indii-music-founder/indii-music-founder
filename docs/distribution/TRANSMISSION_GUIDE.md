@@ -1,6 +1,6 @@
 # Distribution Transmission Guide 📡
 
-**indiiOS Direct Distribution Engine - SFTP & Aspera Setup**
+**indii Direct Distribution Engine - SFTP & Aspera Setup**
 
 ---
 
@@ -51,7 +51,7 @@ The SFTP transmission system is **fully operational** and ready for production u
 
 ### How to Use (Development Mode)
 
-1. **Start indiiOS Studio:**
+1. **Start indii Studio:**
 
    ```bash
    npm run dev
@@ -178,7 +178,7 @@ source ~/.zshrc  # or source ~/.bash_profile
 
 #### Step 4: Test Aspera Integration
 
-1. **Restart indiiOS Studio** (to pick up new PATH)
+1. **Restart indii Studio** (to pick up new PATH)
 2. Navigate to **Distribution** → **Transmission**
 3. Select **Aspera** protocol
 4. Configure connection (host, username, etc.)
@@ -199,7 +199,7 @@ When using Aspera, you may need provider-specific settings:
 - **Encryption**: `-m 10M` (min speed in Mbps)
 - **Resume on Failure**: `-k 2` (resume level)
 
-The indiiOS implementation **automatically handles these defaults**. Custom parameters can be added to `aspera_uploader.py` if needed.
+The indii implementation **automatically handles these defaults**. Custom parameters can be added to `aspera_uploader.py` if needed.
 
 ---
 
@@ -211,9 +211,9 @@ The indiiOS implementation **automatically handles these defaults**. Custom para
 
 ```bash
 # Create a test file
-echo "IndiiOS Test Package" > /tmp/test_sftp.txt
+echo "indii Test Package" > /tmp/test_sftp.txt
 
-# In indiiOS UI:
+# In indii UI:
 # - Protocol: SFTP
 # - Host: test.rebex.net (public test server)
 # - Port: 22
@@ -231,7 +231,7 @@ echo "IndiiOS Test Package" > /tmp/test_sftp.txt
 # Verify ascp is available
 ascp --version
 
-# In indiiOS UI:
+# In indii UI:
 # - Protocol: Aspera
 # - Host: aspera-test.example.com (your test server)
 # - Username: test_user
@@ -291,7 +291,7 @@ Expected: `7/7 tests passing`
   ```
 
 - [ ] **Test Packaged App**
-  - Launch the built `.app` from `dist/mac/indiiOS.app`
+  - Launch the built `.app` from `dist/mac/indii.app`
   - Verify SFTP transmission works
   - Verify Aspera transmission works (if installed)
   - Check logs in `~/Library/Application Support/indii-os/`
@@ -357,7 +357,7 @@ Windows: %APPDATA%/indii-os/sftp_transfer.log
 
 - Follow [Installation Steps](#installation-steps) above
 - Verify installation: `which ascp` (macOS/Linux) or `where ascp` (Windows)
-- Restart indiiOS Studio after installation
+- Restart indii Studio after installation
 
 #### Issue: "Transfer timeout" (Large Files)
 
@@ -396,7 +396,7 @@ Windows: %APPDATA%/indii-os/sftp_transfer.log
 - **Paramiko (SFTP)**: <https://www.paramiko.org/>
 - **DDEX Standards**: <https://ddex.net/>
 
-### IndiiOS-Specific Files
+### indii-Specific Files
 
 - **SFTP Uploader**: `execution/distribution/sftp_uploader.py`
 - **Aspera Uploader**: `execution/distribution/aspera_uploader.py`
@@ -461,7 +461,7 @@ which ascp || echo "Aspera not found - see installation guide"
 ---
 
 **Last Updated**: January 18, 2026  
-**Maintained By**: IndiiOS Development Team  
+**Maintained By**: indii Development Team  
 **Document Location**: `docs/distribution/TRANSMISSION_GUIDE.md`
 
 ---

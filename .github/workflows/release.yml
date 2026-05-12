@@ -81,7 +81,7 @@ jobs:
           # Note: Adjust source path if electron-builder output directory is different.
           DMG_FILE=$(find . -name "*.dmg" -type f | head -n 1)
           if [ -n "$DMG_FILE" ]; then
-            firebase storage:upload "$DMG_FILE" founders/releases/indiiOS-Installer.dmg --project indiios-v-1-1 --non-interactive
+            firebase storage:upload "$DMG_FILE" founders/releases/indii-Installer.dmg --project indii-v-1-1 --non-interactive
           fi
         continue-on-error: true
 
@@ -92,7 +92,7 @@ jobs:
           # Upload EXE files
           EXE_FILE=$(find . -name "*.exe" -type f | head -n 1)
           if [ -n "$EXE_FILE" ]; then
-            firebase storage:upload "$EXE_FILE" founders/releases/indiiOS-Setup.exe --project indiios-v-1-1 --non-interactive
+            firebase storage:upload "$EXE_FILE" founders/releases/indii-Setup.exe --project indii-v-1-1 --non-interactive
           fi
         continue-on-error: true
 

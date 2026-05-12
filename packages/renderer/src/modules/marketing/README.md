@@ -1,6 +1,6 @@
 # Marketing & Campaigns Module (RC1)
 
-The Marketing module is the growth engine of indiiOS. It automates the complex task of promoting creative work, ensuring that every release reaches its maximum potential through AI-driven asset creation and campaign strategy.
+The Marketing module is the growth engine of indii. It automates the complex task of promoting creative work, ensuring that every release reaches its maximum potential through AI-driven asset creation and campaign strategy.
 
 ## 🚀 Key Features
 - **Campaign Architect:** Plan multi-week release cycles including teaser phases, launch day, and post-release support.

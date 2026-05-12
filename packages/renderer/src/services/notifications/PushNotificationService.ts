@@ -76,7 +76,7 @@ export class PushNotificationService {
                         unsubscribe = onMessage(m, (payload) => {
                             logger.info('[PushNotificationService] Received foreground message:', payload);
                             if (payload.notification) {
-                                new Notification(payload.notification.title || 'indiiOS Notification', {
+                                new Notification(payload.notification.title || 'indii Notification', {
                                     body: payload.notification.body,
                                     icon: '/pwa-192x192.png'
                                 });
@@ -100,7 +100,7 @@ export class PushNotificationService {
             return onMessage(messaging, (payload) => {
                 logger.info('[PushNotificationService] Received foreground message:', payload);
                 if (payload.notification) {
-                    new Notification(payload.notification.title || 'indiiOS Notification', {
+                    new Notification(payload.notification.title || 'indii Notification', {
                         body: payload.notification.body,
                         icon: '/pwa-192x192.png'
                     });

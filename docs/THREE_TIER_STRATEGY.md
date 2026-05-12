@@ -2,7 +2,7 @@
 
 # Three-Tier Strategy Implementation Blueprint
 
-**Project:** indiiOS - The Operating System for Independent Artists
+**Project:** indii - The Operating System for Independent Artists
 **Version:** 1.0.0
 **Last Updated:** 2026-01-05
 **Strategy:** Multi-Tier Product Deployment
@@ -12,9 +12,9 @@
 ## Executive Summary
 
 This blueprint implements a three-tier product strategy to serve the entire music industry spectrum:
-- **Tier 1:** indiiOS Free (Web) - Entry-level cloud offering
-- **Tier 2:** indiiOS Pro (Web) - Professional cloud subscription
-- **Tier 3:** indiiOS Studio (Desktop) - Local-first hybrid offering with two variants
+- **Tier 1:** indii Free (Web) - Entry-level cloud offering
+- **Tier 2:** indii Pro (Web) - Professional cloud subscription
+- **Tier 3:** indii Studio (Desktop) - Local-first hybrid offering with two variants
 
 ---
 
@@ -22,24 +22,24 @@ This blueprint implements a three-tier product strategy to serve the entire musi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    indiiOS Ecosystem                          │
+│                    indii Ecosystem                          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
-│  Tier 1: indiiOS Free (Web)                                   │
+│  Tier 1: indii Free (Web)                                   │
 │  ┌─────────────────────┐                                     │
 │  │ • Basic Features    │                                     │
 │  │ • Cloud-Only        │                                     │
 │  │ • Free Forever      │                                     │
 │  └─────────────────────┘                                     │
 │           ↓ Upsell Path                                        │
-│  Tier 2: indiiOS Pro (Web)                                    │
+│  Tier 2: indii Pro (Web)                                    │
 │  ┌─────────────────────┐                                     │
 │  │ • Enhanced Features │                                     │
 │  │ • Subscription      │                                     │
 │  │ • Cloud Power       │                                     │
 │  └─────────────────────┘                                     │
 │           ↓ Upgrade Option                                    │
-│  Tier 3: indiiOS Studio (Desktop)                             │
+│  Tier 3: indii Studio (Desktop)                             │
 │  ┌─────────────────────┐    ┌─────────────────────┐          │
 │  │  Variant 3A         │    │  Variant 3B         │          │
 │  │  TypeScript Native  │    │  Docker indii Conductor  │          │
@@ -108,7 +108,7 @@ export interface TierLimits {
 // Tier Configuration
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
-    name: 'indiiOS Free',
+    name: 'indii Free',
     price: 0,
     billingPeriod: 'once',
     imageGenerations: {
@@ -137,7 +137,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     }
   },
   [SubscriptionTier.PRO_MONTHLY]: {
-    name: 'indiiOS Pro',
+    name: 'indii Pro',
     price: 19,
     billingPeriod: 'month',
     imageGenerations: {
@@ -166,7 +166,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     }
   },
   [SubscriptionTier.PRO_YEARLY]: {
-    name: 'indiiOS Pro (Yearly)',
+    name: 'indii Pro (Yearly)',
     price: 190,
     billingPeriod: 'year',
     imageGenerations: {
@@ -195,7 +195,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     }
   },
   [SubscriptionTier.STUDIO_MONTHLY]: {
-    name: 'indiiOS Studio',
+    name: 'indii Studio',
     price: 49,
     billingPeriod: 'month',
     imageGenerations: {
@@ -224,7 +224,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     }
   },
   [SubscriptionTier.STUDIO_YEARLY]: {
-    name: 'indiiOS Studio (Yearly)',
+    name: 'indii Studio (Yearly)',
     price: 490,
     billingPeriod: 'year',
     imageGenerations: {
@@ -1626,7 +1626,7 @@ export class TokenService {
   }
 
   async approveSpend(amount: bigint): Promise<string> {
-    // Approve indiiOS contract to spend A0T tokens
+    // Approve indii contract to spend A0T tokens
     // Returns transaction hash
 
     return '0xtxhash...';
@@ -1698,8 +1698,8 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
 ```json
 // electron-builder.json (TypeScript Native)
 {
-  "appId": "com.indiios.studio",
-  "productName": "indiiOS Studio",
+  "appId": "com.indii.studio",
+  "productName": "indii Studio",
   "directories": {
     "output": "dist-electron"
   },
@@ -1724,7 +1724,7 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
   "publish": {
     "provider": "github",
     "owner": "new-detroit-music-llc",
-    "repo": "indiiOS-Alpha-Electron"
+    "repo": "indii-Alpha-Electron"
   }
 }
 ```
@@ -1734,8 +1734,8 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
 ```json
 // electron-builder.json (Docker Variant)
 {
-  "appId": "com.indiios.studio.docker",
-  "productName": "indiiOS Studio Pro",
+  "appId": "com.indii.studio.docker",
+  "productName": "indii Studio Pro",
   "directories": {
     "output": "dist-electron-docker"
   },
@@ -1811,12 +1811,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: indiios-agent-zero
+    container_name: indii-agent-zero
     volumes:
       # Map local projects to container
-      - ${HOME}/indiiOS/Projects:/a0/usr/projects
-      - ${HOME}/indiiOS/Memory:/a0/usr/memory
-      - ${HOME}/indiiOS/Instruments:/a0/usr/instruments
+      - ${HOME}/indii/Projects:/a0/usr/projects
+      - ${HOME}/indii/Memory:/a0/usr/memory
+      - ${HOME}/indii/Instruments:/a0/usr/instruments
     ports:
       - "8080:8080"
     environment:
@@ -1827,18 +1827,18 @@ services:
   # Optional: Local PostgreSQL for memory persistence
   postgres:
     image: postgres:15-alpine
-    container_name: indiios-postgres
+    container_name: indii-postgres
     volumes:
-      - indiios-db-data:/var/lib/postgresql/data
+      - indii-db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=indiios
-      - POSTGRES_USER=indiios
+      - POSTGRES_DB=indii
+      - POSTGRES_USER=indii
       - POSTGRES_PASSWORD=secure_password
     ports:
       - "5432:5432"
 
 volumes:
-  indiios-db-data:
+  indii-db-data:
 ```
 
 ```python
@@ -2241,7 +2241,7 @@ class A0TTokenService:
 ```python
 # docker/agent_zero_integration.py
 """
-Integration layer between indii Conductor and indiiOS instruments
+Integration layer between indii Conductor and indii instruments
 """
 
 from typing import Dict, List, Any
@@ -2255,8 +2255,8 @@ sys.path.append('/a0/usr/instruments')
 from image_generation import ImageGenerationInstrument
 from video_editing import VideoEditingInstrument
 
-class IndiiOSAgentZeroBridge:
-    """Bridge between indii Conductor and indiiOS ecosystem"""
+class indiiAgentZeroBridge:
+    """Bridge between indii Conductor and indii ecosystem"""
 
     def __init__(self):
         self.instruments: Dict[str, Any] = {

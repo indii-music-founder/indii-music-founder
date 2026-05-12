@@ -48,7 +48,7 @@ class DDEXGenerator:
 
         Args:
             sender_dpid: DDEX Party ID for the sender (distributor).
-                         Defaults to DDEX_SENDER_DPID env var or the registered indiiOS DPID.
+                         Defaults to DDEX_SENDER_DPID env var or the registered indii DPID.
             sender_name: Human-readable sender name.
                          Defaults to DDEX_SENDER_NAME env var or 'New Detroit Music LLC'.
         """
@@ -216,7 +216,7 @@ class DDEXGenerator:
         audio_dna_hash = track.get("audio_dna", {}).get("hash")
         if audio_dna_hash:
             dna_id = self._create_element(sr, "SoundRecordingId")
-            self._create_element(dna_id, "ProprietaryId", audio_dna_hash, Namespace="IndiiOS:AudioDNA")
+            self._create_element(dna_id, "ProprietaryId", audio_dna_hash, Namespace="indii:AudioDNA")
 
         # Parental Warning
         self._create_element(

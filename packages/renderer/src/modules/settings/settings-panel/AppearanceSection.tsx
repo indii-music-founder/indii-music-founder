@@ -31,7 +31,7 @@ const AppearanceSection: React.FC = () => {
         <div>
             <SectionHeader
                 title="Appearance"
-                description="Customize the look and feel of indiiOS."
+                description="Customize the look and feel of indii."
             />
 
             <div className="space-y-1">
