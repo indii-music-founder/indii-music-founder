@@ -133,7 +133,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                     description: 'Context Integrity Guardian',
                     color: '#4B0082',
                     category: 'specialist',
-                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indiiOS. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
+                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indii. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
                     tools: []
                 });
                 freezeAgentConfig(agent);

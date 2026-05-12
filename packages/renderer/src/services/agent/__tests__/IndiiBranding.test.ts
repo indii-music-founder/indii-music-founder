@@ -38,7 +38,7 @@ describe('indii Branding Constants', () => {
     describe('INDII_MESSAGES', () => {
         it('provides welcome message with indii branding', () => {
             expect(INDII_MESSAGES.welcome).toContain('indii');
-            expect(INDII_MESSAGES.welcome).toContain('indiiOS');
+            expect(INDII_MESSAGES.welcome).toContain('indii');
         });
 
         it('provides orchestrating message', () => {
