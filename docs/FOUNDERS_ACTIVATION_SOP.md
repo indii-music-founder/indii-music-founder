@@ -63,7 +63,7 @@ export const FOUNDERS: FounderEntry[] = [
 ### 2. Commit the Change
 
 ```bash
-cd /path/to/indiiOS-Clean
+cd /path/to/indii-Clean
 git add packages/renderer/src/config/founders.ts
 git commit -m "chore(founders): activate [FOUNDER_NAME] Founders Pass"
 git push origin main

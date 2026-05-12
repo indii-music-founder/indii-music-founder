@@ -1,6 +1,6 @@
 # End-to-End Encryption for Agent Communication
 
-Complete encryption framework for secure agent-to-agent communication in indiiOS.
+Complete encryption framework for secure agent-to-agent communication in indii.
 
 ## Overview
 

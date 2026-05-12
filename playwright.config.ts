@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Configuration — indiiOS E2E Tests
+ * Playwright Configuration — indii E2E Tests
  *
  * Run:           npx playwright test
  * A11y only:     npx playwright test e2e/a11y.spec.ts

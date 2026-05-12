@@ -135,8 +135,8 @@ When a CI shard fails:
 - SEVERITY: Critical (entire Creative Studio editor non-functional)
 - FILE: `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - BUG: `fabric.Image.fromURL(url, { crossOrigin: 'anonymous' })` silently fails when Firebase Storage doesn't return `Access-Control-Allow-Origin` headers. The promise had NO `.catch()` handler, so the canvas stayed blank with zero user feedback. Clicking "Save" then persisted an empty canvas to the gallery, cluttering it with blank assets.
-- ROOT CAUSE: Firebase Storage bucket `gs://indiios-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
-- FIX (server): `gsutil cors set config/cors.json gs://indiios-v-1-1.firebasestorage.app`
+- ROOT CAUSE: Firebase Storage bucket `gs://indii-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
+- FIX (server): `gsutil cors set config/cors.json gs://indii-v-1-1.firebasestorage.app`
 - FIX (client): Added `loadImageSafe()` with 3-tier fallback:
   1. Direct `fabric.Image.fromURL` with `crossOrigin: 'anonymous'`
   2. Fetch via `safeStorageFetch` → `URL.createObjectURL(blob)` (blob URLs are same-origin, bypass CORS)

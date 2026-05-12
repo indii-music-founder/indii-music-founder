@@ -1,6 +1,6 @@
 # Code Signing for Electron Desktop Builds
 
-This document describes the code signing setup for indiiOS desktop applications across macOS and Windows platforms.
+This document describes the code signing setup for indii desktop applications across macOS and Windows platforms.
 
 ## Overview
 

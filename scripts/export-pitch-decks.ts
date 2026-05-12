@@ -6,9 +6,9 @@ async function exportDecksToPDF() {
     const workspacePath = path.resolve(process.env.HOME || '~', '.openclaw/workspace/marketing/pitch-deck');
 
     const decks = [
-        'indiiOS-pitch-UNIFIED.html',
-        'indiiOS-pitch-DISTRIBUTION.html',
-        'indiiOS-pitch-BUSINESS-OS.html'
+        'indii-pitch-UNIFIED.html',
+        'indii-pitch-DISTRIBUTION.html',
+        'indii-pitch-BUSINESS-OS.html'
     ];
 
     console.log('Starting PDF Export for Pitch Decks...');

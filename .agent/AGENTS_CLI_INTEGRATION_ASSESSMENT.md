@@ -1,4 +1,4 @@
-# agents-cli Integration Assessment for indiiOS
+# agents-cli Integration Assessment for indii
 
 **Evaluation Date:** 2026-04-23  
 **Assessment Scope:** Feasibility, compatibility, and risk analysis  
@@ -15,7 +15,7 @@ agents-cli is a **developer productivity tool + workflow framework**, not a runt
 - Generate boilerplate (CI/CD, eval setup, observability config)
 - Enforce quality gates via skill-based methodology
 
-It is **NOT** a multi-tenant agent orchestration platform suitable for embedded use in a production SaaS app like indiiOS.
+It is **NOT** a multi-tenant agent orchestration platform suitable for embedded use in a production SaaS app like indii.
 
 ---
 
@@ -23,12 +23,12 @@ It is **NOT** a multi-tenant agent orchestration platform suitable for embedded 
 
 ### ✅ What agents-cli Does Well
 
-| Component | Value for indiiOS | Notes |
+| Component | Value for indii | Notes |
 |-----------|---|---|
 | **Agent abstraction** | High | Formal `Agent(model, instructions, tools, sub_agents)` interface — cleaner than implicit patterns |
-| **Tool system** | Medium | Function + docstring approach is simple, but indiiOS already uses Python MCP tools |
+| **Tool system** | Medium | Function + docstring approach is simple, but indii already uses Python MCP tools |
 | **State externalization** | High | SessionService pattern solves Zustand coupling problem |
-| **Evaluation framework** | High | LLM-as-judge metrics + iteration loop fills gap in indiiOS |
+| **Evaluation framework** | High | LLM-as-judge metrics + iteration loop fills gap in indii |
 | **Observability** | Medium | 4-tier model (Trace → Logs → Analytics → Custom) aligns with Firebase + BigQuery |
 
 ### ❌ What agents-cli Doesn't Fit
@@ -39,8 +39,8 @@ It is **NOT** a multi-tenant agent orchestration platform suitable for embedded 
 | **CLI-first design** | agents-cli is built for `agents-cli scaffold`, `agents-cli build` workflows | Cannot embed in web UI without heavy adaptation |
 | **Opinionated workflow** | Enforces 7-phase methodology even for simple use cases | Adds friction to rapid experimentation |
 | **Firebase incompatibility** | agents-cli targets Google Cloud (Cloud Run, GKE, Cloud Tasks) | Requires adapter layer to work with Firebase Functions |
-| **No real-time UI** | Designed for asynchronous CLI operations | Does not integrate with indiiOS's real-time React UI (Zustand, WebSockets) |
-| **Python-centric** | ADK is primarily Python; limited TypeScript support | indiiOS is Node.js + React; creates language boundary |
+| **No real-time UI** | Designed for asynchronous CLI operations | Does not integrate with indii's real-time React UI (Zustand, WebSockets) |
+| **Python-centric** | ADK is primarily Python; limited TypeScript support | indii is Node.js + React; creates language boundary |
 
 ---
 
@@ -77,7 +77,7 @@ It is **NOT** a multi-tenant agent orchestration platform suitable for embedded 
 4. **Phase-gate methodology** — Encode best practices in `.agent/skills/<feature>/SKILL.md`
 
 **What to skip:**
-- agents-cli CLI tool (keep indiiOS web UI)
+- agents-cli CLI tool (keep indii web UI)
 - Workflow DAG engine (React Flow already covers this)
 - agents-cli boilerplate generation (not applicable to SaaS app)
 
@@ -89,7 +89,7 @@ It is **NOT** a multi-tenant agent orchestration platform suitable for embedded 
 
 ### Scenario 3: Reference Only
 
-**Approach:** Study agents-cli architecture but build indiiOS-native solutions.
+**Approach:** Study agents-cli architecture but build indii-native solutions.
 
 **Pros:**
 - Zero integration work
@@ -121,7 +121,7 @@ agent = Agent(
 )
 ```
 
-**indiiOS Current Model:**
+**indii Current Model:**
 ```typescript
 // Implicit via service classes
 const legalAgent = new LegalAgentService(
@@ -154,7 +154,7 @@ class Agent:
         await self.session.set("app:last_result", result)
 ```
 
-**indiiOS Current Model:**
+**indii Current Model:**
 ```typescript
 // State scattered across Zustand slices
 const agentState = useAgentSlice();
@@ -187,7 +187,7 @@ def my_tool(query: str, ctx: ToolContext) -> str:
     return results
 ```
 
-**indiiOS Current Model:**
+**indii Current Model:**
 ```python
 # python/tools/image_gen.py
 @tool(name="generate_image")
@@ -218,7 +218,7 @@ Compute Metrics (tool accuracy, hallucination rate, quality score)
 Iterate (prompt / tools / model)
 ```
 
-**indiiOS Current Model:**
+**indii Current Model:**
 ```
 Unit tests in *.test.ts
 Manual testing in UI
@@ -241,7 +241,7 @@ No systematic evaluation
 session_key = f"user:{user_id}:preferences"
 ```
 
-**Problem for indiiOS:**
+**Problem for indii:**
 - Session keys are global; no namespace isolation
 - Customer A's data could leak to Customer B if there's a bug
 
@@ -261,9 +261,9 @@ class TenantAwareSessionService implements SessionService {
 
 ### 6. Real-Time UI Integration
 
-**Problem:** agents-cli assumes async CLI workflows. indiiOS needs real-time streaming to React.
+**Problem:** agents-cli assumes async CLI workflows. indii needs real-time streaming to React.
 
-**Current indiiOS Pattern:**
+**Current indii Pattern:**
 ```typescript
 const agentState = useAgentSlice(); // Zustand hook
 // Subscribe to real-time updates via WebSocket/Firebase
@@ -297,7 +297,7 @@ agent = Agent(
 - Cloud Tasks (job queue)
 - BigQuery (analytics)
 
-**indiiOS Uses:**
+**indii Uses:**
 - Firebase Functions (hosting)
 - Firestore (database)
 - BigQuery (analytics)

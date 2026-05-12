@@ -68,7 +68,7 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w6', type: 'active_campaigns', order: 5 },
 ];
 
-export const STORAGE_KEY = 'indiiOS_custom_dashboard_widgets';
+export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
 
 export function loadWidgets(): Widget[] {
     try {

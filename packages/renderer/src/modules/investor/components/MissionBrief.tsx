@@ -37,7 +37,7 @@ export const MissionBrief = ({ onAccept }: MissionBriefProps) => {
             <div className="space-y-6 text-lg md:text-xl mb-12 font-mono text-left bg-black/80 p-8 border border-[#00FF00]/50 rounded-lg shadow-[0_0_30px_rgba(0,255,0,0.15)] relative overflow-hidden backdrop-blur-md">
                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#00FF00] to-transparent opacity-50" />
                 <DecodeText text="> ATTENTION FOUNDING ARCHITECT..." delay={1000} />
-                <DecodeText text="> THE SOVEREIGN ENGINE REQUIRES IGNITION." delay={2500} />
+                <DecodeText text="> THE independent ENGINE REQUIRES IGNITION." delay={2500} />
                 <DecodeText text="> PROTOCOL: DETROIT 8 INIT." delay={4000} />
                 <DecodeText text="> STATUS: AWAITING NODE AUTHORIZATION." delay={5500} />
             </div>
@@ -52,7 +52,7 @@ export const MissionBrief = ({ onAccept }: MissionBriefProps) => {
                 className="px-10 py-5 bg-[#00FF00]/10 border-2 border-[#00FF00] text-[#00FF00] hover:bg-[#00FF00] hover:text-black transition-all duration-300 rounded font-bold tracking-widest uppercase text-xl flex items-center gap-4 group shadow-[0_0_15px_rgba(0,255,0,0.3)]"
             >
                 <Terminal className="w-6 h-6 group-hover:animate-bounce" />
-                <span>Engage Sovereign Node</span>
+                <span>Engage Independent Node</span>
             </motion.button>
         </motion.div>
     );

@@ -32,7 +32,7 @@ import { PublishingTools } from './tools/PublishingTools';
 import { ProducerTools } from './tools/ProducerTools';
 import { NarrativeTools } from './tools/NarrativeTools';
 import { ScreenwriterTools } from './tools/ScreenwriterTools';
-import { SovereignTools } from './tools/SovereignTools';
+import { AutonomousTools } from './tools/AutonomousTools';
 import { CommerceTools } from './tools/CommerceTools';
 import { BigQueryTools } from './tools/BigQueryTools';
 import { BrowserTools } from './tools/BrowserTools';
@@ -84,7 +84,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...ProducerTools,
     ...NarrativeTools,
     ...ScreenwriterTools,
-    ...SovereignTools,
+    ...AutonomousTools,
     ...CommerceTools,
     ...BigQueryTools,
     ...BrowserTools,
@@ -206,7 +206,7 @@ AVAILABLE TOOLS:
 87. format_screenplay(storyOutline, genre) - Format a screenplay from an outline.
 88. analyze_script_structure(scriptText) - Analyze script structure and pacing.
 --- COMMERCE & WEB3 ---
-89. create_artifact_drop(assetId, dropType, price, quantity) - Create a sovereign artifact drop (NFT or limited edition).
+89. create_artifact_drop(assetId, dropType, price, quantity) - Create a independent artifact drop (NFT or limited edition).
 90. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
 91. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
 92. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.

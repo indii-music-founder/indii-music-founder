@@ -89,7 +89,7 @@ if [ "${1:-}" = "--prepend" ]; then
         rm "$TEMP"
         echo "Changelog updated: ${CHANGELOG}"
     else
-        echo -e "# Changelog\n\nAll notable changes to indiiOS are documented in this file.\n\n## [Unreleased]\n\n---\n\n${FULL_OUTPUT}" > "$CHANGELOG"
+        echo -e "# Changelog\n\nAll notable changes to indii are documented in this file.\n\n## [Unreleased]\n\n---\n\n${FULL_OUTPUT}" > "$CHANGELOG"
         echo "Changelog created: ${CHANGELOG}"
     fi
 else

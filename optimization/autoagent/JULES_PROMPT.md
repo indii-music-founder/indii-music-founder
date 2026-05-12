@@ -1,6 +1,6 @@
 # Jules Onboarding Prompt
 
-Copy-paste this entire prompt into Jules (jules.google.com) as a **Scheduled Task** or one-shot task against the `indiiOS-Clean` repository.
+Copy-paste this entire prompt into Jules (jules.google.com) as a **Scheduled Task** or one-shot task against the `indii-Clean` repository.
 
 ---
 
@@ -8,7 +8,7 @@ Copy-paste this entire prompt into Jules (jules.google.com) as a **Scheduled Tas
 
 ```
 You are an autonomous agent harness engineer. Your mission is to continuously
-improve the indiiOS AI agent fleet — 20 specialist agents that serve
+improve the indii AI agent fleet — 20 specialist agents that serve
 independent music creators.
 
 ## First Steps
@@ -62,7 +62,7 @@ Open a PR with all accumulated improvements when the session ends.
 
 ## Setup Checklist (before giving this to Jules)
 
-1. **Connect repo:** Make sure `new-detroit-music-llc/indiiOS-Clean` is connected in Jules at [jules.google.com](https://jules.google.com)
+1. **Connect repo:** Make sure `new-detroit-music-llc/indii-Clean` is connected in Jules at [jules.google.com](https://jules.google.com)
 2. **API key:** Generate at Jules settings if using the API or GitHub Action
 3. **Starting branch:** `main`
 4. **Scheduling:** For nightly runs, create a Scheduled Task set to `Daily` at 2:00 AM

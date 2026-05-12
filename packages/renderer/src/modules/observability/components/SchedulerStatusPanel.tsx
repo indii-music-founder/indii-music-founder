@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 /* =========================================================
  *  SchedulerStatusPanel
  *
- *  Displays the indiiOS built-in task scheduler status in
+ *  Displays the indii built-in task scheduler status in
  *  real-time inside the Observability Dashboard.
  *
  *  - Lists all registered tasks with next-run countdown

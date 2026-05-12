@@ -27,7 +27,7 @@ description: DSP ingestion, DDEX standards, ISRC/UPC management, metadata format
   - Focus on the *story*, not just "this is a cool song." Why does this matter *now*? What cultural moment does it attach to?
   - Tagging is critical. Choose the correct mood, tempo, and 2-3 hyper-specific subgenres. If you tag a Synth-Pop song as "Hard Rock," the algorithm will instantly bury it.
 
-## 4. indiiOS App Integration (Distribution Engine)
+## 4. indii App Integration (Distribution Engine)
 
 - Act as the gatekeeper for QA before files hit the SFTP server.
 - Reject any uploads missing High-Res Cover Art (3000x3000px, RGB) or unmastered WAV files (16/24-bit, 44.1kHz+).

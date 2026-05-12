@@ -7,7 +7,7 @@ description: Implementation reference for the Brand Kit and Onboarding System �
 
 ## Purpose
 
-The Brand Kit is the artist's identity layer in indiiOS. It's populated via a conversational AI onboarding flow ("indii" agent) and feeds into every downstream feature — Creative Studio, Marketing, Distribution metadata, Social posts, etc.
+The Brand Kit is the artist's identity layer in indii. It's populated via a conversational AI onboarding flow ("indii" agent) and feeds into every downstream feature — Creative Studio, Marketing, Distribution metadata, Social posts, etc.
 
 ## When to Invoke
 
@@ -80,7 +80,7 @@ grep -n "brandKit\|UserProfile" src/core/store/slices/profileSlice.ts
 
 # Watch for Gemini API issues during onboarding
 # → Check Cloud Functions logs for generateContentStream errors
-firebase functions:log --project indiios-v-1-1 --only generateContentStream
+firebase functions:log --project indii-v-1-1 --only generateContentStream
 ```
 
 ---

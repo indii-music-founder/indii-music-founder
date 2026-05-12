@@ -70,7 +70,7 @@ export class PinataService {
         const body = {
             pinataContent: data,
             pinataMetadata: {
-                name: options?.name || `indiiOS-${Date.now()}`,
+                name: options?.name || `indii-${Date.now()}`,
                 keyvalues: options?.keyValues || {},
             },
         };

@@ -9,7 +9,7 @@
 
 ## Overview: The Three Paths to Distribution
 
-indiiOS's distribution architecture supports three paths, which you'll pursue in sequence:
+indii's distribution architecture supports three paths, which you'll pursue in sequence:
 
 ```
 Phase A (Now): Distribute through existing distributors (DistroKid, TuneCore, etc.)
@@ -17,8 +17,8 @@ Phase A (Now): Distribute through existing distributors (DistroKid, TuneCore, et
     └── You are a customer of the distributor
     └── Revenue: subscription fees from users
 
-Phase B (6-12 months): Direct DDEX integration with DSPs
-    └── Requires: DDEX Party ID (DPID), peer conformance testing
+Phase B (6-12 months): Proprietary ingestion IP for direct DSP delivery
+    └── Requires: Proprietary System Identifier (DPID), peer conformance testing
     └── You become the distributor yourself
     └── Revenue: subscription + potential revenue share
 
@@ -42,7 +42,7 @@ Phase C (12-24 months): Full distribution license
 |------|--------|------|--------|
 | 1 | **Create a DistroKid account** at [distrokid.com](https://distrokid.com) | 5 min | `[ ]` |
 | 2 | **Upgrade to a Team/Label plan** — needed for API access and multi-artist distribution | 5 min | `[ ]` |
-| 3 | **Request API access** — email `api@distrokid.com` with: "I'm building a distribution platform (indiiOS) and would like API access for automated uploads." Include your label plan account email. | 10 min | `[ ]` |
+| 3 | **Request API access** — email `api@distrokid.com` with: "I'm building a distribution platform (indii) and would like API access for automated uploads." Include your label plan account email. | 10 min | `[ ]` |
 | 4 | **If API access is denied:** Use SFTP upload as fallback. DistroKid provides SFTP credentials for bulk uploads on Label plans. | — | `[ ]` |
 | 5 | **Configure credentials:** Add to Cloud Functions environment: | 5 min | `[ ]` |
 
@@ -91,11 +91,11 @@ firebase functions:config:set \
 
 ---
 
-## Phase B: DDEX Direct Integration
+## Phase B: Proprietary Ingestion IP & Direct Delivery
 
 > **Timeline:** Start this process 3-6 months before you want to go direct. Certification takes time.
 
-### B1. Get Your DDEX Party ID (DPID)
+### B1. Secure Proprietary System Identifier (DPID)
 
 > This is the single most important registration for direct distribution.
 
@@ -162,7 +162,7 @@ Your DPID looks like: `PADPIDA2024123456`
 | 4 | Get your **IPI Number** (Interested Parties Information) | Wait 2-4 weeks | `[ ]` |
 | 5 | Store IPI in environment: `firebase functions:config:set pro.ascap_ipi="YOUR_IPI"` | 5 min | `[ ]` |
 
-> **Why register as a publisher?** indiiOS users create songs. If you register as a publisher affiliated with ASCAP, you can help users collect performance royalties through the platform. This is a future revenue stream.
+> **Why register as a publisher?** indii users create songs. If you register as a publisher affiliated with ASCAP, you can help users collect performance royalties through the platform. This is a future revenue stream.
 
 ---
 
@@ -221,7 +221,7 @@ Your DPID looks like: `PADPIDA2024123456`
 | 2 | Register as a publisher to claim works | 15 min | `[ ]` |
 | 3 | **Free registration** | — | `[ ]` |
 
-> **Why it matters:** When your users' songs are streamed on interactive services, the MLC collects mechanical royalties. If the songwriter isn't registered with the MLC, royalties go unclaimed. Registration through indiiOS is a value-add feature.
+> **Why it matters:** When your users' songs are streamed on interactive services, the MLC collects mechanical royalties. If the songwriter isn't registered with the MLC, royalties go unclaimed. Registration through indii is a value-add feature.
 
 ---
 

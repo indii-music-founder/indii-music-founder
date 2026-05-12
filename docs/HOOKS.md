@@ -1,6 +1,6 @@
 # Systems & Logic Hooks (Beta Release V5.0)
 
-This document provides a comprehensive technical reference for the **Antigravity Protocol** and the **Core Application Hooks** that power the indiiOS ecosystem.
+This document provides a comprehensive technical reference for the **Antigravity Protocol** and the **Core Application Hooks** that power the indii ecosystem.
 
 ---
 
@@ -31,9 +31,9 @@ graph TD
 
 ### 🪝 Protocol Hooks (`hooks.json`)
 
-- **`session_start`**: [`scripts/session_start.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/scripts/session_start.sh). Performs deep workspace analysis, `npm install` synchronization, and **Cortex type regeneration**.
-- **`after_file_edit`**: [`scripts/after_edit.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/scripts/after_edit.sh). Handles ESLint auto-fixes, Prettier formatting, and localized type checks. **Failures trigger immediate rollback/retry.**
-- **`on_stop`**: [`scripts/on_stop.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/scripts/on_stop.sh). The Beta Gatekeeper. Executes full regression suites ("The Gauntlet") and production build sanity checks.
+- **`session_start`**: [`scripts/session_start.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/scripts/session_start.sh). Performs deep workspace analysis, `npm install` synchronization, and **Cortex type regeneration**.
+- **`after_file_edit`**: [`scripts/after_edit.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/scripts/after_edit.sh). Handles ESLint auto-fixes, Prettier formatting, and localized type checks. **Failures trigger immediate rollback/retry.**
+- **`on_stop`**: [`scripts/on_stop.sh`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/scripts/on_stop.sh). The Beta Gatekeeper. Executes full regression suites ("The Gauntlet") and production build sanity checks.
 
 ---
 

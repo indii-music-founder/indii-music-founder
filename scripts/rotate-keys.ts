@@ -15,7 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../src/utils/logger';
 
-const PROJECT_ID = 'indiios-v-1-1';
+const PROJECT_ID = 'indii-v-1-1';
 const KEY_DIR = path.join(process.cwd(), 'config/keys');
 
 interface RotationResult {
@@ -87,7 +87,7 @@ async function main() {
         }
     } else {
         console.log(`
-indiiOS Key Rotation Utility
+indii Key Rotation Utility
 ============================
 Usage:
   npx tsx scripts/rotate-keys.ts --service-account [ACCOUNT_NAME]

@@ -80,5 +80,5 @@ Before shipping to an acquirer, confirm:
 ---
 
 **Last Updated:** 2026-04-26  
-**Author:** William Roberts (indiiOS)  
+**Author:** William Roberts (indii)  
 **Audience:** Acquisition diligence teams

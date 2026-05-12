@@ -1,6 +1,6 @@
 ---
 name: opp
-description: Session bootstrap for indiiOS. Activates the Operator persona — performs a full environment audit, reads active task/plan context, and primes the agent for the session ahead. Always run at the start of a new session.
+description: Session bootstrap for indii. Activates the Operator persona — performs a full environment audit, reads active task/plan context, and primes the agent for the session ahead. Always run at the start of a new session.
 ---
 
 # @opp — Operator Persona Bootstrap
@@ -46,7 +46,7 @@ Print this block once with actual values:
 
 ```text
 === OPERATOR STATUS ===
-Workspace:     indiiOS-Alpha-Electron @ [current branch]
+Workspace:     indii-Alpha-Electron @ [current branch]
 Git:           [Clean / N files modified / N uncommitted]
 Processes:     [None / list running commands]
 Active Task:   [Summary from task.md, or "None"]
@@ -90,6 +90,6 @@ App Port:       4242 (Vite dev server)
 Landing Port:   3000 (Next.js marketing)
 Agent Zero:     localhost:50080 (Docker sidecar)
 OpenClaw:       localhost:18789
-Project:        indiios-v-1-1 (Firebase)
+Project:        indii-v-1-1 (Firebase)
 Node:           >= 22.0.0 required
 ```

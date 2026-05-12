@@ -12,7 +12,7 @@ This document contains a comprehensive breakdown of all coding-related logic, mu
 **Architectures and Protocols**
 
 * **Model Context Protocol (MCP):** An open standard defining a universal client-server protocol built on JSON-RPC 2.0 to connect AI agents to external capabilities. It transforms M×N integration fragmentation into M+N modularity. It uses stateful connections over transports like STDIO for local tasks and HTTP+SSE for web contexts.
-* **Hub-and-Spoke Architecture:** A routing design utilized in indiiOS where a central orchestrator ("Agent Zero Hub") delegates context-isolated workloads to specialized "Spoke" agents (e.g., Legal, Marketing, Creative Director, Finance).
+* **Hub-and-Spoke Architecture:** A routing design utilized in indii where a central orchestrator ("Agent Zero Hub") delegates context-isolated workloads to specialized "Spoke" agents (e.g., Legal, Marketing, Creative Director, Finance).
 * **Event-Driven Gateway (The "Pulse"):** An architecture where the AI agent is not purely reactive to user prompts but triggers proactive workloads based on 5 inputs: messages, time (heartbeats), scheduled crons, internal state hooks, and external webhooks.
 * **Containerized Sidecar Model:** The pattern of utilizing Dockerized environments (like Agent Zero) to execute arbitrary Python/shell code safely. This isolates the AI's execution space from the host machine to prevent security compromises.
 
@@ -20,7 +20,7 @@ This document contains a comprehensive breakdown of all coding-related logic, mu
 
 * **Agent Zero:** An open-source, highly transparent agent framework running locally on its own virtual computer via Docker. It supports multi-agent cooperation, Python/JS toolchains, browser automation, and integrates persistent memory (FAISS). It is governed by a customizable `agent.system.md` file and utilizes a "Generate -> Execute -> Reason" loop.
 * **OpenClaw (formerly Clawdbot/Moltbot):** A cross-platform (macOS, Linux, Windows WSL2) AI assistant written in TypeScript and Swift. It uses a two-tiered memory system combining JSONL transcripts (raw logs) and markdown files like `MEMORY.md` and `SOUL.md`. It relies on a hybrid search system combining Vector Search for semantics and SQLite FTS5 for exact keywords.
-* **indiiOS Tech Stack:** A proprietary React 19.2 frontend powered by Vite 6.2, TailwindCSS v4.1, Zustand 5.0, Fabric.js, and Remotion 4.0. The backend operates on Firebase Gen 2 Functions (Node 22), Google GenAI/Vertex AI, and Inngest for background jobs. The desktop wrapper is built on Electron 33, interacting with local Puppeteer instances and Keytar for OS-level keychain credential storage.
+* **indii Tech Stack:** A proprietary React 19.2 frontend powered by Vite 6.2, TailwindCSS v4.1, Zustand 5.0, Fabric.js, and Remotion 4.0. The backend operates on Firebase Gen 2 Functions (Node 22), Google GenAI/Vertex AI, and Inngest for background jobs. The desktop wrapper is built on Electron 33, interacting with local Puppeteer instances and Keytar for OS-level keychain credential storage.
 * **Ralph (frankbria/ralph-claude-code):** An autonomous development loop for Claude Code. Features include dual-condition exit gates (requiring both completion indicators and an explicit EXIT_SIGNAL), circuit breakers with multi-line error matching, rate limiting, session expiration, and semantic response analyzers.
 * **AGENT-ZERO (msitarzewski/AGENT-ZERO):** An operational repository dictating workflows for AI assistants using a "Memory Bank" pattern. It enforces strict "Quality Gates" and architecture-aligned code generation using persisted context files like `productContext.md`, `systemPatterns.md`, and `activeContext.md`.
 * **Compiler.next (SE 3.0):** A proposed search-based compiler that transforms human intents into optimized "FMware" (Foundation Model software). It uses algorithms like NSGA-II to perform multi-objective Pareto optimization across accuracy, latency, and token cost, employing a two-level semantic cache to reduce redundant API calls.
@@ -43,7 +43,7 @@ This document contains a comprehensive breakdown of all coding-related logic, mu
 
 **The "Microscopic Mediator" Paradigm**
 
-* **Role Definition:** In the indiiOS blueprint, the AI agent is explicitly instructed never to act as an audio engineer. It is firewall-blocked from mixing, mastering, trimming, or applying DSP manipulation to the waveform.
+* **Role Definition:** In the indii blueprint, the AI agent is explicitly instructed never to act as an audio engineer. It is firewall-blocked from mixing, mastering, trimming, or applying DSP manipulation to the waveform.
 * **The "Wrapper":** The agent functions as an Industry Operator, bridging the gap between the immutable audio master and commercial distribution. It generates the "wrapper" assets around the music: 150-word press releases, visual prompts for 3000x3000px cover art, Spotify Canvas loops, social media copy, and legal compliance contracts.
 * **API Platforms:** The system interfaces directly with distribution services like DistroKid, TuneCore, CD Baby, and Symphonic to manage the lifecycle of a release.
 

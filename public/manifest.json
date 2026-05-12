@@ -12,7 +12,7 @@
     {
       "purpose": "any maskable",
       "sizes": "any",
-      "src": "/indiiOS-logo.svg",
+      "src": "/indii-logo.svg",
       "type": "image/svg+xml"
     },
     {
@@ -21,17 +21,17 @@
       "type": "image/svg+xml"
     }
   ],
-  "name": "indiiOS - AI Creative Studio",
+  "name": "indii - AI Creative Studio",
   "orientation": "portrait-primary",
   "scope": "/",
-  "short_name": "indiiOS",
+  "short_name": "indii",
   "shortcuts": [
     {
       "description": "Open Creative Studio for image generation",
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Creative Studio",
@@ -43,7 +43,7 @@
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Video Studio",
@@ -55,7 +55,7 @@
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Music Analysis",

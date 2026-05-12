@@ -22,7 +22,7 @@ async function runTest() {
     try {
         // 2. Create Test Corpus
         console.log("Creating Test Corpus...");
-        const corpus = await service.createCorpus("IndiiOS Test Corpus " + Date.now());
+        const corpus = await service.createCorpus("indii Test Corpus " + Date.now());
         console.log("✅ Corpus Created:", corpus.name);
 
         console.log("Waiting 10s for corpus propagation...");
@@ -44,7 +44,7 @@ async function runTest() {
 
         // 4. Ingest Data
         console.log("Ingesting Text...");
-        const secretFact = "The secret code for the IndiiOS vault is 'BlueBanana42'.";
+        const secretFact = "The secret code for the indii vault is 'BlueBanana42'.";
         await service.ingestText(doc.name, secretFact);
         console.log("✅ Text Ingested.");
 

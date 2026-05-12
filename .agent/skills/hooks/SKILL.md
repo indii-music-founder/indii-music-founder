@@ -1,6 +1,6 @@
 # Hooks Skill v1.0
 
-> Full-spectrum hooks management for indiiOS. Discovers, audits, evaluates,
+> Full-spectrum hooks management for indii. Discovers, audits, evaluates,
 > recommends, and implements hooks across every layer of the stack.
 
 ---
@@ -19,7 +19,7 @@ Invoke this skill when the user says anything related to:
 
 ## Scope
 
-This skill covers **all hook layers** in indiiOS:
+This skill covers **all hook layers** in indii:
 
 | Layer | Location | Type |
 |-------|----------|------|
@@ -162,7 +162,7 @@ When the user confirms a recommendation, implement it immediately:
 Always produce a structured report, even for partial runs:
 
 ```
-## Hooks Audit — indiiOS
+## Hooks Audit — indii
 Ran: <timestamp>
 
 ---

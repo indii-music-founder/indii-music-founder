@@ -3,7 +3,7 @@ import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 const ENVIRONMENT = import.meta.env.MODE ?? 'development';
-const RELEASE = `indiios@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
+const RELEASE = `indii@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
 const DEBUG = import.meta.env.DEV && import.meta.env.VITE_DEBUG_SENTRY === 'true';
 
 /** Initialize Sentry for the React renderer. Call once before ReactDOM.render(). */

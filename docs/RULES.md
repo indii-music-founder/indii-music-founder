@@ -106,7 +106,7 @@ If a fix fails verification **twice**:
 
 ## 5. GEMINI 3 TECHNICAL SPECIFICATIONS
 
-Refer to [GEMINI.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/docs/GEMINI.md) for full technical specifications, including:
+Refer to [GEMINI.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/docs/GEMINI.md) for full technical specifications, including:
 
 - Reasoning & Thinking Levels
 - Multimodal Specifications

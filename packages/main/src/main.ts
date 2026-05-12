@@ -104,7 +104,7 @@ if (isDev) {
 // Item 374: Crash reporter (no PII — only crash metadata is submitted)
 if (app.isPackaged) {
     crashReporter.start({
-        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indiios/minidump/',
+        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indii/minidump/',
         uploadToServer: !!process.env.CRASH_REPORTER_URL,
     });
 }
@@ -224,7 +224,7 @@ const createWindow = async () => {
     // Handle Window Open Requests
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
-        if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
+        if (url.startsWith('https://indii-v-1-1.firebaseapp.com')) return { action: 'allow' };
 
         // Use logic similar to will-navigate for consistency
         const parsedUrl = new URL(url);
@@ -237,7 +237,7 @@ const createWindow = async () => {
     // Security Gate for WebNavigation
     win.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indiios-v-1-1.firebaseapp.com'];
+        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii-v-1-1.firebaseapp.com'];
 
         if (navigationUrl.startsWith(devServerUrl)) return;
 
@@ -277,7 +277,7 @@ const createTray = () => {
 
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: 'Show IndiiOS',
+            label: 'Show indii',
             click: () => {
                 mainWindow?.show();
                 if (process.platform === 'darwin') {
@@ -295,7 +295,7 @@ const createTray = () => {
         }
     ]);
 
-    tray.setToolTip('IndiiOS Studio');
+    tray.setToolTip('indii Studio');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {

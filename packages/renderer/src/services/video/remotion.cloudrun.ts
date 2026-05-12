@@ -4,7 +4,7 @@
  * Configuration for Remotion Cloud Run (GCP) rendering.
  *
  * This replaces the previous Lambda (AWS) configuration to keep
- * indiiOS fully within the Google Cloud ecosystem.
+ * indii fully within the Google Cloud ecosystem.
  *
  * Required environment variables:
  *   VITE_REMOTION_GCP_PROJECT_ID  – GCP project ID (defaults to Firebase project)

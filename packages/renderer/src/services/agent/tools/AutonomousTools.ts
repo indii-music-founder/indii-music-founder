@@ -3,9 +3,9 @@ import type { AnyToolFunction } from '../types';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export const SovereignTools = {
+export const AutonomousTools = {
     /**
-     * Creates a "Sovereign Artifact Drop" - a high-value purchase link for assets.
+     * Creates an "Independent Artifact Drop" - a high-value purchase link for assets.
      * Packages artwork, audio, and a generated license into a single commercial artifact.
      */
     create_artifact_drop: wrapTool('create_artifact_drop', async (args: { 
@@ -27,7 +27,7 @@ export const SovereignTools = {
             // 1. Create the Artifact record in Firestore
             const dropData = {
                 ownerId: userProfile.id,
-                ownerName: userProfile.displayName || "Sovereign Artist",
+                ownerName: userProfile.displayName || "Independent Artist",
                 title: args.title,
                 description: args.description,
                 priceUsd: args.priceUsd,
@@ -48,7 +48,7 @@ export const SovereignTools = {
                 dropId: docRef.id,
                 url: dropUrl,
                 message: `Artifact Drop "${args.title}" created successfully!`
-            }, `Your Sovereign Artifact is LIVE. Purchase Link: ${dropUrl}`);
+            }, `Your Independent Artifact is LIVE. Purchase Link: ${dropUrl}`);
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';

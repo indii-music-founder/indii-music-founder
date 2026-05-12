@@ -1,4 +1,4 @@
-# indiiOS Production Work Order — Phase 2 (Ongoing Improvements)
+# indii Production Work Order — Phase 2 (Ongoing Improvements)
 
 **Generated:** 2026-03-26 | **Source:** CEO Deep-Dive Review | **For:** Execution Agents
 
@@ -152,7 +152,7 @@ grep -rn "as any" src/services/ --include="*.ts" | grep -v ".test."
 
 ## WO-17: Music Training Data Review
 
-**Context:** `docs/agent-training/datasets/music.jsonl` contains 122 training examples. Some may contain production-focused scenarios (mix feedback, production coaching) that conflict with indiiOS's scope.
+**Context:** `docs/agent-training/datasets/music.jsonl` contains 122 training examples. Some may contain production-focused scenarios (mix feedback, production coaching) that conflict with indii's scope.
 
 **Action:**
 
@@ -207,7 +207,7 @@ grep -rn "as any" src/services/ --include="*.ts" | grep -v ".test."
 3. Auto-populate distribution metadata from DAW project files when possible
 4. Validate audio specs against DSP requirements on import
 
-**Note:** indiiOS does NOT open DAW projects for editing — it only reads metadata from exported files to streamline the distribution pipeline.
+**Note:** indii does NOT open DAW projects for editing — it only reads metadata from exported files to streamline the distribution pipeline.
 
 ---
 

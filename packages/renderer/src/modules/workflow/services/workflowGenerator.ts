@@ -66,7 +66,7 @@ interface GeneratedWorkflow {
 export async function generateWorkflowFromPrompt(userPrompt: string): Promise<SavedWorkflow> {
     const registryContext = JSON.stringify(getRegistryContext(), null, 2);
 
-    const systemInstruction = `You are a Workflow Architect for indiiOS. 
+    const systemInstruction = `You are a Workflow Architect for indii. 
     Your goal is to translate a user's intent into a valid Node Graph JSON structure.
     
     AVAILABLE TOOLS (Node Registry):

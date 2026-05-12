@@ -1,6 +1,6 @@
 # Internationalization (i18n)
 
-Multi-language support for indiiOS with i18next framework.
+Multi-language support for indii with i18next framework.
 
 ## Supported Languages
 
@@ -71,7 +71,7 @@ import { LanguageSelector } from '@/components/shared/LanguageSelector';
 function Header() {
   return (
     <header>
-      <h1>indiiOS</h1>
+      <h1>indii</h1>
       <LanguageSelector />
     </header>
   );

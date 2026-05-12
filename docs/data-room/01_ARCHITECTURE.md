@@ -1,4 +1,4 @@
-# System Architecture: indiiOS Platform
+# System Architecture: indii Platform
 
 **Author:** William Roberts  
 **Date:** 2026-04-26  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-indiiOS operates on a **proven 3-layer separation of concerns** designed to maximize reliability and minimize compound errors in a complex system. The architecture isolates deterministic execution (Layer 3) from probabilistic reasoning (Layer 2) from strategic direction (Layer 1), allowing each layer to be tested and scaled independently.
+indii operates on a **proven 3-layer separation of concerns** designed to maximize reliability and minimize compound errors in a complex system. The architecture isolates deterministic execution (Layer 3) from probabilistic reasoning (Layer 2) from strategic direction (Layer 1), allowing each layer to be tested and scaled independently.
 
 ### Three-Layer Overview
 
@@ -245,7 +245,7 @@ Artist Notification
 
 #### 3.2 Vertex AI Fine-Tuning Pipeline
 
-**Location:** `execution/training/`, GCS bucket `gs://indiios-training-data/ft_export/`
+**Location:** `execution/training/`, GCS bucket `gs://indii-training-data/ft_export/`
 
 **Workflow:**
 
@@ -254,7 +254,7 @@ Gold Dataset (2,000 examples)
     ↓
 Export to Vertex Format (execution/training/export_ft_dataset.ts)
     ↓
-GCS Upload (gs://indiios-training-data/ft_export/r7/)
+GCS Upload (gs://indii-training-data/ft_export/r7/)
     ↓
 Submit 20 Vertex AI Jobs (execution/training/submit_jobs.py)
     ↓
@@ -574,7 +574,7 @@ if (idTokenResult.claims.god_mode) {
 |--------|---------|-----------|-------|
 | **Metadata** | Firestore | Indefinite | Artist data, release info, royalty tracking |
 | **Audio/Video** | Cloud Storage | Indefinite | Master files, processed assets |
-| **Training Data** | GCS Bucket | Indefinite | Fine-tuning datasets (`gs://indiios-training-data/`) |
+| **Training Data** | GCS Bucket | Indefinite | Fine-tuning datasets (`gs://indii-training-data/`) |
 | **Backups** | Firestore Exports | 90 days | Daily exports to GCS |
 | **Analytics** | BigQuery | 7 years | Revenue, stream, and release analytics |
 
@@ -646,7 +646,7 @@ Push to main
 
 - **Concurrent artists:** 10K (Firestore auto-scale)
 - **Monthly releases:** 100K (DDEX pipeline)
-- **Concurrent streams:** 1M+ (DSP backend, not indiiOS)
+- **Concurrent streams:** 1M+ (DSP backend, not indii)
 - **Agent fleet:** 16 R7 endpoints, each 1K concurrent requests
 
 ---
@@ -676,7 +676,7 @@ See `docs/KNOWN_GAPS.md` for complete inventory. Summary:
 
 1. **Authentication:** Migrate Firebase Auth → acquirer's auth system (1–2 FTE weeks)
 2. **Billing:** Migrate Stripe → acquirer's payment processor (2–3 weeks)
-3. **Agent fleet:** Can stay on indiiOS GCP project or migrate to acquirer's Vertex AI (1 week, no model changes)
+3. **Agent fleet:** Can stay on indii GCP project or migrate to acquirer's Vertex AI (1 week, no model changes)
 4. **Data migration:** Firestore → acquirer's data warehouse (2–3 weeks, BigQuery export available)
 
 ---

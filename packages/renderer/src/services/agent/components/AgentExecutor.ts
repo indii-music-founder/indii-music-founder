@@ -9,6 +9,7 @@ import {
 import { PipelineContext } from './ContextPipeline';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
+import { DelegationLoopDetector } from '../LoopDetector';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
@@ -148,6 +149,11 @@ export class AgentExecutor {
             logger.error(`[AgentExecutor] Agent ${agent.name} failed:`, e);
             await TraceService.failTrace(traceId, errorMsg);
             throw e;
+        } finally {
+            // Cleanup delegation chain if this was the root call
+            if (!parentTraceId) {
+                DelegationLoopDetector.cleanup(context.swarmId || traceId);
+            }
         }
     }
 }

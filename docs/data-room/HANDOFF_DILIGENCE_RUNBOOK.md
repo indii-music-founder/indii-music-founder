@@ -3,14 +3,14 @@
 **Generated:** 2026-04-26
 **Audience:** A cheaper executor model (Sonnet 4.5, Haiku 4.5, GPT-4o, or similar) picking up this work cold.
 **Source plan:** `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/memoized-dreaming-journal.md`
-**Repo:** `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/tmp-fix/`
+**Repo:** `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Alpha-Electron/tmp-fix/`
 **Owner / sole human approver:** William Roberts (`williamexpressway@gmail.com`)
 
 ---
 
 ## Read This First — Ground Rules
 
-You are executing a multi-week diligence-prep workstream on the indiiOS codebase. The goal is to make this codebase ready for an acquirer's diligence team to walk in cold and reach an informed view. A more expensive model already did the thinking. Your job is execution. Do not re-derive the strategy. Do not re-explore the codebase. Do not propose alternatives. Use this document.
+You are executing a multi-week diligence-prep workstream on the indii codebase. The goal is to make this codebase ready for an acquirer's diligence team to walk in cold and reach an informed view. A more expensive model already did the thinking. Your job is execution. Do not re-derive the strategy. Do not re-explore the codebase. Do not propose alternatives. Use this document.
 
 **You are NOT in plan mode.** You can edit, run tools, and commit (with William's approval per step). But you must follow the protocols below.
 
@@ -24,7 +24,7 @@ You are executing a multi-week diligence-prep workstream on the indiiOS codebase
    - Any test that was passing starts failing after your change.
    - You find a credential or secret you weren't expecting.
 
-2. **Working directory is `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/tmp-fix/`**. Always use absolute paths. The directory `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/indiiOS-Alpha-Electron/src/` is **empty** (only `.DS_Store`). Never use it. The git repo root is `tmp-fix/`.
+2. **Working directory is `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Alpha-Electron/tmp-fix/`**. Always use absolute paths. The directory `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Alpha-Electron/indii-Alpha-Electron/src/` is **empty** (only `.DS_Store`). Never use it. The git repo root is `tmp-fix/`.
 
 3. **Do not edit the customer-facing Founders covenant** in `src/config/founders.ts`. That's a separate program (10 customer founders, $2,500 lifetime seats). This runbook is about *William's* retention as the technical founder, which is unrelated. If you touch `founders.ts` you've gone off-track.
 
@@ -83,7 +83,7 @@ npm run test:e2e             # Playwright
 
 ### Git facts
 
-- Origin: `https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git`
+- Origin: `https://github.com/the-walking-agency-det/indii-Alpha-Electron.git`
 - Default branch: `main`
 - Commit count: 4,271
 - Top contributors:
@@ -95,8 +95,8 @@ npm run test:e2e             # Playwright
 
 ### Identifiers (verified, do not re-look-up)
 
-- DDEX Party ID: `PA-DPIDA-2025122604-E` (in `src/core/config/ddex.ts:6-26`)
-- Party ID registered to: **"New Detroit Music LLC"** ⚠️ (does not match `IndiiOS LLC` in CLAUDE.md — **this is intentional finding A.3**, do not "fix" it)
+- Proprietary Ingestion ID (DPID): `PA-DPIDA-2025122604-E` (in `src/core/config/ddex.ts:6-26`)
+- Party ID registered to: **"New Detroit Music LLC"** ⚠️ (does not match `indii LLC` in CLAUDE.md — **this is intentional finding A.3**, do not "fix" it)
 - GCP project: `223837784072`
 - 16 R7 Vertex endpoints live, 1 undefined (`keeper`)
 
@@ -110,7 +110,7 @@ These are settled. Don't re-investigate.
 |---|---|---|---|
 | 1 | God-mode email bypass hardcoded in 3 services | Must remediate | A.1 |
 | 2 | `taxForms.ts` is a 39-line stub returning mock data | Document, defer | A.2 |
-| 3 | DDEX Party ID registered to wrong-named entity | Document only | A.3 |
+| 3 | Proprietary Ingestion ID registered to wrong-named entity | Document only | A.3 |
 | 4 | No IP assignment / contributor docs / AI authorship disclosure | Must add | A.4 |
 | 5 | 96.3% single-author concentration | Retention package | C |
 
@@ -243,7 +243,7 @@ honestly with remediation triggers.
 
 ### A.3 — Entity Structure Reconciliation
 
-**Problem:** the DDEX Party ID is registered to "New Detroit Music LLC" but the company is documented as "IndiiOS LLC". Acquirer legal will catch this on day 1.
+**Problem:** the Proprietary Ingestion ID (DPID) is registered to "New Detroit Music LLC" but the company is documented as "indii LLC". Acquirer legal will catch this on day 1.
 
 **This is not a code change.** It's a paperwork question for William.
 
@@ -252,13 +252,13 @@ honestly with remediation triggers.
 1. Create `tmp-fix/docs/ENTITY_STRUCTURE.md` using the template below. Fill in only the framing — William fills in the real answer.
 
 2. **[ESCALATE]** to William: ask him to fill in section "Truth" with one of three answers:
-   - (a) "New Detroit Music LLC owns the Party ID; IndiiOS LLC is a DBA / subsidiary. Filings attached."
-   - (b) "New Detroit Music LLC is the legacy entity; we need to re-register the Party ID to IndiiOS LLC. Ticket open with DDEX Inc."
+   - (a) "New Detroit Music LLC owns the Party ID; indii LLC is a DBA / subsidiary. Filings attached."
+   - (b) "New Detroit Music LLC is the legacy entity; we need to re-register the Party ID to indii LLC. Ticket open with DDEX Inc."
    - (c) "They are the same entity under two names. Operating agreement attached."
 
 3. Commit (whatever William fills in):
    ```
-   docs: add ENTITY_STRUCTURE.md reconciling DDEX Party ID and company name
+   docs: add ENTITY_STRUCTURE.md reconciling Proprietary Ingestion ID and company name
    ```
 
 **Template for `docs/ENTITY_STRUCTURE.md`:**
@@ -273,8 +273,8 @@ honestly with remediation triggers.
 
 | Name | Source | Role |
 |---|---|---|
-| IndiiOS LLC | `package.json`, `CLAUDE.md`, GitHub org references | Operating company |
-| New Detroit Music LLC | `src/core/config/ddex.ts:8` (DDEX Party ID registration) | DDEX-registered entity |
+| indii LLC | `package.json`, `CLAUDE.md`, GitHub org references | Operating company |
+| New Detroit Music LLC | `src/core/config/ddex.ts:8` (Proprietary Ingestion ID registration) | DDEX-registered entity |
 | the-walking-agency-det | GitHub account / repository owner | William's personal GitHub identity |
 
 ## Truth
@@ -282,19 +282,19 @@ honestly with remediation triggers.
 <William fills this in. Pick one of (a), (b), or (c) and attach supporting documents
 in `docs/data-room/10_LEGAL/`.>
 
-(a) New Detroit Music LLC is the legal entity that holds DDEX Party ID PA-DPIDA-2025122604-E.
-    IndiiOS LLC is a [DBA / wholly-owned subsidiary / sister company] of New Detroit Music LLC.
+(a) New Detroit Music LLC is the legal entity that holds Proprietary Ingestion ID PA-DPIDA-2025122604-E.
+    indii LLC is a [DBA / wholly-owned subsidiary / sister company] of New Detroit Music LLC.
     Operating agreement / DBA filing: <path>
 
 (b) New Detroit Music LLC is a predecessor entity. The Party ID needs to be re-registered
-    to IndiiOS LLC. DDEX Inc. ticket: <ticket #>. Expected resolution: <date>.
+    to indii LLC. DDEX Inc. ticket: <ticket #>. Expected resolution: <date>.
 
-(c) New Detroit Music LLC and IndiiOS LLC are the same legal entity under two names.
+(c) New Detroit Music LLC and indii LLC are the same legal entity under two names.
     State filing showing both names: <path>
 
 ## Implications for Diligence
 
-- Acquisition target = <one of: New Detroit Music LLC | IndiiOS LLC | a NewCo>
+- Acquisition target = <one of: New Detroit Music LLC | indii LLC | a NewCo>
 - IP assignment chain (see IP_ASSIGNMENT.md): <how it flows to the target>
 - DSP commercial agreements signed under: <which entity name>
 - Stripe / Firebase / GCP accounts owned by: <which entity>
@@ -328,7 +328,7 @@ in `docs/data-room/10_LEGAL/`.>
 
 ## Purpose
 
-This document records the chain of intellectual property ownership for the indiiOS
+This document records the chain of intellectual property ownership for the indii
 codebase. It is the document an acquirer's legal team reviews to confirm that the
 acquisition target holds clean title to the code being acquired.
 
@@ -352,7 +352,7 @@ This repository contains commits authored by:
 - `github-actions[bot]` — 56 commits (CI tooling, no creative content)
 
 Per Anthropic's Commercial Terms of Service and Google's Generative AI Terms,
-output is owned by the user (William Roberts) and assigned to <IndiiOS LLC | New Detroit Music LLC>
+output is owned by the user (William Roberts) and assigned to <indii LLC | New Detroit Music LLC>
 under the same Founder IP Assignment Agreement above. See AI_AUTHORSHIP_DISCLOSURE.md.
 
 ### Third-Party Code
@@ -365,7 +365,7 @@ are licensed permissively. License audit: <date>, performed by <reviewer>, repor
 
 The legal entity holding all rights to this codebase is:
 
-**<IndiiOS LLC | New Detroit Music LLC | TBD per ENTITY_STRUCTURE.md>**
+**<indii LLC | New Detroit Music LLC | TBD per ENTITY_STRUCTURE.md>**
 
 ## Verification by Reviewer
 
@@ -511,7 +511,7 @@ Create `tmp-fix/docs/data-room/06_REVIEWER_SCOPE.md`:
 # Reviewer Scope of Work
 
 **Engagement:** Independent technical due diligence
-**Target:** indiiOS-Alpha-Electron repository
+**Target:** indii-Alpha-Electron repository
 **Audience:** prospective acquirer's legal + technical advisors
 **Reviewer engaged:** <TBD by William>
 **Engagement period:** <TBD>
@@ -581,7 +581,7 @@ A signed PDF report with:
 
 ## Repo Access
 
-- Read-only collaborator on `the-walking-agency-det/indiiOS-Alpha-Electron`.
+- Read-only collaborator on `the-walking-agency-det/indii-Alpha-Electron`.
 - GCP read-only IAM on project `223837784072` (for endpoint reachability tests only).
 - Stripe test-mode dashboard access (no live-mode access).
 - Firebase test-project access (no production access).
@@ -622,7 +622,7 @@ Create `tmp-fix/docs/founder-retention/RETENTION_TERM_SHEET_TEMPLATE.md`:
 
 **Founder:** William Roberts
 **Acquirer:** <TBD>
-**Acquisition target:** <IndiiOS LLC | New Detroit Music LLC | NewCo per ENTITY_STRUCTURE.md>
+**Acquisition target:** <indii LLC | New Detroit Music LLC | NewCo per ENTITY_STRUCTURE.md>
 **Headline price:** <TBD by negotiation>
 
 ---
@@ -660,14 +660,14 @@ Create `tmp-fix/docs/founder-retention/RETENTION_TERM_SHEET_TEMPLATE.md`:
 
 ## 3. Role and Scope
 
-- **Title:** CTO of acquired indiiOS unit (or equivalent VP-level title).
+- **Title:** CTO of acquired indii unit (or equivalent VP-level title).
 - **Reporting line:** Direct to acquirer's CEO or Chief Product Officer. Not
   embedded in a larger team.
 - **Decision rights:**
-  - Roadmap authority over indiiOS product line for 24 months minimum.
-  - Veto right on rebranding or shutting down the indiiOS distribution rail
+  - Roadmap authority over indii product line for 24 months minimum.
+  - Veto right on rebranding or shutting down the indii distribution rail
     during the earnout period.
-  - Hiring authority for the indiiOS team within budgeted headcount.
+  - Hiring authority for the indii team within budgeted headcount.
 
 ## 4. Knowledge Transfer Milestones
 
@@ -710,7 +710,7 @@ A side-letter formalizes this commitment.
 ## Shadow Appendix — Founder Comp Equivalent (Independent)
 
 If the acquisition path is not pursued, this is what equivalent compensation
-looks like as the independent CEO of indiiOS post-Series A:
+looks like as the independent CEO of indii post-Series A:
 
 - **Base salary:** $<X> (Series A norm: $200–250K for solo founder pre-Series B).
 - **Equity:** retain founder shares; standard refresh grants on subsequent rounds.
@@ -876,9 +876,9 @@ to prevent reviewers from "discovering" risks we already know about.
 - **Mitigation in progress:** See SUCCESSION_PLAN.md.
 - **Status:** Cannot be eliminated pre-acquisition; can only be reduced.
 
-### R-002: Entity name mismatch on DDEX Party ID
+### R-002: Entity name mismatch on Proprietary Ingestion ID
 - **Severity:** Medium
-- **Description:** Party ID PA-DPIDA-2025122604-E registered to New Detroit Music LLC; codebase declares IndiiOS LLC.
+- **Description:** Party ID PA-DPIDA-2025122604-E registered to New Detroit Music LLC; codebase declares indii LLC.
 - **Mitigation in progress:** See ENTITY_STRUCTURE.md for resolution.
 - **Status:** <Resolved | Pending re-registration | Ambiguous>.
 
@@ -958,10 +958,10 @@ You are a cheaper model on a budget. Follow these:
 - **ERN:** Electronic Release Notification — the DDEX message type that announces a release to DSPs.
 - **DSR:** Digital Sales Report — the DDEX message type DSPs send back with sales/streams data.
 - **Party ID:** Globally unique identifier issued by DDEX to a registered entity (label, distributor). Required to deliver directly to DSPs.
-- **Acquirer:** A company buying indiiOS. Could be a major label, a DSP, an aggregator, an AI platform, or a creative-tools company.
+- **Acquirer:** A company buying indii. Could be a major label, a DSP, an aggregator, an AI platform, or a creative-tools company.
 - **LOI:** Letter of Intent — the non-binding document that opens an acquisition negotiation.
 - **Earnout:** A portion of the acquisition price held in escrow and released against post-close milestones.
-- **Bus factor:** The number of people who can be hit by a bus before the project dies. indiiOS bus factor = 1.
+- **Bus factor:** The number of people who can be hit by a bus before the project dies. indii bus factor = 1.
 
 ---
 

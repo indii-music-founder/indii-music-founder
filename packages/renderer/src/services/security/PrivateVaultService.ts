@@ -1,5 +1,5 @@
 /**
- * Sovereign Vault Service — Client-Side AES-GCM 256-bit Encryption
+ * Private Vault Service — Client-Side AES-GCM 256-bit Encryption
  *
  * Provides zero-knowledge encryption for sensitive career data
  * (legal strategies, financial plans, private notes) before writing
@@ -30,7 +30,7 @@ export interface EncryptedPayload {
     encryptedAt: string;
 }
 
-export class SovereignVaultService {
+export class PrivateVaultService {
     private static readonly ALGORITHM = 'AES-GCM';
     private static readonly KEY_LENGTH = 256;
     private static readonly IV_LENGTH = 12; // bytes (96 bits, NIST recommended for GCM)
@@ -44,7 +44,7 @@ export class SovereignVaultService {
     private static assertBrowserEnvironment(): void {
         if (typeof window === 'undefined' || !window.crypto?.subtle) {
             throw new Error(
-                'SovereignVaultService requires a browser environment with Web Crypto API. ' +
+                'PrivateVaultService requires a browser environment with Web Crypto API. ' +
                 'Do not use this service in Node.js/server-side contexts.'
             );
         }
@@ -57,7 +57,7 @@ export class SovereignVaultService {
      * @param salt - Random salt (generated or from existing EncryptedPayload)
      */
     static async deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
-        SovereignVaultService.assertBrowserEnvironment();
+        PrivateVaultService.assertBrowserEnvironment();
 
         const encoder = new TextEncoder();
         const rawKey = encoder.encode(passphrase);
@@ -73,13 +73,13 @@ export class SovereignVaultService {
             {
                 name: 'PBKDF2',
                 salt: salt.buffer as ArrayBuffer,
-                iterations: SovereignVaultService.PBKDF2_ITERATIONS,
+                iterations: PrivateVaultService.PBKDF2_ITERATIONS,
                 hash: 'SHA-256',
             },
             keyMaterial,
             {
-                name: SovereignVaultService.ALGORITHM,
-                length: SovereignVaultService.KEY_LENGTH,
+                name: PrivateVaultService.ALGORITHM,
+                length: PrivateVaultService.KEY_LENGTH,
             },
             false, // Non-extractable — the key stays in Web Crypto
             ['encrypt', 'decrypt']
@@ -94,22 +94,22 @@ export class SovereignVaultService {
      * @returns EncryptedPayload ready for Firestore storage
      */
     static async encrypt(plaintext: string | object, passphrase: string): Promise<EncryptedPayload> {
-        SovereignVaultService.assertBrowserEnvironment();
+        PrivateVaultService.assertBrowserEnvironment();
 
         const text = typeof plaintext === 'string' ? plaintext : JSON.stringify(plaintext);
         const encoder = new TextEncoder();
 
         // Generate random IV and salt
-        const iv = crypto.getRandomValues(new Uint8Array(SovereignVaultService.IV_LENGTH));
-        const salt = crypto.getRandomValues(new Uint8Array(SovereignVaultService.SALT_LENGTH));
+        const iv = crypto.getRandomValues(new Uint8Array(PrivateVaultService.IV_LENGTH));
+        const salt = crypto.getRandomValues(new Uint8Array(PrivateVaultService.SALT_LENGTH));
 
         // Derive key
-        const key = await SovereignVaultService.deriveKey(passphrase, salt);
+        const key = await PrivateVaultService.deriveKey(passphrase, salt);
 
         // Encrypt
         const ciphertext = await crypto.subtle.encrypt(
             {
-                name: SovereignVaultService.ALGORITHM,
+                name: PrivateVaultService.ALGORITHM,
                 iv: iv.buffer as ArrayBuffer,
             },
             key,
@@ -117,9 +117,9 @@ export class SovereignVaultService {
         );
 
         return {
-            iv: SovereignVaultService.toBase64(iv),
-            salt: SovereignVaultService.toBase64(salt),
-            data: SovereignVaultService.toBase64(new Uint8Array(ciphertext)),
+            iv: PrivateVaultService.toBase64(iv),
+            salt: PrivateVaultService.toBase64(salt),
+            data: PrivateVaultService.toBase64(new Uint8Array(ciphertext)),
             version: 1,
             encryptedAt: new Date().toISOString(),
         };
@@ -134,19 +134,19 @@ export class SovereignVaultService {
      * @throws DOMException if the passphrase is wrong (auth tag fails)
      */
     static async decrypt(payload: EncryptedPayload, passphrase: string): Promise<string> {
-        SovereignVaultService.assertBrowserEnvironment();
+        PrivateVaultService.assertBrowserEnvironment();
 
-        const iv = SovereignVaultService.fromBase64(payload.iv);
-        const salt = SovereignVaultService.fromBase64(payload.salt);
-        const ciphertext = SovereignVaultService.fromBase64(payload.data);
+        const iv = PrivateVaultService.fromBase64(payload.iv);
+        const salt = PrivateVaultService.fromBase64(payload.salt);
+        const ciphertext = PrivateVaultService.fromBase64(payload.data);
 
         // Derive the same key from the stored salt
-        const key = await SovereignVaultService.deriveKey(passphrase, salt);
+        const key = await PrivateVaultService.deriveKey(passphrase, salt);
 
         // Decrypt
         const plainBuffer = await crypto.subtle.decrypt(
             {
-                name: SovereignVaultService.ALGORITHM,
+                name: PrivateVaultService.ALGORITHM,
                 iv: iv.buffer as ArrayBuffer,
             },
             key,
@@ -161,7 +161,7 @@ export class SovereignVaultService {
      * Convenience: Decrypt and parse as JSON.
      */
     static async decryptJSON<T = unknown>(payload: EncryptedPayload, passphrase: string): Promise<T> {
-        const plaintext = await SovereignVaultService.decrypt(payload, passphrase);
+        const plaintext = await PrivateVaultService.decrypt(payload, passphrase);
         return JSON.parse(plaintext) as T;
     }
 

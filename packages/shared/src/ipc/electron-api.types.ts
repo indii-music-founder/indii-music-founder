@@ -1,5 +1,5 @@
 /**
- * @indiios/shared — ElectronAPI IPC Type Contracts
+ * @indii/shared — ElectronAPI IPC Type Contracts
  *
  * These interfaces define the complete IPC surface area exposed by the
  * Electron Main process via contextBridge.exposeInMainWorld('electronAPI', {...}).

@@ -1,10 +1,10 @@
-# GitHub Secrets Migration — indii-music/indiiOS-Clean
+# GitHub Secrets Migration — indii-music/indii-Clean
 
 > Required for CI/CD to pass on the new organization repository.
 > Navigate to: **Settings → Secrets and variables → Actions → New repository secret**
-> URL: https://github.com/indii-music/indiiOS-Clean/settings/secrets/actions
+> URL: https://github.com/indii-music/indii-Clean/settings/secrets/actions
 
-## Required Secrets (copy from the-walking-agency-det/indiiOS-Clean)
+## Required Secrets (copy from the-walking-agency-det/indii-Clean)
 
 | Secret Name | Purpose | Used In |
 |---|---|---|
@@ -30,12 +30,12 @@
 | `E2E_TEST_PASSWORD` | Playwright test account password |
 
 ## Steps
-1. Go to the OLD repo: https://github.com/the-walking-agency-det/indiiOS-Clean/settings/secrets/actions
+1. Go to the OLD repo: https://github.com/the-walking-agency-det/indii-Clean/settings/secrets/actions
 2. Note each secret value (you'll need to re-enter them — GitHub doesn't let you view existing values)
-3. Go to the NEW repo: https://github.com/indii-music/indiiOS-Clean/settings/secrets/actions
+3. Go to the NEW repo: https://github.com/indii-music/indii-Clean/settings/secrets/actions
 4. Add each secret above with the same values
 
 ## After Adding Secrets
 Re-run the failed workflow manually:
-1. Go to https://github.com/indii-music/indiiOS-Clean/actions
+1. Go to https://github.com/indii-music/indii-Clean/actions
 2. Click "Deploy to Firebase Hosting" → "Run workflow" → Run on `main`

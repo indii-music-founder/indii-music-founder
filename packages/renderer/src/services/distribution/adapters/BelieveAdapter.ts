@@ -98,7 +98,7 @@ export class BelieveAdapter extends BaseDistributorAdapter {
                         headers: {
                             'Authorization': `Bearer ${this.credentials.apiKey}`,
                             'Content-Type': 'application/json',
-                            'X-Partner-ID': this.credentials.username || 'indiiOS',
+                            'X-Partner-ID': this.credentials.username || 'indii',
                         },
                         body: JSON.stringify({
                             title: metadata.trackTitle,

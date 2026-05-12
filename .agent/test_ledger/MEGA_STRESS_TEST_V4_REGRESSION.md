@@ -125,7 +125,7 @@ should reopen the corresponding ISSUE with `[REGRESSION]` prefix.
      the desktop UI is currently set to.
 
 120. **Remote Pairing Spinner Timeout (ISSUE-016b):** Open the mobile client while the desktop app
-     is NOT running. Verify that after exactly 10 seconds, the "Locating indiiOS..." pairing
+     is NOT running. Verify that after exactly 10 seconds, the "Locating indii..." pairing
      spinner transitions to an idle/disconnected state rather than spinning indefinitely.
 
 121. **Remote Relay Auth Race Condition (ISSUE-016b):** Open the mobile client before Firebase

@@ -127,9 +127,9 @@ export function mapStripeStatus(status: Stripe.Subscription.Status): Subscriptio
 
 // Canonical product ID → tier mapping (test-mode IDs baked in; override via env for live)
 const PRODUCT_TIER_MAP: Record<string, SubscriptionTier> = {
-  'prod_UAPRroIFgVlgBH': SubscriptionTier.PRO_MONTHLY,  // indiiOS Pro (test)
-  'prod_UAPRv11hqs79bP': SubscriptionTier.STUDIO,        // indiiOS Studio (test)
-  'prod_UAPRfFZ19hlLEV': SubscriptionTier.FOUNDER,       // indiiOS Founders Pass (test)
+  'prod_UAPRroIFgVlgBH': SubscriptionTier.PRO_MONTHLY,  // indii Pro (test)
+  'prod_UAPRv11hqs79bP': SubscriptionTier.STUDIO,        // indii Studio (test)
+  'prod_UAPRfFZ19hlLEV': SubscriptionTier.FOUNDER,       // indii Founders Pass (test)
 };
 
 /**

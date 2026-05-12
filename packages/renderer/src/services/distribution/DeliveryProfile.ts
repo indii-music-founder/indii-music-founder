@@ -4,7 +4,7 @@ import { DPID } from '../ddex/types/common';
 /**
  * DeliveryProfile
  *
- * Configures how indiiOS (as a registered DDEX sender, PA-DPIDA-2025122604-E)
+ * Configures how indii (as a registered DDEX sender, PA-DPIDA-2025122604-E)
  * delivers to a specific partner. All Party IDs sourced from dpid.ddex.net.
  *
  * Mode is controlled per-environment via the DDEX_LIVE_MODE env var:
@@ -28,7 +28,7 @@ export interface DeliveryProfile {
 }
 
 // ---------------------------------------------------------------------------
-// Direct Delivery Profiles (indiiOS as the distributor)
+// Direct Delivery Profiles (indii as the distributor)
 // All DPIDs verified against dpid.ddex.net
 // ---------------------------------------------------------------------------
 

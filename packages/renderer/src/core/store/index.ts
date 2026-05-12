@@ -109,7 +109,7 @@ export const useStore = create<StoreState>()(
             return store;
         },
         {
-            name: 'indiios-app-storage',
+            name: 'indii-app-storage',
             storage: createJSONStorage(() => SecureZustandStorage),
             partialize: (state) => ({
                 isSidebarOpen: state.isSidebarOpen,

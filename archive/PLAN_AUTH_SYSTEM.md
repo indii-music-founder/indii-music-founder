@@ -135,7 +135,7 @@ src/modules/auth/
 
 **Design:**
 - Full-screen centered card (like SelectOrg)
-- indiiOS branding at top
+- indii branding at top
 - Dark theme consistent with app
 - Subtle gradient background
 
@@ -280,11 +280,11 @@ landing-page/app/
 **Changes:**
 ```typescript
 // Before
-<Link href="https://indiios-studio.web.app">Sign In</Link>
+<Link href="https://indii.music">Sign In</Link>
 
 // After
-<Link href="https://indiios-studio.web.app/auth/login">Sign In</Link>
-<Link href="https://indiios-studio.web.app/auth/signup">Get Started</Link>
+<Link href="https://indii.music/auth/login">Sign In</Link>
+<Link href="https://indii.music/auth/signup">Get Started</Link>
 ```
 
 **Also Update:**

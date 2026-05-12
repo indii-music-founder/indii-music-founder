@@ -1,12 +1,12 @@
 # Deployment Rollback Strategy
 
-> **indiiOS-Alpha-Electron** — How to roll back deployments when things go wrong
+> **indii-Alpha-Electron** — How to roll back deployments when things go wrong
 
 ---
 
 ## Overview
 
-indiiOS deploys to three targets. Each has its own rollback mechanism.
+indii deploys to three targets. Each has its own rollback mechanism.
 
 | Target | Platform | Rollback Method |
 |--------|----------|----------------|
@@ -131,10 +131,10 @@ The app checks this flag via `FeatureFlagService` and can show a maintenance scr
 
 ```bash
 # 1. Check health endpoint
-curl -s https://us-central1-indiios-v-1-1.cloudfunctions.net/healthCheck | jq .
+curl -s https://us-central1-indii-v-1-1.cloudfunctions.net/healthCheck | jq .
 
 # 2. Verify hosting is serving (check HTTP 200)
-curl -s -o /dev/null -w "%{http_code}" https://indiios-v-1-1.web.app/
+curl -s -o /dev/null -w "%{http_code}" https://indii-v-1-1.web.app/
 
 # 3. Check function logs for errors
 firebase functions:log --only triggerVideoJob --limit 20

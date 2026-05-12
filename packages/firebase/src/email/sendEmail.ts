@@ -1,5 +1,5 @@
 /**
- * Email Service — Resend Integration for indiiOS
+ * Email Service — Resend Integration for indii
  *
  * Production-grade transactional email service for:
  *   - Contract delivery (NDA, IP Assignment, Performance Agreements)
@@ -12,7 +12,7 @@
  *   - Resend SDK handles delivery via Amazon SES backbone
  *   - defineSecret() for production key management
  *   - Firestore audit log for every email sent
- *   - Branded HTML templates with indiiOS identity
+ *   - Branded HTML templates with indii identity
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
@@ -133,14 +133,14 @@ function getEmailTemplate(
                 </p>
             </div>
             <div class="footer">
-                <p>Powered by <a href="https://indii.music">indiiOS</a> — The Creative Operating System</p>
+                <p>Powered by <a href="https://indii.music">indii</a> — The Creative Operating System</p>
                 <p style="margin-top: 8px;">© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
             </div>
         </div>
     </div>
 </body>
 </html>`,
-                text: `${data.title || 'Contract Document'}\n\n${data.message || 'A contract has been prepared for your review.'}\n\nContract Type: ${data.contractType || 'N/A'}\nParties: ${data.parties || 'N/A'}\nDate: ${data.date || new Date().toLocaleDateString()}\n\nPlease find the document attached to this email.\n\n---\nPowered by indiiOS — The Creative Operating System`
+                text: `${data.title || 'Contract Document'}\n\n${data.message || 'A contract has been prepared for your review.'}\n\nContract Type: ${data.contractType || 'N/A'}\nParties: ${data.parties || 'N/A'}\nDate: ${data.date || new Date().toLocaleDateString()}\n\nPlease find the document attached to this email.\n\n---\nPowered by indii — The Creative Operating System`
             };
 
         case 'notification':
@@ -181,7 +181,7 @@ function getEmailTemplate(
     </div>
 </body>
 </html>`,
-                text: `${data.title || 'Notification'}\n\n${data.message || ''}\n\n---\nindiiOS`
+                text: `${data.title || 'Notification'}\n\n${data.message || ''}\n\n---\nindii`
             };
 
         case 'invitation':
@@ -213,7 +213,7 @@ function getEmailTemplate(
             </div>
             <div class="body">
                 <h2>You're Invited!</h2>
-                <p>${data.inviterName || 'Someone'} has invited you to join their team on indiiOS.</p>
+                <p>${data.inviterName || 'Someone'} has invited you to join their team on indii.</p>
                 <a href="${data.inviteLink || 'https://indii.music'}" class="cta">Accept Invitation</a>
                 <p style="font-size: 13px; color: #64748b;">This invitation expires in 7 days.</p>
             </div>
@@ -224,7 +224,7 @@ function getEmailTemplate(
     </div>
 </body>
 </html>`,
-                text: `You're Invited!\n\n${data.inviterName || 'Someone'} has invited you to join their team on indiiOS.\n\nAccept: ${data.inviteLink || 'https://indii.music'}\n\nThis invitation expires in 7 days.`
+                text: `You're Invited!\n\n${data.inviterName || 'Someone'} has invited you to join their team on indii.\n\nAccept: ${data.inviteLink || 'https://indii.music'}\n\nThis invitation expires in 7 days.`
             };
 
         default:
@@ -287,7 +287,7 @@ export const sendEmail = onCall(
         try {
             // Send via Resend
             const result = await resend.emails.send({
-                from: 'indiiOS <onboarding@resend.dev>',  // Use verified domain in production
+                from: 'indii <onboarding@resend.dev>',  // Use verified domain in production
                 to: Array.isArray(data.to) ? data.to : [data.to],
                 subject: data.subject,
                 html: htmlContent,

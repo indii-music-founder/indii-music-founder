@@ -652,7 +652,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 
 ## Phase 6: R5 SFT Training Kick-off — 2026-03-24
 
-**Training data:** Clean 2,000-record dataset (Phase 5), uploaded to `gs://indiios-training-data/ft_export/r5/`
+**Training data:** Clean 2,000-record dataset (Phase 5), uploaded to `gs://indii-training-data/ft_export/r5/`
 **Base model strings confirmed:** `gemini-2.5-pro` | `gemini-2.5-flash` | `gemini-2.5-flash-lite` (no version suffix)
 
 ### R5 Tuning Jobs (all 20 submitted 2026-03-24)
@@ -715,7 +715,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 | merchandise | ~118 | ≥59 | ≥50% |
 | curriculum | ~120 | ≥60 | ≥50% |
 
-**GCS:** `gs://indiios-training-data/ft_export/r6/`
+**GCS:** `gs://indii-training-data/ft_export/r6/`
 
 ### R6 Tuning Jobs (all 20 submitted 2026-03-26/27)
 
@@ -777,7 +777,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 | merchandise | 132 | ≥79 | ≥60% |
 | curriculum | 120 | ≥72 | ≥60% |
 
-**GCS:** `gs://indiios-training-data/ft_export/r7/`
+**GCS:** `gs://indii-training-data/ft_export/r7/`
 
 ### R7 Tuning Jobs (all 20 submitted 2026-03-27)
 

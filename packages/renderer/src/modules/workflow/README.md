@@ -1,6 +1,6 @@
 # Workflow Lab Module (RC1)
 
-The Workflow Lab is the automation brain of indiiOS. It allows creators to chain complex AI tasks across different modules using a visual, node-based editor, creating repeatable "Creative Recipes."
+The Workflow Lab is the automation brain of indii. It allows creators to chain complex AI tasks across different modules using a visual, node-based editor, creating repeatable "Creative Recipes."
 
 ## ⛓️ Key Features
 - **Visual Node Editor:** Drag-and-drop interface for connecting AI agents, creative tools, and business operations.

@@ -2,7 +2,7 @@
  * CEO Sync Service — Encrypted Cloud Backup & Restore
  *
  * Enables artists to create encrypted snapshots of their critical
- * career data and sync them across devices. Uses SovereignVaultService
+ * career data and sync them across devices. Uses PrivateVaultService
  * for AES-GCM 256 encryption before writing to Firebase Storage.
  *
  * The passphrase is never stored — only the artist can decrypt their backup.
@@ -39,7 +39,7 @@ import {
     listAll,
 } from 'firebase/storage';
 import { db, auth, storage } from '@/services/firebase';
-import { SovereignVaultService, EncryptedPayload } from '@/services/security/SovereignVaultService';
+import { PrivateVaultService, EncryptedPayload } from '@/services/security/PrivateVaultService';
 
 /** Collections included in a CEO Sync backup */
 const BACKUP_COLLECTIONS = [
@@ -122,7 +122,7 @@ export class CEOSyncService {
         const integrityHash = await CEOSyncService.sha256(plaintext);
 
         // 4. Encrypt client-side
-        const encrypted = await SovereignVaultService.encrypt(plaintext, passphrase);
+        const encrypted = await PrivateVaultService.encrypt(plaintext, passphrase);
 
         // 5. Build manifest
         const backupId = `backup_${Date.now()}_${crypto.getRandomValues(new Uint8Array(4)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')}`;
@@ -177,7 +177,7 @@ export class CEOSyncService {
         const encrypted: EncryptedPayload = await payloadRes.json();
 
         // 3. Decrypt client-side
-        const plaintext = await SovereignVaultService.decrypt(encrypted, passphrase);
+        const plaintext = await PrivateVaultService.decrypt(encrypted, passphrase);
 
         // 4. Integrity check
         const hash = await CEOSyncService.sha256(plaintext);
