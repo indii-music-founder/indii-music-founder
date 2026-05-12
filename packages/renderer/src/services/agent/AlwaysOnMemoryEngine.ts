@@ -3,7 +3,7 @@
  *
  * A persistent, evolving memory system that runs in the background, continuously
  * processing, consolidating, and connecting information. Inspired by Google's
- * Always-On Memory Agent (ADK reference implementation), adapted for indiiOS.
+ * Always-On Memory Agent (ADK reference implementation), adapted for indii.
  *
  * Responsibilities:
  * - Ingest text and multimodal content into structured memories

@@ -130,10 +130,10 @@ export class DigitalHandshake {
     }
 
     /**
-     * Routes approval requests to the user's memory inbox (~/indiiOS/memory-inbox/).
+     * Routes approval requests to the user's memory inbox (~/indii/memory-inbox/).
      */
     private static async pingMemoryInbox(userId: string, request: HandshakeRequest): Promise<void> {
-        logger.info(`[DigitalHandshake] Pinging ~/indiiOS/memory-inbox/ for User ${userId}`);
+        logger.info(`[DigitalHandshake] Pinging ~/indii/memory-inbox/ for User ${userId}`);
 
         const inboxRef = collection(db, `users/${userId}/memoryInbox`);
 

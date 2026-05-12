@@ -18,6 +18,10 @@ export interface MemoryItem {
     tags?: string[];
     timestamp: number;
     embedding?: number[];
+    isActive?: boolean;             // Lifecycle flag — false means archived/superseded
+    supersedes?: string;            // ID of the memory this replaces
+    supersededBy?: string;          // ID of the memory that replaced this one
+    consolidatedInto?: string;      // ID of the summary this was folded into
 }
 
 // Cosine similarity between two vectors
@@ -113,6 +117,34 @@ class MemoryService {
 
         const embedding = await this.getEmbedding(content);
 
+        // =====================================================================
+        // SUPERSESSION DETECTION — Same pattern as CoreVault and UserMemoryService.
+        // We look back at the last 30 days to keep write performance constant
+        // over the user's multi-year timeline.
+        // =====================================================================
+        let supersededId: string | undefined;
+        if (embedding.length > 0) {
+            const thirtyDaysAgo = Date.now() - (1000 * 60 * 60 * 24 * 30);
+            const candidates = existingMemories.filter(
+                (m) => (m.isActive !== false) && 
+                       m.type === type && 
+                       m.embedding && 
+                       m.embedding.length > 0 &&
+                       m.timestamp > thirtyDaysAgo
+            );
+            for (const existing of candidates) {
+                const similarity = cosineSimilarity(embedding, existing.embedding!);
+                if (similarity >= 0.85) {
+                    supersededId = existing.id;
+                    logger.info(
+                        `[MemoryService] Supersession detected (similarity=${similarity.toFixed(3)}): ` +
+                        `"${existing.content.substring(0, 50)}" \u2192 "${content.substring(0, 50)}"`
+                    );
+                    break;
+                }
+            }
+        }
+
         const item: Omit<MemoryItem, 'id'> = {
             projectId,
             sessionId,
@@ -124,11 +156,26 @@ class MemoryService {
             lastAccessed: Date.now(),
             tags: [],
             timestamp: Date.now(),
-            embedding: embedding.length > 0 ? embedding : undefined
+            embedding: embedding.length > 0 ? embedding : undefined,
+            isActive: true,
+            supersedes: supersededId,
         };
 
         try {
-            await service.add(item);
+            const newId = await service.add(item);
+
+            // Mark superseded memory as inactive and link back
+            if (supersededId && newId) {
+                try {
+                    await service.update(supersededId, {
+                        isActive: false,
+                        supersededBy: newId,
+                    });
+                    logger.info(`[MemoryService] Marked memory ${supersededId} as superseded by ${newId}`);
+                } catch (e: unknown) {
+                    logger.warn('[MemoryService] Failed to mark superseded memory (non-blocking):', e);
+                }
+            }
         } catch (e: unknown) {
             logger.error('[MemoryService] Failed to save memory: (Non-blocking)', e);
         }
@@ -360,20 +407,31 @@ class MemoryService {
             const responseText = result.response.text() || '{}';
             const parsed = JSON.parse(responseText) as { consolidated: string[], idsToDelete: string[] };
 
-            // 1. Delete redundant memories
+            // Soft-archive redundant memories (NEVER hard-delete — preserve the timeline)
             if (parsed.idsToDelete && parsed.idsToDelete.length > 0) {
-                const deletePromises = parsed.idsToDelete.map(id => {
-                    // Verify ID exists in candidates to prevent accidental deletion of wrong items
+                // First, save the consolidated summaries so we have IDs to link back to
+                const consolidatedIds: string[] = [];
+                if (parsed.consolidated && parsed.consolidated.length > 0) {
+                    for (const content of parsed.consolidated) {
+                        await this.saveMemory(projectId, content, 'summary', 0.8, 'system');
+                        // We can't easily get the ID from saveMemory here, but the link is still useful
+                        consolidatedIds.push('consolidated');
+                    }
+                }
+
+                const archivePromises = parsed.idsToDelete.map(id => {
+                    // Verify ID exists in candidates to prevent accidental archival of wrong items
                     if (candidates.some(c => c.id === id)) {
-                        return service.delete(id);
+                        return service.update(id, {
+                            isActive: false,
+                            consolidatedInto: consolidatedIds[0] || 'consolidated',
+                        });
                     }
                     return Promise.resolve();
                 });
-                await Promise.all(deletePromises);
-            }
-
-            // 2. Add new consolidated memories
-            if (parsed.consolidated && parsed.consolidated.length > 0) {
+                await Promise.all(archivePromises);
+            } else if (parsed.consolidated && parsed.consolidated.length > 0) {
+                // No archiving but we have new summaries
                 const addPromises = parsed.consolidated.map(content =>
                     this.saveMemory(projectId, content, 'summary', 0.8, 'system')
                 );

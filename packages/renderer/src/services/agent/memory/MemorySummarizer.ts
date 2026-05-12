@@ -2,7 +2,8 @@
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
 import { logger } from '@/utils/logger';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
-import type { AlwaysOnMemory, MemoryEntity, ConsolidationInsight, MemoryConnection } from '@/types/AlwaysOnMemory';
+import { AlwaysOnMemory, ConsolidationInsight, MemoryConnection, MemoryEntity } from '@/types/AlwaysOnMemory';
+import { cleanPrompt } from '@/utils/prompt';
 import { Timestamp } from 'firebase/firestore';
 
 /**
@@ -52,17 +53,17 @@ export class MemorySummarizer {
         if (memories.length === 1) return memories[0]!.content;
 
         try {
-            const memoryText = memories.map(m => `- [${m.type || 'fact'}] ${m.content}`).join('\n');
-            const prompt = `
-Summarize the following user memories into a concise, high-density paragraph. 
-Focus on recurring preferences, key facts, and established rules.
-Do not lose specific details like artist names, technical requirements, or visual styles.
-
-MEMORIES:
-${memoryText}
-
-SUMMARY:
-`;
+            const prompt = cleanPrompt(`
+                Summarize the following user memories into a concise, high-density paragraph. 
+                Focus on extracting:
+                1. Core identity and role
+                2. Explicit technical preferences
+                3. Creative vision and aesthetic leanings
+                4. Stated goals and deadlines
+                
+                Memories:
+                ${memories.map(m => `- [${m.type || 'fact'}] ${m.content}`).join('\n')}
+            `);
 
             const summary = await AIService.getInstance().generateText(
                 prompt,
@@ -91,35 +92,25 @@ SUMMARY:
         if (memories.length < 2) return null;
 
         try {
-            const memoryBlock = memories.map((m, i) =>
-                `Memory #${m.id} (${m.category}, importance: ${m.importance.toFixed(2)}):\n` +
-                `  Summary: ${m.summary}\n` +
-                `  Entities: [${m.entities.map(e => e.name).join(', ')}]\n` +
-                `  Topics: [${m.topics.join(', ')}]`
-            ).join('\n\n');
-
-            const prompt = `You are a Memory Consolidation Agent for a creative music/visual production platform.
-Analyze these memories and find meaningful connections and cross-cutting insights.
-
-MEMORIES:
-${memoryBlock}
-
-Respond in JSON format:
-{
-  "summary": "A synthesized summary across all memories (1-2 sentences)",
-  "insight": "One key pattern, connection, or strategic insight you discovered (1-2 sentences)",
-  "connections": [
-    {
-      "fromMemoryId": "<id>",
-      "toMemoryId": "<id>",
-      "relationship": "<description of how they're connected>"
-    }
-  ],
-  "confidence": 0.0-1.0
-}
-
-If no meaningful connections exist, return {"summary": "", "insight": "", "connections": [], "confidence": 0.0}.
-Be specific and actionable. Focus on creative workflow, branding, distribution, and business patterns.`;
+            const prompt = cleanPrompt(`
+                Analyze these memories and identify deep connections or patterns.
+                Output a JSON object with:
+                - connections: Array of { fromId, toId, relationship, confidence }
+                - insights: Array of strings describing cross-cutting patterns (e.g. "User's dark aesthetic preference influences their choice of synth textures").
+                
+                Memories:
+                ${memories.map(m => `ID: ${m.id} | Content: ${m.content}`).join('\n')}
+                
+                Format:
+                {
+                    "connections": [
+                        { "fromId": "mem1", "toId": "mem2", "relationship": "causal", "confidence": 0.9 }
+                    ],
+                    "insights": [
+                        "Synthesized pattern description here..."
+                    ]
+                }
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
@@ -130,16 +121,16 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
                 } as Record<string, unknown>
             );
 
-            const parsed = safeParseJson(response, { insight: '', summary: '', confidence: 0, connections: [] });
+            const parsed = safeParseJson(response, { insights: [], connections: [], confidence: 0 });
 
-            if (!parsed.insight || parsed.confidence < 0.3) {
+            if (parsed.insights.length === 0 || parsed.confidence < 0.3) {
                 return null;
             }
 
             const now = Timestamp.now();
             const connections: MemoryConnection[] = (parsed.connections || []).map((c: any) => ({
-                fromMemoryId: String(c.fromMemoryId),
-                toMemoryId: String(c.toMemoryId),
+                fromMemoryId: String(c.fromId),
+                toMemoryId: String(c.toId),
                 relationship: String(c.relationship),
                 confidence: parsed.confidence,
                 discoveredAt: now,
@@ -148,8 +139,8 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
             return {
                 userId,
                 sourceMemoryIds: memories.map(m => m.id),
-                summary: parsed.summary,
-                insight: parsed.insight,
+                summary: parsed.insights.join(' '),
+                insight: parsed.insights[0] || 'No specific insight identified.',
                 connections,
                 createdAt: now,
                 confidence: parsed.confidence,
@@ -171,20 +162,22 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
         if (!text.trim()) return [];
 
         try {
-            const prompt = `Extract named entities from the following text. 
-Categorize each entity as one of: person, company, product, concept, location, genre, tool, other.
-
-TEXT:
-${text.slice(0, 4000)}
-
-Respond in JSON format:
-{
-  "entities": [
-    {"name": "Entity Name", "type": "person|company|product|concept|location|genre|tool|other"}
-  ]
-}
-
-Only include clearly identifiable entities. Be precise with names. Return an empty array if no clear entities exist.`;
+            const prompt = cleanPrompt(`
+                Extract named entities from the following text. 
+                Categorize each entity as one of: person, company, product, concept, location, genre, tool, other.
+                
+                TEXT:
+                ${text.slice(0, 4000)}
+                
+                Respond in JSON format:
+                {
+                  "entities": [
+                    {"name": "Entity Name", "type": "person|company|product|concept|location|genre|tool|other"}
+                  ]
+                }
+                
+                Only include clearly identifiable entities. Be precise with names. Return an empty array if no clear entities exist.
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
@@ -217,17 +210,19 @@ Only include clearly identifiable entities. Be precise with names. Return an emp
         if (!text.trim()) return [];
 
         try {
-            const prompt = `Assign 2-4 concise topic tags to the following text.
-Topics should be broad categories useful for grouping and searching.
-Use lowercase, single-word or hyphenated tags (e.g., "music-production", "branding", "distribution").
-
-TEXT:
-${text.slice(0, 4000)}
-
-Respond in JSON format:
-{
-  "topics": ["tag1", "tag2", "tag3"]
-}`;
+            const prompt = cleanPrompt(`
+                Assign 2-4 concise topic tags to the following text.
+                Topics should be broad categories useful for grouping and searching.
+                Use lowercase, single-word or hyphenated tags (e.g., "music-production", "branding", "distribution").
+                
+                TEXT:
+                ${text.slice(0, 4000)}
+                
+                Respond in JSON format:
+                {
+                  "topics": ["tag1", "tag2", "tag3"]
+                }
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
@@ -258,27 +253,29 @@ Respond in JSON format:
         if (!text.trim()) return 0.3;
 
         try {
-            const prompt = `Rate the importance of the following information for a music/visual creative professional.
-Score from 0.0 (trivial) to 1.0 (critical).
-
-Higher scores for:
-- Actionable deadlines or dates
-- Core preferences and creative vision
-- Business-critical information (contracts, revenue, distribution)
-- Explicit user corrections or feedback
-- Key relationships or collaborations
-
-Lower scores for:
-- General knowledge or trivia
-- Redundant information
-- Temporary or ephemeral context
-
-Category: ${category}
-
-TEXT:
-${text.slice(0, 2000)}
-
-Respond with ONLY a JSON object: {"importance": 0.X}`;
+            const prompt = cleanPrompt(`
+                Rate the importance of the following information for a music/visual creative professional.
+                Score from 0.0 (trivial) to 1.0 (critical).
+                
+                Higher scores for:
+                - Actionable deadlines or dates
+                - Core preferences and creative vision
+                - Business-critical information (contracts, revenue, distribution)
+                - Explicit user corrections or feedback
+                - Key relationships or collaborations
+                
+                Lower scores for:
+                - General knowledge or trivia
+                - Redundant information
+                - Temporary or ephemeral context
+                
+                Category: ${category}
+                
+                TEXT:
+                ${text.slice(0, 2000)}
+                
+                Respond with ONLY a JSON object: {"importance": 0.X}
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
