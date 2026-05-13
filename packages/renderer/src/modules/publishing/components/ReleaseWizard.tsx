@@ -226,8 +226,8 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           </label>
           <input
             type="text"
-            value={metadata.systemIdentifier || ''}
-            onChange={e => updateMetadata({ systemIdentifier: e.target.value.toUpperCase() })}
+            value={metadata.dpid || ''}
+            onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
             placeholder="PA-DPIDA-XXXXXXXXXX-X"
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />

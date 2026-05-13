@@ -7,7 +7,7 @@ test.describe('Founders Program Flow', () => {
         // 1. Mock the auth/onboarding states to prevent blocking overlays
         await context.addInitScript(() => {
             window.localStorage.setItem('TOUR_COMPLETED_dashboard', 'true');
-            window.localStorage.setItem('INDIIOS_ONBOARDING_COMPLETE', 'true');
+            window.localStorage.setItem('INDII_ONBOARDING_COMPLETE', 'true');
             window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
         });
 
