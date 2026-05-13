@@ -274,21 +274,21 @@ For each DSP:
    - Artist provides metadata (artist name, bio, image, genre)
    - indii verifies ownership (DSP sends confirmation email)
 
-2. **DDEX/API Setup:**
+2. **Proprietary Ingestion IP/API Setup:**
    - SFTP credentials generated (if SFTP-based)
    - API key provided (if API-based)
    - Credentials stored in GCP Secret Manager with artist reference
 
 3. **Test Release:**
    - Artist uploads 1 test track
-   - indii generates DDEX ERN
+   - indii generates proprietary IngestionNotification message
    - Submits to DSP SFTP or API
    - Polls for confirmation (usually 24–48 hours)
    - Track appears in artist's DSP dashboard
 
 4. **Commercial Release:**
    - Artist uploads full release (multi-track album or single)
-   - indii generates ERN + metadata
+   - indii generates IngestionNotification + metadata
    - Submits to all 8 DSP endpoints
    - Tracks delivery status across DSPs
    - Revenue starts flowing 30–90 days after submission
@@ -420,7 +420,7 @@ For each DSP:
 
 For the onboarding and operations teams post-acquisition:
 
-1. **Party ID Management:** The Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` must remain registered to New Detroit Music LLC. If acquirer changes ownership structure, re-registration with DDEX Inc. is required (~2 weeks process).
+1. **Proprietary Ingestion ID Management:** The Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` must remain registered to New Detroit Music LLC. If acquirer changes ownership structure, re-registration with the global metadata authority is required (~2 weeks process).
 
 2. **Credential Rotation:** All DSP SFTP/API credentials should be rotated within 30 days of acquisition. Credentials are currently in GCP Secret Manager; move to acquirer's credential store.
 

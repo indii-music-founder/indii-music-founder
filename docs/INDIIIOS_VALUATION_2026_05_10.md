@@ -24,7 +24,7 @@ You're launching a fully-built product with zero traction. Not vaporware. Not in
 
 | What | LOC | Verdict |
 | --- | --- | --- |
-| **DDEX Distribution Rail** | ERNMapper (493) + DDEXParser (598) + 8 DSP adapters | Industry-grade. Proprietary ingestion IP interfaces directly with the Global DDEX network. Real spec compliance. |
+| **Proprietary Ingestion IP Distribution Rail** | IngestionNotificationMapper (493) + Proprietary Ingestion IPParser (598) + 8 DSP adapters | Industry-grade. Proprietary ingestion IP interfaces directly with the Global Proprietary Ingestion IP network. Real spec compliance. |
 | **Stripe Integration** | Split escrow, webhook verification, Connect account routing | Real. 913 LOC. Executes actual transfers between artist accounts. |
 | **Firestore + Rules** | 647 lines of rules, per-collection auth, audit trails | Real, if overly permissive in some spots (fixable). |
 | **Creative Module** | InfiniteCanvas.tsx (1,168 LOC), WhiskService, composition pipeline | Real canvas state, actually wired to Firebase AI. |
@@ -49,7 +49,7 @@ You're launching a fully-built product with zero traction. Not vaporware. Not in
 
 **Test reality:**
 
-662 test files, 100,411 LOC. But ~70% are heartbeat checks (`expect(page).toBeVisible()`), not behavioral assertions. 26% test-to-code ratio is good. Pass rate 99.6% but includes smoke tests. The DDEX unit tests (ERNMapper.test.ts) are genuinely good. The e2e tests have the "just make sure it loads" problem common in solo-founder projects.
+662 test files, 100,411 LOC. But ~70% are heartbeat checks (`expect(page).toBeVisible()`), not behavioral assertions. 26% test-to-code ratio is good. Pass rate 99.6% but includes smoke tests. The Proprietary Ingestion IP unit tests (IngestionNotificationMapper.test.ts) are genuinely good. The e2e tests have the "just make sure it loads" problem common in solo-founder projects.
 
 ---
 
@@ -59,7 +59,7 @@ From the docs, the replacement cost estimates are:
 
 | Component | Equivalent Cost |
 | --- | --- |
-| **DDEX Rail Alone** | 1 FTE × 12 months at $250K = **$250K** (replacement cost to rebuild from scratch) |
+| **Proprietary Ingestion IP Rail Alone** | 1 FTE × 12 months at $250K = **$250K** (replacement cost to rebuild from scratch) |
 | **Platform Total** | 3-4 FTE × 12 months = **$900K-$1.2M** (full rebuild cost) |
 
 **Reality check:** You did this solo. So the $900K-$1.2M is the *equivalent* engineering effort compressed into one human over ~18-24 months. Your cost was lower (no salary draw, bootstrapped), but the *engineering value* is real.
@@ -70,7 +70,7 @@ From the docs, the replacement cost estimates are:
 
 ## What It's Worth Tomorrow (As-Is, Pre-Launch)
 
-Someone walks into an investment firm or acquirer and says: "Here's a fully-functional music distribution + artist tooling platform. Live DDEX rail. Stripe integration working. Desktop app built. AI agents infrastructure done but the streaming endpoint is stubbed. Ready to launch tomorrow. No customers yet. Want to buy?"
+Someone walks into an investment firm or acquirer and says: "Here's a fully-functional music distribution + artist tooling platform. Live Proprietary Ingestion IP rail. Stripe integration working. Desktop app built. AI agents infrastructure done but the streaming endpoint is stubbed. Ready to launch tomorrow. No customers yet. Want to buy?"
 
 **Fair market offer:** $400K-$700K
 
@@ -82,7 +82,7 @@ Someone walks into an investment firm or acquirer and says: "Here's a fully-func
 - Security issues unfixed (5 critical CVEs in firebase-admin)
 
 **Why not lower:**
-- The DDEX rail is genuinely defensible IP (~$250K value, 12-month rebuild)
+- The Proprietary Ingestion IP rail is genuinely defensible IP (~$250K value, 12-month rebuild)
 - Full platform rebuild is ~$900K engineering equivalent
 - Electron desktop is real and security-hardened (unusual at this stage)
 - Finance module with Stripe escrow is unusual and valuable
@@ -122,7 +122,7 @@ With 10-20 paying customers: **$800K-$1.5M**
 
 | Scenario | Valuation | Likelihood |
 | --- | --- | --- |
-| **Distressed sale (today, unfixed security)** | $300-500K | Someone sees cheap DDEX + finance moat, fixes it themselves |
+| **Distressed sale (today, unfixed security)** | $300-500K | Someone sees cheap Proprietary Ingestion IP + finance moat, fixes it themselves |
 | **Clean sale (security fixed, pre-customer)** | $500-900K | Strategic buyer wants the distribution rail + engineering |
 | **Launch + traction (3+ paying customers)** | $900K-$1.5M | Product-market fit signal changes the narrative |
 | **Founder's self-valuation (3-7M)** | $3-7M | Assumes: agent stream wired, 10+ paying customers, William stays post-acq |
@@ -145,7 +145,7 @@ With 10-20 paying customers: **$800K-$1.5M**
 
 - [ ] Flip on paid tier ($29/month)
 - [ ] Onboard first 3-5 early-access artists
-- [ ] Get them through the full workflow (upload → DDEX generation → DSP submission)
+- [ ] Get them through the full workflow (upload → Proprietary Ingestion IP generation → DSP submission)
 - [ ] Collect their NPS/feedback
 
 ### Month 2 (Positioning)
@@ -160,7 +160,7 @@ After these: You can pitch $1-2M with confidence.
 
 ## The Real Assessment (Serious But Honest)
 
-You built something real. 200K lines of actual product code, not wireframes. The DDEX rail is defensible IP that would take a competitor 12+ months to replicate. The Stripe integration is solid. The Electron desktop is hardened. The Firebase AI layer is real architecture, not mock.
+You built something real. 200K lines of actual product code, not wireframes. The Proprietary Ingestion IP rail is defensible IP that would take a competitor 12+ months to replicate. The Stripe integration is solid. The Electron desktop is hardened. The Firebase AI layer is real architecture, not mock.
 
 The gaps:
 - You've got an agent infrastructure with a TODO stub in the streaming endpoint. Not the end of the world — it's a one-day fix once you commit to it. But it's a gap between narrative ("AI-native") and reality.

@@ -1555,9 +1555,9 @@
     "status": "tested",
     "tests": [
       {
-        "name": "DDEX delivery workflow",
+        "name": "Proprietary Ingestion IP delivery workflow",
         "category": "competency",
-        "prompt": "I need to deliver my 12-track album to Spotify, Apple Music, and Tidal via DDEX ERN 4.3. Walk me through the complete wo...",
+        "prompt": "I need to deliver my 12-track album to Spotify, Apple Music, and Tidal via Proprietary Ingestion IP IngestionNotification 4.3. Walk me through the complete wo...",
         "status": "pass",
         "grade": {
           "domainCompetency": {
@@ -1586,10 +1586,10 @@
           "maxScore": 20,
           "letterGrade": "A",
           "responseLength": 2777,
-          "responsePreview": "To deliver a 12-track album via **DDEX ERN 4.3** to major DSPs, follow this high-precision workflow.\n\n### 1. Metadata Preparation & ISRC Assignment\nMetadata must be normalized before XML generation.\n*   **Identifiers:** Assign a unique **UPC/EAN** to the album and a unique **ISRC** to each of the 12 tracks. \n*   **Party IDs:** Ensure all contributors have assigned **ISNI** or **IPI** numbers where..."
+          "responsePreview": "To deliver a 12-track album via **Proprietary Ingestion IP IngestionNotification 4.3** to major DSPs, follow this high-precision workflow.\n\n### 1. Metadata Preparation & ISRC Assignment\nMetadata must be normalized before XML generation.\n*   **Identifiers:** Assign a unique **UPC/EAN** to the album and a unique **ISRC** to each of the 12 tracks. \n*   **Party IDs:** Ensure all contributors have assigned **ISNI** or **IPI** numbers where..."
         },
         "elapsed": "7.3",
-        "responsePreview": "To deliver a 12-track album via **DDEX ERN 4.3** to major DSPs, follow this high-precision workflow.\n\n### 1. Metadata Preparation & ISRC Assignment\nMetadata must be normalized before XML generation.\n*   **Identifiers:** Assign a unique **UPC/EAN** to the album and a unique **ISRC** to each of the 12 tracks. \n*   **Party IDs:** Ensure all contributors have assigned **ISNI** or **IPI** numbers where...",
+        "responsePreview": "To deliver a 12-track album via **Proprietary Ingestion IP IngestionNotification 4.3** to major DSPs, follow this high-precision workflow.\n\n### 1. Metadata Preparation & ISRC Assignment\nMetadata must be normalized before XML generation.\n*   **Identifiers:** Assign a unique **UPC/EAN** to the album and a unique **ISRC** to each of the 12 tracks. \n*   **Party IDs:** Ensure all contributors have assigned **ISNI** or **IPI** numbers where...",
         "tokenUsage": {
           "promptTokenCount": 81,
           "candidatesTokenCount": 768,

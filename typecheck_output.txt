@@ -1,0 +1,71 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/modules/publishing/components/DSRUploadModal.tsx(6,15): error TS2305: Module '"@/services/distribution/proprietary-ingestion/types/dsr"' has no exported member 'DSRReport'.
+packages/renderer/src/modules/publishing/components/DSRUploadModal.tsx(168,93): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/renderer/src/modules/publishing/components/DSRUploadModal.tsx(168,98): error TS7006: Parameter 'i' implicitly has an 'any' type.
+packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx(229,29): error TS2339: Property 'systemIdentifier' does not exist on type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx(230,45): error TS2353: Object literal may only specify known properties, and 'systemIdentifier' does not exist in type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts(64,3): error TS2353: Object literal may only specify known properties, and 'systemIdentifier' does not exist in type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/services/agent/AgentService.ts(210,65): error TS2345: Argument of type 'PipelineContext' is not assignable to parameter of type 'AgentContext'.
+  Types of property 'swarmId' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+packages/renderer/src/services/agent/AgentService.ts(1173,13): error TS2322: Type 'PipelineContext' is not assignable to type 'AgentContext'.
+  Types of property 'swarmId' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+packages/renderer/src/services/agent/BaseAgent.ts(910,47): error TS2339: Property 'recordLLMUsage' does not exist on type 'LoopDetector'.
+packages/renderer/src/services/agent/components/AgentExecutor.ts(137,60): error TS2345: Argument of type 'PipelineContext' is not assignable to parameter of type 'AgentContext'.
+  Types of property 'swarmId' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+packages/renderer/src/services/agent/components/ContextPipeline.ts(10,18): error TS2430: Interface 'PipelineContext' incorrectly extends interface 'AgentContext'.
+  Types of property 'swarmId' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+packages/renderer/src/services/agent/tools/DistributionTools.ts(96,62): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/agent/tools/DistributionTools.ts(605,63): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/agent/tools/DistributionTools.ts(611,67): error TS2339: Property 'validateERNXML' does not exist on type 'typeof IngestionNotificationService'.
+packages/renderer/src/services/analytics/AnalyticsEngine.ts(9,10): error TS2305: Module '"./GrowthPatternService"' has no exported member 'growthPatternService'.
+packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts(77,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts(70,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts(70,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts(80,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts(79,70): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/TuneCoreAdapter.ts(73,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts(81,66): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/cdbaby/CDBabyPackageBuilder.ts(53,62): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryProfile.ts(2,22): error TS2307: Cannot find module '../ddex/types/common' or its corresponding type declarations.
+packages/renderer/src/services/distribution/DeliveryService.integration.test.ts(36,5): error TS2353: Object literal may only specify known properties, and 'systemIdentifier' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/DeliveryService.test.ts(47,45): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.test.ts(48,45): error TS2339: Property 'parseERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.test.ts(49,45): error TS2339: Property 'validateERNContent' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.test.ts(54,48): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.ts(36,73): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.ts(162,69): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.ts(170,58): error TS2339: Property 'parseERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryService.ts(178,60): error TS2339: Property 'validateERNContent' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryServiceIntegration.test.ts(102,45): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/DeliveryServiceIntegration.test.ts(128,45): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/proprietary-ingestion/DDEX_CLIP_Integration.test.ts(69,9): error TS2353: Object literal may only specify known properties, and 'systemIdentity' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/EarningsUploadService.ts(4,15): error TS2724: '"@/types/firestore"' has no exported member named 'EarningsReportProcessedReportDocument'. Did you mean 'DSRProcessedReportDocument'?
+packages/renderer/src/services/distribution/proprietary-ingestion/index.ts(19,10): error TS2724: '"./EarningsProcessor"' has no exported member named 'EarningsProcessor'. Did you mean 'earningsProcessor'?
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(104,17): error TS2339: Property 'dpid' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(106,43): error TS2339: Property 'name' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(107,71): error TS2339: Property 'name' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(112,20): error TS2339: Property 'dpid' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(129,29): error TS2339: Property 'name' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(130,35): error TS2339: Property 'dpid' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(131,24): error TS2339: Property 'dpid' does not exist on type '{ systemIdentifier: string; entityName: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.test.ts(14,5): error TS2353: Object literal may only specify known properties, and 'systemIdentity' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts(193,42): error TS2339: Property 'durationIngestionFormatted' does not exist on type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts(213,60): error TS2339: Property 'durationIngestionFormatted' does not exist on type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.test.ts(12,5): error TS2353: Object literal may only specify known properties, and 'systemIdentity' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts(49,21): error TS2353: Object literal may only specify known properties, and 'partyId' does not exist in type 'SystemIdentity'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts(53,21): error TS2353: Object literal may only specify known properties, and 'partyId' does not exist in type 'SystemIdentity'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts(131,46): error TS2339: Property 'partyId' does not exist on type 'SystemIdentity'.
+packages/renderer/src/services/distribution/symphonic/SymphonicPackageBuilder.ts(50,62): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/distribution/verify-adapters.test.ts(186,63): error TS2339: Property 'generateERN' does not exist on type 'IngestionNotificationService'.
+packages/renderer/src/services/ingestion/TrackIngestionService.ts(71,13): error TS2353: Object literal may only specify known properties, and 'durationIngestionFormatted' does not exist in type 'ExtendedGoldenMetadata'.

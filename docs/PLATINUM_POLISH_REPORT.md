@@ -123,7 +123,7 @@ modules/workflow/services/WorkflowEngine.ts:59
 // ✅ Typed Error Throwing
 src/services/ai/FirebaseAIService.ts:711
 throw new AppException(
-  AppErrorCode.INTERNAL_ERROR, 
+  AppErrorCode.INTIngestionNotificationAL_ERROR, 
   `AI Service Failure: ${error.message}`
 );
 

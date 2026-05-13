@@ -20,7 +20,7 @@ Transform **indii** from a data-parser into a high-fidelity creative partner. Mo
 - **Goal:** Hardening the Goal 3 "Soul Certification."
 - **Task:** dex to refine the prompt for 0.01% phase-shift detection.
 
-### Session 4: The DDEX Bridge
+### Session 4: The Proprietary Ingestion IP Bridge
 - **Focus:** Commercial Translation.
 - **Goal:** Converting feelings into high-conversion DSP marketing copy.
 - **Task:** Build the `AutoCopywriter.ts` module.

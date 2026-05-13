@@ -4,8 +4,8 @@ import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapte
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdapter';
 import { DistributorService } from '@/services/distribution/DistributorService';
-import { ernService } from '@/services/ddex/ERNService';
-import { dsrService } from '@/services/ddex/DSRService';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
@@ -41,8 +41,8 @@ vi.mock('../EarningsService', () => ({
     }
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
     }
 }));
@@ -62,7 +62,7 @@ describe('Distribution System Verification', () => {
         containsSamples: false,
         isGolden: true,
         labelName: 'Retro Records',
-        dpid: 'PA-DPIDA-2025122601-E',
+        systemIdentifier: 'PA-DPIDA-2025122601-E',
         releaseType: 'Single',
         releaseDate: '2025-02-01',
         territories: ['Worldwide'],
@@ -183,7 +183,7 @@ describe('Distribution System Verification', () => {
 
     describe('ERN Service', () => {
         it('should generate ERN XML', async () => {
-            const result = await ernService.generateERN(mockMetadata, 'PADPIDA2014040101U', 'PADPIDB2014040101U');
+            const result = await ingestionNotificationService.generateERN(mockMetadata, 'PADPIDA2014040101U', 'PADPIDB2014040101U');
             expect(result.success).toBe(true);
             expect(result.xml).toBeDefined();
             expect(result.xml!.length).toBeGreaterThan(0);
@@ -196,7 +196,7 @@ describe('Distribution System Verification', () => {
 TX-001\tUS-DK1-25-00001\tNeon Nights\tStream\t1000\t5.00\tUSD\tUS
 TX-002\tUS-DK1-25-00001\tNeon Nights\tDownload\t10\t9.90\tUSD\tUS`;
 
-            const result = await dsrService.ingestFlatFile(mockDSRContent);
+            const result = await earningsReportService.ingestFlatFile(mockDSRContent);
             expect(result.success).toBe(true);
             expect(result.data?.transactions.length).toBe(2);
             expect(result.data?.summary.totalRevenue).toBe(14.9);

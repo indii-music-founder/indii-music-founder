@@ -80,7 +80,7 @@ async function run() {
         console.error(`Failed to remove desktop video:`, e);
     }
 
-    console.log(`\n✅ Done! The video is now attached to your job in Firestore and will appear in indiiOS immediately.`);
+    console.log(`\n✅ Done! The video is now attached to your job in Firestore and will appear in indii immediately.`);
     process.exit(0);
 }
 

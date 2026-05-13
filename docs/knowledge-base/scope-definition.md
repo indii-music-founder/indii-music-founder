@@ -64,7 +64,7 @@
 ### Phase 5: Technical & Production (Medium Priority)
 - [ ] Recording contracts (studio, engineer, rates)
 - [ ] Mixing & mastering (deliverables, standards)
-- [ ] Metadata standards (DDEX, CCDA)
+- [ ] Metadata standards (Proprietary Ingestion IP, CCDA)
 - [ ] ISRC codes (structure, assignment)
 - [ ] UPC codes for releases
 - [ ] Audio formats (delivery specs for distributors)

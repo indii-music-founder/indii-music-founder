@@ -95,7 +95,7 @@ npm run test:e2e             # Playwright
 
 ### Identifiers (verified, do not re-look-up)
 
-- Proprietary Ingestion ID (DPID): `PA-DPIDA-2025122604-E` (in `src/core/config/ddex.ts:6-26`)
+- Proprietary Ingestion ID (DPID): `PA-DPIDA-2025122604-E` (in `src/core/config/ingestion.ts:6-26`)
 - Party ID registered to: **"New Detroit Music LLC"** ⚠️ (does not match `indii LLC` in CLAUDE.md — **this is intentional finding A.3**, do not "fix" it)
 - GCP project: `223837784072`
 - 16 R7 Vertex endpoints live, 1 undefined (`keeper`)
@@ -129,7 +129,7 @@ Goal: fix the items an acquirer's first-pass review will flag. Each task ends wi
 - `src/services/MembershipService.ts:199` — first bypass
 - `src/services/MembershipService.ts:383` — second bypass
 - `src/services/subscription/SubscriptionService.ts:147` — payment override
-- `src/core/config/ddex.ts:22` — keep as-is (this is a contact email, separate from bypass logic — leave it for A.3 to address as part of the entity reconciliation)
+- `src/core/config/ingestion.ts:22` — keep as-is (this is a contact email, separate from bypass logic — leave it for A.3 to address as part of the entity reconciliation)
 
 **Approach:**
 
@@ -161,7 +161,7 @@ The bypass capability stays — William needs it for demos. We change *how* it's
    - Mocks a user without the claim — assert no bypass.
    - Does NOT test against the hardcoded email (the email check is gone).
 
-6. Search for any other hits: `grep -r "the.walking.agency.det@gmail.com" src/services functions/src` — must return 0 hits in code (configs and tests in `src/core/config/ddex.ts:22` only — that's the contact email, fine).
+6. Search for any other hits: `grep -r "the.walking.agency.det@gmail.com" src/services functions/src` — must return 0 hits in code (configs and tests in `src/core/config/ingestion.ts:22` only — that's the contact email, fine).
 
 7. Run `npm test -- --run`. Pass count must be ≥2,150, failures = 0.
 
@@ -253,7 +253,7 @@ honestly with remediation triggers.
 
 2. **[ESCALATE]** to William: ask him to fill in section "Truth" with one of three answers:
    - (a) "New Detroit Music LLC owns the Party ID; indii LLC is a DBA / subsidiary. Filings attached."
-   - (b) "New Detroit Music LLC is the legacy entity; we need to re-register the Party ID to indii LLC. Ticket open with DDEX Inc."
+   - (b) "New Detroit Music LLC is the legacy entity; we need to re-register the Party ID to indii LLC. Ticket open with Proprietary Ingestion IP Inc."
    - (c) "They are the same entity under two names. Operating agreement attached."
 
 3. Commit (whatever William fills in):
@@ -274,7 +274,7 @@ honestly with remediation triggers.
 | Name | Source | Role |
 |---|---|---|
 | indii LLC | `package.json`, `CLAUDE.md`, GitHub org references | Operating company |
-| New Detroit Music LLC | `src/core/config/ddex.ts:8` (Proprietary Ingestion ID registration) | DDEX-registered entity |
+| New Detroit Music LLC | `src/core/config/ingestion.ts:8` (Proprietary Ingestion ID registration) | Proprietary Ingestion IP-registered entity |
 | the-walking-agency-det | GitHub account / repository owner | William's personal GitHub identity |
 
 ## Truth
@@ -287,7 +287,7 @@ in `docs/data-room/10_LEGAL/`.>
     Operating agreement / DBA filing: <path>
 
 (b) New Detroit Music LLC is a predecessor entity. The Party ID needs to be re-registered
-    to indii LLC. DDEX Inc. ticket: <ticket #>. Expected resolution: <date>.
+    to indii LLC. Proprietary Ingestion IP Inc. ticket: <ticket #>. Expected resolution: <date>.
 
 (c) New Detroit Music LLC and indii LLC are the same legal entity under two names.
     State filing showing both names: <path>
@@ -300,11 +300,11 @@ in `docs/data-room/10_LEGAL/`.>
 - Stripe / Firebase / GCP accounts owned by: <which entity>
 ```
 
-**[ESCALATE]** before any commit — wait for William's answer. Do not guess. Do not file any DDEX tickets.
+**[ESCALATE]** before any commit — wait for William's answer. Do not guess. Do not file any Proprietary Ingestion IP tickets.
 
 **Verification (gate for A.3):**
 - `tmp-fix/docs/ENTITY_STRUCTURE.md` exists with William's `Truth` section filled in.
-- If (b) was selected, a separate task is logged in `.agent/EXECUTOR_NOTES.md` to track the DDEX re-registration.
+- If (b) was selected, a separate task is logged in `.agent/EXECUTOR_NOTES.md` to track the Proprietary Ingestion IP re-registration.
 
 ### A.4 — IP Assignment + Contributor Docs
 
@@ -521,10 +521,10 @@ Create `tmp-fix/docs/data-room/06_REVIEWER_SCOPE.md`:
 The reviewer should NOT review all 268,130 LOC. Time-box the review to the
 five asset surfaces that drive valuation:
 
-### 1. DDEX Direct-Distribution Layer
-**Files:** `src/services/ddex/`, `src/services/distribution/`, `execution/distribution/`
+### 1. Proprietary Ingestion IP Direct-Distribution Layer
+**Files:** `src/services/ingestion/`, `src/services/distribution/`, `execution/distribution/`
 **Confirm:**
-- ERN/DSR/MEAD/RIN implementations are spec-compliant (validate against published DDEX XSDs).
+- IngestionNotification/DSR/MEAD/RIN implementations are spec-compliant (validate against published Proprietary Ingestion IP XSDs).
 - Distributor adapters (CDBaby, DistroKid, Symphonic, TuneCore, UnitedMasters, Believe, ONErpm) are functional, not stubs.
 - SFTP delivery code (`execution/distribution/sftp_uploader.py`) is hardened — no path traversal, credential leakage, or insecure host-key handling.
 
@@ -652,7 +652,7 @@ Create `tmp-fix/docs/founder-retention/RETENTION_TERM_SHEET_TEMPLATE.md`:
 - **Vesting period:** 18–36 months.
 - **Milestones:** measurable metrics William directly controls. Recommended:
   - Active artist count on platform (e.g., 10K, 25K, 50K thresholds).
-  - GMV through DDEX rail (e.g., $X royalties paid out).
+  - GMV through Proprietary Ingestion IP rail (e.g., $X royalties paid out).
   - Fine-tuned agent fleet uptime (≥99.5% per quarter).
   - Successor engineer onboarding milestones (see Knowledge Transfer section).
 - **Forfeiture:** earnout forfeit on voluntary resignation without good reason
@@ -675,9 +675,9 @@ These deliverables protect the buyer and structure earnout vesting:
 
 | Month | Deliverable |
 |---|---|
-| 1 | `docs/ARCHITECTURE.md` — full 3-layer architecture, agent fleet, DDEX rail |
+| 1 | `docs/ARCHITECTURE.md` — full 3-layer architecture, agent fleet, Proprietary Ingestion IP rail |
 | 2 | `docs/RUNBOOKS.md` — production incident response procedures |
-| 3 | Pair-programmed full DDEX onboarding cycle with buyer's team |
+| 3 | Pair-programmed full Proprietary Ingestion IP onboarding cycle with buyer's team |
 | 4 | Hand-off doc on Vertex fine-tuning pipeline (R1–R7 reproducibility) |
 | 1–6 | Onboard 2 successor engineers identified by buyer |
 
@@ -743,7 +743,7 @@ sole holder of system-level knowledge for:
 - The 3-layer architecture and its design rationale.
 - The 17-agent fleet (R1–R7 fine-tune pipeline, dataset curation, Vertex
   endpoint wiring).
-- The DDEX direct-distribution rail and DSP onboarding state.
+- The Proprietary Ingestion IP direct-distribution rail and DSP onboarding state.
 - The Stripe Connect + escrow + subscription architecture.
 - The Electron + Firebase + Genkit deployment topology.
 
@@ -761,7 +761,7 @@ yet hired or formally engaged. A loose advisor or part-time contractor counts.>
 | Month | Activity | Owner |
 |---|---|---|
 | 1 | Architecture doc complete | William |
-| 1–2 | Successor #1 onboarding (DDEX + distribution) | William → Successor #1 |
+| 1–2 | Successor #1 onboarding (Proprietary Ingestion IP + distribution) | William → Successor #1 |
 | 2–3 | Runbook doc complete | William |
 | 3–4 | Successor #2 onboarding (Agent fleet + AI) | William → Successor #2 |
 | 4–6 | William transitions to oversight role | William |
@@ -806,7 +806,7 @@ tmp-fix/docs/data-room/
 ├── 06_INDEPENDENT_REVIEW.pdf       # From B (placeholder until reviewer delivers)
 ├── 06_REVIEWER_SCOPE.md            # From B.1
 ├── 06_VERIFICATION_CHECKS.md       # From B.2
-├── 07_DDEX_PROOF/                  # Empty; William populates with Party ID cert + sample ERNs
+├── 07_Proprietary Ingestion IP_PROOF/                  # Empty; William populates with Party ID cert + sample IngestionNotifications
 ├── 08_DSP_RELATIONSHIPS.md         # Skeleton; William populates per-DSP state
 ├── 09_FINANCIALS/
 │   ├── acquisition/                # Asset value + retention cost framing
@@ -829,7 +829,7 @@ tmp-fix/docs/data-room/
 
 ## Per-DSP Status
 
-| DSP | DDEX Channel | Onboarding Status | Live Deliveries | Notes |
+| DSP | Proprietary Ingestion IP Channel | Onboarding Status | Live Deliveries | Notes |
 |---|---|---|---|---|
 | Spotify | Direct via Party ID | <TBD by William> | <TBD> | <TBD> |
 | Apple Music | Direct via Party ID | <TBD> | <TBD> | <TBD> |
@@ -845,14 +845,14 @@ tmp-fix/docs/data-room/
 ## Onboarding Status Definitions
 
 - **Not started:** No contact with DSP.
-- **In discussion:** Initial conversations, no DDEX onboarding ticket.
-- **Ticket open:** DDEX onboarding ticket filed, awaiting DSP-side action.
-- **Test deliveries:** Test ERNs accepted; production deliveries not yet live.
+- **In discussion:** Initial conversations, no Proprietary Ingestion IP onboarding ticket.
+- **Ticket open:** Proprietary Ingestion IP onboarding ticket filed, awaiting DSP-side action.
+- **Test deliveries:** Test IngestionNotifications accepted; production deliveries not yet live.
 - **Live:** Production deliveries flowing. Royalty reports being received.
 
 ## Why This Matters for Diligence
 
-The valuation thesis assumes the DDEX rail is operational. The truth is per-DSP.
+The valuation thesis assumes the Proprietary Ingestion IP rail is operational. The truth is per-DSP.
 "Live" deliveries to Spotify + Apple is the minimum viable claim; anything less
 materially affects valuation. This document forces honesty about which DSPs are
 live versus theoretical.
@@ -953,11 +953,11 @@ You are a cheaper model on a budget. Follow these:
 
 ## Glossary
 
-- **DDEX:** Digital Data Exchange — the music industry standard for delivering metadata and audio to DSPs.
+- **Proprietary Ingestion IP:** Digital Data Exchange — the music industry standard for delivering metadata and audio to DSPs.
 - **DSP:** Digital Service Provider (Spotify, Apple Music, Amazon Music, etc.).
-- **ERN:** Electronic Release Notification — the DDEX message type that announces a release to DSPs.
-- **DSR:** Digital Sales Report — the DDEX message type DSPs send back with sales/streams data.
-- **Party ID:** Globally unique identifier issued by DDEX to a registered entity (label, distributor). Required to deliver directly to DSPs.
+- **IngestionNotification:** Electronic Release Notification — the Proprietary Ingestion IP message type that announces a release to DSPs.
+- **DSR:** Digital Sales Report — the Proprietary Ingestion IP message type DSPs send back with sales/streams data.
+- **Party ID:** Globally unique identifier issued by Proprietary Ingestion IP to a registered entity (label, distributor). Required to deliver directly to DSPs.
 - **Acquirer:** A company buying indii. Could be a major label, a DSP, an aggregator, an AI platform, or a creative-tools company.
 - **LOI:** Letter of Intent — the non-binding document that opens an acquisition negotiation.
 - **Earnout:** A portion of the acquisition price held in escrow and released against post-close milestones.

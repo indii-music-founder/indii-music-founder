@@ -52,7 +52,7 @@ export class DistributionSyncService {
         onError?: (error: Error) => void
     ): () => void {
         const q = query(
-            collection(db, 'ddexReleases'),
+            collection(db, 'proprietaryIngestionReleases'),
             where('orgId', '==', orgId),
             orderBy('createdAt', 'desc')
         );
@@ -85,7 +85,7 @@ export class DistributionSyncService {
 
         try {
             const q = query(
-                collection(db, 'ddexReleases'),
+                collection(db, 'proprietaryIngestionReleases'),
                 where('orgId', '==', orgId),
                 orderBy('createdAt', 'desc')
             );
@@ -105,7 +105,7 @@ export class DistributionSyncService {
      */
     static async getRelease(releaseId: string): Promise<DDEXReleaseRecord | null> {
         try {
-            const docRef = doc(db, 'ddexReleases', releaseId);
+            const docRef = doc(db, 'proprietaryIngestionReleases', releaseId);
             const snapshot = await getDoc(docRef);
             if (snapshot.exists()) {
                 const data = snapshot.data() as DDEXReleaseRecord;
