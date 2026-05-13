@@ -148,11 +148,11 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
                 setTimeout(() => cb(null), 100);
                 return () => { };
             },
-            signInAnonymously: () => Promise.reject(new Error("Missing API Key")),
-            signInWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
-            createUserWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
-            sendPasswordResetEmail: () => Promise.reject(new Error("Missing API Key")),
-            signInWithPopup: () => Promise.reject(new Error("Missing API Key")),
+            signInAnonymously: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            signInWithEmailAndPassword: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            createUserWithEmailAndPassword: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            sendPasswordResetEmail: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            signInWithPopup: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
             signOut: () => Promise.resolve(),
         } as unknown as Auth;
     }

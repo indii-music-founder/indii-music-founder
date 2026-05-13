@@ -27,7 +27,7 @@ This system prevents runaway agents by enforcing **hard cost limits** at the Clo
 ### 1. **Firestore Cost Ledger** (Single Source of Truth)
 
 ```
-projects/indiios-v-1-1/databases/(default)/
+projects/indii-music/databases/(default)/
 └── costLedger
     ├── /daily/{YYYY-MM-DD}
     │   ├── totalCost: 127.50
@@ -314,7 +314,7 @@ export const enforceOperationCost = functions
 ```hcl
 # Hard limit: No Vertex AI Veo API can exceed 1000 calls/month
 resource "google_compute_project_quota_override" "veo_quota" {
-  project       = "indiios-v-1-1"
+  project       = "indii-music"
   service       = "aiplatform.googleapis.com"
   metric        = "aiplatform.googleapis.com/GenerativeAI-Request-Count"
   limit_name    = "request-count-per-month-per-region"
@@ -323,7 +323,7 @@ resource "google_compute_project_quota_override" "veo_quota" {
 
 # Gemini API: Max 100k requests/month (agents can't runaway)
 resource "google_compute_project_quota_override" "gemini_quota" {
-  project       = "indiios-v-1-1"
+  project       = "indii-music"
   service       = "generativelanguage.googleapis.com"
   metric        = "generativelanguage.googleapis.com/requests_per_month"
   limit_name    = "requests-per-month"
@@ -339,7 +339,7 @@ gcloud compute project-quotas update \
   --service=aiplatform.googleapis.com \
   --limit-name=request-count-per-month-per-region \
   --override-value=1000 \
-  --project=indiios-v-1-1
+  --project=indii-music
 ```
 
 ---

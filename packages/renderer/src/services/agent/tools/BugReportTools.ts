@@ -131,19 +131,12 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 
         // 3. Save to Agent Memory for context continuity
         try {
-            const { memoryService } = await import('@/services/agent/MemoryService');
-            const currentProjectId = toolContext
-                ? toolContext.get('currentProjectId')
-                : state.currentProjectId;
-            if (currentProjectId) {
-                await memoryService.saveMemory(
-                    currentProjectId,
-                    `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
-                    'fact',
-                    0.7,
-                    'system'
-                );
-            }
+            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            await alwaysOnMemoryEngine.ingest(
+                `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
+                'system',
+                'context'
+            );
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to save bug to memory:', e);
         }
@@ -233,19 +226,12 @@ ${featureRequest.useCase}
 
         // 2. Save to Agent Memory
         try {
-            const { memoryService } = await import('@/services/agent/MemoryService');
-            const currentProjectId = toolContext
-                ? toolContext.get('currentProjectId')
-                : state.currentProjectId;
-            if (currentProjectId) {
-                await memoryService.saveMemory(
-                    currentProjectId,
-                    `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
-                    'fact',
-                    0.6,
-                    'system'
-                );
-            }
+            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            await alwaysOnMemoryEngine.ingest(
+                `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
+                'system',
+                'context'
+            );
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
         }

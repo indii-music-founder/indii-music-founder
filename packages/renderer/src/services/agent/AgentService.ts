@@ -1041,7 +1041,7 @@ The user will see this plan and can approve it to start execution.`;
                 metadata: {
                     model: AI_MODELS.TEXT.FAST,
                     messageLength: text.length,
-                    source: options?.source || 'web',
+                    source: 'web',
                 },
             });
 
@@ -1166,13 +1166,13 @@ The user will see this plan and can approve it to start execution.`;
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
                     const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
-                    const memories = await alwaysOnMemoryEngine.retrieve(task, 5);
-                    if (memories && memories.length > 0) {
-                        context.relevantMemories = memories;
-                        context.memoryContext = memories
-                            .map(m => `- ${m}`)
+                    const results = await alwaysOnMemoryEngine.retrieve({ query: task, limit: 5 });
+                    if (results && results.length > 0) {
+                        context.relevantMemories = results.map(m => m.summary || m.content);
+                        context.memoryContext = results
+                            .map(m => `- ${m.summary || m.content}`)
                             .join('\n');
-                        logger.debug(`[AgentService] Injected ${memories.length} memories into context.`);
+                        logger.debug(`[AgentService] Injected ${results.length} memories into context.`);
                     }
                 } catch (e: unknown) {
                     logger.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);

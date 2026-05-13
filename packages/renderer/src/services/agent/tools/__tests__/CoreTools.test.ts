@@ -21,6 +21,21 @@ vi.mock('../../registry', () => ({
 import { CoreTools } from '../CoreTools';
 import { useStore } from '@/core/store';
 import { agentRegistry } from '../../registry';
+import { AI_MODELS } from '@/core/config/ai-models';
+import { GenAI as AI } from '@/services/ai/GenAI';
+
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        rawGenerateContent: vi.fn().mockResolvedValue({
+            getText: () => '{"score": 8, "reason": "Good", "pass": true}',
+            response: {
+                text: () => '{"score": 8, "reason": "Good", "pass": true}',
+                candidates: [],
+                usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
+            }
+        })
+    }
+}));
 
 describe('CoreTools', () => {
     const mockStoreState = {
@@ -29,15 +44,17 @@ describe('CoreTools', () => {
         setModule: vi.fn(),
         requestApproval: vi.fn(),
         setAgentMode: vi.fn(),
-        agentMode: 'assistant'
+        agentMode: 'assistant',
+        agentHistory: [
+            { role: 'user', text: 'Hello' },
+            { role: 'model', text: 'Hi there' }
+        ]
     };
 
     beforeEach(() => {
         vi.resetAllMocks();
         vi.mocked(useStore.getState).mockReturnValue(mockStoreState as unknown as ReturnType<typeof useStore.getState>);
     });
-
-
 
     describe('request_approval', () => {
         it('should handle approved request', async () => {
@@ -89,6 +106,36 @@ describe('CoreTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.text).toBe('New prompt');
             expect(result.data.message).toContain('Prompt updated');
+        });
+    });
+
+    describe('read_history', () => {
+        it('should return history items', async () => {
+            const result = await CoreTools.read_history({});
+            expect(result.success).toBe(true);
+            expect(result.data.history).toHaveLength(2);
+            expect(result.data.history[0].text).toBe('Hello');
+        });
+
+        it('should truncate long messages', async () => {
+            mockStoreState.agentHistory = [{
+                role: 'user',
+                text: 'a'.repeat(200)
+            }];
+            const result = await CoreTools.read_history({});
+            expect(result.data.history[0].text.length).toBe(100);
+        });
+    });
+
+    describe('verify_output', () => {
+        it('should verify content meet goal', async () => {
+            const result = await CoreTools.verify_output({
+                goal: 'Test goal',
+                content: 'Test content'
+            });
+            expect(result.success).toBe(true);
+            expect(result.data.verification.pass).toBe(true);
+            expect(AI.rawGenerateContent).toHaveBeenCalled();
         });
     });
 });

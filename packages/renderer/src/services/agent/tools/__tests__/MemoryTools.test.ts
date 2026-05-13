@@ -10,42 +10,25 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/agent/MemoryService', () => ({
-    memoryService: {
-        saveMemory: vi.fn(),
-        retrieveRelevantMemories: vi.fn()
-    }
-}));
-
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
-        rawGenerateContent: vi.fn().mockResolvedValue({
-            getText: () => '{"score": 8, "reason": "Good", "pass": true}',
-            response: {
-                text: () => '{"score": 8, "reason": "Good", "pass": true}',
-                candidates: [],
-                usageMetadata: {}
-            }
-        })
+vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
+    alwaysOnMemoryEngine: {
+        ingest: vi.fn(),
+        query: vi.fn(),
+        getStatus: vi.fn(),
+        getAllMemories: vi.fn(),
+        deleteMemory: vi.fn(),
+        consolidateNow: vi.fn(),
+        retrieve: vi.fn()
     }
 }));
 
 import { MemoryTools } from '../MemoryTools';
 import { useStore } from '@/core/store';
-import { memoryService } from '@/services/agent/MemoryService';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { alwaysOnMemoryEngine } from '../../memory/AlwaysOnMemoryEngine';
 
 describe('MemoryTools', () => {
     const mockStoreState = {
-        currentProjectId: 'project-123',
-        agentHistory: [
-            { role: 'user', text: 'Hello, how are you?' },
-            { role: 'model', text: 'I am doing well, thank you!' },
-            { role: 'user', text: 'Can you help me with something?' },
-            { role: 'model', text: 'Of course! What do you need help with?' },
-            { role: 'user', text: 'I need to generate an image' }
-        ]
+        currentProjectId: 'project-123'
     };
 
     beforeEach(() => {
@@ -54,229 +37,85 @@ describe('MemoryTools', () => {
     });
 
     describe('save_memory', () => {
-        it('should save memory successfully', async () => {
-            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
+        it('should save memory successfully via AlwaysOnMemoryEngine', async () => {
+            vi.mocked(alwaysOnMemoryEngine.ingest).mockResolvedValue('Stored: info');
 
             const result = await MemoryTools.save_memory({
                 content: 'User prefers dark themes'
             });
 
             expect(result.success).toBe(true);
-            expect(result.data.message).toContain('Memory processed');
-            expect(result.data.content).toBe('User prefers dark themes');
-            expect(memoryService.saveMemory).toHaveBeenCalledWith(
-                'project-123',
+            expect(result.data.message).toContain('Memory stored');
+            expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalledWith(
                 'User prefers dark themes',
-                'fact'
-            );
-        });
-
-        it('should use specified memory type', async () => {
-            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
-
-            await MemoryTools.save_memory({
-                content: 'Always use formal language',
-                type: 'rule'
-            });
-
-            expect(memoryService.saveMemory).toHaveBeenCalledWith(
-                'project-123',
-                'Always use formal language',
-                'rule'
-            );
-        });
-
-        it('should handle save errors gracefully (non-blocking)', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-            vi.mocked(memoryService.saveMemory).mockRejectedValue(new Error('Storage full'));
-
-            const result = await MemoryTools.save_memory({
-                content: 'Test memory'
-            });
-
-            // save_memory catches errors non-blocking and still returns success
-            expect(result.success).toBe(true);
-            expect(result.data.content).toBe('Test memory');
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[MemoryTools]'),
-                expect.any(Error)
-            );
-            consoleSpy.mockRestore();
-        });
-
-        it('should default to fact type', async () => {
-            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
-
-            await MemoryTools.save_memory({ content: 'Some fact' });
-
-            expect(memoryService.saveMemory).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.any(String),
+                'agent_extraction',
                 'fact'
             );
         });
     });
 
     describe('recall_memories', () => {
-        it('should recall relevant memories', async () => {
-            const mockMemories = [
-                'User likes blue color',
-                'Previous project was about music',
-                'Prefers minimal design'
-            ];
-            vi.mocked(memoryService.retrieveRelevantMemories).mockResolvedValue(mockMemories);
+        it('should recall memories via AlwaysOnMemoryEngine', async () => {
+            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Answer based on memory');
 
             const result = await MemoryTools.recall_memories({ query: 'user preferences' });
 
             expect(result.success).toBe(true);
-            expect(result.data.memories).toEqual(mockMemories);
-            expect(result.data.message).toContain('Retrieved 3 relevant memories');
-
-            expect(memoryService.retrieveRelevantMemories).toHaveBeenCalledWith(
-                'project-123',
-                'user preferences'
-            );
-        });
-
-        it('should handle no memories found', async () => {
-            vi.mocked(memoryService.retrieveRelevantMemories).mockResolvedValue([]);
-
-            const result = await MemoryTools.recall_memories({ query: 'obscure topic' });
-
-            expect(result.success).toBe(true);
-            expect(result.data.memories).toEqual([]);
-            expect(result.data.message).toContain('No relevant memories found');
-        });
-
-        it('should handle recall errors', async () => {
-            vi.mocked(memoryService.retrieveRelevantMemories).mockRejectedValue(
-                new Error('Database unavailable')
-            );
-
-            const result = await MemoryTools.recall_memories({ query: 'test' });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('Database unavailable');
+            expect(result.data.answer).toBe('Answer based on memory');
+            expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('user preferences');
         });
     });
 
-    describe('read_history', () => {
-        it('should return last 5 messages', async () => {
-            const result = await MemoryTools.read_history({});
+    describe('save_user_memory', () => {
+        it('should ingest user memory', async () => {
+            vi.mocked(alwaysOnMemoryEngine.ingest).mockResolvedValue('Summary of memory');
+
+            const result = await MemoryTools.save_user_memory({
+                content: 'Important feedback',
+                category: 'feedback'
+            });
 
             expect(result.success).toBe(true);
-            expect(result.data.history).toHaveLength(5);
-            expect(result.data.history[0]).toHaveProperty('role');
-            expect(result.data.history[0]).toHaveProperty('text');
-        });
-
-        it('should truncate long messages', async () => {
-            vi.mocked(useStore.getState).mockReturnValue({
-                agentHistory: [
-                    {
-                        role: 'user',
-                        text: 'This is a very long message that should be truncated because it exceeds the fifty character limit that we have set'
-                    }
-                ]
-            } as unknown as ReturnType<typeof useStore.getState>);
-
-            const result = await MemoryTools.read_history({});
-
-            expect(result.data.history[0].text.length).toBeLessThanOrEqual(100);
-        });
-
-        it('should handle empty history', async () => {
-            vi.mocked(useStore.getState).mockReturnValue({ agentHistory: [] } as unknown as ReturnType<typeof useStore.getState>);
-
-            const result = await MemoryTools.read_history({});
-
-            expect(result.success).toBe(true);
-            expect(result.data.history).toHaveLength(0);
+            expect(result.data.summary).toBe('Summary of memory');
+            expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalledWith(
+                'Important feedback',
+                'user_input',
+                'feedback'
+            );
         });
     });
 
-    describe('verify_output', () => {
-        it('should verify output and return result', async () => {
-            const mockVerification = {
-                score: 8,
-                reason: 'Content meets the goal well',
-                pass: true
-            };
-            vi.mocked(AI.rawGenerateContent).mockResolvedValue({
-                getText: () => JSON.stringify(mockVerification),
-                response: {
-                    text: () => JSON.stringify(mockVerification),
-                    candidates: [],
-                    usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
-                }
-            } as unknown as Awaited<ReturnType<typeof AI.rawGenerateContent>>);
+    describe('search_user_memory', () => {
+        it('should query user memory', async () => {
+            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Search results');
 
-            const result = await MemoryTools.verify_output({
-                goal: 'Write a compelling headline',
-                content: 'Revolutionary AI Changes Everything'
-            });
+            const result = await MemoryTools.search_user_memory({ query: 'search query' });
 
             expect(result.success).toBe(true);
-            expect(result.data.verification.score).toBe(8);
-            expect(AI.rawGenerateContent).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        parts: expect.arrayContaining([
-                            expect.objectContaining({ text: expect.any(String) })
-                        ])
-                    })
-                ]),
-                AI_MODELS.TEXT.FAST,
-                expect.objectContaining({
-                    responseMimeType: 'application/json'
-                })
-            );
+            expect(result.data.answer).toBe('Search results');
+            expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('search query');
         });
+    });
 
-        it('should include goal and content in prompt', async () => {
-            vi.mocked(AI.rawGenerateContent).mockResolvedValue({
-                getText: () => '{"score": 7, "pass": true}',
-                response: {
-                    text: () => '{"score": 7, "pass": true}',
-                    candidates: [],
-                    usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
-                }
-            } as unknown as Awaited<ReturnType<typeof AI.rawGenerateContent>>);
+    describe('get_user_context', () => {
+        it('should return context and status', async () => {
+            vi.mocked(alwaysOnMemoryEngine.getStatus).mockResolvedValue({ totalMemories: 10 } as any);
+            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Context summary');
 
-            await MemoryTools.verify_output({
-                goal: 'Test Goal',
-                content: 'Test Content'
-            });
+            const result = await MemoryTools.get_user_context({});
 
-            const callArgs = vi.mocked(AI.rawGenerateContent).mock.calls[0]?.[0];
-            if (!callArgs) throw new Error('Expected rawGenerateContent to be called');
-            const promptText = (callArgs as { parts: { text: string }[] }[])[0]?.parts?.[0]?.text || '';
-            expect(promptText).toContain('Test Goal');
-            expect(promptText).toContain('Test Content');
+            expect(result.success).toBe(true);
+            expect(result.data.context).toBe('Context summary');
+            expect(result.data.engineStatus.totalMemories).toBe(10);
         });
+    });
 
-        it('should handle verification errors', async () => {
-            vi.mocked(AI.rawGenerateContent).mockRejectedValue(new Error('API unavailable'));
+    describe('delete_user_memory', () => {
+        it('should delete specified memory', async () => {
+            const result = await MemoryTools.delete_user_memory({ memoryId: 'mem-1' });
 
-            const result = await MemoryTools.verify_output({
-                goal: 'Goal',
-                content: 'Content'
-            });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('API unavailable');
-        });
-
-        it('should handle unknown errors', async () => {
-            vi.mocked(AI.rawGenerateContent).mockRejectedValue('Unknown error type');
-
-            const result = await MemoryTools.verify_output({
-                goal: 'Goal',
-                content: 'Content'
-            });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Unknown error type');
+            expect(result.success).toBe(true);
+            expect(alwaysOnMemoryEngine.deleteMemory).toHaveBeenCalledWith('mem-1');
         });
     });
 });
