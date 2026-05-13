@@ -15,7 +15,7 @@ vi.mock('@/core/store', () => ({
 
 vi.mock('../MembershipService', () => ({
     MembershipService: {
-        checkBudget: vi.fn().mockResolvedValue(true)
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true })
     }
 }));
 

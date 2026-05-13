@@ -33,7 +33,7 @@ const mockMetadata: ExtendedGoldenMetadata = {
     explicit: false,
     genre: 'Pop',
     labelName: 'Test Label',
-    systemIdentifier: 'PADPIDA001',
+    dpid: 'PADPIDA001',
     splits: [],
     pro: 'None',
     publisher: 'Self',
