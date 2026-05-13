@@ -17,6 +17,11 @@ vi.mock('@/services/ai/GenAI', () => ({
                 functionCalls: () => []
             }
         }),
+        generateStructuredData: vi.fn().mockResolvedValue({
+            score: 0.9,
+            reasoning: "Mocked evaluation",
+            improvements: []
+        }),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: {
                 getReader: () => ({

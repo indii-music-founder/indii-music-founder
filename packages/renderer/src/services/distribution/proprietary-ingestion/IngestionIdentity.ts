@@ -101,15 +101,15 @@ export class IngestionIdentity {
             );
         }
 
-        if (dsp.dpid === 'PENDING_ONBOARDING') {
+        if (dsp.systemIdentifier === 'PENDING_ONBOARDING') {
             throw new Error(
-                `SystemIdentity for ${dsp.name} is pending onboarding. ` +
-                `Complete the content provider application with ${dsp.name} to obtain their SystemIdentity, ` +
+                `SystemIdentity for ${dsp.entityName} is pending onboarding. ` +
+                `Complete the content provider application with ${dsp.entityName} to obtain their SystemIdentity, ` +
                 `then set VITE_Ingestion_SystemIdentity_${key.toUpperCase()} environment variable.`
             );
         }
 
-        return dsp.dpid;
+        return dsp.systemIdentifier;
     }
 
     /**
@@ -126,9 +126,9 @@ export class IngestionIdentity {
     static getDSPRegistry(): Array<{ key: string; entityName: string; systemIdentifier: string; ready: boolean; protocol: string }> {
         return Object.entries(INGESTION_REGISTRY).map(([key, dsp]) => ({
             key,
-            entityName: dsp.name,
-            systemIdentifier: dsp.dpid,
-            ready: dsp.dpid !== 'PENDING_ONBOARDING',
+            entityName: dsp.entityName,
+            systemIdentifier: dsp.systemIdentifier,
+            ready: dsp.systemIdentifier !== 'PENDING_ONBOARDING',
             protocol: dsp.protocol,
         }));
     }

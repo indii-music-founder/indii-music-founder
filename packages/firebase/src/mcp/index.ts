@@ -96,7 +96,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         // Mocked remote operation that would actually hit Firestore/BigQuery
         const formattedMetadata = {
-            upc: `US-INDIIOS-${Math.floor(Math.random() * 100000)}`,
+            upc: `US-INDII-${Math.floor(Math.random() * 100000)}`,
             dspTitle: `${releaseTitle} - Single`,
             primaryArtistString: artists.join(' & '),
             genreCategory: genre.toUpperCase(),
