@@ -81,6 +81,8 @@ export interface RoyaltyCalculation {
   releaseId: string;
   resourceId: string;
   isrc: string;
+  trackTitle?: string;
+  artistName?: string;
 
   // Aggregated usage
   totalStreams: number;

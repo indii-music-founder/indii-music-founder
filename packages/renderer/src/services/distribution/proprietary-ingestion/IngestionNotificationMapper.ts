@@ -190,7 +190,7 @@ export class IngestionNotificationMapper {
                       resourceTitle: { titleText: metadata.trackTitle, titleType: 'DisplayTitle' },
                       displayArtistName: metadata.artistName,
                       contributors,
-                      duration: metadata.durationIngestionFormatted || IngestionNotificationMapper.formatISO8601Duration(metadata.durationFormatted),
+                      duration: metadata.durationDDEXFormatted || IngestionNotificationMapper.formatISO8601Duration(metadata.durationFormatted),
                       parentalWarningType: metadata.explicit ? 'Explicit' : 'NotExplicit',
                       soundRecordingDetails: {
                                         soundRecordingType: 'MusicalWorkSoundRecording',
@@ -210,7 +210,7 @@ export class IngestionNotificationMapper {
                                                                filePath: assets.audioFile.path,
                                                                hashSum: assets.audioFile.hash,
                                         },
-                                        duration: metadata.durationIngestionFormatted || IngestionNotificationMapper.formatISO8601Duration(metadata.durationFormatted),
+                                        duration: metadata.durationDDEXFormatted || IngestionNotificationMapper.formatISO8601Duration(metadata.durationFormatted),
                       }];
         }
 

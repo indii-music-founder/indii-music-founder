@@ -212,7 +212,7 @@ export interface AgentContext {
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
     traceId?: string;
-    swarmId?: string;
+    swarmId?: string | null;
     attachments?: { mimeType: string; base64: string }[];
     systemPrompt?: string;
     whiskState?: WhiskState;

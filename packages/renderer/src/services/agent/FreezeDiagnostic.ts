@@ -54,8 +54,8 @@ export function freezeAgentConfig(agent: any) {
         }
     });
 
-    // Finally freeze the root agent object
-    Object.freeze(agent);
+    // Finally freeze the root agent object - REMOVED: Agent instances must maintain internal state (call history, etc)
+    // Object.freeze(agent);
 
     // logger.debug(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
 }

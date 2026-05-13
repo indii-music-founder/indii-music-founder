@@ -9,7 +9,7 @@ export const MOCK_METADATA: ExtendedGoldenMetadata = {
     explicit: false,
     genre: 'Electronic',
     labelName: 'Mute Records',
-    systemIdentity: 'PASystemIdentityA001',
+    dpid: 'PASystemIdentityA001',
     splits: [
         { legalName: 'M83', role: 'songwriter', percentage: 100, email: 'anthony@m83.com' }
     ],
