@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-13 17:48 EDT
+**Updated:** 2026-05-13 19:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a7a03aee7 chore: session checkpoint [17:48]
 111f40404 fix(ci): harden firebase identifiers in deploy.yml to resolve E2E failures
 7ee5b30e1 fix(deploy): correct firebase project identifier and resolve deployment gate
 c1c12fbc1 fix(ci): resolve stripe resolution error and stabilize dependency hoisting
@@ -13,12 +14,82 @@ fd888046a Merge pull request #10 from indii-music/v1.63.0
 36a93896f fix(proprietary-ingestion): stabilize ingestion schema and resolve CI shard regressions for v1.63.0
 222fb9793 Merge pull request #9 from indii-music/v1.63.0
 fff0e5c59 chore: finalize indii.music rebranding and resolve monorepo typecheck regressions
-87459a63b feat(billing): implement universal cost control system for all agents
 ```
 
 ## Working State
 ```
-clean working tree
+M  .env.example
+M  .firebaserc
+M  docs/COST_CONTROL_SYSTEM.md
+M  docs/THREE_TIER_STRATEGY.md
+M  electron-builder.json
+M  extensions/storage-resize-images.env
+M  firebase.json
+M  package.json
+M  packages/firebase/src/index.ts
+M  packages/landing/index.html
+M  packages/landing/src/login-bridge/page.tsx
+M  packages/landing/src/page.tsx
+M  packages/main/src/handlers/deeplink.ts
+M  packages/main/src/main.ts
+M  packages/main/src/security/index.ts
+M  packages/main/src/services/APIService.ts
+M  packages/main/src/utils/ipc-security.ts
+M  packages/renderer/index.html
+M  packages/renderer/public/manifest.json
+ D packages/renderer/src/components/agent/MemoryBrowserPanel.tsx
+M  packages/renderer/src/core/App.tsx
+M  packages/renderer/src/core/components/ModuleAmbientBackground.tsx
+M  packages/renderer/src/core/components/auth/LoginForm.tsx
+ M packages/renderer/src/core/store/slices/agentFeedbackSlice.ts
+ M packages/renderer/src/core/store/slices/agentMemorySlice.ts
+M  packages/renderer/src/core/store/slices/memoryAgentSlice.ts
+ D packages/renderer/src/hooks/useMemoryQuery.ts
+MM packages/renderer/src/main.tsx
+MD packages/renderer/src/modules/agent/components/MemoryDashboard.tsx
+ D packages/renderer/src/modules/agent/components/MemoryDashboardSubComponents.tsx
+MM packages/renderer/src/modules/memory/MemoryDashboard.tsx
+M  packages/renderer/src/modules/merchandise/components/DesignCanvas.tsx
+M  packages/renderer/src/modules/merchandise/hooks/useAutoSave.ts
+ M packages/renderer/src/services/agent/AgentService.ts
+D  packages/renderer/src/services/agent/AlwaysOnMemoryEngine.test.ts
+D  packages/renderer/src/services/agent/AlwaysOnMemoryEngine.ts
+ M packages/renderer/src/services/agent/BaseAgent.ts
+MM packages/renderer/src/services/agent/IndiiNucleus.ts
+ D packages/renderer/src/services/agent/MemoryService.test.ts
+ D packages/renderer/src/services/agent/MemoryService.ts
+ D packages/renderer/src/services/agent/UserMemoryService.ts
+D  packages/renderer/src/services/agent/__tests__/AlwaysOnMemoryEngine.benchmark.test.ts
+ M packages/renderer/src/services/agent/benchmark_clearAllMemories.test.ts
+ M packages/renderer/src/services/agent/components/ContextPipeline.ts
+ M packages/renderer/src/services/agent/components/HistoryManager.ts
+ M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts
+ M packages/renderer/src/services/agent/memory/BigBrainEngine.ts
+ M packages/renderer/src/services/agent/memory/__tests__/BigBrainEngine.test.ts
+ M packages/renderer/src/services/agent/tools/BugReportTools.ts
+ M packages/renderer/src/services/agent/tools/CoreTools.ts
+ M packages/renderer/src/services/agent/tools/HiveTools.ts
+ M packages/renderer/src/services/agent/tools/MemoryTools.ts
+ D packages/renderer/src/services/agent/tools/UserMemoryTools.ts
+ M packages/renderer/src/services/agent/tools/index.ts
+ M packages/renderer/src/services/agent/types.ts
+M  packages/renderer/src/services/blockchain/SmartContractService.ts
+M  packages/renderer/src/services/firebase.ts
+ D packages/renderer/src/services/memory/MemoryIndexService.test.ts
+ D packages/renderer/src/services/memory/MemoryIndexService.ts
+ D packages/renderer/src/services/memory/PersistentMemoryService.test.ts
+ D packages/renderer/src/services/memory/PersistentMemoryService.ts
+M  packages/renderer/src/services/video/remotion.cloudrun.ts
+M  packages/renderer/src/skills/studio/audit_release_readiness/SKILL.md
+M  packages/renderer/src/skills/studio/generate_creative_copy/SKILL.md
+M  packages/renderer/src/skills/studio/generate_release_package/SKILL.md
+M  packages/renderer/src/skills/studio/scan_audio_dna/SKILL.md
+M  packages/shared/src/services/AuthService.ts
+M  public/indii-logo.svg
+M  scripts/seed_wiki.cjs
+M  scripts/update-agency-profile.mjs
+M  scripts/upload-persona-assets.mjs
+M  scripts/upload_video_to_firestore.mjs
 ```
 
 ## Decisions
