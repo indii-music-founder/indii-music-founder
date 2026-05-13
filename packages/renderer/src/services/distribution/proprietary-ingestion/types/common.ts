@@ -9,13 +9,6 @@ export interface SystemIdentity {
   entityName: string;
 }
 
-/** @deprecated Use SystemIdentity */
-export interface DPID {
-  partyId: string;
-  partyName: string;
-}
-
-
 // ISO 3166-1 Territory Codes
 export type TerritoryCode = 'Worldwide' | string;  // 'US', 'GB', 'DE', etc.
 

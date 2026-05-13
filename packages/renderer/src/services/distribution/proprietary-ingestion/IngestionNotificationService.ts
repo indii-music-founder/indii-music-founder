@@ -46,12 +46,12 @@ export class IngestionNotificationService {
             const ern = IngestionNotificationMapper.mapMetadataToIngestionNotification(metadata, {
                 messageId: `MSG-${Date.now()}`,
                 sender: {
-                    systemIdentifier: senderSystemIdentifier,
-                    entityName: metadata.labelName || INGESTION_CONFIG.ENTITY_NAME,
+                    partyId: senderSystemIdentifier,
+                    partyName: metadata.labelName || INGESTION_CONFIG.ENTITY_NAME,
                 },
                 recipient: {
-                    systemIdentifier: recipientSystemIdentifier,
-                    entityName: 'Distributor', // Ideally fetched from distributor config
+                    partyId: recipientSystemIdentifier,
+                    partyName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
                 messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage',
@@ -128,7 +128,7 @@ export class IngestionNotificationService {
 
         // Check Header
         if (!ern.messageHeader.messageId) errors.push('MessageId is missing');
-        if (!ern.messageHeader.messageSender.systemIdentifier) errors.push('MessageSender SystemIdentifier is missing');
+        if (!ern.messageHeader.messageSender.partyId) errors.push('MessageSender SystemIdentifier is missing');
 
         // Check Releases
         if (!ern.releaseList || ern.releaseList.length === 0) {
@@ -148,40 +148,6 @@ export class IngestionNotificationService {
             valid: errors.length === 0,
             errors,
         };
-    }
-
-    // ========================================================================
-    // Legacy Aliases (Electronic Release Notification)
-    // ========================================================================
-
-    /** @deprecated Use generateIngestionNotification */
-    async generateERN(
-        metadata: ExtendedGoldenMetadata,
-        senderSystemIdentifier: string = INGESTION_CONFIG.SYSTEM_IDENTIFIER,
-        distributorKey: string = 'merlin',
-        assets?: ReleaseAssets,
-        options?: {
-            isTestMode?: boolean;
-            action?: 'NewRelease' | 'Update' | 'Takedown';
-        }
-    ) {
-        return this.generateIngestionNotification(metadata, senderSystemIdentifier, distributorKey, assets, options);
-    }
-
-    /** @deprecated Use parseIngestionNotification */
-    parseERN(xml: string) {
-        return this.parseIngestionNotification(xml);
-    }
-
-    /** @deprecated Use validateIngestionNotificationXML */
-    /** @deprecated Use validateIngestionNotificationXML */
-    static validateERNXML(xml: string): string[] {
-        return this.validateIngestionNotificationXML(xml);
-    }
-
-    /** @deprecated Use validateIngestionNotificationContent */
-    validateERNContent(ern: IngestionNotificationMessage) {
-        return this.validateIngestionNotificationContent(ern);
     }
 }
 

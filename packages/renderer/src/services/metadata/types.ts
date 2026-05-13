@@ -25,7 +25,7 @@ export interface GoldenMetadata {
     explicit: boolean;
     genre: string;
     labelName: string;
-    systemIdentifier?: string; // System Identity Code
+    dpid?: string; // DDEX Party ID
 
     // 2. The Economics
     splits: RoyaltySplit[];
@@ -118,9 +118,7 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Duration (computed from audio)
     durationSeconds?: number;
     durationFormatted?: string; // "3:45"
-    durationIngestionFormatted?: string; // e.g. "PT3M4S.123"
-    durationDDEXFormatted?: string; // Legacy alias for durationIngestionFormatted
-
+    durationDDEXFormatted?: string; // e.g. "PT3M4S.123"
 
     // Confidence Scores
     confidenceScores?: {
@@ -144,11 +142,6 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
 
     // Cover Art AI Disclosure (2026 DSP Compliance)
     coverArtAIGenerated?: boolean; // true when cover art was created by AI (e.g., Nano Banana)
-
-    // Proprietary Ingestion Identifiers
-    systemIdentity?: string; // System identity block
-    identity?: string; // Legacy DDEX identity block
-    dpid?: string; // Legacy DPID alias
 }
 
 // Type for release status in distribution
@@ -165,7 +158,7 @@ export type ReleaseDistributionStatus =
     | 'taken_down';
 
 // Release record for Firestore
-export interface IngestionReleaseRecord {
+export interface DDEXReleaseRecord {
     id: string;
     orgId: string;
     projectId: string;
@@ -203,13 +196,6 @@ export interface IngestionReleaseRecord {
     publishedAt?: string;
 }
 
-/** @deprecated Use IngestionReleaseRecord */
-export type DDEXReleaseRecord = IngestionReleaseRecord;
-
-/** @deprecated Use IngestionReleaseRecord */
-export type ClientReleaseRecord = IngestionReleaseRecord;
-
-
 export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     trackTitle: '',
     artistName: '',
@@ -217,7 +203,7 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     explicit: false,
     genre: '',
     labelName: INGESTION_CONFIG.ENTITY_NAME,
-    systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+    dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
     splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
     pro: 'None',
     publisher: 'Self-Published',

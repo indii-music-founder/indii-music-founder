@@ -245,7 +245,3 @@ export interface DSRProcessedReportDocument extends BaseDocument {
         source: string;
     };
 }
-
-/** @deprecated Use DSRProcessedReportDocument */
-export type EarningsReportProcessedReportDocument = DSRProcessedReportDocument;
-

@@ -9,7 +9,7 @@ import { ExtendedGoldenMetadata, RoyaltySplit } from '@/services/metadata/types'
  * EarningsReport Processor
  * Calculates royalties and splits based on sales reports and metadata
  */
-export class EarningsProcessor {
+export class EarningsReportProcessor {
     /**
      * Process a Full EarningsReport Report against a catalog of metadata
      * @param report The parsed EarningsReport report
@@ -124,4 +124,4 @@ export class EarningsProcessor {
     }
 }
 
-export const earningsProcessor = new EarningsProcessor();
+export const earningsProcessor = new EarningsReportProcessor();
