@@ -1,0 +1,1 @@
+packages/renderer/src/services/agent/tools/index.ts(244,1): error TS1160: Unterminated template literal.

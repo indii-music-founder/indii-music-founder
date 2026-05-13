@@ -96,7 +96,7 @@ export const ModuleAmbientBackground = () => {
                             className="text-[10px] tracking-[0.4em] uppercase font-bold"
                             style={{ color: theme.accent }}
                         >
-                            INDII OFFICE
+                            INDIIOS OFFICE
                         </span>
                         <span
                             className="text-4xl font-display tracking-tighter mt-1"
