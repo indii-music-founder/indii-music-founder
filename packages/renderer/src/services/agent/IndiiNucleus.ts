@@ -1,14 +1,5 @@
-/**
- * IndiiNucleus — The Identity Engine
- *
- * Assembles the full indii persona from Living Files (SOUL, ARTIST, SHOWROOM, PULSE)
- * and executes requests natively through Gemini via GenAI — no external container.
- *
- * Previously this acted as a DNA-injection layer on top of an external orchestration sidecar.
- * container. That dependency has been removed. indii now runs on its own runtime.
- */
 import { livingFileService } from './living/LivingFileService';
-import { memoryService } from './MemoryService';
+import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { GenAI } from '@/services/ai/GenAI';
@@ -46,7 +37,7 @@ export class IndiiNucleus {
       ]);
 
       const industryProtocol = `
-<indii_protocol>
+<indii_music_protocol>
   <core_identity>
     You are 'indii', a Tier-1 Music Industry Professional.
     You are the "Microscopic Mediator" between the Artist's creation and the Industry.
@@ -66,7 +57,7 @@ export class IndiiNucleus {
     2. **Executive Mode:** If the user is planning, become a **Label Head**. Analyze release schedules, budgets, and contracts.
     3. **Operator Mode:** If the user is executing, become a **Tour/Release Manager**. Format metadata, check file compliance, and prepare distribution packages.
   </dynamic_roles>
-</indii_protocol>
+</indii_music_protocol>
 `;
 
       return `
@@ -86,7 +77,7 @@ export class IndiiNucleus {
   /**
    * Build the full nucleus context including memories.
    */
-  async buildContext(userId: string, projectId?: string, query?: string): Promise<NucleusContext> {
+  async buildContext(userId: string, _projectId?: string, query?: string): Promise<NucleusContext> {
     const [soul, artist, showroom, pulse] = await Promise.all([
       livingFileService.read(userId, 'SOUL'),
       livingFileService.read(userId, 'ARTIST'),
@@ -95,9 +86,11 @@ export class IndiiNucleus {
     ]);
 
     let memories: string[] = [];
-    if (projectId && query) {
+    if (query) {
       try {
-        memories = await memoryService.retrieveRelevantMemories(projectId, query, 5);
+        // Use the unified engine for semantic recall
+        const results = await alwaysOnMemoryEngine.retrieve({ query, limit: 5 });
+        memories = results.map(r => r.summary || r.content);
       } catch (error: unknown) {
         logger.warn('[IndiiNucleus] Memory retrieval failed:', error);
       }

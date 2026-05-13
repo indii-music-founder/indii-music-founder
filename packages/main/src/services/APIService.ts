@@ -15,8 +15,8 @@ export class APIService {
             id: 'demo-1',
             artist: 'Indii Demo',
             title: 'Tech House Loop',
-            album: 'Indii O.S. Vol 1',
-            splits: { 'producer@indii.os': 50, 'artist@indii.os': 50 }
+            album: 'indii.music Vol 1',
+            splits: { 'producer@indii.music': 50, 'artist@indii.music': 50 }
         }
     };
 

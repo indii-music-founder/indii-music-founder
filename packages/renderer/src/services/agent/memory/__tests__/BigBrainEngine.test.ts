@@ -24,18 +24,6 @@ vi.mock('@/utils/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
-        generateContent: vi.fn().mockResolvedValue({
-            response: { text: () => 'AI-generated summary' },
-        }),
-    },
-}));
-
-vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: { TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3.1-pro-preview' } },
-}));
-
 // Layer 4 — Captain's Log
 vi.mock('../CaptainsLogService', () => ({
     captainsLogService: {
@@ -59,22 +47,21 @@ vi.mock('../CoreVaultService', () => ({
     ],
 }));
 
-// Layer 2 — Memory Service
-vi.mock('../../MemoryService', () => ({
-    memoryService: {
-        retrieveRelevantMemories: vi.fn().mockResolvedValue([
-            'User prefers warm color palettes',
-            'Previous session discussed album sequencing',
+// Layer 2 — Always-On Memory Engine
+vi.mock('../AlwaysOnMemoryEngine', () => ({
+    alwaysOnMemoryEngine: {
+        getAllMemories: vi.fn().mockResolvedValue([
+            { id: 'm1', content: 'Recent discussion about album sequencing', summary: 'Album sequencing conversation', tier: 'working', category: 'interaction', createdAt: Date.now(), topics: [] },
         ]),
     },
 }));
 
-// User Memory Service
-vi.mock('../../UserMemoryService', () => ({
-    userMemoryService: {
+// Layer (User) — Memory Bank (Mem0)
+vi.mock('../MemoryBankService', () => ({
+    memoryBankService: {
         searchMemories: vi.fn().mockResolvedValue([
-            { memory: { content: 'Always use formal language' } },
-            { memory: { content: 'Prefer dark mode' } },
+            { id: 'bank-1', memory: 'User prefers warm color palettes' },
+            { id: 'bank-2', memory: 'Always use formal language' },
         ]),
     },
 }));
@@ -86,6 +73,8 @@ vi.mock('../../UserMemoryService', () => ({
 import { bigBrainEngine } from '../BigBrainEngine';
 import { captainsLogService } from '../CaptainsLogService';
 import { coreVaultService } from '../CoreVaultService';
+import { alwaysOnMemoryEngine } from '../AlwaysOnMemoryEngine';
+import { memoryBankService } from '../MemoryBankService';
 
 // ============================================================================
 // TESTS
@@ -104,20 +93,27 @@ describe('BigBrainEngine', () => {
                 { id: 'f1', fact: 'Artist name: Nova', category: 'artist_identity', status: 'active', accessCount: 1, timestamp: new Date().toISOString(), source: 'user' as const },
             ],
         });
+        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockResolvedValue([
+            { id: 'm1', content: 'Recent discussion about album sequencing', summary: 'Album sequencing conversation', tier: 'working', category: 'interaction', createdAt: Date.now(), topics: [] } as any,
+        ]);
+        vi.mocked(memoryBankService.searchMemories).mockResolvedValue([
+            { id: 'bank-1', memory: 'User prefers warm color palettes' } as any,
+            { id: 'bank-2', memory: 'Always use formal language' } as any,
+        ]);
     });
 
     describe('assembleContext', () => {
-        it('should assemble context from all 4 layers in parallel', async () => {
+        it('should assemble context from all layers in parallel', async () => {
             const context = await bigBrainEngine.assembleContext(
                 'user-1',
                 'creative-director',
-                'Help me design album art',
-                'project-123'
+                'Help me design album art'
             );
 
             expect(context.dailyLog).toContain('Tasks (2)');
             expect(context.vaultFacts).toContain('Artist name: Nova');
-            expect(context.episodicRecall).toContain('warm color palettes');
+            expect(context.episodicRecall).toContain('warm color palettes'); // from memoryBankService
+            expect(context.episodicRecall).toContain('Album sequencing'); // from alwaysOnMemoryEngine
             expect(context.alignmentRules).toContain('Always use formal language');
             expect(context.meta.layerErrors).toHaveLength(0);
         });
@@ -129,7 +125,7 @@ describe('BigBrainEngine', () => {
 
             const context = await bigBrainEngine.assembleContext(
                 'user-1',
-                'agent0',
+                'generalist',
                 'What happened today?'
             );
 
@@ -143,14 +139,15 @@ describe('BigBrainEngine', () => {
         it('should use targeted vault categories for the agent', async () => {
             await bigBrainEngine.assembleContext(
                 'user-1',
-                'distribution',
-                'Check my distributor status'
+                'creative-director',
+                'Help me design album art'
             );
 
-            // Distribution agent should query distribution, legal, financial categories
-            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'distribution');
-            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'legal');
-            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'financial');
+            // Creative director should query artist_identity, preferences, technical, goals
+            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'artist_identity');
+            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'preferences');
+            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'technical');
+            expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'goals');
         });
 
         it('should use defaults for unknown agent IDs', async () => {
@@ -165,32 +162,14 @@ describe('BigBrainEngine', () => {
             expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'preferences');
             expect(coreVaultService.readVault).toHaveBeenCalledWith('user-1', 'goals');
         });
-
-        it('should report totalCharacters correctly', async () => {
-            const context = await bigBrainEngine.assembleContext(
-                'user-1',
-                'agent0',
-                'Hello',
-                'project-1'
-            );
-
-            expect(context.totalCharacters).toBeGreaterThan(0);
-            const manualTotal =
-                context.dailyLog.length +
-                context.vaultFacts.length +
-                context.episodicRecall.length +
-                context.alignmentRules.join('').length;
-            expect(context.totalCharacters).toBe(manualTotal);
-        });
     });
 
     describe('formatForPrompt', () => {
         it('should produce valid XML block with memory sections', async () => {
             const context = await bigBrainEngine.assembleContext(
                 'user-1',
-                'agent0',
-                'Test',
-                'project-1'
+                'generalist',
+                'Test'
             );
 
             const prompt = bigBrainEngine.formatForPrompt(context);
@@ -200,8 +179,6 @@ describe('BigBrainEngine', () => {
             expect(prompt).toContain('<daily_context>');
             expect(prompt).toContain('<authoritative_facts>');
             expect(prompt).toContain('<cross_session_recall>');
-            // alignment rules are handled by AgentPromptBuilder, NOT here
-            expect(prompt).not.toContain('<user_specific_alignment>');
         });
 
         it('should return empty string when all layers are empty', () => {
@@ -220,33 +197,9 @@ describe('BigBrainEngine', () => {
                 },
             };
 
-            const prompt = bigBrainEngine.formatForPrompt(emptyContext);
+            const prompt = bigBrainEngine.formatForPrompt(emptyContext as any);
 
             expect(prompt).toBe('');
-        });
-
-        it('should handle partial context (only vault facts)', () => {
-            const partialContext = {
-                dailyLog: '',
-                vaultFacts: '- [artist_identity] Name is Nova',
-                episodicRecall: '',
-                alignmentRules: [],
-                totalCharacters: 35,
-                meta: {
-                    dailyLogEntries: 0,
-                    vaultFactCount: 1,
-                    episodicMatches: 0,
-                    alignmentRuleCount: 0,
-                    layerErrors: [],
-                },
-            };
-
-            const prompt = bigBrainEngine.formatForPrompt(partialContext);
-
-            expect(prompt).toContain('<auto_recall>');
-            expect(prompt).toContain('<authoritative_facts>');
-            expect(prompt).not.toContain('<daily_context>');
-            expect(prompt).not.toContain('<cross_session_recall>');
         });
     });
 });

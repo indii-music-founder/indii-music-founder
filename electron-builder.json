@@ -1,5 +1,5 @@
 {
-  "appId": "com.indii.os",
+  "appId": "com.indii.music",
   "directories": {
     "output": "dist-electron"
   },
@@ -45,12 +45,12 @@
       "teamId": "${APPLE_TEAM_ID}"
     }
   },
-  "productName": "indii",
+  "productName": "indii.music",
   "protocols": [
     {
-      "name": "indii Auth Protocol",
+      "name": "indii.music Auth Protocol",
       "schemes": [
-        "indii-os"
+        "indii"
       ]
     }
   ],

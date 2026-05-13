@@ -244,8 +244,8 @@ export class VideoGenerationService {
             if (import.meta.env.PROD) {
                 return { canGenerate: false, reason: 'Service unavailable. Please try again.' };
             }
-            // FAIL-SECURE: Block if check fails (safety-first, not fail-open)
-            return { canGenerate: false, reason: 'Quota check unavailable. Please try again.' };
+            // Fail open in DEV
+            return { canGenerate: true };
         }
     }
 

@@ -36,7 +36,7 @@ export class GeneralistAgent extends BaseAgent {
 
     tools: ToolDefinition[] = [];
     protected authorizedTools: string[] = [
-        'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'delegate_task',
+        'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'consult_specialist', 'delegate_task',
         'create_project', 'list_projects', 'search_knowledge', 'request_approval', 'verify_output',
         'batch_edit_images', 'generate_social_post', 'list_files', 'search_files',
         'list_organizations', 'switch_organization',
@@ -211,14 +211,27 @@ export class GeneralistAgent extends BaseAgent {
                 }
             },
             {
-                name: 'delegate_task',
-                description: 'Delegate a task to a specialized agent. Use when expertise is needed.',
+                name: 'consult_specialist',
+                description: 'Directly consult a specialized agent via the A2A Swarm Protocol. Use this for precise expert task delegation with session persistence. Requires an active Directive.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        targetAgentId: { type: 'STRING', description: 'ID of the target agent (marketing, legal, finance, director, video, social, brand, music, etc.).' },
+                        targetAgentId: { type: 'STRING', description: 'ID of the expert agent to consult (e.g., marketing, legal, finance).' },
+                        task: { type: 'STRING', description: 'Detailed instruction or question for the expert.' },
+                        sharedContext: { type: 'STRING', description: 'Optional context to preserve session continuity.' }
+                    },
+                    required: ['targetAgentId', 'task']
+                }
+            },
+            {
+                name: 'delegate_task',
+                description: '(Legacy) Delegate a task via the broadcast hub. Prefer consult_specialist for swarm interactions.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the target agent.' },
                         task: { type: 'STRING', description: 'The specific task to delegate.' },
-                        sharedContext: { type: 'STRING', description: '(Optional) Specific context or memory to share with the target agent so they do not start from scratch.' }
+                        sharedContext: { type: 'STRING', description: '(Optional) Specific context or memory to share.' }
                     },
                     required: ['targetAgentId', 'task']
                 }

@@ -18,11 +18,9 @@
 
 import { captainsLogService } from './CaptainsLogService';
 import { coreVaultService, type VaultCategory } from './CoreVaultService';
-import { userMemoryService } from '../UserMemoryService';
-import { memoryService } from '../MemoryService';
-import { logger } from '@/utils/logger';
-import type { MemorySearchResult } from '@/types/UserMemory';
+import { alwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
 import { memoryBankService } from './MemoryBankService';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // TYPES
@@ -50,11 +48,11 @@ export interface BigBrainContext {
     };
 }
 
-/** Configuration for the Big Brain token budget */
-interface BigBrainConfig {
-    /** Maximum total characters for auto-injected context (~4 chars per token) */
+/** Configuration for Big Brain */
+export interface BigBrainConfig {
+    /** Total characters allowed for all injected context */
     maxTotalCharacters: number;
-    /** Budget allocation per layer (must sum to 1.0) */
+    /** Proportional allocation for each layer */
     budgetAllocation: {
         dailyLog: number;
         vaultFacts: number;
@@ -64,12 +62,12 @@ interface BigBrainConfig {
 }
 
 const DEFAULT_CONFIG: BigBrainConfig = {
-    maxTotalCharacters: 10000, // ~2500 tokens at 4 chars/token
+    maxTotalCharacters: 10000,
     budgetAllocation: {
-        dailyLog: 0.15,       // 1500 chars for today's log
-        vaultFacts: 0.35,     // 3500 chars for authoritative facts
-        episodicRecall: 0.30, // 3000 chars for cross-session recall
-        alignmentRules: 0.20, // 2000 chars for user preferences
+        dailyLog: 0.2,      // 2,000 chars
+        vaultFacts: 0.3,    // 3,000 chars
+        episodicRecall: 0.4, // 4,000 chars
+        alignmentRules: 0.1, // 1,000 chars
     },
 };
 
@@ -77,26 +75,16 @@ const DEFAULT_CONFIG: BigBrainConfig = {
 // AGENT → VAULT CATEGORY MAPPING
 // ============================================================================
 
-/**
- * Maps agent IDs to the vault categories most relevant to them.
- * This allows targeted fact retrieval instead of loading everything.
- */
+/** Map of agent IDs to the vault categories they should auto-fetch */
 const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
-    // Agent folder names
-    'conductor': ['artist_identity', 'goals', 'preferences', 'team'],
-    'brand': ['artist_identity', 'goals', 'contacts'],
-    'distribution': ['distribution', 'legal', 'financial'],
-    'finance': ['financial', 'business_model', 'legal'],
-    'legal': ['legal', 'financial', 'distribution'],
-    'licensing': ['legal', 'financial', 'contacts'],
-    'marketing': ['artist_identity', 'goals', 'contacts'],
-    'music': ['technical', 'artist_identity', 'preferences'],
-    'publicist': ['artist_identity', 'contacts', 'goals'],
-    'publishing': ['legal', 'financial', 'distribution'],
-    'road': ['contacts', 'financial', 'goals'],
-    'social': ['artist_identity', 'goals', 'contacts'],
-    'video': ['artist_identity', 'preferences', 'technical'],
-
+    'marketing-agent': ['artist_identity', 'preferences', 'marketing' as any, 'goals'],
+    'creative-director': ['artist_identity', 'preferences', 'technical', 'goals'],
+    'brand-agent': ['artist_identity', 'brand_voice' as any, 'goals'],
+    'music-agent': ['artist_identity', 'technical', 'preferences'],
+    'legal-agent': ['contract_terms' as any, 'artist_identity', 'publishing' as any],
+    'road-agent': ['tour_preferences' as any, 'artist_identity', 'technical'],
+    'finance-agent': ['revenue_targets' as any, 'artist_identity', 'financial'],
+    
     // Module ID aliases (ContextPipeline passes activeModule, not agent folder name)
     'generalist': ['artist_identity', 'goals', 'preferences', 'team'],  // indii Conductor (Hub)
     'creative': ['artist_identity', 'preferences', 'technical'],        // alias for creative-director
@@ -123,13 +111,13 @@ class BigBrainEngine {
      * @param userId - The authenticated user ID
      * @param agentId - The active agent (used for vault category targeting)
      * @param userMessage - The user's latest message (used for Deep Hive search)
-     * @param projectId - The current project (used for MemoryService search)
+     * @param _projectId - Legacy projectId (now unused in Always-On architecture)
      */
     async assembleContext(
         userId: string,
         agentId: string,
         userMessage: string,
-        projectId?: string
+        _projectId?: string
     ): Promise<BigBrainContext> {
         const meta = {
             dailyLogEntries: 0,
@@ -150,7 +138,7 @@ class BigBrainEngine {
         const [dailyLog, vaultFacts, episodicRecall, alignmentRules] = await Promise.allSettled([
             this.fetchDailyLog(userId, budgets.dailyLog),
             this.fetchVaultFacts(userId, agentId, budgets.vaultFacts),
-            this.fetchEpisodicRecall(userId, userMessage, projectId, budgets.episodicRecall),
+            this.fetchEpisodicRecall(userId, userMessage, budgets.episodicRecall),
             this.fetchAlignmentRules(userId, userMessage, budgets.alignmentRules),
         ]);
 
@@ -213,10 +201,6 @@ class BigBrainEngine {
             sections.push(`<cross_session_recall>\n${context.episodicRecall}\n</cross_session_recall>`);
         }
 
-        // NOTE: User alignment rules are NOT included here because
-        // AgentPromptBuilder already injects them via the separate
-        // `userAlignmentRules` field on PipelineContext.
-
         if (sections.length === 0) return '';
 
         return `<auto_recall>\n${sections.join('\n')}\n</auto_recall>`;
@@ -242,7 +226,7 @@ class BigBrainEngine {
 
         // Fetch all categories concurrently to avoid N+1 queries
         const categoryPromises = targetCategories.map(async (category) => {
-            const { facts } = await coreVaultService.readVault(userId, category);
+            const { facts } = await coreVaultService.readVault(userId, category as VaultCategory);
             return { category, facts };
         });
 
@@ -266,73 +250,68 @@ class BigBrainEngine {
     }
 
     /**
-     * Layer 2: Fetch episodic memories from Deep Hive matching the user's intent.
+     * Layer 2: Fetch episodic memories from Always-On Memory matching the user's intent.
      */
     private async fetchEpisodicRecall(
         userId: string,
         userMessage: string,
-        projectId?: string,
         maxChars?: number
     ): Promise<string> {
-        const _maxChars = maxChars || 3000;
+        const _maxChars = maxChars || 4000;
         const lines: string[] = [];
 
         if (!userMessage) return '';
 
         // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall
         try {
-            const mem0Results = await memoryBankService.searchMemories(userId, userMessage, 5);
+            const mem0Results = await memoryBankService.searchMemories(userId, userMessage, 8);
             for (const mem of mem0Results) {
-                const line = `- [Global] ${mem.memory}`;
+                const line = `- [Recall] ${mem.memory}`;
                 if (lines.join('\n').length + line.length > _maxChars) break;
                 lines.push(line);
             }
         } catch (error) {
-            logger.warn('[BigBrain] Mem0 retrieval failed:', error);
+            logger.warn('[BigBrain] Memory recall retrieval failed:', error);
         }
 
-        // 2. Project-scoped semantic search via MemoryService (existing Deep Hive)
-        if (projectId && lines.join('\n').length < _maxChars) {
-            try {
-                const memories = await memoryService.retrieveRelevantMemories(
-                    projectId,
-                    userMessage,
-                    3
-                );
-                for (const mem of memories) {
-                    const line = `- [Project] ${mem}`;
-                    if (lines.join('\n').length + line.length > _maxChars) break;
-                    lines.push(line);
-                }
-            } catch (error) {
-                logger.warn('[BigBrain] Project memory retrieval failed:', error);
+        // 2. Fetch recent unconsolidated memories for fresh context
+        try {
+            const freshMemories = await alwaysOnMemoryEngine.getAllMemories(5);
+            for (const mem of freshMemories) {
+                // Skip if already in results (naive check)
+                if (lines.some(l => l.includes(mem.summary || mem.content.substring(0, 50)))) continue;
+                
+                const line = `- [Fresh] ${mem.summary || mem.content}`;
+                if (lines.join('\n').length + line.length > _maxChars) break;
+                lines.push(line);
             }
+        } catch (error) {
+            logger.warn('[BigBrain] Fresh memory retrieval failed:', error);
         }
 
         return lines.join('\n');
     }
 
     /**
-     * Layer (User): Fetch user alignment rules from UserMemoryService.
+     * Layer (User): Fetch user alignment rules and preferences from Always-On Memory.
      */
     private async fetchAlignmentRules(
         userId: string,
         userMessage: string,
         maxChars: number
     ): Promise<string[]> {
-        const rules = await userMemoryService.searchMemories({
-            userId,
-            query: userMessage || 'general preferences',
-            categories: ['preference', 'feedback', 'interaction'],
-            limit: 5
-        });
+        // Query preferences and feedback categories specifically
+        const results = await memoryBankService.searchMemories(userId, userMessage || 'general preferences', 5);
 
         const result: string[] = [];
         let currentChars = 0;
 
-        for (const rule of rules) {
-            const r = rule as MemorySearchResult;
-            const content = r.memory.content;
+        for (const res of results) {
+            const content = res.memory;
+            // Only include if it sounds like a rule or preference
+            const isRule = /prefer|like|always|never|should|must|avoid|style|tone/i.test(content);
+            if (!isRule && result.length > 0) continue; 
+
             if (currentChars + content.length > maxChars) break;
             result.push(content);
             currentChars += content.length;
