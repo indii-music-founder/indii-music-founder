@@ -1,6 +1,6 @@
 {
   "name": "indii-monorepo",
-  "version": "1.63.0",
+  "version": "1.64.0",
   "description": "The Operating System for Independent Music — npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
