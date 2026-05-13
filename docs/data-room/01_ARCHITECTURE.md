@@ -13,6 +13,12 @@ indii operates on a **proven 3-layer separation of concerns** designed to maximi
 
 ### Three-Layer Overview
 
+| Layer | Type | Responsibility | Example |
+|-------|------|----------------|---------|
+| **Layer 1: Directive** | Deterministic (SOP) | Strategy, goals, tool selection, edge-case handling | Example: **Proprietary Ingestion Engine** SOP |
+| **Layer 2: Orchestration** | Probabilistic (AI) | Intelligent task routing, tool sequencing, error analysis | Example: **indii Conductor** (Hub Agent) |
+| **Layer 3: Execution** | Deterministic (Code) | API interaction, data processing, file system ops | Example: **SFTP Uploader** script |
+
 ```
 Layer 1: DIRECTIVE
 (Strategy & SOPs)
@@ -44,16 +50,16 @@ Natural-language Standard Operating Procedures (SOPs) in `directives/` define sp
 |-----------|---------|--------------|
 | `agent_stability.md` | Agent reliability standards, fallback logic, timeout handling | 2026-03-27 |
 | `architecture_standard.md` | Architectural guidelines, separation of concerns, testing patterns | 2026-03-27 |
-| `direct_distribution_engine.md` | DDEX ERN generation, DSP submission, retry logic, QC validation | 2026-02-14 |
+| `direct_distribution_engine.md` | Proprietary IngestionNotification message generation and ingestion pipeline SOP, retry logic, QC validation | 2026-02-14 |
 | `font_consistency.md` | UI font standards, size hierarchy, weight usage | 2026-01-15 |
 | `git_sync.md` | Version control procedures, commit standards, branch strategy | 2026-01-10 |
 
 ### How Directives Drive Execution
 
-Example: **Direct Distribution Engine** SOP
+Example: **Proprietary Ingestion Engine** SOP
 
 ```markdown
-# Direct Distribution Engine SOP
+# Proprietary Ingestion Engine SOP
 
 ## Goal
 Ship an artist's release to all configured DSPs in spec-compliant format.
@@ -65,17 +71,17 @@ Ship an artist's release to all configured DSPs in spec-compliant format.
 
 ## Process
 1. Validate audio file format and bitrate
-2. Generate ERN (Electronic Release Notification) per DDEX spec
+2. Generate proprietary IngestionNotification message per industry standards
 3. For each DSP:
    a. Connect via SFTP
-   b. Upload ERN + audio
+   b. Upload IngestionNotification + audio
    c. Poll for delivery confirmation
    d. Handle failures (retry, notify artist)
 
 ## Expected Output
-- ERN file in Firestore
+- Proprietary IngestionNotification message in Firestore
 - Audio file in GCS
-- SFTP delivery confirmation per DSP
+- Submit releases, track streaming confirmation per DSP
 - Royalty tracking initialized
 
 ## Edge Cases
@@ -207,7 +213,7 @@ Artist Upload
     ↓
 Metadata Generation (Music Agent)
     ↓
-DDEX ERN Generation (execution/distribution/ern-generator.ts)
+Proprietary IngestionNotification Generation (execution/distribution/ern-generator.ts)
     ↓
 DSP Adapter Selection (src/services/distribution/adapters/)
     ↓
@@ -224,9 +230,9 @@ Artist Notification
 
 | Script | Purpose | Input | Output |
 |--------|---------|-------|--------|
-| `ern-generator.ts` | Generate DDEX ERN XML | Release metadata, master file | Valid ERN per XSD spec |
-| `dsps-adapter.ts` | DSP-specific submission logic | ERN, audio, DSP config | API response or SFTP receipt |
-| `sftp-uploader.ts` | SFTP file transfer | ERN, audio, SFTP creds | Delivery confirmation or retry |
+| `ern-generator.ts` | Generate Proprietary IngestionNotification XML | Release metadata, master file | Valid Proprietary IngestionNotification per industry XSD spec |
+| `dsps-adapter.ts` | DSP-specific submission logic | IngestionNotification, audio, DSP config | API response or SFTP receipt |
+| `sftp-uploader.ts` | SFTP file transfer | IngestionNotification, audio, SFTP creds | Delivery confirmation or retry |
 | `delivery-poller.ts` | Poll DSP for confirmation | DSP config, release ID | Delivery status (pending/confirmed/failed) |
 | `isrc-generator.ts` | Auto-assign ISRC codes | Artist, track metadata | Valid ISRC per ISO 3901 spec |
 
@@ -459,7 +465,7 @@ Request to Vertex AI Endpoint (fine-tuned)
         (Automatic, no user-facing impact)
 ```
 
-### DDEX Submission Retry
+### Proprietary Ingestion Submission Retry
 
 ```
 SFTP Upload Attempt
@@ -606,7 +612,7 @@ Push to main
 
 - `src/**/*.test.ts(x)` — co-located with source
 - jsdom environment, Firebase mocked
-- Coverage: business logic, agent routing, payment logic, DDEX generation
+- Coverage: business logic, agent routing, payment logic, Proprietary message generation
 
 ### Integration Tests (~300 tests)
 
@@ -637,7 +643,7 @@ Push to main
 | Endpoint | Latency | Notes |
 |----------|---------|-------|
 | Generate metadata | <2s | Music Agent inference |
-| Create ERN | <1s | Deterministic script |
+| Create IngestionNotification | <1s | Deterministic script |
 | Submit DSP | <5s | SFTP upload + poll |
 | List releases | <500ms | Firestore query |
 | Stream chat | <500ms | First token (Vertex AI) |
@@ -645,7 +651,7 @@ Push to main
 ### Scalability Targets
 
 - **Concurrent artists:** 10K (Firestore auto-scale)
-- **Monthly releases:** 100K (DDEX pipeline)
+- **Monthly releases:** 100K (Proprietary Ingestion IP pipeline)
 - **Concurrent streams:** 1M+ (DSP backend, not indii)
 - **Agent fleet:** 16 R7 endpoints, each 1K concurrent requests
 

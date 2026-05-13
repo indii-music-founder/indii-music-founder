@@ -18,6 +18,7 @@ export interface ExecutionContextOptions {
     projectId?: string;
     agentId: string;
     traceId: string;
+    swarmId?: string;
     conversationMode?: 'direct' | 'department' | 'boardroom';
 }
 
@@ -303,8 +304,23 @@ export class AgentExecutionContext {
             modificationsCount: this.modifications.size,
             isCommitted: this.isCommitted,
             isRolledBack: this.isRolledBack,
-            changeHistory: this.changeHistory.length
+            changeHistory: this.changeHistory.length,
+            swarmId: this.options.swarmId
         };
+    }
+
+    /**
+     * Get trace ID
+     */
+    get traceId(): string {
+        return this.options.traceId;
+    }
+
+    /**
+     * Get swarm ID
+     */
+    get swarmId(): string | undefined {
+        return this.options.swarmId;
     }
 
     /**
@@ -338,6 +354,7 @@ export class ExecutionContextFactory {
         userId?: string;
         projectId?: string;
         traceId?: string;
+        swarmId?: string | null;
         conversationMode?: 'direct' | 'department' | 'boardroom';
     }, agentId: string): Promise<AgentExecutionContext> {
         const { useStore } = await import('@/core/store');
@@ -345,7 +362,8 @@ export class ExecutionContextFactory {
             userId: agentContext.userId,
             projectId: agentContext.projectId,
             agentId,
-            traceId: agentContext.traceId || `trace-${Date.now()}`
+            traceId: agentContext.traceId || `trace-${Date.now()}`,
+            swarmId: agentContext.swarmId || undefined
         }, useStore.getState());
     }
 }

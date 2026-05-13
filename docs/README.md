@@ -48,7 +48,7 @@ This directory contains detailed architectural and technical documentation for i
 |----------|-------------|
 | [component-kit-research.md](./component-kit-research.md) | UI library analysis |
 | [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
-| [DDEX_IMPLEMENTATION_PLAN.md](./DDEX_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |
+| [Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md](./Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |
 
 ## 🗄️ Archive
 

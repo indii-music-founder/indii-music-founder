@@ -53,7 +53,7 @@ This document serves as the absolute master checklist to get indii out of alpha/
 - [x] **32. Optimistic UI Updates:** Forms should reflect success instantly on the UI while network requests resolve in the background.
 - [x] **33. Real-time Firestore Sync:** Implement live listeners for critical data like Distribution pipeline statuses so the user never has to manual-refresh.
 - [x] **34. Secure Local Storage:** Utilize Keytar (OS Keychain) or encrypted storage for sensitive tokens rather than standard `localStorage`.
-- [x] **35. Form Validation (Zod):** Comprehensive client-side validation for complex objects like DDEX metadata to block invalid submissions early.
+- [x] **35. Form Validation (Zod):** Comprehensive client-side validation for complex objects like Proprietary Ingestion IP metadata to block invalid submissions early.
 - [x] **36. Caching API Responses:** Implement SWR or custom caching for the indii Conductor interactions to avoid redundant API hits for unchanged queries.
 - [x] **37. Image Lazy Loading:** Use standard intersection observers or modern `loading="lazy"` attributes across all creative/marketing views.
 - [x] **38. Background Job Status UI:** Present clear visual indicators for long-running workflows (e.g., "Generative Video Rendering... 45%").
@@ -109,7 +109,7 @@ This document serves as the absolute master checklist to get indii out of alpha/
 
 - [x] **71. Firestore Security Rules:** Comprehensive rules ensuring users only access their own data; no wildcard permissions. (Verified in firestore.rules).
 - [x] **72. Firebase Authentication:** Multi-provider auth (Google, Apple, email) with email verification enforcement (Implemented in authSlice.ts).
-- [x] **73. Data Validation Layer:** Zod schemas validate all data at API boundary before Firestore writes (Implemented for DDEX and ENV; using TypeScript types globally).
+- [x] **73. Data Validation Layer:** Zod schemas validate all data at API boundary before Firestore writes (Implemented for Proprietary Ingestion IP and ENV; using TypeScript types globally).
 - [x] **74. Real-time Listeners:** Implement efficient Firestore listeners for live data (Implemented in DistributionSyncService.ts for distribution status).
 - [x] **75. Offline Persistence:** Enable Firestore offline caching; queue writes for sync when connectivity returns (Implemented in firebase.ts via persistentLocalCache).
 - [x] **76. Database Indexing:** Create composite indexes for common query patterns (userId + createdAt, etc.) (Implemented in firestore.indexes.json).

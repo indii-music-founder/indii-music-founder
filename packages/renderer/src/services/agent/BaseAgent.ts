@@ -51,7 +51,8 @@ export class BaseAgent implements SpecializedAgent {
     protected authorizedTools?: string[];
     /** Fine-tuned model endpoint for this agent. When set and feature flag is enabled,
      *  this model is used instead of the default AI_MODELS.TEXT.AGENT. */
-    protected modelId?: string;
+    private modelId?: string;
+    private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -764,43 +765,38 @@ export class BaseAgent implements SpecializedAgent {
 
         try {
             while (iterations < MAX_ITERATIONS) {
-                // LEDGER: Circuit Breaker - Check daily spend limit before execution
-                // Passing a small non-zero value (0.01) to ensure the check validates headroom
-                const budgetCheck = await MembershipService.checkBudget(0.01);
-                if (!budgetCheck.allowed) {
-                    const tier = await MembershipService.getCurrentTier();
-                    const tierName = MembershipService.getTierDisplayName(tier);
-                    const limits = MembershipService.getLimits(tier);
-
-                    // Diagnostic: capture email state for debugging false-positive denials
-                    try {
-                        const { useStore } = await import('@/core/store');
-                        const state = useStore.getState();
-                        const profileEmail = state.userProfile?.email || '(empty)';
-                        const authEmail = (state as unknown as { user?: { email?: string | null } }).user?.email || '(no auth user)';
-                        logger.warn(
-                            `[BaseAgent] Budget DENIED in ${this.id}. ` +
-                            `profileEmail=${profileEmail}, authEmail=${authEmail}, ` +
-                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
-                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
-                        );
-                    } catch {
-                        logger.warn(
-                            `[BaseAgent] Daily spend limit reached in ${this.id}. ` +
-                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
-                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
-                        );
-                    }
-
+                // Phase 3: High-frequency call detection (Rate Limiting)
+                const now = Date.now();
+                this.llmCallHistory.push(now);
+                // Keep history within last minute
+                this.llmCallHistory = this.llmCallHistory.filter(t => now - t < 60000);
+                
+                if (this.llmCallHistory.length > 20) {
+                    logger.error(`[BaseAgent] HIGH FREQUENCY DETECTED: ${this.id} attempted > 20 calls in 1 minute. Aborting to prevent burn.`);
                     executionContext.rollback();
                     return {
-                        text: `Task paused: You've reached your daily AI spend limit ` +
-                              `($${limits.maxDailySpend.toFixed(2)}/day on the ${tierName} plan). ` +
-                              `Your budget resets at midnight UTC. ` +
+                        text: 'Task aborted: High-frequency LLM call pattern detected (>20 calls/min). Safety circuit breaker triggered.',
+                        error: 'High-frequency Abort',
+                        toolCalls
+                    };
+                }
+
+                // Phase 2: Integrated budget circuit breaker check
+                const budgetCheck = await MembershipService.checkBudget(0.01);
+                if (!budgetCheck.allowed) {
+                    logger.warn(`[BaseAgent] Budget circuit breaker triggered for ${this.id}.`);
+                    const tier = await MembershipService.getCurrentTier();
+                    executionContext.rollback();
+                    return {
+                        text: budgetCheck.requiresApproval 
+                            ? 'Task paused: The next step exceeds the $0.50 auto-approval threshold. Please review and authorize the next action in the Ledger.'
+                            : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.',
+                        hint: budgetCheck.requiresApproval 
+                            ? 'Approval Required' :
                               (tier === 'free' ? 'Upgrade to Pro for a $10/day limit.' :
                                tier === 'pro' ? 'Upgrade to Founder for a $500/day limit.' :
                                'Contact support if you need a higher limit.'),
-                        error: 'Daily spend limit reached',
+                        error: budgetCheck.requiresApproval ? 'Approval Required' : 'Daily spend limit reached',
                         toolCalls
                     };
                 }
@@ -911,6 +907,7 @@ export class BaseAgent implements SpecializedAgent {
 
                         if (totalCost > 0) {
                             await MembershipService.recordSpend(context.userId, totalCost);
+                            this.loopDetector.recordLLMUsage(totalCost);
                         }
                     }
                 }

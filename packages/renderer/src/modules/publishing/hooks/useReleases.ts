@@ -35,7 +35,7 @@ export function useReleases(orgId: string | undefined) {
         setLoading(true);
 
         const q = query(
-            collection(db, 'ddexReleases'),
+            collection(db, 'proprietaryIngestionReleases'),
             where('orgId', '==', orgId),
             orderBy('createdAt', 'desc')
         );
@@ -70,7 +70,7 @@ export function useReleases(orgId: string | undefined) {
 
     const deleteRelease = useCallback(async (releaseId: string) => {
         try {
-            const releaseRef = doc(db, 'ddexReleases', releaseId);
+            const releaseRef = doc(db, 'proprietaryIngestionReleases', releaseId);
             await deleteDoc(releaseRef);
         } catch (err: unknown) {
             logger.error('Error deleting release:', err);
@@ -81,7 +81,7 @@ export function useReleases(orgId: string | undefined) {
 
     const archiveRelease = useCallback(async (releaseId: string) => {
         try {
-            const releaseRef = doc(db, 'ddexReleases', releaseId);
+            const releaseRef = doc(db, 'proprietaryIngestionReleases', releaseId);
             await updateDoc(releaseRef, { status: 'archived' });
         } catch (err: unknown) {
             logger.error('Error archiving release:', err);

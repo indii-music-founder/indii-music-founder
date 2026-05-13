@@ -105,7 +105,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 **Deliverable:** Complete `docs/ARCHITECTURE.md` covering:
 - 3-layer design (Directive → Orchestration → Execution)
 - Hub-and-spoke agent topology (indii Conductor + 17 specialists)
-- DDEX distribution pipeline (ERN generation through DSP submission)
+- Proprietary Ingestion IP distribution pipeline (IngestionNotification generation through DSP submission)
 - Vertex AI fine-tuning pipeline (dataset generation, job submission, endpoint deployment)
 - Critical path for incident response
 
@@ -116,7 +116,7 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 **Deadline:** Month 2  
 **Deliverable:** `docs/RUNBOOKS.md` covering:
 - On-call procedure (who to page, escalation)
-- Common incidents: agent endpoint down, DDEX delivery failure, Stripe payment failure
+- Common incidents: agent endpoint down, Proprietary Ingestion IP delivery failure, Stripe payment failure
 - Rollback procedures for each incident
 - Monitoring dashboards and alert definitions
 - Database backup/restore procedures
@@ -135,12 +135,12 @@ This term sheet outlines the retention package for William Roberts upon acquisit
 
 **Success Metric:** A new engineer (not William) can re-run a training job and deploy to production
 
-### Deliverable 4: DDEX Onboarding Cycle
+### Deliverable 4: Proprietary Ingestion IP Onboarding Cycle
 
 **Deadline:** Month 3 (pair programming)  
 **Deliverable:** Live walkthrough of:
 - Accepting a new DSP connection request
-- Generating an ERN for a new release
+- Generating an IngestionNotification for a new release
 - Monitoring SFTP delivery
 - Processing DSP acknowledgment
 - Handling delivery failures

@@ -110,7 +110,7 @@ class IdentityManager:
         self.data["isrc_count"] += 1
         sequence = str(self.data["isrc_count"]).zfill(5)
 
-        # Format: CCXXXRRNNNNN (12 characters, no dashes for DDEX compliance)
+        # Format: CCXXXRRNNNNN (12 characters, no dashes for Proprietary Ingestion IP compliance)
         isrc = f"{resolved_country}{resolved_registrant}{year}{sequence}"
 
         # Uniqueness check — prevent reissuing same ISRC across releases

@@ -26,6 +26,7 @@ export interface LoopDetectionResult {
 
 export class LoopDetector {
     private toolCallHistory: ToolCall[] = [];
+    private llmCostHistory: { timestamp: number; cost: number }[] = [];
     private maxHistorySize = 20; // Track last 20 tool calls
 
     /**
@@ -55,6 +56,23 @@ export class LoopDetector {
         // Keep history bounded
         if (this.toolCallHistory.length > this.maxHistorySize) {
             this.toolCallHistory.shift();
+        }
+    }
+
+    /**
+     * Record LLM generation cost
+     */
+    recordLLMUsage(cost: number): void {
+        if (cost <= 0) return;
+        
+        this.llmCostHistory.push({
+            timestamp: Date.now(),
+            cost
+        });
+
+        // Keep history bounded (matches tool history size)
+        if (this.llmCostHistory.length > this.maxHistorySize) {
+            this.llmCostHistory.shift();
         }
     }
 
@@ -134,6 +152,9 @@ export class LoopDetector {
         for (const call of this.toolCallHistory) {
             cumulativeCost += call.cost || 0;
         }
+        for (const call of this.llmCostHistory) {
+            cumulativeCost += call.cost;
+        }
 
         const MAX_SESSION_COST_LIMIT = 5.00; // $5 limit per agent session for anti-burn
         if (cumulativeCost >= MAX_SESSION_COST_LIMIT) {
@@ -146,11 +167,23 @@ export class LoopDetector {
 
         // Check 7: Real-time Budget Enforcement (Global Circuit Breaker)
         // This stops agents if the USER'S daily limit or SESSION hard limit is hit.
-        const canExecute = await MembershipService.checkBudget();
-        if (!canExecute) {
+        
+        // Estimate cost for this specific call to prevent unmonitored credit burn (Bug C4)
+        let currentCost = 0;
+        if (name === 'generate_video' || name === 'indii_video_gen') {
+            const duration = typeof args.duration === 'number' ? args.duration : 4;
+            currentCost = duration * 0.20; // Approx $0.20 per second for 720p
+        } else if (name === 'generate_image' || name === 'indii_image_gen') {
+            currentCost = 0.04;
+        } else if (name === 'generate_audio' || name === 'indii_audio_gen') {
+            currentCost = 0.10;
+        }
+
+        const canExecute = await MembershipService.checkBudget(currentCost);
+        if (!canExecute.allowed) {
             return {
                 isLoop: true,
-                reason: 'Budget limit exceeded or Emergency Kill Switch triggered. All agent operations suspended for safety.',
+                reason: canExecute.requiresApproval ? 'Action requires explicit user approval (cost ceiling reached)' : 'Budget limit exceeded or Emergency Kill Switch triggered. All agent operations suspended for safety.',
                 pattern: 'Emergency Circuit Breaker Triggered'
             };
         }

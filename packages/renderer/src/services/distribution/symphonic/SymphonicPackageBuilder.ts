@@ -1,5 +1,5 @@
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
 import { logger } from '@/utils/logger';
@@ -47,7 +47,7 @@ export class SymphonicPackageBuilder {
         const packagedFiles: string[] = [];
 
         // 2. Generate and Write XML
-        const xmlResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'symphonic');
+        const xmlResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'symphonic');
         if (!xmlResult.success || !xmlResult.xml) {
             throw new Error(`Failed to generate ERN for Symphonic: ${xmlResult.error}`);
         }

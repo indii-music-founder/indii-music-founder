@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger("sftp_uploader")
 
 class SFTPUploader:
-    """Manages the transmission of DDEX packages and ITMSP bundles via SFTP."""
+    """Manages the transmission of Proprietary Ingestion IP packages and ITMSP bundles via SFTP."""
 
     def __init__(self, storage_path: Optional[str] = None):
         self.storage_path = storage_path

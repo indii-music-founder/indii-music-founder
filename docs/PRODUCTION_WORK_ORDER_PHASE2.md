@@ -16,9 +16,9 @@
 
 1. **Agent service files** — type errors propagate into AI responses and tool calls
    - `src/services/agent/` (253 files — largest service directory)
-2. **Distribution/DDEX** — type errors corrupt industry-standard XML
+2. **Distribution/Proprietary Ingestion IP** — type errors corrupt industry-standard XML
    - `src/services/distribution/` (43 files)
-   - `src/services/ddex/` (31 files)
+   - `src/services/ingestion/` (31 files)
 3. **Payment/subscription** — type errors affect billing
    - `src/services/payment/` (3 files)
    - `src/services/subscription/` (10 files)

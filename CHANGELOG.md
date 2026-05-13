@@ -14,7 +14,7 @@ All notable changes to indii are documented in this file.
 * add cache entries and update detection logic, test fixtures, and documentation ([9e046e6](https://github.com/indii-music/indii-Clean/commit/9e046e6705a130c47419e1598e1ba0cd0eb47c54))
 * add renderer vite config and rotate e2e interop test keys ([7c5f1ec](https://github.com/indii-music/indii-Clean/commit/7c5f1ece8dfe8b8ac3996a7bbcf6315c84a1dd1c))
 * **admin-dashboard:** finalize server and Docker config for indii-music org ([a221b7f](https://github.com/indii-music/indii-Clean/commit/a221b7fa16e977931a7f12a58bc6ccd9c40598d8))
-* **admin-dashboard:** flesh out Nexus Monitor, Email Manager, DDEX Tracker, and Founders Portal components ([7c98f0e](https://github.com/indii-music/indii-Clean/commit/7c98f0e22bc7a4990b8da4624488b01c091d7c6a))
+* **admin-dashboard:** flesh out Nexus Monitor, Email Manager, Proprietary Ingestion IP Tracker, and Founders Portal components ([7c98f0e](https://github.com/indii-music/indii-Clean/commit/7c98f0e22bc7a4990b8da4624488b01c091d7c6a))
 * **admin:** implement system listener and auto-remediation webhooks ([8eb8d40](https://github.com/indii-music/indii-Clean/commit/8eb8d40ffa34436b2e35c9dc529f7d8325a4cee9))
 * **agent-v2:** implement Living Plan system, Media/Project tools, and AgentGraph orchestration ([b7a434b](https://github.com/indii-music/indii-Clean/commit/b7a434b33232d1e7bcefe5e8c87f0d99c2b4feac))
 * **agent:** add LivingPlan substrate (Phase 1) — LivingPlanService, PlanCard, ProjectService ([ee21d1b](https://github.com/indii-music/indii-Clean/commit/ee21d1bf1908006e0bf98a3edb2b952814ba10a8))
@@ -306,7 +306,7 @@ All notable changes to indii are documented in this file.
 * add cache entries and update detection logic, test fixtures, and documentation ([9e046e6](https://github.com/indii-music/indii-Clean/commit/9e046e6705a130c47419e1598e1ba0cd0eb47c54))
 * add renderer vite config and rotate e2e interop test keys ([7c5f1ec](https://github.com/indii-music/indii-Clean/commit/7c5f1ece8dfe8b8ac3996a7bbcf6315c84a1dd1c))
 * **admin-dashboard:** finalize server and Docker config for indii-music org ([a221b7f](https://github.com/indii-music/indii-Clean/commit/a221b7fa16e977931a7f12a58bc6ccd9c40598d8))
-* **admin-dashboard:** flesh out Nexus Monitor, Email Manager, DDEX Tracker, and Founders Portal components ([7c98f0e](https://github.com/indii-music/indii-Clean/commit/7c98f0e22bc7a4990b8da4624488b01c091d7c6a))
+* **admin-dashboard:** flesh out Nexus Monitor, Email Manager, Proprietary Ingestion IP Tracker, and Founders Portal components ([7c98f0e](https://github.com/indii-music/indii-Clean/commit/7c98f0e22bc7a4990b8da4624488b01c091d7c6a))
 * **admin:** implement system listener and auto-remediation webhooks ([8eb8d40](https://github.com/indii-music/indii-Clean/commit/8eb8d40ffa34436b2e35c9dc529f7d8325a4cee9))
 * **agent-v2:** implement Living Plan system, Media/Project tools, and AgentGraph orchestration ([b7a434b](https://github.com/indii-music/indii-Clean/commit/b7a434b33232d1e7bcefe5e8c87f0d99c2b4feac))
 * **agent:** add LivingPlan substrate (Phase 1) — LivingPlanService, PlanCard, ProjectService ([ee21d1b](https://github.com/indii-music/indii-Clean/commit/ee21d1bf1908006e0bf98a3edb2b952814ba10a8))
@@ -873,7 +873,7 @@ All notable changes to indii are documented in this file.
 ### Features
 
 * **ci:** sync and sanitize local state for clean CI validation ([0ec3137](https://github.com/new-detroit-music-llc/indii-Clean/commit/0ec31375dcb74063fac217f05e56c64353956543))
-* implement DDEX metadata validation schemas ([868f96a](https://github.com/new-detroit-music-llc/indii-Clean/commit/868f96a2718887195cdc004e468390b5b3f1eaeb))
+* implement Proprietary Ingestion IP metadata validation schemas ([868f96a](https://github.com/new-detroit-music-llc/indii-Clean/commit/868f96a2718887195cdc004e468390b5b3f1eaeb))
 * **workflow:** add support for conditional steps and skipping ([9c7e9dc](https://github.com/new-detroit-music-llc/indii-Clean/commit/9c7e9dca60c343f554d30c641a62b87cf30715bd))
 
 
@@ -902,7 +902,7 @@ All notable changes to indii are documented in this file.
 ### Performance Improvements
 
 * **devops:** fix N+1 query in storage maintenance ([#1535](https://github.com/new-detroit-music-llc/indii-Clean/issues/1535)) ([8284abc](https://github.com/new-detroit-music-llc/indii-Clean/commit/8284abcd7534cba0018fdf50bacca5f1775f40ef))
-* Optimize DSRProcessor N+1 query loop ([#1542](https://github.com/new-detroit-music-llc/indii-Clean/issues/1542)) ([ff92272](https://github.com/new-detroit-music-llc/indii-Clean/commit/ff92272e6f00b8b0d07abba905b68b24ca75966e))
+* Optimize Earnings ReportProcessor N+1 query loop ([#1542](https://github.com/new-detroit-music-llc/indii-Clean/issues/1542)) ([ff92272](https://github.com/new-detroit-music-llc/indii-Clean/commit/ff92272e6f00b8b0d07abba905b68b24ca75966e))
 
 ## [1.55.1](https://github.com/new-detroit-music-llc/indii-Clean/compare/v1.55.0...v1.55.1) (2026-04-22)
 
@@ -962,7 +962,7 @@ All notable changes to indii are documented in this file.
 * **audio:** resolve CORS blocker, enforce lossless uploads, scrub vendor branding ([92d9abf](https://github.com/new-detroit-music-llc/indii-Clean/commit/92d9abf5fc3750c4cb4f86b1d42bb62eca2aab39))
 * **ci:** use public getState() instead of private .state on CircuitBreaker ([7ad10dd](https://github.com/new-detroit-music-llc/indii-Clean/commit/7ad10dd60576124a8529c57da1fb80d5e3ccffd1))
 * **firestore:** add missing closing brace for memoryInbox rule ([cf3cada](https://github.com/new-detroit-music-llc/indii-Clean/commit/cf3cada384afee0e81cb94b00e4ce1e845da6d88))
-* harden DDEX contributor dedup, ProactiveService isolation, Firestore usage rules ([9efd5d8](https://github.com/new-detroit-music-llc/indii-Clean/commit/9efd5d8a7f162dd40286e1e8ec1561cef99d89ca))
+* harden Proprietary Ingestion IP contributor dedup, ProactiveService isolation, Firestore usage rules ([9efd5d8](https://github.com/new-detroit-music-llc/indii-Clean/commit/9efd5d8a7f162dd40286e1e8ec1561cef99d89ca))
 * **pr-1510:** resolve all 12 CodeRabbit audit findings ([f2915d9](https://github.com/new-detroit-music-llc/indii-Clean/commit/f2915d9bc2a70552454641c72df930d65b9719c9))
 * **security:** harden Firestore rules, fix GeminiFileService typeof guard, add artist ID fallback ([0762233](https://github.com/new-detroit-music-llc/indii-Clean/commit/0762233c6a7f17f0765fe97772bb61f0c4d1dcb1))
 * **security:** resolve final CodeRabbit PR-1510 findings ([c5db35e](https://github.com/new-detroit-music-llc/indii-Clean/commit/c5db35eaf2c7d451d34d3bd5bddd5e63d4fb7935))
@@ -974,15 +974,15 @@ All notable changes to indii are documented in this file.
 
 ### Features
 
-* Add BPM, key, and energy fields to DDEX ERN generation ([acf47e3](https://github.com/new-detroit-music-llc/indii-Clean/commit/acf47e3bf8b4847aecffd71d51f6c717e37f1b7c))
+* Add BPM, key, and energy fields to Proprietary Ingestion IP Ingestion Notification generation ([acf47e3](https://github.com/new-detroit-music-llc/indii-Clean/commit/acf47e3bf8b4847aecffd71d51f6c717e37f1b7c))
 * **publishing:** add BPM, Key, and Energy metadata to releases ([aa2db9f](https://github.com/new-detroit-music-llc/indii-Clean/commit/aa2db9fba19e5f582484c5e8ed2652707fdc0881))
-* refine audio technical feature mapping for DDEX ERN ([33bc869](https://github.com/new-detroit-music-llc/indii-Clean/commit/33bc8697319a56896854abca542259bc48928259))
+* refine audio technical feature mapping for Proprietary Ingestion IP Ingestion Notification ([33bc869](https://github.com/new-detroit-music-llc/indii-Clean/commit/33bc8697319a56896854abca542259bc48928259))
 
 
 ### Bug Fixes
 
 * **creative:** resolve TrackIngestionService types and harden CanvasOperationsService mask generation ([7dd05e1](https://github.com/new-detroit-music-llc/indii-Clean/commit/7dd05e195c9d204a9ebd0b5dec95ad27b48be91b))
-* **ddex:** resolve ERN types and tests for YouTube Content ID integration ([9495b36](https://github.com/new-detroit-music-llc/indii-Clean/commit/9495b36010cd8106f003196a60f79f2831a58d50))
+* **ddex:** resolve Ingestion Notification types and tests for YouTube Content ID integration ([9495b36](https://github.com/new-detroit-music-llc/indii-Clean/commit/9495b36010cd8106f003196a60f79f2831a58d50))
 
 ## [1.51.0](https://github.com/new-detroit-music-llc/indii-Clean/compare/v1.50.1...v1.51.0) (2026-04-18)
 
@@ -1285,7 +1285,7 @@ All notable changes to indii are documented in this file.
 
 ### Features
 
-* **distribution:** propagate Audio DNA semantic metadata to ERN and UI ([b69e593](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/b69e593c14ae44873ca7c5a61dde8d406d2986ab))
+* **distribution:** propagate Audio DNA semantic metadata to Ingestion Notification and UI ([b69e593](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/b69e593c14ae44873ca7c5a61dde8d406d2986ab))
 * harden merchandise designer, Audio DNA distribution mapping, and E2E stress test ([206bdaa](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/206bdaa1071e1a4a0f97960ba30248ce86eb2b2c))
 * implement right-panel workflow and knowledge components while hardening prompt sanitization and updating E2E test suites. ([135633c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/135633ca68cec4122d729cc6f5f269ef4dc9d876))
 * **sprint7:** Neural Cortex vector-retrieval pipeline + Audio DNA Cortex auto-registration ([f3fcb55](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/f3fcb559abb89b1ff5ac0b4b22b3c12b215b7c1b))
@@ -1307,7 +1307,7 @@ All notable changes to indii are documented in this file.
 
 ### Features
 
-* enhance agent orchestration and DDEX distribution workflows with updated security rules and expanded test coverage ([d0fd190](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/d0fd190526125125e7ea66646a73d4c8ffef8508))
+* enhance agent orchestration and Proprietary Ingestion IP distribution workflows with updated security rules and expanded test coverage ([d0fd190](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/d0fd190526125125e7ea66646a73d4c8ffef8508))
 * overhaul distribution module architecture, add unit tests for authority and registration panels, and update UI components across multiple modules ([2a6c50e](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/2a6c50e83e562702c0bd8133a653b84bb606c391))
 
 ## [1.42.0](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/compare/v1.41.0...v1.42.0) (2026-03-28)
@@ -1456,11 +1456,11 @@ All notable changes to indii are documented in this file.
 * **ci:** pin firebase-tools@13.29.1 to avoid Gen 1 CPU error ([7a434e6](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7a434e6d6078bd78a25618bbf2d45d9ed266bc7e))
 * **ci:** target specific non-storage functions for deploy ([35dd9d0](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/35dd9d0950d0c44d8f0b26b538b2737e119168e0))
 * correct all storage bucket references across codebase ([29d02b6](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/29d02b613b17161e6ffefefcc428acc84e3184b8))
-* disable processDDEXAck only — CLI bucket region bug ([825cc1c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/825cc1c123946584bdf1e5aa90b390ba14560caf))
-* **functions:** add explicit bucket to processDDEXAck trigger ([51632d1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/51632d198b25f66c707ad1d15a05ec1db91958bf))
+* disable processProprietary Ingestion IPAck only — CLI bucket region bug ([825cc1c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/825cc1c123946584bdf1e5aa90b390ba14560caf))
+* **functions:** add explicit bucket to processProprietary Ingestion IPAck trigger ([51632d1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/51632d198b25f66c707ad1d15a05ec1db91958bf))
 * **functions:** add setGlobalOptions for default region ([d10c98c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/d10c98cab4b5ec8fbf1d084859cc463cf007f587))
 * **functions:** disable Gen 1 secret-dependent exports causing CPU error ([6f9dce0](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/6f9dce005162e4ac567cb70c53e4eab4016fa6e4))
-* **functions:** remove processDDEXAck export and setGlobalOptions ([b515d1c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/b515d1c576380387ebb2d425449337948298a9ac))
+* **functions:** remove processProprietary Ingestion IPAck export and setGlobalOptions ([b515d1c](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/b515d1c576380387ebb2d425449337948298a9ac))
 * re-enable 8 disabled function exports ([c9cf23e](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c9cf23e382457259dca1fe34a5926ca331465565))
 * **test:** update LedgerCircuitBreaker cost assertion for gemini-2.5-pro pricing ([fb2e8d3](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/fb2e8d3efe13a0aa5ffa84552a3d0c88ea748c87))
 * **test:** update MemoryTools verify_output model assertion to gemini-2.5-flash ([3b89c3a](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/3b89c3a1b4bce375b06b830c68a7b66655d27b2e))
@@ -1931,7 +1931,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * comprehensive improvements — E2E, agent UI, observability, marketplace, security, and Python tools ([77b19d7](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/77b19d763f9f65344e45d790e5d81cf4133adc95))
@@ -2201,7 +2201,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * comprehensive improvements — E2E, agent UI, observability, marketplace, security, and Python tools ([77b19d7](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/77b19d763f9f65344e45d790e5d81cf4133adc95))
@@ -2472,7 +2472,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -2743,7 +2743,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -3014,7 +3014,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -3285,7 +3285,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -3557,7 +3557,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -3830,7 +3830,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -4103,7 +4103,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -4372,7 +4372,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -4635,7 +4635,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
@@ -4899,7 +4899,7 @@ All notable changes to indii are documented in this file.
 * complete item 19 of PRODUCTION_100.md (Media Player PIP) ([17c7996](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/17c7996249fa638f43aa8e22b2bb13f1a3666771))
 * complete item 20 of PRODUCTION_100.md (Audio Format Conversion checks) ([7078863](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/7078863fe3f9f87e526de4fb521f5562f92588b5))
 * complete items 9 and 10 from PRODUCTION_100.md (accessibility labels and unsaved changes guards) ([57fb19f](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/57fb19ff0d784c5aa22623f9e79753323a09cb8e))
-* complete platinum documentation, upgrade DDEX engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
+* complete platinum documentation, upgrade Proprietary Ingestion IP engine, and activate multimodal audio intelligence ([ebb1eca](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ebb1eca6d830788e0b5ac1784c785a9221744673))
 * complete RAG implementation and various UI updates ([ea142b1](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/ea142b1ab7b664b28798041100a29a38561caf12))
 * complete UI Specs 003 (unified cmd, spacebar audio, download util, sidebar state, drag/drop timeline, context menus) [PRODUCTION-100] ([c0b09c5](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/c0b09c50fc9c263a42153eb80ffcabce512eb14d))
 * creative canvas batching, avatar lip-sync, influencer bounty, auto-poster improvements ([68700ee](https://github.com/new-detroit-music-llc/indii-Alpha-Electron/commit/68700ee5e13df6577e20529a93420f9e29ae1de0))
