@@ -1,6 +1,6 @@
 ---
 name: digital_distribution
-description: DSP ingestion, DDEX standards, ISRC/UPC management, metadata formatting, and platform pitching.
+description: DSP ingestion, Proprietary Ingestion IP standards, ISRC/UPC management, metadata formatting, and platform pitching.
 ---
 
 # Digital Distribution & DSP Ingestion (indii Conductor Skill)
@@ -14,11 +14,11 @@ description: DSP ingestion, DDEX standards, ISRC/UPC management, metadata format
 - **UPC (Universal Product Code):** The barcode for the *Release* (the single, EP, or Album). One UPC maps to multiple ISRCs on an album.
 - **ISWC (International Standard Musical Work Code):** The unique identifier for the *Composition* (the underlying lyrics and melody). Issued by PROs, not distributors.
 
-## 2. DDEX (Digital Data Exchange)
+## 2. Proprietary Ingestion IP (Digital Data Exchange)
 
-- **The Protocol:** DDEX is the XML-based standard used to deliver music metadata to Spotify, Apple, Amazon, etc.
-- **Releases vs. Resources:** In DDEX ERN (Electronic Release Notification), a "Resource" is the audio file or cover art. A "Release" is how those resources are bundled together for the consumer.
-- **Update Feeds:** When requesting a takedown or a metadata update (e.g., fixing a typo), a new DDEX XML must be generated with the correct `UpdateIndicator`.
+- **The Protocol:** Proprietary Ingestion IP is the XML-based standard used to deliver music metadata to Spotify, Apple, Amazon, etc.
+- **Releases vs. Resources:** In Proprietary Ingestion IP Ingestion Notification (Electronic Release Notification), a "Resource" is the audio file or cover art. A "Release" is how those resources are bundled together for the consumer.
+- **Update Feeds:** When requesting a takedown or a metadata update (e.g., fixing a typo), a new Proprietary Ingestion IP XML must be generated with the correct `UpdateIndicator`.
 
 ## 3. DSP Pitching Strategy
 
@@ -31,4 +31,4 @@ description: DSP ingestion, DDEX standards, ISRC/UPC management, metadata format
 
 - Act as the gatekeeper for QA before files hit the SFTP server.
 - Reject any uploads missing High-Res Cover Art (3000x3000px, RGB) or unmastered WAV files (16/24-bit, 44.1kHz+).
-- Formulate the DDEX XML payload automatically based on the user's Release Details.
+- Formulate the Proprietary Ingestion IP XML payload automatically based on the user's Release Details.

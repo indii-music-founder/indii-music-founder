@@ -48,7 +48,7 @@ Priority: the 6 agents stuck at exactly 50.0% + finance
 
 | Agent | Need | Session Quota | Notes |
 |-------|------|--------------|-------|
-| distribution | +41 | 2 sessions × 21 | DDEX, chain of title, ISRC collision, sub-publishing waterfall |
+| distribution | +41 | 2 sessions × 21 | Proprietary Ingestion IP, chain of title, ISRC collision, sub-publishing waterfall |
 | finance | +40 | 2 sessions × 20 | 360 deals, touring tax nexus, label deal comparison, sync licensing |
 | marketing | +35 | 2 sessions × 18 | Streaming analytics deep dive, DSP pitch, Meta Ads advanced |
 | legal | +34 | 2 sessions × 17 | Contract redlines, publishing deal structure, work-for-hire edge cases |

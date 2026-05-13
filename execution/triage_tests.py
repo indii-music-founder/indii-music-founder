@@ -96,7 +96,7 @@ def print_triage_report(report: Dict[str, Any]) -> None:
     for item in report["top_failing_files"]:
         print(f"  ({item['count']}) {item['file']}")
 
-    print("\n[ TOP ERROR PATTERNS ]")
+    print("\n[ TOP ERROR PATTIngestion NotificationS ]")
     for item in report["top_error_messages"]:
         print(f"  ({item['count']}) {item['message']}")
     print("=" * 60 + "\n")

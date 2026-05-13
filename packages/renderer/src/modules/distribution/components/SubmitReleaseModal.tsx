@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Send, CheckCircle2, Loader2, XCircle, ChevronRight } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { useToast } from '@/core/context/ToastContext';
-import type { DDEXMetadata } from '@/types/distribution';
+import type { IngestionMetadata } from '@/types/distribution';
 
 interface PipelineStep {
     id: string;

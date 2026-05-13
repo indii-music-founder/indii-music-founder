@@ -57,7 +57,7 @@ make dev                    # Full Electron + Vite on :4242
 
 indii solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
 
-**indii is the distributor.** We utilize a sophisticated, proprietary ingestion IP to interface directly with the global distribution infrastructure. By bypassing the traditional aggregator middleman layer, indii delivers your assets directly to DSPs—ensuring your masters, royalties, and creative data remain entirely in your control.
+**indii is the platform of record. We hold sophisticated, proprietary system IP that interfaces directly with global distribution infrastructure. By bypassing traditional third-party aggregator layers, indii enables creators to maintain absolute control over their masters, royalties, and creative data through a direct-to-DSP transmission rail.**
 
 ---
 
@@ -76,7 +76,7 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 │  → agents/ + src/services/agent/                             │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Deterministic)                          │
-│  Hard-coded scripts for API calls, file ops, DDEX gen        │
+│  Hard-coded scripts for API calls, file ops, Proprietary Ingestion IP generation  │
 │  → execution/ + python/tools/                                │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -89,7 +89,7 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 
 ## 🤖 indii: The Hub-and-Spoke Agent System
 
-The core of indii is **indii**, an intelligent orchestration hub with **17 specialist agents**.
+The core of indii is the **Agent Hub**, an intelligent orchestration hub with **17 specialist agents**.
 
 ```
               ┌─────────────────────┐
@@ -443,7 +443,7 @@ indii ships with 36 lazy-loaded modules organized across four domains:
 
 | Module | Route | Description |
 |--------|-------|-------------|
-| **Distribution** | `/distribution` | Direct DDEX delivery to DSPs (Merlin, Apple, Spotify, Amazon, Tidal) — no aggregator middlemen |
+| **Distribution** | `/distribution` | Direct Proprietary Ingestion delivery to DSPs (Merlin, Apple, Spotify, Amazon, Tidal) — no aggregator middlemen |
 | **Release Manager** | `/release` | End-to-end release lifecycle: metadata, artwork, scheduling, delivery, and QC |
 | **Finance** | `/finance` | Streaming revenue tracking, waterfall royalty splits, and automated payout calculations |
 | **Royalty** | `/royalty` | Detailed royalty statement parsing, reconciliation, and split management |
@@ -548,7 +548,7 @@ Firebase API keys are **identifiers, not secrets** — security is enforced via 
 | Database | Firestore | Real-time sync with security rules |
 | Storage | Firebase Storage | Media assets with security rules |
 | Analytics | BigQuery | Revenue analytics pipeline |
-| Distribution | DDEX ERN 4.3 | Direct DSP delivery via SFTP |
+| Distribution | Proprietary Ingestion IP 4.3 | Direct DSP delivery via SFTP |
 
 ### AI Model Policy
 
@@ -765,7 +765,7 @@ For deep-dives into specific subsystems:
 |----------|-------------|
 | [Architecture Standard](directives/architecture_standard.md) | 3-layer architecture guidelines |
 | [Agent Stability Protocol](directives/agent_stability.md) | Agent reliability standards |
-| [DDEX Implementation Plan](docs/DDEX_IMPLEMENTATION_PLAN.md) | Distribution engine specification |
+| [Proprietary Ingestion Implementation Plan](docs/PROPRIETARY_INGESTION_IMPLEMENTATION_PLAN.md) | Distribution engine specification |
 | [Model Usage Policy](MODEL_POLICY.md) | AI model selection and enforcement |
 | [API Credentials Policy](docs/API_CREDENTIALS_POLICY.md) | Security policy for credential management |
 | [Production Checklist](docs/PRODUCTION_300.md) | 300+ item production readiness audit |

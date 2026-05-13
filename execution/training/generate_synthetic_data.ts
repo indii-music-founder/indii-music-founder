@@ -70,7 +70,7 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'opting human catalogs out of AI training datasets',
     ],
     distribution: [
-        'DDEX ERN 4.3 required fields for a single release',
+        'Proprietary Ingestion IP Ingestion Protocol 4.3 required fields for a single release',
         'ISRC assignment and format validation',
         'UPC vs ISRC — what each identifies',
         'metadata QC failures on major DSPs and how to fix them',

@@ -1,0 +1,207 @@
+/**
+ * Ingestion IngestionNotification (Electronic Release Notification) Types
+ * Version: IngestionNotification 4.3 (supports AI-generated content flagging)
+ */
+
+import type {
+  IngestionMessageHeader,
+  SystemIdentity,
+  TerritoryCode,
+  ReleaseType,
+  UseType,
+  CommercialModelType,
+  Price,
+  DateRange,
+  Contributor,
+  TechnicalDetails,
+  ParentalWarningType,
+  AIGenerationInfo,
+  RightsController,
+} from './common';
+
+export type { Contributor };
+
+// IngestionNotification Message - top level
+export interface IngestionNotificationMessage {
+  action?: 'NewRelease' | 'Update' | 'Takedown';
+  messageSchemaVersionId: '4.3';
+  messageHeader: IngestionMessageHeader;
+  releaseList: Release[];
+  resourceList: Resource[];
+  dealList: Deal[];
+}
+
+// Release - the product being distributed
+export interface Release {
+  releaseId: ReleaseId;
+  releaseReference: string;  // Internal reference (e.g., 'R0001')
+  releaseType: ReleaseType;
+  releaseTitle: TitleText;
+  releaseSubTitle?: TitleText;
+  displayArtistName: string;
+  displayArtistSystemIdentifier?: string;
+  contributors: Contributor[];
+  labelName: string;
+  pLine?: CopyrightLine;
+  cLine?: CopyrightLine;
+  releaseDate?: ReleaseDate;
+  originalReleaseDate?: string;
+  genre: GenreWithSubGenre;
+  parentalWarningType: ParentalWarningType;
+  marketingComment?: string;
+  keyWords?: string[];
+
+  // AI Generation (IngestionNotification 4.3)
+  aiGenerationInfo?: AIGenerationInfo;
+
+  // Rights Controllers (Self-Publishing)
+  rightsControllers?: RightsController[];
+
+  // Resources in this release
+  releaseResourceReferenceList: string[];  // References to resources
+
+  // Additional metadata
+  releaseDetailsByTerritory?: ReleaseDetailsByTerritory[];
+}
+
+// Release Identifiers
+export interface ReleaseId {
+  icpn?: string;   // International Standard Recording Code Product Number (barcode)
+  gridId?: string; // Global Release Identifier
+  isrc?: string;   // For single-track releases
+  catalogNumber?: string;
+  proprietaryId?: ProprietaryId;
+}
+
+export interface ProprietaryId {
+  proprietaryIdType: string;
+  id: string;
+}
+
+// Title with type
+export interface TitleText {
+  titleText: string;
+  titleType?: 'FormalTitle' | 'DisplayTitle' | 'GroupingTitle' | 'AlternativeTitle';
+  languageCode?: string;  // ISO 639-2
+}
+
+// Copyright Lines
+export interface CopyrightLine {
+  year: number;
+  text: string;
+}
+
+// Release Date with territory-specific dates
+export interface ReleaseDate {
+  releaseDate: string;  // ISO 8601
+  isOriginalReleaseDate?: boolean;
+}
+
+// Genre
+export interface GenreWithSubGenre {
+  genre: string;
+  subGenre?: string;
+}
+
+// Territory-specific release details
+export interface ReleaseDetailsByTerritory {
+  territoryCode: TerritoryCode[];
+  displayArtistName?: string;
+  releaseTitle?: TitleText;
+  labelName?: string;
+  releaseDate?: string;
+}
+
+// Resource - the actual content (audio, video, image)
+export interface Resource {
+  resourceReference: string;  // Internal reference (e.g., 'A0001')
+  resourceType: 'SoundRecording' | 'Video' | 'Image' | 'Text';
+  resourceId: ResourceId;
+  resourceTitle: TitleText;
+  displayArtistName: string;
+  contributors: Contributor[];
+  duration?: string;  // ISO 8601 duration
+  technicalDetails?: TechnicalDetails[];
+  parentalWarningType?: ParentalWarningType;
+
+  // AI Generation (IngestionNotification 4.3)
+  aiGenerationInfo?: AIGenerationInfo;
+
+  // For sound recordings
+  soundRecordingDetails?: SoundRecordingDetails;
+
+  // For text resources (like lyrics)
+  textDetails?: TextDetails;
+}
+
+export interface ResourceId {
+  isrc?: string;  // International Standard Recording Code
+  proprietaryId?: ProprietaryId;
+}
+
+export interface SoundRecordingDetails {
+  soundRecordingType: 'MusicalWorkSoundRecording' | 'NonMusicalWorkSoundRecording';
+  isInstrumental: boolean;
+  languageOfPerformance?: string;  // ISO 639-2
+  iswc?: string;  // International Standard Musical Work Code
+  immersiveAudioProfile?: 'DolbyAtmos' | 'Sony360' | 'None';
+  lyrics?: {
+    lyricsText: string;
+    isExplicit: boolean;
+  };
+  bpm?: number;
+  key?: string;
+  energy?: number;
+}
+
+export interface TextDetails {
+  textType: 'Lyrics' | 'LinerNotes';
+  languageOfText?: string;
+  textContent?: string;
+}
+
+// Deal - commercial terms for distribution
+export interface Deal {
+  dealReference: string;
+  dealTerms: DealTerms;
+  youtubeContentIdPolicy?: string;
+}
+
+export interface DealTerms {
+  commercialModelType: CommercialModelType;
+  usage: Usage[];
+  territoryCode: TerritoryCode[];
+  validityPeriod: DateRange;
+  priceInformation?: PriceInformation;
+  releaseDisplayStartDate?: string;
+  preOrderReleaseDate?: string;
+  takeDown?: boolean;
+}
+
+export interface Usage {
+  useType: UseType;
+  distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice' | 'Physical';
+}
+
+export interface PriceInformation {
+  priceType: 'WholesalePricePerUnit' | 'SuggestedRetailPrice';
+  price: Price;
+}
+
+// IngestionNotification Builder Helper Type
+export interface IngestionNotificationBuildOptions {
+  sender: SystemIdentity;
+  recipient: SystemIdentity;
+  isTest?: boolean;
+}
+
+// IngestionNotification Validation specific errors
+export type IngestionNotificationValidationErrorCode =
+  | 'MISSING_ISRC'
+  | 'INVALID_TERRITORY'
+  | 'MISSING_RELEASE_DATE'
+  | 'INVALID_DEAL_PERIOD'
+  | 'MISSING_CONTRIBUTOR'
+  | 'INVALID_DURATION'
+  | 'MISSING_GENRE'
+  | 'INCOMPLETE_AI_DISCLOSURE';

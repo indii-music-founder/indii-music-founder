@@ -81,8 +81,8 @@ export interface TaxProfileDocument extends BaseDocument {
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 /**
- * Release Management (DDEX)
- * Collection: ddexReleases
+ * Release Management (Proprietary Ingestion IP)
+ * Collection: proprietaryIngestionReleases
  */
 export type ReleaseDistributionStatus =
     | 'draft'
@@ -96,7 +96,7 @@ export type ReleaseDistributionStatus =
     | 'takedown_requested'
     | 'taken_down';
 
-export interface DDEXReleaseDocument extends BaseDocument {
+export interface IngestionReleaseDocument extends BaseDocument {
     orgId: string;
     projectId: string;
     userId: string;
@@ -245,3 +245,7 @@ export interface DSRProcessedReportDocument extends BaseDocument {
         source: string;
     };
 }
+
+/** @deprecated Use DSRProcessedReportDocument */
+export type EarningsReportProcessedReportDocument = DSRProcessedReportDocument;
+

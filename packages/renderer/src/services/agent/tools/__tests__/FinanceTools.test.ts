@@ -23,11 +23,11 @@ vi.mock('@/core/config/distributors', () => ({
     DISTRIBUTORS: {
         'distrokid': {
             name: 'DistroKid',
-            ddexPartyId: 'PADPIDA2013021901W'
+            systemIdentifier: 'PADPIDA2013021901W'
         },
         'tunecore': {
             name: 'TuneCore',
-            ddexPartyId: 'PADPIDA2009090203U'
+            systemIdentifier: 'PADPIDA2009090203U'
         }
     }
 }));

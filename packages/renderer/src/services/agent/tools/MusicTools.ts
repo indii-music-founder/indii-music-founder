@@ -52,7 +52,7 @@ export const MusicTools = {
      * Verifies if a metadata object meets the industrial "Golden Standard".
      */
     verify_metadata_golden: wrapTool('verify_metadata_golden', async (args: { metadata: any }) => {
-        const { ExtendedGoldenMetadataSchema } = await import('@/services/ddex/validation');
+        const { ExtendedGoldenMetadataSchema } = await import('@/services/distribution/proprietary-ingestion/validation');
 
         const result = ExtendedGoldenMetadataSchema.safeParse(args.metadata);
 

@@ -41,8 +41,8 @@ This timeline puts everything in the right order.
 | W-5 Mon | **Contact attorney** — send the brief packet | 30 min | `[ ]` |
 | W-5 Mon | Confirm estimated turnaround time (usually 2-3 weeks for ToS + Privacy) | 15 min | `[ ]` |
 | W-5 Tue | Start DistroKid API/SFTP credential process | Doc 04 §A1 | 15 min | `[ ]` |
-| W-5 Wed | Register at DDEX Knowledge Base + sign implementation license | Doc 04 §B1 | 15 min | `[ ]` |
-| W-5 Wed | Apply for Proprietary Ingestion ID (DPID) | Doc 04 §B1 | 15 min | `[ ]` |
+| W-5 Wed | Register at Proprietary Ingestion IP Knowledge Base + sign implementation license | Doc 04 §B1 | 15 min | `[ ]` |
+| W-5 Wed | Apply for Proprietary System Identifier | Doc 04 §B1 | 15 min | `[ ]` |
 | W-5 Thu | Register App Check in Firebase Console (monitor-only mode) | Doc 03 §B6 | 15 min | `[ ]` |
 | W-5 Fri | Choose ASCAP or BMI — apply as publisher | Doc 04 | 20 min | `[ ]` |
 
@@ -140,9 +140,9 @@ These are not launch blockers but should happen within 90 days:
 | Launch + 2 weeks | Enforce App Check (switch from monitor-only to enforce) |
 | Launch + 30 days | First revenue report from DistroKid DSR |
 | Launch + 30 days | Attorney partnership deal structure agreed (if pursuing) |
-| Launch + 60 days | DPID received — begin DDEX peer conformance testing |
+| Launch + 60 days | Proprietary System Identifier received — begin peer conformance testing |
 | Launch + 90 days | ASCAP/BMI IPI number received — enable performance royalty features |
-| Launch + 6 months | First direct DSP delivery via DDEX (Phase B) |
+| Launch + 6 months | First direct DSP delivery via proprietary ingestion IP (Phase B) |
 
 ---
 

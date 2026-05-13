@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-test_pipeline_e2e.py - End-to-End DDEX Distribution Pipeline Test
+test_pipeline_e2e.py - End-to-End Proprietary Ingestion IP Distribution Pipeline Test
 
 Tests the complete pipeline from metadata input to delivery-ready packages:
   1. ISRC/UPC generation
   2. QC validation (metadata + style guide)
-  3. DDEX ERN 4.3 XML generation
+  3. Proprietary Ingestion IP Ingestion Protocol 4.3 XML generation
   4. XSD/structural validation
   5. Apple ITMSP packaging
   6. Spotify package creation
@@ -27,10 +27,10 @@ import xml.etree.ElementTree as ET
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ddex_generator import DDEXGenerator
+from ingestion_generator import Proprietary Ingestion IPGenerator
 from isrc_manager import IdentityManager
 from qc_validator import QCValidator
-from xsd_validator import DDEXXSDValidator
+from xsd_validator import Proprietary Ingestion IPXSDValidator
 
 
 # ─── Test Fixtures ─────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ MOCK_RELEASE = {
 # ─── Tests ─────────────────────────────────────────────────────────────────
 
 class TestFullPipeline(unittest.TestCase):
-    """End-to-end tests for the complete DDEX distribution pipeline."""
+    """End-to-end tests for the complete Proprietary Ingestion IP distribution pipeline."""
 
     def setUp(self):
         """Create a temporary staging directory with mock files."""
@@ -198,20 +198,20 @@ class TestFullPipeline(unittest.TestCase):
             "Should flag generic artist name"
         )
 
-    # ─── Step 3: DDEX ERN Generation ───────────────────────────────────
+    # ─── Step 3: Proprietary Ingestion IP Ingestion Notification Generation ───────────────────────────────────
 
-    def test_06_ddex_ern_generation(self):
-        """Test DDEX ERN 4.3 XML generation."""
+    def test_06_ingestion_ern_generation(self):
+        """Test Proprietary Ingestion IP Ingestion Protocol 4.3 XML generation."""
         # Assign test ISRCs
         for i, track in enumerate(self.release_data["tracks"], 1):
             track["isrc"] = f"US-T3S-26-{str(i).zfill(5)}"
         self.release_data["upc"] = "012345678012"
 
-        generator = DDEXGenerator()
+        generator = Proprietary Ingestion IPGenerator()
         xml_output = generator.generate_ern(self.release_data)
 
         self.assertIn("NewReleaseMessage", xml_output)
-        self.assertIn("http://ddex.net/xml/ern/43", xml_output)
+        self.assertIn("http://ingestion.net/xml/ern/43", xml_output)
 
         # Verify all tracks are in the XML
         for track in self.release_data["tracks"]:
@@ -226,12 +226,12 @@ class TestFullPipeline(unittest.TestCase):
         # Store for later tests
         self._xml_output = xml_output
 
-    def test_07_ddex_no_duplicate_filename(self):
+    def test_07_ingestion_no_duplicate_filename(self):
         """Verify the FileName duplication bug is fixed."""
         for i, track in enumerate(self.release_data["tracks"], 1):
             track["isrc"] = f"US-T3S-26-{str(i).zfill(5)}"
 
-        generator = DDEXGenerator()
+        generator = Proprietary Ingestion IPGenerator()
         root = ET.Element("Root")
         sr = generator.generate_sound_recording(root, self.release_data["tracks"][0], 1)
 
@@ -251,15 +251,15 @@ class TestFullPipeline(unittest.TestCase):
     # ─── Step 4: XSD/Structural Validation ─────────────────────────────
 
     def test_08_xsd_structural_validation(self):
-        """Test structural validation of generated ERN XML."""
+        """Test structural validation of generated Ingestion Notification XML."""
         for i, track in enumerate(self.release_data["tracks"], 1):
             track["isrc"] = f"US-T3S-26-{str(i).zfill(5)}"
         self.release_data["upc"] = "012345678012"
 
-        generator = DDEXGenerator()
+        generator = Proprietary Ingestion IPGenerator()
         xml_output = generator.generate_ern(self.release_data)
 
-        validator = DDEXXSDValidator()
+        validator = Proprietary Ingestion IPXSDValidator()
         result = validator.validate_xml_string(xml_output)
 
         self.assertTrue(
@@ -335,7 +335,7 @@ class TestFullPipeline(unittest.TestCase):
         # Manifest must exist
         self.assertTrue(os.path.exists(os.path.join(package_path, "manifest.xml")))
 
-        # ERN XML must exist
+        # Ingestion Notification XML must exist
         self.assertTrue(os.path.exists(os.path.join(package_path, "TEST-REL-001.xml")))
 
         # Resources directory must contain audio and cover
@@ -369,13 +369,13 @@ class TestFullPipeline(unittest.TestCase):
         })
         self.assertTrue(qc_result["valid"], f"QC failed: {qc_result['errors']}")
 
-        # Step 3: Generate DDEX ERN 4.3
-        generator = DDEXGenerator()
+        # Step 3: Generate Proprietary Ingestion IP Ingestion Protocol 4.3
+        generator = Proprietary Ingestion IPGenerator()
         xml = generator.generate_ern(self.release_data)
         self.assertIn("NewReleaseMessage", xml)
 
         # Step 4: Validate XML
-        validator = DDEXXSDValidator()
+        validator = Proprietary Ingestion IPXSDValidator()
         val_result = validator.validate_xml_string(xml)
         self.assertTrue(val_result["valid"], f"Validation failed: {val_result['errors']}")
 
