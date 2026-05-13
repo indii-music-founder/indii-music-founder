@@ -12,6 +12,7 @@ import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
+import { CostControlService } from '@/services/billing/CostControlService';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -236,6 +237,24 @@ export class ImageGenerationService {
         const userId = options.userProfile?.id;
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
+
+        // Cost Control: Enforce budget limits before expensive API call
+        const estimatedCost = count * 0.04; // $0.04 per image
+        const costCheck = await CostControlService.checkAndReserve({
+            operationType: 'image',
+            estimatedCost,
+            userId: userId || auth.currentUser?.uid || 'unknown',
+            metadata: {
+                imageCount: count,
+                prompt: options.prompt.substring(0, 100),
+                style: options.style,
+            },
+        });
+
+        if (!costCheck.allowed) {
+            throw new Error(`Image generation blocked: ${costCheck.reason}`);
+        }
+
 
         if (!quotaCheck.allowed) {
             logger.error('[ImageGen] Quota exceeded');
