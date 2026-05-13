@@ -46,12 +46,12 @@ export class IngestionNotificationService {
             const ern = IngestionNotificationMapper.mapMetadataToIngestionNotification(metadata, {
                 messageId: `MSG-${Date.now()}`,
                 sender: {
-                    partyId: senderSystemIdentifier,
-                    partyName: metadata.labelName || INGESTION_CONFIG.ENTITY_NAME,
+                    systemIdentifier: senderSystemIdentifier,
+                    entityName: metadata.labelName || INGESTION_CONFIG.ENTITY_NAME,
                 },
                 recipient: {
-                    partyId: recipientSystemIdentifier,
-                    partyName: 'Distributor', // Ideally fetched from distributor config
+                    systemIdentifier: recipientSystemIdentifier,
+                    entityName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
                 messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage',
@@ -128,7 +128,7 @@ export class IngestionNotificationService {
 
         // Check Header
         if (!ern.messageHeader.messageId) errors.push('MessageId is missing');
-        if (!ern.messageHeader.messageSender.partyId) errors.push('MessageSender SystemIdentifier is missing');
+        if (!ern.messageHeader.messageSender.systemIdentifier) errors.push('MessageSender SystemIdentifier is missing');
 
         // Check Releases
         if (!ern.releaseList || ern.releaseList.length === 0) {
@@ -148,6 +148,32 @@ export class IngestionNotificationService {
             valid: errors.length === 0,
             errors,
         };
+    }
+
+    // =========================================================================
+    // Legacy ERN Method Aliases for Backward Compatibility
+    // =========================================================================
+    
+    async generateERN(
+        metadata: ExtendedGoldenMetadata,
+        senderSystemIdentifier?: string,
+        distributorKey?: string,
+        assets?: ReleaseAssets,
+        options?: { isTestMode?: boolean; action?: 'NewRelease' | 'Update' | 'Takedown'; }
+    ) {
+        return this.generateIngestionNotification(metadata, senderSystemIdentifier, distributorKey, assets, options);
+    }
+
+    parseERN(xml: string) {
+        return this.parseIngestionNotification(xml);
+    }
+
+    validateERNContent(ern: IngestionNotificationMessage) {
+        return this.validateIngestionNotificationContent(ern);
+    }
+
+    static validateERNXML(xml: string) {
+        return IngestionNotificationService.validateIngestionNotificationXML(xml);
     }
 }
 

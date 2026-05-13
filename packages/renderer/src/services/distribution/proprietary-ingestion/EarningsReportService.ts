@@ -54,9 +54,67 @@ export class EarningsReportService {
             }
         }
 
-        // Calculate Royalties (placeholder — full calculation in EarningsService)
-        // In a real scenario, this would fetch detailed config from DB
+        // group transactions by ISRC
+        const royaltiesMap = new Map<string, RoyaltyCalculation>();
+
+        for (const txn of report.transactions) {
+            const isrc = txn.resourceId.isrc;
+            if (!isrc) continue;
+
+            const metadata = catalog.get(isrc);
+            if (!metadata) continue;
+
+            let calc = royaltiesMap.get(isrc);
+            if (!calc) {
+                const currentCalc: RoyaltyCalculation = {
+                    isrc,
+                    resourceId: isrc,
+                    releaseId: metadata.upc || 'unknown',
+                    trackTitle: metadata.trackTitle,
+                    artistName: metadata.artistName,
+                    period: report.reportingPeriod,
+                    totalStreams: 0,
+                    totalDownloads: 0,
+                    grossRevenue: 0,
+                    platformFees: 0, // Placeholder
+                    distributorFees: 0,
+                    netRevenue: 0,
+                    currencyCode: report.currencyCode,
+                    contributorPayments: []
+                };
+                calc = currentCalc;
+                royaltiesMap.set(isrc, currentCalc);
+            }
+
+            if (txn.usageType === 'OnDemandStream' || txn.usageType === 'ProgrammedStream') {
+                calc.totalStreams += txn.usageCount;
+            } else if (txn.usageType === 'Download' || txn.usageType === 'RingtoneDownload') {
+                calc.totalDownloads += txn.usageCount;
+            }
+
+            calc.grossRevenue += txn.revenueAmount;
+            const fee = txn.revenueAmount * (distributorFeePercent / 100);
+            calc.distributorFees += fee;
+            calc.netRevenue += (txn.revenueAmount - fee);
+        }
+
+        // Calculate Contributor Payments (Splits)
         const royalties: RoyaltyCalculation[] = [];
+        for (const calc of royaltiesMap.values()) {
+            const metadata = catalog.get(calc.isrc);
+            if (metadata?.splits) {
+                calc.contributorPayments = metadata.splits.map(split => ({
+                    contributorId: split.email,
+                    contributorName: split.legalName || split.email,
+                    role: split.role,
+                    splitPercentage: split.percentage,
+                    grossAmount: calc.netRevenue * (split.percentage / 100),
+                    netAmount: calc.netRevenue * (split.percentage / 100), // Simple net for now
+                    paymentStatus: 'pending'
+                }));
+            }
+            royalties.push(calc);
+        }
 
         // indii Phase 4: Persist processed earnings to Firestore
         const { earningsService } = await import('@/services/distribution/EarningsService');

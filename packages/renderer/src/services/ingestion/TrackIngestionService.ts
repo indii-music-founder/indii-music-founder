@@ -68,7 +68,7 @@ export class TrackIngestionService {
             trackTitle: file.name.replace(/\.[^/.]+$/, ""), // Strip extension
             durationSeconds: technical.duration,
             durationFormatted: this.formatDuration(technical.duration),
-            durationIngestionFormatted: this.formatDurationDDEX(technical.duration),
+            durationDDEXFormatted: this.formatDurationDDEX(technical.duration),
 
             // DDEX Fields from AI
             genre: semantic.ddexGenre || '', // Strict Validation: leave empty so UI wizard catches it
@@ -94,7 +94,7 @@ export class TrackIngestionService {
             territories: ['Worldwide'],
             distributionChannels: ['streaming', 'download'],
             labelName: INGESTION_CONFIG.ENTITY_NAME,
-            systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+            dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
 
             // AI Content Disclosure (Goal 3 compliance — surfaced by Sonic Cortex aiArtifacts flag)
             aiGeneratedContent: {
