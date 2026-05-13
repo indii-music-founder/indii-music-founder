@@ -277,7 +277,7 @@ const agents: AgentDef[] = [
     title: 'Tribe Architect',
     tagline: 'Connected, Not Consumed.',
     description: 'Sync your social presence and keep your tribe engaged without the noise. Real connection, automated and authenticated by you.',
-    keywords: ['Unified Presence', 'Tribe Sync', 'Authentic Reach', 'Engagement Hub'],
+    keywords: ['Unified Presence', 'Tribe Sync', 'Authentic Reach', 'Engagement Swarm'],
     icon: Share2,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',

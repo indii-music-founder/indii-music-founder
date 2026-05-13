@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/*  Hub-and-Spoke Animated Visualization                               */
+/*  A2A Swarm Animated Visualization                                   */
 /* ------------------------------------------------------------------ */
 
 interface SpokeNode {
@@ -142,7 +142,7 @@ function OrbitalVisualization() {
         <div className="w-56 h-56 rounded-full border border-amber-500/20" />
       </motion.div>
 
-      {/* Center Hub — The Conductor */}
+      {/* Center Swarm — The Conductor */}
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
@@ -167,7 +167,7 @@ function OrbitalVisualization() {
 /*  Capabilities List                                                  */
 /* ------------------------------------------------------------------ */
 
-const hubCapabilities = [
+const swarmCapabilities = [
   {
     icon: Zap,
     title: 'From Vision to Reality',
@@ -237,7 +237,7 @@ export default function ConductorSection() {
 
         {/* Right: Capabilities */}
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {hubCapabilities.map((cap, i) => (
+          {swarmCapabilities.map((cap, i) => (
             <motion.div
               key={cap.title}
               initial={{ opacity: 0, x: 20 }}

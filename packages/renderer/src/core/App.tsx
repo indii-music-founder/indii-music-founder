@@ -183,9 +183,9 @@ function DevPortWarning() {
 
     return (
         <div className="fixed bottom-4 right-4 z-9999 bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
-            Wrong Port: {port}
+            indii.music — Web-Only Mode ({port})
             <br />
-            <span className="font-normal opacity-80">Use :4242 for Studio</span>
+            <span className="font-normal opacity-80 text-[10px]">Use port :4242 for full Studio experience</span>
         </div>
     );
 }

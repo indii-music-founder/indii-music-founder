@@ -5,7 +5,6 @@ import { EditImageWithAnnotationsTool } from './EditImageWithAnnotationsTool';
 import { EditDocumentWithAnnotationsTool } from './EditDocumentWithAnnotationsTool';
 import { VideoTools } from './VideoTools';
 import { MemoryTools } from './MemoryTools';
-import { UserMemoryTools } from './UserMemoryTools';
 import { AnalysisTools } from './AnalysisTools';
 import { FinanceTools } from './FinanceTools';
 import { SocialTools } from './SocialTools';
@@ -47,18 +46,19 @@ import { NotificationTools } from './NotificationTools';
 import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
+import { consult_specialist } from './SwarmTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
     ...UniversalTools,
+    consult_specialist,
     ...DirectorTools,
     edit_image_with_annotations: EditImageWithAnnotationsTool.execute,
     edit_document_with_annotations: EditDocumentWithAnnotationsTool.execute,
     ...VideoTools,
     ...CREATIVE_TOOLS,
     ...MemoryTools,
-    ...UserMemoryTools,
     ...AnalysisTools,
     ...SocialTools,
     ...OrganizationTools,
