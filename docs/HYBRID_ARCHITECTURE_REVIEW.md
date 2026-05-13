@@ -542,7 +542,7 @@ export class SecretsBroker {
 ```typescript
 // Add to InputSanitizer class:
 
-private static readonly INJECTION_PATTERNS = [
+private static readonly INJECTION_PATTIngestionNotificationS = [
     { pattern: 'ignore previous instructions', score: 0.9 },
     { pattern: 'ignore all previous instructions', score: 0.95 },
     { pattern: 'system prompt', score: 0.85 },
@@ -572,7 +572,7 @@ static analyzeInjectionRisk(input: string): {
     const detectedPatterns: string[] = [];
     let maxScore = 0;
 
-    for (const { pattern, score } of this.INJECTION_PATTERNS) {
+    for (const { pattern, score } of this.INJECTION_PATTIngestionNotificationS) {
         if (lower.includes(pattern)) {
             detectedPatterns.push(pattern);
             maxScore = Math.max(maxScore, score);

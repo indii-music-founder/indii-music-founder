@@ -58,7 +58,7 @@ The U.S. Copyright Office has been clear:
 
 ### Decision A2: AI Disclosure at Distribution Time
 
-> **Question:** Will the DDEX release wizard require users to declare AI involvement before submitting to DSPs?
+> **Question:** Will the Proprietary Ingestion IP release wizard require users to declare AI involvement before submitting to DSPs?
 
 | Option | What it means |
 |--------|-------------|
@@ -69,7 +69,7 @@ The U.S. Copyright Office has been clear:
 > **Recommendation:** 🟢 **Option (c) — Mirror DistroKid's model.**
 > Since DistroKid is the primary distribution partner, matching their UX exactly prevents disclosure mismatches that could cause DSP rejections. This is also the most legally defensible position.
 >
-> ✅ **Already implemented in code:** The distribution flow in `useDDEXRelease.ts` includes an `ai_disclosure` step in the wizard. The `ERNMapper.ts` includes AI disclosure classification in DDEX ERN 4.3 output.
+> ✅ **Already implemented in code:** The distribution flow in `useProprietary Ingestion IPRelease.ts` includes an `ai_disclosure` step in the wizard. The `IngestionNotificationMapper.ts` includes AI disclosure classification in Proprietary Ingestion IP IngestionNotification 4.3 output.
 
 **Your answer:** `_________________________________`
 
@@ -146,8 +146,8 @@ All code paths for these decisions already exist:
 
 | Feature | Status | Location |
 |---------|--------|----------|
-| AI disclosure wizard step | ✅ Built | `src/modules/publishing/hooks/useDDEXRelease.ts` → `ai_disclosure` step |
-| ERN 4.3 AI classification | ✅ Built | `src/services/ddex/ERNMapper.ts` → `classifyAIDisclosure()` |
+| AI disclosure wizard step | ✅ Built | `src/modules/publishing/hooks/useProprietary Ingestion IPRelease.ts` → `ai_disclosure` step |
+| IngestionNotification 4.3 AI classification | ✅ Built | `src/services/ingestion/IngestionNotificationMapper.ts` → `classifyAIDisclosure()` |
 | Distribution flow with disclosure | ✅ Built | `src/modules/publishing/` → ReleaseWizard components |
 | Legal page scaffolds | ✅ Built | `src/modules/legal/pages/LegalPages.tsx` — awaiting attorney text |
 

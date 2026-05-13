@@ -1,0 +1,130 @@
+import { describe, it, expect } from 'vitest';
+import { IngestionMapper } from '@/services/distribution/proprietary-ingestion/IngestionMapper';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { ingestionValidator } from '@/services/distribution/proprietary-ingestion/IngestionValidator';
+import { AudioIntelligenceProfile } from '@/services/audio/types';
+import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
+import { AI_MODELS } from '@/core/config/ai-models';
+
+describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
+
+    // 1. Mock the Output of Audio Intelligence (The "CLIP" part)
+    const mockAIProfile: AudioIntelligenceProfile = {
+        id: 'sonic-id-123',
+        modelVersion: AI_MODELS.TEXT.AGENT,
+        analyzedAt: Date.now(),
+        technical: {
+            bpm: 128,
+            key: 'A',
+            scale: 'minor',
+            energy: 0.85,
+            duration: 184, // 3:04
+            danceability: 0.8,
+            loudness: -4
+        },
+        semantic: {
+            mood: ['Aggressive', 'Dark'],
+            genre: ['Electronic'],
+            instruments: ['Bass', 'Sampler'],
+            ddexGenre: 'Electronica',
+            ddexSubGenre: 'Techno',
+            language: 'zxx', // Instrumental
+            isExplicit: false,
+            marketingComment: 'A peak-time warehouse weapon.',
+            timbre: {
+                texture: 'Analog Warmth',
+                brightness: 'Dark & Muddy',
+                saturation: 'Heavily Compressed',
+                spaceDepth: 'Cavernous Reverb'
+            },
+            productionValue: {
+                era: 'Modern Techno',
+                quality: 'Independent Pro Studio',
+                mixBalance: 'Bass-Forward',
+                aiArtifacts: false
+            },
+            visualImagery: {
+                abstract: 'Strobe lights',
+                narrative: 'Warehouse party',
+                lighting: 'Stark monochrome'
+            },
+            marketingHooks: {
+                keywords: ['underground', 'techno', 'warehouse'],
+                oneLiner: 'A peak-time warehouse weapon.'
+            },
+            targetPrompts: {
+                image: 'foo',
+                veo: 'bar'
+            }
+        }
+    };
+
+    // 2. Mock a User's Project Baseline (The "Metadata" part)
+    const baseMetadata: ExtendedGoldenMetadata = {
+        ...INITIAL_METADATA,
+        trackTitle: 'Midnight Warehouse',
+        artistName: 'DJ Test',
+        isrc: 'US-S1Z-25-00001',
+        labelName: 'Test Records',
+        systemIdentity: 'PASystemIdentityA20251226',
+        releaseType: 'Single',
+        releaseDate: '2025-12-31',
+        territories: ['Worldwide'],
+        distributionChannels: ['streaming', 'download'],
+        // User might not have set these yet, expecting AI to fill them:
+        // genre, language, explicit, duration
+        genre: '',
+        explicit: false,
+        durationSeconds: 0,
+        aiGeneratedContent: {
+            isFullyAIGenerated: false,
+            isPartiallyAIGenerated: false
+        }
+    };
+
+    it('should successfully translate AI analysis into a valid Ingestion IngestionNotification message', async () => {
+        // Step A: Map AI Profile to Ingestion Metadata fields
+        const aiMetadata = IngestionMapper.mapAudioProfileToMetadata(mockAIProfile);
+
+        expect(aiMetadata.genre).toBe('Electronica');
+        expect(aiMetadata.subGenre).toBe('Techno');
+        expect(aiMetadata.durationFormatted).toBe('3:04');
+        expect(aiMetadata.marketingComment).toBe('A peak-time warehouse weapon.');
+
+        // Step B: Merge with Base Metadata
+        const finalMetadata: ExtendedGoldenMetadata = {
+            ...baseMetadata,
+            ...aiMetadata
+        };
+
+        // Step C: Generate IngestionNotification
+        const result = await ingestionNotificationService.generateIngestionNotification(finalMetadata, 'PASystemIdentityA20251226', 'generic', undefined, { isTestMode: true });
+
+        expect(result.success).toBe(true);
+        expect(result.xml).toBeDefined();
+
+        const xml = result.xml!;
+
+        // Step D: Verify Content in XML
+        // Check for mapped values
+        expect(xml).toContain('<GenreText>Electronica</GenreText>');
+        expect(xml).toContain('<SubGenre>Techno</SubGenre>');
+        expect(xml).toContain('<Duration>PT3M4S</Duration>');
+        expect(xml).toContain('<LanguageOfPerformance>zxx</LanguageOfPerformance>'); // Instrumental
+        expect(xml).toContain('<BPM>128</BPM>');
+        expect(xml).toContain('<Key>Am</Key>');
+        expect(xml).toContain('<Energy>0.85</Energy>');
+        expect(xml).toContain('<MarketingComment>A peak-time warehouse weapon.</MarketingComment>');
+        expect(xml).toContain('<KeyWord>underground</KeyWord>');
+        expect(xml).toContain('<KeyWord>techno</KeyWord>');
+        expect(xml).toContain('<KeyWord>dark</KeyWord>');
+
+        // Step E: Validate with Ingestion Validator (Schema integrity)
+        const validation = ingestionValidator.validateXML(xml, '4.3');
+        expect(validation.valid).toBe(true);
+        expect(validation.errors).toEqual([]);
+
+        // Optional: Log the XML for visual inspection if needed
+        // console.log(xml);
+    });
+});

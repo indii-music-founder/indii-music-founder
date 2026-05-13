@@ -32,7 +32,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **332. Firestore Write Schema Validation in Functions:** `functions/src/index.ts:366` writes `videoJobs` documents with no schema guard. Add a Zod `videoJobSchema` and validate before `admin.firestore().set()` — prevents schema drift corrupting documents.
 - [x] **333. Social Post Delivery Error Handling:** `functions/src/social/deliverScheduledPosts.ts:60-108` — fetch calls to Twitter/Instagram/TikTok APIs have no try/catch around `response.json()` or HTTP status checks. Add per-platform error handling with structured failure logging and Firestore status update on failure.
 - [x] **334. Security Handler: Real Key Rotation API Calls:** `electron/handlers/security.ts:38` builds `sk_test_rotated_${suffix}` — simulated rotation only. Wire real Stripe `POST /v1/restricted_keys` and GitHub `PATCH /repos/{owner}/{repo}/actions/secrets/{secret_name}` API calls.
-- [x] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, DDEX parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
+- [x] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, Proprietary Ingestion IP parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
 
 ---
 
@@ -86,11 +86,11 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6G: Test Coverage Expansion (364–372)
 
-- [x] **364. Unit Tests: DistributionService.ts:** `src/services/distribution/DistributionService.ts` orchestrates the entire release delivery pipeline (metadata validation → DDEX generation → SFTP upload) with zero unit tests. Write Vitest tests for the happy path and each error branch.
+- [x] **364. Unit Tests: DistributionService.ts:** `src/services/distribution/DistributionService.ts` orchestrates the entire release delivery pipeline (metadata validation → Proprietary Ingestion IP generation → SFTP upload) with zero unit tests. Write Vitest tests for the happy path and each error branch.
 - [x] **365. Unit Tests: TaxService.ts:** `src/services/distribution/TaxService.ts` has no tests. Tax calculations are legally significant — write tests for all US withholding rate tiers and VATMOSS scenarios.
 - [x] **366. Unit Tests: AIService.ts:** `src/services/ai/AIService.ts` (Gemini wrapper) has no unit tests. Mock `@google/genai` and test prompt construction, streaming handler, token budget enforcement, and error fallback.
 - [x] **367. Unit Tests: AgentOrchestrator.ts:** `src/services/agent/AgentOrchestrator.ts` routes all agent tasks — zero test coverage. Write tests for task routing logic, specialist selection, and fallback when a specialist is unavailable.
-- [x] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (DDEX ERN, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
+- [x] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (Proprietary Ingestion IP IngestionNotification, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
 - [x] **369. Unit Tests: RagService.ts:** `src/services/rag/ragService.ts` manages knowledge retrieval — partial tests only. Complete coverage of chunk splitting, embedding, retrieval ranking, and context window management.
 - [x] **370. Component Tests: Finance Module:** `src/modules/finance/` has 10+ components with zero tests. Start with `EarningsDashboard.tsx` and `LabelDealRecoupment.tsx` — render + interaction tests.
 - [x] **371. Component Tests: Legal Module:** `src/modules/legal/components/DMCANoticeGenerator.tsx` and `ContractReviewPanel.tsx` generate legally significant outputs — add tests validating output structure.
@@ -130,7 +130,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
 - [x] **391. Health Check Endpoint for indii Conductor Sidecar:** `localhost:50080` sidecar has no documented health endpoint. Add `GET /health` returning `{ status: 'ok', version, uptime }` — enables Electron to surface sidecar status and GCP uptime checks to monitor it.
 - [x] **392. Alert on High Agent Error Rate:** Add a Cloud Monitoring metric that alerts when agent task failures exceed 10% of requests in a 5-minute window. Route to PagerDuty or Slack `#incidents` channel.
-- [x] **393. Release Delivery Audit Log:** Every SFTP upload, DDEX submission, and delivery status change should write an immutable audit record to `distribution_audit/{releaseId}/events/{eventId}`. Currently only Firestore document state is tracked, not event history.
+- [x] **393. Release Delivery Audit Log:** Every SFTP upload, Proprietary Ingestion IP submission, and delivery status change should write an immutable audit record to `distribution_audit/{releaseId}/events/{eventId}`. Currently only Firestore document state is tracked, not event history.
 
 ---
 
@@ -167,7 +167,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **412. Split Sheet PDF Export:** `SplitSheetEscrow.tsx` manages royalty splits but there is no PDF export for legal documentation. Generate a signed split sheet PDF using `pdfkit` or a Cloud Function and deliver via email + Firebase Storage.
 - [x] **413. Distributor API Version Pinning:** Distributor adapters hit live API endpoints without version pinning. If TuneCore or CD Baby releases a breaking API change, all deliveries fail. Add explicit API version headers and a version-check startup probe.
 - [x] **414. Release Metadata Versioning:** When metadata is edited post-distribution, there is no history of what was sent to each distributor. Add a `metadata_history` subcollection under each release that snapshots metadata at every distribution event.
-- [x] **415. DDEX DSP Acknowledgement Processing:** After delivery, DSPs send back acknowledgement ERN messages confirming ingestion. Add a Cloud Function (`processDDEXAck`) that parses inbound ACK messages (stored in a Storage bucket) and updates the release delivery status.
+- [x] **415. Proprietary Ingestion IP DSP Acknowledgement Processing:** After delivery, DSPs send back acknowledgement IngestionNotification messages confirming ingestion. Add a Cloud Function (`processProprietary Ingestion IPAck`) that parses inbound ACK messages (stored in a Storage bucket) and updates the release delivery status.
 
 ---
 

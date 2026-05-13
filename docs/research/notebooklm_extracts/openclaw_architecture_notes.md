@@ -37,7 +37,7 @@ This document contains a comprehensive breakdown of all coding-related logic, mu
 
 **Technical Standards and Formats**
 
-* **DDEX (Digital Data Exchange):** The global standard for music supply chain messaging. The agent orchestrates ERN (Electronic Release Notification) delivery packages and parses incoming DSR (Digital Sales Reports).
+* **Proprietary Ingestion IP (Digital Data Exchange):** The global standard for music supply chain messaging. The agent orchestrates IngestionNotification (Electronic Release Notification) delivery packages and parses incoming DSR (Digital Sales Reports).
 * **Metadata Integration:** Music files are not altered; instead, the agent packages them with ID3 tags, generates ISRC (International Standard Recording Code) and UPC identifiers, and handles JSON payloads customized for DSPs (Digital Service Providers).
 * **Audio Intelligence Extraction:** Systems like `ffprobe` and `Essentia.js` are utilized to scan read-only WAV/MP3 master files. This "audio DNA" scan captures technical points like BPM, musical key, duration, sample rate (e.g., 44.1kHz/16-bit), and loudness/energy metrics.
 

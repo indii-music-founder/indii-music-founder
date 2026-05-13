@@ -178,7 +178,7 @@ export class LicensingService {
 
     /**
      * Returns the user's catalog tracks mapped to the SyncCatalogTrack shape.
-     * Reads from `ddexReleases` and picks up BPM from `audioFeatures.bpm`
+     * Reads from `proprietaryIngestionReleases` and picks up BPM from `audioFeatures.bpm`
      * if stored on the document (set by AudioAnalysisService after upload).
      */
     async getCatalogTracksForSync(): Promise<SyncCatalogTrack[]> {
@@ -187,7 +187,7 @@ export class LicensingService {
 
         try {
             const snapshot = await getDocs(
-                query(collection(db, 'ddexReleases'), where('orgId', '==', userProfile.id), limit(50))
+                query(collection(db, 'proprietaryIngestionReleases'), where('orgId', '==', userProfile.id), limit(50))
             );
 
             return snapshot.docs.map(d => {

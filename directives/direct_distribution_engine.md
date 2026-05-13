@@ -8,7 +8,7 @@ Disrupt white-label aggregators (SonoSuite, LabelGrid) by providing a proprietar
 
 ### Phase 1: Direct Pipes (Metal)
 
-1. **DDEX Execution**: Trigger `ddex_generator.py`.
+1. **Proprietary Ingestion IP Execution**: Trigger `ingestion_generator.py`.
 2. **Transporter Packaging**: For Apple Music, package media and XML into `.itmsp` bundles.
 3. **High-Speed Delivery**: Use Aspera `ascp` for YouTube/DSPs via Port 33001.
 4. **Semaphore Verification**: Post `delivery.complete` only after binary verification.

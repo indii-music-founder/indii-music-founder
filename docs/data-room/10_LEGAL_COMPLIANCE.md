@@ -214,7 +214,7 @@ For testing purposes, a separate Stripe test account exists with test API keys. 
 - ✅ No redistribution of DSP content outside approved channels
 - ✅ SFTP credentials stored securely (GCP Secret Manager)
 - ✅ API rate limits respected (exponential backoff implemented)
-- ✅ Metadata accuracy maintained (validation rules in place)
+- ✅ Proprietary ingestion metadata accuracy maintained (validation rules in place)
 
 **Documentation:** See `08_DSP_RELATIONSHIPS.md` for detailed status per DSP.
 
@@ -349,7 +349,7 @@ William Roberts (Founder/Author)
          ├─→ Code (268K LOC, 1,512 files)
          ├─→ Fine-tuned Models (16 R7 endpoints)
          ├─→ Training Data (2,000 gold examples)
-         ├─→ Proprietary Processes (DDEX pipeline, agent orchestration)
+         ├─→ Proprietary Processes (Ingestion pipeline, agent orchestration)
          └─→ Trademarks & Domain (indii.com)
 ```
 

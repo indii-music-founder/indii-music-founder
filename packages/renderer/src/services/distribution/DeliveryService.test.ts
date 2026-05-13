@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeliveryService } from '@/services/distribution/DeliveryService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { ernService } from '@/services/ddex/ERNService';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 
 // Mock dependencies
 vi.mock('@/services/security/CredentialService', () => ({
@@ -18,8 +18,8 @@ vi.mock('./transport/SFTPTransporter', () => ({
   }
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-  ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+  ingestionNotificationService: {
     generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<xml>mock</xml>' }),
     parseERN: vi.fn().mockReturnValue({ success: true, data: { resourceList: [] } }),
     validateERNContent: vi.fn().mockReturnValue({ valid: true, errors: [] })
@@ -44,14 +44,14 @@ describe('DeliveryService', () => {
 
         const result = await service.validateReleasePackage(mockMetadata);
 
-        expect(ernService.generateERN).toHaveBeenCalledWith(mockMetadata, undefined, undefined, undefined);
-        expect(ernService.parseERN).toHaveBeenCalled();
-        expect(ernService.validateERNContent).toHaveBeenCalled();
+        expect(ingestionNotificationService.generateERN).toHaveBeenCalledWith(mockMetadata, undefined, undefined, undefined);
+        expect(ingestionNotificationService.parseERN).toHaveBeenCalled();
+        expect(ingestionNotificationService.validateERNContent).toHaveBeenCalled();
         expect(result.valid).toBe(true);
     });
 
     it('should fail validation if generation fails', async () => {
-        vi.mocked(ernService.generateERN).mockResolvedValueOnce({ success: false, error: 'Gen Error' });
+        vi.mocked(ingestionNotificationService.generateERN).mockResolvedValueOnce({ success: false, error: 'Gen Error' });
         const result = await service.validateReleasePackage({} as ExtendedGoldenMetadata);
         expect(result.valid).toBe(false);
         expect(result.errors).toContain('Gen Error');

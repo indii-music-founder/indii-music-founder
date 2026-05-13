@@ -30,7 +30,7 @@ The codebase includes references to both "indii LLC" and "New Detroit Music LLC"
 
 - **`CLAUDE.md`:** Lists `Org: indii LLC` (marketing/product naming)
 - **`package.json`:** May list `indii LLC` in author field
-- **DDEX Config (`src/core/config/ddex.ts`):** Correctly references Party ID registered to `New Detroit Music LLC`
+- **Proprietary Ingestion IP Config (`src/core/config/ingestion.ts`):** Correctly references Party ID registered to `New Detroit Music LLC`
 
 **Clarification:** "indii" is the **product name** and operates as a DBA (Doing Business As) under the parent company **New Detroit Music LLC**. "New Detroit Music LLC" is the **legal entity** that owns and develops indii.
 
@@ -40,7 +40,7 @@ The codebase includes references to both "indii LLC" and "New Detroit Music LLC"
 
 An acquirer will:
 
-1. Verify New Detroit Music LLC has clean title to the Proprietary Ingestion ID (DPID) via DDEX Inc. lookup
+1. Verify New Detroit Music LLC has clean title to the Proprietary Ingestion ID (DPID) via Proprietary Ingestion IP Inc. lookup
 2. Confirm all subsidiary assets (code, Firebase project, domains) are owned by New Detroit Music LLC
 3. Review any existing contracts or IP assignments that transfer ownership
 

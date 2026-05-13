@@ -50,7 +50,7 @@ Phase C (12-24 months): Full distribution license
 firebase functions:config:set \
   distrokid.api_key="YOUR_API_KEY" \
   distrokid.sftp_host="sftp.distrokid.com" \
-  distrokid.sftp_user="YOUR_USERNAME" \
+  distrokid.sftp_user="YOUR_USIngestionNotificationAME" \
   distrokid.sftp_pass="YOUR_PASSWORD"
 ```
 
@@ -101,49 +101,50 @@ firebase functions:config:set \
 
 | Step | Action | Time | Status |
 |------|--------|------|--------|
-| 1 | **Register at DDEX Knowledge Base** — [kb.ddex.net](https://kb.ddex.net) | 10 min | `[ ]` |
+| 1 | **Register at Proprietary Ingestion IP Knowledge Base** — [kb.ingestion.net](https://kb.ingestion.net) | 10 min | `[ ]` |
 | 2 | **Sign the Implementation License** — Royalty-free click-wrap agreement | 5 min | `[ ]` |
-| 3 | **Apply for DPID** at [dpid.ddex.net](https://dpid.ddex.net) | 15 min | `[ ]` |
+| 3 | **Apply for Proprietary System Identifier (DPID)** at [dpid.ingestion.net](https://dpid.ingestion.net) | 15 min | `[ ]` |
 | 4 | **Wait for approval** — typically 1-2 weeks | — | `[ ]` |
-| 5 | **Store your DPID** in environment: | 5 min | `[ ]` |
+| 5 | **Store your Proprietary System Identifier** in environment: | 5 min | `[ ]` |
 
 ```bash
-firebase functions:config:set ddex.dpid="PADPIDA{your-10-digit-code}"
+# Set your Proprietary System Identifier (DPID)
+firebase functions:config:set distro.identifier="PADPIDA{your-10-digit-code}"
 ```
 
-Your DPID looks like: `PADPIDA2024123456`
+Your Proprietary System Identifier looks like: `PADPIDA2024123456`
 
-**Code location:** `src/services/ddex/DDEXIdentity.ts` is ready and waiting for this value.
+**Code location:** `src/services/distribution/ProprietaryIdentity.ts` is ready and waiting for this value.
 
 ---
 
-### B2. Download DDEX Schemas
+### B2. Download Proprietary Ingestion Schemas
 
 | Step | Action | Notes |
 |------|--------|-------|
-| 1 | Download ERN 4.3 XSD from DDEX Knowledge Base | Used for release notifications |
+| 1 | Download IngestionNotification 4.3 XSD from Industry Knowledge Base | Used for release notifications |
 | 2 | Download DSR 2.1 XSD | Used for sales report parsing |
 | 3 | Download MWN 1.0 XSD | Used for musical work notifications |
-| 4 | Place in `src/services/ddex/schemas/` | Directory already exists |
+| 4 | Place in `src/services/distribution/schemas/` | Directory already exists |
 
 ---
 
 ### B3. Peer Conformance Testing
 
-> Before you can send real releases to DSPs via DDEX, you must pass peer conformance testing with each recipient.
+> Before you can send real releases to DSPs via proprietary ingestion IP, you must pass peer conformance testing with each recipient.
 
 | Step | Action | Notes |
 |------|--------|-------|
-| 1 | Generate a test ERN message using `ERNMapper.ts` | Use `isTestFlag: true` |
-| 2 | Validate against ERN 4.3 XSD using `DDEXValidator.ts` | Must pass with zero errors |
-| 3 | Submit to DDEX Workbench for validation | Web-based validation tool |
+| 1 | Generate a test IngestionNotification message using `IngestionNotificationMapper.ts` | Use `isTestFlag: true` |
+| 2 | Validate against IngestionNotification 4.3 XSD using `ProprietaryValidator.ts` | Must pass with zero errors |
+| 3 | Submit to Industry Standard Workbench for validation | Web-based validation tool |
 | 4 | Send test delivery to DSP's test SFTP endpoint | Each DSP has a test server |
 | 5 | Resolve any rejections | Common issues: element ordering, namespace mismatches |
 | 6 | DSP confirms conformance | Keep confirmation email |
 
 **Code locations:**
-- `src/services/ddex/ERNMapper.ts` — generates ERN messages
-- `src/services/ddex/DDEXValidator.ts` — schema validation
+- `src/services/distribution/IngestionNotificationMapper.ts` — generates IngestionNotification messages
+- `src/services/distribution/ProprietaryValidator.ts` — schema validation
 - `execution/distribution/sftp_uploader.py` — file delivery
 
 ---
@@ -247,8 +248,8 @@ Your DPID looks like: `PADPIDA2024123456`
 | Priority | Action | Blocks |
 |----------|--------|--------|
 | 🔴 P0 | DistroKid API/SFTP access | User distribution (Phase A) |
-| 🔴 P0 | DDEX Knowledge Base registration | Phase B certification |
-| 🟡 P1 | DPID application | Direct DSP delivery |
+| 🔴 P0 | Proprietary Ingestion IP Knowledge Base registration | Phase B certification |
+| 🟡 P1 | Proprietary System Identifier application | Direct DSP delivery |
 | 🟡 P1 | ASCAP or BMI publisher registration | Performance royalty collection |
 | ⚪ P2 | SoundExchange registration | Digital performance royalties |
 | ⚪ P2 | HFA/Songfile setup | Mechanical licensing feature |

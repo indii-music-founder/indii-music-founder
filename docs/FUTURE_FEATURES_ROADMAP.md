@@ -68,7 +68,7 @@
 - Examples:
   - User on the Basic plan needs 1 more video generation → buy a single credit
   - User ran over their image generation quota → micro-purchase to finish the job
-  - One-time DDEX submission without upgrading to Pro tier
+  - One-time Proprietary Ingestion IP submission without upgrading to Pro tier
 - No forced upselling — respect the user's current tier choice
 - Transparent per-unit pricing for each feature
 

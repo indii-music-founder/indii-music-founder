@@ -15,7 +15,7 @@ const mockElectronAPI = {
         validateMetadata: vi.fn(),
         generateISRC: vi.fn(),
         generateUPC: vi.fn(),
-        generateDDEX: vi.fn(),
+        generateIngestionNotification: vi.fn(),
         generateContentIdCSV: vi.fn(),
         checkMerlinStatus: vi.fn(),
         generateBWARM: vi.fn(),
@@ -97,14 +97,14 @@ describe('DistributionService Integration', () => {
         expect(result).toEqual(mockReport);
     });
 
-    it('should call generateDDEX via IPC', async () => {
+    it('should call generateIngestionNotification via IPC', async () => {
         const metadata = { releaseId: '123', title: 'Test', artists: [], tracks: [] };
-        mockElectronAPI.distribution.generateDDEX.mockResolvedValue({
+        mockElectronAPI.distribution.generateIngestionNotification.mockResolvedValue({
             success: true,
             xml: '<xml>DDEX</xml>'
         });
 
-        const result = await distributionService.generateDDEX(metadata);
+        const result = await distributionService.generateIngestionNotification(metadata);
         expect(result).toBe('<xml>DDEX</xml>');
     });
 

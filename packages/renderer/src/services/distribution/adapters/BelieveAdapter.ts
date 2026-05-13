@@ -19,8 +19,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 const BELIEVE_API_BASE = 'https://api.believemusic.com/v1';
@@ -74,7 +74,7 @@ export class BelieveAdapter extends BaseDistributorAdapter {
         const releaseId = metadata.id || `BLV-${Date.now()}`;
 
         try {
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'believe', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'believe', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {

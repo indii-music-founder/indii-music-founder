@@ -8,7 +8,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { StorageService } from '@/services/StorageService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
@@ -60,8 +60,8 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
   releaseDate: new Date().toISOString().split('T')[0],
   territories: ['Worldwide'],
   distributionChannels: ['streaming', 'download'],
-  labelName: DDEX_CONFIG.PARTY_NAME,
-  dpid: DDEX_CONFIG.PARTY_ID,
+  labelName: INGESTION_CONFIG.ENTITY_NAME,
+  systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
   aiGeneratedContent: {
     isFullyAIGenerated: false,
     isPartiallyAIGenerated: false,
@@ -402,7 +402,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       };
 
       // Save to Firestore
-      const docRef = await addDoc(collection(db, 'ddexReleases'), {
+      const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
         ...releaseRecord,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -410,7 +410,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
       // Update status to validating
       // Update status to complete
-      await updateDoc(doc(db, 'ddexReleases', docRef.id), {
+      await updateDoc(doc(db, 'proprietaryIngestionReleases', docRef.id), {
         status: 'metadata_complete',
         updatedAt: serverTimestamp()
       });

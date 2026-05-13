@@ -24,7 +24,7 @@
 | [`01`](./01_COMPANY_IDENTITY.md) | Company Identity & Legal Basics | 15 min | All legal docs, DMCA safe harbor, attorney engagement |
 | [`02`](./02_AI_COPYRIGHT_STANCE.md) | AI Copyright Platform Stance | 30 min | Terms of Service §4–5, distribution flow, DSP compliance |
 | [`03`](./03_REVENUE_AND_PRICING.md) | Revenue Model & Pricing | 45 min | Stripe configuration, tier limits, Founders Pass |
-| [`04`](./04_DSP_ONBOARDING_PLAYBOOK.md) | DSP & Distribution Onboarding | N/A (reference) | DistroKid SFTP, DDEX certification, ASCAP/BMI |
+| [`04`](./04_DSP_ONBOARDING_PLAYBOOK.md) | DSP & Distribution Onboarding | N/A (reference) | DistroKid SFTP, Proprietary Ingestion IP certification, ASCAP/BMI |
 | [`05`](./05_LAUNCH_TIMELINE.md) | Pre-Launch Orchestration Timeline | 20 min | Deployment sequence, attorney handoff, go-live date |
 
 ---

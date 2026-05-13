@@ -38,8 +38,8 @@
 
 | ID | Task | Status | Source |
 | :--- | :--- | :--- | :--- |
-| 7.1 | `DDEXTrack` type: add `audio_dna`, `sub_genre`, `language`, `marketing_comment` fields | [x] | Item 415 |
-| 7.2 | `DistributionService.submitRelease`: map Audio DNA from `MusicLibraryService` into DDEX payload | [x] | Item 415 |
+| 7.1 | `Proprietary Ingestion IPTrack` type: add `audio_dna`, `sub_genre`, `language`, `marketing_comment` fields | [x] | Item 415 |
+| 7.2 | `DistributionService.submitRelease`: map Audio DNA from `MusicLibraryService` into Proprietary Ingestion IP payload | [x] | Item 415 |
 | 7.3 | `NeuralCortexService`: vector-retrieval pipeline (embeddings, drift detection, render directives) | [x] | NEURAL_CORTEX.md |
 | 7.4 | `AudioIntelligenceService`: auto-register profiles in Neural Cortex after each analysis | [x] | NEURAL_CORTEX.md |
 | 7.5 | `RightPanel`: 7-item nav hub (Creative, Video, Workflow, Knowledge, Files, History, Agent) | [x] | User request |

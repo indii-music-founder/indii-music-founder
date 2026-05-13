@@ -28,10 +28,10 @@
             "@agents/*": [
                 "../../agents/*"
             ],
-            "@shared": [
+            "@indii/shared": [
                 "../shared/src/index.ts"
             ],
-            "@shared/*": [
+            "@indii/shared/*": [
                 "../shared/src/*"
             ]
         }

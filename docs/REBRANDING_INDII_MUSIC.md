@@ -52,7 +52,7 @@ Central source of truth for all brand messaging, email addresses, and organizati
 |------|------|--------|--------|
 | Agent guidelines | `packages/renderer/src/core/agent-guidelines.json` | Update `"platform": "indii"` → `"indii.music"` | Affects agent system prompts |
 | i18n localStorage key | `packages/renderer/src/core/i18n.ts` | Update key from `indii_language` → `indii_language` | Language preferences |
-| DDEX trading name | `packages/renderer/src/core/config/ddex.ts:TRADING_NAME` | `indii` → `indii.music` | Legal/distribution |
+| Proprietary Ingestion IP trading name | `packages/renderer/src/core/config/ingestion.ts:TRADING_NAME` | `indii` → `indii.music` | Legal/distribution |
 | Storage keys (app state) | `packages/renderer/src/core/store/slices/appSlice.ts` | Replace all `indii_` prefixes with `indii_` | App persistence |
 | Agent UI config | `packages/renderer/src/core/store/slices/agent/agentUISlice.ts` | Update localStorage keys | UI preferences |
 

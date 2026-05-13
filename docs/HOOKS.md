@@ -60,10 +60,10 @@ The primary entry point for global state management via Zustand. It utilizes a *
 
 ### 📦 Publishing & Distribution
 
-#### `useDDEXRelease`
+#### `useProprietary Ingestion IPRelease`
 
 **Status:** `PRODUCTION_READY`
-**Location:** `src/modules/publishing/hooks/useDDEXRelease.ts`
+**Location:** `src/modules/publishing/hooks/useProprietary Ingestion IPRelease.ts`
 
 Manages the complex multi-step Release Wizard state machine.
 
@@ -80,7 +80,7 @@ stateDiagram-v2
 ```
 
 - **Asset Ingestion**: Integrates with `StorageService.uploadFileWithProgress`.
-- **Validation**: Enforces ERN 4.3 standards.
+- **Validation**: Enforces IngestionNotification 4.3 standards.
 
 #### `useReleases`
 

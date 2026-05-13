@@ -1,5 +1,5 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
+import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import {
     BaseDistributorAdapter
 } from './BaseDistributorAdapter';
@@ -74,10 +74,10 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                 logger.info('[Symphonic] Delivering via Electron SFTP...');
 
                 // Generate DDEX ERN for Symphonic delivery
-                const { ernService } = await import('@/services/ddex/ERNService');
-                const { DDEX_CONFIG } = await import('@/core/config/ddex');
-                const ernResult = await ernService.generateERN(
-                    metadata, DDEX_CONFIG.PARTY_ID, 'symphonic', assets
+                const { ingestionNotificationService } = await import('@/services/distribution/proprietary-ingestion/IngestionNotificationService');
+                const { INGESTION_CONFIG } = await import('@/core/config/ingestion');
+                const ernResult = await ingestionNotificationService.generateERN(
+                    metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'symphonic', assets
                 );
 
                 if (ernResult.success && ernResult.xml && window.electronAPI.distribution?.stageRelease) {

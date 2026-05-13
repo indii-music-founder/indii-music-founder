@@ -218,7 +218,7 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {
-        const MAX_RETRIES = 2;
+        const MAX_RETRIES = 3;
         const RETRY_DELAY_MS = 500;
 
         // Return cached agent if already loaded
@@ -227,53 +227,66 @@ export class AgentRegistry implements AgentRegistryProvider {
         }
 
         // Deduplicate concurrent loads - if already loading, wait for that promise
-        if (this.loadingPromises.has(id)) {
+        // BUT only if we are not in a retry loop (to avoid potential recursive locking logic issues)
+        if (retryCount === 0 && this.loadingPromises.has(id)) {
             return this.loadingPromises.get(id);
         }
 
         const loader = this.loaders.get(id);
         if (!loader) {
+            if (retryCount === 0) {
+                logger.warn(`[AgentRegistry] No loader registered for agent '${id}'`);
+            }
             return undefined;
         }
 
-        // Create the loading promise and cache it to prevent duplicate loads
         const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
+            const attempts = retryCount + 1;
             try {
-                logger.debug(`[AgentRegistry] Loading agent '${id}'...`);
+                logger.debug(`[AgentRegistry] Loading agent '${id}' (attempt ${attempts})...`);
                 const agent = await loader();
                 this.agents.set(id, agent);
-                // Clear any previous error state
                 this.loadErrors.delete(id);
                 logger.debug(`[AgentRegistry] Agent '${id}' loaded successfully`);
                 return agent;
             } catch (e: unknown) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                const existingError = this.loadErrors.get(id);
-                const attempts = (existingError?.attempts || 0) + 1;
-
                 logger.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                
+                // Track error state
                 this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
 
                 // Retry with exponential backoff
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-                    logger.debug(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
+                    logger.warn(`[AgentRegistry] Retrying '${id}' in ${delay}ms... (Remaining retries: ${MAX_RETRIES - retryCount})`);
                     await new Promise(resolve => setTimeout(resolve, delay));
-                    this.loadingPromises.delete(id); // Clear so retry can proceed
+                    
+                    // Recursive call for retry
                     return this.getAsync(id, retryCount + 1);
                 }
 
-                logger.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
+                logger.error(`[AgentRegistry] Agent '${id}' PERMANENTLY failed after ${attempts} attempts. Error: ${error.message}`);
                 return undefined;
             } finally {
-                // Clean up loading promise after completion (unless retrying)
-                if (retryCount >= MAX_RETRIES || this.agents.has(id)) {
-                    this.loadingPromises.delete(id);
+                // Clear the loading promise from our map only at the very top level
+                if (retryCount === 0) {
+                    // This is handled by the .finally block on the returned promise below
                 }
             }
         })();
 
-        this.loadingPromises.set(id, loadPromise);
+        if (retryCount === 0) {
+            this.loadingPromises.set(id, loadPromise);
+            
+            // Cleanup promise from map once settled to allow future re-loads if it failed
+            loadPromise.finally(() => {
+                if (!this.agents.has(id)) {
+                    this.loadingPromises.delete(id);
+                }
+            });
+        }
+
         return loadPromise;
     }
 

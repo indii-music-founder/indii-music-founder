@@ -141,11 +141,11 @@ Update this file after every agent training session.
 
 - Baseline score: **unscored**
 - Changes made:
-  - Added MISSION as "Sonic Director" with LUFS/BPM/DDEX specifics
+  - Added MISSION as "Sonic Director" with LUFS/BPM/Proprietary Ingestion IP specifics
   - Added hub-and-spoke architecture rules
   - Added IN SCOPE (9 items) and OUT OF SCOPE (8 items)
   - Added 3 TOOLS with detailed documentation (analyze_audio, create_music_metadata, verify_metadata_golden)
-  - Added CRITICAL PROTOCOLS (precision over vibes, DDEX compliance, mix feedback protocol with frequency ranges)
+  - Added CRITICAL PROTOCOLS (precision over vibes, Proprietary Ingestion IP compliance, mix feedback protocol with frequency ranges)
   - Added SECURITY PROTOCOL and PERSONA
   - Added 5 worked examples
 - New score: **32/35** (Clarity:5, Specificity:5, ToolAlign:4, FewShot:5, EdgeCase:5, Routing:4, GuardRails:4)
@@ -627,7 +627,7 @@ Total gold examples across all agents: **943** (+70 this phase, +154 this sessio
 | director | `indii_image_gen`→`generate_image`, `generate_video`→`[]`, `set_entity_anchor`→`[]`, `generate_visual_script`→`[]`, `interpolate_sequence`→`[]` |
 | music | `audioIntelligence.analyze`→`analyze_audio` |
 | producer | `essentia_analyze`→`[]` |
-| distribution | `ddex_generate`→`[]` |
+| distribution | `ingestion_generate`→`[]` |
 | licensing | `check_license_availability`→`check_availability` |
 | road | `route.calculate`→`get_distance_matrix` |
 | video | `veo.generate`→`generate_video`, `video.render`→`generate_video` |
