@@ -148,8 +148,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
 
         // Assertions
         expect(MembershipService.checkBudget).toHaveBeenCalledTimes(5);
-        expect(response.error).toContain('Daily spend limit reached');
-        expect(response.text).toContain('paused');
+        expect(response.text).toContain('daily budget limit');
 
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
     });

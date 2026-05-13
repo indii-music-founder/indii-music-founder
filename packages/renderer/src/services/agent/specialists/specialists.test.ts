@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
-vi.mock('../tools', () => ({
+vi.mock('../tools/index', () => ({
     TOOL_REGISTRY: {
         save_memory: vi.fn(),
         recall_memories: vi.fn(),

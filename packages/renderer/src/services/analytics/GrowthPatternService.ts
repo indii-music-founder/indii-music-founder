@@ -68,7 +68,7 @@ const PATTERN_META: Record<GrowthPatternName, { label: string; description: stri
 // Public service
 // ──────────────────────────────────────────────────────────────────────────────
 
-export class GrowthPattingestionNotificationService {
+export class GrowthPatternService {
     /**
      * Run all pattern detectors and return those with confidence ≥ 0.4.
      */
@@ -356,4 +356,4 @@ export class GrowthPattingestionNotificationService {
     }
 }
 
-export const growthPattingestionNotificationService = new GrowthPattingestionNotificationService();
+export const growthPatternService = new GrowthPatternService();

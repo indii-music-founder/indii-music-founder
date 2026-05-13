@@ -66,7 +66,7 @@ describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
         artistName: 'DJ Test',
         isrc: 'US-S1Z-25-00001',
         labelName: 'Test Records',
-        systemIdentity: 'PASystemIdentityA20251226',
+        dpid: 'PASystemIdentityA20251226',
         releaseType: 'Single',
         releaseDate: '2025-12-31',
         territories: ['Worldwide'],
