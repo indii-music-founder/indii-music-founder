@@ -5,6 +5,7 @@ import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
@@ -248,6 +249,17 @@ export class VideoGenerationService {
         }
     }
 
+
+    /**
+     * Estimate the cost of video generation based on duration and model.
+     * Pricing: fast=$0.10/sec, pro=$0.40/sec
+     */
+    private estimateVideoCost(durationSeconds: number, model?: string): number {
+        const actualModel = model || DEFAULT_VIDEO_MODEL;
+        const rate = actualModel.includes('pro') ? 0.40 : 0.10;
+        return durationSeconds * rate;
+    }
+
     private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high' }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
 
@@ -331,6 +343,26 @@ export class VideoGenerationService {
         if (!quota.canGenerate) {
             throw new Error(`Quota exceeded: ${quota.reason}`);
         }
+
+        // Cost Control: Enforce budget limits before expensive API call
+        const videoDuration = options.durationSeconds || options.duration || 8;
+        const estimatedCost = this.estimateVideoCost(videoDuration, options.model);
+        const costCheck = await CostControlService.checkAndReserve({
+            operationType: 'video',
+            estimatedCost,
+            userId,
+            metadata: {
+                durationSeconds: videoDuration,
+                model: options.model || DEFAULT_VIDEO_MODEL,
+                resolution: options.resolution,
+                aspectRatio: options.aspectRatio,
+            },
+        });
+
+        if (!costCheck.allowed) {
+            throw new Error(`Video generation blocked: ${costCheck.reason}`);
+        }
+
 
         // Security: Sanitize Prompt (Redact PII)
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
