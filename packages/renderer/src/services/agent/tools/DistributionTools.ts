@@ -3,11 +3,11 @@
  * DistributionTools.ts
  * 
  * Tool implementations for the Direct Distribution Engine.
- * Wired to actual services: ERNService, IdentifierService, RoyaltyService.
+ * Wired to actual services: IngestionNotificationService, IdentifierService, RoyaltyService.
  */
 
 import { IdentifierService } from '@/services/identity/IdentifierService';
-import { ernService, ERNService } from '@/services/ddex/ERNService';
+import { ingestionNotificationService, IngestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { db, auth } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -33,7 +33,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const rawDdex = await window.electronAPI.distribution.generateDDEX({
+            const rawDdex = await window.electronAPI.distribution.generateIngestionNotification({
                 releaseId: `rel-${isrc}`,
                 title,
                 artists: [artist],
@@ -93,13 +93,13 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             aiGeneratedContent: { isFullyAIGenerated: false, isPartiallyAIGenerated: false }
         };
 
-        const ernResult = await ernService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: false });
+        const ernResult = await ingestionNotificationService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: false });
         if (!ernResult.success) return toolError(ernResult.error || 'ERN Generation Failed', 'ERN_ERROR');
 
         // Persist (Mirroring existing logic)
         const userId = auth.currentUser?.uid;
         if (userId) {
-            await setDoc(doc(collection(db, 'ddexReleases')), {
+            await setDoc(doc(collection(db, 'proprietaryIngestionReleases')), {
                 userId, title, artist, upc, isrc, label, releaseType,
                 ernXml: ernResult.xml, status: 'STAGED', createdAt: serverTimestamp()
             });
@@ -574,7 +574,7 @@ export const DistributionTools = {
     }),
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
-        // Wire to ERNService for ERN export (Item 171)
+        // Wire to IngestionNotificationService for ERN export (Item 171)
         // Build ExtendedGoldenMetadata from the provided metadata
         const meta: ExtendedGoldenMetadata = {
             id: args.releaseId,
@@ -602,13 +602,13 @@ export const DistributionTools = {
         };
 
         try {
-            const result = await ernService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
+            const result = await ingestionNotificationService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
             if (!result.success) {
                 return toolError(result.error || 'ERN generation failed', 'ERN_ERROR');
             }
 
             // Validate the generated XML
-            const validationErrors = ERNService.validateERNXML(result.xml || '');
+            const validationErrors = IngestionNotificationService.validateERNXML(result.xml || '');
 
             return toolSuccess({
                 releaseId: args.releaseId,
@@ -616,7 +616,7 @@ export const DistributionTools = {
                 isValid: validationErrors.length === 0,
                 validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
                 xmlLength: result.xml?.length || 0,
-            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via ERNService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
+            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
         } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
         }
@@ -759,7 +759,7 @@ export const DistributionTools = {
             return toolError(`Release ${args.trackId} not found`);
         }
 
-        // Persist flag to Firestore release record — ERNMapper reads this on next delivery
+        // Persist flag to Firestore release record — IngestionNotificationMapper reads this on next delivery
         await setDoc(releaseRef, {
             'metadata.youtubeContentIdOptIn': args.optIn,
             'metadata.youtubeContentIdPolicy': args.optIn ? policy : null,

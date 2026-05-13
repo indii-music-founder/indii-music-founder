@@ -88,7 +88,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
 
     /**
      * Looks up on-chain royalty attribution for an ISRC.
-     * Reads from Firestore `users/{uid}/ddexReleases` for any stored tx hashes.
+     * Reads from Firestore `users/{uid}/proprietaryIngestionReleases` for any stored tx hashes.
      * Falls back to a descriptive status when no chain record exists yet.
      */
     trace_blockchain_royalty: wrapTool('trace_blockchain_royalty', async (args: { isrc: string; totalRevenue: number }) => {
@@ -98,7 +98,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
 
             const uid = auth.currentUser?.uid;
             if (uid) {
-                const q = query(collection(db, 'users', uid, 'ddexReleases'), where('isrc', '==', args.isrc));
+                const q = query(collection(db, 'users', uid, 'proprietaryIngestionReleases'), where('isrc', '==', args.isrc));
                 const snap = await getDocs(q);
 
                 if (!snap.empty) {

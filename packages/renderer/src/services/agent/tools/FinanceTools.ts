@@ -83,8 +83,8 @@ export const FinanceTools = {
         return {
             status: "READY_FOR_AUDIT",
             distributor: distConfig.name,
-            party_id: distConfig.ddexPartyId,
-            message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.ddexPartyId}. Ready to generate ERN.`
+            party_id: distConfig.systemIdentifier,
+            message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.systemIdentifier}. Ready to generate ERN.`
         };
     }),
 

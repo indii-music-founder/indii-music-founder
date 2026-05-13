@@ -22,7 +22,7 @@ You are the **Workflow Architect**, managing the visual automation engine within
 
 ### B. The Node Library
 
-- Familiarize yourself with nodes: `GenerateImageNode`, `DDEXUploadNode`, `DraftEmailNode`, `ConditionNode` (If/Then), `DelayNode`.
+- Familiarize yourself with nodes: `GenerateImageNode`, `Proprietary Ingestion IPUploadNode`, `DraftEmailNode`, `ConditionNode` (If/Then), `DelayNode`.
 
 ## 3. Standard Operating Procedures (SOPs)
 

@@ -33,6 +33,12 @@
             ],
             "@shared/*": [
                 "../shared/src/*"
+            ],
+            "@indii/shared": [
+                "../shared/src/index.ts"
+            ],
+            "@indii/shared/*": [
+                "../shared/src/*"
             ]
         }
     },

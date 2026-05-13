@@ -135,30 +135,13 @@ class MembershipServiceImpl {
      * @returns True if the account has the god_mode claim or in DEV mode.
      */
     private async isBuilderAccount(): Promise<boolean> {
-        // ALWAYS bypass limits in local development so the team can test without hitting budget caps
-        // IMPORTANT: Do NOT bypass in Vitest test runs — tests need to exercise real limit enforcement
-        // OPTIONAL: Bypass via explicit environment variable if the developer chooses
-        if (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
+        // STRICT SAFETY: No automatic bypass in DEV mode anymore.
+        // Requires explicit opt-in via .env flag for high-cost testing.
+        if (import.meta.env && import.meta.env.VITE_DANGEROUS_BYPASS_BUDGET === 'true') {
             return true;
         }
 
-        try {
-            // Check for god_mode custom claim on Firebase Auth
-            const firebaseModule = await import('@/services/firebase');
-            const currentUser = firebaseModule.auth.currentUser;
-            if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
-                const tokenResult = await currentUser.getIdTokenResult();
-                if (tokenResult?.claims?.god_mode === true) {
-                    return true;
-                }
-            }
-
-            return false;
-        } catch {
-            // STRICT SAFETY: No automatic bypass in DEV mode anymore.
-            // Requires explicit opt-in via .env flag for high-cost testing.
-            return (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') || false;
-        }
+        return false;
     }
 
     /**

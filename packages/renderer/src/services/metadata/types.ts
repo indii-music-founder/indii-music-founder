@@ -3,7 +3,7 @@
  * Core metadata schema for music tracks with DDEX extension support
  */
 
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 export interface RoyaltySplit {
     legalName: string;
@@ -25,7 +25,7 @@ export interface GoldenMetadata {
     explicit: boolean;
     genre: string;
     labelName: string;
-    dpid?: string; // DDEX Party ID
+    systemIdentifier?: string; // System Identity Code
 
     // 2. The Economics
     splits: RoyaltySplit[];
@@ -118,7 +118,9 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Duration (computed from audio)
     durationSeconds?: number;
     durationFormatted?: string; // "3:45"
-    durationDDEXFormatted?: string; // e.g. "PT3M4S.123"
+    durationIngestionFormatted?: string; // e.g. "PT3M4S.123"
+    durationDDEXFormatted?: string; // Legacy alias for durationIngestionFormatted
+
 
     // Confidence Scores
     confidenceScores?: {
@@ -142,6 +144,11 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
 
     // Cover Art AI Disclosure (2026 DSP Compliance)
     coverArtAIGenerated?: boolean; // true when cover art was created by AI (e.g., Nano Banana)
+
+    // Proprietary Ingestion Identifiers
+    systemIdentity?: string; // System identity block
+    identity?: string; // Legacy DDEX identity block
+    dpid?: string; // Legacy DPID alias
 }
 
 // Type for release status in distribution
@@ -158,7 +165,7 @@ export type ReleaseDistributionStatus =
     | 'taken_down';
 
 // Release record for Firestore
-export interface DDEXReleaseRecord {
+export interface IngestionReleaseRecord {
     id: string;
     orgId: string;
     projectId: string;
@@ -196,14 +203,21 @@ export interface DDEXReleaseRecord {
     publishedAt?: string;
 }
 
+/** @deprecated Use IngestionReleaseRecord */
+export type DDEXReleaseRecord = IngestionReleaseRecord;
+
+/** @deprecated Use IngestionReleaseRecord */
+export type ClientReleaseRecord = IngestionReleaseRecord;
+
+
 export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     trackTitle: '',
     artistName: '',
     isrc: '',
     explicit: false,
     genre: '',
-    labelName: DDEX_CONFIG.PARTY_NAME,
-    dpid: DDEX_CONFIG.PARTY_ID,
+    labelName: INGESTION_CONFIG.ENTITY_NAME,
+    systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
     splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
     pro: 'None',
     publisher: 'Self-Published',

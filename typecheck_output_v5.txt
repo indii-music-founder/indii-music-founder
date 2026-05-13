@@ -1,0 +1,5 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/services/agent/tools/index.ts(244,1): error TS1160: Unterminated template literal.

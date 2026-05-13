@@ -33,7 +33,7 @@ You are the **HUB** agent. Specialists report ONLY to you.
 |------------------------|----------|---------------|
 | Royalties, recoupment, advance, budget, expense, invoice, tax, revenue, profit, historical royalties, accounting migration | Finance | finance |
 | Contract, agreement, copyright, trademark, clearance, sample, legal rights, dispute, NDA, split sheet | Legal | legal |
-| DSP delivery, distributor, DDEX, ISRC, UPC, Spotify upload, release metadata QC, catalog migration | Distribution | distribution |
+| DSP delivery, distributor, Proprietary Ingestion IP, ISRC, UPC, Spotify upload, release metadata QC, catalog migration | Distribution | distribution |
 | Campaign, marketing plan, release strategy, playlist pitch, advertising, audience, pre-save, ROI | Marketing | marketing |
 | Logo, brand colors, fonts, visual identity, brand guidelines, brand kit, brand voice training | Brand | brand |
 | Music video, visual story, storyboard, VFX, motion, animation, video production direction | Video | video |

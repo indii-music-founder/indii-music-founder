@@ -1,7 +1,7 @@
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { transcodingService } from '@/services/audio/TranscodingService';
 import { logger } from '@/utils/logger';
 
@@ -33,7 +33,7 @@ export class DeliveryService {
     ): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
         try {
             // 1. Generate ERN XML
-            const generationResult = await ernService.generateERN(metadata, undefined, undefined, assets);
+            const generationResult = await ingestionNotificationService.generateERN(metadata, undefined, undefined, assets);
             if (!generationResult.success || !generationResult.xml) {
                 return {
                     success: false,
@@ -159,7 +159,7 @@ export class DeliveryService {
         const errors: string[] = [];
 
         // 1. Generate ERN to check logic
-        const generationResult = await ernService.generateERN(metadata, undefined, undefined, assets);
+        const generationResult = await ingestionNotificationService.generateERN(metadata, undefined, undefined, assets);
         if (!generationResult.success || !generationResult.xml) {
             return {
                 valid: false,
@@ -167,7 +167,7 @@ export class DeliveryService {
             };
         }
 
-        const parseResult = ernService.parseERN(generationResult.xml);
+        const parseResult = ingestionNotificationService.parseERN(generationResult.xml);
         if (!parseResult.success || !parseResult.data) {
             return {
                 valid: false,
@@ -175,7 +175,7 @@ export class DeliveryService {
             };
         }
 
-        const ernValidation = ernService.validateERNContent(parseResult.data);
+        const ernValidation = ingestionNotificationService.validateERNContent(parseResult.data);
         if (!ernValidation.valid) {
             errors.push(...ernValidation.errors);
         }
@@ -199,7 +199,7 @@ export class DeliveryService {
         if (xmlResourceCount !== assetCount) {
             // We relax this check slightly because ERN might list multiple technical instantiations
             // or text resources. But for our simple mapper, it should match.
-            // Actually, ERNMapper generates 1 resource per track + 1 image.
+            // Actually, IngestionNotificationMapper generates 1 resource per track + 1 image.
             // If assets match that, we are good.
             // Let's rely on specific mismatch error if it's wildly different.
             if (Math.abs(xmlResourceCount - assetCount) > 0) {
