@@ -93,8 +93,8 @@ The core of indii is the **Agent Hub**, an intelligent orchestration hub with **
 
 ```
               ┌─────────────────────┐
-              │   Agent Zero (Hub)  │
-              │   Orchestrator      │
+              │  indii Conductor (Hub)│
+              │    Orchestrator     │
               └──────────┬──────────┘
                          │
     ┌────────────────────┼────────────────────┐
@@ -113,7 +113,7 @@ The core of indii is the **Agent Hub**, an intelligent orchestration hub with **
 
 | Agent | Domain | Capabilities |
 |-------|--------|-------------|
-| **Agent Zero** | Hub Orchestrator | Session context, task routing, multi-agent coordination |
+| **indii Conductor** | Hub Orchestrator | Native Node.js orchestration, session context, task routing, multi-agent graph coordination |
 | **Creative Director** | Visual Identity | Brand-consistent AI image/video generation, style enforcement |
 | **Music Agent** | Audio Intelligence | BPM, key, timbre analysis via `Essentia.js`, mastering QA |
 | **Legal Agent** | Rights & Contracts | Real-time contract review, rights management, IP protection |
@@ -148,11 +148,18 @@ By keeping the "brain" on the desktop device and utilizing the phone strictly as
 
 ---
 
-## 🧠 Always-On Memory Agent
+## 🧠 indii Cognitive Core: Always-On Memory Agent
 
-Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, rebuilt as a native TypeScript service with significant enhancements.
+Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, indii's memory system is a native TypeScript **Neural Engine** built for absolute persistence and zero-latency recall.
 
-The Memory Agent is a **persistent, evolving memory system** that runs in the background — continuously ingesting, consolidating, and connecting information. Think of it as the platform's hippocampus: it processes raw experiences during idle time and surfaces cross-cutting insights on demand.
+The Memory Agent is a **state-of-the-art, autonomous cognitive system** that operates silently in the background — continuously ingesting, consolidating, and synthesizing information across your entire creative business. It functions as the platform's **Digital Hippocampus**: it converts raw daily interactions into a rich, structured knowledge graph during idle cycles, ensuring your agents are always grounded in the precise truth of your brand.
+
+### ✨ The Memory Advantage
+
+- **Infinite Recall:** Never repeat yourself. Every decision, stylistic preference, and business rule is etched into the long-term vector store.
+- **Cross-Module Intelligence:** Knowledge generated in the *Legal* module (e.g., a specific royalty split) is instantly available to the *Finance* and *Social* agents.
+- **Autonomous Consolidation:** During "sleep cycles," the engine automatically merges redundant facts and resolves contradictory information using high-thinking reasoning loops.
+- **Temporal Awareness:** Navigate your brand's history with a visual timeline that shows how your creative identity has evolved over months and years.
 
 ### How It Works
 

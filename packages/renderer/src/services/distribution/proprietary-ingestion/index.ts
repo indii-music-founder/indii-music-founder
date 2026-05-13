@@ -16,5 +16,5 @@ export { EarningsReportService, earningsReportService } from './EarningsReportSe
 export { IngestionValidator } from './IngestionValidator';
 export { MediaAssetDataService, mediaAssetDataService } from './MediaAssetDataService';
 export { RecordingInformationService, recordingInformationService } from './RecordingInformationService';
-export { EarningsProcessor, earningsProcessor } from './EarningsProcessor';
+export { EarningsReportProcessor, earningsProcessor } from './EarningsProcessor';
 export { IngestionIdentity } from './IngestionIdentity';

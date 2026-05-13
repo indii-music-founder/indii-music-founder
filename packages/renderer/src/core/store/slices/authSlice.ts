@@ -144,6 +144,7 @@ function getAuthErrorMessage(error: FirebaseAuthError): string | null {
     }
 }
 
+/** INDII DESIGN SYSTEM - Single Source of Truth state */
 // Define the shape of our Auth state
 export interface AuthSlice {
     user: User | null;
@@ -223,7 +224,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             // 1. Bypass Onboarding and Tours for the Founders Pitch Demo
             if (typeof window !== 'undefined') {
                 window.localStorage.setItem('TOUR_COMPLETED_dashboard', 'true');
-                window.localStorage.setItem('INDIIOS_ONBOARDING_COMPLETE', 'true');
+                window.localStorage.setItem('INDII_ONBOARDING_COMPLETE', 'true');
                 window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
             }
 

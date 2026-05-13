@@ -61,7 +61,7 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
   territories: ['Worldwide'],
   distributionChannels: ['streaming', 'download'],
   labelName: INGESTION_CONFIG.ENTITY_NAME,
-  systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+  dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
   aiGeneratedContent: {
     isFullyAIGenerated: false,
     isPartiallyAIGenerated: false,

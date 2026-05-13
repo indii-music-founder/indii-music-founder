@@ -11,7 +11,7 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     explicit: false,
     genre: 'Pop',
     labelName: 'Test Label',
-    systemIdentity: 'PASystemIdentityA001',
+    dpid: 'PASystemIdentityA001',
     splits: [],
     pro: 'None',
     publisher: 'Self',
