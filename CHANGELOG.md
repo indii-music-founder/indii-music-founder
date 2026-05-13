@@ -2,6 +2,25 @@
 
 All notable changes to indii are documented in this file.
 
+## [1.64.0](https://github.com/indii-music/indiiOS-Clean/compare/v1.63.0...v1.64.0) (2026-05-13)
+
+
+### Features
+
+* **billing:** implement universal cost control system for all agents ([87459a6](https://github.com/indii-music/indiiOS-Clean/commit/87459a63b91ecfce549d372c57d524e07e247079))
+* **billing:** integrate cost control into expensive operations ([d7dfd92](https://github.com/indii-music/indiiOS-Clean/commit/d7dfd9242e92e08b487699f1b5c4deceff39bd39))
+* **memory/infra:** implement longitudinal memory architecture & omni-aware routing ([f012264](https://github.com/indii-music/indiiOS-Clean/commit/f012264cdd7a02eff9f89c84a64ac72b7f3c4849))
+* **memory/infra:** implement longitudinal memory architecture & omni… ([092ef2c](https://github.com/indii-music/indiiOS-Clean/commit/092ef2c260823187fd540d9bf50b95f02dd33be0))
+
+
+### Bug Fixes
+
+* **ci:** harden firebase identifiers in deploy.yml to resolve E2E failures ([111f404](https://github.com/indii-music/indiiOS-Clean/commit/111f4040454402755ff40569c4f4183b89b5541b))
+* **ci:** resolve stripe resolution error and stabilize dependency hoisting ([c1c12fb](https://github.com/indii-music/indiiOS-Clean/commit/c1c12fbc1d67989b2115d998289a71e3b181da4d))
+* **deploy:** correct firebase project identifier and resolve deployment gate ([7ee5b30](https://github.com/indii-music/indiiOS-Clean/commit/7ee5b30e19b950c78cf70ca2948fadf2f23ea423))
+* **deps:** downgrade utf-8-validate to 5.0.10 to resolve CI lockfile mismatch ([7a5a102](https://github.com/indii-music/indiiOS-Clean/commit/7a5a102239bc1bc706b02e847a744e28eaf586ec))
+* **proprietary-ingestion:** stabilize ingestion schema and resolve CI shard regressions for v1.63.0 ([36a9389](https://github.com/indii-music/indiiOS-Clean/commit/36a93896f7cc1e1b7a00a071154943f220f5f614))
+
 ## [1.63.0](https://github.com/indii-music/indii-Clean/compare/v1.62.0...v1.63.0) (2026-05-11)
 
 
