@@ -1,5 +1,5 @@
 // path is dynamically imported inside createBatchDirectory to avoid Vite web-build externalization
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 /**
  * BatchDeliveryService
@@ -81,7 +81,7 @@ export class BatchDeliveryService {
     // Generate Manifest
     const manifestXml = this.generateBatchManifest({
       batchId,
-      messageSender: DDEX_CONFIG.PARTY_ID,
+      messageSender: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
       messageRecipient: 'PADPIDA_RECIPIENT_MOCK', // Recipient should be dynamic in real use
       releaseCount: releasePackages.length,
       createdDateTime: new Date().toISOString()

@@ -116,7 +116,7 @@ export interface ElectronAPI {
         delete: (id: string) => Promise<boolean>;
     };
 
-    // Distribution (DDEX Packaging)
+    // Distribution (Proprietary Ingestion IP)
     distribution: {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path' | 'metadata'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
         runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ForensicsReport>>;
@@ -124,11 +124,11 @@ export interface ElectronAPI {
         calculateTax: (data: DistributionTypes.TaxCalculationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
         certifyTax: (userId: string, data: DistributionTypes.TaxCertificationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
         executeWaterfall: (data: DistributionTypes.WaterfallData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.WaterfallReport>>;
-        validateMetadata: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
+        validateMetadata: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
         generateISRC: (options?: DistributionTypes.ISRCGenerationOptions) => Promise<DistributionTypes.ISRCResponse>;
         generateUPC: (options?: DistributionTypes.UPCGenerationOptions) => Promise<DistributionTypes.UPCResponse>;
         registerRelease: (metadata: unknown, releaseId?: string) => Promise<DistributionTypes.IPCResponse<unknown>>;
-        generateDDEX: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.DDEXResponse>;
+        generateIngestionNotification: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IngestionResponse>;
         generateContentIdCSV: (data: DistributionTypes.ContentIdData) => Promise<DistributionTypes.CSVResponse<DistributionTypes.ContentIdReport>>;
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;

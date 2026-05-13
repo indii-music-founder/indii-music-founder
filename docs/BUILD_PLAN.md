@@ -7,7 +7,7 @@
 
 ## Task 1: Wire the Distribution Execution Layer
 
-The UI and agent definitions are complete. The Python DDEX generator exists. Nothing is connected. This task closes that gap.
+The UI and agent definitions are complete. The Python Proprietary Ingestion IP generator exists. Nothing is connected. This task closes that gap.
 
 ### 1a. Create execution/distribution/ scripts
 
@@ -15,8 +15,8 @@ The UI and agent definitions are complete. The Python DDEX generator exists. Not
 | --- | --- |
 | `isrc_assign.py` | Generate/assign ISRC codes, write to Firestore |
 | `qc_runner.py` | Audio QC checks (sample rate, bit depth, loudness, clipping) |
-| `sftp_upload.py` | Authenticate and upload assets + DDEX XML to distributor SFTP |
-| `ddex_build.py` | Orchestrator — calls ddex_generator.py → qc_runner.py → sftp_upload.py in sequence |
+| `sftp_upload.py` | Authenticate and upload assets + Proprietary Ingestion IP XML to distributor SFTP |
+| `ingestion_build.py` | Orchestrator — calls ingestion_generator.py → qc_runner.py → sftp_upload.py in sequence |
 
 **Credential Management:** Use Keytar to securely store SFTP distributor credentials in the OS keychain. Pass credentials securely from Electron to the Python script at runtime, and handle credential refresh/rotation if needed.
 
@@ -26,7 +26,7 @@ File: `electron/handlers/distributionHandlers.ts`
 
 - `runQC(filePath)` → spawns `qc_runner.py`, returns pass/fail + report
 - `assignISRC(metadata)` → spawns `isrc_assign.py`, returns ISRC string
-- `buildAndUploadDDEX(releaseData)` → spawns `ddex_build.py` end-to-end
+- `buildAndUploadProprietary Ingestion IP(releaseData)` → spawns `ingestion_build.py` end-to-end
 - All handlers stream stdout back as progress events to renderer
 
 ### 1c. Connect DistributionService.ts
@@ -34,7 +34,7 @@ File: `electron/handlers/distributionHandlers.ts`
 File: `src/services/distribution/DistributionService.ts`
 
 - Replace `window.electronAPI.distribution.runForensics()` placeholder with real `runQC()` call
-- Add `submitRelease()` that calls `buildAndUploadDDEX()` and updates Firestore task doc
+- Add `submitRelease()` that calls `buildAndUploadProprietary Ingestion IP()` and updates Firestore task doc
 - Surface progress events to the Distribution Dashboard via Zustand `distributionSlice`
 
 ### 1d. Hook the QC Panel in the UI
@@ -72,9 +72,9 @@ Phase 1 can be done entirely in this repo without any new tooling.
 
 ## Definition of Done
 
-- [ ] Distribution: "Submit Release" button triggers real DDEX XML build → QC check → SFTP upload
+- [ ] Distribution: "Submit Release" button triggers real Proprietary Ingestion IP XML build → QC check → SFTP upload
 - [ ] Distribution: ISRC is assigned and written back to the release record
 - [ ] Distribution: QC panel shows real per-check results from the audio file
 - [x] Sidecar Removal: The Python sidecar was completely ripped out, and the UI successfully interacts with the native `AgentGraphService`.
 - [ ] Testing: Unit tests cover Python handler scripts and distribution logic
-- [ ] Testing: Integration tests verify the DDEX end-to-end flow with a mock distributor
+- [ ] Testing: Integration tests verify the Proprietary Ingestion IP end-to-end flow with a mock distributor

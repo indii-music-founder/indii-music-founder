@@ -2,7 +2,7 @@ import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { Logger } from '@/core/logger/Logger';
 
 export class TrackIngestionService {
@@ -68,7 +68,7 @@ export class TrackIngestionService {
             trackTitle: file.name.replace(/\.[^/.]+$/, ""), // Strip extension
             durationSeconds: technical.duration,
             durationFormatted: this.formatDuration(technical.duration),
-            durationDDEXFormatted: this.formatDurationDDEX(technical.duration),
+            durationIngestionFormatted: this.formatDurationDDEX(technical.duration),
 
             // DDEX Fields from AI
             genre: semantic.ddexGenre || '', // Strict Validation: leave empty so UI wizard catches it
@@ -93,8 +93,8 @@ export class TrackIngestionService {
             releaseType: 'Single',
             territories: ['Worldwide'],
             distributionChannels: ['streaming', 'download'],
-            labelName: DDEX_CONFIG.PARTY_NAME,
-            dpid: DDEX_CONFIG.PARTY_ID,
+            labelName: INGESTION_CONFIG.ENTITY_NAME,
+            systemIdentifier: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
 
             // AI Content Disclosure (Goal 3 compliance — surfaced by Sonic Cortex aiArtifacts flag)
             aiGeneratedContent: {

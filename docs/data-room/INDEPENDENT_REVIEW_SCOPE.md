@@ -15,13 +15,13 @@ The reviewer should focus on these three subsystems, which are the basis of valu
 **Why:** Direct-to-DSP music distribution is the primary business asset. Acquirer needs to verify this is real, spec-compliant, and operationally sound.
 
 **Files to Review:**
-- `src/services/ddex/` — ERN/DSR/MEAD/RIN generation and validation
-- `execution/distribution/` — Python DDEX generation scripts, SFTP delivery, QC logic
+- `src/services/distribution/proprietary-ingestion/` — Electronic metadata and sales reporting generation and validation
+- `execution/distribution/` — Python proprietary ingestion generation scripts, SFTP delivery, QC logic
 - `src/services/distribution/adapters/` — 8 distributor adapters (CDBaby, Spotify, Apple, Amazon, Tidal, Deezer, legacy aggregators)
-- `src/core/config/ddex.ts` — Party ID, DSP credentials configuration
+- `src/core/config/distribution-ip.ts` — Proprietary Ingestion ID, DSP credentials configuration
 
 **Verification Checklist:**
-- [ ] ERN XML structure matches published DDEX XSD (at least one sample generation)
+- [ ] IngestionNotification XML structure matches industry standard XSD (at least one sample generation)
 - [ ] SFTP delivery mechanism is hardened (no creds in logs, proper error handling)
 - [ ] DSP onboarding adapters are real, not mocks (confirm each has actual API integration, not stubs)
 - [ ] Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC
@@ -105,9 +105,9 @@ The reviewer must explicitly verify and sign off on these 12 gates:
 
 ### Proprietary Ingestion IP (Gates 5–7)
 
-5. **ERN Spec Compliance** — Generate one ERN per configured DSP, validate against published XSD, confirm structure matches DDEX standard (not a custom format)
-6. **SFTP Delivery** — Deliver a test ERN to a test SFTP target; confirm file arrives intact, no creds in logs, retry logic works
-7. **Proprietary Ingestion ID Verification** — Contact DDEX Inc. or verify via DDEX portal that the Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC and active
+5. **IngestionNotification Spec Compliance** — Generate one IngestionNotification per configured DSP, validate against published XSD, confirm structure matches industry standards (not a custom format)
+6. **SFTP Delivery** — Deliver a test IngestionNotification to a test SFTP target; confirm file arrives intact, no creds in logs, retry logic works
+7. **Proprietary Ingestion ID Verification** — Contact the global metadata authority or verify via their portal that the Proprietary Ingestion ID (DPID) `PA-DPIDA-2025122604-E` is registered to New Detroit Music LLC and active
 
 ### Payments (Gates 8–10)
 

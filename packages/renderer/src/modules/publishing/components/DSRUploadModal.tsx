@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
 import FileUpload from '@/components/kokonutui/file-upload';
-import { dsrService } from '@/services/ddex/DSRService';
-import { type DSRReport } from '@/services/ddex/types/dsr';
+import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
+import { type DSRReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
@@ -32,8 +32,8 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
             // Read file as text
             const text = await selectedFile.text();
 
-            // Basic parsing logic simulation matching dsrService capabilities
-            const result = await dsrService.ingestFlatFile(text);
+            // Basic parsing logic simulation matching earningsReportService capabilities
+            const result = await earningsReportService.ingestFlatFile(text);
 
             if (result.success && result.data) {
                 setParsedReport(result.data);

@@ -4,7 +4,7 @@ import { FirestoreService } from '@/services/FirestoreService';
 import {
     DistributionTaskDocument,
     TaxProfileDocument,
-    DDEXReleaseDocument,
+    IngestionReleaseDocument,
     ReleaseDistributionStatus
 } from '@/types/firestore';
 import { isrcService } from './ISRCService';
@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
 import {
     MerlinCheckData, MerlinReport,
     BWarmData,
-    DDEXMetadata,
+    IngestionMetadata,
     ContentIdData,
     ISRCGenerationOptions,
     UPCGenerationOptions,
@@ -35,7 +35,7 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 export type { DistributionTaskDocument as DistributionTask };
 
 /** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
-async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata): Promise<void> {
+async function writeMetadataSnapshot(releaseId: string, metadata: IngestionMetadata): Promise<void> {
     try {
         const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
         if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
@@ -72,7 +72,7 @@ async function writeDistributionAuditEvent(
 }
 
 class DistributionService extends FirestoreService<DistributionTaskDocument> {
-    private releasesService = new FirestoreService<DDEXReleaseDocument>('ddexReleases');
+    private releasesService = new FirestoreService<IngestionReleaseDocument>('proprietaryIngestionReleases');
 
     constructor() {
         super('distribution_tasks');
@@ -268,7 +268,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Validate release metadata via Electron IPC
      */
-    async validateReleaseMetadata(metadata: DDEXMetadata): Promise<ValidationReport> {
+    async validateReleaseMetadata(metadata: IngestionMetadata): Promise<ValidationReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for metadata validation');
         }
@@ -372,13 +372,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate DDEX ERN 4.3 XML via Python engine
      */
-    async generateDDEX(metadata: DDEXMetadata): Promise<string> {
+    async generateIngestionNotification(metadata: IngestionMetadata): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for DDEX generation');
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateDDEX(metadata);
+            const result = await window.electronAPI.distribution.generateIngestionNotification(metadata);
             if (!result.success || !result.xml) {
                 throw new Error(result.error || 'DDEX Generation failed');
             }
@@ -557,13 +557,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             status: 'validating' as ReleaseDistributionStatus,
             lastCheckedAt: Timestamp.now(),
             submittedAt: null
-        } as unknown as DDEXReleaseDocument);
+        } as unknown as IngestionReleaseDocument);
     }
 
     /**
      * Get all releases for the current user/org
      */
-    async getReleases(orgId?: string): Promise<DDEXReleaseDocument[]> {
+    async getReleases(orgId?: string): Promise<IngestionReleaseDocument[]> {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
@@ -582,7 +582,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * @param onProgress   Optional callback for step-by-step progress events
      */
     async submitRelease(
-        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
+        releaseData: IngestionMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
     ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
         if (!window.electronAPI) {
@@ -768,7 +768,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Subscribe to releases
      */
-    subscribeReleases(callback: (releases: DDEXReleaseDocument[]) => void, orgId?: string) {
+    subscribeReleases(callback: (releases: IngestionReleaseDocument[]) => void, orgId?: string) {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 

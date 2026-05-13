@@ -64,7 +64,7 @@
 5. **Risk Mitigation** — Their findings identify gaps before an acquirer's more expensive review (cheaper to fix now than during LOI diligence)
 
 **Embedded's Typical Scope:**
-- Architecture review (3-layer, agent fleet, DDEX rail)
+- Architecture review (3-layer, agent fleet, Proprietary Ingestion IP rail)
 - Security audit (Firestore rules, custom claims, payment data isolation)
 - Testing & QA (verify 99.6% pass rate, identify flaky tests)
 - Tech debt inventory (what will slow down post-acquisition integration)

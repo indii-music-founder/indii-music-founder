@@ -19,7 +19,7 @@ export const PublishingTools = {
 
             const uid = auth.currentUser?.uid;
             if (uid) {
-                const releasesRef = collection(db, 'users', uid, 'ddexReleases');
+                const releasesRef = collection(db, 'users', uid, 'proprietaryIngestionReleases');
                 const q = query(releasesRef, where('trackTitle_lower', '>=', titleLower), where('trackTitle_lower', '<=', titleLower + '\uf8ff'));
                 const snap = await getDocs(q);
 

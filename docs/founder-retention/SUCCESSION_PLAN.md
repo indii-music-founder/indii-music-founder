@@ -6,7 +6,7 @@
 
 ## Current State: Bus Factor = 1
 
-- **William Roberts:** 96.3% of human commits, sole author with deep knowledge of DDEX rail, Vertex AI fine-tuning, payment architecture, and production incident response
+- **William Roberts:** 96.3% of human commits, sole author with deep knowledge of Proprietary Ingestion IP rail, Vertex AI fine-tuning, payment architecture, and production incident response
 - **No documented successors** — no second senior engineer with comparable system knowledge
 - **Risk:** If William becomes unavailable (illness, departure, acquisition integration demands), indii becomes unmaintainable
 
@@ -40,7 +40,7 @@
 ### Option 2: Internal Promotion (From indii Team)
 
 **If indii has existing engineers on staff:**
-- Promote most senior engineer who has worked closely with DDEX and agent systems
+- Promote most senior engineer who has worked closely with Proprietary Ingestion IP and agent systems
 - Fast-track into ownership roles (lead on incidents, design reviews)
 - Pair with William starting month 1 (not waiting for external hire)
 
@@ -65,7 +65,7 @@
 
 **Successor's Tasks:**
 - [ ] Read `docs/ARCHITECTURE.md` (CLAUDE.md level detail)
-- [ ] Review DDEX subsystem (`src/services/ddex/`, `execution/distribution/`)
+- [ ] Review Proprietary Ingestion IP subsystem (`src/services/ingestion/`, `execution/distribution/`)
 - [ ] Review Vertex AI fleet (`src/services/agent/fine-tuned-models.ts`, agent routing)
 - [ ] Review Stripe/payment logic (`functions/src/stripe/`)
 - [ ] Attend all production incidents (shadow, do not lead)
@@ -78,7 +78,7 @@
 ### Months 4–6: Pair Programming & Documentation
 
 **Successor's Tasks:**
-- [ ] Pair with William on: DDEX ERN generation flow, Vertex AI endpoint testing, Stripe webhook handling
+- [ ] Pair with William on: Proprietary Ingestion IP IngestionNotification generation flow, Vertex AI endpoint testing, Stripe webhook handling
 - [ ] Write runbooks for each subsystem (`docs/RUNBOOKS.md`)
 - [ ] Lead code review on at least one non-trivial PR (William reviews their review)
 - [ ] Reproduce fine-tuning pipeline locally (`execution/training/`, R1–R7 job submission)
@@ -91,7 +91,7 @@
 
 **Successor's Tasks:**
 - [ ] Lead production incident response (for at least 2 incidents; William shadows, does not take over)
-- [ ] Onboard a new DSP (real or simulated; full cycle from request → ERN → delivery)
+- [ ] Onboard a new DSP (real or simulated; full cycle from request → IngestionNotification → delivery)
 - [ ] Design and implement a non-trivial feature (e.g., new agent type, new DSP, payment flow change)
 - [ ] Write successor-for-successor documentation (explain system to a hypothetical third engineer)
 

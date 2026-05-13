@@ -89,7 +89,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Mixing feedback (frequency clash, EQ, stereo) | ✅ HAS EXPERT | — | — |
 | Lyric analysis / thematic consistency | 🟡 ENTRY/INT | 🟡 MEDIUM | "My hook structure uses an extended metaphor across all 3 verses but the bridge abandons it. Walk me through whether resolving or subverting the metaphor is the stronger compositional choice and why." |
 | Sonic branding strategy | ✅ HAS EXPERT | ✅ FILLED | "I'm 4 albums in with a dark, lo-fi aesthetic but want to pivot to a cleaner pop sound for commercial viability without losing my core fanbase. What are the sonic transition strategies artists like Billie Eilish or Frank Ocean used, and how should I sequence this shift across my next 2 releases?" |
-| Metadata generation (DDEX-compliant tags) | ✅ HAS EXPERT | — | — |
+| Metadata generation (Proprietary Ingestion IP-compliant tags) | ✅ HAS EXPERT | — | — |
 | Metadata verification (Golden Standard) | ✅ HAS EXPERT | — | — |
 | **YouTube Content ID** | ✅ HAS EXPERT | — | "My distributor filed a Content ID claim on my original track and a third-party label is monetizing my YouTube streams. Walk me through the exact OAC (Official Artist Channel) dispute process, typical resolution timelines, the specific language I should use in my counter-notification, and how the outcome differs if it's a cover vs. original work vs. a sample-based track." |
 | Mastering for vinyl / physical formats | ✅ HAS EXPERT | — | "I'm pressing my EP on vinyl. My master was optimized for streaming at -14 LUFS. What are the specific LUFS targets, dynamic range requirements, and inner groove distortion considerations I need to apply to the vinyl-specific master, and how do I handle the stereo width in the low frequencies?" |
@@ -107,8 +107,8 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 
 | Skill Domain | Status | Priority | Example Expert Prompt |
 |---|---|---|---|
-| DDEX ERN message construction | ✅ HAS EXPERT | 🔴 HIGH | "My distributor rejected my DDEX ERN 4.3 message with error code C0023 (invalid territory code) and C0041 (missing sound recording ISRC). The track is a collaboration with a UK artist using a co-owned master. Walk me through the exact XML node changes I need to make to the `<TerritoryCode>`, `<SoundRecordingId>`, and `<ResourceList>` elements to resolve both errors simultaneously." |
-| DDEX common rejection errors | ✅ HAS EXPERT | — | — |
+| Proprietary Ingestion IP IngestionNotification message construction | ✅ HAS EXPERT | 🔴 HIGH | "My distributor rejected my Proprietary Ingestion IP IngestionNotification 4.3 message with error code C0023 (invalid territory code) and C0041 (missing sound recording ISRC). The track is a collaboration with a UK artist using a co-owned master. Walk me through the exact XML node changes I need to make to the `<TerritoryCode>`, `<SoundRecordingId>`, and `<ResourceList>` elements to resolve both errors simultaneously." |
+| Proprietary Ingestion IP common rejection errors | ✅ HAS EXPERT | — | — |
 | Audio forensics / spectral fraud detection | ✅ HAS EXPERT | 🔴 HIGH | "My QC system flagged a track with a spectral anomaly: the content above 17 kHz is pure noise floor with no harmonic content, while the 16 kHz digital brick wall is perfectly flat. The artist claims it's a genuine 24-bit file. Walk me through the forensic analysis steps — spectral view, frequency histogram, ABX test — to definitively determine if this is an upsampled 44.1kHz-to-96kHz fake hi-res file." |
 | Aspera FASP delivery | ✅ HAS EXPERT | 🔴 HIGH | "My Aspera transfer to Spotify is failing mid-batch with a FASP timeout on the 3rd file of 12. The session log shows: 'Peer connection reset, ORTP timeout after 45s.' Walk me through diagnosing whether this is a UDP port blocking issue on the ISP side vs. a server-side queue problem, and the exact Aspera ascp CLI flags I should use to force TCP fallback while maintaining the correct credential chain." |
 | W-8BEN / W-9 tax certification | ✅ HAS EXPERT | — | — |
@@ -121,7 +121,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Territory-specific distribution | ✅ HAS EXPERT | — | — |
 | Catalog migration (switching distributors) | ✅ HAS EXPERT | — | — |
 
-**Top gap:** Overall expert% is critically low (18%). The agent handles highly technical workflows (DDEX XML, Aspera, Chain of Title) that are currently undertrained at expert level. Adding 15–20 expert examples here would have the highest impact.
+**Top gap:** Overall expert% is critically low (18%). The agent handles highly technical workflows (Proprietary Ingestion IP XML, Aspera, Chain of Title) that are currently undertrained at expert level. Adding 15–20 expert examples here would have the highest impact.
 
 ---
 
@@ -185,7 +185,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | ISWC assignment and management | ✅ HAS EXPERT | — | — |
 | Split sheet administration | ✅ HAS EXPERT | — | — |
 | Publishing contract analysis | ✅ HAS EXPERT | — | — |
-| DDEX metadata for distribution | ✅ HAS EXPERT | — | — |
+| Proprietary Ingestion IP metadata for distribution | ✅ HAS EXPERT | — | — |
 | Black Box royalty recovery | ✅ HAS EXPERT | — | — |
 | Sub-publishing deal analysis | ✅ HAS EXPERT | — | — |
 | Mechanical licensing (MLC, Harry Fox) | ✅ HAS EXPERT | ✅ FILLED | "I want to issue a compulsory mechanical license for an artist covering my song without going through the MLC. Walk me through the Section 115 notice requirements — exact timing relative to release, the specific information I must include in the Notice of Intent, the CRB rate calculation for a streaming vs. download license, and how to issue a direct license instead that supersedes the compulsory rate and what terms I can negotiate." |
@@ -516,7 +516,7 @@ Sorted by impact tier. Work through HIGH priority first, then MEDIUM.
 | 3 | Publishing | ISWC collision resolution | ✅ FILLED | CISAC collision procedure, priority documentation, cross-society propagation fix |
 | 4 | Distribution | Chain of Title disputes | ✅ FILLED | Verbal work-for-hire reconstruction, DSP escrow resolution, evidence standards |
 | 5 | Distribution | Aspera FASP delivery troubleshooting | ✅ FILLED | ORTP timeout diagnosis, TCP fallback flags, credential chain |
-| 6 | Distribution | DDEX ERN 4.3 full message construction | ✅ FILLED | Multi-party collaboration XML, error code resolution, UpdateIndicator usage |
+| 6 | Distribution | Proprietary Ingestion IP IngestionNotification 4.3 full message construction | ✅ FILLED | Multi-party collaboration XML, error code resolution, UpdateIndicator usage |
 | 7 | Distribution | Audio forensics / spectral fraud detection | ✅ FILLED | Upsampled hi-res detection, ABX test, forensic analysis steps |
 | 8 | Finance | 360 deal financial modeling | ✅ FILLED | Full recoupment model, NPV vs. staying indie, breakeven stream count |
 | 9 | Finance | Touring tax / state nexus | ✅ FILLED | Multi-state filing obligations, withholding on promoter check, LLC strategies |
