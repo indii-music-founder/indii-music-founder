@@ -6,7 +6,6 @@ import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
-import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 import { livingPlanService } from './LivingPlanService';
 
@@ -19,6 +18,7 @@ import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
 
+import { CostControlService } from '@/services/billing/CostControlService';
 /**
  * AgentService is the primary entry point for agent-related operations.
  * It manages the lifecycle of user messages, context resolution, orchestration, and execution.
@@ -129,13 +129,11 @@ export class AgentService {
 
         // Tier 2: Index user message for semantic recall (Episodic Indexing)
         if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-            memoryService.saveMemory(
-                state.currentProjectId,
+            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+            alwaysOnMemoryEngine.ingest(
                 redactedText,
-                'session_message',
-                0.4,
-                'user',
-                state.activeSessionId
+                'user_input',
+                'context'
             ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
         }
 
@@ -472,13 +470,11 @@ export class AgentService {
 
             // Tier 2: Index model response
             if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
-                memoryService.saveMemory(
-                    state.currentProjectId,
+                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                alwaysOnMemoryEngine.ingest(
                     result.text,
-                    'session_message',
-                    0.4,
-                    'agent',
-                    state.activeSessionId
+                    'agent_output',
+                    'context'
                 ).catch(err => logger.warn('[AgentService] Failed to index agent response:', err));
             }
         } else {
@@ -1034,6 +1030,26 @@ The user will see this plan and can approve it to start execution.`;
         ];
 
         try {
+
+        // Cost Control: Agent streaming is inexpensive but still tracked
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            const streamCostCheck = await CostControlService.checkAndReserve({
+                operationType: 'agent_stream',
+                estimatedCost: 0.001, // ~$0.001 per request
+                userId: currentUser.uid,
+                metadata: {
+                    model: AI_MODELS.TEXT.FAST,
+                    messageLength: text.length,
+                    source: options?.source || 'web',
+                },
+            });
+
+            if (!streamCostCheck.allowed) {
+                throw new Error(`Agent streaming blocked: ${streamCostCheck.reason}`);
+            }
+        }
+
             const { stream } = await GenAI.generateContentStream(
                 contents,
                 AI_MODELS.TEXT.FAST,
@@ -1149,7 +1165,8 @@ The user will see this plan and can approve it to start execution.`;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const memories = await memoryService.retrieveRelevantMemories(projectId, task, 5);
+                    const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                    const memories = await alwaysOnMemoryEngine.retrieve(task, 5);
                     if (memories && memories.length > 0) {
                         context.relevantMemories = memories;
                         context.memoryContext = memories
