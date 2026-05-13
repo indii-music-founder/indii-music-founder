@@ -10,7 +10,7 @@
  */
 
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
+import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import type {
   DistributorId,
   ReleaseAssets,
@@ -35,7 +35,7 @@ import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resi
 import {
   ExtendedGoldenMetadataSchema,
   DistributorEarningsSchema
-} from '@/services/ddex/validation';
+} from '@/services/distribution/proprietary-ingestion/validation';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';

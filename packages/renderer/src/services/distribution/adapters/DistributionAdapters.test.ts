@@ -58,8 +58,8 @@ vi.mock('ssh2-sftp-client', () => {
     };
 });
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
     }
 }));

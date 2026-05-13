@@ -22,7 +22,7 @@ export const QCPanel: React.FC = () => {
         setLoading('qc');
         setQcResult(null);
         try {
-            const ddexMetadata: import('@/types/distribution').DDEXMetadata = {
+            const ddexMetadata: import('@/types/distribution').IngestionMetadata = {
                 releaseId: `qc-${Date.now()}`,
                 title: metadata.title,
                 artists: [metadata.artist],

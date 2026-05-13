@@ -3,7 +3,7 @@
  * Core metadata schema for music tracks with DDEX extension support
  */
 
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 export interface RoyaltySplit {
     legalName: string;
@@ -202,8 +202,8 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     isrc: '',
     explicit: false,
     genre: '',
-    labelName: DDEX_CONFIG.PARTY_NAME,
-    dpid: DDEX_CONFIG.PARTY_ID,
+    labelName: INGESTION_CONFIG.ENTITY_NAME,
+    dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
     splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
     pro: 'None',
     publisher: 'Self-Published',

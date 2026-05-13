@@ -12,8 +12,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 export class DistroKidAdapter extends BaseDistributorAdapter {
@@ -67,7 +67,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
         try {
             // 1. Generate DDEX ERN
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'distrokid', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'distrokid', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -230,8 +230,8 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             const fileResult = await window.electronAPI.sftp.readFile(remotePath);
 
             if (fileResult.success && fileResult.content) {
-                const { dsrService } = await import('@/services/ddex/DSRService');
-                const parsed = await dsrService.ingestFlatFile(fileResult.content);
+                const { earningsReportService } = await import('@/services/distribution/proprietary-ingestion/EarningsReportService');
+                const parsed = await earningsReportService.ingestFlatFile(fileResult.content);
                 
                 if (parsed.success && parsed.data) {
                     // Filter transactions for this releaseId (ISRC/UPC)

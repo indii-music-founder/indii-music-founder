@@ -1,0 +1,11 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/services/distribution/DeliveryProfile.ts(2,22): error TS2307: Cannot find module '../ddex/types/common' or its corresponding type declarations.
+packages/renderer/src/services/distribution/proprietary-ingestion/EarningsUploadService.ts(4,15): error TS2724: '"@/types/firestore"' has no exported member named 'EarningsReportProcessedReportDocument'. Did you mean 'DSRProcessedReportDocument'?
+packages/renderer/src/services/distribution/proprietary-ingestion/index.ts(19,10): error TS2724: '"./EarningsProcessor"' has no exported member named 'EarningsProcessor'. Did you mean 'earningsProcessor'?
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(104,17): error TS2339: Property 'dpid' does not exist on type '{ identity: string; name: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(112,20): error TS2339: Property 'dpid' does not exist on type '{ identity: string; name: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(130,27): error TS2339: Property 'dpid' does not exist on type '{ identity: string; name: string; protocol: "sftp" | "aspera" | "transporter"; }'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts(131,24): error TS2339: Property 'dpid' does not exist on type '{ identity: string; name: string; protocol: "sftp" | "aspera" | "transporter"; }'.

@@ -1,0 +1,88 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/modules/distribution/components/AuthorityPanel.tsx(63,98): error TS7006: Parameter 't' implicitly has an 'any' type.
+packages/renderer/src/modules/distribution/components/AuthorityPanel.tsx(77,132): error TS7006: Parameter 't' implicitly has an 'any' type.
+packages/renderer/src/modules/distribution/components/AuthorityPanel.tsx(77,135): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(218,54): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(220,82): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(221,90): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(223,79): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(245,150): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(257,116): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(273,83): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(274,85): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(278,103): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(281,58): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(282,71): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(286,117): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(287,136): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(288,59): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(288,83): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(290,66): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(290,175): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(291,66): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(291,175): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(297,103): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(299,54): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(302,103): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(304,93): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(305,112): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(308,139): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(309,50): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(311,114): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseListView.tsx(317,110): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(31,42): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(31,91): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(43,51): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(50,51): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(61,30): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(62,43): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(62,76): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(72,34): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(75,40): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(77,40): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(98,50): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx(135,46): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx(229,29): error TS2339: Property 'dpid' does not exist on type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx(230,45): error TS2353: Object literal may only specify known properties, and 'dpid' does not exist in type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts(14,39): error TS2305: Module '"@/services/metadata/types"' has no exported member 'DDEXReleaseRecord'.
+packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts(64,3): error TS2353: Object literal may only specify known properties, and 'dpid' does not exist in type 'Partial<ExtendedGoldenMetadata>'.
+packages/renderer/src/modules/publishing/hooks/useReleaseList.ts(18,25): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/hooks/useReleaseList.ts(19,25): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/hooks/useReleaseList.ts(21,69): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/hooks/useReleases.test.ts(87,44): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/hooks/useReleases.ts(6,15): error TS2305: Module '"@/services/metadata/types"' has no exported member 'DDEXReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(95,30): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(100,45): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(101,46): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(102,116): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(164,67): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(167,70): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(168,73): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(169,77): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(170,75): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(171,84): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(175,70): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(176,72): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(177,73): error TS2339: Property 'assets' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(182,70): error TS2339: Property 'distributors' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(182,88): error TS7006: Parameter 'd' implicitly has an 'any' type.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(310,56): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(311,54): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(311,72): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(385,49): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(396,36): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(397,55): error TS2339: Property 'id' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(402,79): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(403,77): error TS2339: Property 'metadata' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/modules/publishing/PublishingDashboard.tsx(454,46): error TS2339: Property 'status' does not exist on type 'ClientReleaseRecord'.
+packages/renderer/src/services/distribution/DeliveryProfile.ts(2,10): error TS2305: Module '"./proprietary-ingestion/types/common"' has no exported member 'DPID'.
+packages/renderer/src/services/distribution/DeliveryService.integration.test.ts(36,5): error TS2353: Object literal may only specify known properties, and 'dpid' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/DistributionSyncService.ts(3,15): error TS2305: Module '"@/services/metadata/types"' has no exported member 'DDEXReleaseRecord'.
+packages/renderer/src/services/distribution/DistributionSyncService.ts(15,39): error TS7006: Parameter 'dist' implicitly has an 'any' type.
+packages/renderer/src/services/distribution/proprietary-ingestion/DDEX_CLIP_Integration.test.ts(69,9): error TS2353: Object literal may only specify known properties, and 'identity' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.test.ts(14,5): error TS2353: Object literal may only specify known properties, and 'identity' does not exist in type 'ExtendedGoldenMetadata'.
+packages/renderer/src/services/ingestion/TrackIngestionService.ts(71,13): error TS2561: Object literal may only specify known properties, but 'durationDDEXFormatted' does not exist in type 'ExtendedGoldenMetadata'. Did you mean to write 'durationFormatted'?
+packages/renderer/src/services/metadata/types.ts(209,5): error TS2353: Object literal may only specify known properties, and 'dpid' does not exist in type 'ExtendedGoldenMetadata'.
