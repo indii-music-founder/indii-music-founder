@@ -742,7 +742,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             }
 
             // Raster formats (PNG, JPEG, WebP)
-            // ⚡ INDII FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
+            // ⚡ INDIIOS FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
             // to ensure no cropping occurs due to responsive scaling
             const currentZoom = canvas.getZoom();
             const currentWidth = canvas.width;

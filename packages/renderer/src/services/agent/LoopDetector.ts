@@ -26,7 +26,6 @@ export interface LoopDetectionResult {
 
 export class LoopDetector {
     private toolCallHistory: ToolCall[] = [];
-    private llmCostHistory: { timestamp: number; cost: number }[] = [];
     private maxHistorySize = 20; // Track last 20 tool calls
 
     /**
@@ -56,23 +55,6 @@ export class LoopDetector {
         // Keep history bounded
         if (this.toolCallHistory.length > this.maxHistorySize) {
             this.toolCallHistory.shift();
-        }
-    }
-
-    /**
-     * Record LLM generation cost
-     */
-    recordLLMUsage(cost: number): void {
-        if (cost <= 0) return;
-        
-        this.llmCostHistory.push({
-            timestamp: Date.now(),
-            cost
-        });
-
-        // Keep history bounded (matches tool history size)
-        if (this.llmCostHistory.length > this.maxHistorySize) {
-            this.llmCostHistory.shift();
         }
     }
 
@@ -151,9 +133,6 @@ export class LoopDetector {
         let cumulativeCost = 0;
         for (const call of this.toolCallHistory) {
             cumulativeCost += call.cost || 0;
-        }
-        for (const call of this.llmCostHistory) {
-            cumulativeCost += call.cost;
         }
 
         const MAX_SESSION_COST_LIMIT = 5.00; // $5 limit per agent session for anti-burn

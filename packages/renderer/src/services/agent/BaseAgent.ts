@@ -788,14 +788,14 @@ export class BaseAgent implements SpecializedAgent {
                     const tier = await MembershipService.getCurrentTier();
                     executionContext.rollback();
                     return {
-                        text: budgetCheck.requiresApproval 
+                        text: (budgetCheck.requiresApproval 
                             ? 'Task paused: The next step exceeds the $0.50 auto-approval threshold. Please review and authorize the next action in the Ledger.'
-                            : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.',
-                        hint: budgetCheck.requiresApproval 
+                            : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.') +
+                            ' \n\nHint: ' + (budgetCheck.requiresApproval 
                             ? 'Approval Required' :
                               (tier === 'free' ? 'Upgrade to Pro for a $10/day limit.' :
                                tier === 'pro' ? 'Upgrade to Founder for a $500/day limit.' :
-                               'Contact support if you need a higher limit.'),
+                               'Contact support if you need a higher limit.')),
                         error: budgetCheck.requiresApproval ? 'Approval Required' : 'Daily spend limit reached',
                         toolCalls
                     };

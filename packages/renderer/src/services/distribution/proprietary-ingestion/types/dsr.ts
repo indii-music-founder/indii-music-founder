@@ -174,28 +174,3 @@ export interface ReleaseEarnings {
   downloads: number;
   revenue: number;
 }
-
-// ========================================================================
-// Legacy Aliases (Digital Sales Reporting)
-// ========================================================================
-
-/** @deprecated Use EarningsReportReport */
-export type DSRReport = EarningsReportReport;
-
-/** @deprecated Use EarningsReportSummary */
-export type DSRSummary = EarningsReportSummary;
-
-/** @deprecated Use EarningsReportTransaction */
-export type DSRTransaction = EarningsReportTransaction;
-
-/** @deprecated Use EarningsReportUsageType */
-export type DSRUsageType = EarningsReportUsageType;
-
-/** @deprecated Use EarningsReportParseResult */
-export type DSRParseResult = EarningsReportParseResult;
-
-/** @deprecated Use EarningsReportParseError */
-export type DSRParseError = EarningsReportParseError;
-
-/** @deprecated Use EarningsReportProcessingOptions */
-export type DSRProcessingOptions = EarningsReportProcessingOptions;

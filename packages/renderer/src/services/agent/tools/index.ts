@@ -187,57 +187,55 @@ AVAILABLE TOOLS:
 70. generate_beat_lease_contract(beatTitle, producerName, buyerName, leaseType, price) - Generate a beat lease agreement (Exclusive or Non-Exclusive).
 71. draft_contract(type, parties, terms) - Draft a general music industry contract.
 72. generate_nda(partyA, partyB, purpose, duration) - Generate a Non-Disclosure Agreement.
-73. generate_split_sheet(trackTitle, collaborators) - Generate a royalty split sheet.
-74. trigger_digital_signature(documentUrl, signers) - Initiate digital signature workflow.
-75. generate_dmca_takedown(infringingUrl, contentDescription, ownerName) - Generate a DMCA takedown notice.
-76. verify_mechanical_license(isrc, territory) - Verify mechanical license coverage for a track.
+73. generate_dmca_takedown(infringingUrl, contentDescription, ownerName) - Generate a DMCA takedown notice.
+74. verify_mechanical_license(isrc, territory) - Verify mechanical license coverage for a track.
 --- MUSIC & PUBLISHING ---
-77. create_music_metadata(trackTitle, artistName, genre, bpm, key, mood, isrc) - Create standardized music metadata.
-78. verify_metadata_golden(trackId) - Verify metadata completeness against golden standard.
-79. update_track_metadata(trackId, updates) - Update track metadata fields.
-80. scrub_id3_tags(fileUrl) - Scrub and standardize ID3 tags on an audio file.
-81. inject_splits_to_metadata(trackId, splits) - Inject royalty split data into track metadata.
-82. export_dolby_atmos_stems(trackId, format) - Export stems for Dolby Atmos spatial audio.
-83. query_pro_database(songTitle, composer, pro) - Query a Performing Rights Organization database.
+75. create_music_metadata(trackTitle, artistName, genre, bpm, key, mood, isrc) - Create standardized music metadata.
+76. verify_metadata_golden(trackId) - Verify metadata completeness against golden standard.
+77. update_track_metadata(trackId, updates) - Update track metadata fields.
+78. scrub_id3_tags(fileUrl) - Scrub and standardize ID3 tags on an audio file.
+79. inject_splits_to_metadata(trackId, splits) - Inject royalty split data into track metadata.
+80. exported_dolby_atmos_stems(trackId, format) - Export stems for Dolby Atmos spatial audio.
+81. query_pro_database(songTitle, composer, pro) - Query a Performing Rights Organization database.
 --- PRODUCTION & NARRATIVE ---
-84. create_call_sheet(projectName, date, location, crew, talent) - Create a production call sheet.
-85. breakdown_script(scriptText) - Break down a script into production elements.
-86. generate_visual_script(concept, scenes, style) - Generate a visual narrative script.
-87. format_screenplay(storyOutline, genre) - Format a screenplay from an outline.
-88. analyze_script_structure(scriptText) - Analyze script structure and pacing.
+82. create_call_sheet(projectName, date, location, crew, talent) - Create a production call sheet.
+83. breakdown_script(scriptText) - Break down a script into production elements.
+84. generate_visual_script(concept, scenes, style) - Generate a visual narrative script.
+85. format_screenplay(storyOutline, genre) - Format a screenplay from an outline.
+86. analyze_script_structure(scriptText) - Analyze script structure and pacing.
 --- COMMERCE & WEB3 ---
-89. create_artifact_drop(assetId, dropType, price, quantity) - Create a independent artifact drop (NFT or limited edition).
-90. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
-91. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
-92. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
-93. create_limited_drop_campaign(productId, dropDate, quantity, notifyFans) - Create a limited drop campaign.
-94. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
-95. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
-96. generate_token_gated_preview(assetId, tokenContract) - Generate a token-gated content preview URL.
+87. create_artifact_drop(assetId, dropType, price, quantity) - Create a independent artifact drop (NFT or limited edition).
+88. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
+89. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
+90. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
+91. create_limited_drop_campaign(productId, dropDate, quantity, notifyFans) - Create a limited drop campaign.
+92. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
+93. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
+94. generate_token_gated_preview(assetId, tokenContract) - Generate a token-gated content preview URL.
 --- ANALYTICS & BROWSER ---
-97. execute_bigquery_query(sql, projectId) - Execute a BigQuery SQL query for revenue analytics.
-98. get_table_schema(dataset, table) - Get BigQuery table schema.
-99. list_datasets(projectId) - List available BigQuery datasets.
-100. run_cohort_analysis(metric, cohortType, dateRange) - Run a user/fan cohort analysis.
-101. browser_navigate(url) - Navigate to a URL in the background browser.
-102. browser_action(action, selector, value) - Perform a browser action (click, type, select).
-103. browser_snapshot(format) - Take a snapshot of the current browser page.
+95. execute_bigquery_query(sql, projectId) - Execute a BigQuery SQL query for revenue analytics.
+96. get_table_schema(dataset, table) - Get BigQuery table schema.
+97. list_datasets(projectId) - List available BigQuery datasets.
+98. run_cohort_analysis(metric, cohortType, dateRange) - Run a user/fan cohort analysis.
+99. browser_navigate(url) - Navigate to a URL in the background browser.
+100. browser_action(action, selector, value) - Perform a browser action (click, type, select).
+101. browser_snapshot(format) - Take a snapshot of the current browser page.
 --- CANVAS (A2UI - DETERMINISTIC UI VECTOR DRAWING) ---
-104. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
-105. canvas_clear() - Clear all agent-pushed canvas panels.
-106. draw_shape(shapeType, x, y, width?, height?, radius?, color?, fill?, stroke?, zIndex?, label?) - Draw deterministic UI vector shapes (rect, circle, line, text). NOT for AI media generation.
+102. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
+103. canvas_clear() - Clear all agent-pushed canvas panels.
+104. draw_shape(shapeType, x, y, width?, height?, radius?, color?, fill?, stroke?, zIndex?, label?) - Draw deterministic UI vector shapes (rect, circle, line, text). NOT for AI media generation.
 --- CODE EXECUTION ---
-106. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
+105. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
 --- NOTIFICATIONS ---
-107. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
-108. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.
-109. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
-110. get_plan(planId: string) - Get details of a specific plan.
-111. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using AI outpainting.
-112. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.
+106. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
+107. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.
+108. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
+109. get_plan(planId: string) - Get details of a specific plan.
+110. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using AI outpainting.
+111. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.
 --- FEEDBACK ---
-113. report_bug(title: string, description: string, stepsToReproduce?: string, expectedBehavior?: string, actualBehavior?: string, severity?: string, module?: string, errorMessage?: string) - Report a bug or issue. Use when user describes something broken, crashing, or not working.
-114. request_feature(title: string, description: string, useCase?: string, priority?: string, category?: string, module?: string) - Capture a feature request or product idea. Use when user suggests new functionality, improvements, or says "it would be cool if...".
-115. edit_image_with_annotations(imageId: string, annotations: object[], colorPrompts?: object) - Edit an image using spatial annotations (circles) and color-coded instructions.
-116. edit_document_with_annotations(documentId: string, annotations: object[], globalInstruction?: string) - Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.
+112. report_bug(title: string, description: string, stepsToReproduce?: string, expectedBehavior?: string, actualBehavior?: string, severity?: string, module?: string, errorMessage?: string) - Report a bug or issue. Use when user describes something broken, crashing, or not working.
+113. request_feature(title: string, description: string, useCase?: string, priority?: string, category?: string, module?: string) - Capture a feature request or product idea. Use when user suggests new functionality, improvements, or says "it would be cool if...".
+114. edit_image_with_annotations(imageId: string, annotations: object[], colorPrompts?: object) - Edit an image using spatial annotations (circles) and color-coded instructions.
+115. edit_document_with_annotations(documentId: string, annotations: object[], globalInstruction?: string) - Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.
 `;
