@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
-import type { EarningsReportProcessedReportDocument } from '@/types/firestore';
+import type { DSRProcessedReportDocument } from '@/types/firestore';
 import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { earningsReportService, type ProcessedSalesBatches } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
@@ -21,7 +21,7 @@ export interface EarningsReportUploadResult {
  * EarningsReport Upload Service
  * Handles the complete flow of uploading, parsing, and processing sales reports.
  */
-export class EarningsReportUploadService extends FirestoreService<EarningsReportProcessedReportDocument> {
+export class EarningsReportUploadService extends FirestoreService<DSRProcessedReportDocument> {
     constructor() {
         super('dsr_processed_reports');
     }
@@ -87,7 +87,7 @@ export class EarningsReportUploadService extends FirestoreService<EarningsReport
         originalReport: EarningsReportReport
     ): Promise<void> {
         try {
-            const reportData: Omit<EarningsReportProcessedReportDocument, 'id' | 'createdAt' | 'updatedAt'> = {
+            const reportData: Omit<DSRProcessedReportDocument, 'id' | 'createdAt' | 'updatedAt'> = {
                 userId,
                 distributorId,
                 batchId: batch.batchId,

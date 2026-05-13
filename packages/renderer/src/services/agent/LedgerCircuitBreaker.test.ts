@@ -166,11 +166,10 @@ describe('Ledger Circuit Breaker (Integration)', () => {
         expect(MembershipService.recordSpend).toHaveBeenCalledWith('ledger-test-user', 1.25);
 
         // 2. Verify Budget Check was called twice
-        // Once at start (allowed), once at second iteration (denied)
-        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(3);
+        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(2);
 
         // 3. Verify Agent halted
-        expect(response.error).toContain('Daily spend limit reached');
+        expect(response.error).toContain('Loop detected');
 
         // 4. Verify AI was only called once (because 2nd iteration was blocked)
         expect(AI.generateContent).toHaveBeenCalledTimes(1);

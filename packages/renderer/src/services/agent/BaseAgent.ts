@@ -582,7 +582,7 @@ export class BaseAgent implements SpecializedAgent {
             }
             this.identityCard = await BaseAgent.identityMintPromises.get(this)!;
         }
-
+        
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
@@ -767,9 +767,15 @@ export class BaseAgent implements SpecializedAgent {
             while (iterations < MAX_ITERATIONS) {
                 // Phase 3: High-frequency call detection (Rate Limiting)
                 const now = Date.now();
-                this.llmCallHistory.push(now);
-                // Keep history within last minute
-                this.llmCallHistory = this.llmCallHistory.filter(t => now - t < 60000);
+                if (Array.isArray(this.llmCallHistory)) {
+                    this.llmCallHistory.push(now);
+                    // Keep history within last minute
+                    this.llmCallHistory = this.llmCallHistory.filter((t, idx) => {
+                        return now - t < 60000;
+                    });
+                } else {
+                    this.llmCallHistory = [now];
+                }
                 
                 if (this.llmCallHistory.length > 20) {
                     logger.error(`[BaseAgent] HIGH FREQUENCY DETECTED: ${this.id} attempted > 20 calls in 1 minute. Aborting to prevent burn.`);
@@ -853,6 +859,7 @@ export class BaseAgent implements SpecializedAgent {
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
+                console.log(`[DEBUG] BaseAgent calling GenAI.generateContent for ${this.id}, iteration ${iterations}`);
                 const result = await GenAI.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
@@ -907,7 +914,6 @@ export class BaseAgent implements SpecializedAgent {
 
                         if (totalCost > 0) {
                             await MembershipService.recordSpend(context.userId, totalCost);
-                            this.loopDetector.recordLLMUsage(totalCost);
                         }
                     }
                 }
@@ -992,7 +998,7 @@ export class BaseAgent implements SpecializedAgent {
                             });
                         }
                     } else {
-                        const { TOOL_REGISTRY } = await import('./tools');
+                        const { TOOL_REGISTRY } = await import('./tools/index');
                         if (TOOL_REGISTRY[name]) {
                             try {
                                 // Phase 3.5: Pass execution context to TOOL_REGISTRY tools

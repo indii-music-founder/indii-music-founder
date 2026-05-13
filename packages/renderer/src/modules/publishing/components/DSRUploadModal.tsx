@@ -3,20 +3,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
-import { type DSRReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
+import { type EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 interface DSRUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onProcess: (report: DSRReport) => Promise<void>;
+    onProcess: (report: EarningsReportReport) => Promise<void>;
 }
 
 export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose, onProcess }) => {
     const [file, setFile] = useState<File | null>(null);
     const [isParsing, setIsParsing] = useState(false);
-    const [parsedReport, setParsedReport] = useState<DSRReport | null>(null);
+    const [parsedReport, setParsedReport] = useState<EarningsReportReport | null>(null);
     const [error, setError] = useState<string | null>(null);
     const toast = useToast();
 
@@ -165,7 +165,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-800/50">
-                                                {parsedReport.transactions.slice(0, 5).map((row, i) => (
+                                                {parsedReport.transactions.slice(0, 5).map((row: any, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
                                                         <td className="px-4 py-2">{row.usageCount.toLocaleString()}</td>
