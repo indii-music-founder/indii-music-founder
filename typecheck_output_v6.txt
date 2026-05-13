@@ -1,0 +1,4 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+

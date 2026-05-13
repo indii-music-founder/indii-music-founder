@@ -1,0 +1,9 @@
+
+> indii-monorepo@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/core/store/slices/__tests__/analyticsSlice.test.ts(8,37): error TS2307: Cannot find module '@indii/shared' or its corresponding type declarations.
+packages/renderer/src/core/store/slices/analyticsSlice.ts(4,37): error TS2307: Cannot find module '@indii/shared' or its corresponding type declarations.
+packages/renderer/src/services/agent/BaseAgent.ts(128,42): error TS2339: Property 'swarmId' does not exist on type 'AgentContext'.
+packages/renderer/src/services/agent/LoopDetector.ts(149,52): error TS2554: Expected 1 arguments, but got 0.
+packages/renderer/src/services/analytics/analytics-queries.ts(11,37): error TS2307: Cannot find module '@indii/shared' or its corresponding type declarations.

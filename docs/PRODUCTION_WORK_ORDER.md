@@ -241,7 +241,7 @@ Replace `Math.random` with proper ID generation in non-test service files.
 **Prioritize by impact:**
 
 1. Agent service files (where type errors propagate to AI responses)
-2. Distribution/DDEX (where type errors corrupt industry-standard XML)
+2. Distribution/Proprietary Ingestion IP (where type errors corrupt industry-standard XML)
 3. Payment/subscription (where type errors affect billing)
 4. AI service files (where type errors affect model calls)
 
@@ -251,7 +251,7 @@ Replace `Math.random` with proper ID generation in non-test service files.
 
 | Task | Detail |
 |------|--------|
-| **SFTP test against real DSP** | Set up a test SFTP endpoint that mirrors DSP delivery specs. Validate full pipeline: DDEX XML gen → audio file packaging → metadata attachment → SFTP upload → delivery confirmation |
+| **SFTP test against real DSP** | Set up a test SFTP endpoint that mirrors DSP delivery specs. Validate full pipeline: Proprietary Ingestion IP XML gen → audio file packaging → metadata attachment → SFTP upload → delivery confirmation |
 | **Per-DSP adapter configs** | Create delivery spec configs for: Spotify, Apple Music, Tidal, Amazon Music, Deezer, YouTube Music. Each has unique format, codec, metadata, and artwork requirements |
 | **DSP compliance coaching** | After DNA extraction, compare track specs (LUFS, sample rate, bit depth, codec) against the selected DSP's delivery requirements. Flag mismatches with actionable guidance |
 

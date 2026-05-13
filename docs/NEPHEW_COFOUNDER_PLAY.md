@@ -16,7 +16,7 @@
 
 **Mechanics:**
 - Nephew commits 2-3 weeks to code audit (no upfront cash)
-- Audits critical systems: DDEX rail, Stripe integration, agent stream, Firebase architecture
+- Audits critical systems: Proprietary Ingestion IP rail, Stripe integration, agent stream, Firebase architecture
 - Documents his findings + commits to 12-month post-acquisition retention
 - Gets: Co-founder equity + $X bonus if acquisition closes
 

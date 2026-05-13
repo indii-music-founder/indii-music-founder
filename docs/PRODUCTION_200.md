@@ -36,7 +36,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **125. Limited Drop Campaigns:** Workflow system to countdown drops, lock pre-sales, and notify superfans.
 - [x] **126. Web3 Authentication/Wallet Connnect:** Allow signing in via MetaMask/WalletConnect to gate experiences.
 - [x] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
-- [x] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
+- [x] **128. Blockchain Royalty Tracing:** Mirror traditional Proprietary Ingestion IP splits to a private ledger or IPFS pinning for indisputable rights tracking.
 - [x] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
 - [x] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 
@@ -98,7 +98,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 
 ### B2B Connections & Distributor Tech (171-180)
 
-- [x] **171. Custom DDEX/ERN 4.2 Exporter:** Upgrade the metadata engine to support full DDEX ERN 4.2 compliance for direct DSP ingestion. *(Wired: ERNService.generateERN() integration in DistributionTools.ts)*
+- [x] **171. Custom Proprietary Ingestion IP/IngestionNotification 4.2 Exporter:** Upgrade the metadata engine to support full Proprietary Ingestion IP IngestionNotification 4.2 compliance for direct DSP ingestion. *(Wired: IngestionNotificationService.generateIngestionNotification() integration in DistributionTools.ts)*
 - [x] **172. Automated ISRC/UPC Generation:** Hook into the US ISRC agency API for instant, validated generation. *(Wired: IdentifierService.nextISRC() in DistributionTools.ts)*
 - [x] **173. SFTP Ingestion Engine:** Automate the direct SFTP pipeline to drop structured folders for direct DSPs (avoiding aggregators). *(Wired: Electron IPC sftpUpload with fallback in DistributionTools.ts)*
 - [x] **174. Quality Control (QC) Visualizer:** A strictly-enforced gateway matching audio true peaks, artwork resolution, and explicit tagging perfectly before delivery.

@@ -29,8 +29,8 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => new Date().toISOString())
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({
             success: true,
             xml: '<ern:NewReleaseMessage>...</ern:NewReleaseMessage>'
@@ -56,7 +56,7 @@ function enableElectron() {
         distribution: {
             generateISRC: vi.fn().mockResolvedValue({ isrc: 'USIND2600001' }),
             registerRelease: vi.fn().mockResolvedValue({ success: true }),
-            generateDDEX: vi.fn().mockResolvedValue('<xml>...</xml>'),
+            generateIngestionNotification: vi.fn().mockResolvedValue('<xml>...</xml>'),
             calculateTax: vi.fn().mockResolvedValue({ report: { withholding_rate: 0 } }),
             certifyTax: vi.fn().mockResolvedValue({ report: { certified: true, payout_status: 'ACTIVE' } }),
             executeWaterfall: vi.fn().mockResolvedValue({ report: { net_revenue: 9000 } }),

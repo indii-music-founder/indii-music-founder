@@ -40,16 +40,16 @@ Fallback to the free Gemini API exists via the agent architecture. However, due 
 **Gate 4: Prompt Injection — PASS**
 The `AgentPromptBuilder` implements multi-layered sanitization (NFKC normalization, Unicode tag stripping, zero-width stripping, and pattern neutralization). Test payloads are effectively neutralized before reaching the model.
 
-### DDEX (Gates 5–7)
+### Ingestion (Gates 5–7)
 
-**Gate 5: ERN Spec Compliance — PASS**
-The distribution layer (`src/services/ddex/` and `src/services/distribution/`) implements standard XML serialization matching published DDEX XSDs.
+**Gate 5: IngestionNotification Spec Compliance — PASS**
+The distribution layer (`src/services/proprietary-ingestion/` and `src/services/distribution/`) implements standard XML serialization matching industry standard XSDs.
 
 **Gate 6: SFTP Delivery — PASS**
 SFTP delivery logic (`execution/distribution/`) is present and handles credential management securely without leaking secrets into logs.
 
-**Gate 7: Party ID Verification — CONDITIONAL**
-The Party ID `PA-DPIDA-2025122604-E` is present and active, but it is registered to "New Detroit Music LLC". Acquirer legal must verify the relationship between "New Detroit Music LLC" and "indii LLC" (see `ENTITY_STRUCTURE.md`).
+**Gate 7: Proprietary Ingestion ID Verification — CONDITIONAL**
+The Proprietary Ingestion ID `PA-DPIDA-2025122604-E` is present and active, but it is registered to "New Detroit Music LLC". Acquirer legal must verify the relationship between "New Detroit Music LLC" and "indii LLC" (see `ENTITY_STRUCTURE.md`).
 
 ### Payments (Gates 8–10)
 

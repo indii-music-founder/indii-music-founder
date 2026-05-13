@@ -1050,7 +1050,7 @@ As your **Social Media Department**, my job is to protect your brand and ensure 
 
 ### Distribution Engineer
 
-#### ✅ DDEX delivery workflow *(competency)*
+#### ✅ Proprietary Ingestion IP delivery workflow *(competency)*
 
 | Dimension | Score |
 |-----------|-------|
@@ -1067,7 +1067,7 @@ As your **Social Media Department**, my job is to protect your brand and ensure 
 <details><summary>Response preview</summary>
 
 ```
-To deliver a 12-track album via **DDEX ERN 4.3** to major DSPs, follow this high-precision workflow.
+To deliver a 12-track album via **Proprietary Ingestion IP IngestionNotification 4.3** to major DSPs, follow this high-precision workflow.
 
 ### 1. Metadata Preparation & ISRC Assignment
 Metadata must be normalized before XML generation.

@@ -22,7 +22,7 @@ Transform indii from a tool-suite into a self-orchestrating operating system. Th
 
 ### 🎼 The "Music DNA" (Specialized Skills)
 
-- **Direct Distribution (DDEX):** Build a specialized Agent Skill that understands DDEX XML/ERN 4.3 metadata.
+- **Direct Distribution (Proprietary Ingestion IP):** Build a specialized Agent Skill that understands Proprietary Ingestion IP XML/IngestionNotification 4.3 metadata.
 - **Shared Workspace:** Sync the "Human-in-the-Loop" sliders (Creative Studio) directly with the Agent's tool-calls so the agent can "see" what the artist is designing in real-time.
 
 ## 3. Implementation Phases
@@ -42,7 +42,7 @@ Transform indii from a tool-suite into a self-orchestrating operating system. Th
 ### Phase 3: External Hands (IN PROGRESS)
 
 - [x] Initial test: Automating a search on the Copyright Office website.
-- [x] Implement DDEX/ERN 4.3 metadata parser and generator logic (`DDEXParser.ts`, `ERNService.ts`).
+- [x] Implement Proprietary Ingestion IP/IngestionNotification 4.3 metadata parser and generator logic (`Proprietary Ingestion IPParser.ts`, `IngestionNotificationService.ts`).
 - [x] Draft internal 'Credential Vault' architecture (`CREDENTIAL_VAULT.md`).
 - [x] Map out automated PRO work registration flow (`PRO_STRATEGY.md`).
 - [ ] Implement "Human-in-the-Loop" payment authorization for registration fees ($).

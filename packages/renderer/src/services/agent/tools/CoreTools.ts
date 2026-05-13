@@ -200,7 +200,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
                 const releasesSnap = await getDocs(
                     query(
-                        collection(db, 'users', uid, 'ddexReleases'),
+                        collection(db, 'users', uid, 'proprietaryIngestionReleases'),
                         where('releaseDate', '>=', Timestamp.fromDate(now)),
                         where('releaseDate', '<=', Timestamp.fromDate(thirtyDaysOut))
                     )

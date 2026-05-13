@@ -1,0 +1,102 @@
+import { describe, it, expect } from 'vitest';
+import { earningsReportService } from './EarningsReportService';
+import type { EarningsReportReport } from './types/dsr';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+
+describe('EarningsReportService', () => {
+    it('should ingest valid flat file content', async () => {
+        // Mock IngestionParser.parseEarningsReport behavior
+        // Real parser implementation logic is tested in IngestionParser.test.ts (if it exists)
+        // Here we test integration
+        const content = 'ISRC\tTitle\tUsageType\tUsageCount\tRevenue\tCurrency\tTerritory\nUS1234567890\tTest Track\tOnDemandStream\t100\t0.99\tUSD\tUS';
+        const result = await earningsReportService.ingestFlatFile(content);
+
+        // Since we know IngestionParser.parseEarningsReport handles TSV, we expect success 
+        // IF the parser is implemented. 
+        // Note: IngestionParser implementation for parseEarningsReport is extremely basic in the current codebase 
+        // (based on prior context). It might return generic stub data.
+        expect(result.success).toBe(true);
+        expect(result.data).toBeDefined();
+    });
+
+    it('should process report and calculate royalties', async () => {
+        const mockReport: EarningsReportReport = {
+            reportId: 'RPT-001',
+            senderId: 'PASystemIdentityA',
+            recipientId: 'PASystemIdentityB',
+            reportingPeriod: { startDate: '2025-01-01', endDate: '2025-01-31' },
+            reportCreatedDateTime: '2025-02-01T12:00:00Z',
+            currencyCode: 'USD',
+            summary: {
+                totalUsageCount: 2,
+                totalRevenue: 200,
+                currencyCode: 'USD'
+            },
+            transactions: [
+                {
+                    transactionId: 'TX-1',
+                    resourceId: { isrc: 'US1234567890' },
+                    usageType: 'Download',
+                    usageCount: 1,
+                    revenueAmount: 100,
+                    currencyCode: 'USD',
+                    territoryCode: 'US'
+                },
+                {
+                    transactionId: 'TX-2',
+                    resourceId: { isrc: 'US1234567890' },
+                    usageType: 'Download',
+                    usageCount: 1,
+                    revenueAmount: 100,
+                    currencyCode: 'USD',
+                    territoryCode: 'US'
+                }
+            ]
+        };
+
+        const mockMetadata: ExtendedGoldenMetadata = {
+            title: 'Test Track',
+            artist: 'Test Artist',
+            isrc: 'US1234567890',
+            upc: '1234567890123',
+            releaseDate: '2024-01-01',
+            genre: 'Pop',
+            releaseType: 'Single',
+            territories: ['US'],
+            splits: [
+                { email: 'artist@test.com', percentage: 80, role: 'Main Artist', legalName: 'Artist' },
+                { email: 'producer@test.com', percentage: 20, role: 'Producer', legalName: 'Producer' }
+            ],
+            // Add other required fields if necessary
+            tracks: [],
+            copyrightYear: '2024',
+            copyrightOwner: 'Test Label'
+        } as unknown as ExtendedGoldenMetadata;
+
+        const catalog = new Map<string, ExtendedGoldenMetadata>();
+        catalog.set('US1234567890', mockMetadata);
+
+        const result = await earningsReportService.processReport(mockReport, catalog);
+
+        expect(result.batchId).toContain('BATCH-');
+        expect(result.totalRevenue).toBe(200);
+        expect(result.royalties.length).toBe(1);
+
+        const royalty = result.royalties[0];
+        expect(royalty!.isrc).toBe('US1234567890');
+        expect(royalty!.grossRevenue).toBe(200);
+
+        // Check Splits
+        expect(royalty!.contributorPayments.length).toBe(2);
+
+        const artistPayment = royalty!.contributorPayments.find(p => p.role === 'Main Artist');
+        expect(artistPayment).toBeDefined();
+        // 80% of 200 = 160
+        expect(artistPayment?.grossAmount).toBe(160);
+
+        const producerPayment = royalty!.contributorPayments.find(p => p.role === 'Producer');
+        expect(producerPayment).toBeDefined();
+        // 20% of 200 = 40
+        expect(producerPayment?.grossAmount).toBe(40);
+    });
+});
