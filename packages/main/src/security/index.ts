@@ -87,9 +87,9 @@ export function configureSecurity(session: Session) {
 
     // 4. Certificate Verification
     // Trusts Google/Firebase domains via standard certificate verification.
-    // NOTE: Certificate pinning for api.indii.os is disabled until the API is deployed.
+    // NOTE: Certificate pinning for api.indii.music is disabled until the API is deployed.
     // When deploying a custom API, generate real certificate fingerprints using:
-    //   openssl s_client -connect api.indii.os:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
+    //   openssl s_client -connect api.indii.music:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
 
     session.setCertificateVerifyProc((request, callback) => {
         const { hostname, verificationResult } = request;

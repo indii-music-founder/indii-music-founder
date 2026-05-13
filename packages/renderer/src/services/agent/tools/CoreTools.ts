@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction, AgentContext } from '../types';
+import type { ToolExecutionContext } from '../ToolExecutionContext';
 import type { StoreState } from '@/core/store';
 
 import type { AgentMode } from '@/core/store/slices/agent';
@@ -274,6 +275,57 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
             checksPassed: 100,
             experienceLevel: 'Elite Creative Software',
             message: `Absolute zero-defect pixel-perfection established. indii experience transcends standard B2B enterprise SaaS.`
+        };
+    }),
+
+    verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
+        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AI_MODELS } = await import('@/core/config/ai-models');
+        const prompt = `
+        Verify if the following content meets the goal:
+        Goal: ${args.goal}
+        Content: ${args.content}
+        
+        Return JSON: { score: number (1-10), pass: boolean, reason: string }
+        `;
+
+        const response = await GenAI.rawGenerateContent(
+            [{ role: 'user', parts: [{ text: prompt }] }],
+            AI_MODELS.TEXT.FAST,
+            { responseMimeType: 'application/json' }
+        );
+
+        const text = (typeof response === 'object' && response !== null && 'getText' in response && typeof (response as { getText: () => string }).getText === 'function')
+            ? (response as { getText: () => string }).getText()
+            : '{}';
+
+        let verification;
+        try {
+            verification = JSON.parse(text);
+        } catch (_e: unknown) {
+            logger.error('[CoreTools] Failed to parse verification JSON:', text);
+            verification = { score: 0, pass: false, reason: 'Failed to parse AI response' };
+        }
+
+        return {
+            verification,
+            message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
+        };
+    }),
+
+    read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
+        const history = (toolContext
+            ? toolContext.get('agentHistory')
+            : useStore.getState().agentHistory) || [];
+
+        const recentHistory = history.slice(-10);
+        return {
+            history: recentHistory.map(h => ({
+                role: h.role,
+                text: h.text.substring(0, 100)
+            })),
+            message: `Retrieved ${recentHistory.length} most recent history items.`
         };
     })
 } satisfies Record<string, AnyToolFunction>;

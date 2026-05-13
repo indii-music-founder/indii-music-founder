@@ -1,5 +1,5 @@
 {
-  "name": "indii-monorepo",
+  "name": "indii.music",
   "version": "1.63.0",
   "description": "The Operating System for Independent Music — npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
@@ -135,7 +135,7 @@
         "owner": "the-walking-agency-det",
         "private": true,
         "provider": "github",
-        "repo": "indii-Clean",
+        "repo": "indii-music",
         "releaseType": "release"
       }
     ],

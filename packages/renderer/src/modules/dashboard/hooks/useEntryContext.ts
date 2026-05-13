@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { memoryService } from '@/services/agent/MemoryService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { 
     Sparkles, 
     Play, 
@@ -76,14 +76,13 @@ export function useEntryContext(): EntryContext {
 
             try {
                 // Fetch recent high-priority memories to inject into greeting
-                const results = await memoryService.retrieveRelevantMemories(
-                    currentOrganizationId,
-                    'recent activity and current focus',
-                    1
-                );
+                const results = await alwaysOnMemoryEngine.retrieve({
+                    query: 'recent activity and current focus',
+                    limit: 1
+                });
                 
                 if (isMounted && results.length > 0) {
-                    setMemoryContext(results[0]!);
+                    setMemoryContext(results[0]!.summary || results[0]!.content);
                 }
             } catch (err) {
                 logger.error('[useEntryContext] Memory retrieval failed:', err);

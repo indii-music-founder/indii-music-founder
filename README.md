@@ -72,7 +72,7 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 │  → directives/                                               │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 2: ORCHESTRATION (Intelligence)                       │
-│  Hub-and-spoke agent system — reasons, routes, manages       │
+│  A2A swarm protocol — reasons, routes, manages               │
 │  → agents/ + src/services/agent/                             │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Deterministic)                          │
@@ -87,13 +87,13 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 
 ---
 
-## 🤖 indii: The Hub-and-Spoke Agent System
+## 🤖 indii: The A2A Swarm Protocol
 
-The core of indii is the **Agent Hub**, an intelligent orchestration hub with **17 specialist agents**.
+The core of indii is the **Agent Swarm**, a decentralized orchestration protocol with **17 specialist agents**.
 
 ```
               ┌─────────────────────┐
-              │  indii Conductor (Hub)│
+              │indii Conductor (Swarm)│
               │    Orchestrator     │
               └──────────┬──────────┘
                          │
@@ -113,7 +113,7 @@ The core of indii is the **Agent Hub**, an intelligent orchestration hub with **
 
 | Agent | Domain | Capabilities |
 |-------|--------|-------------|
-| **indii Conductor** | Hub Orchestrator | Native Node.js orchestration, session context, task routing, multi-agent graph coordination |
+| **indii Conductor** | Swarm Orchestrator | Native Node.js orchestration, session context, task routing, multi-agent graph coordination |
 | **Creative Director** | Visual Identity | Brand-consistent AI image/video generation, style enforcement |
 | **Music Agent** | Audio Intelligence | BPM, key, timbre analysis via `Essentia.js`, mastering QA |
 | **Legal Agent** | Rights & Contracts | Real-time contract review, rights management, IP protection |
@@ -475,7 +475,7 @@ indii ships with 36 lazy-loaded modules organized across four domains:
 
 | Module | Route | Description |
 |--------|-------|-------------|
-| **Agent Tools** | `/agent` | Hub for Agent Zero interactions and specialist agent routing |
+| **Agent Tools** | `/agent` | Hub for Agent Swarm interactions and specialist agent routing |
 | **Memory Agent** | `/memory` | Always-On Memory dashboard — memory timeline, insights, and query interface |
 | **Knowledge Base** | `/knowledge` | Searchable knowledge repository for artists and labels |
 | **Audio Analyzer** | `/audio-analyzer` | Deep audio analysis — BPM, key detection, timbre analysis via Essentia.js |
@@ -750,7 +750,7 @@ indii-Alpha-Electron/
 │   ├── lib/                # Utility libraries
 │   ├── types/              # TypeScript type definitions
 │   └── config/             # App configuration
-├── agents/                 # 17 AI agent definitions (hub-and-spoke)
+├── agents/                 # 17 AI agent definitions (A2A swarm)
 ├── execution/              # Deterministic scripts (Layer 3)
 ├── directives/             # AI agent SOPs (Layer 1)
 ├── python/                 # Python tools and API handlers
