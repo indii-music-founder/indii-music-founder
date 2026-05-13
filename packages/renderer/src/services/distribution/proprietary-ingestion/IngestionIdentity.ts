@@ -4,7 +4,7 @@ import { INGESTION_CONFIG } from '@/core/config/ingestion';
  * Ingestion Identity Service
  * Manages SystemIdentitys and Party IDs for the indii distribution pipeline.
  *
- * SystemIdentitys (Ingestion Party IDs) are registered at https://systemIdentifier.ddex.net/
+ * SystemIdentitys (Ingestion Party IDs) are registered at https://dpid.ddex.net/
  * Each DSP has a unique SystemIdentity that must be used as the MessageRecipient.
  *
  * Production SystemIdentitys are obtained during the onboarding process with each DSP.
@@ -56,7 +56,7 @@ const INGESTION_REGISTRY: Record<string, { systemIdentifier: string; entityName:
 export class IngestionIdentity {
     /**
      * Get the sender SystemIdentity (indii / New Detroit Music LLC)
-     * This is the registered SystemIdentity from systemIdentifier.ddex.net
+     * This is the registered SystemIdentity from dpid.ddex.net
      */
     static getSenderSystemIdentity(): string {
         return INGESTION_CONFIG.SYSTEM_IDENTIFIER;
@@ -101,15 +101,15 @@ export class IngestionIdentity {
             );
         }
 
-        if (dsp.systemIdentifier === 'PENDING_ONBOARDING') {
+        if (dsp.dpid === 'PENDING_ONBOARDING') {
             throw new Error(
-                `SystemIdentity for ${dsp.entityName} is pending onboarding. ` +
-                `Complete the content provider application with ${dsp.entityName} to obtain their SystemIdentity, ` +
+                `SystemIdentity for ${dsp.name} is pending onboarding. ` +
+                `Complete the content provider application with ${dsp.name} to obtain their SystemIdentity, ` +
                 `then set VITE_Ingestion_SystemIdentity_${key.toUpperCase()} environment variable.`
             );
         }
 
-        return dsp.systemIdentifier;
+        return dsp.dpid;
     }
 
     /**
@@ -126,9 +126,9 @@ export class IngestionIdentity {
     static getDSPRegistry(): Array<{ key: string; entityName: string; systemIdentifier: string; ready: boolean; protocol: string }> {
         return Object.entries(INGESTION_REGISTRY).map(([key, dsp]) => ({
             key,
-            entityName: dsp.entityName,
-            systemIdentifier: dsp.systemIdentifier,
-            ready: dsp.systemIdentifier !== 'PENDING_ONBOARDING',
+            entityName: dsp.name,
+            systemIdentifier: dsp.dpid,
+            ready: dsp.dpid !== 'PENDING_ONBOARDING',
             protocol: dsp.protocol,
         }));
     }

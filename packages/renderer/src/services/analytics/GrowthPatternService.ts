@@ -1,5 +1,5 @@
 /**
- * GrowthPatternService — Detects viral growth patterns in streaming data.
+ * GrowthPattingestionNotificationService — Detects viral growth patterns in streaming data.
  *
  * Each detector analyzes the 30-day stream history and cross-platform signals
  * to identify which growth archetype best describes the track's trajectory.
@@ -68,7 +68,7 @@ const PATTERN_META: Record<GrowthPatternName, { label: string; description: stri
 // Public service
 // ──────────────────────────────────────────────────────────────────────────────
 
-export class GrowthPatternService {
+export class GrowthPattingestionNotificationService {
     /**
      * Run all pattern detectors and return those with confidence ≥ 0.4.
      */
@@ -356,4 +356,4 @@ export class GrowthPatternService {
     }
 }
 
-export const growthPatternService = new GrowthPatternService();
+export const growthPattingestionNotificationService = new GrowthPattingestionNotificationService();

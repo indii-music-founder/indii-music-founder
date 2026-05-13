@@ -60,7 +60,7 @@ export class CostControlService {
   static async checkAndReserve(req: CostCheckRequest): Promise<CostCheckResponse> {
     const timestamp = new Date();
     const isoString = timestamp.toISOString();
-    const today = isoString.split('T')[0] || isoString;
+    const today = (isoString.split('T')[0] as string) || isoString;
     const month = today.slice(0, 7);
     const hour = isoString.slice(0, 13);
 
@@ -298,7 +298,7 @@ export class CostControlService {
   }> {
     try {
       const isoString = new Date().toISOString();
-      const today = isoString.split('T')[0] || isoString;
+      const today = (isoString.split('T')[0] as string) || isoString;
       const month = today.slice(0, 7);
 
       const dailyRef = doc(db, 'costLedger', `daily-${today}`);
