@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2, Rocket
+    Palette, Clock, FlaskConical, Wand2, Rocket, Layers
 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import DaisyChainControls from './DaisyChainControls';

@@ -187,6 +187,7 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }
                 }}
                 role="button"
                 aria-disabled={isFull}
+                data-testid="drop-zone"
             >
                 {!isFull && (
                     <button
