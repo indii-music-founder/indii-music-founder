@@ -1,8 +1,9 @@
 import { ContextResolver } from './ContextResolver';
-import { AgentContext } from '../types';
+import { AgentContext, Directive } from '../types';
+import { Timestamp } from 'firebase/firestore';
 import { PlanStep } from '../LivingPlanService';
 import { HistoryManager } from './HistoryManager';
-import { memoryService } from '../MemoryService';
+import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 import { bigBrainEngine } from '../memory/BigBrainEngine';
 import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
@@ -130,7 +131,27 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         // 5. Format legacy memory context for backward compatibility
         const memoryContext = this.formatMemoryContext(relevantMemories);
 
-        // 5. Assemble Pipeline Context
+        // 6. Generate A2A Swarm Directive
+        const directive: Directive = {
+            id: crypto.randomUUID(),
+            userId: userId || 'anonymous',
+            title: stateContext.activeModule ? `Task: ${stateContext.activeModule}` : 'General Consultation',
+            status: 'IN_PROGRESS',
+            assignedAgent: (stateContext.activeModule || 'generalist') as any,
+            goalAncestry: [],
+            computeAllocation: {
+                maxTokens: 4000,
+                tokensUsed: 0,
+                isMaximizerModeActive: false
+            },
+            contextFiles: [],
+            conversationThread: [],
+            requiresDigitalHandshake: false,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        };
+
+        // 7. Assemble Pipeline Context
         return {
             ...stateContext,
             chatHistoryString,
@@ -139,6 +160,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             memoryContext,
             autoRecallBlock,
             activePlanBlock,
+            directive,
         };
     }
 
@@ -146,20 +168,16 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
      * Fallback memory retrieval (used when BigBrain is unavailable)
      */
     private async fallbackRetrieveMemories(
-        projectId: string | undefined,
+        _projectId: string | undefined,
         chatHistory: string
     ): Promise<string[]> {
-        if (!projectId) return [];
-
         try {
             const recentContext = this.extractRecentContext(chatHistory);
             if (!recentContext) return [];
 
-            return await memoryService.retrieveRelevantMemories(
-                projectId,
-                recentContext,
-                5
-            );
+            // Use the unified engine's retrieve for semantic search
+            const memories = await alwaysOnMemoryEngine.retrieve({ query: recentContext, limit: 5 });
+            return memories.map(m => m.summary || m.content);
         } catch (error: unknown) {
             logger.warn('[ContextPipeline] Fallback memory retrieval failed:', error);
             return [];
@@ -198,11 +216,22 @@ Use these memories to maintain continuity and apply learned preferences/rules.
      * Call this after significant interactions
      */
     async extractAndSaveLearnings(
-        projectId: string,
+        _projectId: string,
         learnings: Array<{ content: string; type: 'fact' | 'summary' | 'rule' }>
     ): Promise<void> {
         for (const learning of learnings) {
-            await memoryService.saveMemory(projectId, learning.content, learning.type);
+            // Map legacy 'type' to AlwaysOnMemoryCategory
+            const categoryMap: Record<string, any> = {
+                'fact': 'fact',
+                'summary': 'context',
+                'rule': 'preference'
+            };
+            
+            await alwaysOnMemoryEngine.ingest(
+                learning.content, 
+                'agent_extraction',
+                categoryMap[learning.type] || 'fact'
+            );
         }
     }
 }

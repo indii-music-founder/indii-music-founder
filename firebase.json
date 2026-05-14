@@ -160,7 +160,7 @@
   "storage": [
     {
       "target": "alpha",
-      "bucket": "indii-alpha-electron",
+      "bucket": "indii-music-alpha",
       "rules": "packages/firebase/storage.rules"
     }
   ]

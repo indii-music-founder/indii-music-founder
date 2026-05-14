@@ -1,8 +1,26 @@
 {
   "projects": {
-    "default": "indiios-v-1-1"
+    "default": "indii-music"
   },
   "targets": {
+    "indii-music": {
+      "hosting": {
+        "landing": [
+          "indii-music"
+        ],
+        "app": [
+          "indii-studio"
+        ]
+      },
+      "storage": {
+        "main": [
+          "indii-music.firebasestorage.app"
+        ],
+        "alpha": [
+          "indii-music-alpha"
+        ]
+      }
+    },
     "indiios-v-1-1": {
       "hosting": {
         "landing": [
@@ -15,9 +33,6 @@
       "storage": {
         "main": [
           "indiios-v-1-1.firebasestorage.app"
-        ],
-        "alpha": [
-          "indiios-alpha-electron"
         ]
       }
     }

@@ -94,7 +94,7 @@ export class AuthService {
             const urlObj = new URL(url);
 
             // Must be our custom protocol
-            if (urlObj.protocol !== 'indii-os:') {
+            if (urlObj.protocol !== 'indii:') {
                 return { valid: false, error: `Invalid protocol: ${urlObj.protocol}` };
             }
 

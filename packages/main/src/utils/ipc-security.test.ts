@@ -34,8 +34,8 @@ describe('Sentinel: IPC Validation Security', () => {
             expect(() => validateSender(mockEvent('file:///tmp/malicious.html'))).toThrow('Unauthorized sender URL');
         });
 
-        it('should accept indii-os:// URLs (Deep Links)', () => {
-            expect(() => validateSender(mockEvent('indii-os://open/project/123'))).not.toThrow();
+        it('should accept indii:// URLs (Deep Links)', () => {
+            expect(() => validateSender(mockEvent('indii://open/project/123'))).not.toThrow();
         });
 
         it('should accept Dev Server URL when configured', () => {

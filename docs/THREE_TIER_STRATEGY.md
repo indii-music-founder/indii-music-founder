@@ -1896,7 +1896,7 @@ export const ProductComparison: React.FC = () => {
     <div className="min-h-screen bg-[#0d1117] text-white p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-5xl font-black mb-8 tracking-tighter text-center">
-          WHICH INDIIOS IS RIGHT FOR YOU?
+          WHICH indii.music IS RIGHT FOR YOU?
         </h1>
 
         <ComparisonTable />

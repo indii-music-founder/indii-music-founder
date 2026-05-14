@@ -74,7 +74,8 @@ vi.mock('@/core/store', () => {
             motion: [],
             preciseReference: false
         },
-        studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24, model: 'fast' }
+        studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24, model: 'fast' },
+        initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
     }));
     (mockStore as any).subscribe = vi.fn();
     return { useStore: mockStore };
@@ -244,7 +245,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setHasUnsavedChanges: vi.fn(),
                 isRightPanelOpen: false,
                 toggleRightPanel: vi.fn(),
-                whiskState: state.whiskState
+                whiskState: state.whiskState,
+                initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 
             // Sync useStore mock to this local state

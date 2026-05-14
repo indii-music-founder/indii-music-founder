@@ -1,12 +1,30 @@
 name: Build and Test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build_all:
+        description: 'Build for all platforms (macOS/Windows)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
+  setup-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.build_all }}" == "true" ]]; then
+            echo 'matrix=["blacksmith-4vcpu-ubuntu-2204", "macos-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix=["blacksmith-4vcpu-ubuntu-2204"]' >> "$GITHUB_OUTPUT"
+          fi
+
   test:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
@@ -37,17 +55,14 @@ jobs:
     - name: Typecheck
       run: npm run typecheck
 
-    - name: Build Electron App
-      run: npm run build
-
   build:
-    needs: test
+    needs: [test, setup-matrix]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, blacksmith-4vcpu-ubuntu-2204, windows-latest]
-
+        os: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
+    
     steps:
     - uses: actions/checkout@v5
 
@@ -62,6 +77,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+
     - name: Install dependencies
       run: npm ci
 
