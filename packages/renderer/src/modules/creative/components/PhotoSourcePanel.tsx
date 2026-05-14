@@ -54,11 +54,13 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
             if (ctx) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                setPreviewUrl(dataUrl);
-                setCapturedImage({
-                    mimeType: 'image/jpeg',
-                    data: dataUrl.split(',')[1]
-                });
+                if (dataUrl) {
+                    setPreviewUrl(dataUrl);
+                    setCapturedImage({
+                        mimeType: 'image/jpeg',
+                        data: dataUrl.split(',')[1] || ''
+                    });
+                }
                 stopCamera();
             }
         }
@@ -70,10 +72,11 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result as string;
+                if (!dataUrl) return;
                 setPreviewUrl(dataUrl);
                 setCapturedImage({
                     mimeType: file.type || 'image/jpeg',
-                    data: dataUrl.split(',')[1]
+                    data: dataUrl.split(',')[1] || ''
                 });
                 setIsCameraActive(false);
             };

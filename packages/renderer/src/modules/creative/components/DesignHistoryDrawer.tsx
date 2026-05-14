@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, RotateCw, Trash2, Save, Layers } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { DesignVersion } from '../designHistorySlice';
+import { DesignVersion } from '@/core/store';
 
 export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }) {
     const { designVersions, saveDesignVersion, restoreDesignVersion, deleteDesignVersion } = useStore(useShallow(state => ({
