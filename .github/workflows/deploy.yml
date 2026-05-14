@@ -151,6 +151,15 @@ jobs:
           cd packages/landing
           rm -rf dist .next
           NODE_ENV=production npm run build
+        env:
+          NODE_ENV: production
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: indiios-v-1-1
+          VITE_FIREBASE_STORAGE_BUCKET: indiios-v-1-1.firebasestorage.app
+          VITE_FIREBASE_AUTH_DOMAIN: indiios-v-1-1.firebaseapp.com
+          VITE_FIREBASE_APP_ID: 1:223837784072:web:28eabcf0c5dd985395e9bd
+          VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
 
       - name: Build studio app
         run: npm run build:studio
