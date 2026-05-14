@@ -11,7 +11,8 @@ vi.mock('@/core/store', () => ({
         uploadedImages: [],
         addUploadedImage: vi.fn(),
         currentProjectId: 'test-project',
-        generatedHistory: []
+        generatedHistory: [],
+        initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
     })
 }));
 
@@ -68,7 +69,8 @@ vi.mock('../services/CanvasOperationsService', () => ({
         updateBrushColor: vi.fn(),
         setMagicFillMode: vi.fn(),
         canUndo: vi.fn().mockReturnValue(false),
-        canRedo: vi.fn().mockReturnValue(false)
+        canRedo: vi.fn().mockReturnValue(false),
+        toJSON: vi.fn().mockResolvedValue({}),
     }
 }));
 
