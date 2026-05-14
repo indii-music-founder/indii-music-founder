@@ -234,6 +234,19 @@ export class CanvasOperationsService {
                     } else {
                         (this._currentShape as fabric.Polyline).set({ points: [...this._points] });
                     }
+                } else if (this._activeTool === 'text') {
+                    const text = new fabric.IText('Edit Me', {
+                        left: pointer.x,
+                        top: pointer.y,
+                        fill: this._activeColorId ? STUDIO_COLORS.find(c => c.id === this._activeColorId)?.hex || '#ffffff' : '#ffffff',
+                        fontSize: 24,
+                        data: { isAnnotation: true }
+                    });
+                    this.canvas.add(text);
+                    this.canvas.setActiveObject(text);
+                    text.enterEditing();
+                    this.canvas.renderAll();
+                    this.saveHistoryState();
                 }
                 this.canvas.renderAll();
             });
@@ -260,7 +273,7 @@ export class CanvasOperationsService {
             });
 
             this.canvas.on('mouse:up', () => {
-                if (this._activeTool === 'line' && this._isDrawing) {
+                if ((this._activeTool === 'line' || this._activeTool === 'brush') && this._isDrawing) {
                     this._isDrawing = false;
                     this._currentShape = null;
                     this.saveHistoryState();
