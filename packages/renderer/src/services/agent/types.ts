@@ -7,6 +7,10 @@ export type { AgentMessage };
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
 import type { AgentIdentityCard } from './governance/AgentIdentity';
+import { AgentCard } from './a2a/AgentCard';
+export type { AgentCard };
+import type { Directive } from '@/services/directive/DirectiveTypes';
+export type { Directive };
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -253,6 +257,8 @@ export interface AgentContext {
     contextSummary?: string;
     /** Active session ID */
     sessionId?: string;
+    /** Current directive guiding agent behavior */
+    directive?: Directive;
 }
 
 export type AgentRunner = (
@@ -279,28 +285,6 @@ export interface ProactiveTask {
 }
 
 // Using types from @/modules/workflow/types via imports above
-
-// ============================================================================
-// Memory & Knowledge Types
-// ============================================================================
-
-export interface UserMemory {
-    id: string;
-    content: string;
-    type: 'fact' | 'preference' | 'rule' | 'summary';
-    timestamp: any; // Firestore Timestamp
-    metadata?: Record<string, any>;
-    important?: boolean;
-    consolidated?: boolean;
-    sourceIds?: string[];
-}
-
-export interface KnowledgeItem {
-    id: string;
-    title: string;
-    content: string;
-    type: string;
-}
 
 // ============================================================================
 // Tool Function Types
@@ -357,11 +341,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  * Uses contravariance to accept more specific arg types
  */
 
-export type AnyToolFunction = (
-    args: any,
-    context?: AgentContext,
-    toolContext?: ToolExecutionContext
-) => Promise<ToolFunctionResult>;
+export type AnyToolFunction = (...args: any[]) => Promise<ToolFunctionResult>;
 
 // ============================================================================
 // Agent Configuration Types
@@ -431,6 +411,8 @@ export interface SpecializedAgent {
     description: string;
     color: string;
     category: AgentCategory;
+    /** Swarm identity card for A2A communication */
+    card?: AgentCard;
     execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
 }
 
@@ -505,63 +487,6 @@ export interface WorkflowExecution {
     edges: WorkflowEdge[];
     createdAt: number;
     updatedAt: number;
-}
-
-// ============================================================================
-// Phase 2: Agent Orchestration & Memory Types
-// ============================================================================
-
-/**
- * The 5 memory layers in the indii Persistent Memory hierarchy.
- * Each layer has different persistence, TTL, and authority semantics.
- */
-export type MemoryLayer = 'scratchpad' | 'session' | 'vault' | 'captains_log' | 'rag_index';
-
-/**
- * A single memory entry that can exist in any of the 5 layers.
- * This is the universal currency of the PersistentMemoryService facade.
- */
-export interface MemoryEntry {
-    /** Unique identifier within the layer */
-    id: string;
-    /** Which memory layer this entry belongs to */
-    layer: MemoryLayer;
-    /** Lookup key (e.g., "artist_name", "preferred_genre") */
-    key: string;
-    /** The stored value (type depends on the layer) */
-    value: unknown;
-    /** Provenance and lifecycle metadata */
-    metadata: {
-        createdAt: number;
-        updatedAt: number;
-        /** Which agent wrote this entry (null = user-written) */
-        agentId?: string;
-        /** Project scope (null = global) */
-        projectId?: string;
-        /** Time-to-live in milliseconds (only for scratchpad/session layers) */
-        ttl?: number;
-        /** Source of truth for conflict resolution */
-        source?: 'user' | 'agent' | 'webhook' | 'import' | 'onboarding';
-    };
-}
-
-/**
- * Assembled context window from all 5 memory layers.
- * Used by agents to receive structured memory before execution.
- */
-export interface ContextWindow {
-    /** In-memory task-scoped key-value pairs */
-    scratchpad: Record<string, unknown>;
-    /** Recent session memories (last 24h) */
-    sessionMemories: MemoryEntry[];
-    /** Authoritative facts from CORE Vault */
-    vaultFacts: string[];
-    /** Recent Captain's Log entries */
-    recentLogs: string[];
-    /** Semantically matched RAG results */
-    ragResults: MemoryEntry[];
-    /** Estimated token count of the full context window */
-    totalTokenEstimate: number;
 }
 
 /**

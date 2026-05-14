@@ -2,7 +2,7 @@
 name: scan_audio_dna
 description: Scans a finished audio master to extract technical metadata (BPM, Duration, Key) for publishing.
 metadata:
-  indii_os:
+  indii_music:
     requires:
       bins: ["ffprobe", "essentia_streaming_extractor_music"]
     context: "Music Studio -> Metadata"

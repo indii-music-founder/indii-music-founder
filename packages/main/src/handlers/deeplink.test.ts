@@ -34,25 +34,25 @@ describe('handleDeepLink', () => {
     });
 
     it('should handle missing mainWindow gracefully', () => {
-        handleDeepLink('indii-os://test', null);
+        handleDeepLink('indii://test', null);
         expect(log.warn).not.toHaveBeenCalled();
         expect(log.info).not.toHaveBeenCalled();
     });
 
-    it('should block non-indii-os protocol URLs', () => {
+    it('should block non-indii protocol URLs', () => {
         handleDeepLink('http://example.com', mockWindow);
         expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Blocked unsafe deep link'));
         expect(mockWindow.webContents.send).not.toHaveBeenCalled();
     });
 
     it('should block URLs with private IP hostnames', () => {
-        handleDeepLink('indii-os://127.0.0.1/test', mockWindow);
+        handleDeepLink('indii://127.0.0.1/test', mockWindow);
         expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Blocked unsafe deep link'));
         expect(mockWindow.webContents.send).not.toHaveBeenCalled();
     });
 
     it('should block URLs with invalid characters in path', () => {
-        handleDeepLink('indii-os://test/path+plus', mockWindow);
+        handleDeepLink('indii://test/path+plus', mockWindow);
         expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Blocked unsafe deep link'));
         expect(mockWindow.webContents.send).not.toHaveBeenCalled();
     });
@@ -64,16 +64,16 @@ describe('handleDeepLink', () => {
     });
 
     it('should process valid deep links', () => {
-        handleDeepLink('indii-os://auth/login?token=123', mockWindow);
+        handleDeepLink('indii://auth/login?token=123', mockWindow);
         expect(log.info).toHaveBeenCalledWith(expect.stringContaining('Dispatching deep link'));
         expect(mockWindow.show).toHaveBeenCalled();
         expect(mockWindow.focus).toHaveBeenCalled();
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith('deeplink:received', 'indii-os://auth/login?token=123');
+        expect(mockWindow.webContents.send).toHaveBeenCalledWith('deeplink:received', 'indii://auth/login?token=123');
     });
 
     it('should restore window if minimized', () => {
         mockWindow.isMinimized.mockReturnValue(true);
-        handleDeepLink('indii-os://auth/login', mockWindow);
+        handleDeepLink('indii://auth/login', mockWindow);
         expect(mockWindow.restore).toHaveBeenCalled();
     });
 
@@ -83,7 +83,7 @@ describe('handleDeepLink', () => {
             throw error;
         });
 
-        handleDeepLink('indii-os://auth/login', mockWindow);
+        handleDeepLink('indii://auth/login', mockWindow);
 
         expect(log.error).toHaveBeenCalledWith(`[Main] Error handling deep link: ${error}`);
     });

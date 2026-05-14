@@ -67,7 +67,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
             }).catch(err => logger.error('Failed to load AssetObserver', err));
 
             // Initialize Always-On Memory Engine — starts background consolidation
-            import('@/services/agent/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
+            import('@/services/agent/memory/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
                 if (isMounted) alwaysOnMemoryEngine.start(user.uid);
             }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
 

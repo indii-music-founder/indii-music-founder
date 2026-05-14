@@ -2,7 +2,7 @@
 name: generate_creative_copy
 description: Acts as a professional music copywriter to generate bios, liner notes, and press assets.
 metadata:
-  indii_os:
+  indii_music:
     requires:
       models: ["gemini-pro"] # Uses high-reasoning model for text
     context: "Creative Studio"

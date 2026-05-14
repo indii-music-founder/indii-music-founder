@@ -199,6 +199,21 @@ export class AlwaysOnMemoryEngine {
     }
 
     /**
+     * Specifically persist user feedback as a high-priority 'feedback' memory.
+     *
+     * @param text - The feedback comment or descriptive action
+     * @param rating - User rating (positive/negative)
+     * @returns Success message
+     */
+    public async saveFeedback(text: string, rating: 'positive' | 'negative' | 'neutral'): Promise<string> {
+        return this.ingest(
+            text,
+            `user_feedback_${rating}`,
+            'feedback'
+        );
+    }
+
+    /**
      * Ingest a file into the memory system.
      *
      * @param fileBytes - Raw file content
@@ -457,24 +472,62 @@ If appropriate, suggest that the user can ingest relevant information to build a
     }
 
     /**
-     * Get all memories for the current user.
+     * Get all memories for the current user, optionally filtered by project or session.
      */
-    public async getAllMemories(maxCount: number = 50): Promise<AlwaysOnMemory[]> {
+    public async getAllMemories(
+        maxCount: number = 50,
+        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
+    ): Promise<AlwaysOnMemory[]> {
         if (!this.userId) return [];
 
         const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
-        const q = query(
+        let q = query(
             memoryRef,
             where('isActive', '==', true),
-            orderBy('createdAt', 'desc'),
-            limit(maxCount)
+            orderBy('createdAt', 'desc')
         );
 
-        const snapshot = await getDocs(q);
+        if (filters?.projectId) {
+            q = query(q, where('sourceProjectId', '==', filters.projectId));
+        }
+        if (filters?.sessionId) {
+            q = query(q, where('sourceSessionId', '==', filters.sessionId));
+        }
+        if (filters?.category) {
+            q = query(q, where('category', '==', filters.category));
+        }
+
+        const snapshot = await getDocs(query(q, limit(maxCount)));
         return snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
         })) as AlwaysOnMemory[];
+    }
+
+    /**
+     * Retrieve relevant memories based on semantic similarity or filters.
+     * Useful for agents that need raw memory fragments rather than a synthesized answer.
+     */
+    public async retrieve(
+        options: {
+            query?: string;
+            projectId?: string;
+            sessionId?: string;
+            categories?: AlwaysOnMemoryCategory[];
+            limit?: number;
+        }
+    ): Promise<AlwaysOnMemory[]> {
+        if (!this.userId) return [];
+
+        // For now, we fetch the most recent ones filtered by project/session
+        // and let the agent filter them further if needed.
+        // True vector search happens in the query() method, but for raw retrieval,
+        // we provide this interface for compatibility with legacy systems.
+        return this.getAllMemories(options.limit || 10, {
+            projectId: options.projectId,
+            sessionId: options.sessionId,
+            category: options.categories?.[0] // Simplified for now
+        });
     }
 
     /**
