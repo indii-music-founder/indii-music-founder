@@ -12,6 +12,7 @@ const defaultStoreState = createMockStore({
     addUploadedImage: vi.fn(),
     currentProjectId: 'test-project',
     generatedHistory: [],
+    initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
 });
 
 vi.mock('@/core/store', () => ({
@@ -45,7 +46,10 @@ vi.mock('../services/CanvasOperationsService', () => ({
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
-        setMagicFillMode: vi.fn()
+        setMagicFillMode: vi.fn(),
+        canUndo: vi.fn().mockReturnValue(false),
+        canRedo: vi.fn().mockReturnValue(false),
+        toJSON: vi.fn().mockResolvedValue({}),
     }
 }));
 vi.mock('../services/VideoDirector', () => ({ VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) } }));

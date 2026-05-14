@@ -1,4 +1,4 @@
-// indii Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
+// indii.music Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
@@ -169,7 +169,7 @@ import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } fro
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
     return new Inngest({
-        id: "indii-os-functions",
+        id: "indii-music-functions",
         eventKey: inngestEventKey.value()
     });
 };

@@ -224,6 +224,7 @@ const createWindow = async () => {
     // Handle Window Open Requests
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
+        if (url.startsWith('https://indii.music')) return { action: 'allow' };
         if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
 
         // Use logic similar to will-navigate for consistency
@@ -237,7 +238,7 @@ const createWindow = async () => {
     // Security Gate for WebNavigation
     win.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indiios-v-1-1.firebaseapp.com'];
+        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indiios-v-1-1.firebaseapp.com'];
 
         if (navigationUrl.startsWith(devServerUrl)) return;
 
@@ -333,11 +334,11 @@ if (process.defaultApp) {
     if (process.argv.length >= 2) {
         const scriptPath = path.resolve(process.argv[1]);
         log.info(`Setting default protocol client in DEV mode. Script: ${scriptPath}`);
-        app.setAsDefaultProtocolClient('indii-os', process.execPath, [scriptPath]);
+        app.setAsDefaultProtocolClient('indii', process.execPath, [scriptPath]);
     }
 } else {
     // Production/Bundled
-    app.setAsDefaultProtocolClient('indii-os');
+    app.setAsDefaultProtocolClient('indii');
 }
 
 // Single Instance Lock
@@ -356,7 +357,7 @@ if (!gotTheLock) {
             if (win.isMinimized()) win.restore();
             win.focus();
         }
-        const url = commandLine.find(arg => arg.startsWith('indii-os://'));
+        const url = commandLine.find(arg => arg.startsWith('indii://'));
         if (url) {
             log.info(`Handling deep link from second-instance: ${url}`);
             handleDeepLink(url, mainWindow);

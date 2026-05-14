@@ -51,14 +51,14 @@ export default function LoginBridge() {
                 }
             }
 
-            const callbackUrl = `indii-os://auth/callback?${params.toString()}`;
+            const callbackUrl = `indii://auth/callback?${params.toString()}`;
             setCallbackPackage(callbackUrl);
             window.location.href = callbackUrl;
 
             timeoutRef.current = window.setTimeout(() => {
                 const timeoutEvent = {
                     event: 'landing_login_bridge_deep_link_timeout',
-                    callbackUrlScheme: 'indii-os',
+                    callbackUrlScheme: 'indii',
                     timedOutAfterMs: DEEP_LINK_TIMEOUT_MS,
                 };
                 console.warn('Deep link redirect timeout', timeoutEvent);
@@ -152,7 +152,7 @@ export default function LoginBridge() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
             <div className="p-8 border border-neutral-800 rounded-xl bg-neutral-900/50 text-center max-w-md w-full">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold mb-2">indii</h1>
+                    <h1 className="text-2xl font-bold mb-2">indii.music</h1>
                     <p className="text-neutral-400 text-sm">Sign in to continue to the app</p>
                 </div>
 
@@ -181,7 +181,7 @@ export default function LoginBridge() {
                 {status === 'deepLinkFallback' && (
                     <div className="py-4 text-left">
                         <div className="bg-amber-500/10 border border-amber-500/50 text-amber-200 p-4 rounded-lg mb-4">
-                            Could not switch to the desktop app automatically. The app may not be running, or the indii-os:// protocol may not be registered.
+                            Could not switch to the desktop app automatically. The app may not be running, or the indii:// protocol may not be registered.
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => callbackPackage && (window.location.href = callbackPackage)} className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors">Open app again</button>

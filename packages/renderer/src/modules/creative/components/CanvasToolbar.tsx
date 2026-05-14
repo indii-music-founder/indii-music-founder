@@ -1,85 +1,143 @@
 import React from 'react';
-import { Square, Circle as CircleIcon, Type, Wand2, Scan, Eraser, Crop, Trash2 } from 'lucide-react';
+import { Square, Circle as CircleIcon, Type, Wand2, Scan, Eraser, Crop, Trash2, MousePointer2, Minus, Pentagon, Undo2, Redo2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CanvasToolbarProps {
     addRectangle: () => void;
     addCircle: () => void;
     addText: () => void;
-    toggleMagicFill: () => void;
+    setTool: (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => void;
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    activeTool: 'select' | 'line' | 'polygon' | 'text' | 'brush';
     handleDetectObjects: () => void;
     handleClearDetections: () => void;
-    isMagicFillMode: boolean;
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     addRectangle,
     addCircle,
     addText,
-    toggleMagicFill,
+    setTool,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    activeTool,
     handleDetectObjects,
     handleClearDetections,
-    isMagicFillMode
 }) => {
     const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none";
+    const getActiveButtonClass = (tool: string) => `p-2 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${activeTool === tool ? 'bg-dept-creative text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`;
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="w-16 bg-background border-r border-gray-800 flex flex-col items-center py-4 gap-4">
+            <div className="w-16 bg-[#0a0a0a] border-r border-gray-800 flex flex-col items-center py-4 gap-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button title="Rectangle Tool" onClick={addRectangle} data-testid="add-rect-btn" className={baseButtonClass} aria-label="Add Rectangle">
-                            <Square size={20} aria-hidden="true" />
+                        <button onClick={() => setTool('select')} className={getActiveButtonClass('select')} aria-label="Select Tool">
+                            <MousePointer2 size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Rectangle</TooltipContent>
+                    <TooltipContent side="right">Selection Tool</TooltipContent>
+                </Tooltip>
+
+                <div className="w-8 h-px bg-gray-800 my-1" />
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={() => setTool('brush')} className={getActiveButtonClass('brush')} aria-label="Magic Fill">
+                            <Wand2 size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Magic Fill (Drawing)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={() => setTool('line')} className={getActiveButtonClass('line')} aria-label="Line Tool">
+                            <Minus size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Line Tool (Shift for angles)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={() => setTool('polygon')} className={getActiveButtonClass('polygon')} aria-label="Polygon Tool">
+                            <Pentagon size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Polygon Tool (Double click to finish)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={addRectangle} className={baseButtonClass} aria-label="Add Rectangle">
+                            <Square size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Add Rectangle</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button title="Circle Tool" onClick={addCircle} data-testid="add-circle-btn" className={baseButtonClass} aria-label="Add Circle">
-                            <CircleIcon size={20} aria-hidden="true" />
+                        <button onClick={addCircle} className={baseButtonClass} aria-label="Add Circle">
+                            <CircleIcon size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Circle</TooltipContent>
+                    <TooltipContent side="right">Add Circle</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button title="Text Tool" onClick={addText} data-testid="add-text-btn" className={baseButtonClass} aria-label="Add Text">
-                            <Type size={20} aria-hidden="true" />
+                        <button onClick={() => setTool('text')} className={getActiveButtonClass('text')} aria-label="Add Text">
+                            <Type size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Text</TooltipContent>
+                    <TooltipContent side="right">Add Text</TooltipContent>
                 </Tooltip>
 
-                <div className="w-8 h-px bg-gray-800 my-2" role="separator" />
+                <div className="w-8 h-px bg-gray-800 my-1" />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button title="Detect Objects" onClick={handleDetectObjects} data-testid="detect-objects-btn" className={baseButtonClass} aria-label="Detect Objects">
-                            <Scan size={20} aria-hidden="true" />
+                        <button onClick={handleDetectObjects} className={baseButtonClass} aria-label="Detect Objects">
+                            <Scan size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Detect Objects via AI</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button title="Clear Canvas" onClick={handleClearDetections} data-testid="clear-detections-btn" className={baseButtonClass} aria-label="Clear AI Detections">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Clear Canvas</TooltipContent>
+                    <TooltipContent side="right">AI Object Detection</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button title="Magic Fill" onClick={toggleMagicFill} data-testid="magic-fill-toggle" className={`p-2 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${isMagicFillMode ? 'bg-dept-creative text-white shadow-[0_0_15px_var(--color-dept-creative-glow)]' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`} aria-label="Magic Fill" aria-pressed={isMagicFillMode}>
-                            <Wand2 size={20} aria-hidden="true" />
+                        <button onClick={handleClearDetections} className={baseButtonClass} aria-label="Clear All">
+                            <Trash2 size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Magic Fill mode</TooltipContent>
+                    <TooltipContent side="right">Clear All Detections</TooltipContent>
+                </Tooltip>
+
+                <div className="w-8 h-px bg-gray-800 my-1" />
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={undo} disabled={!canUndo} className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`} aria-label="Undo">
+                            <Undo2 size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Undo</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={redo} disabled={!canRedo} className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`} aria-label="Redo">
+                            <Redo2 size={20} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Redo</TooltipContent>
                 </Tooltip>
             </div>
         </TooltipProvider>

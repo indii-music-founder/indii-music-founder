@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { TOOL_REGISTRY } from './tools';
-import { memoryService } from './MemoryService';
+import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -26,10 +26,10 @@ vi.mock('@/services/ai/GenAI', () => ({
     }
 }));
 
-vi.mock('./MemoryService', () => ({
-    memoryService: {
-        saveMemory: vi.fn(),
-        retrieveRelevantMemories: vi.fn().mockResolvedValue(['Memory 1', 'Memory 2'])
+vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
+    alwaysOnMemoryEngine: {
+        ingest: vi.fn().mockResolvedValue('Memory processed'),
+        query: vi.fn().mockResolvedValue('Retrieved synthesized answer')
     }
 }));
 
@@ -41,15 +41,15 @@ describe('indii Conductor Restoration', () => {
         expect(TOOL_REGISTRY).toHaveProperty('request_approval');
     });
 
-    it('save_memory tool should call MemoryService', async () => {
-        const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory' })) as unknown as { data: { message: string } };
-        expect(memoryService.saveMemory).toHaveBeenCalledWith('test-project', 'Test memory', 'fact');
-        expect(result.data.message).toContain('Memory processed');
+    it('save_memory tool should call AlwaysOnMemoryEngine', async () => {
+        const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory', type: 'fact' })) as any;
+        expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalled();
+        expect(result.data.message).toContain('Memory stored');
     });
 
-    it('recall_memories tool should call MemoryService', async () => {
-        const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as unknown as { data: { message: string } };
-        expect(memoryService.retrieveRelevantMemories).toHaveBeenCalledWith('test-project', 'test');
+    it('recall_memories tool should call AlwaysOnMemoryEngine', async () => {
+        const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as any;
+        expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('test');
         expect(result.data.message).toContain('Retrieved');
     });
 

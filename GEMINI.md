@@ -107,7 +107,7 @@ indii-Alpha-Electron/
 │   ├── landing/                # Separate marketing site (React + Vite)
 │   ├── sdk/                    # SDKs
 │   └── mcp-server-local/       # Local MCP server
-├── agents/                     # AI agent definitions (hub-and-spoke architecture)
+├── agents/                     # AI agent definitions (A2A Swarm Protocol)
 ├── execution/                  # Deterministic scripts for agent tools (Layer 3)
 ├── directives/                 # AI agent SOPs (Layer 1)
 ├── e2e/                        # Playwright E2E tests (60+ spec files)
@@ -341,25 +341,26 @@ The `build` script runs three steps sequentially:
 
 ---
 
-## Hub-and-Spoke Agent Architecture
-
 ```
-         ┌─────────────────────┐
-         │  indii Conductor (Hub) │
-         │    (Orchestrator)      │
-         └──────────┬──────────┘
-                    │
-    ┌───────────────┼───────────────┐
-    │       │       │       │       │
-  Legal   Brand  Marketing Music  Video
-  Agent   Agent   Agent   Agent  Agent
-    │
-  [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
+                    ┌─────────────────────────┐
+                    │      A2A Swarm          │
+                    │   (Decentralized)       │
+                    └──────────┬──────────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Legal Agent   │──│ Creative Agent│──│ Brand Agent   │
+    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Marketing Agt │──│ Finance Agent │──│ Music Agent   │
+    └───────────────┘  └───────────────┘  └───────────────┘
 ```
 
-- **indii Conductor** (`agents/conductor/`) - Central hub, routes tasks to specialists
-- **Specialist Agents** - Domain experts with focused capabilities
-- **Native Execution** - All tools run natively within the Node.js/TypeScript environment
+- **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
+- **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
+- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
 
 ---
 
