@@ -206,7 +206,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
     it('processes dropped files when dragged from filesystem', async () => {
         const onChange = vi.fn();
         render(<IngredientDropZone ingredients={[]} onChange={onChange} mode="reference" />);
-        const dropZone = screen.getByRole('button');
+        const dropZone = screen.getByTestId('drop-zone');
         const file = createMockFile('dropped.png', 'image/png');
 
         fireEvent.drop(dropZone, {
@@ -224,7 +224,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
     it('accepts gallery items dropped via text/plain ID', async () => {
         const onChange = vi.fn();
         render(<IngredientDropZone ingredients={[]} onChange={onChange} mode="reference" />);
-        const dropZone = screen.getByRole('button');
+        const dropZone = screen.getByTestId('drop-zone');
 
         fireEvent.drop(dropZone, {
             dataTransfer: {
@@ -261,7 +261,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
     it('rejects video drops in base_video mode for non-video gallery items', () => {
         const onChange = vi.fn();
         render(<IngredientDropZone ingredients={[]} onChange={onChange} mode="base_video" />);
-        const dropZone = screen.getByRole('button');
+        const dropZone = screen.getByTestId('drop-zone');
 
         fireEvent.drop(dropZone, {
             dataTransfer: {
@@ -337,7 +337,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
 
     it('opens file picker on Enter key when not full', () => {
         const { container } = renderDropZone();
-        const zone = screen.getByRole('button');
+        const zone = screen.getByTestId('drop-zone');
         const fileInput = container.querySelector('input[type="file"]')!;
         const clickSpy = vi.spyOn(fileInput as HTMLInputElement, 'click');
 
@@ -347,7 +347,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
 
     it('opens file picker on Space key when not full', () => {
         const { container } = renderDropZone();
-        const zone = screen.getByRole('button');
+        const zone = screen.getByTestId('drop-zone');
         const fileInput = container.querySelector('input[type="file"]')!;
         const clickSpy = vi.spyOn(fileInput as HTMLInputElement, 'click');
 

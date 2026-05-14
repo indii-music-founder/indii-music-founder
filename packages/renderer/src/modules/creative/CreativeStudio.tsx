@@ -39,7 +39,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         userProfile, whiskState,
         characterReferences,
         chatImportContext,
-        clearChatImportContext
+        clearChatImportContext,
+        initializeDesignHistory
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
