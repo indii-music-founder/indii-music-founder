@@ -1,6 +1,5 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
-import { CreativeSlice } from './index';
 import { CanvasImage } from './creativeHistorySlice';
 import { WhiskState } from './creativeControlsSlice';
 
@@ -10,10 +9,10 @@ export interface DesignVersion {
     createdAt: number;
     projectId: string;
     state: {
-        studioControls: CreativeSlice['studioControls'];
+        studioControls: any;
         canvasImages: CanvasImage[];
         whiskState: WhiskState;
-        characterReferences: CreativeSlice['characterReferences'];
+        characterReferences: any;
         creativePrompt: string;
     };
 }
@@ -27,8 +26,8 @@ export interface DesignHistorySlice {
 }
 
 export function buildDesignHistoryState(
-    set: Parameters<StateCreator<CreativeSlice>>[0],
-    get: Parameters<StateCreator<CreativeSlice>>[1]
+    set: any,
+    get: any
 ): DesignHistorySlice {
     return {
         designVersions: [],
@@ -56,7 +55,7 @@ export function buildDesignHistoryState(
                 }
             };
 
-            set((state) => ({
+            set((state: any) => ({
                 designVersions: [newVersion, ...state.designVersions]
             }));
 
@@ -72,7 +71,7 @@ export function buildDesignHistoryState(
         },
 
         restoreDesignVersion: (version) => {
-            set((state) => ({
+            set((state: any) => ({
                 ...state,
                 studioControls: { ...state.studioControls, ...version.state.studioControls },
                 canvasImages: [...version.state.canvasImages],
@@ -84,8 +83,8 @@ export function buildDesignHistoryState(
         },
 
         deleteDesignVersion: async (id) => {
-            set((state) => ({
-                designVersions: state.designVersions.filter(v => v.id !== id)
+            set((state: any) => ({
+                designVersions: state.designVersions.filter((v: any) => v.id !== id)
             }));
 
             try {

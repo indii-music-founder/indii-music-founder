@@ -1,4 +1,11 @@
 import * as fabric from 'fabric';
+
+declare module 'fabric' {
+    interface FabricObjectProps {
+        data?: any;
+        id?: string;
+    }
+}
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
@@ -198,7 +205,7 @@ export class CanvasOperationsService {
 
             this.canvas.on('mouse:down', (o) => {
                 if (!this.canvas) return;
-                const pointer = this.canvas.getPointer(o.e);
+                const pointer = this.canvas.getScenePoint(o.e);
 
                 if (this._activeTool === 'line') {
                     this._isDrawing = true;
@@ -233,7 +240,7 @@ export class CanvasOperationsService {
 
             this.canvas.on('mouse:move', (o) => {
                 if (!this.canvas || !this._isDrawing || !this._currentShape) return;
-                const pointer = this.canvas.getPointer(o.e);
+                const pointer = this.canvas.getScenePoint(o.e);
 
                 if (this._activeTool === 'line') {
                     let endX = pointer.x;
@@ -269,7 +276,7 @@ export class CanvasOperationsService {
 
     private saveHistoryState(): void {
         if (!this.canvas) return;
-        const json = JSON.stringify(this.canvas.toJSON(['data']));
+        const json = JSON.stringify((this.canvas as any).toJSON(['data', 'id']));
         
         // Only push if it's different from the top of the stack
         if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
@@ -640,7 +647,10 @@ export class CanvasOperationsService {
     /**
      * Export canvas to JSON string
      */
-
+    async toJSON(): Promise<any> {
+        if (!this.canvas) return null;
+        return (this.canvas as any).toJSON(['data', 'id']);
+    }
 
     /**
      * Load canvas from JSON string
@@ -701,15 +711,16 @@ export class CanvasOperationsService {
     /**
      * Add editable text to canvas
      */
-    addText(): void {
+    addText(content: string = 'Edit Me', fill: string = '#ffffff'): void {
         if (!this.canvas) return;
-        const text = new fabric.IText('Edit Me', {
+        const text = new fabric.IText(content, {
             left: 300,
             top: 300,
-            fill: '#ffffff',
+            fill: fill,
             fontSize: 24,
         });
         this.canvas.add(text);
+        this.canvas.renderAll();
     }
 
     /**
@@ -1350,26 +1361,6 @@ export class CanvasOperationsService {
         if (!this.canvas) return;
         obj.set('visible', visible);
         this.canvas.renderAll();
-    }
-
-    /**
-     * Convert canvas to JSON
-     */
-    async toJSON(): Promise<string | null> {
-        if (!this.canvas) return null;
-        // Include 'data' property so colorId survives serialization/deserialization
-        // Fabric 6: toJSON() takes no args; use toObject() for custom property inclusion
-        const json = this.canvas.toObject(['data', 'id']);
-        
-        // Strip out transient UI data (bounding boxes, masks)
-        if (json.objects && Array.isArray(json.objects)) {
-            json.objects = json.objects.filter((obj: any) => {
-                if (!obj.data) return true;
-                return !obj.data.isBoundingBox && !obj.data.isSegmentationMask;
-            });
-        }
-        
-        return JSON.stringify(json);
     }
 }
 
