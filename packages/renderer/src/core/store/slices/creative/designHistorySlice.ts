@@ -3,18 +3,20 @@ import { logger } from '@/utils/logger';
 import { CanvasImage } from './creativeHistorySlice';
 import { WhiskState } from './creativeControlsSlice';
 
+export interface DesignVersionState {
+    studioControls: any;
+    canvasImages: CanvasImage[];
+    whiskState: WhiskState;
+    characterReferences: Array<{ image: any; referenceType: 'subject' | 'style' | 'reference'; name?: string }>;
+    creativePrompt: string;
+}
+
 export interface DesignVersion {
     id: string;
     name: string;
     createdAt: number;
     projectId: string;
-    state: {
-        studioControls: any;
-        canvasImages: CanvasImage[];
-        whiskState: WhiskState;
-        characterReferences: any;
-        creativePrompt: string;
-    };
+    state: DesignVersionState;
 }
 
 export interface DesignHistorySlice {
