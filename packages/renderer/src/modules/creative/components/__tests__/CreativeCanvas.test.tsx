@@ -11,7 +11,8 @@ vi.mock('@/core/store', () => ({
         uploadedImages: [],
         addUploadedImage: vi.fn(),
         currentProjectId: 'test-project',
-        generatedHistory: []
+        generatedHistory: [],
+        initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
     })
 }));
 
@@ -36,6 +37,7 @@ vi.mock('fabric', () => {
             remove: vi.fn(),
             toDataURL: vi.fn().mockReturnValue('data:image/png;base64,mock'),
             set: vi.fn(),
+            toJSON: vi.fn().mockReturnValue({}),
             isDrawingMode: false,
             freeDrawingBrush: {},
         };
@@ -65,7 +67,10 @@ vi.mock('../services/CanvasOperationsService', () => ({
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
-        setMagicFillMode: vi.fn()
+        setMagicFillMode: vi.fn(),
+        canUndo: vi.fn().mockReturnValue(false),
+        canRedo: vi.fn().mockReturnValue(false),
+        toJSON: vi.fn().mockResolvedValue({}),
     }
 }));
 

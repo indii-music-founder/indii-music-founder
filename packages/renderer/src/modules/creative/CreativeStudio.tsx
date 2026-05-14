@@ -39,7 +39,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         userProfile, whiskState,
         characterReferences,
         chatImportContext,
-        clearChatImportContext
+        clearChatImportContext,
+        initializeDesignHistory
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -59,10 +60,15 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         whiskState: state.whiskState,
         characterReferences: state.characterReferences,
         chatImportContext: state.chatImportContext,
-        clearChatImportContext: state.clearChatImportContext
+        clearChatImportContext: state.clearChatImportContext,
+        initializeDesignHistory: state.initializeDesignHistory
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
+
+    useEffect(() => {
+        initializeDesignHistory();
+    }, [initializeDesignHistory]);
 
     const isDirty = React.useMemo(() => (prompt && prompt.length > 0) || isGenerating, [prompt, isGenerating]);
     useUnsavedChanges(isDirty);
