@@ -53,6 +53,15 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleCreateLastFrame,
         handleFlattenCanvas,
         batchExportDimensions,
+        handleUndo,
+        handleRedo,
+        canUndo,
+        canRedo,
+        activeTool,
+        handleSetTool,
+        handleAddRectangle,
+        handleAddCircle,
+        handleAddText,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     if (!item) return null;
@@ -92,13 +101,17 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     {/* Left Sidebar: Tools & Annotations */}
                     <aside className="hidden md:flex border-r border-gray-800 bg-[#0a0a0a] flex-col items-center">
                         <CanvasToolbar
-                            addRectangle={() => canvasOps.addRectangle()}
-                            addCircle={() => canvasOps.addCircle()}
-                            addText={() => canvasOps.addText()}
-                            toggleMagicFill={toggleMagicFill}
+                            addRectangle={handleAddRectangle}
+                            addCircle={handleAddCircle}
+                            addText={handleAddText}
+                            setTool={handleSetTool}
+                            undo={handleUndo}
+                            redo={handleRedo}
+                            canUndo={canUndo}
+                            canRedo={canRedo}
+                            activeTool={activeTool}
                             handleDetectObjects={handleDetectObjects}
                             handleClearDetections={handleClearDetections}
-                            isMagicFillMode={isMagicFillMode}
                         />
                         <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">
                             <AnnotationPalette
