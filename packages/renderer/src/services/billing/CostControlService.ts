@@ -46,6 +46,7 @@ const BUDGET_LIMITS: Record<UserTier, BudgetLimits> = {
 };
 
 const RUNAWAY_LIMIT = 500; // Global kill-switch: no account can exceed $500/month
+const TEST_MODE_DAILY_LIMIT = 5; // Testing should never cost more than $5/day total
 
 export class CostControlService {
   /**
@@ -118,6 +119,33 @@ export class CostControlService {
         : 'free';
 
       const limits = BUDGET_LIMITS[userTier];
+
+      // 4.5 TEST MODE CHECK: Enforce strict testing budget
+      // Testing should never cost more than $5/day total to prevent accidental expensive tests
+      const isTestMode = req.metadata?.isTest === true || import.meta.env.VITE_TEST_MODE === 'true';
+      if (isTestMode) {
+        const testLedgerRef = doc(db, 'costLedger', `test-${today}`);
+        const testSnap = await getDoc(testLedgerRef);
+        const testDailyUsed = testSnap.exists() ? (testSnap.data()?.totalCost || 0) : 0;
+
+        if (testDailyUsed + req.estimatedCost > TEST_MODE_DAILY_LIMIT) {
+          logger.warn('[CostControl] TEST_MODE budget exceeded', {
+            userId: req.userId,
+            operationType: req.operationType,
+            testDailyUsed,
+            estimatedCost: req.estimatedCost,
+            limit: TEST_MODE_DAILY_LIMIT,
+          });
+
+          return {
+            allowed: false,
+            reason: `Testing budget exceeded ($${TEST_MODE_DAILY_LIMIT}/day). Used: $${testDailyUsed.toFixed(2)}, requested: $${req.estimatedCost.toFixed(2)}. Testing should never cost more than a few dollars.`,
+            remainingBudget: Math.max(0, TEST_MODE_DAILY_LIMIT - testDailyUsed),
+            dailyUsed: testDailyUsed,
+            monthlyUsed: 0,
+          };
+        }
+      }
 
       // 5. RUNAWAY KILL-SWITCH: Global $500/month hard limit
       if (monthlyUsed + req.estimatedCost > RUNAWAY_LIMIT) {
@@ -241,6 +269,26 @@ export class CostControlService {
         });
       }
 
+      // Track test spending separately if in test mode
+      if (isTestMode) {
+        const testLedgerRef = doc(db, 'costLedger', `test-${today}`);
+        const testLedgerSnap = await getDoc(testLedgerRef);
+        if (testLedgerSnap.exists()) {
+          await updateDoc(testLedgerRef, {
+            totalCost: increment(req.estimatedCost),
+            operationCount: increment(1),
+            lastUpdated: Timestamp.now(),
+          });
+        } else {
+          await setDoc(testLedgerRef, {
+            date: today,
+            totalCost: req.estimatedCost,
+            operationCount: 1,
+            lastUpdated: Timestamp.now(),
+          });
+        }
+      }
+
       // Log operation
       const opRef = doc(db, 'costLedger', operationId);
       await setDoc(opRef, {
@@ -250,6 +298,7 @@ export class CostControlService {
         userTier,
         estimatedCost: req.estimatedCost,
         status: 'APPROVED',
+        isTest: isTestMode,
         timestamp: Timestamp.now(),
         metadata: req.metadata || {},
       });
