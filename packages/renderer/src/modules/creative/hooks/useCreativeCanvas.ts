@@ -43,6 +43,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
+    const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
+    const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
 
     // Data State
     const [prompt, setPrompt] = useState('');
@@ -127,19 +129,41 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     };
 
     const toggleMagicFill = () => {
-        const newMode = !isMagicFillMode;
-        setIsMagicFillMode(newMode);
-
-        if (isMagicFillMode) {
+        const newTool = activeTool === 'brush' ? 'select' : 'brush';
+        setActiveTool(newTool);
+        
+        if (activeTool === 'brush') {
             setGeneratedCandidates([]);
         }
 
-        canvasOps.setMagicFillMode(newMode, activeColor);
+        canvasOps.setTool(newTool, activeColor);
 
-        if (newMode) {
+        if (newTool === 'brush') {
             toast.info(`Annotating with ${activeColor.name}. Describe your edit.`);
             setMagicFillPrompt(definitions[activeColor.id] || '');
         }
+    };
+
+    const handleSetTool = (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => {
+        setActiveTool(tool);
+        canvasOps.setTool(tool, activeColor);
+        if (tool === 'brush') {
+            setMagicFillPrompt(definitions[activeColor.id] || '');
+        }
+    };
+
+    const handleAddRectangle = () => canvasOps.addRectangle(activeColor.hex);
+    const handleAddCircle = () => canvasOps.addCircle(activeColor.hex);
+    const handleAddText = () => canvasOps.addText('New Text', activeColor.hex);
+
+    const handleUndo = () => {
+        canvasOps.undo();
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    const handleRedo = () => {
+        canvasOps.redo();
+        setHistoryTrigger(prev => prev + 1);
     };
 
     const handleUpdateDefinition = (colorId: string, prompt: string) => {
@@ -546,7 +570,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         // State
         isProcessing,
         processingStatus,
-        isMagicFillMode,
+        isMagicFillMode: activeTool === 'brush',
         isSelectingEndFrame,
         isDefinitionsOpen,
         prompt,
@@ -583,5 +607,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,
+        handleUndo,
+        handleRedo,
+        canUndo: canvasOps.canUndo(),
+        canRedo: canvasOps.canRedo(),
+        activeTool,
+        handleSetTool,
+        handleAddRectangle,
+        handleAddCircle,
+        handleAddText,
     };
 }
