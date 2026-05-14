@@ -532,6 +532,25 @@ vi.mock('@/services/CloudStorageService', () => ({
     },
 }));
 
+// Mock CostControlService globally to prevent blocking AI operations in tests
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
+    }
+}));
+
 // Mock @react-three/fiber and @react-three/drei to prevent event initialization errors in JSDOM
 vi.mock('@react-three/fiber', () => ({
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'mock-canvas' }, children),

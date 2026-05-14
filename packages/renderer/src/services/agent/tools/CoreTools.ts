@@ -281,36 +281,37 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
     verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
         const { GenAI } = await import('@/services/ai/GenAI');
         const { AI_MODELS } = await import('@/core/config/ai-models');
-        const prompt = `
-        Verify if the following content meets the goal:
+        const prompt = `Verify if the following content meets the goal.
         Goal: ${args.goal}
-        Content: ${args.content}
-        
-        Return JSON: { score: number (1-10), pass: boolean, reason: string }
-        `;
+        Content: ${args.content}`;
 
-        const response = await GenAI.rawGenerateContent(
-            [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.FAST,
-            { responseMimeType: 'application/json' }
-        );
-
-        const text = (typeof response === 'object' && response !== null && 'getText' in response && typeof (response as { getText: () => string }).getText === 'function')
-            ? (response as { getText: () => string }).getText()
-            : '{}';
-
-        let verification;
         try {
-            verification = JSON.parse(text);
-        } catch (_e: unknown) {
-            logger.error('[CoreTools] Failed to parse verification JSON:', text);
-            verification = { score: 0, pass: false, reason: 'Failed to parse AI response' };
-        }
+            const verification = await GenAI.generateStructuredData<{
+                score: number;
+                pass: boolean;
+                reason: string;
+            }>(prompt, {
+                type: 'OBJECT' as const,
+                properties: {
+                    score: { type: 'NUMBER' as const },
+                    pass: { type: 'BOOLEAN' as const },
+                    reason: { type: 'STRING' as const },
+                },
+                required: ['score', 'pass', 'reason'],
+            } as any, undefined, undefined, AI_MODELS.TEXT.FAST);
 
-        return {
-            verification,
-            message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
-        };
+            return {
+                verification,
+                message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
+            };
+        } catch (error: unknown) {
+            logger.error('[CoreTools] Verification failed:', error);
+            const fallback = { score: 0, pass: false, reason: 'Verification service error' };
+            return {
+                verification: fallback,
+                message: `Verification failed. Fallback: ${fallback.reason}`
+            };
+        }
     }),
 
     read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {

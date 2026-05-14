@@ -24,17 +24,20 @@ import { agentRegistry } from '../../registry';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GenAI as AI } from '@/services/ai/GenAI';
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
-        rawGenerateContent: vi.fn().mockResolvedValue({
-            getText: () => '{"score": 8, "reason": "Good", "pass": true}',
-            response: {
-                text: () => '{"score": 8, "reason": "Good", "pass": true}',
-                candidates: [],
-                usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
-            }
-        })
+const { mockAI } = vi.hoisted(() => ({
+    mockAI: {
+        rawGenerateContent: vi.fn(),
+        generateStructuredData: vi.fn().mockResolvedValue({
+            score: 8,
+            reason: "Good",
+            pass: true
+        }),
+        analyzeImage: vi.fn().mockResolvedValue('Mock analysis')
     }
+}));
+
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: mockAI
 }));
 
 describe('CoreTools', () => {
@@ -129,13 +132,19 @@ describe('CoreTools', () => {
 
     describe('verify_output', () => {
         it('should verify content meet goal', async () => {
+            vi.mocked(AI.generateStructuredData).mockResolvedValue({
+                score: 8,
+                reason: "Good",
+                pass: true
+            });
+
             const result = await CoreTools.verify_output({
                 goal: 'Test goal',
                 content: 'Test content'
             });
             expect(result.success).toBe(true);
+            expect(AI.generateStructuredData).toHaveBeenCalled();
             expect(result.data.verification.pass).toBe(true);
-            expect(AI.rawGenerateContent).toHaveBeenCalled();
         });
     });
 });

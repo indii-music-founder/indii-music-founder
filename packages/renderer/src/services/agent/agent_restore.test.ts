@@ -44,13 +44,13 @@ describe('indii Conductor Restoration', () => {
     it('save_memory tool should call AlwaysOnMemoryEngine', async () => {
         const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory', type: 'fact' })) as any;
         expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalled();
-        expect(result.message).toContain('Memory stored');
+        expect(result.data.message).toContain('Memory stored');
     });
 
     it('recall_memories tool should call AlwaysOnMemoryEngine', async () => {
         const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as any;
         expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('test');
-        expect(result.message).toContain('Retrieved');
+        expect(result.data.message).toContain('Retrieved');
     });
 
     it('request_approval tool should return approved message', async () => {

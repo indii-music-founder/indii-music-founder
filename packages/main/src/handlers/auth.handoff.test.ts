@@ -46,8 +46,8 @@ describe('auth handoff deep link', () => {
     const fetchMock = vi.fn().mockReturnValue(fetchPromise);
     vi.stubGlobal('fetch', fetchMock as any);
 
-    const firstAttempt = handleDeepLink('indii-os://auth/callback?code=one-time-1234');
-    const secondAttempt = handleDeepLink('indii-os://auth/callback?code=one-time-1234');
+    const firstAttempt = handleDeepLink('indii://auth/callback?code=one-time-1234');
+    const secondAttempt = handleDeepLink('indii://auth/callback?code=one-time-1234');
 
     resolveFetch?.({
       ok: true,
@@ -72,8 +72,8 @@ describe('auth handoff deep link', () => {
     });
     vi.stubGlobal('fetch', fetchMock as any);
 
-    await handleDeepLink('indii-os://auth/callback?code=one-time-1234');
-    await handleDeepLink('indii-os://auth/callback?code=one-time-1234');
+    await handleDeepLink('indii://auth/callback?code=one-time-1234');
+    await handleDeepLink('indii://auth/callback?code=one-time-1234');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(sendMock).toHaveBeenCalledWith('auth:error', expect.objectContaining({ message: expect.stringContaining('already redeemed') }));
@@ -87,7 +87,7 @@ describe('auth handoff deep link', () => {
     });
     vi.stubGlobal('fetch', fetchMock as any);
 
-    await handleDeepLink('indii-os://auth/callback?code=expired-9999');
+    await handleDeepLink('indii://auth/callback?code=expired-9999');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(sendMock).toHaveBeenCalledWith('auth:error', expect.objectContaining({ message: expect.stringContaining('expired or invalid') }));
@@ -96,7 +96,7 @@ describe('auth handoff deep link', () => {
   it('blocks legacy token callbacks by default during rollout', async () => {
     delete process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK;
 
-    await handleDeepLink('indii-os://auth/callback?idToken=header.payload.sig&accessToken=legacy-access-token-1234567890');
+    await handleDeepLink('indii://auth/callback?idToken=header.payload.sig&accessToken=legacy-access-token-1234567890');
 
     expect(sendMock).toHaveBeenCalledWith('auth:error', expect.objectContaining({ message: expect.stringContaining('out of date') }));
   });
@@ -106,7 +106,7 @@ describe('auth handoff deep link', () => {
     const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', exp: Math.floor(Date.now()/1000)+300 }), 'utf8').toString('base64url');
     const idToken = `header.${payload}.sig`;
 
-    await handleDeepLink(`indii-os://auth/callback?idToken=${idToken}&accessToken=legacy-access-token-1234567890`);
+    await handleDeepLink(`indii://auth/callback?idToken=${idToken}&accessToken=legacy-access-token-1234567890`);
 
     expect(sendMock).toHaveBeenCalledWith('auth:user-update', expect.objectContaining({ idToken }));
   });
