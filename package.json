@@ -1,4 +1,6 @@
 {
+  "name": "indii-monorepo",
+  "version": "1.64.0",
   "name": "indii.music",
   "version": "1.63.0",
   "description": "The Operating System for Independent Music — npm Workspace Monorepo",
