@@ -22,6 +22,18 @@ export class CanvasOperationsService {
     private _activeColorId: string = '';
     /** Track blob URLs so we can revoke them on dispose to prevent memory leaks */
     private _activeBlobUrls: string[] = [];
+    private _historyStack: string[] = [];
+    private _redoStack: string[] = [];
+    private _isUndoingRedoing: boolean = false;
+    private _maxHistory: number = 50;
+
+    // Advanced Tools State
+    private _activeTool: 'select' | 'line' | 'polygon' | 'text' | 'brush' = 'select';
+    private _isDrawing: boolean = false;
+    private _currentShape: fabric.FabricObject | null = null;
+    private _startX: number = 0;
+    private _startY: number = 0;
+    private _points: { x: number; y: number }[] = [];
 
     /**
      * Load a Fabric.js Image from URL with automatic CORS fallback.
@@ -167,13 +179,151 @@ export class CanvasOperationsService {
         }
 
         if (onChange) {
-            this.canvas.on('object:modified', onChange);
-            this.canvas.on('object:added', onChange);
-            this.canvas.on('object:removed', onChange);
-            this.canvas.on('path:created', onChange);
+            const wrappedChange = () => {
+                if (!this._isUndoingRedoing) {
+                    this.saveHistoryState();
+                }
+                onChange();
+            };
+            this.canvas.on('object:modified', wrappedChange);
+            this.canvas.on('object:added', wrappedChange);
+            this.canvas.on('object:removed', wrappedChange);
+            this.canvas.on('path:created', wrappedChange);
+            this.canvas.on('mouse:dblclick', () => {
+                if (this._activeTool === 'polygon' && this._points.length > 2) {
+                    const color = this._activeColorId ? STUDIO_COLORS.find(c => c.id === this._activeColorId)?.hex || '#ff0000' : '#ff0000';
+                    this.finishPolygon(color);
+                }
+            });
+
+            this.canvas.on('mouse:down', (o) => {
+                if (!this.canvas) return;
+                const pointer = this.canvas.getPointer(o.e);
+
+                if (this._activeTool === 'line') {
+                    this._isDrawing = true;
+                    this._startX = pointer.x;
+                    this._startY = pointer.y;
+                    const color = this._activeColorId ? STUDIO_COLORS.find(c => c.id === this._activeColorId)?.hex || '#ff0000' : '#ff0000';
+                    this._currentShape = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+                        stroke: color,
+                        strokeWidth: 2,
+                        selectable: false,
+                        data: { isAnnotation: true }
+                    });
+                    this.canvas.add(this._currentShape);
+                } else if (this._activeTool === 'polygon') {
+                    this._points.push({ x: pointer.x, y: pointer.y });
+                    const color = this._activeColorId ? STUDIO_COLORS.find(c => c.id === this._activeColorId)?.hex || '#ff0000' : '#ff0000';
+                    if (this._points.length === 1) {
+                        this._currentShape = new fabric.Polyline(this._points, {
+                            stroke: color,
+                            strokeWidth: 2,
+                            fill: 'transparent',
+                            selectable: false,
+                            data: { isAnnotation: true }
+                        });
+                        this.canvas.add(this._currentShape);
+                    } else {
+                        (this._currentShape as fabric.Polyline).set({ points: [...this._points] });
+                    }
+                }
+                this.canvas.renderAll();
+            });
+
+            this.canvas.on('mouse:move', (o) => {
+                if (!this.canvas || !this._isDrawing || !this._currentShape) return;
+                const pointer = this.canvas.getPointer(o.e);
+
+                if (this._activeTool === 'line') {
+                    let endX = pointer.x;
+                    let endY = pointer.y;
+
+                    if (o.e.shiftKey) {
+                        const angle = Math.atan2(pointer.y - this._startY, pointer.x - this._startX);
+                        const dist = Math.sqrt(Math.pow(pointer.x - this._startX, 2) + Math.pow(pointer.y - this._startY, 2));
+                        const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+                        endX = this._startX + dist * Math.cos(snapAngle);
+                        endY = this._startY + dist * Math.sin(snapAngle);
+                    }
+
+                    (this._currentShape as fabric.Line).set({ x2: endX, y2: endY });
+                    this.canvas.renderAll();
+                }
+            });
+
+            this.canvas.on('mouse:up', () => {
+                if (this._activeTool === 'line' && this._isDrawing) {
+                    this._isDrawing = false;
+                    this._currentShape = null;
+                    this.saveHistoryState();
+                }
+            });
         }
 
+        // Initial state save
+        this.saveHistoryState();
+
         return this.canvas;
+    }
+
+    private saveHistoryState(): void {
+        if (!this.canvas) return;
+        const json = JSON.stringify(this.canvas.toJSON(['data']));
+        
+        // Only push if it's different from the top of the stack
+        if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
+            this._historyStack.push(json);
+            if (this._historyStack.length > this._maxHistory) {
+                this._historyStack.shift();
+            }
+            // Clear redo stack on new action
+            this._redoStack = [];
+        }
+    }
+
+    undo(): void {
+        if (!this.canvas || this._historyStack.length <= 1) return;
+
+        this._isUndoingRedoing = true;
+        const currentState = this._historyStack.pop();
+        if (currentState) {
+            this._redoStack.push(currentState);
+        }
+
+        const previousState = this._historyStack[this._historyStack.length - 1];
+        if (previousState) {
+            this.canvas.loadFromJSON(JSON.parse(previousState), () => {
+                this.canvas?.renderAll();
+                this._isUndoingRedoing = false;
+            });
+        } else {
+            this._isUndoingRedoing = false;
+        }
+    }
+
+    redo(): void {
+        if (!this.canvas || this._redoStack.length === 0) return;
+
+        this._isUndoingRedoing = true;
+        const nextState = this._redoStack.pop();
+        if (nextState) {
+            this._historyStack.push(nextState);
+            this.canvas.loadFromJSON(JSON.parse(nextState), () => {
+                this.canvas?.renderAll();
+                this._isUndoingRedoing = false;
+            });
+        } else {
+            this._isUndoingRedoing = false;
+        }
+    }
+
+    canUndo(): boolean {
+        return this._historyStack.length > 1;
+    }
+
+    canRedo(): boolean {
+        return this._redoStack.length > 0;
     }
 
     /**
@@ -516,32 +666,36 @@ export class CanvasOperationsService {
     /**
      * Add a rectangle shape to canvas
      */
-    addRectangle(): void {
+    addRectangle(color: string = 'rgba(255,0,0,0.5)'): void {
         if (!this.canvas) return;
         const rect = new fabric.Rect({
             left: 100,
             top: 100,
-            fill: 'rgba(255,0,0,0.5)',
+            fill: color.includes('rgba') ? color : hexToRgba(color, 0.5),
             width: 100,
             height: 100,
             data: { isAnnotation: true }
         });
         this.canvas.add(rect);
+        this.canvas.renderAll();
+        this.saveHistoryState();
     }
 
     /**
      * Add a circle shape to canvas
      */
-    addCircle(): void {
+    addCircle(color: string = 'rgba(0,255,0,0.5)'): void {
         if (!this.canvas) return;
         const circle = new fabric.Circle({
             left: 200,
             top: 200,
-            fill: 'rgba(0,255,0,0.5)',
+            fill: color.includes('rgba') ? color : hexToRgba(color, 0.5),
             radius: 50,
             data: { isAnnotation: true }
         });
         this.canvas.add(circle);
+        this.canvas.renderAll();
+        this.saveHistoryState();
     }
 
     /**
@@ -721,6 +875,95 @@ export class CanvasOperationsService {
             }
             this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
         }
+    }
+
+    /**
+     * Set the active drawing tool
+     */
+    setTool(tool: 'select' | 'line' | 'polygon' | 'text' | 'brush', color?: CreativeColor): void {
+        if (!this.canvas) return;
+        
+        this._activeTool = tool;
+        this._activeColorId = color?.id || '';
+        this._points = [];
+        this._currentShape = null;
+        this._isDrawing = false;
+
+        // Reset canvas state for different tools
+        this.canvas.isDrawingMode = tool === 'brush';
+        this.canvas.selection = tool === 'select';
+        this.canvas.defaultCursor = tool === 'select' ? 'default' : 'crosshair';
+
+        if (tool === 'brush' && color) {
+            this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+            this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
+            this.canvas.freeDrawingBrush.width = 30;
+            
+            // Stamp colorId on every new path
+            if (this._pathCreatedHandler) {
+                this.canvas.off('path:created', this._pathCreatedHandler);
+            }
+            this._pathCreatedHandler = (e: { path: fabric.FabricObject }) => {
+                if (e.path) {
+                    e.path.set('data', { colorId: this._activeColorId, isAnnotation: true });
+                }
+            };
+            this.canvas.on('path:created', this._pathCreatedHandler);
+        }
+
+        if (tool === 'select') {
+            this.canvas.getObjects().forEach(obj => {
+                obj.selectable = true;
+                obj.evented = true;
+            });
+        } else {
+            this.canvas.getObjects().forEach(obj => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
+        }
+
+        if (tool === 'text') {
+            this.addText('New Text', color?.hex || '#ffffff');
+            // We stay in text tool if the user wants to add more? 
+            // The request says "text input directly on the canvas".
+            // Typically after adding one, you might want to edit it.
+            this.setTool('select', color);
+        }
+
+        this.canvas.renderAll();
+    }
+
+    private stopDrawingTool(): void {
+        if (!this.canvas) return;
+        this.canvas.isDrawingMode = false;
+        this.canvas.selection = true;
+        this.canvas.off('mouse:down');
+        this.canvas.off('mouse:move');
+        this.canvas.off('mouse:up');
+        this.canvas.off('mouse:dblclick');
+        this._isDrawing = false;
+        this._currentShape = null;
+        this._points = [];
+    }
+
+    private finishPolygon(color: string): void {
+        if (!this.canvas || this._points.length < 3) return;
+        
+        this.canvas.remove(this._currentShape!);
+        const polygon = new fabric.Polygon(this._points, {
+            fill: hexToRgba(color, 0.2),
+            stroke: color,
+            strokeWidth: 2,
+            selectable: true,
+            data: { isAnnotation: true }
+        });
+        
+        this.canvas.add(polygon);
+        this._points = [];
+        this._currentShape = null;
+        this.canvas.renderAll();
+        this.saveHistoryState();
     }
 
     /**

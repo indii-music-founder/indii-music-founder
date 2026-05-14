@@ -13,6 +13,7 @@ import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import PromptHistoryDrawer from './PromptHistoryDrawer';
+import DesignHistoryDrawer from './DesignHistoryDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -46,6 +47,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const toast = useToast();
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
+    const [showDesignHistory, setShowDesignHistory] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
@@ -132,6 +134,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             >
                                 <Clock size={10} /> History
                             </button>
+                            <button
+                                onClick={() => setShowDesignHistory(!showDesignHistory)}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                    ${showDesignHistory
+                                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                            >
+                                <Layers size={10} /> Versions
+                            </button>
                         </div>
                     ) : (
                         <DaisyChainControls
@@ -217,6 +228,11 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {/* Prompt History Drawer */}
             {showPromptHistory && (
                 <PromptHistoryDrawer onClose={() => setShowPromptHistory(false)} />
+            )}
+
+            {/* Design History Drawer */}
+            {showDesignHistory && (
+                <DesignHistoryDrawer onClose={() => setShowDesignHistory(false)} />
             )}
 
 
