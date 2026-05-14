@@ -65,7 +65,7 @@ describe('LoginBridge deep-link flows', () => {
         });
 
         expect(container.textContent).toContain('Success! Redirecting to app...');
-        expect(window.location.href).toContain('indii-os://auth/callback?');
+        expect(window.location.href).toContain('indii://auth/callback?');
     });
 
     it('renders deep-link timeout fallback after redirect does not leave page', async () => {
@@ -112,7 +112,7 @@ describe('LoginBridge deep-link flows', () => {
             retryButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         });
 
-        expect(window.location.href).toContain('indii-os://auth/callback?');
+        expect(window.location.href).toContain('indii://auth/callback?');
         expect(window.location.href).toBe(before);
     });
 });
