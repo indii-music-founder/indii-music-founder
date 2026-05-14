@@ -52,11 +52,29 @@ vi.mock('uuid', () => ({
     v4: () => 'mock-uuid'
 }));
 
-// 4. Mock Subscription Service
+// 5. Mock Subscription & Cost Control Services
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: 'pro' })
+    }
+}));
+
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
     }
 }));
 

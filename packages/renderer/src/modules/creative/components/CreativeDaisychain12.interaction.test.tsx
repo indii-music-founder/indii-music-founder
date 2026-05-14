@@ -66,6 +66,9 @@ vi.mock('../services/CanvasOperationsService', () => ({
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
+        canUndo: vi.fn().mockReturnValue(false),
+        canRedo: vi.fn().mockReturnValue(false),
+        toJSON: vi.fn().mockResolvedValue({}),
     }
 }));
 
@@ -186,6 +189,7 @@ describe('Creative Director 12-Click Daisychain', () => {
                     generationMode: 'image',
                     setGenerationMode: mockSetGenerationMode,
                     addWhiskItem: mockAddWhiskItem,
+                    initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
                     setPendingPrompt: mockSetPendingPrompt,
                     prompt,
                     setPrompt: (newPrompt: string) => {
