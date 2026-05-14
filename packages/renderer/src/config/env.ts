@@ -77,39 +77,40 @@ const getProcessEnv = (key: string): string | undefined => {
 
 const processEnv = {
     // 🛡️ Sentinel: Using static lookups for Vite compatibility
-    apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), getProcessEnv('VITE_API_KEY')),
-    projectId: getEnv(getSafeMetaEnv('VITE_VERTEX_PROJECT_ID'), getProcessEnv('VITE_VERTEX_PROJECT_ID')),
-    location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), getProcessEnv('VITE_VERTEX_LOCATION')) || "us-central1",
-    useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || getProcessEnv('VITE_USE_VERTEX')),
-    googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), getProcessEnv('VITE_GOOGLE_MAPS_API_KEY')),
+    // Vite requires static analysis of import.meta.env.VITE_* to perform replacement at build time.
+    apiKey: import.meta.env.VITE_API_KEY || getProcessEnv('VITE_API_KEY'),
+    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || getProcessEnv('VITE_VERTEX_PROJECT_ID'),
+    location: import.meta.env.VITE_VERTEX_LOCATION || getProcessEnv('VITE_VERTEX_LOCATION') || "us-central1",
+    useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || getProcessEnv('VITE_USE_VERTEX')),
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY'),
     enableGoogleMaps: (() => {
-        const raw = getEnv(getSafeMetaEnv('VITE_ENABLE_GOOGLE_MAPS'), getProcessEnv('VITE_ENABLE_GOOGLE_MAPS'));
+        const raw = import.meta.env.VITE_ENABLE_GOOGLE_MAPS || getProcessEnv('VITE_ENABLE_GOOGLE_MAPS');
         return raw === undefined ? true : toBoolean(raw);
     })(),
 
-    VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), getProcessEnv('VITE_FUNCTIONS_URL')),
-    VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), getProcessEnv('VITE_RAG_PROXY_URL')),
-    DEV: getSafeMetaEnv('DEV') ?? getProcessEnv('NODE_ENV') !== 'production',
+    VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL || getProcessEnv('VITE_FUNCTIONS_URL'),
+    VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || getProcessEnv('VITE_RAG_PROXY_URL'),
+    DEV: import.meta.env.DEV ?? getProcessEnv('NODE_ENV') !== 'production',
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), getProcessEnv('VITE_FIREBASE_API_KEY')),
-    firebaseAuthDomain: getEnv(getSafeMetaEnv('VITE_FIREBASE_AUTH_DOMAIN'), getProcessEnv('VITE_FIREBASE_AUTH_DOMAIN')),
-    firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), getProcessEnv('VITE_FIREBASE_PROJECT_ID')),
-    firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), getProcessEnv('VITE_FIREBASE_STORAGE_BUCKET')),
-    firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), getProcessEnv('VITE_FIREBASE_DATABASE_URL')),
-    appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), getProcessEnv('VITE_FIREBASE_APP_CHECK_KEY')),
-    appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), getProcessEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN')),
-    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')),
+    firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || getProcessEnv('VITE_FIREBASE_API_KEY'),
+    firebaseAuthDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || getProcessEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+    firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || getProcessEnv('VITE_FIREBASE_PROJECT_ID'),
+    firebaseStorageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || getProcessEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+    firebaseDatabaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || getProcessEnv('VITE_FIREBASE_DATABASE_URL'),
+    appCheckKey: import.meta.env.VITE_FIREBASE_APP_CHECK_KEY || getProcessEnv('VITE_FIREBASE_APP_CHECK_KEY'),
+    appCheckDebugToken: import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN || getProcessEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'),
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || getProcessEnv('VITE_FIREBASE_APP_ID'),
 
-    skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || getProcessEnv('VITE_SKIP_ONBOARDING')),
-    VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), getProcessEnv('VITE_EXPOSE_INTERNALS')),
-    VITE_USE_FUNCTIONS_EMULATOR: getEnv(getSafeMetaEnv('VITE_USE_FUNCTIONS_EMULATOR'), getProcessEnv('VITE_USE_FUNCTIONS_EMULATOR')),
+    skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || getProcessEnv('VITE_SKIP_ONBOARDING')),
+    VITE_EXPOSE_INTERNALS: import.meta.env.VITE_EXPOSE_INTERNALS || getProcessEnv('VITE_EXPOSE_INTERNALS'),
+    VITE_USE_FUNCTIONS_EMULATOR: import.meta.env.VITE_USE_FUNCTIONS_EMULATOR || getProcessEnv('VITE_USE_FUNCTIONS_EMULATOR'),
 
     // AI Sidecar
-    VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), getProcessEnv('VITE_A0_BASE_URL')),
-    VITE_A0_RUNTIME_ID: getEnv(getSafeMetaEnv('VITE_A0_RUNTIME_ID'), getProcessEnv('VITE_A0_RUNTIME_ID')),
-    VITE_A0_AUTH_LOGIN: getEnv(getSafeMetaEnv('VITE_A0_AUTH_LOGIN'), getProcessEnv('VITE_A0_AUTH_LOGIN')),
-    VITE_A0_AUTH_PASSWORD: getEnv(getSafeMetaEnv('VITE_A0_AUTH_PASSWORD'), getProcessEnv('VITE_A0_AUTH_PASSWORD')),
+    VITE_A0_BASE_URL: import.meta.env.VITE_A0_BASE_URL || getProcessEnv('VITE_A0_BASE_URL'),
+    VITE_A0_RUNTIME_ID: import.meta.env.VITE_A0_RUNTIME_ID || getProcessEnv('VITE_A0_RUNTIME_ID'),
+    VITE_A0_AUTH_LOGIN: import.meta.env.VITE_A0_AUTH_LOGIN || getProcessEnv('VITE_A0_AUTH_LOGIN'),
+    VITE_A0_AUTH_PASSWORD: import.meta.env.VITE_A0_AUTH_PASSWORD || getProcessEnv('VITE_A0_AUTH_PASSWORD'),
 };
 
 // isTest moved to top
