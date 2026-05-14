@@ -4,13 +4,24 @@ import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({
     db: {},
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} },
+    app: { options: {} },
+    getFirebaseAI: vi.fn(() => ({})),
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: {},
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
-    getDocs: vi.fn(),
+    getDocs: vi.fn().mockResolvedValue({ docs: [] }),
     deleteDoc: vi.fn(),
     doc: vi.fn(),
+    query: vi.fn(),
+    limit: vi.fn(),
     writeBatch: vi.fn(() => ({
         delete: vi.fn(),
         commit: vi.fn().mockResolvedValue(undefined),

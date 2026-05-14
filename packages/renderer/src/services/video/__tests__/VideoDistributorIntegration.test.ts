@@ -31,6 +31,24 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     }
 }));
 
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
+    }
+}));
+
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     functions: {},
@@ -51,6 +69,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         updateDoc: vi.fn().mockResolvedValue(undefined),
+        getDoc: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
         serverTimestamp: vi.fn(),
         onSnapshot: vi.fn(),
         Timestamp: {
