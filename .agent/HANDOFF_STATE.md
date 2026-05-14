@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-13 19:46 EDT
+**Updated:** 2026-05-13 20:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cddbd0b78 docs: add strategic billing & financial architecture overview
+4e25c9f1b chore: session checkpoint [19:46]
 accda2e2f fix(billing): integrate cost control and fix runaway vulnerability
 bc72e5519 chore: session checkpoint [19:38]
 e0e1f6910 chore: session checkpoint [19:31]
@@ -12,15 +14,20 @@ bdcbdaa12 chore: session checkpoint [19:20]
 a7a03aee7 chore: session checkpoint [17:48]
 111f40404 fix(ci): harden firebase identifiers in deploy.yml to resolve E2E failures
 7ee5b30e1 fix(deploy): correct firebase project identifier and resolve deployment gate
-c1c12fbc1 fix(ci): resolve stripe resolution error and stabilize dependency hoisting
-fd888046a Merge pull request #10 from indii-music/v1.63.0
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
+ M packages/main/src/handlers/deeplink.test.ts
+ M packages/main/src/utils/ipc-security.test.ts
+ M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
+ M packages/renderer/src/services/agent/agent_restore.test.ts
+ M packages/renderer/src/services/agent/benchmark_clearAllMemories.test.ts
  M packages/renderer/src/services/agent/tools/CoreTools.ts
  M packages/renderer/src/services/agent/tools/__tests__/CoreTools.test.ts
+ M packages/renderer/src/services/video/LensVeoResilience.test.ts
+ M packages/renderer/src/services/video/VideoGenerationService.security.test.ts
+ M packages/renderer/src/test/setup.ts
 ?? core_tools_test_output.txt
 ?? core_tools_test_output_2.txt
 ```
