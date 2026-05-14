@@ -78,7 +78,8 @@ describe('CreativeStudio', () => {
             toggleWhiskItem: vi.fn(),
             updateWhiskItem: vi.fn(),
             setPreciseReference: vi.fn(),
-            setHasUnsavedChanges: vi.fn()
+            setHasUnsavedChanges: vi.fn(),
+            initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
         };
 
         (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {

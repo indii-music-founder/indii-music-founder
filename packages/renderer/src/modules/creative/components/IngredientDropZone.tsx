@@ -1,7 +1,8 @@
 import React, { useCallback, useRef } from 'react';
-import { X, ImagePlus, Upload, Film, ArrowRightLeft } from 'lucide-react';
+import { X, ImagePlus, Upload, Film, ArrowRightLeft, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { PhotoSourcePanel } from './PhotoSourcePanel';
 
 export type IngredientMode = 'reference' | 'base_video' | 'transition';
 
@@ -21,6 +22,7 @@ interface IngredientDropZoneProps {
 export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }: IngredientDropZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { error } = useToast();
+    const [showCamera, setShowCamera] = React.useState(false);
 
     const maxIngredients = mode === 'reference' ? 3 : mode === 'transition' ? 2 : 1;
     const acceptedTypes = mode === 'base_video' ? 'video/*' : 'image/*,video/*';
@@ -142,6 +144,31 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }
                 onChange={(e) => e.target.files && handleFiles(e.target.files)}
             />
             
+            {showCamera && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-md">
+                        <PhotoSourcePanel 
+                            onCapture={(image) => {
+                                // Convert dataURL to File object
+                                fetch(`data:${image.mimeType};base64,${image.data}`)
+                                    .then(res => res.blob())
+                                    .then(blob => {
+                                        const file = new File([blob], `capture_${Date.now()}.jpg`, { type: image.mimeType });
+                                        const newIngredient: Ingredient = {
+                                            id: crypto.randomUUID(),
+                                            dataUrl: `data:${image.mimeType};base64,${image.data}`,
+                                            file,
+                                            type: 'image'
+                                        };
+                                        onChange([...ingredients, newIngredient]);
+                                    });
+                            }}
+                            onClose={() => setShowCamera(false)}
+                        />
+                    </div>
+                </div>
+            )}
+
             <div 
                 className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all ${
                     isFull 
@@ -160,7 +187,20 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }
                 }}
                 role="button"
                 aria-disabled={isFull}
+                data-testid="drop-zone"
             >
+                {!isFull && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowCamera(true);
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors border border-white/10"
+                        title="Capture Photo"
+                    >
+                        <Camera size={16} />
+                    </button>
+                )}
                 {ingredients.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         {getModeIcon()}

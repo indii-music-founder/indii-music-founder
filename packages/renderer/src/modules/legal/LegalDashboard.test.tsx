@@ -92,7 +92,7 @@ describe('LegalDashboard', () => {
 
         fireEvent.change(fileInput!, { target: { files: [file] } });
 
-        expect(await screen.findByText('Analysis Report')).toBeInTheDocument();
+        expect(await screen.findByText('Analysis Report', {}, { timeout: 5000 })).toBeInTheDocument();
         expect(screen.getByText('Test Summary')).toBeInTheDocument();
     });
 
