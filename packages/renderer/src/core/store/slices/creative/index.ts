@@ -15,25 +15,29 @@ import { HistoryItem } from '@/core/types/history';
 // Sub-module imports
 import { CreativeHistorySlice, buildCreativeHistoryState } from './creativeHistorySlice';
 import { CreativeControlsSlice, buildCreativeControlsState } from './creativeControlsSlice';
+import { DesignHistorySlice, buildDesignHistoryState } from './designHistorySlice';
 
 // Combined interface for the root store
-export interface CreativeSlice extends CreativeHistorySlice, CreativeControlsSlice {}
+export interface CreativeSlice extends CreativeHistorySlice, CreativeControlsSlice, DesignHistorySlice {}
 
 // Type re-exports for backward compatibility
 export type { HistoryItem };
 export type { CanvasImage } from './creativeHistorySlice';
 export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, SavedPrompt } from './creativeControlsSlice';
+export type { DesignVersion } from './designHistorySlice';
 
 /**
- * Composed StateCreator that merges both creative sub-slices.
+ * Composed StateCreator that merges all creative sub-slices.
  * This is the single entry point consumed by the root store.
  */
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => {
     const historyState = buildCreativeHistoryState(set, get);
     const controlsState = buildCreativeControlsState(set, get);
+    const designHistoryState = buildDesignHistoryState(set, get);
 
     return {
         ...historyState,
         ...controlsState,
+        ...designHistoryState,
     };
 };
