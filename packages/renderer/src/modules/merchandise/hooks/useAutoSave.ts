@@ -59,7 +59,7 @@ export const useAutoSave = (
             const canvasJSON = JSON.stringify(canvas.toObject(['name', 'thumbnail']));
 
             // Generate thumbnail (low quality for storage efficiency)
-            // ⚡ INDIIOS FIX: Reset zoom and viewport temporarily for consistent thumbnails
+            // ⚡ indii.music FIX: Reset zoom and viewport temporarily for consistent thumbnails
             const currentZoom = canvas.getZoom();
             const currentVpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
 

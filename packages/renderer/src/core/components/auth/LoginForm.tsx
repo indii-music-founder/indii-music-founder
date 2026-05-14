@@ -144,7 +144,7 @@ export default function LoginForm() {
                         animate={{ scale: 1 }}
                         className="text-5xl font-black mb-2 tracking-tighter"
                     >
-                        indii<span className="text-dept-creative">OS</span>
+                        indii<span className="text-dept-creative">.music</span>
                     </motion.h1>
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>

@@ -36,7 +36,7 @@ export const RemotionCloudRunConfig = {
      * Created via `npx remotion cloudrun sites create`.
      * Format: https://storage.googleapis.com/{bucket}/sites/{site-id}
      */
-    siteName: import.meta.env.VITE_REMOTION_SITE_NAME || 'indii-os-remotion-site',
+    siteName: import.meta.env.VITE_REMOTION_SITE_NAME || 'indii.music-remotion-site',
 
     /**
      * GCP Project ID — defaults to the Firebase project for billing/IAM alignment.

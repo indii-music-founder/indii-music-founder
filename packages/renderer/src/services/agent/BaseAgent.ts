@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -9,6 +10,8 @@ import {
     ToolDefinition,
     FunctionDeclaration,
     AgentContext,
+    Directive,
+    AgentCard,
     VALID_AGENT_IDS,
     ValidAgentId,
     AnyToolFunction,
@@ -34,7 +37,6 @@ import { getDepartmentOf, isHead, sameDepartment } from './departments';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
-import { getPersistentMemoryService } from '@/services/memory/PersistentMemoryService';
 import { getReflectionLoop } from './ReflectionLoop';
 
 export class BaseAgent implements SpecializedAgent {
@@ -45,6 +47,8 @@ export class BaseAgent implements SpecializedAgent {
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
     public tools: ToolDefinition[];
+    /** Swarm identity card for A2A communication */
+    public card?: AgentCard;
     protected functions: Record<string, AnyToolFunction> = {};
     /** Explicit allowlist of tool names. Populated from AgentConfig.authorizedTools.
      *  If undefined, all declared functionDeclarations are allowed. */
@@ -326,7 +330,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
             },
             consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
-                const { targetAgentId, payload } = args as { targetAgentId: string; payload: Record<string, unknown> };
+                const { targetAgentId, task, sharedContext } = args as { targetAgentId: string; task: string; sharedContext?: string };
 
                 // GEAP: Record consultation provenance for audit trail
                 if (this.identityCard) {
@@ -339,7 +343,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 try {
-                    if (!VALID_AGENT_IDS.includes(targetAgentId as typeof VALID_AGENT_IDS[number])) {
+                    if (!VALID_AGENT_IDS.includes(targetAgentId as any)) {
                         return toolError(`Invalid agent ID: ${targetAgentId}`, 'INVALID_ARGS');
                     }
 
@@ -351,17 +355,29 @@ export class BaseAgent implements SpecializedAgent {
 
                     // A2A Swarm Request
                     const { a2aClient } = await import('./a2a/A2AClient');
-                    const directive = {
-                        id: crypto.randomUUID(),
-                        type: 'A2A_CONSULTATION',
-                        title: `Consult ${targetAgentId}`,
-                        status: 'in_progress',
-                        steps: [],
-                        createdAt: Date.now(),
-                        updatedAt: Date.now()
-                    };
                     
-                    const response = await a2aClient.invoke(targetAgentId, 'execute', payload, directive as any);
+                    // Use the directive from context if available, otherwise fallback to a generic one
+                    // This is critical for Digital Handshake continuity across the swarm
+                    const directive = context?.directive || {
+                        id: crypto.randomUUID(),
+                        userId: context?.userId || auth.currentUser?.uid || 'anonymous',
+                        title: `Consult ${targetAgentId}`,
+                        status: 'IN_PROGRESS',
+                        assignedAgent: targetAgentId as any,
+                        goalAncestry: [],
+                        computeAllocation: {
+                            maxTokens: 4000,
+                            tokensUsed: 0,
+                            isMaximizerModeActive: false
+                        },
+                        contextFiles: [],
+                        conversationThread: [],
+                        requiresDigitalHandshake: false,
+                        createdAt: Timestamp.now(),
+                        updatedAt: Timestamp.now()
+                    } as Directive;
+                    
+                    const response = await a2aClient.invoke(targetAgentId, 'agent.execute', { task, sharedContext }, directive);
                     return {
                         success: true,
                         data: response,
@@ -369,6 +385,12 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
+                    logger.error(`[BaseAgent] Specialist consultation failed for ${targetAgentId}:`, err);
+                    
+                    if (message.includes('Digital Handshake approval')) {
+                        return toolError(message, 'A2A_HANDSHAKE_PENDING');
+                    }
+
                     return toolError(`Specialist consultation failed: ${message}`, 'EXECUTION_ERROR');
                 }
             },
@@ -498,7 +520,6 @@ export class BaseAgent implements SpecializedAgent {
     ): Promise<void> {
         try {
             const streamingService = getAgentStreamingService();
-            const memoryService = getPersistentMemoryService();
             const reflectionService = getReflectionLoop();
 
             // Build context for streaming
@@ -524,11 +545,11 @@ export class BaseAgent implements SpecializedAgent {
 
                         // Store in memory (Phase 2 integration)
                         try {
-                            await memoryService.write(
-                                'session',
-                                `agent-response-${this.id}`,
-                                { response: fullText, task, metadata },
-                                ['agent-output', this.id, task.substring(0, 50)]
+                            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                            await alwaysOnMemoryEngine.ingest(
+                                `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
+                                'agent_output',
+                                'context'
                             );
                         } catch (err) {
                             logger.warn('[BaseAgent] Failed to store streaming response in memory', err);

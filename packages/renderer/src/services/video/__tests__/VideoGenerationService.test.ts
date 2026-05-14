@@ -79,6 +79,15 @@ vi.mock('@/services/ai/utils/InputSanitizer', () => ({
     }
 }));
 
+// Mock CostControlService
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ allowed: true }),
+        releaseReservation: vi.fn().mockResolvedValue(undefined),
+        confirmUsage: vi.fn().mockResolvedValue(undefined),
+    }
+}));
+
 // Mock video utils to prevent HTMLMediaElement frame extraction timeout in jsdom
 vi.mock('@/utils/video', () => ({
     extractLastFrameForAPI: vi.fn().mockResolvedValue({

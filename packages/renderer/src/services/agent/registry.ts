@@ -4,6 +4,7 @@ import { freezeAgentConfig } from './FreezeDiagnostic';
 
 import { SpecializedAgent, AgentRegistryProvider } from './types';
 import { DEPARTMENTS } from './departments';
+import { getCardForAgent } from './a2a/CardRegistry';
 
 export class AgentRegistry implements AgentRegistryProvider {
     private agents: Map<string, SpecializedAgent> = new Map();
@@ -58,6 +59,10 @@ export class AgentRegistry implements AgentRegistryProvider {
                     throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
                 const agent = new module.GeneralistAgent();
+                
+                // Attach A2A Card
+                agent.card = getCardForAgent(generalistKey);
+
                 // Check for initialize method using type guard
                 if ('initialize' in agent && typeof agent.initialize === 'function') {
                     await agent.initialize();
@@ -81,7 +86,9 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(merchMeta, async () => {
                 const { MerchandiseAgent } = await import('./MerchandiseAgent');
-                return new MerchandiseAgent();
+                const agent = new MerchandiseAgent();
+                agent.card = getCardForAgent('merchandise');
+                return agent;
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
@@ -105,6 +112,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                         // Use RAGAgent which automatically queries File Search before execution
                         // RAGAgent extends BaseAgent.
                         const agent = new RAGAgent(config);
+                        agent.card = getCardForAgent(config.id);
                         freezeAgentConfig(agent);
                         return agent;
                     });
@@ -136,6 +144,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                     systemPrompt: 'You are Keeper, the Context Integrity Guardian for indii. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
                     tools: []
                 });
+                agent.card = getCardForAgent('keeper');
                 freezeAgentConfig(agent);
                 return agent;
             });
@@ -155,7 +164,9 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(curriculumMeta, async () => {
                 const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
-                return new CurriculumAgent();
+                const agent = new CurriculumAgent();
+                agent.card = getCardForAgent('curriculum');
+                return agent;
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
@@ -189,6 +200,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                                 systemPrompt: `You are a worker in the ${typedDept.displayName} department.`,
                                 tools: []
                             });
+                            agent.card = getCardForAgent(workerId);
                             freezeAgentConfig(agent);
                             return agent;
                         });

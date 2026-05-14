@@ -106,7 +106,7 @@ export default function Home() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500">
             <span className="text-amber-500 font-black text-[10px] tracking-tighter">indii</span>
           </div>
-          <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii</span>
+          <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii.music</span>
         </div>
 
         <div className="flex items-center gap-8">
@@ -211,7 +211,7 @@ export default function Home() {
             </div>
             <div className="mx-auto flex items-center gap-2 bg-[#1A1A1A] border border-white/5 rounded-md px-32 py-1.5 shadow-inner">
               <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/independence-hub</span>
+              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/independence-swarm</span>
             </div>
           </div>
           <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
@@ -254,7 +254,7 @@ export default function Home() {
         >
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
             The Independence{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Hub</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Swarm</span>
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-platform release pipelines. High-fidelity creative synthesis. Total ownership of your masters and your career.</p>
         </motion.div>
@@ -344,7 +344,7 @@ export default function Home() {
           <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-center items-center shadow-[0_0_10px_rgba(245,158,11,0.2)]">
             <Zap size={12} className="text-amber-500" />
           </div>
-          <span className="font-medium tracking-wide">© 2026 indii Inc. The operating system for your musical independence.</span>
+          <span className="font-medium tracking-wide">© 2026 New Detroit Music LLC. indii.music — the operating system for your musical independence.</span>
         </div>
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
