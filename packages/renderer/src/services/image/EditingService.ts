@@ -1,6 +1,6 @@
 import { AutonomousGenAI } from '../intelligence/AutonomousGenAI';
 import { AI_MODELS } from '@/core/config/intelligence-models';
-import { InputSanitizer } from '../ai/utils/InputSanitizer';
+import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart } from '@/shared/types/ai.dto';
 import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';

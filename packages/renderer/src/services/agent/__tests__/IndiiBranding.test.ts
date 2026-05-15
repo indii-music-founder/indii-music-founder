@@ -22,7 +22,7 @@ describe('indii Branding Constants', () => {
 
         it('includes descriptive tagline for independent artists', () => {
             expect(AGENT_SYSTEM_BRANDING.description).toContain('independent artists');
-            expect(AGENT_SYSTEM_BRANDING.description).toContain('AI');
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('Intelligence');
         });
 
         it('has version number', () => {
@@ -220,8 +220,7 @@ describe('indii Branding Constants', () => {
         });
 
         it('emphasizes Intelligence-powered nature', () => {
-            expect(AGENT_SYSTEM_BRANDING.description).toContain('AI');
-            expect(AGENT_SYSTEM_BRANDING.fullName).toContain('AI');
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('Intelligence');
         });
     });
 

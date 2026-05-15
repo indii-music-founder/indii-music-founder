@@ -66,7 +66,7 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('../ai/FirebaseIntelligenceService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
   serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));

@@ -1,4 +1,4 @@
-import { FirebaseIntelligenceService as AIService } from '../../ai/FirebaseIntelligenceService';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
-import { FirebaseIntelligenceService as AIService } from '../../ai/FirebaseIntelligenceService';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { AlwaysOnMemory, ConsolidationInsight, MemoryConnection, MemoryEntity } from '@/types/AlwaysOnMemory';

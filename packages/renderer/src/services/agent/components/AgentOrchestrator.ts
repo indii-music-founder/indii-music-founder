@@ -144,7 +144,7 @@ export class AgentOrchestrator {
                     store.setModule('registration');
                     if (orgId) {
                         store.setRegistrationFocus({ orgId: orgId as import('@/modules/registration/types').OrgId, trackId: null });
-                        store.setRegistrationAIMessage(
+                        store.setRegistrationIntelligenceMessage(
                             `I'll help you register with ${registrationIntent.toUpperCase()}. Let me pull your catalog info and pre-fill what I know…`
                         );
                     }

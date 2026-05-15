@@ -55,7 +55,7 @@ vi.mock('../firebase', () => ({
     remoteConfig: {},
 }));
 
-vi.mock('../ai/FirebaseIntelligenceService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
   serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn(),
