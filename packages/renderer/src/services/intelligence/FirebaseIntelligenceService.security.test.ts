@@ -20,7 +20,7 @@ vi.mock('@/services/firebase', () => ({
 // Mock Google AutonomousGenAI SDK (Fallback)
 vi.mock('@google/genai', () => {
     return {
-        GoogleAutonomousGenAI: class {
+        GoogleGenAI: class {
             models = {
                 generateContent: vi.fn().mockResolvedValue({
                     candidates: [{ content: { parts: [{ text: 'Response' }] } }],
