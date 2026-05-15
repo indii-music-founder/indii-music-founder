@@ -116,3 +116,17 @@ We have migrated from the legacy Corpus/AQA system to the **Gemini File Search A
 2. **Multi-Store Management**: Moving from a single "default" store to project-specific search stores for tighter context isolation.
 3. **Agentic Workflows (Mastra)**: Integrating `@mastra/core` for complex, multi-step agent graphs and state management.
 4. **Unified Multimodal RAG**: Expanding retrieval to support image and video context natively.
+
+## 7. Core Foundational Skills (Administrative Utilities)
+
+The system includes two core administrative utilities for managing the local agent ecosystem:
+
+### 7.1. State Mapping and Routing (Audit Skill)
+* **Location**: `agents/foundational/audit_skill/`
+* **Utility**: Executes `scan_directory.py` to map the agent structure and tool directories.
+* **Purpose**: Prevents redundant tool creation and defines routing for new composable sub-skills.
+
+### 7.2. Persistent State Modification (Memory Skill)
+* **Location**: `agents/foundational/memory_skill/`
+* **Utility**: Executes `update_knowledge.py` to modify agent instruction files (`.md`).
+* **Purpose**: Enforces persistent memory, updates preferences, and ensures compounding system intelligence.
