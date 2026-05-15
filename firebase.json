@@ -159,8 +159,8 @@
   ],
   "storage": [
     {
-      "target": "alpha",
-      "bucket": "indii-music-alpha",
+      "target": "main",
+      "bucket": "indiios-v-1-1.firebasestorage.app",
       "rules": "packages/firebase/storage.rules"
     }
   ]
