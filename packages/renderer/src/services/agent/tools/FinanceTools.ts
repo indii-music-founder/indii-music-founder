@@ -1,4 +1,4 @@
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { functions } from '@/services/firebase';
@@ -37,7 +37,7 @@ let _ecbCache = loadEcbCache();
 
 export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
 
         // Construct Multimodal Prompt
         const prompt = `You are an expert accountant. Extract the following data from this receipt image:
@@ -49,7 +49,7 @@ export const FinanceTools = {
         
         Output strictly in JSON format: { "vendor": string, "date": string, "amount": number, "category": string, "description": string }`;
 
-        const res = await GenAI.generateContent(
+        const res = await AutonomousGenAI.generateContent(
             [
                 {
                     role: 'user',
@@ -59,7 +59,7 @@ export const FinanceTools = {
                     ]
                 }
             ],
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
 
         // Access the text from the response object
@@ -413,7 +413,7 @@ export const FinanceTools = {
 
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
         // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
 
         const prompt = `
         You are a music industry financial analyst. The following CSV files have been uploaded 
@@ -428,7 +428,7 @@ export const FinanceTools = {
         `;
 
         try {
-            const response = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const response = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const analysisText = response.response.text();
 
             return toolSuccess({
@@ -441,7 +441,7 @@ export const FinanceTools = {
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
                 status: 'Normalized into standard indii ledger format (basic mode)'
-            }, `Successfully ingested ${args.csvFiles.length} CSV statements. AI-enhanced normalization unavailable.`);
+            }, `Successfully ingested ${args.csvFiles.length} CSV statements. Intelligence-enhanced normalization unavailable.`);
         }
     })
 } satisfies Record<string, AnyToolFunction>;

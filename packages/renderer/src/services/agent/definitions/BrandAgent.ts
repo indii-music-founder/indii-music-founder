@@ -1,5 +1,5 @@
 import { AgentConfig } from "../types";
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import systemPrompt from '@agents/brand/prompt.md?raw';
 
@@ -18,7 +18,7 @@ export const BrandAgent: AgentConfig = {
             
             Provide a pass/fail assessment and specific feedback.`;
             try {
-                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousGenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { critique: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -41,7 +41,7 @@ export const BrandAgent: AgentConfig = {
                 
                 Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
                 Return a Score (0-100) and actionable feedback.`;
-                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousGenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -57,7 +57,7 @@ export const BrandAgent: AgentConfig = {
             3. Visual Identity Pillars
             4. Do's and Don'ts`;
             try {
-                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousGenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { guidelines: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -68,7 +68,7 @@ export const BrandAgent: AgentConfig = {
             for (const assetUrl of args.assets) {
                 try {
                     const prompt = `Critique this visual asset against standard brand guidelines (Logo usage, Color palette, Typography). Provide a pass/fail score (0-100) and specific feedback.`;
-                    const analysis = await GenAI.analyzeImage(prompt, assetUrl);
+                    const analysis = await AutonomousGenAI.analyzeImage(prompt, assetUrl);
                     results.push({ asset: assetUrl, analysis });
                 } catch (e: unknown) {
                     results.push({ asset: assetUrl, error: (e as Error).message });

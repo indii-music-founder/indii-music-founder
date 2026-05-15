@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../../intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { Logger } from '@/core/logger/Logger';
 
 /**
@@ -44,9 +44,9 @@ export class SummaryService {
 
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW,
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW,
                     maxOutputTokens: 512
                 }
             );

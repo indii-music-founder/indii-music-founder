@@ -7,8 +7,8 @@
  * - Respects MembershipService tier quotas
  */
 
-import { GenAI as AI } from '../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { VideoGenerationConfig } from '@/shared/types/ai.dto';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
@@ -231,7 +231,7 @@ class SceneExtensionServiceImpl {
         // Audio is always-on for Veo 3.1 — no generateAudio parameter exists in API
 
         const uri = await AI.generateVideo({
-            model: AI_MODELS.VIDEO.GENERATION,
+            model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
             prompt: config.prompt,
             image: config.firstFrame
                 ? { imageBytes: config.firstFrame.data, mimeType: config.firstFrame.mimeType }

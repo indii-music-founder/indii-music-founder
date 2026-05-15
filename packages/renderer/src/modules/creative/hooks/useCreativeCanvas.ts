@@ -477,7 +477,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
             const { mimeType, base64 } = await fetchAsBase64(item.url);
             const caption = await ImageGeneration.captionImage({ mimeType, data: base64 }, 'subject');
-            useStore.getState().updateWhiskItem('subject', whiskId, { aiCaption: caption });
+            useStore.getState().updateWhiskItem('subject', whiskId, { intelligenceCaption: caption });
             toast.success("Essence locked!");
         } catch {
             toast.warning("Manual check required.");

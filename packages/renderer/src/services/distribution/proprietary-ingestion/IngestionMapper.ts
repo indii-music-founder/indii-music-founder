@@ -5,12 +5,12 @@ import { ExtendedGoldenMetadata } from '@/services/metadata/types';
  * IngestionMapper
  * 
  * Bridges the gap between "CLIP" (Audio Intelligence) and Ingestion Supply Chain Standards.
- * Maps high-fidelity AI semantic analysis into strictly identifiable Ingestion metadata fields.
+ * Maps high-fidelity Autonomous semantic analysis into strictly identifiable Ingestion metadata fields.
  */
 export class IngestionMapper {
 
     /**
-     * Transforms an AI Audio Profile into the Ingestion-compliant subset of Golden Metadata.
+     * Transforms an Autonomous Audio Profile into the Ingestion-compliant subset of Golden Metadata.
      * This prepares the metadata for the IngestionNotificationService.
      */
     static mapAudioProfileToMetadata(profile: AudioIntelligenceProfile): Partial<ExtendedGoldenMetadata> {
@@ -46,10 +46,10 @@ export class IngestionMapper {
             durationSeconds: technical.duration,
             durationFormatted: this.formatDuration(technical.duration),
 
-            // AI Disclosure (IngestionNotification 4.3 compliance calls)
-            // Since this comes FROM our AI analysis, we might infer things, 
-            // but the AI tool usage itself usually comes from the Project state, not the audio analysis.
-            // However, if the analysis DETECTS AI artifacts (future feature), we could flag it.
+            // Intelligence Disclosure (IngestionNotification 4.3 compliance calls)
+            // Since this comes FROM our Intelligence analysis, we might infer things, 
+            // but the Autonomous tool usage itself usually comes from the Project state, not the audio analysis.
+            // However, if the analysis DETECTS Intelligence artifacts (future feature), we could flag it.
             // For now, we leave aiGeneratedContent to be merged from the Project Source.
         };
 
@@ -57,7 +57,7 @@ export class IngestionMapper {
         // fall back to the one-liner from marketingHooks for backward compat with older profiles
         metadata.marketingComment = semantic.marketingComment || semantic.marketingHooks?.oneLiner;
 
-        // 3. AI Artifact Disclosure (IngestionNotification 4.3 / Goal 3 compliance)
+        // 3. Autonomous Artifact Disclosure (IngestionNotification 4.3 / Goal 3 compliance)
         if (semantic.productionValue?.aiArtifacts) {
             metadata.aiGeneratedContent = {
                 isFullyAIGenerated: false,

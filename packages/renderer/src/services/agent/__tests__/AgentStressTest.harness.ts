@@ -150,7 +150,7 @@ export function createMockStoreState(overrides: Record<string, unknown> = {}) {
 }
 
 /**
- * Creates a mock AI routing response (what the orchestrator returns).
+ * Creates a mock Autonomous routing response (what the orchestrator returns).
  */
 export function createRoutingResponse(targetAgentId: string, confidence = 0.95) {
     return {

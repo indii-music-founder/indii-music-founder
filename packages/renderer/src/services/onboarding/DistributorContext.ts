@@ -4,7 +4,7 @@
  * This service provides distributor-aware defaults across the entire app:
  * - Image generation auto-sizes to distributor cover art specs
  * - Audio exports validate against distributor requirements
- * - AI prompts include distributor context for smart suggestions
+ * - Intelligence prompts include distributor context for smart suggestions
  * - Export functionality validates before upload
  */
 
@@ -296,7 +296,7 @@ export function getVideoConstraints(profile: UserProfile): VideoConstraints {
 }
 
 /**
- * Generate a context string for AI prompts - includes all relevant distributor info
+ * Generate a context string for Intelligence prompts - includes all relevant distributor info
  */
 export function getDistributorPromptContext(profile: UserProfile): string {
     const ctx = buildDistributorContext(profile);

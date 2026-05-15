@@ -1,4 +1,4 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { doc, getDoc } from 'firebase/firestore';
@@ -189,7 +189,7 @@ export const SecurityTools = {
             }, "Permissions audit completed using live organization data.");
         }
 
-        // Fallback to AI Simulation
+        // Fallback to Autonomous Simulation
         const schema = zodToJsonSchema(AuditPermissionsSchema);
         const prompt = `
         You are a Security Officer. Perform a Permission Audit ${project_id ? `for project ${project_id}` : 'for the organization'}.
@@ -197,12 +197,12 @@ export const SecurityTools = {
         Identify potential risks (e.g., too many Admins, external guests).
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousGenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
         const validated = AuditPermissionsSchema.parse(data);
-        return toolSuccess(validated, "Permissions audit simulated via AI due to missing live data.");
+        return toolSuccess(validated, "Permissions audit simulated via Autonomous due to missing live data.");
     }),
 
     scan_for_vulnerabilities: wrapTool('scan_for_vulnerabilities', async ({ scope }: { scope: string }) => {

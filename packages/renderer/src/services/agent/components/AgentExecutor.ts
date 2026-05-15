@@ -7,7 +7,7 @@ import {
     AgentProgressCallback
 } from '../types';
 import { PipelineContext } from './ContextPipeline';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { DelegationLoopDetector } from '../LoopDetector';
 
@@ -102,7 +102,7 @@ export class AgentExecutor {
             const interceptedOnProgress: AgentProgressCallback = async (event) => {
                 if (onProgress) onProgress(event);
 
-                const currentModel = agent?.id ? (AI_MODELS.TEXT.AGENT) : '';
+                const currentModel = agent?.id ? (INTELLIGENCE_MODELS.TEXT.AGENT) : '';
 
                 if (event.type === 'thought') {
                     await TraceService.addStep(traceId, 'thought', event.content);

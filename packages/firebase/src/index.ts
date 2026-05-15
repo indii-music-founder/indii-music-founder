@@ -18,7 +18,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
-import { FUNCTION_AI_MODELS } from "./config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
@@ -776,7 +776,7 @@ export const generateSpeech = functions
 
         try {
             console.log(`[generateSpeech] Generating speech with model: ${model}`);
-            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
             const apiKey = getGeminiApiKey();
 
             // Use REST API for precise control over TTS config

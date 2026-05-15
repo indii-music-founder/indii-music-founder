@@ -1,21 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -72,7 +72,7 @@ vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
 }));
 
 // Mock InputSanitizer
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: vi.fn((text: string) => text),
         sanitizePrompt: vi.fn((text: string) => text),
@@ -109,7 +109,7 @@ describe('VideoGenerationService', () => {
             expect(result[0]!.id).toBeDefined();
             expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
             // Verify it calls the direct SDK path, not Cloud Functions
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -129,7 +129,7 @@ describe('VideoGenerationService', () => {
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(GenAI.analyzeImage).toHaveBeenCalled();
+            expect(AutonomousGenAI.analyzeImage).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {
@@ -141,7 +141,7 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
         });
     });
 

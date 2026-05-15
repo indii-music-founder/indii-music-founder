@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }
@@ -77,7 +77,7 @@ describe('GeneralistAgent', () => {
             }
         } as unknown as Record<string, unknown>;
 
-        // Mock AI response with native function calling format
+        // Mock Intelligence response with native function calling format
         vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
                 [Symbol.asyncIterator]: async function* () {
@@ -90,7 +90,7 @@ describe('GeneralistAgent', () => {
             })
         } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
-        // Spy on the AI call to inspect the prompt
+        // Spy on the Autonomous call to inspect the prompt
         const generateSpy = vi.spyOn(AI, 'generateContentStream');
 
         await agent.execute('Test task', context);
@@ -107,8 +107,8 @@ describe('GeneralistAgent', () => {
         expect(promptText).toContain('Distributor: DistroKid');
     });
 
-    it('should execute generate_image tool when requested by AI via native function calling', async () => {
-        // Mock AI to return a native function call (not JSON)
+    it('should execute generate_image tool when requested by Autonomous via native function calling', async () => {
+        // Mock Autonomous to return a native function call (not JSON)
         vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
                 [Symbol.asyncIterator]: async function* () {

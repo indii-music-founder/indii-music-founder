@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Extended asset shape for workflow node results.
- * Covers AI-generated images, concept sets, videos, and generic outputs.
+ * Covers Intelligence-generated images, concept sets, videos, and generic outputs.
  * AnyAsset already has `[key: string]: unknown` but these helpers
  * make the property access explicit and TypeScript-checked.
  */
@@ -101,7 +101,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     imageUrl: firstImage.imageUrl || `data:${firstImage.mimeType || 'image/png'};base64,${firstImage.bytesBase64Encoded || firstImage.base64}`,
                     aiMetadata: rawResult.aiMetadata,
                     aiGenerationInfo: rawResult.aiGenerationInfo,
-                    title: 'AI Generated Artwork'
+                    title: 'Autonomous Generated Artwork'
                 };
             } else {
                 asset = rawResult as WorkflowResultAsset;
@@ -117,7 +117,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 <img src={asset.imageUrl ?? ''} alt="Result" className="w-full h-full object-cover" />
                 {asset.aiMetadata && (
                     <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
-                        AI Provenance Locked
+                        Autonomous Provenance Locked
                     </div>
                 )}
             </div>
@@ -129,7 +129,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     <img src={firstConcept?.imageUrl} alt="Result" className="w-full h-full object-cover" />
                     {firstConcept?.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
-                            AI Provenance Locked
+                            Autonomous Provenance Locked
                         </div>
                     )}
                 </div>
@@ -147,7 +147,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     {asset.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
-                            AI Provenance Locked
+                            Autonomous Provenance Locked
                         </div>
                     )}
                 </div>

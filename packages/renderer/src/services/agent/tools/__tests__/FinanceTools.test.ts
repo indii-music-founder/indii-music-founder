@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceTools } from '../FinanceTools';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // Mock Dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue('Mock analysis text'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response')
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response')
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -33,12 +33,12 @@ vi.mock('@/core/config/distributors', () => ({
 }));
 
 describe('FinanceTools', () => {
-    let GenAI: any;
+    let AutonomousGenAI: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const module = await import('@/services/ai/GenAI');
-        GenAI = module.GenAI;
+        const module = await import('@/services/intelligence/AutonomousGenAI');
+        AutonomousGenAI = module.AutonomousGenAI;
     });
 
     describe('analyze_receipt', () => {
@@ -51,7 +51,7 @@ describe('FinanceTools', () => {
                 description: 'Printer Paper'
             });
 
-            GenAI.generateContent.mockResolvedValue({
+            AutonomousGenAI.generateContent.mockResolvedValue({
                 response: {
                     text: () => mockResponseText
                 }
@@ -64,7 +64,7 @@ describe('FinanceTools', () => {
 
             const result = await FinanceTools.analyze_receipt(args);
 
-            expect(GenAI.generateContent).toHaveBeenCalledWith(
+            expect(AutonomousGenAI.generateContent).toHaveBeenCalledWith(
                 expect.arrayContaining([
                     expect.objectContaining({
                         role: 'user',
@@ -73,7 +73,7 @@ describe('FinanceTools', () => {
                         ])
                     })
                 ]),
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             expect(result).toEqual(expect.objectContaining({
@@ -85,8 +85,8 @@ describe('FinanceTools', () => {
             }));
         });
 
-        it('should handle AI errors gracefully via wrapTool', async () => {
-            GenAI.generateContent.mockRejectedValue(new Error('AI Error'));
+        it('should handle Autonomous errors gracefully via wrapTool', async () => {
+            AutonomousGenAI.generateContent.mockRejectedValue(new Error('AI Error'));
 
             const args = {
                 image_data: 'data',

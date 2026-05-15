@@ -1,17 +1,17 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RoadTools } from '../RoadTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -43,14 +43,14 @@ describe('RoadTools', () => {
         expect(parsed.breakdown.crew_costs).toBe(12500);
     });
 
-    it('plan_tour_route calls AI with enhanced prompt', async () => {
+    it('plan_tour_route calls Autonomous with enhanced prompt', async () => {
         const mockResponse = {
             route: ["A", "B"],
             totalDistance: "100 miles",
             estimatedDuration: "2 hours",
             legs: []
         };
-        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
+        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
 
         const result = await RoadTools.plan_tour_route({ locations: ["A", "B"] });
 
@@ -58,7 +58,7 @@ describe('RoadTools', () => {
         expect(result.data).toEqual(mockResponse);
 
         // Verify prompt enhancement
-        const callArgs = vi.mocked(GenAI.generateStructuredData).mock.calls[0]!;
+        const callArgs = vi.mocked(AutonomousGenAI.generateStructuredData).mock.calls[0]!;
         expect(callArgs[0]).toEqual(expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("You are a Logistics Engine") })]));
     });
 });

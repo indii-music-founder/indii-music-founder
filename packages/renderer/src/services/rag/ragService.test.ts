@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before imports
-vi.mock('../ai/GenAI', () => ({
-    GenAI: {
+vi.mock('../intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateText: vi.fn(),
         generateStructuredData: vi.fn(),
@@ -24,13 +24,13 @@ vi.mock('./GeminiRetrievalService', () => ({
     }
 }));
 
-// Mock AI models config
-vi.mock('@/core/config/ai-models', () => ({
+// Mock Autonomous models config
+vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' }
     },
-    AI_CONFIG: {
+    INTELLIGENCE_CONFIG: {
         THINKING: { LOW: { thinkingConfig: { thinkingLevel: 'LOW' } } }
     },
     APPROVED_MODELS: {
@@ -49,7 +49,7 @@ vi.mock('@/core/config/ai-models', () => ({
 }));
 
 import { runAgenticWorkflow, processForKnowledgeBase } from './ragService';
-import { GenAI as AI } from '../ai/GenAI';
+import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 

@@ -4,28 +4,28 @@ import { logger } from '@/utils/logger';
 
 // Inspiration prompts for each category
 const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
-    subject: `You are a creative director for music artists. Generate 4 unique, evocative subject ideas for AI image generation. Focus on:
+    subject: `You are a creative director for music artists. Generate 4 unique, evocative subject ideas for Intelligence image generation. Focus on:
 - Characters (singers, musicians, abstract figures)
 - Objects (instruments, microphones, vinyl records, headphones)
 - Animals with personality (fox with golden fur, raven in moonlight)
 - Symbolic elements (masks, crowns, wings)
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
 
-    scene: `You are a creative director for music artists. Generate 4 unique, atmospheric scene/background ideas for AI image generation. Focus on:
+    scene: `You are a creative director for music artists. Generate 4 unique, atmospheric scene/background ideas for Intelligence image generation. Focus on:
 - Concert venues (neon-lit stage, intimate jazz club, festival crowd)
 - Urban environments (rooftop at sunset, graffiti alley, rainy city street)
 - Nature settings (misty forest, desert under stars, ocean waves)
 - Abstract/surreal spaces (floating platforms, geometric dreamscape)
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
 
-    style: `You are a creative director for music artists. Generate 4 unique artistic style ideas for AI image generation. Focus on:
+    style: `You are a creative director for music artists. Generate 4 unique artistic style ideas for Intelligence image generation. Focus on:
 - Art movements (vaporwave, synthwave, gothic, baroque, minimalist)
 - Techniques (double exposure, glitch art, pointillism, watercolor)
 - Media types (vintage film grain, polaroid, 3D render, vector art)
 - Moods (dreamlike, gritty, nostalgic, futuristic)
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
 
-    motion: `You are a creative director for music videos. Generate 4 unique camera movement and motion ideas for AI video generation. Focus on:
+    motion: `You are a creative director for music videos. Generate 4 unique camera movement and motion ideas for Intelligence video generation. Focus on:
 - Camera movements (slow orbit, dramatic push-in, fluid tracking shot, aerial sweep)
 - Motion intensities (serene and hypnotic, energetic and dynamic, subtle breathing motion)
 - Speed variations (slow motion dreamscape, quick cuts, time-lapse transition)
@@ -48,7 +48,7 @@ export class WhiskService {
 
         // 1. Subject Injection
         if (activeSubjects.length > 0) {
-            const subjectDescs = activeSubjects.map(s => s.aiCaption || s.content);
+            const subjectDescs = activeSubjects.map(s => s.intelligenceCaption || s.content);
             if (activeSubjects.length === 1) {
                 finalPrompt = `${subjectDescs[0]}, ${finalPrompt}`;
             } else {
@@ -58,13 +58,13 @@ export class WhiskService {
 
         // 2. Scene Injection
         if (activeScenes.length > 0) {
-            const sceneDescs = activeScenes.map(s => s.aiCaption || s.content);
+            const sceneDescs = activeScenes.map(s => s.intelligenceCaption || s.content);
             finalPrompt = `${finalPrompt} in a setting described as: ${sceneDescs.join(', ')}`;
         }
 
         // 3. Style Injection
         if (activeStyles.length > 0) {
-            const styleDescs = activeStyles.map(s => s.aiCaption || s.content);
+            const styleDescs = activeStyles.map(s => s.intelligenceCaption || s.content);
             const styleString = styleDescs.join(', ');
 
             if (activeScenes.length === 0) {
@@ -136,7 +136,7 @@ export class WhiskService {
         // Add motion context if available
         const activeMotion = whiskState.motion.filter(i => i.checked);
         if (activeMotion.length > 0) {
-            const motionDescs = activeMotion.map(m => m.aiCaption || m.content);
+            const motionDescs = activeMotion.map(m => m.intelligenceCaption || m.content);
             finalPrompt = `${finalPrompt}. Camera and motion: ${motionDescs.join(', ')}`;
         }
 
@@ -173,7 +173,7 @@ export class WhiskService {
         // Check motion category for intensity hints
         const activeMotion = whiskState.motion.filter(i => i.checked);
         for (const motion of activeMotion) {
-            const content = (motion.aiCaption || motion.content).toLowerCase();
+            const content = (motion.intelligenceCaption || motion.content).toLowerCase();
             if (content.includes('slow') || content.includes('calm') || content.includes('serene')) {
                 params.motionIntensity = 'low';
             } else if (content.includes('dynamic') || content.includes('energetic') || content.includes('fast')) {
@@ -196,15 +196,15 @@ export class WhiskService {
     }
 
     /**
-     * Generates creative text suggestions for a given category using the AI service.
+     * Generates creative text suggestions for a given category using the Intelligence service.
      */
     static async generateInspiration(category: 'subject' | 'scene' | 'style' | 'motion'): Promise<string[]> {
         try {
-            const { GenAI: AI } = await import('@/services/ai/GenAI');
+            const { AutonomousGenAI: AI } = await import('@/services/intelligence/AutonomousGenAI');
 
             const { stream } = await AI.generateContentStream(
                 [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
-                undefined, // Default model configuration will be applied by GenAI facade
+                undefined, // Default model configuration will be applied by AutonomousGenAI facade
                 {
                     temperature: 1.0,
                     maxOutputTokens: 500,

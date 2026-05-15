@@ -1,5 +1,5 @@
-import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import type { Content } from 'firebase/ai';
 
@@ -14,10 +14,10 @@ export interface ReceiptData {
 }
 
 export class ReceiptOCRService {
-    private aiService: FirebaseAIService;
+    private aiService: FirebaseIntelligenceService;
 
     constructor() {
-        this.aiService = new FirebaseAIService();
+        this.aiService = new FirebaseIntelligenceService();
     }
 
     /**
@@ -63,7 +63,7 @@ export class ReceiptOCRService {
 
             const result = await this.aiService.rawGenerateContent(
                 contents,
-                AI_MODELS.TEXT.AGENT, // Corrected from .PRO
+                INTELLIGENCE_MODELS.TEXT.AGENT, // Corrected from .PRO
                 {
                     responseMimeType: 'application/json'
                 }

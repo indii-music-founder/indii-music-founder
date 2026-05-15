@@ -11,7 +11,7 @@
 
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 /**
  * Sleep helper.
@@ -82,8 +82,8 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ── Step 2: Initialize SDK ─────────────────────────────────────────
         const { model: requestedModel } = options || {};
         const modelId = requestedModel === 'fast'
-            ? FUNCTION_AI_MODELS.VIDEO.FAST
-            : FUNCTION_AI_MODELS.VIDEO.PRO;
+            ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+            : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';

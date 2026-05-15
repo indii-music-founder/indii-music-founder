@@ -22,22 +22,22 @@ vi.mock('@agents/licensing/prompt.md?raw', () => ({
     default: 'Mock System Prompt'
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 vi.mock('../tools/LegalTools', () => ({
     LegalTools: {
@@ -45,15 +45,15 @@ vi.mock('../tools/LegalTools', () => ({
     }
 }));
 
-vi.mock('@/core/config/ai-models', () => ({
+vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             FAST: 'mock-model-fast',
             AGENT: 'mock-model-agent'
         }
     },
-    AI_CONFIG: {
+    INTELLIGENCE_CONFIG: {
         THINKING: {
             HIGH: { thinkingConfig: { thinkingLevel: "HIGH" } }
         }
@@ -148,8 +148,8 @@ describe('LicensingAgent', () => {
     });
 
     describe('analyze_contract', () => {
-        it('should use AI to analyze contract data', async () => {
-            vi.mocked(GenAI.analyzeImage).mockResolvedValue("Mocked AI analysis summary.");
+        it('should use Autonomous to analyze contract data', async () => {
+            vi.mocked(AutonomousGenAI.analyzeImage).mockResolvedValue("Mocked Intelligence analysis summary.");
 
             const args = {
                 file_data: 'base64data',
@@ -158,9 +158,9 @@ describe('LicensingAgent', () => {
             type ResultType = { success: boolean; data: { summary?: string } };
             const result = await (LicensingAgent.functions!.analyze_contract as (args: unknown) => Promise<ResultType>)(args);
 
-            expect(GenAI.analyzeImage).toHaveBeenCalled();
+            expect(AutonomousGenAI.analyzeImage).toHaveBeenCalled();
             expect(result.success).toBe(true);
-            expect(result.data.summary).toBe("Mocked AI analysis summary.");
+            expect(result.data.summary).toBe("Mocked Intelligence analysis summary.");
         });
     });
 

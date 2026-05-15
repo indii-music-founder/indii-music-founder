@@ -23,24 +23,24 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-// ── Mock GenAI (used by negotiation) ────────────────────────────────────
-vi.mock('@/services/ai/FirebaseAIService', () => {
+// ── Mock AutonomousGenAI (used by negotiation) ────────────────────────────────────
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: { TEXT: { FAST: 'gemini-flash' } },
+vi.mock('@/core/config/intelligence-models', () => ({
+    INTELLIGENCE_MODELS: { TEXT: { FAST: 'gemini-flash' } },
 }));
 
 // ── Import under test ─────────────────────────────────────────────────────────

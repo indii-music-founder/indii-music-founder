@@ -1,6 +1,6 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -13,9 +13,9 @@ export const SocialTools = {
     generate_social_post: wrapTool('generate_social_post', async ({ platform, topic, tone }: { platform: string; topic: string; tone?: string }) => {
         const prompt = `Generate a ${tone || 'professional'} social media post for ${platform} about ${topic}. Include hashtags.`;
 
-        const result = await GenAI.generateContent(
+        const result = await AutonomousGenAI.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
         const text = result.response.text();
 
@@ -68,7 +68,7 @@ Return a JSON object with exactly these fields:
 }
 Be specific and data-driven based on the post content above.`;
 
-        const result = await GenAI.generateStructuredData<{
+        const result = await AutonomousGenAI.generateStructuredData<{
             sentiment: string;
             trend_score: number;
             insights: string[];
@@ -87,7 +87,7 @@ Be specific and data-driven based on the post content above.`;
             } as Record<string, unknown>,
             undefined,
             undefined,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
 
         const normalizedTrendScore = Math.min(100, Math.max(0, Math.round(result.trend_score)));

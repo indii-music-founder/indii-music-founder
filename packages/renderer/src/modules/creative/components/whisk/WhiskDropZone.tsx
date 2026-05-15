@@ -35,7 +35,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
     const activeItems = items.filter(i => i.checked);
     const hasItems = items.length > 0;
 
-    // Handle file upload with AI captioning
+    // Handle file upload with Autonomous captioning
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -102,7 +102,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         }
     };
 
-    // Generate AI inspiration
+    // Generate Autonomous inspiration
     const handleInspire = async () => {
         setIsInspiring(true);
         try {
@@ -182,7 +182,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                     exit={{ opacity: 0, y: -10 }}
                                     className="mb-2 p-2 rounded-lg bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30"
                                 >
-                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ AI Suggestions</p>
+                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ Autonomous Suggestions</p>
                                     <div className="space-y-1">
                                         {inspirations.map((idea, i) => (
                                             <button
@@ -290,7 +290,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                     }`}
                                                 role="checkbox"
                                                 aria-checked={item.checked}
-                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.aiCaption || 'Image reference')}`}
+                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.intelligenceCaption || 'Image reference')}`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
                                             </button>
@@ -303,7 +303,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                             <img src={item.content} className="w-full h-full object-cover" alt="" />
                                                         </div>
                                                         <span className="text-[10px] text-gray-300 truncate flex-1">
-                                                            {item.aiCaption || 'Image reference'}
+                                                            {item.intelligenceCaption || 'Image reference'}
                                                         </span>
                                                     </>
                                                 ) : (
@@ -315,8 +315,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => {
-                                                        const newCaption = window.prompt('Edit description:', item.aiCaption || item.content);
-                                                        if (newCaption !== null) onUpdate(item.id, { aiCaption: newCaption });
+                                                        const newCaption = window.prompt('Edit description:', item.intelligenceCaption || item.content);
+                                                        if (newCaption !== null) onUpdate(item.id, { intelligenceCaption: newCaption });
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"
