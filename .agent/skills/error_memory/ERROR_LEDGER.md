@@ -1,5 +1,42 @@
 # Error Ledger
 
+## 2026-05-15 Cost-Control Feature: TypeScript & Code Generation Anti-Patterns
+
+**SEVERITY:** High (breaks CI, prevents merge)
+
+**MISTAKES:**
+
+1. **Duplicate Block-Scoped Variable Declaration**
+   - FILE: `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+   - ERROR: `TS2451: Cannot redeclare block-scoped variable 'userId'`
+   - CAUSE: Added MOCK MODE check that should return early, but the early return was missing. Left two `const userId = auth.currentUser?.uid;` declarations at lines 348 and 370 in the same function scope.
+   - FIX: Ensure MOCK MODE check includes an early `return` statement BEFORE the second userId declaration. Structure: check condition → return result → then declare userId.
+   - PREVENTION: When adding conditional branches that bypass logic, **always include the return/break statement**. Don't add the check and then declare variables after it in the same scope.
+
+2. **Import Statement Inside JSDoc Comment**
+   - FILE: `packages/renderer/src/services/analytics/EventBusService.ts`
+   - ERROR: `TS2304: Cannot find name 'logger'`
+   - CAUSE: During console.* → logger.* swap, placed `import { logger } from '@/utils/logger'` inside the JSDoc block instead of at the file's top-level imports. The import was on line 12, but wrapped as a comment: `/** ... import ... */`.
+   - FIX: Move import statements ABOVE all JSDoc comments and code. Top of file order: (1) imports, (2) JSDoc file header, (3) code.
+   - PREVENTION: **Always add imports before any comments or JSDoc.** When swapping console.* → logger.*, verify the import is in the import section, not embedded in documentation.
+
+**LEARNING POINTS FOR ALL AGENTS:**
+
+When performing multi-file refactors (like console → logger swaps):
+1. **Pre-check:** Identify ALL files that will be modified. List them explicitly.
+2. **Per-file checklist:** For each file, verify:
+   - ✅ Import statement added at top (above JSDoc/comments)
+   - ✅ All console.* calls replaced with logger.*
+   - ✅ No duplicate variable declarations in same scope
+3. **Post-change verification:** Run `npm run typecheck` **immediately after edits**, not after multiple files are changed.
+4. **Early returns:** Any conditional branch that handles an edge case must have an explicit return/break before continuing to the main logic path.
+
+**REGISTRY:** Both errors appeared in PR #1 (fix/intelligence-emergency-killswitch) after the cost-control feature was added. The MOCK MODE check and logger swap were incomplete implementations that passed initial review but failed CI typecheck.
+
+**HOW TO CATCH EARLIER:** `npm run typecheck` on individual files after each major change, or run it after every 2-3 files edited. Don't batch multiple refactored files and run typecheck once at the end.
+
+---
+
 ## 2026-05-06 Hierarchical agent scope violations (Phase 1)
 
 Three new tool-error codes thrown by `BaseAgent.delegate_task` and `BaseAgent.consult_experts`
