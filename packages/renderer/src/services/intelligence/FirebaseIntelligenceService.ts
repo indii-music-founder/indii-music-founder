@@ -10,7 +10,7 @@ import {
     Tool,
     SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
-import { GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
