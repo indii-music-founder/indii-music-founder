@@ -1,5 +1,7 @@
 # Advanced Improvements Roadmap: 4-Phase Implementation Plan
 
+> **STATUS: SUPERSEDED 2026-05-15 — see WORKSHEET.md**
+
 **Status:** Planning Complete → Phase 1 Starting  
 **Date Created:** 2026-04-24  
 **Total Effort:** 10-12 weeks  
