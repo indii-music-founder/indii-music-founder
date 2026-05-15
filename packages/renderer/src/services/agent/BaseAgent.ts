@@ -880,7 +880,7 @@ export class BaseAgent implements SpecializedAgent {
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
-                console.log(`[DEBUG] BaseAgent calling AutonomousGenAI.generateContent for ${this.id}, iteration ${iterations}`);
+                logger.debug(`BaseAgent calling AutonomousGenAI.generateContent for ${this.id}, iteration ${iterations}`);
                 const result = await AutonomousGenAI.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
