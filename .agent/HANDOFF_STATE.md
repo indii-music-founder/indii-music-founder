@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-14 17:57 EDT
+**Updated:** 2026-05-14 21:45 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5daa0e3e3 chore: synchronize repository state (428+ files) and align local with remote
+c6ab44e77 ci: use secrets for all variables and trigger final deployment
+6c855f3b3 ci: pass env vars to landing build and trigger deployment
+cb8521ffa Merge pull request #8 from indii-music/release-please--branches--main--components--indii-monorepo
+acd0e1e4d fix(env): use static import.meta.env lookups for Vite compatibility
+ecb2848f3 chore: session checkpoint [17:57]
+1682bb4dd Merge branch 'main' into release-please--branches--main--components--indii-monorepo
 aa690d48d fix(ci): add firebase targets for indiios-v-1-1 to fix deployment failure
 11e8e99b1 Merge pull request #12 from indii-music/release/v1.63.0-hardened
 a7c459429 feat(creative): finalize design history and photo source features, fix test mocks
-bbbab0035 fix(creative): stabilize test suite regressions
-971252cf1 chore: finalize v1.63.0 pipeline stabilization and CI cost optimization
-4ed476eae chore: session checkpoint [07:34]
-4fc6c1151 feat(billing): enforce testing budget limit ($5/day max)
-e8c483804 chore: finalize v1.63.0 hardening, protocol standardization, and test stabilization
-aede1ab1e chore: session checkpoint [20:06]
-cddbd0b78 docs: add strategic billing & financial architecture overview
 ```
 
 ## Working State
 ```
- M docs/CHAT_IMAGE_INTERACTION_PLAN.md
+clean working tree
 ```
 
 ## Decisions
