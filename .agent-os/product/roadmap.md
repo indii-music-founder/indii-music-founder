@@ -40,9 +40,11 @@ Every item below is verified against the codebase at v1.55.3. Nothing aspiration
 
 ---
 
-## Phase 1 — Pre-Weekend Hardening (current sprint, ends Saturday 2026-04-25)
+## Phase 1 — Pre-Weekend Hardening (deferred — pending app stabilization)
 
-### Must-pass before investor handoff
+> **Status: deferred as of 2026-05-15.** These items remain valuable and will be revisited once core platform tightening is complete. Originally targeted for 2026-04-25, but investor window shifted and focus moved to finalizing remaining loose ends.
+
+### Must-pass before investor handoff (when revisited)
 
 - [ ] **API cascade audit** — systematically test every API-dependent path (Gemini, Vertex, Firestore, Stripe, 7 distributor adapters, Python sidecar health). User observation: "anything API-related almost always affects everything API-related." Document each cascade failure mode.
 
