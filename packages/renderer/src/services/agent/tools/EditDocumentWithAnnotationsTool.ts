@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Tool for editing documents (PDFs, text files) using structured annotations.
- * Enables AI-driven refinement of specific document sections based on coordinates or highlights.
+ * Enables Intelligence-driven refinement of specific document sections based on coordinates or highlights.
  */
 export const EditDocumentWithAnnotationsTool: any = {
     name: 'edit_document_with_annotations',

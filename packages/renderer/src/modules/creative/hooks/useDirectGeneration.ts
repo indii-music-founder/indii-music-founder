@@ -176,8 +176,8 @@ export function useDirectGeneration() {
     }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
-        const { generateImageDirectly } = await importWithRetry(() => import('@/services/ai/generators/DirectImageGenerator'));
-        const { AI_MODELS } = await importWithRetry(() => import('@/core/config/ai-models'));
+        const { generateImageDirectly } = await importWithRetry(() => import('@/services/intelligence/generators/DirectImageGenerator'));
+        const { AI_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
 
         const resolvedModel = studioControls.model === 'pro'
             ? AI_MODELS.IMAGE.DIRECT_PRO
@@ -245,7 +245,7 @@ export function useDirectGeneration() {
             aspectRatio: effectiveAspectRatio,
             duration: finalDuration,
             durationSeconds: finalDuration,
-            model: studioControls.model, // Will be resolved by FirebaseAIService
+            model: studioControls.model, // Will be resolved by FirebaseIntelligenceService
             fps: 24,
             orgId: 'personal', // Force personal for direct test
             referenceImages: [

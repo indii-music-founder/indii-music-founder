@@ -318,7 +318,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         break;
 
       case 'ai_disclosure':
-        // AI disclosure is optional, no required fields
+        // Autonomous disclosure is optional, no required fields
         break;
 
       case 'assets':

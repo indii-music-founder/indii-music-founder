@@ -122,10 +122,10 @@ export const CoreTools = {
         topic: string;
         initialTerms: string;
     }) => {
-        // AI-driven negotiation simulation using Gemini
+        // Intelligence-driven negotiation simulation using Gemini
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const { AI_MODELS } = await import('@/core/config/ai-models');
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AI_MODELS } = await import('@/core/config/intelligence-models');
 
             const prompt = `Simulate a 3-turn multi-agent negotiation in the music industry.
 Agent A (${args.initiatingAgentId}) initiates. Agent B (${args.targetAgentId}) responds.
@@ -136,7 +136,7 @@ Apply standard music industry conventions (royalty splits, licensing windows, te
 Return JSON: { "negotiationLog": ["msg1","msg2","msg3"], "finalTerms": "...", "outcome": "accepted|rejected|counter_proposed" }
 Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
-            const result = await GenAI.generateStructuredData<{
+            const result = await AutonomousGenAI.generateStructuredData<{
                 negotiationLog: string[];
                 finalTerms: string;
                 outcome: string;
@@ -148,7 +148,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as Parameters<typeof GenAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as Parameters<typeof AutonomousGenAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
 
             return {
                 success: true,
@@ -279,14 +279,14 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
     }),
 
     verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
-        const { GenAI } = await import('@/services/ai/GenAI');
-        const { AI_MODELS } = await import('@/core/config/ai-models');
+        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AI_MODELS } = await import('@/core/config/intelligence-models');
         const prompt = `Verify if the following content meets the goal.
         Goal: ${args.goal}
         Content: ${args.content}`;
 
         try {
-            const verification = await GenAI.generateStructuredData<{
+            const verification = await AutonomousGenAI.generateStructuredData<{
                 score: number;
                 pass: boolean;
                 reason: string;

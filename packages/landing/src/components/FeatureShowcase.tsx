@@ -28,7 +28,7 @@ const features = [
         id: 'creative',
         title: 'Visual Synthesis',
         subtitle: 'Creative Module',
-        description: 'Bring your visual world to life with AI-powered video and design. Create stunning visualizers and artwork that match your sound perfectly.',
+        description: 'Bring your visual world to life with intelligence-driven video and design. Create stunning visualizers and artwork that match your sound perfectly.',
         icon: Clapperboard,
         color: 'text-white',
         gradient: 'from-white/10 to-gray-500/10',

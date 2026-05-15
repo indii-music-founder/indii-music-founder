@@ -92,7 +92,7 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     cLineYear?: number;
     cLineText?: string; // e.g., "2025 Publisher Name"
 
-    // AI Content Disclosure (ERN 4.3)
+    // Intelligence Content Disclosure (ERN 4.3)
     aiGeneratedContent: {
         isFullyAIGenerated: boolean;
         isPartiallyAIGenerated: boolean;
@@ -140,8 +140,8 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     youtubeContentIdOptIn?: boolean; // When true, content policy deal is included in DDEX ERN delivery
     youtubeContentIdPolicy?: 'monetize' | 'track' | 'block'; // Default: 'monetize'
 
-    // Cover Art AI Disclosure (2026 DSP Compliance)
-    coverArtAIGenerated?: boolean; // true when cover art was created by AI (e.g., Nano Banana)
+    // Cover Art Intelligence Disclosure (2026 DSP Compliance)
+    coverArtAIGenerated?: boolean; // true when cover art was created by Autonomous (e.g., Nano Banana)
 }
 
 // Type for release status in distribution

@@ -8,7 +8,7 @@ export const CreativeCard: AgentCard = {
     capabilities: [
     {
         "name": "generate_image",
-        "description": "Generate AI images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.",
+        "description": "Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

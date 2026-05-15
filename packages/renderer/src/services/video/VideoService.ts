@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
@@ -143,7 +143,7 @@ export class VideoService {
                 ? { imageBytes: firstFrameSource.data, mimeType: firstFrameSource.mimeType }
                 : undefined;
 
-            // Generate with retry for rate limiting — direct SDK call through GenAI alias
+            // Generate with retry for rate limiting — direct SDK call through AutonomousGenAI alias
             const uri = await this.withRetry(() => AI.generateVideo({
                 model,
                 prompt: options.prompt,

@@ -34,13 +34,13 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
                                 <span className="text-[10px] font-medium text-amber-400 uppercase tracking-widest">API Missing</span>
                             </div>
                         ) : (
-                            <div className="px-2 py-0.5 rounded-full bg-dept-creative/10 border border-dept-creative/20 flex items-center gap-1.5" title="AI Engine Connected">
+                            <div className="px-2 py-0.5 rounded-full bg-dept-creative/10 border border-dept-creative/20 flex items-center gap-1.5" title="Intelligence Engine Connected">
                                 <div className="w-1.5 h-1.5 rounded-full bg-dept-creative animate-pulse" />
                                 <span className="text-[10px] font-medium text-dept-creative uppercase tracking-widest">Online</span>
                             </div>
                         )}
                     </div>
-                    <p className="text-[10px] text-dept-creative/60 font-medium uppercase tracking-[0.1em] mt-0.5">AI Orchestrator</p>
+                    <p className="text-[10px] text-dept-creative/60 font-medium uppercase tracking-[0.1em] mt-0.5">Orchestrator Intelligence</p>
                 </div>
             </div>
 

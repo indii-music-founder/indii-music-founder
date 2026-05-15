@@ -120,7 +120,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         type: file.type,
                         size: file.size.toString()
                     }).then(() => {
-                        toast.success(`Indexed ${file.name} for AI search`);
+                        toast.success(`Indexed ${file.name} for Intelligence search`);
                     }).catch(err => {
                         logger.error("Indexing failed for", file.name, err);
                     });

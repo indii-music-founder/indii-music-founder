@@ -178,7 +178,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />
 
                     {/* System Status */}
-                    <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6" title="AI Systems Status">
+                    <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6" title="Autonomous Systems Status">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
                         <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest hidden lg:block">ONLINE</span>
                     </div>

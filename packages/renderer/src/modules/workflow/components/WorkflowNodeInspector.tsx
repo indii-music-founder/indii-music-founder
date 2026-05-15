@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
         nodes: state.nodes,
@@ -84,7 +84,7 @@ export default function WorkflowNodeInspector() {
 
                 <div className="bg-purple-900/10 border border-purple-500/30 rounded-lg p-3">
                     <label className="text-xs font-bold text-purple-400 uppercase mb-2 block flex items-center gap-2">
-                        <Sparkles size={12} /> AI Assistant
+                        <Sparkles size={12} /> Autonomous Assistant
                     </label>
                     <div className="flex gap-2">
                         <input

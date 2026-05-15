@@ -46,7 +46,7 @@ export function ApprovalModal() {
                 {/* Content */}
                 <div className="px-6 py-5">
                     <p className="text-gray-300 mb-4">
-                        The AI agent wants to perform the following action:
+                        The Autonomous agent wants to perform the following action:
                     </p>
                     <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 font-mono text-sm text-white whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
                         {pendingApproval.content}

@@ -185,7 +185,7 @@ export const MerchandiseService = {
 
     /**
      * Generates a mockup request and saves to Firestore.
-     * Uses persistent AI generation of photorealistic mockups via ImageGenerationService.
+     * Uses persistent Autonomous generation of photorealistic mockups via ImageGenerationService.
      */
     generateMockup: async (asset: string, type: string, scene: string): Promise<string> => {
         const { useStore } = await import('@/core/store');
@@ -242,7 +242,7 @@ export const MerchandiseService = {
 
     /**
      * Generates a video request and saves to Firestore.
-     * Uses persistent AI generation of product animations via VideoGenerationService.
+     * Uses persistent Autonomous generation of product animations via VideoGenerationService.
      * Returns the Job ID for subscription.
      */
     generateVideo: async (mockupUrl: string, motion: string): Promise<string> => {

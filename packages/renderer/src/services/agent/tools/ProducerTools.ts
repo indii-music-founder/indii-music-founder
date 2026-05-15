@@ -1,5 +1,5 @@
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -39,7 +39,7 @@ Location: ${args.location}
 Cast: ${args.cast.join(', ')}
 `;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousGenAI.generateContent(
             prompt,
             AI_MODELS.TEXT.AGENT,
             undefined,
@@ -67,7 +67,7 @@ Output a JSON list of:
 `;
         const prompt = `Breakdown this script:\n\n${args.script}`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousGenAI.generateContent(
             prompt,
             AI_MODELS.TEXT.AGENT,
             undefined,

@@ -11,9 +11,9 @@ describe('indii Branding Constants', () => {
             expect(AGENT_SYSTEM_BRANDING.name).toBe(AGENT_SYSTEM_BRANDING.name.toLowerCase());
         });
 
-        it('provides full name with AI Agent System', () => {
+        it('provides full name with Autonomous Agent System', () => {
             expect(AGENT_SYSTEM_BRANDING.fullName).toContain('indii');
-            expect(AGENT_SYSTEM_BRANDING.fullName).toContain('AI Agent System');
+            expect(AGENT_SYSTEM_BRANDING.fullName).toContain('Autonomous Agent System');
         });
 
         it('identifies hub as indii', () => {
@@ -211,15 +211,15 @@ describe('indii Branding Constants', () => {
             expect(violationMsg).toContain('indii');
         });
 
-        it('maintains consistent "indii AI Agent System" nomenclature', () => {
-            expect(AGENT_SYSTEM_BRANDING.fullName).toBe('indii AI Agent System');
+        it('maintains consistent "indii Autonomous Agent System" nomenclature', () => {
+            expect(AGENT_SYSTEM_BRANDING.fullName).toBe('indii Autonomous Agent System');
         });
 
         it('associates indii with independent artists', () => {
             expect(AGENT_SYSTEM_BRANDING.description).toContain('independent artists');
         });
 
-        it('emphasizes AI-powered nature', () => {
+        it('emphasizes Intelligence-powered nature', () => {
             expect(AGENT_SYSTEM_BRANDING.description).toContain('AI');
             expect(AGENT_SYSTEM_BRANDING.fullName).toContain('AI');
         });

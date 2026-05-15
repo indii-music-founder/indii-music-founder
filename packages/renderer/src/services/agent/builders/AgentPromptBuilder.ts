@@ -74,12 +74,12 @@ export class AgentPromptBuilder {
     }
 
     // =========================================================================
-    // TEMPORAL AWARENESS — Gives the AI a sense of "when"
+    // TEMPORAL AWARENESS — Gives the Autonomous a sense of "when"
     // =========================================================================
 
     /**
-     * Builds the temporal awareness block that anchors the AI in time.
-     * Without this, the AI has no idea what "today" is, how long the user
+     * Builds the temporal awareness block that anchors the Autonomous in time.
+     * Without this, the Autonomous has no idea what "today" is, how long the user
      * has been on the platform, or whether a memory is from 4 years ago
      * or 4 days ago.
      */
@@ -155,13 +155,13 @@ export class AgentPromptBuilder {
     }
 
     // =========================================================================
-    // SPATIAL AWARENESS — Gives the AI a sense of "where"
+    // SPATIAL AWARENESS — Gives the Autonomous a sense of "where"
     // =========================================================================
 
     /**
-     * Builds the spatial awareness block that grounds the AI in the user's
+     * Builds the spatial awareness block that grounds the Autonomous in the user's
      * geographic context. When a user from Detroit says "shoot me in the
-     * lobby of the Penobscot Building," the AI should know:
+     * lobby of the Penobscot Building," the Autonomous should know:
      * - The Penobscot is a 47-story Art Deco skyscraper in downtown Detroit
      * - Its lobby has ornate bronze elevator doors, marble walls, painted ceilings
      * - The user's other location references likely mean Metro Detroit landmarks
@@ -191,7 +191,7 @@ export class AgentPromptBuilder {
             lines.push(`- Use the user's region to contextualize ambiguous references (e.g., "downtown" means downtown ${location.split(',')[0]?.trim() || location}).`);
         }
 
-        // If brand assets include headshots, note the AI can composite
+        // If brand assets include headshots, note the Autonomous can composite
         const headshots = brandKit?.brandAssets?.filter(
             a => a.category === 'headshot' || a.category === 'bodyshot'
         );
@@ -235,7 +235,7 @@ export class AgentPromptBuilder {
         const autoRecall = autoRecallBlock || '';
         const boardroom = boardroomSection || '';
 
-        // Phase 1: Temporal & Spatial Awareness — anchors the AI in time and space
+        // Phase 1: Temporal & Spatial Awareness — anchors the Autonomous in time and space
         const temporalContext = this.buildTemporalContext(context);
         const spatialContext = this.buildSpatialContext(context);
 

@@ -1,5 +1,5 @@
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_CONFIG, AI_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -10,11 +10,11 @@ import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
-import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { VideoJob, VideoSafetyRating } from '@/types/video';
 import { logger } from '@/utils/logger';
-import { neuralCortex, type RenderDirectives } from '@/services/ai/NeuralCortexService';
+import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
@@ -29,7 +29,7 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
 }
 
 /**
- * VideoGenerationService - Client-side orchestrator for AI video production
+ * VideoGenerationService - Client-side orchestrator for Intelligence video production
  * 
  * Handles quota checking, prompt enrichment (cinematography/physics), 
  * temporal context analysis, and triggering both atomic and long-form 
@@ -225,7 +225,7 @@ export class VideoGenerationService {
 
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
-            return await GenAI.analyzeImage(analysisPrompt, image);
+            return await AutonomousGenAI.analyzeImage(analysisPrompt, image);
         } catch (__e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
@@ -297,7 +297,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseAIService (no Cloud Functions).
+     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -376,7 +376,7 @@ export class VideoGenerationService {
             }
         }
 
-        // Map internal parameters to AI service expectations
+        // Map internal parameters to Intelligence service expectations
         let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
@@ -474,7 +474,7 @@ export class VideoGenerationService {
 
         // Generate video via direct @google/genai SDK (no Cloud Functions)
         try {
-            // Build the AI service request object
+            // Build the Intelligence service request object
             const aiRequest = {
                 prompt: enrichedPrompt,
                 model: options.model || DEFAULT_VIDEO_MODEL,
@@ -491,7 +491,7 @@ export class VideoGenerationService {
                 }),
             };
 
-            logger.info('[VideoGeneration] 🚀 Calling GenAI.generateVideo() with:', {
+            logger.info('[VideoGeneration] 🚀 Calling AutonomousGenAI.generateVideo() with:', {
                 model: aiRequest.model,
                 promptLength: aiRequest.prompt.length,
                 hasImage: !!aiRequest.image,
@@ -499,7 +499,7 @@ export class VideoGenerationService {
             });
 
             const videoUrl = await this.withRetry(
-                () => GenAI.generateVideo(aiRequest),
+                () => AutonomousGenAI.generateVideo(aiRequest),
                 'generateVideo (atomic)',
                 3,
                 2000
@@ -795,7 +795,7 @@ export class VideoGenerationService {
                 //   - Fails fast on 400, 401, 403, quota, safety violations
                 //   - Respects Retry-After headers when present
                 const videoUrl = await this.withRetry(
-                    () => GenAI.generateVideo({
+                    () => AutonomousGenAI.generateVideo({
                         prompt: segmentPrompt,
                         model: options.model || DEFAULT_VIDEO_MODEL,
                         image: previousLastFrame

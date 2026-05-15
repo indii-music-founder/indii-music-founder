@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../../services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { Schema, SchemaType } from 'firebase/ai';
 import { logger } from '@/utils/logger';
 

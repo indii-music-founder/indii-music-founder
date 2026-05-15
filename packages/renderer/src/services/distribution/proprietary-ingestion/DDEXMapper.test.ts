@@ -1,6 +1,6 @@
 import { IngestionMapper } from './IngestionMapper';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 describe('IngestionMapper', () => {
     const mockProfile: AudioIntelligenceProfile = {

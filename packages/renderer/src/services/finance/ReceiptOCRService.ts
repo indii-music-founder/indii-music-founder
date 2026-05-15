@@ -1,5 +1,5 @@
-import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import type { Content } from 'firebase/ai';
 
@@ -14,10 +14,10 @@ export interface ReceiptData {
 }
 
 export class ReceiptOCRService {
-    private aiService: FirebaseAIService;
+    private aiService: FirebaseIntelligenceService;
 
     constructor() {
-        this.aiService = new FirebaseAIService();
+        this.aiService = new FirebaseIntelligenceService();
     }
 
     /**

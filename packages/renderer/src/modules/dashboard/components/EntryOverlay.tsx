@@ -57,7 +57,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     const getSubtext = () => {
         if (isLoading) return 'Scanning memory...';
         if (memoryContext) return memoryContext;
-        if (scenario === 'new-user') return "I'm your AI creative engine. What should we build first?";
+        if (scenario === 'new-user') return "I'm your creative engine. What should we build first?";
         if (scenario === 'returning-active') return "Ready to pick up where we left off?";
         return "What are we working on today?";
     };

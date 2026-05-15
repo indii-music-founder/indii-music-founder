@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { agentService } from '../AgentService';
-import { ContextManager } from '@/services/ai/context/ContextManager';
+import { ContextManager } from '@/services/intelligence/context/ContextManager';
 import { useStore } from '@/core/store';
 import { BaseAgent } from '../BaseAgent';
 
@@ -29,7 +29,7 @@ vi.mock('firebase/firestore', () => ({
     }
 }));
 
-// 1. Mock GenAI Service
+// 1. Mock AutonomousGenIntelligence Service
 const mockResponseHelper = (text: string) => ({
     response: {
         text: () => text,
@@ -57,8 +57,8 @@ mockGenerateContent
         complete: true
     })));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         batchEmbedContents: vi.fn((texts: string[]) => Promise.resolve(Array(texts.length).fill(Array(768).fill(0)))),
         embedContent: vi.fn().mockResolvedValue({ values: Array(768).fill(0) })
@@ -74,7 +74,7 @@ vi.mock('@/services/MembershipService', () => ({
 }));
 
 // 3. Mock ContextManager (Context Window Check)
-vi.mock('@/services/ai/context/ContextManager', () => ({
+vi.mock('@/services/intelligence/context/ContextManager', () => ({
     ContextManager: {
         truncateContext: vi.fn().mockReturnValue([{ role: 'user', parts: [{ text: 'TRUNCATED' }] }]),
         estimateTokens: vi.fn().mockReturnValue(10),
@@ -258,9 +258,9 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         // Assert limit is passed correctly (15000)
         expect(truncateArgs![1]).toBe(15000);
 
-        // Assert AI received the truncated context
+        // Assert Autonomous received the truncated context
         // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)
-        // Note: With current mocks, Orchestrator and Coordinator are mocked out, so AI is called only ONCE by BaseAgent.
+        // Note: With current mocks, Orchestrator and Coordinator are mocked out, so Autonomous is called only ONCE by BaseAgent.
         const aiCall = mockGenerateContent.mock.calls[0]![0];
         const sentText = aiCall[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');

@@ -103,7 +103,7 @@ const AudioAnalyzer: React.FC = () => {
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
 
-            // This runs the full local audio analysis + remote AI deep analysis
+            // This runs the full local audio analysis + remote Autonomous deep analysis
             const resultProfile = await audioIntelligence.analyze(audioFile);
 
             // Populate tags from the semantic output
@@ -117,12 +117,12 @@ const AudioAnalyzer: React.FC = () => {
             setProfile(resultProfile); // Set profile ONLY after semantic is validated/processed
 
             toast.dismiss(extractToastId);
-            toast.success("Extraction Complete: Deep AI acoustic fingerprint generated.");
+            toast.success("Extraction Complete: Deep Autonomous acoustic fingerprint generated.");
 
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
-            toast.error("Deep Extraction failed. AI service limits or connectivity issues detected.");
+            toast.error("Deep Extraction failed. Autonomous service limits or connectivity issues detected.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -180,7 +180,7 @@ const AudioAnalyzer: React.FC = () => {
                                         <ShieldCheck className="text-green-400" size={24} />
                                         Ingestion & Data Extraction
                                     </h2>
-                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via AI-powered acoustic analysis.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.</p>
                                 </div>
                                 <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                                     {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
@@ -231,7 +231,7 @@ const AudioAnalyzer: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* AI Deep Analysis & Distribution Spec */}
+                            {/* Autonomous Deep Analysis & Distribution Spec */}
                             {profile && (
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
 

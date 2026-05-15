@@ -2,7 +2,7 @@
  * Cost Control Service — Universal Workflow for All Agents
  *
  * MANDATORY: Call this before ANY expensive operation:
- * - Video generation (Vertex AI Veo)
+ * - Video generation (Vertex Autonomous Veo)
  * - Image generation (Imagen)
  * - Agent streaming (Gemini)
  *

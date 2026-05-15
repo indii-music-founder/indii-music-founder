@@ -1086,7 +1086,7 @@ export class CanvasOperationsService {
                             (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke = obj.stroke;
                             obj.set({ stroke: '#ffffff', fill: '' });
                         } else if (obj.type === 'image' && (obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask) {
-                            // For AI masks, bypass tint explicitly so it becomes pure binary
+                            // For Autonomous masks, bypass tint explicitly so it becomes pure binary
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const imgObj = obj as fabric.Image & { _originalOpacity?: number, _originalFilters?: any[] };
                             imgObj._originalOpacity = obj.opacity;

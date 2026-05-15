@@ -12,6 +12,7 @@ import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Request, Response } from "express";
 import { GoogleGenAI } from "@google/genai";
+import { FUNCTION_AI_MODELS } from "../config/models";
 
 interface StreamToken {
   token: string;
@@ -129,7 +130,7 @@ export const agentStreamResponse = onRequest(
       try {
         // Stream agent response from Gemini API
         const stream = await genai.models.generateContentStream({
-          model: "gemini-2.5-flash",
+          model: FUNCTION_AI_MODELS.TEXT.FAST,
           contents: [
             {
               role: "user",

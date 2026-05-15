@@ -22,8 +22,8 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================
 // TYPES
@@ -326,7 +326,7 @@ ${factsText}
 
 OUTPUT:
 Write a 2-4 sentence summary capturing the key information from these facts.
-Be specific and actionable. This summary is used by AI agents to quickly understand this category.
+Be specific and actionable. This summary is used by Autonomous agents to quickly understand this category.
         `.trim();
 
         let summary = '';

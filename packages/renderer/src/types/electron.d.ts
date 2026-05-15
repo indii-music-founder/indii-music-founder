@@ -91,7 +91,7 @@ export interface ElectronAPI {
     };
 
 
-    // AI Sidecar (Docker container management — restart handled by health checks)
+    // Autonomous Sidecar (Docker container management — restart handled by health checks)
     sidecar?: {
         onStatusUpdate?: (callback: (status: string) => void) => () => void;
     };

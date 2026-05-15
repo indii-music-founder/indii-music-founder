@@ -1,7 +1,7 @@
 /**
  * AvatarGenerationService.ts
  *
- * Orchestrates AI lip-sync and avatar video generation.
+ * Orchestrates Autonomous lip-sync and avatar video generation.
  * Connects to SadTalker, HeyGen, or D-ID APIs.
  * Fulfills PRODUCTION_200 item #106.
  *

@@ -1,11 +1,11 @@
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
-import { MODEL_PRICING, getModelKey } from '@/core/config/ai-models';
+import { MODEL_PRICING, getModelKey } from '@/core/config/intelligence-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
-import { RemoteAIConfigSchema } from '@/services/ai/config/RemoteAIConfig';
+import { RemoteIntelligenceConfigSchema } from '@/services/intelligence/config/RemoteIntelligenceConfig';
 import { logger } from '@/utils/logger';
 
 export class TraceService {
@@ -79,7 +79,7 @@ export class TraceService {
             const configStr = getValue(remoteConfig, 'ai_system_config').asString();
             if (configStr) {
                 const parsed = JSON.parse(configStr);
-                const validated = RemoteAIConfigSchema.safeParse(parsed);
+                const validated = RemoteIntelligenceConfigSchema.safeParse(parsed);
 
                 if (validated.success) {
                     const dynamicConfig = validated.data;

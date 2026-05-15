@@ -27,18 +27,18 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-// Mock FirebaseAIService
-vi.mock('../ai/FirebaseAIService', () => {
+// Mock FirebaseIntelligenceService
+vi.mock('../ai/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -46,7 +46,7 @@ vi.mock('../ai/FirebaseAIService', () => {
 });
 
 // Mock AI_MODELS config
-vi.mock('@/core/config/ai-models', () => ({
+vi.mock('@/core/config/intelligence-models', () => ({
     AI_MODELS: {
         IMAGE: {
             GENERATION: 'gemini-3-pro-image-preview',
@@ -59,7 +59,7 @@ vi.mock('@/core/config/ai-models', () => ({
 
 // Mock InputSanitizer — must expose `sanitize`, `validate`, and `containsInjectionPatterns`
 // to match the real static class API used by DirectImageEditor and EditingService.
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: (p: string) => p,
         sanitizePrompt: (p: string) => p,
@@ -79,7 +79,7 @@ vi.mock('./PromptBuilderService', () => ({
 // Mock DirectImageEditor — editImageDirectly is the actual call path
 // after the Cloud Function → Direct SDK refactor.
 const mockEditImageDirectly = vi.fn();
-vi.mock('@/services/ai/generators/DirectImageEditor', () => ({
+vi.mock('@/services/intelligence/generators/DirectImageEditor', () => ({
     editImageDirectly: (...args: any[]) => mockEditImageDirectly(...args),
 }));
 

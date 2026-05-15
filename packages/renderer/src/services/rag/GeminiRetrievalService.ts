@@ -5,7 +5,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 
 // Switch to File API resource types
-import { AI_MODELS } from '../../core/config/ai-models.ts';
+import { AI_MODELS } from '../../core/config/intelligence-models.ts';
 import { delay } from '@/utils/async';
 import { logger } from '@/utils/logger';
 

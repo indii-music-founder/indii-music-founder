@@ -130,7 +130,7 @@ export interface Timeline {
 
 /**
  * Input brief for creating a new timeline.
- * The AI uses this to generate a full phased plan.
+ * The Autonomous uses this to generate a full phased plan.
  */
 export interface TimelineBrief {
     /** What is this timeline for? e.g. "My new single 'Midnight Sun' dropping March 28" */
@@ -147,7 +147,7 @@ export interface TimelineBrief {
     templateId?: TimelineTemplateId;
     /** Optional: release ID to tie this timeline to */
     releaseId?: string;
-    /** Optional: custom instructions for AI generation */
+    /** Optional: custom instructions for Autonomous generation */
     customInstructions?: string;
     /** Optional: initial asset strategy preference */
     assetStrategy?: AssetStrategy;
