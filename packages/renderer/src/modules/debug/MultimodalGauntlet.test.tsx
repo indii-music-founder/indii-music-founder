@@ -56,7 +56,7 @@ describe('MultimodalGauntlet', () => {
     it('renders the gauntlet title and subtitle', () => {
         render(<MultimodalGauntlet />);
         expect(screen.getByText('MULTIMODAL GAUNTLET')).toBeInTheDocument();
-        expect(screen.getByText('PROVING CONSISTENT AI GENERATION & LOOPING LOGIC')).toBeInTheDocument();
+        expect(screen.getByText('PROVING CONSISTENT Autonomous GENERATION & LOOPING LOGIC')).toBeInTheDocument();
     });
 
     it('renders all 4 gauntlet steps', () => {

@@ -532,7 +532,7 @@ vi.mock('@/services/CloudStorageService', () => ({
     },
 }));
 
-// Mock CostControlService globally to prevent blocking AI operations in tests
+// Mock CostControlService globally to prevent blocking Autonomous operations in tests
 vi.mock('@/services/billing/CostControlService', () => ({
     CostControlService: {
         checkAndReserve: vi.fn().mockResolvedValue({ 

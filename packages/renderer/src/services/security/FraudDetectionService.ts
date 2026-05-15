@@ -141,7 +141,7 @@ export class FraudDetectionService {
      * Legacy URL-based copyright check (maintained for backward compatibility)
      */
     /**
-     * Requirement 108: Copyright AI Filter
+     * Requirement 108: Copyright Autonomous Filter
      * Implements a preliminary hashing/screening layer using the Audio Fingerprinting service
      * before distribution to catch uncleared samples.
      * Backwards compatibility: If file is not provided (legacy call), we skip fingerprinting and only check URL.
@@ -194,7 +194,7 @@ export class FraudDetectionService {
             return { safe: true, fingerprint: fingerprint || undefined };
 
         } catch (e: unknown) {
-            logger.error('[FraudDetection] Failed to run Copyright AI filter', e);
+            logger.error('[FraudDetection] Failed to run Copyright Autonomous filter', e);
             // Fail open so we don't block distribution completely on external API failure,
             // but we log it heavily for manual review.
             return { safe: true };

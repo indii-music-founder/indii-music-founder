@@ -2,29 +2,29 @@
  * Item 281: Agent Tool Integration Tests — MarketingTools
  *
  * Verifies that MarketingTools produce correctly-shaped outputs for each
- * defined tool, using mocked Firebase / AI dependencies.
+ * defined tool, using mocked Firebase / Autonomous dependencies.
  *
  * Tests:
- *  - schedule_content: deterministic date generation (no AI dependency)
- *  - create_campaign_brief: AI-driven brief generation + persistence
- *  - analyze_audience: AI-driven audience segmentation
+ *  - schedule_content: deterministic date generation (no Autonomous dependency)
+ *  - create_campaign_brief: Intelligence-driven brief generation + persistence
+ *  - analyze_audience: Intelligence-driven audience segmentation
  *  - tier_superfans: Firestore-based fan aggregation with fallback
  *  - track_performance: Firestore campaign metrics read
- *  - analyze_market_trends: AI-driven trend analysis fallback
+ *  - analyze_market_trends: Intelligence-driven trend analysis fallback
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -61,7 +61,7 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 import { MarketingTools } from '../MarketingTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { getDocs } from 'firebase/firestore';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ describe('MarketingTools — integration', () => {
     // ── create_campaign_brief ────────────────────────────────────────────────────
 
     describe('create_campaign_brief', () => {
-        it('calls AI and persists the generated brief', async () => {
+        it('calls Autonomous and persists the generated brief', async () => {
             const mockBrief = {
                 campaignName: 'Summer Splash',
                 targetAudience: 'Gen Z music fans 18-24',
@@ -127,7 +127,7 @@ describe('MarketingTools — integration', () => {
                 channels: ['Instagram', 'TikTok'],
                 kpis: ['streams', 'playlist adds'],
             };
-            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
+            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
 
             const result = await MarketingTools.create_campaign_brief({
                 product: 'Summer EP',
@@ -138,11 +138,11 @@ describe('MarketingTools — integration', () => {
             expect(result.success).toBe(true);
             expect(result.data.campaignName).toBe('Summer Splash');
             expect(result.data.channels).toContain('Instagram');
-            expect(GenAI.generateStructuredData).toHaveBeenCalledOnce();
+            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledOnce();
         });
 
-        it('returns a fallback result when AI fails', async () => {
-            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
+        it('returns a fallback result when Autonomous fails', async () => {
+            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
                 new Error('Quota exceeded')
             );
 
@@ -169,7 +169,7 @@ describe('MarketingTools — integration', () => {
                 interests: ['Hip-hop', 'R&B', 'Streetwear'],
                 reach: '250,000'
             };
-            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
+            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
 
             const result = await MarketingTools.analyze_audience({
                 genre: 'hip-hop',
@@ -252,7 +252,7 @@ describe('MarketingTools — integration', () => {
                 metrics: { impressions: 1000, clicks: 100, conversions: 10 },
                 roi: '150%'
             };
-            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
+            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
             
             const result = await MarketingTools.track_performance({ campaignId: 'camp-mock-001' });
             expect(result.success).toBe(true);

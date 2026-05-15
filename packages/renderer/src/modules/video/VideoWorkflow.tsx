@@ -11,7 +11,7 @@ import { WhiskService } from '../../services/WhiskService';
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
-import { VideoPromptBuilder } from '../creative/components/veo/VideoPromptBuilder';
+import { IntelligencePromptInput } from '../creative/components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -78,7 +78,7 @@ export const processJobUpdate = (
         if (newStatus === 'completed' && data.videoUrl) {
             useStore.getState().updateJobStatus(currentJobId, 'success');
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
-            // The AI community/app needs access to this file locally first.
+            // The Autonomous community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
 
             // Trigger background download via Electron
@@ -350,7 +350,7 @@ export default function VideoWorkflow() {
 
             // 🔇 Audio Suppression: When generateAudio is disabled, append audio-muting
             // instructions. Veo 3.1 has no API-level audio toggle — this is a prompt-level
-            // workaround recommended by the Google AI community.
+            // workaround recommended by the Google Autonomous community.
             let audioNegativePrompt = studioControls.negativePrompt;
             if (!studioControls.generateAudio) {
                 const audioSuppression = '(no background music), (no dialogue), (no sound effects), (no audio), (silent video), (muted)';
@@ -643,7 +643,7 @@ export default function VideoWorkflow() {
                                     </button>
                                 </div>
                             )}
-                            <VideoPromptBuilder
+                            <IntelligencePromptInput
                                 mode="video"
                                 prompt={localPrompt}
                                 onChange={(val) => {
@@ -684,7 +684,7 @@ export default function VideoWorkflow() {
                                         </>
                                     )}
                                 </button>
-                            </VideoPromptBuilder>
+                            </IntelligencePromptInput>
                         </div>
                     </div>
                 </div>

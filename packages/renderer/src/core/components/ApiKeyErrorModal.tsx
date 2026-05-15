@@ -41,7 +41,7 @@ export const ApiKeyErrorModal = () => {
                         <h2 className="text-xl font-bold text-white">Billing / API Key Error</h2>
 
                         <p className="text-gray-400 text-sm">
-                            We detected a billing or quota issue with your Google AI Studio API key.
+                            We detected a billing or quota issue with your Google Autonomous Studio API key.
                             Please check your billing status or quota limits.
                         </p>
 

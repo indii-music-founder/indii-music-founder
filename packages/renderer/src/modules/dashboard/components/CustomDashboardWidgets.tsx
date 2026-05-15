@@ -49,7 +49,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
-    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent AI agent tasks and completions' },
+    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
     audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
     active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
     pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },

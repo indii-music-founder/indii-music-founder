@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import CreativeGallery from './CreativeGallery';
 import CreativeNavbar from './CreativeNavbar';
 import CreativeCanvas from './CreativeCanvas';
-import PromptBuilder from './PromptBuilder';
+import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -39,8 +39,8 @@ vi.mock('./EditDefinitionsPanel', () => ({
     default: () => <div data-testid="edit-definitions-panel" />
 }));
 
-// Mock PromptBuilder — renders the brand category and tag buttons the test expects
-vi.mock('./PromptBuilder', () => ({
+// Mock IntelligencePromptBuilder — renders the brand category and tag buttons the test expects
+vi.mock('./IntelligencePromptBuilder', () => ({
     default: ({ onAddTag }: { onAddTag: (tag: string) => void }) => (
         <div data-testid="prompt-builder-panel">
             <button
@@ -252,7 +252,7 @@ describe('Creative Director 12-Click Daisychain', () => {
                     >
                         Go to Showroom
                     </button>
-                    <PromptBuilder
+                    <IntelligencePromptBuilder
                         onAddTag={(tag: string) => {
                             setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag);
                             mockSetPrompt(prompt ? `${prompt}, ${tag}` : tag);

@@ -48,6 +48,11 @@ import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 
+// Item 325: Import subscription types for hoisted global state
+import type { Subscription, UsageStats } from '@/services/subscription/types';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+import { useSubscription } from '@/modules/finance/hooks/useSubscription';
+
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
@@ -59,8 +64,6 @@ import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { useSubscription } from '@/modules/finance/hooks/useSubscription';
-import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -196,7 +199,7 @@ function DevPortWarning() {
 
 // Modules that require a verified (non-anonymous) account
 const COMMERCIAL_MODULES = new Set<ModuleId>([
-    'distribution', 'finance', 'licensing', 'merch', 'publishing',
+    'distribution', 'licensing', 'merch', 'publishing',
 ]);
 
 function useOnboardingRedirect() {
@@ -310,7 +313,14 @@ function UpgradeGate({ onUpgrade }: { onUpgrade: () => void }) {
     );
 }
 
-function ModuleRenderer({ moduleId }: ModuleRendererProps) {
+function ModuleRenderer({ 
+    moduleId, 
+    subscription, 
+    subLoading 
+}: ModuleRendererProps & { 
+    subscription: Subscription | null; 
+    subLoading: boolean 
+}) {
     const location = useLocation();
     const subPath = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
@@ -320,9 +330,6 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
     const { user, setModule } = useStore(
         useShallow(s => ({ user: s.user, setModule: s.setModule }))
     );
-
-    // Call subscription hook unconditionally per React Rules of Hooks
-    const { subscription, loading: subLoading } = useSubscription();
 
     const ModuleComponent = MODULE_COMPONENTS[moduleId];
 
@@ -452,6 +459,9 @@ export default function App() {
 function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
     useOnboardingRedirect();
 
+    // Call subscription hook globally to leverage caching across module switches
+    const { subscription, loading: subLoading } = useSubscription();
+
     return (
         <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
             <GlobalDropZone>
@@ -485,7 +495,11 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                                 {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
                                 <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
                                     <Suspense fallback={<LoadingFallback />}>
-                                        <ModuleRenderer moduleId={currentModule as ModuleId} />
+                                        <ModuleRenderer 
+                                            moduleId={currentModule as ModuleId} 
+                                            subscription={subscription} 
+                                            subLoading={subLoading} 
+                                        />
                                     </Suspense>
                                 </ModuleErrorBoundary>
                             </div>

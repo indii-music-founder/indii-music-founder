@@ -143,7 +143,7 @@ export default function WorkflowLab() {
             animate: true,
             steps: [
                 { element: '#tour-workflow-controls', popover: { title: 'Controls Panel', description: 'Manage your workflow files, run executions, and save changes here.' } },
-                { element: '#tour-workflow-generator', popover: { title: 'AI Generator', description: 'Describe what you want to achieve, and let AI build the initial node structure for you.' } },
+                { element: '#tour-workflow-generator', popover: { title: 'Autonomous Generator', description: 'Describe what you want to achieve, and let Autonomous build the initial node structure for you.' } },
                 { element: '#tour-workflow-canvas', popover: { title: 'Node Editor', description: 'Drag and drop nodes here. Connect them to build automation logic.' } },
                 { element: '#tour-workflow-library', popover: { title: 'Node Library', description: 'A collection of available triggers, actions, and logic gates.' } },
                 { element: '#tour-workflow-inspector', popover: { title: 'Inspector', description: 'Select a node to view and edit its detailed configuration.' } },
@@ -475,9 +475,9 @@ function SavedWorkflowsWidget({
 
 function NodeLibraryPanel() {
     const nodeDefs = [
-        { name: 'AI Generate', nodeType: 'departmentNode', data: { departmentName: 'AI Department' }, icon: Sparkles, category: 'AI', color: 'text-purple-400' },
+        { name: 'Autonomous Generate', nodeType: 'departmentNode', data: { departmentName: 'Autonomous Department' }, icon: Sparkles, category: 'Autonomous', color: 'text-purple-400' },
         { name: 'Process Audio', nodeType: 'audioSegmentNode', data: {}, icon: Music, category: 'Audio', color: 'text-blue-400' },
-        { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'AI', color: 'text-pink-400' },
+        { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'Autonomous', color: 'text-pink-400' },
         { name: 'Send Email', nodeType: 'outputNode', data: {}, icon: Mail, category: 'Action', color: 'text-green-400' },
         { name: 'Filter', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'gatekeeper' }, icon: Filter, category: 'Logic', color: 'text-yellow-400' },
         { name: 'Webhook', nodeType: 'inputNode', data: {}, icon: Webhook, category: 'Integration', color: 'text-orange-400' },

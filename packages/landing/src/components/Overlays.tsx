@@ -84,7 +84,7 @@ export default function Overlays() {
                         indii
                     </h2>
                     <p className="text-2xl text-white/80 font-light mb-8 leading-tight">
-                        Your AI production manager.
+                        Your production manager.
                     </p>
 
                     <div className="flex flex-col items-end gap-6 text-white/50">

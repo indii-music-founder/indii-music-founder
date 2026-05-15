@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from '../AgentService';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import {
     AGENT_DOMAIN_KEYWORDS,
     createMockStoreState,
@@ -49,30 +49,30 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() },
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
     },
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/services/ai/AIResponseCache', () => ({
-    AIResponseCache: class {
+vi.mock('@/services/intelligence/IntelligenceResponseCache', () => ({
+    IntelligenceResponseCache: class {
         get() { return null; }
         set() { /* no-op */ }
     },
@@ -354,7 +354,7 @@ describe('🎯 Hub Routing Accuracy Stress Test (25 scenarios)', () => {
         const mockState = createMockStoreState();
         vi.mocked(useStore.getState).mockReturnValue(mockState as unknown as ReturnType<typeof useStore.getState>);
 
-        // Configure AI mock to return routing decisions
+        // Configure Autonomous mock to return routing decisions
         vi.mocked(AI.generateContent).mockImplementation(async (content: any) => {
             // Extract the user request from the prompt to determine routing
             const promptText = typeof content === 'string'

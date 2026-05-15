@@ -1,6 +1,6 @@
 /**
  * Rate Limit Configuration
- * Defines quota limits for AI usage tiers.
+ * Defines quota limits for Intelligence usage tiers.
  */
 
 export const RATE_LIMITS = {

@@ -3,7 +3,7 @@ import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { Inngest } from "inngest";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI.
@@ -164,8 +164,8 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
                     const { model: requestedModel } = options || {};
                     const modelId = requestedModel === 'fast'
-                        ? FUNCTION_AI_MODELS.VIDEO.FAST
-                        : FUNCTION_AI_MODELS.VIDEO.PRO;
+                        ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+                        : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
                     const auth = new GoogleAuth({
                         scopes: ['https://www.googleapis.com/auth/cloud-platform']

@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MembershipService } from './MembershipService';
-import { CostPredictor } from '@/services/ai/utils/CostPredictor';
+import { CostPredictor } from '@/services/intelligence/utils/CostPredictor';
 import { getDoc } from 'firebase/firestore';
 
 // Mock Firebase services
@@ -66,7 +66,7 @@ describe('MembershipService (Ledger\'s Cost Predictor Integration)', () => {
         });
 
         // 2. Mock Cost Predictor for Veo 3.1
-        // Veo cost is typically $0.05 per generation (based on ai-models.ts or assumption)
+        // Veo cost is typically $0.05 per generation (based on intelligence-models.ts or assumption)
         // We force it to return $0.05
         const VEO_COST = 0.05;
         vi.spyOn(CostPredictor, 'predictVideoCost').mockReturnValue({

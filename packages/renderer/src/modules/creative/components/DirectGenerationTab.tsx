@@ -3,7 +3,7 @@ import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronD
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
-import { VideoPromptBuilder } from './veo/VideoPromptBuilder';
+import { IntelligencePromptInput } from './veo/IntelligencePromptInput';
 import { VeoSettingsPanel } from './veo/VeoSettingsPanel';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
@@ -56,7 +56,7 @@ export default function DirectGenerationTab() {
                         </div>
                         <p className="text-sm font-medium">Direct Generation Mode</p>
                         <p className="text-xs text-gray-500 max-w-xs text-center">
-                            Bypass the agent orchestration layer to directly test API integration and asset generation.
+                            Bypass the Autonomous orchestration layer to directly test API integration and asset generation.
                         </p>
                     </div>
                 ) : (
@@ -197,7 +197,7 @@ export default function DirectGenerationTab() {
 
                     {/* Prompt Input */}
                     <div className="flex-1 flex flex-col gap-2">
-                        <VideoPromptBuilder
+                        <IntelligencePromptInput
                             mode={mode}
                             prompt={localPrompt}
                             onChange={setLocalPrompt}
@@ -236,7 +236,7 @@ export default function DirectGenerationTab() {
                                     </>
                                 )}
                             </button>
-                        </VideoPromptBuilder>
+                        </IntelligencePromptInput>
 
                         {hasWhiskModifiers && (
                             <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg mt-1">

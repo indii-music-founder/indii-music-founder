@@ -1,7 +1,7 @@
 /**
  * BrowserAgentService — Gemini Computer Use Integration
  *
- * Core orchestrator for AI-driven browser automation using Google's
+ * Core orchestrator for Autonomous browser automation using Google's
  * Gemini Computer Use API. Enables portal automation for services
  * that have no public APIs (ASCAP, BMI, SoundExchange, etc.).
  *
@@ -18,8 +18,8 @@
  *          Web renderer (DOM-based) for dev/testing
  */
 
-import { AI_MODELS } from '@/core/config/ai-models';
-import { GoogleGenAI } from '@google/genai';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 
@@ -104,7 +104,7 @@ export class BrowserAgentService {
     private config: BrowserAgentConfig;
     private currentTask: AgentTask | null = null;
     private apiKey: string;
-    private genAI: GoogleGenAI | null = null;
+    private genAI: GoogleAutonomousGenAI | null = null;
     private listeners: Map<string, Set<(step: AgentStep) => void>> = new Map();
 
     constructor(config: Partial<BrowserAgentConfig> = {}) {
@@ -112,7 +112,7 @@ export class BrowserAgentService {
         this.apiKey = import.meta.env.VITE_API_KEY || '';
 
         if (this.apiKey) {
-            this.genAI = new GoogleGenAI({ apiKey: this.apiKey });
+            this.genAI = new GoogleAutonomousGenAI({ apiKey: this.apiKey });
         }
     }
 
@@ -295,7 +295,7 @@ export class BrowserAgentService {
             ? `\nLogin credentials are available. Username: ${credentials.username}. Use these when a login form is encountered.`
             : '\nNo login credentials provided. If a login is required, report it as a blocker.';
 
-        return `You are an AI browser agent operating on the ${portal} web portal.
+        return `You are an Autonomous browser agent operating on the ${portal} web portal.
 
 Your task: ${goal}
 
@@ -651,4 +651,4 @@ export const browserAgentService = new BrowserAgentService();
 
 // ─── Re-export model constant for reference ─────────────────────
 
-export { COMPUTER_USE_MODEL, AI_MODELS };
+export { COMPUTER_USE_MODEL, INTELLIGENCE_MODELS };

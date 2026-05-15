@@ -3,28 +3,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Mock response' } }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateStructuredData: vi.fn(),
         generateVideo: vi.fn()
@@ -84,7 +84,7 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValueOnce(mockResponse);
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValueOnce(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
 

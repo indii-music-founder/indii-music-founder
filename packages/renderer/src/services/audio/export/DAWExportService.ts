@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 
 /**
  * Requirement 109: External DAW Integration
- * Export `.als` (Ableton Live Set) or MIDI generic project files from AI generated concepts.
+ * Export `.als` (Ableton Live Set) or MIDI generic project files from Intelligence generated concepts.
  */
 
 export interface ExportTrack {
@@ -65,7 +65,7 @@ export class DAWExportService {
             // A very minimal, generic XML structure of an Ableton project.
             // Ableton will typically attempt to repair and open simple valid XML schemas.
             let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="3" Creator="indii AI">
+<Ableton MajorVersion="5" MinorVersion="11.0_11300" SchemaChangeCount="3" Creator="indii Autonomous">
     <LiveSet>
         <MasterTrack>
             <DeviceChain>

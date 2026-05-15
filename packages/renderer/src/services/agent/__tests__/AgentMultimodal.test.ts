@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import { GenAI } from '../../ai/GenAI';
+import { AutonomousGenAI } from '../../intelligence/AutonomousGenAI';
 // Mock AI
-vi.mock('../../ai/GenAI', () => ({
-    GenAI: {
+vi.mock('../../intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     },
@@ -64,7 +64,7 @@ describe('Agent Multimodal Support', () => {
         agent = new VisionAgent();
     });
 
-    it('should include attachments in AI requests', async () => {
+    it('should include attachments in Autonomous requests', async () => {
         const mockResponse = {
             response: {
                 text: () => 'I see a red car.',
@@ -73,7 +73,7 @@ describe('Agent Multimodal Support', () => {
             }
         };
 
-        vi.mocked(GenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
 
         const attachments = [
             { mimeType: 'image/jpeg', base64: 'base64-data-here' }
@@ -81,8 +81,8 @@ describe('Agent Multimodal Support', () => {
 
         const result = await agent.execute('What is in this image?', {}, undefined, undefined, attachments);
 
-        // Verify AI call contains the image part
-        expect(GenAI.generateContent).toHaveBeenCalledWith(
+        // Verify Autonomous call contains the image part
+        expect(AutonomousGenAI.generateContent).toHaveBeenCalledWith(
             expect.arrayContaining([
                 expect.objectContaining({
                     parts: expect.arrayContaining([

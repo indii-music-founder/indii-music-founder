@@ -646,7 +646,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         // Item 408: Auto-assign ISRCs to tracks that are missing them
-        // Item 415: Map AI Audio DNA into DDEX Payload
+        // Item 415: Map Autonomous Audio DNA into DDEX Payload
         if (releaseData.tracks?.length) {
             for (const track of releaseData.tracks) {
                 if (!track.isrc || track.isrc.trim() === '') {
@@ -658,13 +658,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                     }
                 }
 
-                // Map AI Audio DNA into the DDEX Payload if track has a file hash
+                // Map Autonomous Audio DNA into the DDEX Payload if track has a file hash
                 if (track.file_hash) {
                     try {
                         const analysis = await musicLibraryService.getAnalysisByHash(track.file_hash);
                         if (analysis && analysis.semantic) {
                             const semantic = analysis.semantic;
-                            // Map AI Semantic Data to DDEX Track
+                            // Map Autonomous Semantic Data to DDEX Track
                             track.genre = track.genre || semantic.ddexGenre;
                             track.sub_genre = track.sub_genre || semantic.ddexSubGenre;
                             track.language = track.language || semantic.language;

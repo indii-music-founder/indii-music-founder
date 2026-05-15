@@ -41,7 +41,7 @@ class UsageTracker {
   }
 
   /**
-   * Track AI chat token usage
+   * Track Intelligence chat token usage
    */
   async trackChatTokens(userId: string, tokenCount: number, metadata?: UsageRecord['metadata']): Promise<void> {
     await this.trackUsage(userId, {

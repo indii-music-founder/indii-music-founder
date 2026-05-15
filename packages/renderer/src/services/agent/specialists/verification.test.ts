@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 import { AGENT_CONFIGS } from '../agentConfig';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
@@ -57,8 +57,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => 'Mock Agent Response',
@@ -97,7 +97,7 @@ vi.mock('../context/AgentExecutionContext', () => ({
 }));
 
 // Mock ContextManager to prevent import errors in history truncation
-vi.mock('@/services/ai/context/ContextManager', () => ({
+vi.mock('@/services/intelligence/context/ContextManager', () => ({
     ContextManager: {
         truncateContext: vi.fn().mockImplementation((history: any[]) => history)
     }

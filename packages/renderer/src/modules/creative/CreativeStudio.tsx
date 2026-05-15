@@ -2,7 +2,7 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
-import AILab from './components/AILab';
+import AutonomousLab from './components/AutonomousLab';
 import VideoWorkflow from '../video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
@@ -16,7 +16,7 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
-/** Map UI-friendly person generation values to Gemini API uppercase constants. */
+/** Map UI-friendly person generation values to Intelligence API uppercase constants. */
 const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_adult': 'ALLOW_ADULT',
     'dont_allow': 'ALLOW_NONE',
@@ -323,7 +323,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
                         {viewMode === 'showroom' && <ShowroomUI />}
-                        {viewMode === 'lab' && <AILab />}
+                        {viewMode === "lab" && <AutonomousLab />}
                         {viewMode === 'editor' && selectedItem && (
                             <CreativeCanvas
                                 item={selectedItem}

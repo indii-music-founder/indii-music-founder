@@ -81,14 +81,14 @@ export function ContactList({ contacts, onSelectContact, onPitchContact }: Conta
                             </div>
                         </div>
 
-                        {/* AI Pitch Button */}
+                        {/* Autonomous Pitch Button */}
                         {onPitchContact && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onPitchContact(contact); }}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-dept-marketing/10 border border-dept-marketing/20 text-dept-marketing-glow text-[10px] font-bold hover:bg-dept-marketing/20"
                             >
                                 <Sparkles size={10} />
-                                AI Pitch
+                                Autonomous Pitch
                             </button>
                         )}
                     </motion.div>

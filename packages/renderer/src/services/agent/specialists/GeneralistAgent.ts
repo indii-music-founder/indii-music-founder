@@ -3,8 +3,8 @@ import { logger } from '@/utils/logger';
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
@@ -650,9 +650,9 @@ CURRENT REQUEST: ${task}
                             }))
                         ]
                     }],
-                    AI_MODELS.TEXT.AGENT,
+                    INTELLIGENCE_MODELS.TEXT.AGENT,
                     {
-                        ...AI_CONFIG.THINKING.HIGH
+                        ...INTELLIGENCE_CONFIG.THINKING.HIGH
                     },
                     undefined,
                     iterationTools as Parameters<typeof AI.generateContentStream>[4],
@@ -784,14 +784,14 @@ CURRENT REQUEST: ${task}
 
                     if (shouldBreakAfterBatch) {
                         // Replace accumulated tool blocks with a clean human-readable summary.
-                        // The raw [Tool: ...][End Tool ...] blocks are for AI context only, not users.
+                        // The raw [Tool: ...][End Tool ...] blocks are for Intelligence context only, not users.
                         const lastToolMsg = lastToolMessage;
                         if (lastToolMsg) {
                             accumulatedResponse = lastToolMsg;
                         }
                         break;
                     }
-                    continue; // Next turn to let AI respond to the batch of results
+                    continue; // Next turn to let Autonomous respond to the batch of results
                 } else {
                     // No function call - this is the final text response
                     const responseText = response.text?.() || '';
@@ -822,7 +822,7 @@ CURRENT REQUEST: ${task}
         }
 
         // Strip any [Tool: name]...[End Tool name] blocks from the final response.
-        // These are internal AI reasoning artifacts — users should only see the narrative text.
+        // These are internal Autonomous reasoning artifacts — users should only see the narrative text.
         const cleanedResponse = (accumulatedResponse || 'Task completed.')
             .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
             .trim();

@@ -109,7 +109,7 @@ export interface InstrumentMetadata {
   /** Compute location */
   computeType: ComputeType;
 
-  /** Preferred AI model */
+  /** Preferred Autonomous model */
   preferredModel?: string;
 
   /** Fallback models if preferred unavailable */

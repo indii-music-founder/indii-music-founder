@@ -78,7 +78,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     }));
 
     // 3. Mutation Function: Gemini 3 Pro (Mocked)
-    // Simulates the AI rewriting the prompt and tweaking parameters
+    // Simulates the Autonomous rewriting the prompt and tweaking parameters
     mockMutationFn.mockImplementation(async (gene) => ({
       ...gene,
       systemPrompt: `${gene.systemPrompt} [GEMINI-3-PRO-EVOLVED]`,

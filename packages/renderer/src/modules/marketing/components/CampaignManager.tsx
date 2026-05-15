@@ -3,7 +3,7 @@ import { CampaignAsset, ScheduledPost, CampaignStatus } from '../types';
 import CampaignList from './CampaignList';
 import CampaignDetail from './CampaignDetail';
 import EditableCopyModal from './EditableCopyModal';
-import AIImageBatchModal from './AIImageBatchModal';
+import IntelligenceImageBatchModal from './IntelligenceImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -121,7 +121,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         />
                     )}
                     {showImageBatchModal && (
-                        <AIImageBatchModal
+                        <IntelligenceImageBatchModal
                             campaign={selectedCampaign}
                             onClose={() => setShowImageBatchModal(false)}
                             onComplete={(updatedCampaign) => {
