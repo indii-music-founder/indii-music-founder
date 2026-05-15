@@ -71,7 +71,7 @@ export interface ToolDefinition {
  * This is the single source of truth for agent ID validation.
  *
  * IMPORTANT: Keep this in sync when adding new agents.
- * Used to prevent AI hallucination of non-existent agent IDs.
+ * Used to prevent Autonomous hallucination of non-existent agent IDs.
  */
 export const VALID_AGENT_IDS = [
     'marketing',
@@ -107,7 +107,7 @@ export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 
 /**
  * Comma-separated list of valid agent IDs for use in tool descriptions.
- * Prevents AI from hallucinating non-existent agent names.
+ * Prevents Autonomous from hallucinating non-existent agent names.
  */
 export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 
@@ -364,7 +364,7 @@ export interface AgentConfig {
     authorizedTools?: string[];
     /** Optional fine-tuned model endpoint. When set and the feature flag
      *  VITE_USE_FINE_TUNED_AGENTS is enabled, BaseAgent will use this model
-     *  instead of the default AI_MODELS.TEXT.AGENT. Format:
+     *  instead of the default INTELLIGENCE_MODELS.TEXT.AGENT. Format:
      *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
      */
     modelId?: string;

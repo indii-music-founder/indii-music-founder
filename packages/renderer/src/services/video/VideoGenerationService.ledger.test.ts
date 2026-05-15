@@ -44,8 +44,8 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn()
 }));
 
-// Mock Firebase AI (used in analyzeTemporalContext)
-vi.mock('../ai/FirebaseAIService', () => ({
+// Mock Firebase Autonomous (used in analyzeTemporalContext)
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
     firebaseAI: {
         analyzeImage: vi.fn()
     }

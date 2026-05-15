@@ -1,5 +1,5 @@
-import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { WikiStorageAdapter, WikiDocument } from './WikiStorageAdapter';
 import { WikiLinter } from './WikiLinter';
@@ -59,9 +59,9 @@ Data: ${request.rawInput}
 
 Return ONLY the complete, updated Markdown document content. Do not include introductory text.`;
 
-            const compiledContent = await FirebaseAIService.getInstance().generateText(
+            const compiledContent = await FirebaseIntelligenceService.getInstance().generateText(
                 prompt,
-                AI_MODELS.TEXT.AGENT // Use PRO for high-quality Markdown synthesis
+                INTELLIGENCE_MODELS.TEXT.AGENT // Use PRO for high-quality Markdown synthesis
             );
 
             const cleanContent = compiledContent.replace(/^```markdown\s*/im, '').replace(/```$/im, '').trim();
@@ -108,9 +108,9 @@ Fallback Hint: ${hint || 'None'}
 Return ONLY a snake_case string for the Document ID. If it belongs in an existing doc, return that ID exactly. If it requires a new topic, invent a concise new snake_case ID.
 Example output: brand_guidelines OR release_strategy`;
 
-        const response = await FirebaseAIService.getInstance().generateText(
+        const response = await FirebaseIntelligenceService.getInstance().generateText(
             prompt,
-            AI_MODELS.TEXT.FAST
+            INTELLIGENCE_MODELS.TEXT.FAST
         );
 
         const docId = response.replace(/[^a-zA-Z0-9_]/g, '').trim().toLowerCase();

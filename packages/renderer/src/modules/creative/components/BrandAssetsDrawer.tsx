@@ -8,7 +8,7 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import type { BrandAsset } from '@/types/User';
-import { AI_CONFIG } from '@/core/config/ai-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import type { StoreState } from '@/core/store';
 
 interface BrandAssetsDrawerProps {
@@ -50,7 +50,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
     const processFiles = async (files: File[]) => {
         // For uploads, we'll default to style_reference if under limit, else logo
-        const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+        const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
         const currentCount = userProfile?.brandKit?.referenceImages?.length || 0;
 
         setIsGenerating(true);
@@ -131,7 +131,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             toast.success("Moved to Logos & Graphics");
         } else {
             // Move from Logos to Style References
-            const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+            const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
             if ((currentKit.referenceImages || []).length >= MAX_REF) {
                 toast.error(`Limit reached. You can only have up to ${MAX_REF} style references.`);
                 return;
@@ -204,11 +204,11 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         // StorageService now handles DEV-mode permission fallbacks internally
                         downloadUrl = await StorageService.uploadFile(blob, path);
                     } else {
-                        throw new Error("No image data in AI response");
+                        throw new Error("No image data in Autonomous response");
                     }
                 } catch (apiError: unknown) {
                     if (import.meta.env.DEV) {
-                        logger.error("[BrandAssets] AI API failed in dev, falling back to mock", apiError);
+                        logger.error("[BrandAssets] Autonomous API failed in dev, falling back to mock", apiError);
                         downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
                     } else {
                         throw apiError;
@@ -226,7 +226,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
 
                 if (targetCategory === 'style_reference') {
-                    const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                    const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
                     const currentCount = currentKit.referenceImages?.length || 0;
 
                     if (currentCount >= MAX_REF) {
@@ -386,8 +386,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     <div>
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex justify-between">
                             Style References
-                            <span className={refImages.length >= AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages ? 'text-orange-500' : 'text-gray-400'}>
-                                {refImages.length}/{AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages}
+                            <span className={refImages.length >= INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages ? 'text-orange-500' : 'text-gray-400'}>
+                                {refImages.length}/{INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages}
                             </span>
                         </h4>
                         {refImages.length === 0 ? (

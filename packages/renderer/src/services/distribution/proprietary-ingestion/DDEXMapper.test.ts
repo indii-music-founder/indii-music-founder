@@ -1,11 +1,11 @@
 import { IngestionMapper } from './IngestionMapper';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 describe('IngestionMapper', () => {
     const mockProfile: AudioIntelligenceProfile = {
         id: 'test-fingerprint',
-        modelVersion: AI_MODELS.TEXT.AGENT,
+        modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT,
         analyzedAt: Date.now(),
         technical: {
             bpm: 120,

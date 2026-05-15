@@ -23,7 +23,7 @@ export class VideoGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_video',
     name: 'Generate Video',
-    description: 'Generate AI videos from text prompts using Veo 3.1. Supports multiple aspect ratios and durations.',
+    description: 'Generate Intelligence videos from text prompts using Veo 3.1. Supports multiple aspect ratios and durations.',
     category: 'generation',
     version: '1.0.0',
     author: 'indii Core Team',

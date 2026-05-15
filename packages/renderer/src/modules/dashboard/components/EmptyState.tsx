@@ -79,7 +79,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.2 }}
                 className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
             >
-                Your AI Creative Engine • What Would You Like To Do?
+                Your Creative Intelligence Engine • What Would You Like To Do?
             </motion.p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full px-4">

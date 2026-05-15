@@ -684,7 +684,7 @@ export function getDistributorRequirements(distributorName: string): Distributor
 }
 
 /**
- * Get a summary of distributor requirements for the AI
+ * Get a summary of distributor requirements for the Intelligence
  */
 export function getDistributorSummaryForAI(distributorName: string): string | null {
     const requirements = getDistributorRequirements(distributorName);

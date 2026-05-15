@@ -1,6 +1,6 @@
 /**
  * Ingestion IngestionNotification (Electronic Release Notification) Types
- * Version: IngestionNotification 4.3 (supports AI-generated content flagging)
+ * Version: IngestionNotification 4.3 (supports Intelligence-generated content flagging)
  */
 
 import type {
@@ -51,7 +51,7 @@ export interface Release {
   marketingComment?: string;
   keyWords?: string[];
 
-  // AI Generation (IngestionNotification 4.3)
+  // Autonomous Generation (IngestionNotification 4.3)
   aiGenerationInfo?: AIGenerationInfo;
 
   // Rights Controllers (Self-Publishing)
@@ -124,7 +124,7 @@ export interface Resource {
   technicalDetails?: TechnicalDetails[];
   parentalWarningType?: ParentalWarningType;
 
-  // AI Generation (IngestionNotification 4.3)
+  // Autonomous Generation (IngestionNotification 4.3)
   aiGenerationInfo?: AIGenerationInfo;
 
   // For sound recordings

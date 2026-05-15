@@ -23,8 +23,8 @@ export default function MarketingAssetGeneratorUI() {
 
         try {
             if (generatorMode === 'reel') {
-                const { CampaignAI } = await import('@/services/marketing/CampaignAIService');
-                const url = await CampaignAI.generateMarketingVideo(prompt, style);
+                const { CampaignIntelligence } = await import('@/services/marketing/CampaignIntelligenceService');
+                const url = await CampaignIntelligence.generateMarketingVideo(prompt, style);
                 setVideoUrl(url);
             } else {
                 const { avatarGenerationService } = await import('@/services/video/AvatarGenerationService');
@@ -89,7 +89,7 @@ export default function MarketingAssetGeneratorUI() {
                                 onClick={() => setGeneratorMode('avatar')}
                                 className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
                             >
-                                AI Avatar Lip-Sync
+                                Autonomous Avatar Lip-Sync
                             </button>
                         </div>
                     </div>
@@ -194,7 +194,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <RefreshCw size={14} /> {error}
                                     </div>
                                 )}
-                                <p className="text-sm text-gray-400 mb-6">Describe what you want the AI video to look like.</p>
+                                <p className="text-sm text-gray-400 mb-6">Describe what you want the Autonomous video to look like.</p>
 
                                 <div className="space-y-6 flex-1">
                                     <div>

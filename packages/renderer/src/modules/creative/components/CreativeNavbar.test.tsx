@@ -34,7 +34,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Mock child components to simplify testing
-vi.mock('./PromptBuilder', () => ({
+vi.mock('./IntelligencePromptBuilder', () => ({
     default: ({ onAddTag }: { onAddTag: (tag: string) => void }) => (
         <div data-testid="prompt-builder">
             <button onClick={() => onAddTag('test tag')}>Add Tag</button>

@@ -124,7 +124,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
             {!generatedIdentity ? (
                 <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
                     <Wand2 size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Click generate to get AI-powered handle and bio ideas.</p>
+                    <p>Click generate to get Autonomous handle and bio ideas.</p>
                 </div>
             ) : (
                 <div className="space-y-6">

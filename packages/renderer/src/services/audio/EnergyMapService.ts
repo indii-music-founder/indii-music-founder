@@ -8,8 +8,8 @@
  * then uses Gemini to produce a time-stamped emotional arc with tension peaks,
  * release moments, and narrative phase labels.
  */
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -114,7 +114,7 @@ RULES:
 - If the track doesn't peak emotionally, say so via trajectoryShape = 'Plateau'.
 `;
 
-            const narrative = await GenAI.generateStructuredData<EmotionalNarrative>(
+            const narrative = await AutonomousGenAI.generateStructuredData<EmotionalNarrative>(
                 [
                     { text: prompt },
                     {
@@ -127,7 +127,7 @@ RULES:
                 ENERGY_MAP_SCHEMA,
                 4096,
                 'You are an expert in music emotion analysis and narrative arc mapping.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             Logger.info('EnergyMap', `Arc mapped: ${narrative.arc.length} beats, soul peak at index ${narrative.soulPeakIndex}, shape: ${narrative.trajectoryShape}`);

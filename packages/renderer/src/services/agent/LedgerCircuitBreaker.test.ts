@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
@@ -15,10 +15,10 @@ vi.mock('@/services/ai/GenAI', () => ({
     AI: {
         generateContent: vi.fn()
     },
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview' }
     },
-    AI_CONFIG: { THINKING: { LOW: {} } }
+    INTELLIGENCE_CONFIG: { THINKING: { LOW: {} } }
 }));
 
 // We need a stateful mock for MembershipService to test the loop interaction
@@ -112,13 +112,13 @@ describe('Ledger Circuit Breaker (Integration)', () => {
     it('💸 stops execution when "Fake High Usage" metadata triggers the budget limit', async () => {
         // SCENARIO:
         // 1. Agent starts. Budget Check (0) -> Allowed (Spend 0 <= 1.00).
-        // 2. Agent calls AI. AI returns "Fake High Usage" (Cost > $1.00).
+        // 2. Agent calls AI. Autonomous returns "Fake High Usage" (Cost > $1.00).
         // 3. Agent *should* call recordSpend. Total Spend becomes > $1.00.
         // 4. Loop continues to Iteration 2.
         // 5. Budget Check (0) -> Denied (Spend > 1.00).
         // 6. Agent halts.
 
-        // Setup AI Mock
+        // Setup Autonomous Mock
         const dummyToolCall = {
             name: 'dummy_tool',
             args: { purpose: 'spend money' }
@@ -171,7 +171,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
         // 3. Verify Agent halted
         expect(response.error).toContain('Loop detected');
 
-        // 4. Verify AI was only called once (because 2nd iteration was blocked)
+        // 4. Verify Autonomous was only called once (because 2nd iteration was blocked)
         expect(AI.generateContent).toHaveBeenCalledTimes(1);
 
         console.log(`💸 [Ledger] Test Verification:

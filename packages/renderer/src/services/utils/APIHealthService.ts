@@ -97,8 +97,8 @@ class APIHealthService {
     private async checkGeminiAPI() {
         const start = Date.now();
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const states = GenAI.getCircuitStates();
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const states = AutonomousGenAI.getCircuitStates();
 
             // If any critical circuit is open, status is unstable
             if (Object.values(states).some(s => s === 'open')) {

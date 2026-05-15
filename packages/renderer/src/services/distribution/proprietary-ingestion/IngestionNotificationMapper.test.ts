@@ -181,7 +181,7 @@ describe('IngestionNotificationMapper', () => {
         expect(deals.length).toBe(3);
     });
 
-    it('should map AI generation info correctly', () => {
+    it('should map Autonomous generation info correctly', () => {
         const aiMetadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             aiGeneratedContent: {
@@ -221,13 +221,13 @@ describe('IngestionNotificationMapper', () => {
 
     // 2026 Compliance Tests
 
-    it('should set AI disclosure type correctly for partially AI-assisted content', () => {
+    it('should set Autonomous disclosure type correctly for partially Autonomous-assisted content', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             aiGeneratedContent: {
                 isFullyAIGenerated: false,
                 isPartiallyAIGenerated: true,
-                aiToolsUsed: ['AI Mastering'],
+                aiToolsUsed: ['Autonomous Mastering'],
                 humanContribution: 'All composition and performance by artist'
             }
         };
@@ -256,7 +256,7 @@ describe('IngestionNotificationMapper', () => {
         expect(release!.aiGenerationInfo?.disclosureType).toBe('Human_Composed_AI_Produced');
     });
 
-    it('should classify as Human_Created when no AI involvement', () => {
+    it('should classify as Human_Created when no Autonomous involvement', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             aiGeneratedContent: {
@@ -300,7 +300,7 @@ describe('IngestionNotificationMapper', () => {
         expect(release!.rightsControllers).toBeUndefined();
     });
 
-    it('should flag Image resource as AI-generated when cover art is AI-made', () => {
+    it('should flag Image resource as Intelligence-generated when cover art is Autonomous-made', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             coverArtAIGenerated: true,

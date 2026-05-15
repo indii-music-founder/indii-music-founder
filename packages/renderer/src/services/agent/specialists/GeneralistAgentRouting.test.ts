@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -12,8 +12,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }
@@ -54,7 +54,7 @@ describe('GeneralistAgent Routing Logic', () => {
     });
 
     /**
-     * Helper to mock AI responses for routing tests
+     * Helper to mock Intelligence responses for routing tests
      */
     const mockDelegationResponse = (targetAgentId: string, task: string) => {
         let callCount = 0;
@@ -94,7 +94,7 @@ describe('GeneralistAgent Routing Logic', () => {
     };
 
     /**
-     * Helper to mock multiple turns of AI conversation
+     * Helper to mock multiple turns of Autonomous conversation
      */
     const mockMultiTurnResponse = (turns: Array<{ text?: string, functionCalls?: any[] }>) => {
         let callCount = 0;

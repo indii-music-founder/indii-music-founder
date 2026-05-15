@@ -25,11 +25,11 @@ const CATEGORIES: AssetCategory[] = ['logo', 'headshot', 'bodyshot', 'clothing',
  * Features:
  * - Tabbed UI for switching between Brand Assets and Style References
  * - Category picker on upload (logo, headshot, bodyshot, clothing, environment, other)
- * - Tag input for AI context (stored in BrandAsset.tags[])
+ * - Tag input for Autonomous context (stored in BrandAsset.tags[])
  * - Webcam capture, drag-drop, file upload
  * - Proper Firebase Storage cleanup on delete
  *
- * AI agents consume this data via brandKit.brandAssets and brandKit.referenceImages
+ * Autonomous agents consume this data via brandKit.brandAssets and brandKit.referenceImages
  */
 export default function UnifiedAssetLibrary({
     userId,
@@ -322,7 +322,7 @@ export default function UnifiedAssetLibrary({
                         <p className="text-[10px] text-gray-600 mt-1">
                             {activeCollection === 'brandAssets'
                                 ? 'Upload logos, headshots, and branded graphics'
-                                : 'Upload style guides and reference imagery for AI training'}
+                                : 'Upload style guides and reference imagery for Autonomous training'}
                         </p>
                     </div>
                 )}

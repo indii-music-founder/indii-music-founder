@@ -105,7 +105,7 @@ describe('WhiskDropZone', () => {
         render(<WhiskDropZone {...defaultProps} />);
         const editBtn = screen.getByRole('button', { name: 'Edit text' });
         fireEvent.click(editBtn);
-        expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { aiCaption: 'New Robot Caption' });
+        expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { intelligenceCaption: 'New Robot Caption' });
     });
 
     it('handles QuotaExceededError during file upload', async () => {

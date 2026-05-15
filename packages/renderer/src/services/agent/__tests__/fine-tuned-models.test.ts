@@ -66,7 +66,7 @@ describe('Fine-Tuned Model Registry', () => {
         }
     });
 
-    it('should have all endpoint strings in the correct Vertex AI format', async () => {
+    it('should have all endpoint strings in the correct Vertex Autonomous format', async () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'true');
         const { FINE_TUNED_MODEL_REGISTRY } = await import('../fine-tuned-models');
 

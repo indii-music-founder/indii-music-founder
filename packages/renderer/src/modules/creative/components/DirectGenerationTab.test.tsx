@@ -21,17 +21,17 @@ vi.mock('@/core/context/ToastContext', () => ({
 // The component dynamically imports DirectImageGenerator — mock it so the
 // dynamic import resolves to our spy.
 const mockGenerateImageDirectly = vi.fn();
-vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
+vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
     generateImageDirectly: (...args: any[]) => mockGenerateImageDirectly(...args)
 }));
 
-// Mock the AI_MODELS config that the component also imports dynamically.
-vi.mock('@/core/config/ai-models', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@/core/config/ai-models')>();
+// Mock the INTELLIGENCE_MODELS config that the component also imports dynamically.
+vi.mock('@/core/config/intelligence-models', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/core/config/intelligence-models')>();
     return {
         ...actual,
-        AI_MODELS: {
-            ...actual.AI_MODELS,
+        INTELLIGENCE_MODELS: {
+            ...actual.INTELLIGENCE_MODELS,
             IMAGE: {
                 DIRECT_PRO: 'gemini-3-pro-image-preview',
                 DIRECT_FAST: 'gemini-3-flash-preview'

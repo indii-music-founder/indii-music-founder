@@ -38,7 +38,7 @@ export interface WhiskItem {
     id: string;
     type: 'text' | 'image' | 'video';
     content: string; // user text or original image data/url
-    aiCaption?: string; // Generated caption for images
+    intelligenceCaption?: string; // Generated caption for images
     checked: boolean;
     category: WhiskCategory;
 }
@@ -168,7 +168,7 @@ export interface CreativeControlsSlice {
 
     // Whisk
     whiskState: WhiskState;
-    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
+    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, intelligenceCaption?: string, explicitId?: string) => void;
     updateWhiskItem: (category: WhiskCategory, id: string, updates: Partial<WhiskItem>) => void;
     removeWhiskItem: (category: WhiskCategory, id: string) => void;
     toggleWhiskItem: (category: WhiskCategory, id: string) => void;
@@ -332,12 +332,12 @@ export function buildCreativeControlsState(
             preciseReference: false,
             targetMedia: 'image' as TargetMedia
         },
-        addWhiskItem: (category, type, content, aiCaption, explicitId) => set((state) => {
+        addWhiskItem: (category, type, content, intelligenceCaption, explicitId) => set((state) => {
             const newItem: WhiskItem = {
                 id: explicitId || crypto.randomUUID(),
                 type,
                 content,
-                aiCaption,
+                intelligenceCaption,
                 checked: true,
                 category
             };

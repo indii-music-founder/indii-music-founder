@@ -9,10 +9,10 @@ import { logger } from '@/utils/logger';
 
 export interface AssetLibraryProps {
     onAddAsset: (url: string, name: string) => Promise<void>;
-    onGenerateAI?: () => void;
+    onGenerateAutonomous?: () => void;
 }
 
-export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAI }) => {
+export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAutonomous }) => {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders when unrelated store state changes
     const { generatedHistory, uploadedImages } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
@@ -145,16 +145,16 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                         {!isUploading && <Upload size={14} className="mr-2" />}
                         Upload
                     </Button>
-                    {onGenerateAI && (
+                    {onGenerateAutonomous && (
                         <Button
-                            onClick={onGenerateAI}
+                            onClick={onGenerateAutonomous}
                             variant="ghost"
                             size="sm"
-                            aria-label="Generate image with AI"
+                            aria-label="Generate image autonomously"
                             className="bg-[#FFE135]/10 hover:bg-[#FFE135]/20 border border-[#FFE135]/20 hover:border-[#FFE135]/50 text-[#FFE135] hover:text-[#FFE135] rounded-lg text-xs"
                         >
                             <Sparkles size={14} className="mr-2" />
-                            AI Generate
+                            Autonomous
                         </Button>
                     )}
                 </div>

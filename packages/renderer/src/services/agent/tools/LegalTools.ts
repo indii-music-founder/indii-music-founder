@@ -1,7 +1,7 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -36,9 +36,9 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
         const prompt = `Draft a ${args.type} between ${args.parties.join(' and ')}.
 Key Terms: ${args.terms}`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousGenAI.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT,
+            INTELLIGENCE_MODELS.TEXT.AGENT,
             undefined,
             systemPrompt
         );
@@ -219,7 +219,7 @@ Signature: ____________________________
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
-        store.setRegistrationAIMessage(
+        store.setRegistrationIntelligenceMessage(
             `Opening Library of Congress (eCO) copyright registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill everything I know from your catalog — you'll only need to confirm a couple of details.`
         );
 
@@ -227,7 +227,7 @@ Signature: ____________________________
             module: 'registration',
             orgId: 'loc',
             trackId: args.trackId ?? null,
-        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The AI co-pilot is pre-filling your catalog data now.`);
+        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The Autonomous co-pilot is pre-filling your catalog data now.`);
     }),
 
     start_pro_registration: wrapTool('start_pro_registration', async (args: {
@@ -242,7 +242,7 @@ Signature: ____________________________
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
-        store.setRegistrationAIMessage(
+        store.setRegistrationIntelligenceMessage(
             `Opening ${orgName} work registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill your contributor splits and metadata — just confirm your IPI number.`
         );
 

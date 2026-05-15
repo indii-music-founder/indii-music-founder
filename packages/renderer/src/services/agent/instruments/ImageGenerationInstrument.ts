@@ -18,14 +18,14 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_image',
     name: 'Generate Image',
-    description: 'Generate AI images using text prompts with support for various aspect ratios and styles',
+    description: 'Generate Intelligence images using text prompts with support for various aspect ratios and styles',
     category: 'generation',
     version: '1.0.0',
     author: 'indii Core Team',
@@ -44,8 +44,8 @@ export class ImageGenerationInstrument implements Instrument {
       rateLimitPerMinute: 10
     },
     computeType: 'cloud',
-    preferredModel: AI_MODELS.IMAGE.GENERATION,
-    fallbackModels: [AI_MODELS.IMAGE.FAST],
+    preferredModel: INTELLIGENCE_MODELS.IMAGE.GENERATION,
+    fallbackModels: [INTELLIGENCE_MODELS.IMAGE.FAST],
     tags: ['ai', 'image', 'generation', 'creative'],
     examples: [
       {

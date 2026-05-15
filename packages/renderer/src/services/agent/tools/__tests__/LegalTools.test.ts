@@ -1,25 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LegalTools } from '../LegalTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Mock response' } }),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn()
     }
 }));
@@ -30,7 +30,7 @@ describe('LegalTools', () => {
     });
 
     it('generate_nda returns generated NDA', async () => {
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     ndaTitle: "Non-Disclosure Agreement",
@@ -49,7 +49,7 @@ describe('LegalTools', () => {
     });
 
     it('draft_contract generates contract text', async () => {
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     contractTitle: "Service Agreement",

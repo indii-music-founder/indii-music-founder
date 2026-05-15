@@ -4,16 +4,16 @@ import { AGENT_CONFIGS } from '../agentConfig';
 import { BrandAgent } from '../definitions/BrandAgent';
 import { vi } from 'vitest';
 
-// Mock FirebaseAIService for verify_output (which is currently in BrandTools)
-vi.mock('@/services/ai/FirebaseAIService', () => {
+// Mock FirebaseIntelligenceService for verify_output (which is currently in BrandTools)
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -21,8 +21,8 @@ vi.mock('@/services/ai/FirebaseAIService', () => {
 });
 
 // Also mock AIService because BaseAgent uses it
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn().mockResolvedValue({
             text: () => JSON.stringify({
                 score: 8,

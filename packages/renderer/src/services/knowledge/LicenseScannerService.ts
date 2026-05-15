@@ -1,4 +1,4 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 
 export interface LicenseAnalysis {
@@ -12,7 +12,7 @@ export interface LicenseAnalysis {
 export class LicenseScannerService {
 
     /**
-     * Scans a URL for license terms using AI.
+     * Scans a URL for license terms using Intelligence.
      * 1. Fetches HTML content via Main process (bypass CORS).
      * 2. Sends content to Gemini for analysis.
      */
@@ -32,7 +32,7 @@ export class LicenseScannerService {
             // 2. Truncate content 
             const truncatedContent = result.text.substring(0, 15000);
 
-            // 3. AI Analysis
+            // 3. Autonomous Analysis
             const prompt = `
                 Analyze the following webpage content (likely a music sample pack or Terms of Service page).
                 Extract the license rights for using these audio samples in a commercial music release.
@@ -63,7 +63,7 @@ export class LicenseScannerService {
                 },
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
             } satisfies JSONSchemaObject;
-            const analysis = await GenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
+            const analysis = await AutonomousGenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
             return analysis;
 
         } catch (_error: unknown) {

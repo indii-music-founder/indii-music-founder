@@ -8,7 +8,7 @@
  *   • Status Dashboard — at-a-glance system status
  *   • Command Pad — quick-action module navigation
  *   • Agent Chat — simplified mobile chat with indii Conductor
- *   • Generation Monitor — real-time AI generation progress
+ *   • Generation Monitor — real-time Autonomous generation progress
  *   • Transport Bar — audio playback controls
  *   • Approval Queue — swipeable approve/reject cards
  *

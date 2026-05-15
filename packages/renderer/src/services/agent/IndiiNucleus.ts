@@ -2,8 +2,8 @@ import { livingFileService } from './living/LivingFileService';
 import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface NucleusContext {
   soul: string;
@@ -70,7 +70,7 @@ export class IndiiNucleus {
     `.trim();
     } catch (error: unknown) {
       logger.error('[IndiiNucleus] DNA Splicing Failed:', error);
-      return '<system_dna><directive>You are indii, an AI creative director. Operate in safe mode — personality data unavailable.</directive></system_dna>';
+      return '<system_dna><directive>You are indii, an Autonomous creative director. Operate in safe mode — personality data unavailable.</directive></system_dna>';
     }
   }
 
@@ -101,7 +101,7 @@ export class IndiiNucleus {
 
   /**
    * Execute a request through the native Gemini runtime with full indii DNA injected.
-   * All requests are handled by GenAI — no external sidecar required.
+   * All requests are handled by AutonomousGenAI — no external sidecar required.
    */
   async execute(
     userMessage: string,
@@ -146,9 +146,9 @@ export class IndiiNucleus {
       }
     }
 
-    const genResult = await GenAI.generateContent(
+    const genResult = await AutonomousGenAI.generateContent(
       [{ role: 'user', parts }],
-      AI_MODELS.TEXT.AGENT,
+      INTELLIGENCE_MODELS.TEXT.AGENT,
       { systemInstruction: systemPrompt }
     );
     const responseText = genResult.response.text();

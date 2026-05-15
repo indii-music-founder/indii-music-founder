@@ -5,7 +5,7 @@ import { MerchButton } from './components/MerchButton';
 import { DesignCanvas, useCanvasControls, CanvasObject } from './components/DesignCanvas';
 import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
-import { AIGenerationDialog } from './components/AIGenerationDialog';
+import { AutonomousGenerationDialog } from './components/AutonomousGenerationDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
@@ -72,7 +72,7 @@ export default function MerchDesigner() {
     const [exportedDesign, setExportedDesign] = useState<string | null>(null);
 
     // Dialog State
-    const [showAIDialog, setShowAIDialog] = useState(false);
+    const [showAutonomousDialog, setShowAutonomousDialog] = useState(false);
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
@@ -124,14 +124,14 @@ export default function MerchDesigner() {
         }
     }, [addImage, toast]);
 
-    // Handle AI generated image
-    const handleAIImageGenerated = useCallback(async (url: string, name: string) => {
+    // Handle autonomous generated image
+    const handleAutonomousImageGenerated = useCallback(async (url: string, name: string) => {
         try {
             await addImage(url, name);
-            toast.success('AI image added to canvas');
+            toast.success('Autonomous asset added to canvas');
         } catch (error: unknown) {
-            logger.error('Failed to add AI image:', error);
-            toast.error('Failed to add AI image');
+            logger.error('Failed to add autonomous image:', error);
+            toast.error('Failed to add autonomous image');
         }
     }, [addImage, toast]);
 
@@ -396,7 +396,7 @@ export default function MerchDesigner() {
         setWorkMode(newMode);
 
         if (newMode === 'agent') {
-            toast.success('Agent Mode: AI will help automate your workflow', 3000);
+            toast.success('Agent Mode: Autonomous systems will help automate your workflow', 3000);
         } else {
             toast.success('User Mode: You have full manual control', 3000);
         }
@@ -438,7 +438,7 @@ export default function MerchDesigner() {
                                         ? 'bg-purple-500/20 border-purple-500 text-purple-300'
                                         : 'bg-blue-500/20 border-blue-500 text-blue-300'
                                         }`}
-                                    title={workMode === 'agent' ? 'AI assists your workflow' : 'Full manual control'}
+                                    title={workMode === 'agent' ? 'Autonomous assistance' : 'Full manual control'}
                                 >
                                     {workMode === 'agent' ? (
                                         <>
@@ -453,7 +453,7 @@ export default function MerchDesigner() {
                                     )}
                                 </button>
                                 <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full mt-2 px-3 py-1.5 bg-black/90 text-white text-xs rounded-lg whitespace-nowrap opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 z-50`}>
-                                    {workMode === 'agent' ? 'AI automation enabled' : 'Manual control'}
+                                    {workMode === 'agent' ? 'Autonomous automation enabled' : 'Manual control'}
                                 </div>
                             </div>
 
@@ -593,15 +593,15 @@ export default function MerchDesigner() {
                                 />
                                 <ToolButton
                                     icon={<Sparkles size={18} />}
-                                    label="AI Gen"
-                                    onClick={() => setShowAIDialog(true)}
+                                    label="Autonomous"
+                                    onClick={() => setShowAutonomousDialog(true)}
                                 />
                             </div>
 
                             {/* Asset Library */}
                             <AssetLibrary
                                 onAddAsset={handleAddAsset}
-                                onGenerateAI={() => setShowAIDialog(true)}
+                                onGenerateAutonomous={() => setShowAutonomousDialog(true)}
                             />
                         </div>
 
@@ -645,11 +645,11 @@ export default function MerchDesigner() {
                             onUpdateProperty={handleUpdateProperty}
                         />
 
-                        {/* AI Generation Dialog */}
-                        <AIGenerationDialog
-                            isOpen={showAIDialog}
-                            onClose={() => setShowAIDialog(false)}
-                            onImageGenerated={handleAIImageGenerated}
+                        {/* Autonomous Generation Dialog */}
+                        <AutonomousGenerationDialog
+                            isOpen={showAutonomousDialog}
+                            onClose={() => setShowAutonomousDialog(false)}
+                            onImageGenerated={handleAutonomousImageGenerated}
                         />
 
                         {/* Template Picker Dialog */}

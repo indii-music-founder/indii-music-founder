@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * HELIX TEST SUITE: Gemini 3 Pro Integration
- * Verifies the evolutionary loop with a realistic AI mutation mock.
+ * Verifies the evolutionary loop with a realistic Autonomous mutation mock.
  */
 
 // Mock dependencies

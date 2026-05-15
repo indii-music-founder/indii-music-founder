@@ -1,11 +1,11 @@
 import { audioAnalysisService } from './AudioAnalysisService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { AudioIntelligenceProfile, AudioSemanticData } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
-import { neuralCortex } from '@/services/ai/NeuralCortexService';
+import { neuralCortex } from '@/services/intelligence/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 
@@ -79,7 +79,7 @@ export class AudioIntelligenceService {
     /**
      * Orchestrates full audio analysis:
      * 1. Technical (local WASM)
-     * 2. Semantic (Gemini 3 Pro - AI_MODELS.TEXT.AGENT)
+     * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
     async analyze(file: File): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
@@ -101,7 +101,7 @@ export class AudioIntelligenceService {
                     technical: cachedAnalysis.features,
                     semantic: cachedAnalysis.semantic,
                     analyzedAt: new Date(cachedAnalysis.analyzedAt).getTime(),
-                    modelVersion: AI_MODELS.TEXT.AGENT
+                    modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT
                 };
             }
 
@@ -121,7 +121,7 @@ export class AudioIntelligenceService {
                 technical,
                 semantic,
                 analyzedAt: Date.now(),
-                modelVersion: AI_MODELS.TEXT.AGENT
+                modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT
             };
 
             // 5. Save to Firestore/Music Library Cache
@@ -208,11 +208,11 @@ Technical Context (Do NOT override this with your assumptions):
    - 'productionValue.era': What era does the production most accurately evoke? (e.g., "Late 90s Boom Bap", "2010s Trap", "Modern Hyperpop", "70s Soul", "80s Synthwave").
    - 'productionValue.quality': Production tier (e.g., "Bedroom Producer", "Independent Pro Studio", "Major Label Mastered", "Lo-Fi Aesthetic — Intentional").
    - 'productionValue.mixBalance': Dominant frequency/element focus (e.g., "Bass-Forward", "Vocal-Forward", "Balanced", "Mid-Heavy", "High-End Shimmer").
-   - 'productionValue.aiArtifacts': true if you detect unnatural quantization, robotic phrasing, or clear signs of AI-generated audio. This is a GOAL 3 COMPLIANCE check.
+   - 'productionValue.aiArtifacts': true if you detect unnatural quantization, robotic phrasing, or clear signs of Intelligence-generated audio. This is a GOAL 3 COMPLIANCE check.
 
 3. Creative Direction (For Visual Agents):
    - 'visualImagery.abstract': Abstract visual for a motion visualizer.
-   - 'visualImagery.narrative': Scene description for stock footage or AI video generation.
+   - 'visualImagery.narrative': Scene description for stock footage or Intelligence video generation.
    - 'visualImagery.lighting': Specific lighting (e.g., "Red neon backlight through rain-soaked glass").
    - 'targetPrompts.image': A render-ready prompt for Gemini Image 3.1 that captures this song's visual soul.
    - 'targetPrompts.veo': A scene-ready prompt for Veo 3.1 with camera movement and atmosphere.
@@ -223,7 +223,7 @@ CRITICAL RULES:
 - 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
-        const response = await GenAI.generateStructuredData<AudioSemanticData>(
+        const response = await AutonomousGenAI.generateStructuredData<AudioSemanticData>(
             [
                 { text: systemPrompt },
                 {
@@ -236,7 +236,7 @@ CRITICAL RULES:
             SEMANTIC_SCHEMA,
             8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
             "You are an expert musicologist and audio analyst.",
-            AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
+            INTELLIGENCE_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
         );
         return response;
     }
