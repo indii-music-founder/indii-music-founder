@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Mock modules
-vi.mock('../ai/FirebaseIntelligenceService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage,

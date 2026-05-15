@@ -8,7 +8,7 @@
  * Extracted from FirebaseIntelligenceService.ts for cleaner separation.
  */
 
-import { GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import type { Content, Tool } from 'firebase/ai';
 import { env } from '@/config/env';
 import { AppErrorCode, AppException } from '@/shared/types/errors';

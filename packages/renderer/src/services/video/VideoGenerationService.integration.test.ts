@@ -4,7 +4,7 @@ import { VideoGenerationOptions } from '@/modules/video/schemas';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mock Dependencies
-vi.mock('../ai/FirebaseIntelligenceService', () => {
+vi.mock('../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

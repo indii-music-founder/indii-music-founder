@@ -6,7 +6,7 @@ import { onSnapshot } from 'firebase/firestore';
 // Mocks
 // -----------------------------------------------------------------------------
 
-vi.mock('../../ai/FirebaseIntelligenceService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

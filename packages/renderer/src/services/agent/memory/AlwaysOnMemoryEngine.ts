@@ -12,7 +12,7 @@ import {
     doc as firestoreDoc,
     getCountFromServer,
 } from 'firebase/firestore';
-import { FirebaseIntelligenceService as AIService } from '../../ai/FirebaseIntelligenceService';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
 import { cleanPrompt } from '@/utils/prompt';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';

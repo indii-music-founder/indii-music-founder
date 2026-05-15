@@ -19,7 +19,7 @@
  */
 
 import { AI_MODELS } from '@/core/config/intelligence-models';
-import { GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 

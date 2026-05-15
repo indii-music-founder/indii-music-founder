@@ -11,7 +11,7 @@
  * The Files API is simpler, more reliable, and actively maintained.
  */
 
-import { GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
 
