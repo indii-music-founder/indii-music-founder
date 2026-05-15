@@ -35,7 +35,7 @@ vi.mock('@/services/agent/tools/LegalTools', () => ({
 
 vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             FAST: 'fast-model',
             AGENT: 'agent-model',

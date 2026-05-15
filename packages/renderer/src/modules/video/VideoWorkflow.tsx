@@ -11,7 +11,7 @@ import { WhiskService } from '../../services/WhiskService';
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
-import { VideoPromptBuilder } from '../creative/components/veo/VideoPromptBuilder';
+import { IntelligencePromptInput } from '../creative/components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -643,7 +643,7 @@ export default function VideoWorkflow() {
                                     </button>
                                 </div>
                             )}
-                            <VideoPromptBuilder
+                            <IntelligencePromptInput
                                 mode="video"
                                 prompt={localPrompt}
                                 onChange={(val) => {
@@ -684,7 +684,7 @@ export default function VideoWorkflow() {
                                         </>
                                     )}
                                 </button>
-                            </VideoPromptBuilder>
+                            </IntelligencePromptInput>
                         </div>
                     </div>
                 </div>

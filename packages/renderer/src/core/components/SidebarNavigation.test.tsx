@@ -58,6 +58,16 @@ vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window"
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
 vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
+vi.mock('@/modules/finance/hooks/useSubscription', () => ({
+    useSubscription: vi.fn(() => ({
+        subscription: { tier: 'pro', status: 'active' },
+        loading: false,
+        error: null,
+        refresh: vi.fn(),
+        createCheckoutSession: vi.fn(),
+        getPortalUrl: vi.fn()
+    }))
+}));
 
 // Mock feature flags — useGatedModules returns empty Set (all modules visible) in tests
 vi.mock('@/config/featureFlags', () => ({

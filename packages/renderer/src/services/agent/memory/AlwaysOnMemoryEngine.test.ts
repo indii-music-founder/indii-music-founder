@@ -83,7 +83,7 @@ vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
 
 // Mock Autonomous models
 vi.mock('@/core/config/intelligence-models', () => ({
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3-flash-preview' },
         EMBEDDING: { DEFAULT: 'gemini-embedding-001' },
     },

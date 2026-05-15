@@ -1,5 +1,5 @@
 
-import { APPROVED_MODELS, MODEL_PRICING, AI_CONFIG, getModelKey } from '@/core/config/intelligence-models';
+import { APPROVED_MODELS, MODEL_PRICING, INTELLIGENCE_CONFIG, getModelKey } from '@/core/config/intelligence-models';
 import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
 import { RemoteIntelligenceConfigSchema } from '@/services/intelligence/config/RemoteIntelligenceConfig';
@@ -93,7 +93,7 @@ export class CostPredictor {
     /**
      * Predict cost for video generation (Veo 3.1)
      */
-    static predictVideoCost(durationSeconds: number = AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS, model = APPROVED_MODELS.VIDEO_GEN): CostEstimate {
+    static predictVideoCost(durationSeconds: number = INTELLIGENCE_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS, model = APPROVED_MODELS.VIDEO_GEN): CostEstimate {
         const pricing = this.getPricing(model);
         if (!pricing || pricing.perSecond === undefined) {
             return this.getUnknownEstimate(model);

@@ -1,4 +1,4 @@
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { functions } from '@/services/firebase';
@@ -59,7 +59,7 @@ export const FinanceTools = {
                     ]
                 }
             ],
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
 
         // Access the text from the response object
@@ -428,7 +428,7 @@ export const FinanceTools = {
         `;
 
         try {
-            const response = await AutonomousGenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const response = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const analysisText = response.response.text();
 
             return toolSuccess({

@@ -1,7 +1,7 @@
 
 import { AgentContext } from './types';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
 export type TaskComplexity = 'SIMPLE_GENERATION' | 'COMPLEX_ORCHESTRATION';
@@ -150,7 +150,7 @@ export class WorkflowCoordinator {
                     { role: 'model', parts: [{ text: systemPrompt }] },
                     { role: 'user', parts: [{ text: message }] }
                 ],
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
 
             const text = response.response.text() || "";

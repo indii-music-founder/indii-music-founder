@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions/v1";
 import { GoogleGenAI } from "@google/genai";
-import { FUNCTION_AI_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
     GenerateImageRequestSchema,
     EditImageRequestSchema,
@@ -120,12 +120,12 @@ export class GeminiImageService {
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {
             case "pro":
-                return FUNCTION_AI_MODELS.IMAGE.GENERATION;
+                return FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION;
             case "legacy":
-                return FUNCTION_AI_MODELS.IMAGE.LEGACY;
+                return FUNCTION_INTELLIGENCE_MODELS.IMAGE.LEGACY;
             case "fast":
             default:
-                return FUNCTION_AI_MODELS.IMAGE.FAST;
+                return FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST;
         }
     }
 
@@ -543,7 +543,7 @@ export class GeminiImageService {
         } else if (data.model) {
             modelId = data.model;
         } else {
-            modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION; // Default to Pro for editing
+            modelId = FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION; // Default to Pro for editing
         }
 
         console.log(`[GeminiImageService:edit] Model: ${modelId} | Prompt: "${data.prompt.substring(0, 50)}..."`);

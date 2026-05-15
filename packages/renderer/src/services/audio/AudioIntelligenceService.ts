@@ -3,7 +3,7 @@ import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { AudioIntelligenceProfile, AudioSemanticData } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { neuralCortex } from '@/services/intelligence/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
@@ -79,7 +79,7 @@ export class AudioIntelligenceService {
     /**
      * Orchestrates full audio analysis:
      * 1. Technical (local WASM)
-     * 2. Semantic (Gemini 3 Pro - AI_MODELS.TEXT.AGENT)
+     * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
     async analyze(file: File): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
@@ -101,7 +101,7 @@ export class AudioIntelligenceService {
                     technical: cachedAnalysis.features,
                     semantic: cachedAnalysis.semantic,
                     analyzedAt: new Date(cachedAnalysis.analyzedAt).getTime(),
-                    modelVersion: AI_MODELS.TEXT.AGENT
+                    modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT
                 };
             }
 
@@ -121,7 +121,7 @@ export class AudioIntelligenceService {
                 technical,
                 semantic,
                 analyzedAt: Date.now(),
-                modelVersion: AI_MODELS.TEXT.AGENT
+                modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT
             };
 
             // 5. Save to Firestore/Music Library Cache
@@ -236,7 +236,7 @@ CRITICAL RULES:
             SEMANTIC_SCHEMA,
             8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
             "You are an expert musicologist and audio analyst.",
-            AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
+            INTELLIGENCE_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
         );
         return response;
     }

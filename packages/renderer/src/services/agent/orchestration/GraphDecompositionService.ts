@@ -9,7 +9,7 @@ import {
     ValidAgentId
 } from '../types';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator
@@ -84,9 +84,9 @@ export class GraphDecompositionService {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT, // Use Agent for complex architecture
+                INTELLIGENCE_MODELS.TEXT.AGENT, // Use Agent for complex architecture
                 {
-                    ...AI_CONFIG.THINKING.HIGH,
+                    ...INTELLIGENCE_CONFIG.THINKING.HIGH,
                     responseMimeType: 'application/json'
                 }
             );

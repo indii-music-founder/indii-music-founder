@@ -3,7 +3,7 @@ import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -552,10 +552,10 @@ export class ImageGenerationService {
                         { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
                     responseMimeType: 'application/json',
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
 
@@ -686,9 +686,9 @@ export class ImageGenerationService {
                         { inlineData: { mimeType: image.mimeType || 'image/png', data: image.data } }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
             return response.response.text().trim();

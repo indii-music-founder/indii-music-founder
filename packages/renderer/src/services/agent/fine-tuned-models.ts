@@ -3,7 +3,7 @@
  *
  * Maps each agent ID to its domain-specific fine-tuned Vertex Autonomous endpoint.
  * When `VITE_USE_FINE_TUNED_AGENTS=true`, BaseAgent will prefer these
- * endpoints over the default `AI_MODELS.TEXT.AGENT` base model.
+ * endpoints over the default `INTELLIGENCE_MODELS.TEXT.AGENT` base model.
  *
  * HOW TO UPDATE:
  * 1. Run `python3 scripts/wire-r5-endpoints.py --write` after R5 jobs complete

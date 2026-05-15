@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions/v1";
 import { z } from "zod";
 import { getGeminiApiKey, geminiApiKey } from "../config/secrets";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { enforceRateLimit } from "./rateLimit";
 
 export const GenerateSpeechRequestSchema = z.object({
@@ -69,7 +69,7 @@ export const analyzeAudioFn = () => functions
 
         try {
             const apiKey = getGeminiApiKey();
-            const modelId = FUNCTION_AI_MODELS.AUDIO.ANALYSIS;
+            const modelId = FUNCTION_INTELLIGENCE_MODELS.AUDIO.ANALYSIS;
 
             console.log(`[analyzeAudio] Using model: ${modelId} for track: ${audioUrl}`);
 

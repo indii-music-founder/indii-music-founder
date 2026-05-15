@@ -1,5 +1,5 @@
 import { AutonomousGenAI as AI } from '../../services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema, SchemaType } from 'firebase/ai';
 import { logger } from '@/utils/logger';
 
@@ -22,7 +22,7 @@ export const SOCIAL_TOOLS = {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
             return res.response.text() || "Failed to generate copy.";
         } catch (_e: unknown) {

@@ -177,11 +177,11 @@ export function useDirectGeneration() {
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
         const { generateImageDirectly } = await importWithRetry(() => import('@/services/intelligence/generators/DirectImageGenerator'));
-        const { AI_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
+        const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
 
         const resolvedModel = studioControls.model === 'pro'
-            ? AI_MODELS.IMAGE.DIRECT_PRO
-            : AI_MODELS.IMAGE.DIRECT_FAST;
+            ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
+            : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
         const generatedUrls = await generateImageDirectly({
             prompt: finalPrompt,

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { z } from 'zod';
 
 import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
@@ -74,7 +74,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousGenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -102,7 +102,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousGenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -163,7 +163,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousGenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);

@@ -424,8 +424,8 @@ Return only valid JSON, no markdown fences.`;
 
         try {
             const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-            const { AI_MODELS } = await import('@/core/config/intelligence-models');
-            const raw = await AutonomousGenAI.generateText(prompt, AI_MODELS.TEXT.FAST);
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const raw = await AutonomousGenAI.generateText(prompt, INTELLIGENCE_MODELS.TEXT.FAST);
             // Strip any markdown wrapping
             const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
             const pitches: Array<{ outlet: string; subject: string; body: string; angle: string }> = JSON.parse(cleaned);

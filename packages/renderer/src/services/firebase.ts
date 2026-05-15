@@ -10,7 +10,7 @@ import { firebaseConfig, env } from '@/config/env';
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
 // The app will show the login screen with an auth error rather than crashing.
@@ -165,7 +165,7 @@ try {
     // Initialize Remote Config
     remoteConfig = getRemoteConfig(app);
     remoteConfig.defaultConfig = {
-        model_name: AI_MODELS.TEXT.FAST,
+        model_name: INTELLIGENCE_MODELS.TEXT.FAST,
         vertex_location: 'global'
     };
 } catch (e) {

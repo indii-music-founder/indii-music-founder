@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
         nodes: state.nodes,
@@ -40,7 +40,7 @@ export default function WorkflowNodeInspector() {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }],
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
             const newPrompt = (part && 'text' in part && typeof part.text === 'string') ? part.text : prompt;

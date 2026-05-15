@@ -1,5 +1,5 @@
 import { AutonomousGenAI } from '../intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart } from '@/shared/types/ai.dto';
@@ -231,7 +231,7 @@ export class EditingService {
         // Use rawGenerateContent with DIRECT image model (NOT text model)
         const response = await AutonomousGenAI.rawGenerateContent(
             [{ role: 'user', parts }],
-            AI_MODELS.IMAGE.DIRECT_PRO,
+            INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
             { responseModalities: ['IMAGE'] },
             undefined,
             undefined,
@@ -312,7 +312,7 @@ export class EditingService {
             // Use rawGenerateContent with DIRECT image model (NOT text model)
             const response = await AutonomousGenAI.rawGenerateContent(
                 [{ role: 'user', parts }],
-                AI_MODELS.IMAGE.DIRECT_PRO,
+                INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
                 { responseModalities: ['IMAGE'] },
                 undefined,
                 undefined,
@@ -346,8 +346,8 @@ export class EditingService {
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const modelId = options.model === 'pro'
-            ? AI_MODELS.IMAGE.DIRECT_PRO
-            : AI_MODELS.IMAGE.DIRECT_FAST;
+            ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
+            : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
         const parts: import('firebase/ai').Part[] = [
             { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },

@@ -12,7 +12,7 @@
  * A track that fails CANNOT proceed to distribution without human sign-off.
  */
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -186,7 +186,7 @@ CRITICAL RULES:
                 FORENSIC_SCHEMA,
                 8192, // Higher budget — forensic reasoning is complex
                 'You are a forensic audio engineer. Precision and honesty are your only directives.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             Logger.info(

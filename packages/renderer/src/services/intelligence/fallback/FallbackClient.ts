@@ -8,12 +8,12 @@
  * Extracted from FirebaseIntelligenceService.ts for cleaner separation.
  */
 
-import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { Content, Tool } from 'firebase/ai';
 import { env } from '@/config/env';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { STANDARD_SAFETY_SETTINGS } from '../config/safety-settings';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 /**
@@ -53,7 +53,7 @@ function resolveModelForFallback(modelName: string): string {
             `Falling back to base model. Endpoint: ${modelName}`
         );
         // Resolve recursively in case the base model itself needs mapping
-        return resolveModelForFallback(AI_MODELS.TEXT.AGENT);
+        return resolveModelForFallback(INTELLIGENCE_MODELS.TEXT.AGENT);
     }
 
     // Case 2: Preview model names that don't exist on the Developer API
@@ -92,7 +92,7 @@ import type { GenerateContentResult } from 'firebase/ai';
  * Tries multiple key locations to find an API key.
  * Returns the initialized client.
  */
-export async function initializeFallbackClient(): Promise<GoogleAutonomousGenAI> {
+export async function initializeFallbackClient(): Promise<GoogleGenAI> {
     // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
     // Explicitly check sources to log which one is used
     const keySources = {
@@ -118,7 +118,7 @@ export async function initializeFallbackClient(): Promise<GoogleAutonomousGenAI>
         );
     }
 
-    const client = new GoogleAutonomousGenAI({ apiKey });
+    const client = new GoogleGenAI({ apiKey });
     logger.info('[FirebaseIntelligenceService] Initialized with direct Gemini SDK (fallback mode)');
     return client;
 }
@@ -129,7 +129,7 @@ export async function initializeFallbackClient(): Promise<GoogleAutonomousGenAI>
  * Uses the new @google/genai SDK (GA).
  */
 export async function generateWithFallback(
-    fallbackClient: GoogleAutonomousGenAI,
+    fallbackClient: GoogleGenAI,
     prompt: string | Content[],
     modelName: string,
     config?: GenerationConfig,
@@ -211,7 +211,7 @@ export async function generateWithFallback(
  * Uses the new @google/genai SDK (GA).
  */
 export async function streamWithFallback(
-    fallbackClient: GoogleAutonomousGenAI,
+    fallbackClient: GoogleGenAI,
     prompt: string | Content[],
     modelName: string,
     config?: GenerationConfig,

@@ -11,8 +11,8 @@ vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
     },
-    AI_MODELS: { TEXT: { AGENT: 'mock-model' } },
-    AI_CONFIG: { THINKING: { LOW: {} } }
+    INTELLIGENCE_MODELS: { TEXT: { AGENT: 'mock-model' } },
+    INTELLIGENCE_CONFIG: { THINKING: { LOW: {} } }
 }));
 
 vi.mock('@/services/MembershipService', () => ({

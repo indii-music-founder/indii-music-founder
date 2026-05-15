@@ -12,7 +12,7 @@
  */
 
 import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
@@ -283,13 +283,13 @@ ALWAYS preserve what they're NOT changing.`;
     try {
         const response = await AI.generateContent(
             contents,
-            AI_MODELS.TEXT.AGENT,
+            INTELLIGENCE_MODELS.TEXT.AGENT,
             {
                 systemInstruction,
                 tools: [{
                     functionDeclarations: ALL_ONBOARDING_TOOL_DECLARATIONS,
                 }],
-                ...AI_CONFIG.THINKING.HIGH,
+                ...INTELLIGENCE_CONFIG.THINKING.HIGH,
             },
             undefined, // systemInstruction already in config (extracted by rawGenerateContent)
             undefined, // tools already in config (extracted by rawGenerateContent)
@@ -500,10 +500,10 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'cr
 
     const response = await AI.generateContent(
         [{ role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] }],
-        AI_MODELS.TEXT.AGENT,
+        INTELLIGENCE_MODELS.TEXT.AGENT,
         {
             systemInstruction: systemPrompt,
-            ...AI_CONFIG.THINKING.HIGH,
+            ...INTELLIGENCE_CONFIG.THINKING.HIGH,
         }
     );
     return response.response.text().trim() || "";

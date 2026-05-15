@@ -27,10 +27,10 @@ vi.mock('./GeminiRetrievalService', () => ({
 // Mock Autonomous models config
 vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' }
     },
-    AI_CONFIG: {
+    INTELLIGENCE_CONFIG: {
         THINKING: { LOW: { thinkingConfig: { thinkingLevel: 'LOW' } } }
     },
     APPROVED_MODELS: {
