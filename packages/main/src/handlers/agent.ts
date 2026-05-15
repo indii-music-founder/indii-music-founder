@@ -50,6 +50,36 @@ export function registerAgentHandlers() {
         }
     });
 
+    // Foundational Skills (Audit & Memory)
+    ipcMain.handle('agent:scan-directory', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const { foundationalSkillService } = await import('../services/FoundationalSkillService');
+            const result = await foundationalSkillService.scanDirectory();
+            return { success: true, data: result };
+        } catch (error) {
+            log.error('Agent Scan Directory Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string) => {
+        try {
+            validateSender(event);
+            // Basic path safety check
+            if (!filePath.includes('agents/') || filePath.includes('..')) {
+                throw new Error('Invalid file path for knowledge update');
+            }
+            
+            const { foundationalSkillService } = await import('../services/FoundationalSkillService');
+            const result = await foundationalSkillService.updateKnowledge(filePath, action, content);
+            return { success: true, ...result };
+        } catch (error) {
+            log.error('Agent Update Knowledge Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
     // Test Browser Agent (Development ONLY)
     if (!app.isPackaged) {
         ipcMain.handle('test:browser-agent', async (event: IpcMainInvokeEvent, query?: string) => {
