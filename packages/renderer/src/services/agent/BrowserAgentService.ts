@@ -18,7 +18,7 @@
  *          Web renderer (DOM-based) for dev/testing
  */
 
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
@@ -651,4 +651,4 @@ export const browserAgentService = new BrowserAgentService();
 
 // ─── Re-export model constant for reference ─────────────────────
 
-export { COMPUTER_USE_MODEL, AI_MODELS };
+export { COMPUTER_USE_MODEL, INTELLIGENCE_MODELS };

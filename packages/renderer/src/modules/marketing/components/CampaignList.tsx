@@ -60,7 +60,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                                 <Sparkles size={32} className="text-dept-marketing group-hover:text-white" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with AI</h3>
+                                <h3 className="text-sm font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with Intelligence</h3>
                                 <p className="text-xs text-gray-500 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
                             </div>
 
@@ -100,7 +100,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                         title="No active campaigns"
                         description="Create your first campaign to start reaching fans and tracking performance."
                         action={{ label: 'Create Campaign', onClick: onCreateNew }}
-                        secondaryAction={onAIGenerate ? { label: 'Generate with AI', onClick: onAIGenerate, variant: 'secondary' } : undefined}
+                        secondaryAction={onAIGenerate ? { label: 'Generate with Intelligence', onClick: onAIGenerate, variant: 'secondary' } : undefined}
                         compact
                     />
                 ) : campaigns.map(campaign => (

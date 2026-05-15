@@ -15,10 +15,10 @@ vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
     AI: {
         generateContent: vi.fn()
     },
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview' }
     },
-    AI_CONFIG: { THINKING: { LOW: {} } }
+    INTELLIGENCE_CONFIG: { THINKING: { LOW: {} } }
 }));
 
 // We need a stateful mock for MembershipService to test the loop interaction

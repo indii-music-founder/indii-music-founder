@@ -1,5 +1,5 @@
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface AgentAction {
     thought: string;
@@ -87,7 +87,7 @@ export class BrowserAgentDriver {
                             ]
                         }
                     ],
-                    AI_MODELS.BROWSER.AGENT,
+                    INTELLIGENCE_MODELS.BROWSER.AGENT,
                     {
                         responseMimeType: 'application/json',
                         temperature: 0.0 // Precise actions

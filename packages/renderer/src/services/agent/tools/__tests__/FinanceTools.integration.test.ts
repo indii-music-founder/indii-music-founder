@@ -40,7 +40,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 });
 
 vi.mock('@/core/config/intelligence-models', () => ({
-    AI_MODELS: { TEXT: { FAST: 'gemini-flash' } },
+    INTELLIGENCE_MODELS: { TEXT: { FAST: 'gemini-flash' } },
 }));
 
 // ── Import under test ─────────────────────────────────────────────────────────

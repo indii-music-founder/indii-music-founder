@@ -245,7 +245,7 @@ export class LicensingService {
     private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
         try {
             const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-            const { AI_MODELS } = await import('@/core/config/intelligence-models');
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const today = new Date();
             const deadlines = [7, 14, 21, 30, 45, 60, 90].map(d => {

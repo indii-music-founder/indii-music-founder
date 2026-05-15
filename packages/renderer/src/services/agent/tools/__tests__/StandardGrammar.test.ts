@@ -8,7 +8,7 @@ import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 // Mock Autonomous Models
 vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             AGENT: 'gemini-pro',
             FAST: 'gemini-flash'

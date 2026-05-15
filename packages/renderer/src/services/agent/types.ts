@@ -364,7 +364,7 @@ export interface AgentConfig {
     authorizedTools?: string[];
     /** Optional fine-tuned model endpoint. When set and the feature flag
      *  VITE_USE_FINE_TUNED_AGENTS is enabled, BaseAgent will use this model
-     *  instead of the default AI_MODELS.TEXT.AGENT. Format:
+     *  instead of the default INTELLIGENCE_MODELS.TEXT.AGENT. Format:
      *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
      */
     modelId?: string;

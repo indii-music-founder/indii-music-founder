@@ -30,7 +30,7 @@ export const APPROVED_MODELS = {
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
-export const AI_MODELS = {
+export const INTELLIGENCE_MODELS = {
     TEXT: {
         AGENT: APPROVED_MODELS.TEXT_AGENT,
         FAST: APPROVED_MODELS.TEXT_FAST,
@@ -66,7 +66,7 @@ export const AI_MODELS = {
 // Zod schema for runtime validation
 export const ModelIdSchema = z.enum(Object.values(APPROVED_MODELS) as [string, ...string[]]);
 
-export const AI_CONFIG = {
+export const INTELLIGENCE_CONFIG = {
     THINKING: {
         HIGH: {
             thinkingConfig: { thinkingLevel: "HIGH" }
@@ -155,7 +155,7 @@ export const MODEL_PRICING = {
  * Calculate video generation timeout based on duration
  */
 export function calculateVideoTimeout(durationSeconds: number): number {
-    const { MIN_TIMEOUT_MS, TIMEOUT_PER_SECOND_MS, MAX_TIMEOUT_MS } = AI_CONFIG.VIDEO;
+    const { MIN_TIMEOUT_MS, TIMEOUT_PER_SECOND_MS, MAX_TIMEOUT_MS } = INTELLIGENCE_CONFIG.VIDEO;
     const calculated = Math.max(MIN_TIMEOUT_MS, durationSeconds * TIMEOUT_PER_SECOND_MS);
     return Math.min(calculated, MAX_TIMEOUT_MS);
 }
@@ -205,12 +205,12 @@ function validateModels(): void {
 validateModels();
 
 // Export type helpers
-export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
-export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
-export type AudioModel = typeof AI_MODELS.AUDIO[keyof typeof AI_MODELS.AUDIO];
-export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
-export type LiteModel = typeof AI_MODELS.TEXT.LITE;
-export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];
+export type TextModel = typeof INTELLIGENCE_MODELS.TEXT[keyof typeof INTELLIGENCE_MODELS.TEXT];
+export type ImageModel = typeof INTELLIGENCE_MODELS.IMAGE[keyof typeof INTELLIGENCE_MODELS.IMAGE];
+export type AudioModel = typeof INTELLIGENCE_MODELS.AUDIO[keyof typeof INTELLIGENCE_MODELS.AUDIO];
+export type VideoModel = typeof INTELLIGENCE_MODELS.VIDEO[keyof typeof INTELLIGENCE_MODELS.VIDEO];
+export type LiteModel = typeof INTELLIGENCE_MODELS.TEXT.LITE;
+export type BrowserModel = typeof INTELLIGENCE_MODELS.BROWSER[keyof typeof INTELLIGENCE_MODELS.BROWSER];
 
 /**
  * Reverse lookup to find the configuration key for a given model ID.

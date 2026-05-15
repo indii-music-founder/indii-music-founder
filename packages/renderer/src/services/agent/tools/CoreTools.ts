@@ -125,7 +125,7 @@ export const CoreTools = {
         // Intelligence-driven negotiation simulation using Gemini
         try {
             const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-            const { AI_MODELS } = await import('@/core/config/intelligence-models');
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const prompt = `Simulate a 3-turn multi-agent negotiation in the music industry.
 Agent A (${args.initiatingAgentId}) initiates. Agent B (${args.targetAgentId}) responds.
@@ -148,7 +148,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as Parameters<typeof AutonomousGenAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as Parameters<typeof AutonomousGenAI.generateStructuredData>[1], undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST);
 
             return {
                 success: true,
@@ -280,7 +280,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
     verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
         const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-        const { AI_MODELS } = await import('@/core/config/intelligence-models');
+        const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
         const prompt = `Verify if the following content meets the goal.
         Goal: ${args.goal}
         Content: ${args.content}`;
@@ -298,7 +298,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     reason: { type: 'STRING' as const },
                 },
                 required: ['score', 'pass', 'reason'],
-            } as any, undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as any, undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST);
 
             return {
                 verification,

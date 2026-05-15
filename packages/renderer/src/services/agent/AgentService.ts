@@ -12,7 +12,7 @@ import { livingPlanService } from './LivingPlanService';
 // Workflow coordinator removed for indii Conductor standard routing
 import { maestroBatchingService } from './MaestroBatchingService';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
@@ -1039,7 +1039,7 @@ The user will see this plan and can approve it to start execution.`;
                 estimatedCost: 0.001, // ~$0.001 per request
                 userId: currentUser.uid,
                 metadata: {
-                    model: AI_MODELS.TEXT.FAST,
+                    model: INTELLIGENCE_MODELS.TEXT.FAST,
                     messageLength: text.length,
                     source: 'web',
                 },
@@ -1052,7 +1052,7 @@ The user will see this plan and can approve it to start execution.`;
 
             const { stream } = await AutonomousGenAI.generateContentStream(
                 contents,
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 undefined,
                 systemPrompt
             );

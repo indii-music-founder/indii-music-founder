@@ -21,7 +21,7 @@ vi.mock('../../registry', () => ({
 import { CoreTools } from '../CoreTools';
 import { useStore } from '@/core/store';
 import { agentRegistry } from '../../registry';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 
 const { mockAI } = vi.hoisted(() => ({

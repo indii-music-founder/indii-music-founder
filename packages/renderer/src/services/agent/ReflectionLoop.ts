@@ -16,13 +16,13 @@
  *
  * Design Decisions:
  * - Uses FirebaseIntelligenceService (not direct GoogleAutonomousGenAI) for consistency
- * - Uses AI_MODELS.TEXT.FAST for evaluation (structured judgment task)
+ * - Uses INTELLIGENCE_MODELS.TEXT.FAST for evaluation (structured judgment task)
  * - Temperature 0.2 for consistent scoring
  * - Evaluation failure is non-blocking (accepts output on error)
  * - Preserves backward compat: reflect() / runLoop() still work
  */
 
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
 import type { ReflectionResult, AgentContext } from '@/services/agent/types';
@@ -191,7 +191,7 @@ export class ReflectionLoop {
       const aiService = FirebaseIntelligenceService.getInstance();
       const genResult = await aiService.generateContent(
         evaluationPrompt,
-        AI_MODELS.TEXT.FAST,
+        INTELLIGENCE_MODELS.TEXT.FAST,
         {
           temperature: 0.2,
           maxOutputTokens: 200,

@@ -12,11 +12,11 @@
  * editing pipeline to avoid 401 errors in dev and provide lower latency.
  */
 
-import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { GoogleGenAI } from '@google/genai';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
-import { PromptBuilder } from '@/services/image/PromptBuilderService';
+import { IntelligenceImagePromptService } from '@/services/image/IntelligenceImagePromptService';
 import { logger } from '@/utils/logger';
 
 export interface DirectEditOptions {
@@ -61,19 +61,19 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Missing Gemini API Key for Direct Editing.');
     }
 
-    const client = new GoogleAutonomousGenAI({ apiKey });
+    const client = new GoogleGenAI({ apiKey });
 
     // Determine model
     const useHighFidelity = options.model === 'pro' || options.forceHighFidelity;
-    const modelId = useHighFidelity ? AI_MODELS.IMAGE.DIRECT_PRO : AI_MODELS.IMAGE.DIRECT_FAST;
+    const modelId = useHighFidelity ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
-    // Determine task label for PromptBuilder
+    // Determine task label for IntelligenceImagePromptService
     let taskLabel = "Object Modification via Visual Prompt";
     if (options.useSemanticMap) taskLabel = "Semantic Image Editing";
     else if (options.mask) taskLabel = "Targeted Image Inpainting";
 
     // Build structured prompt
-    const structuredPrompt = PromptBuilder.build({
+    const structuredPrompt = IntelligenceImagePromptService.build({
         userPrompt: InputSanitizer.sanitize(options.prompt),
         useDualView: !!options.mask,
         useSemanticMap: !!options.useSemanticMap,

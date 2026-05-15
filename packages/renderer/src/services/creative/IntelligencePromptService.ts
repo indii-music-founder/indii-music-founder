@@ -2,7 +2,7 @@ import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { logger } from '@/utils/logger';
 
 /**
- * PromptImproverService
+ * IntelligencePromptService
  *
  * Takes a user's rough, rambling prompt and rewrites it into a
  * production-quality image or video generation prompt.
@@ -14,7 +14,7 @@ import { logger } from '@/utils/logger';
  * Flow:
  *   1. User types a rough prompt → "me standing in a dark room looking cool"
  *   2. User clicks tags from the Builder to append descriptors.
- *   3. User clicks "✨ Improve Prompt" →
+ *   3. User clicks "✨ Improve with Intelligence" →
  *        Service takes (rawPrompt + brandKit) → Gemini rewrites it →
  *        Returns a rich, cinematographic prompt ready for generation.
  */
@@ -28,7 +28,7 @@ export interface ImprovedPromptResult {
     reasoning: string;
 }
 
-export class PromptImproverService {
+export class IntelligencePromptService {
     /**
      * Enhance a rough user prompt into a detailed, generation-ready prompt.
      * Uses Gemini 3 Flash for speed — this is a "rewrite" task, not heavy reasoning.
@@ -103,7 +103,7 @@ Return a JSON object with:
                 return { improved: rawPrompt, reasoning: 'No improvements could be generated.' };
             }
 
-            logger.info('[PromptImprover] Enhanced prompt successfully', {
+            logger.info('[IntelligencePrompt] Enhanced prompt successfully', {
                 originalLength: rawPrompt.length,
                 improvedLength: result.improved.length
             });
@@ -113,7 +113,7 @@ Return a JSON object with:
                 reasoning: result.reasoning || 'Enhanced with technical details and brand context.'
             };
         } catch (error: unknown) {
-            logger.error('[PromptImprover] Failed to improve prompt:', error);
+            logger.error('[IntelligencePrompt] Failed to improve prompt:', error);
             throw new Error('Failed to improve prompt. Please try again.');
         }
     }

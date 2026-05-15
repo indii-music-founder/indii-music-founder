@@ -1141,7 +1141,7 @@ export default function InfiniteCanvas() {
                             className="w-full px-3 py-2 text-sm text-white bg-purple-600 hover:bg-purple-700 rounded transition-colors flex items-center justify-center gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
-                            Adaptive Fill (AI)
+                            Adaptive Fill (Autonomous)
                         </button>
                     </div>
                     <div className="flex justify-end gap-2 mt-1">

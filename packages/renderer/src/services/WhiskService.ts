@@ -48,7 +48,7 @@ export class WhiskService {
 
         // 1. Subject Injection
         if (activeSubjects.length > 0) {
-            const subjectDescs = activeSubjects.map(s => s.aiCaption || s.content);
+            const subjectDescs = activeSubjects.map(s => s.intelligenceCaption || s.content);
             if (activeSubjects.length === 1) {
                 finalPrompt = `${subjectDescs[0]}, ${finalPrompt}`;
             } else {
@@ -58,13 +58,13 @@ export class WhiskService {
 
         // 2. Scene Injection
         if (activeScenes.length > 0) {
-            const sceneDescs = activeScenes.map(s => s.aiCaption || s.content);
+            const sceneDescs = activeScenes.map(s => s.intelligenceCaption || s.content);
             finalPrompt = `${finalPrompt} in a setting described as: ${sceneDescs.join(', ')}`;
         }
 
         // 3. Style Injection
         if (activeStyles.length > 0) {
-            const styleDescs = activeStyles.map(s => s.aiCaption || s.content);
+            const styleDescs = activeStyles.map(s => s.intelligenceCaption || s.content);
             const styleString = styleDescs.join(', ');
 
             if (activeScenes.length === 0) {
@@ -136,7 +136,7 @@ export class WhiskService {
         // Add motion context if available
         const activeMotion = whiskState.motion.filter(i => i.checked);
         if (activeMotion.length > 0) {
-            const motionDescs = activeMotion.map(m => m.aiCaption || m.content);
+            const motionDescs = activeMotion.map(m => m.intelligenceCaption || m.content);
             finalPrompt = `${finalPrompt}. Camera and motion: ${motionDescs.join(', ')}`;
         }
 
@@ -173,7 +173,7 @@ export class WhiskService {
         // Check motion category for intensity hints
         const activeMotion = whiskState.motion.filter(i => i.checked);
         for (const motion of activeMotion) {
-            const content = (motion.aiCaption || motion.content).toLowerCase();
+            const content = (motion.intelligenceCaption || motion.content).toLowerCase();
             if (content.includes('slow') || content.includes('calm') || content.includes('serene')) {
                 params.motionIntensity = 'low';
             } else if (content.includes('dynamic') || content.includes('energetic') || content.includes('fast')) {

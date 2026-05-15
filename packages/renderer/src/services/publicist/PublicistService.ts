@@ -13,7 +13,7 @@ import { Campaign, Contact } from '../../modules/publicist/types';
 import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
 import { logger } from '@/utils/logger';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
@@ -54,9 +54,9 @@ export class PublicistService {
 
         const response = await AutonomousGenAI.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
+            INTELLIGENCE_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
             {
-                ...AI_CONFIG.THINKING.HIGH,
+                ...INTELLIGENCE_CONFIG.THINKING.HIGH,
                 temperature: 1.0 // Creative task
             }
         );
