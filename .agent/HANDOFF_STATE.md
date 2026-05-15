@@ -5,6 +5,11 @@
 ## Recent Commits
 ```
 8d3bca854 chore: session checkpoint [18:45]
+**Updated:** 2026-05-15 18:43 EDT
+**Branch:** `chore/changelog-dedupe-v1.64.0`
+
+## Recent Commits
+```
 5e5203ae0 chore(agent-memory): add knowledge in prompt.md
 5dbdfb8cf chore: update storage target to match project indiios-v-1-1
 8bee89e6f Merge pull request #11 from indii-music/release-please--branches--main--components--indii.music
@@ -14,6 +19,7 @@ e7494eb2e chore: stabilize CI, fix @google/genai nomenclature, and resolve intel
 28ab68cd8 chore(branding): finalize repository-wide Intelligence branding and resolve SDK import regressions
 a7834183b chore: session checkpoint [21:45]
 5daa0e3e3 chore: synchronize repository state (428+ files) and align local with remote
+c6ab44e77 ci: use secrets for all variables and trigger final deployment
 ```
 
 ## Working State
@@ -24,6 +30,7 @@ a7834183b chore: session checkpoint [21:45]
  M packages/renderer/src/services/agent/WorkflowRegistry.ts
  M packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts
  M packages/renderer/src/services/analytics/EventBusService.ts
+ M CHANGELOG.md
 ```
 
 ## Decisions
