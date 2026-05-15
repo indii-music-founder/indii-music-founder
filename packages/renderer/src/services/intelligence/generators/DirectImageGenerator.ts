@@ -7,7 +7,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 
@@ -41,7 +41,7 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
     const client = new GoogleGenAI({ apiKey });
 
     // Determine model (default to Pro)
-    const modelId = options.model || AI_MODELS.IMAGE.DIRECT_PRO;
+    const modelId = options.model || INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO;
 
     logger.info('[DirectImageGenerator] Generating image directly with SDK:', {
         model: modelId,

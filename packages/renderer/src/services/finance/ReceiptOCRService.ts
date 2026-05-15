@@ -1,5 +1,5 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import type { Content } from 'firebase/ai';
 
@@ -63,7 +63,7 @@ export class ReceiptOCRService {
 
             const result = await this.aiService.rawGenerateContent(
                 contents,
-                AI_MODELS.TEXT.AGENT, // Corrected from .PRO
+                INTELLIGENCE_MODELS.TEXT.AGENT, // Corrected from .PRO
                 {
                     responseMimeType: 'application/json'
                 }

@@ -1,5 +1,5 @@
 import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
@@ -483,7 +483,7 @@ export class MemoryIngestionPipeline {
                         },
                     ],
                 }] as Content[],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { temperature: 0.3 } as GenerationConfig,
             );
 

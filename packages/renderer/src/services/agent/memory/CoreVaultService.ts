@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================
 // TYPES
@@ -333,7 +333,7 @@ Be specific and actionable. This summary is used by Autonomous agents to quickly
         try {
             const result = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
             summary = result.response.text() || '';
         } catch (error: unknown) {

@@ -1,5 +1,5 @@
 import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
@@ -68,15 +68,15 @@ export class VideoService {
                         ]
                     }
                 ],
-                AI_MODELS.TEXT.AGENT,
-                { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
+                INTELLIGENCE_MODELS.TEXT.AGENT,
+                { responseMimeType: 'application/json', ...INTELLIGENCE_CONFIG.THINKING.HIGH }
             );
             const plan = AI.parseJSON(analysisRes.response.text());
 
             // Step 2: Generate Video (with retry for rate limiting)
             const videoPrompt = typeof plan.video_prompt === 'string' ? plan.video_prompt : "Animate";
             const uri = await this.withRetry(() => AI.generateVideo({
-                model: AI_MODELS.VIDEO.GENERATION,
+                model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
                 prompt: videoPrompt,
                 image: { imageBytes: image.data, mimeType: image.mimeType },
                 config: { aspectRatio: '16:9', durationSeconds: 4 }
@@ -120,7 +120,7 @@ export class VideoService {
         }
 
         try {
-            const model = AI_MODELS.VIDEO.GENERATION;
+            const model = INTELLIGENCE_MODELS.VIDEO.GENERATION;
 
             // Build reference images (up to 3 per Veo 3.1 limit)
             // Official API only supports referenceType: 'asset' (lowercase, no 'style' mode)
@@ -183,7 +183,7 @@ export class VideoService {
         try {
             // FIX #8: Wrap with retry logic
             const uri = await this.withRetry(() => AI.generateVideo({
-                model: AI_MODELS.VIDEO.GENERATION,
+                model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
                 prompt: prompt || "Transition",
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
                 config: {

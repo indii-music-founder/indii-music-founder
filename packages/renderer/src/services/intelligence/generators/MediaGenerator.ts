@@ -12,7 +12,7 @@
  */
 
 import type { GoogleGenAI } from '@google/genai';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import type { GenerateVideoRequest } from '@/shared/types/ai.dto';
 import { logger } from '@/utils/logger';
@@ -37,7 +37,7 @@ const RESOLUTION_MAP: Record<string, string> = {
  * from the @google/genai SDK, then polling the returned operation until done.
  * Matches the pattern used by image generation (direct SDK call, no backend proxy).
  *
- * @param client - The initialized GoogleGenAI client
+ * @param client - The initialized GoogleAutonomousGenAI client
  * @param options - Video generation request + optional timeout override
  * @returns A blob URL or raw URI pointing at the generated video
  */
@@ -45,25 +45,25 @@ export async function generateVideo(
     client: GoogleGenAI,
     options: GenerateVideoRequest & { timeoutMs?: number }
 ): Promise<string> {
-    const { calculateVideoTimeout, AI_CONFIG } = await import('@/core/config/intelligence-models');
+    const { calculateVideoTimeout, INTELLIGENCE_CONFIG } = await import('@/core/config/intelligence-models');
     
     /**
      * Video model alias map — resolves abbreviated UI names to full model IDs.
      */
     const VIDEO_MODEL_ALIASES: Record<string, string> = {
-        'pro': AI_MODELS.VIDEO.PRO,
-        'fast': AI_MODELS.VIDEO.FAST,
-        'lite': AI_MODELS.VIDEO.LITE,
-        'edit': AI_MODELS.VIDEO.EDIT,
-        'generation': AI_MODELS.VIDEO.GENERATION,
+        'pro': INTELLIGENCE_MODELS.VIDEO.PRO,
+        'fast': INTELLIGENCE_MODELS.VIDEO.FAST,
+        'lite': INTELLIGENCE_MODELS.VIDEO.LITE,
+        'edit': INTELLIGENCE_MODELS.VIDEO.EDIT,
+        'generation': INTELLIGENCE_MODELS.VIDEO.GENERATION,
     };
 
-    const durationSeconds = options.config?.durationSeconds || AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
+    const durationSeconds = options.config?.durationSeconds || INTELLIGENCE_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
     const timeoutMs = options.timeoutMs || calculateVideoTimeout(durationSeconds);
 
     // Determine model — resolve abbreviated UI names to full model IDs
     const rawModel = options.model || '';
-    const modelId = VIDEO_MODEL_ALIASES[rawModel.toLowerCase()] || rawModel || AI_MODELS.VIDEO.PRO;
+    const modelId = VIDEO_MODEL_ALIASES[rawModel.toLowerCase()] || rawModel || INTELLIGENCE_MODELS.VIDEO.PRO;
 
     // Clamp duration to API-valid range [5, 8] as integer
     const clampedDuration = Math.min(8, Math.max(5, Math.round(durationSeconds)));

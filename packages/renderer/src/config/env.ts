@@ -83,6 +83,8 @@ const processEnv = {
     location: import.meta.env.VITE_VERTEX_LOCATION || getProcessEnv('VITE_VERTEX_LOCATION') || "us-central1",
     useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || getProcessEnv('VITE_USE_VERTEX')),
     googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
+    VITE_GOOGLE_MAPS_API_KEY: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
+    VITE_ENABLE_GOOGLE_MAPS: import.meta.env.VITE_ENABLE_GOOGLE_MAPS || getProcessEnv('VITE_ENABLE_GOOGLE_MAPS'),
     enableGoogleMaps: (() => {
         const raw = import.meta.env.VITE_ENABLE_GOOGLE_MAPS || getProcessEnv('VITE_ENABLE_GOOGLE_MAPS');
         return raw === undefined ? true : toBoolean(raw);
@@ -146,13 +148,21 @@ if (!parsed.success && !isTest) {
 
 const runtimeEnv = parsed.success ? parsed.data : (processEnv as z.infer<typeof FrontendEnvSchema>);
 
+// Item 326: Log env in dev mode
+if (import.meta.env.DEV) {
+    console.log('[indii.music][Env] Initialized:', {
+        hasMapsKey: !!runtimeEnv.googleMapsApiKey,
+        mapsEnabled: runtimeEnv.enableGoogleMaps,
+    });
+}
+
 export const env = {
     ...runtimeEnv,
     VITE_API_KEY: runtimeEnv.apiKey,
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
-    VITE_GOOGLE_MAPS_API_KEY: runtimeEnv.googleMapsApiKey, // Explicit mapping
+    VITE_GOOGLE_MAPS_API_KEY: runtimeEnv.googleMapsApiKey || runtimeEnv.VITE_GOOGLE_MAPS_API_KEY,
     enableGoogleMaps: runtimeEnv.enableGoogleMaps,
     appCheckKey: processEnv.appCheckKey,
     appCheckDebugToken: processEnv.appCheckDebugToken,

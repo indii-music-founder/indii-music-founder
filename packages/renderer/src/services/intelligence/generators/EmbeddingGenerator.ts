@@ -12,7 +12,7 @@ import { getFirebaseAI } from '@/services/firebase';
 import { auth } from '@/services/firebase';
 import type { IntelligenceContext } from '../IntelligenceContext';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_CONFIG, APPROVED_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { isAppCheckError } from '../appcheck';
 import { TokenUsageService } from '../billing/TokenUsageService';
 import { logger } from '@/utils/logger';
@@ -36,7 +36,7 @@ export async function embedContent(
                 const result = await ctx.fallbackClient.models.embedContent({
                     model: options.model,
                     contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
+                    config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
                 });
                 const embedResult = result as unknown as AutonomousGenAIEmbedResult;
                 return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
@@ -120,7 +120,7 @@ export async function batchEmbedContents(
                 const result = await ctx.fallbackClient!.models.embedContent({
                     model: modelName,
                     contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
+                    config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
                 });
                 const embedResult = result as unknown as AutonomousGenAIEmbedResult;
                 return embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [];

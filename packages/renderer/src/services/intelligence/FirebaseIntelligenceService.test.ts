@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // HOISTED MOCKS
 const {
@@ -296,7 +296,7 @@ describe('FirebaseIntelligenceService', () => {
         await service.getLiveModel('System instruction');
 
         expect(getLiveGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: AI_MODELS.TEXT.AGENT,
+            model: INTELLIGENCE_MODELS.TEXT.AGENT,
             systemInstruction: 'System instruction'
         }));
     });

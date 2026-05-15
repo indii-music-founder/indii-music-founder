@@ -9,10 +9,10 @@ export interface PromptOptions {
 }
 
 /**
- * PromptBuilder - Enforces the "Task-Inputs-Instruction" structure
+ * IntelligenceImagePromptService - Enforces the "Task-Inputs-Instruction" structure
  * for Gemini 3 ("Nano Banana") series multimodal editing.
  */
-export class PromptBuilder {
+export class IntelligenceImagePromptService {
     private static DEFAULT_CONSTRAINTS = [
         "Maintain consistent lighting, shadows, and texture from the source image",
         "Ensure seamless blending and edge refinement"

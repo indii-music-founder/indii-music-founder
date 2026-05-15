@@ -25,13 +25,13 @@ vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
     generateImageDirectly: (...args: any[]) => mockGenerateImageDirectly(...args)
 }));
 
-// Mock the AI_MODELS config that the component also imports dynamically.
+// Mock the INTELLIGENCE_MODELS config that the component also imports dynamically.
 vi.mock('@/core/config/intelligence-models', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/core/config/intelligence-models')>();
     return {
         ...actual,
-        AI_MODELS: {
-            ...actual.AI_MODELS,
+        INTELLIGENCE_MODELS: {
+            ...actual.INTELLIGENCE_MODELS,
             IMAGE: {
                 DIRECT_PRO: 'gemini-3-pro-image-preview',
                 DIRECT_FAST: 'gemini-3-flash-preview'

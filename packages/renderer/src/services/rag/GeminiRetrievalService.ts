@@ -5,7 +5,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 
 // Switch to File API resource types
-import { AI_MODELS } from '../../core/config/intelligence-models.ts';
+import { INTELLIGENCE_MODELS } from '../../core/config/intelligence-models.ts';
 import { delay } from '@/utils/async';
 import { logger } from '@/utils/logger';
 
@@ -312,7 +312,7 @@ export class GeminiRetrievalService {
      */
     async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string) {
         let tools: Record<string, unknown>[] | undefined;
-        const targetModel = model || AI_MODELS.TEXT.AGENT;
+        const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
@@ -381,7 +381,7 @@ export class GeminiRetrievalService {
      */
     async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string): AsyncGenerator<string> {
         let tools: Record<string, unknown>[] | undefined;
-        const targetModel = model || AI_MODELS.TEXT.AGENT;
+        const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {

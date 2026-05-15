@@ -10,12 +10,12 @@ import {
     Tool,
     SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
-import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
-import { AI_MODELS, getModelKey } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
 import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
 import {
     FunctionCallPart,
@@ -83,7 +83,7 @@ import type {
 export type { ChatMessage } from './types';
 
 // Default model if remote config fails
-const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
+const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
 
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
@@ -91,7 +91,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     public defaultConfig: GenerationConfig = {};
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
-    public fallbackClient: GoogleAutonomousGenAI | null = null;
+    public fallbackClient: GoogleGenAI | null = null;
     public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
@@ -921,7 +921,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         }
 
         return getLiveGenerativeModel(firebaseAI, {
-            model: AI_MODELS.TEXT.AGENT,
+            model: INTELLIGENCE_MODELS.TEXT.AGENT,
             systemInstruction
         });
     }

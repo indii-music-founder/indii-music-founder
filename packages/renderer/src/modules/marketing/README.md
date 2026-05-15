@@ -1,10 +1,10 @@
 # Marketing & Campaigns Module (RC1)
 
-The Marketing module is the growth engine of indii. It automates the complex task of promoting creative work, ensuring that every release reaches its maximum potential through AI-driven asset creation and campaign strategy.
+The Marketing module is the growth engine of indii. It automates the complex task of promoting creative work, ensuring that every release reaches its maximum potential through Intelligence-driven asset creation and campaign strategy.
 
 ## 🚀 Key Features
 - **Campaign Architect:** Plan multi-week release cycles including teaser phases, launch day, and post-release support.
-- **AI Copywriter:** Generates platform-specific captions, bios, and press releases that maintain brand voice.
+- **Autonomous Copywriter:** Generates platform-specific captions, bios, and press releases that maintain brand voice.
 - **Brand Kit Management:** Centralized storage for logos, color palettes, and fonts to ensure visual consistency across all assets.
 - **Asset Optimizer:** Automatically resizes and formats creative assets for TikTok, Instagram, YouTube, and X.
 - **EPK Builder:** Generate professional Electronic Press Kits from release metadata and creative studio assets.

@@ -18,7 +18,7 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
@@ -44,8 +44,8 @@ export class ImageGenerationInstrument implements Instrument {
       rateLimitPerMinute: 10
     },
     computeType: 'cloud',
-    preferredModel: AI_MODELS.IMAGE.GENERATION,
-    fallbackModels: [AI_MODELS.IMAGE.FAST],
+    preferredModel: INTELLIGENCE_MODELS.IMAGE.GENERATION,
+    fallbackModels: [INTELLIGENCE_MODELS.IMAGE.FAST],
     tags: ['ai', 'image', 'generation', 'creative'],
     examples: [
       {

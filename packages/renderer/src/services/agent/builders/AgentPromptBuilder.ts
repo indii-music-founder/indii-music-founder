@@ -303,13 +303,13 @@ ${safeTask}
         lines.push('The following items are "Locked" in the Reference Mixer. They represent the current visual direction:');
 
         if (checkedSubjects.length > 0) {
-            lines.push('- SUBJECTS: ' + checkedSubjects.map(s => s.aiCaption || s.content).join(', '));
+            lines.push('- SUBJECTS: ' + checkedSubjects.map(s => s.intelligenceCaption || s.content).join(', '));
         }
         if (checkedScenes.length > 0) {
-            lines.push('- SCENES: ' + checkedScenes.map(s => s.aiCaption || s.content).join(', '));
+            lines.push('- SCENES: ' + checkedScenes.map(s => s.intelligenceCaption || s.content).join(', '));
         }
         if (checkedStyles.length > 0) {
-            lines.push('- STYLES: ' + checkedStyles.map(s => s.aiCaption || s.content).join(', '));
+            lines.push('- STYLES: ' + checkedStyles.map(s => s.intelligenceCaption || s.content).join(', '));
         }
 
         lines.push('IMPORTANT: When generating images or videos, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');

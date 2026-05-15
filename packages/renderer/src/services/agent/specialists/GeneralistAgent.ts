@@ -4,7 +4,7 @@ import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
@@ -650,9 +650,9 @@ CURRENT REQUEST: ${task}
                             }))
                         ]
                     }],
-                    AI_MODELS.TEXT.AGENT,
+                    INTELLIGENCE_MODELS.TEXT.AGENT,
                     {
-                        ...AI_CONFIG.THINKING.HIGH
+                        ...INTELLIGENCE_CONFIG.THINKING.HIGH
                     },
                     undefined,
                     iterationTools as Parameters<typeof AI.generateContentStream>[4],

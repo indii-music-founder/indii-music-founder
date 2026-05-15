@@ -46,7 +46,7 @@ vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
 }));
 
 vi.mock('@/core/config/intelligence-models', () => ({
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3.1-pro-preview' },
     },
 }));

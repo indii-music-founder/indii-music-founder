@@ -191,7 +191,7 @@ const CampaignDashboard: React.FC = () => {
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <PerformanceSnapshotPanel campaigns={campaigns} />
                     <AssetLibraryPanel />
-                    <AISuggestionsPanel />
+                    <IntelligenceSuggestionsPanel />
                 </aside>
 
                 {isCreateModalOpen && (
@@ -283,7 +283,7 @@ function AssetLibraryPanel() {
     );
 }
 
-function AISuggestionsPanel() {
+function IntelligenceSuggestionsPanel() {
     return (
         <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
             <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">

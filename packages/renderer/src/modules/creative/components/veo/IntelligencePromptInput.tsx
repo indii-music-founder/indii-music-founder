@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Video, Image as ImageIcon, Sparkles, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
-import { PromptImproverService } from '@/services/creative/PromptImproverService';
+import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
@@ -102,7 +102,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
 });
 CategoryDropdown.displayName = 'CategoryDropdown';
 
-interface VideoPromptBuilderProps {
+interface IntelligencePromptInputProps {
     prompt: string;
     onChange: (val: string) => void;
     onGenerate: () => void;
@@ -112,7 +112,7 @@ interface VideoPromptBuilderProps {
     showBuilder?: boolean;
 }
 
-export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mode = 'video', children, showBuilder = false }: VideoPromptBuilderProps) {
+export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled, mode = 'video', children, showBuilder = false }: IntelligencePromptInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const toast = useToast();
     const [isImproving, setIsImproving] = useState(false);
@@ -174,7 +174,7 @@ export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mod
 
         setIsImproving(true);
         try {
-            const result = await PromptImproverService.improve({
+            const result = await IntelligencePromptService.improve({
                 rawPrompt: prompt,
                 mode: mode
             });
@@ -271,7 +271,7 @@ export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mod
                         <button
                             onClick={handleImprove}
                             disabled={isImproving || !prompt.trim() || disabled}
-                            title="Improve with AI"
+                            title="Improve with Intelligence"
                             className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {isImproving ? (

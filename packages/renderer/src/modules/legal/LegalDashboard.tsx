@@ -5,7 +5,7 @@ import { MyContracts } from './components/MyContracts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { LegalService } from '@/services/legal/LegalService';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
@@ -103,7 +103,7 @@ Only return valid JSON.
 
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: `Contract Content:\n${content}` }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { responseMimeType: 'application/json' },
                 systemPrompt
             );

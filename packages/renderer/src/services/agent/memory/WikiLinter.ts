@@ -1,5 +1,5 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { WikiDocument } from './WikiStorageAdapter';
 
@@ -52,7 +52,7 @@ Analyze the changes. Output a JSON object exactly matching this schema:
 
             const responseText = await FirebaseIntelligenceService.getInstance().generateText(
                 prompt,
-                AI_MODELS.TEXT.FAST // gemini-3-flash-preview is perfect for fast JSON QA
+                INTELLIGENCE_MODELS.TEXT.FAST // gemini-3-flash-preview is perfect for fast JSON QA
             );
 
             // Clean json response

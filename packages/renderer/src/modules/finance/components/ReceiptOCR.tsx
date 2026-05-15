@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, Store, AlertTriangle } from 'lucide-react';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 /* ================================================================== */

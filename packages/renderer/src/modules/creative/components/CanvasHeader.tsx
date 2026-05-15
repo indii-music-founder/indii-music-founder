@@ -77,7 +77,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onClick={handleMagicFill}
                         data-testid="magic-generate-btn"
                         disabled={isProcessing}
-                        title={!isAuthenticated ? 'Sign in to use Magic Edit' : 'Refine image with AI'}
+                        title={!isAuthenticated ? 'Sign in to use Magic Edit' : 'Refine image with Intelligence'}
                         className={`px-4 py-1.5 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
                             isAuthenticated
                                 ? 'bg-dept-creative hover:bg-dept-creative/80 border-white/20 shadow-dept-creative/30'

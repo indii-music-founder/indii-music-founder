@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
 import type { Part, Schema } from 'firebase/ai';
 
@@ -70,7 +70,7 @@ export class ImageAnalysisService {
                 schema,
                 undefined,
                 undefined,
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
             
             logger.info(`Detected ${results?.length || 0} objects.`);
@@ -119,7 +119,7 @@ Return ONLY valid JSON containing a single field "maskBase64" which is a base64-
                 schema,
                 { thinkingBudget: 0, includeThoughts: false }, // config with thinking budget
                 undefined, // system instructions
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
 
             if (!result || !result.maskBase64) {

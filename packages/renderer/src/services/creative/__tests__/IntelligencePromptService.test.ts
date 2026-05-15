@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PromptImproverService, ImprovedPromptResult } from '../PromptImproverService';
+import { IntelligencePromptService, ImprovedPromptResult } from '../IntelligencePromptService';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mock AutonomousGenAI
@@ -45,20 +45,20 @@ vi.mock('@/utils/logger', () => ({
     }
 }));
 
-describe('PromptImproverService', () => {
+describe('IntelligencePromptService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('should throw if prompt is empty', async () => {
         await expect(
-            PromptImproverService.improve({ rawPrompt: '', mode: 'image' })
+            IntelligencePromptService.improve({ rawPrompt: '', mode: 'image' })
         ).rejects.toThrow('Cannot improve an empty prompt.');
     });
 
     it('should throw if prompt is only whitespace', async () => {
         await expect(
-            PromptImproverService.improve({ rawPrompt: '   ', mode: 'image' })
+            IntelligencePromptService.improve({ rawPrompt: '   ', mode: 'image' })
         ).rejects.toThrow('Cannot improve an empty prompt.');
     });
 
@@ -70,7 +70,7 @@ describe('PromptImproverService', () => {
 
         (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
-        const result = await PromptImproverService.improve({
+        const result = await IntelligencePromptService.improve({
             rawPrompt: 'rapper on dark stage',
             mode: 'image'
         });
@@ -95,7 +95,7 @@ describe('PromptImproverService', () => {
 
         (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
-        const result = await PromptImproverService.improve({
+        const result = await IntelligencePromptService.improve({
             rawPrompt: 'rapper on dark stage',
             mode: 'video'
         });
@@ -116,7 +116,7 @@ describe('PromptImproverService', () => {
 
         (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
-        await PromptImproverService.improve({
+        await IntelligencePromptService.improve({
             rawPrompt: 'portrait of me',
             mode: 'image'
         });
@@ -139,7 +139,7 @@ describe('PromptImproverService', () => {
             reasoning: 'Could not improve'
         });
 
-        const result = await PromptImproverService.improve({
+        const result = await IntelligencePromptService.improve({
             rawPrompt: 'my original prompt',
             mode: 'image'
         });
@@ -154,7 +154,7 @@ describe('PromptImproverService', () => {
             reasoning: ''
         });
 
-        const result = await PromptImproverService.improve({
+        const result = await IntelligencePromptService.improve({
             rawPrompt: 'raw prompt',
             mode: 'image'
         });
@@ -169,7 +169,7 @@ describe('PromptImproverService', () => {
         );
 
         await expect(
-            PromptImproverService.improve({ rawPrompt: 'test prompt', mode: 'image' })
+            IntelligencePromptService.improve({ rawPrompt: 'test prompt', mode: 'image' })
         ).rejects.toThrow('Failed to improve prompt. Please try again.');
     });
 
@@ -179,7 +179,7 @@ describe('PromptImproverService', () => {
             reasoning: 'reason'
         });
 
-        await PromptImproverService.improve({
+        await IntelligencePromptService.improve({
             rawPrompt: 'test',
             mode: 'image'
         });
@@ -210,7 +210,7 @@ describe('PromptImproverService', () => {
             reasoning: 'reason'
         });
 
-        const result = await PromptImproverService.improve({
+        const result = await IntelligencePromptService.improve({
             rawPrompt: 'test',
             mode: 'image'
         });
