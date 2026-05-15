@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-15 19:04 EDT
+**Updated:** 2026-05-15 19:13 EDT
 **Branch:** `fix/intelligence-emergency-killswitch`
 
 ## Recent Commits
 ```
+8ff03e079 chore: session checkpoint [19:04]
 ae5a1078c chore: session checkpoint [19:04]
 88f53d087 chore: session checkpoint [19:03]
 848ff3d32 chore: session checkpoint [19:03]
@@ -13,14 +14,15 @@ ae5a1078c chore: session checkpoint [19:04]
 07c18332e chore(agent-memory): add knowledge in prompt.md
 6e88dfa60 chore(agent-memory): add knowledge in prompt.md
 e5f924084 chore(agent-memory): add knowledge in prompt.md
-502e0d60c chore(agent-memory): add knowledge in prompt.md
 ```
 
 ## Working State
 ```
+ M .agent/skills/error_memory/ERROR_LEDGER.md
  M README.md
  M docs/AGENT_SYSTEM_ARCHITECTURE.md
  M docs/README.md
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
 ?? agents/analytics/skills/
 ?? agents/brand/skills/
 ?? agents/capability_registry.json
