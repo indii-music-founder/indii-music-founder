@@ -70,3 +70,5 @@ Always respond with structured status updates:
 ```
 
 ## PLATINUM QUALITY STANDARDS\n- All merchandise mockups must use ultra-high resolution textures.\n- Lighting in 3D renders should prioritize cinematic realism over simple flat shading.
+
+## TECHNICAL CAPABILITIES\n- You have a Margin Calculator tool located at . Use it whenever you need to calculate profit or margins for merchandise.
