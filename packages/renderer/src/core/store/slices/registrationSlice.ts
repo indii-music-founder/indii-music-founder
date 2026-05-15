@@ -10,9 +10,9 @@ export interface RegistrationSlice {
   updateOrgRecord: (trackId: string, orgId: OrgId, record: OrgRegistrationRecord) => void;
 
   // One-shot message bus: AgentOrchestrator/navigate_to pushes a message here;
-  // RegistrationAIRail consumes and clears it. Not persisted.
-  registrationAIMessage: string;
-  setRegistrationAIMessage: (message: string) => void;
+  // RegistrationIntelligenceRail consumes and clears it. Not persisted.
+  registrationIntelligenceMessage: string;
+  setRegistrationIntelligenceMessage: (message: string) => void;
 }
 
 export const createRegistrationSlice: StateCreator<RegistrationSlice> = (set) => ({
@@ -46,6 +46,6 @@ export const createRegistrationSlice: StateCreator<RegistrationSlice> = (set) =>
       };
     }),
 
-  registrationAIMessage: '',
-  setRegistrationAIMessage: (message) => set({ registrationAIMessage: message }),
+  registrationIntelligenceMessage: '',
+  setRegistrationIntelligenceMessage: (message) => set({ registrationIntelligenceMessage: message }),
 });

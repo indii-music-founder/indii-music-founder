@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, Store, AlertTriangle } from 'lucide-react';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 /* ================================================================== */
@@ -84,15 +84,15 @@ export function ReceiptOCR() {
         setExtracted(null);
 
         try {
-            // Call AI Vision service for receipt analysis via the GeminiFileService
-            const { GenAI } = await import('@/services/ai/GenAI');
+            // Call Autonomous Vision service for receipt analysis via the GeminiFileService
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
 
             // 1. Upload the file using resumable upload
-            const fileMeta = await GenAI.fileService.uploadFile(uploadedFile);
+            const fileMeta = await AutonomousGenAI.fileService.uploadFile(uploadedFile);
 
 
             // 2. Wait for it to be active
-            await GenAI.fileService.waitForActive(fileMeta.name);
+            await AutonomousGenAI.fileService.waitForActive(fileMeta.name);
 
             // 3. Analyze the URI
             const jsonPrompt = `
@@ -105,14 +105,14 @@ Analyze this receipt image and extract the following fields as JSON:
 }
 Return ONLY valid JSON, no markdown fences or extra text.`;
 
-            const responseText = await GenAI.analyzeFileURI(
+            const responseText = await AutonomousGenAI.analyzeFileURI(
                 fileMeta.uri,
                 fileMeta.mimeType,
                 jsonPrompt
             );
 
             // 4. Cleanup the file (fire and forget)
-            GenAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
+            AutonomousGenAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
                 logger.warn('[ReceiptOCR] Failed to cleanup Gemini file', ce);
             });
 
@@ -158,7 +158,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`;
                 </div>
                 <div>
                     <h2 className="text-sm font-bold text-white">Receipt OCR</h2>
-                    <p className="text-[10px] text-gray-500">AI-Powered Vision Analysis</p>
+                    <p className="text-[10px] text-gray-500">Autonomous Vision Analysis</p>
                 </div>
             </div>
 
@@ -225,7 +225,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`;
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-sm transition-colors disabled:opacity-60 border border-emerald-500/20"
                 >
                     <Scan size={16} className={isAnalyzing ? 'animate-spin' : ''} />
-                    {isAnalyzing ? 'Analyzing with AI Vision…' : 'Analyze with AI Vision'}
+                    {isAnalyzing ? 'Analyzing with Autonomous Vision…' : 'Analyze with Autonomous Vision'}
                 </motion.button>
             )}
 

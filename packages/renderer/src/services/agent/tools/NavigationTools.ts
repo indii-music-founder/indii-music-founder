@@ -32,9 +32,9 @@ export const NavigationTools = {
                 orgId: args.orgId ?? null,
                 trackId: args.trackId ?? null,
             });
-            // Activate AI co-pilot
+            // Activate Autonomous co-pilot
             if (args.orgId) {
-                store.setRegistrationAIMessage(
+                store.setRegistrationIntelligenceMessage(
                     `Opening ${args.orgId.toUpperCase()} registration. Let me pre-fill what I already know about your catalog…`
                 );
             }

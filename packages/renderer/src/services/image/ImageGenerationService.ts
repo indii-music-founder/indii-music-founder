@@ -2,8 +2,8 @@ import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -514,7 +514,7 @@ export class ImageGenerationService {
             // This eliminates the Firebase Auth dependency that caused
             // "Unauthenticated" errors when sessions expire or users aren't
             // signed in. Matches the EditingService pattern.
-            const { editImageDirectly } = await import('@/services/ai/generators/DirectImageEditor');
+            const { editImageDirectly } = await import('@/services/intelligence/generators/DirectImageEditor');
 
             logger.info('[ImageGen] remixImage: using Direct SDK path', {
                 hasContent: !!options.contentImage,
@@ -544,7 +544,7 @@ export class ImageGenerationService {
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         return withServiceError('ImageGeneration', 'extractStyle', async () => {
-            const response = await GenAI.generateContent(
+            const response = await AutonomousGenAI.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -552,14 +552,14 @@ export class ImageGenerationService {
                         { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
                     responseMimeType: 'application/json',
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
 
-            return GenAI.parseJSON(response.response.text());
+            return AutonomousGenAI.parseJSON(response.response.text());
         });
     }
 
@@ -673,12 +673,12 @@ export class ImageGenerationService {
     async captionImage(image: { mimeType: string, data: string }, category: 'subject' | 'scene' | 'style'): Promise<string> {
         return withServiceError('ImageGeneration', `captionImage(${category})`, async () => {
             const promptMap = {
-                subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an AI image generator.",
+                subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an Intelligence image generator.",
                 scene: "Describe the setting, environment, and background of this image. Focus on location, objects, architecture, and spatial arrangement.",
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            const response = await GenAI.generateContent(
+            const response = await AutonomousGenAI.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -686,9 +686,9 @@ export class ImageGenerationService {
                         { inlineData: { mimeType: image.mimeType || 'image/png', data: image.data } }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
             return response.response.text().trim();

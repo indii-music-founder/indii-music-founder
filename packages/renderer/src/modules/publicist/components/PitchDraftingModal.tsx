@@ -1,14 +1,14 @@
 /**
  * PitchDraftingModal — Item 120 (PRODUCTION_200)
- * AI-powered pitch email drafting for publicist contacts.
- * Uses GenAI.generateText() to stream a personalized pitch
+ * Intelligence-driven pitch email drafting for publicist contacts.
+ * Uses AutonomousGenAI.generateText() to stream a personalized pitch
  * based on the selected contact + optional campaign context.
  */
 import React, { useState } from 'react';
 import { X, Sparkles, Copy, Send, RefreshCw, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Contact, Campaign } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import { useToast } from '@/core/context/ToastContext';
 
 interface PitchDraftingModalProps {

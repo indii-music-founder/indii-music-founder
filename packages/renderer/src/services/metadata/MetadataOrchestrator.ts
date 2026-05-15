@@ -7,7 +7,7 @@ import { Logger } from '@/core/logger/Logger';
 /**
  * MetadataOrchestrator
  * The "Grand Central Station" for music metadata.
- * Coordinates between AI analysis, industry identifiers, and persistence.
+ * Coordinates between Intelligence analysis, industry identifiers, and persistence.
  */
 export class MetadataOrchestrator {
     /**
@@ -16,14 +16,14 @@ export class MetadataOrchestrator {
     async createGoldenMetadata(file: File, initialData: Partial<ExtendedGoldenMetadata> = {}): Promise<ExtendedGoldenMetadata> {
         Logger.info('MetadataOrchestrator', `Creating golden metadata for ${file.name}`);
 
-        // 1. Run AI Intelligence (Technical + Semantic)
+        // 1. Run Autonomous Intelligence (Technical + Semantic)
         const profile = await audioIntelligence.analyze(file);
         
         // 2. Auto-generate Industry Identifiers if missing
         const isrc = initialData.isrc || await IdentifierService.nextISRC();
         const upc = initialData.upc || (initialData.releaseType !== 'Single' ? await IdentifierService.nextUPC() : undefined);
 
-        // 3. Map AI results to Golden Metadata Schema
+        // 3. Map Intelligence results to Golden Metadata Schema
         const metadata: ExtendedGoldenMetadata = {
             ...INITIAL_METADATA,
             ...initialData,
@@ -47,7 +47,7 @@ export class MetadataOrchestrator {
             durationFormatted: this.formatDuration(profile.technical.duration),
             releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
-            isGolden: true, // Mark as Golden since it's AI-verified and ID-assigned
+            isGolden: true, // Mark as Golden since it's Intelligence-verified and ID-assigned
             aiGeneratedContent: {
                 isFullyAIGenerated: false, // Default to false unless specified
                 isPartiallyAIGenerated: true,

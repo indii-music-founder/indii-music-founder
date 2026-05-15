@@ -22,7 +22,7 @@ vi.mock('@/services/agent/registry', () => ({
   },
 }));
 
-vi.mock('@/services/ai/VoiceService', () => ({
+vi.mock('@/services/intelligence/VoiceService', () => ({
   voiceService: {
     isSupported: () => true,
     startListening: vi.fn(),

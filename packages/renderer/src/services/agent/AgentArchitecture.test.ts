@@ -5,12 +5,12 @@ import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HistoryManager } from './components/HistoryManager';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import { agentRegistry } from './registry';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => "Mock Response",
@@ -267,7 +267,7 @@ describe('Multi-Agent Architecture Tests', () => {
         });
 
         // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
-        it('should pass superpower tools to AI when executing', async () => {
+        it('should pass superpower tools to Autonomous when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
             const result = await agent_marketing?.execute('Research market trends');
 

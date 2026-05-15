@@ -8,15 +8,15 @@ import {
     VALID_AGENT_IDS,
     ValidAgentId
 } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator
  * 
  * Pillar 3: Graph-Based Orchestration
  * 
- * This service uses high-reasoning AI to decompose a novel user request 
+ * This service uses high-reasoning Autonomous to decompose a novel user request 
  * into a structured AgentGraph. This allows for truly autonomous, 
  * non-linear multi-agent coordination.
  */
@@ -84,9 +84,9 @@ export class GraphDecompositionService {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT, // Use Agent for complex architecture
+                INTELLIGENCE_MODELS.TEXT.AGENT, // Use Agent for complex architecture
                 {
-                    ...AI_CONFIG.THINKING.HIGH,
+                    ...INTELLIGENCE_CONFIG.THINKING.HIGH,
                     responseMimeType: 'application/json'
                 }
             );

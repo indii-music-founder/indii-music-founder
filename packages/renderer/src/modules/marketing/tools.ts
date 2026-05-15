@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../../services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export const MARKETING_TOOLS = {
     generate_campaign_strategy: async (args: { product_name: string, target_audience: string, goal: string }) => {
@@ -23,7 +23,7 @@ export const MARKETING_TOOLS = {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
             return res.response.text() || "Failed to generate strategy.";
         } catch (_e: unknown) {

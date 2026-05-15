@@ -108,7 +108,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Scan size={20} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">AI Object Detection</TooltipContent>
+                    <TooltipContent side="right">Intelligence Object Detection</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

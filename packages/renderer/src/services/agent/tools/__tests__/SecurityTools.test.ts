@@ -11,22 +11,22 @@ import {
 import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
@@ -115,15 +115,15 @@ describe('SecurityTools (Mocked)', () => {
             expect(adminRole.count).toBe(1);
             expect(viewerRole.count).toBe(2);
 
-            // AI should NOT be called
-            expect(GenAI.generateStructuredData).not.toHaveBeenCalled();
+            // Autonomous should NOT be called
+            expect(AutonomousGenAI.generateStructuredData).not.toHaveBeenCalled();
         });
 
-        it('should fallback to AI if Firestore returns empty/error', async () => {
+        it('should fallback to Autonomous if Firestore returns empty/error', async () => {
             // Mock Firestore not found
             vi.mocked(getDoc).mockResolvedValue({ exists: () => false } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
-            // Mock AI response
+            // Mock Intelligence response
             const mockAIResponse = {
                 project_id: 'test-project',
                 status: 'AI Audit',
@@ -131,13 +131,13 @@ describe('SecurityTools (Mocked)', () => {
                 recommendations: []
             };
 
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
 
             const result = await audit_permissions({ project_id: 'test-project' });
             const parsed = result.data;
 
             expect(parsed.status).toBe("AI Audit");
-            expect(GenAI.generateStructuredData).toHaveBeenCalled();
+            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 

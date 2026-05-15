@@ -12,8 +12,8 @@ import {
 // Mocks
 // ============================================================================
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateStructuredData: vi.fn(),
     },
 }));
@@ -36,7 +36,7 @@ vi.mock('@/services/firebase', () => ({
     },
 }));
 
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 
 // ============================================================================
@@ -115,29 +115,30 @@ describe('VisualOutputAutorater', () => {
 
     // ── 1. Pass on first try ──────────────────────────────────────────────
     describe('evaluateImage', () => {
-        it('returns structured score from GenAI on successful evaluation', async () => {
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(passingScore);
+        it('returns structured score from AutonomousGenAI on successful evaluation', async () => {
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
             const result = await VisualOutputAutorater.evaluateImage(makeInput());
             expect(result).toEqual(passingScore);
-            expect(GenAI.generateStructuredData).toHaveBeenCalledOnce();
+            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledOnce();
         });
 
-        it('returns null when GenAI returns null', async () => {
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(null);
+        it('returns null when AutonomousGenAI returns null', async () => {
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(null);
             const result = await VisualOutputAutorater.evaluateImage(makeInput());
             expect(result).toBeNull();
         });
 
-        it('returns null and does not throw when GenAI rejects', async () => {
-            vi.mocked(GenAI.generateStructuredData).mockRejectedValue(new Error('model overloaded'));
+        it('returns null and does not throw when AutonomousGenAI rejects', async () => {
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockRejectedValue(new Error('model overloaded'));
             const result = await VisualOutputAutorater.evaluateImage(makeInput());
             expect(result).toBeNull();
         });
 
         it('embeds the original brief into the evaluation prompt', async () => {
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(passingScore);
+            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
             await VisualOutputAutorater.evaluateImage(makeInput({ originalBrief: 'A purple dragon flying over Tokyo' }));
-            const prompt = vi.mocked(GenAI.generateStructuredData).mock.calls[0]?.[0] as string;
+            const parts = vi.mocked(AutonomousGenAI.generateStructuredData).mock.calls[0]?.[0] as any[];
+            const prompt = parts.find(p => p.text)?.text || '';
             expect(prompt).toContain('A purple dragon flying over Tokyo');
         });
     });

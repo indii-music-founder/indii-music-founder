@@ -8,7 +8,7 @@
  *   - Firestore read/write counts
  *   - Storage bandwidth estimates
  *   - Cloud Function invocation tracking
- *   - AI API token usage estimation
+ *   - Autonomous API token usage estimation
  */
 
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
@@ -104,7 +104,7 @@ export class CostAnomalyService {
     }
 
     /**
-     * Track AI token usage.
+     * Track Intelligence token usage.
      */
     trackAITokens(inputTokens: number, outputTokens: number): void {
         this.counters.aiTokensUsed += inputTokens + outputTokens;
@@ -141,7 +141,7 @@ export class CostAnomalyService {
         }
 
         if (this.counters.aiTokensUsed > DEFAULT_THRESHOLDS.aiTokensPerDay) {
-            this.addAlert('warning', 'Gemini AI',
+            this.addAlert('warning', 'Gemini Intelligence',
                 `High token usage: ${this.counters.aiTokensUsed.toLocaleString()} tokens (threshold: ${DEFAULT_THRESHOLDS.aiTokensPerDay.toLocaleString()})`,
                 this.counters.aiTokensUsed * PRICING.geminiInputToken,
                 DEFAULT_THRESHOLDS.aiTokensPerDay * PRICING.geminiInputToken

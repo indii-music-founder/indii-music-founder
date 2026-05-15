@@ -30,7 +30,7 @@ const BRAND_INTERVIEW_GREETINGS = [
     "Hey — welcome to the Brand Interview. I'm indii, your creative director. Whether you skipped onboarding or just want to dig deeper, let's build out your artist identity. What should we start with?",
     "Alright, let's get your brand locked in. I'm indii — I'll walk you through everything from your bio to your visual identity, genre, goals, and release details. Ready? Tell me about yourself.",
     "Hey there. This is where we build your artist DNA. I'm indii, and I'm going to ask you some questions to understand who you are, what you sound like, and how you want the world to see you. Start by telling me your story.",
-    "Welcome to the interview room. I'm indii — think of me as half creative director, half brand architect. Everything I learn here powers your AI tools, your campaign strategy, and your visual identity. So — who are you?",
+    "Welcome to the interview room. I'm indii — think of me as half creative director, half brand architect. Everything I learn here powers your Autonomous tools, your campaign strategy, and your visual identity. So — who are you?",
 ];
 
 const RETURNING_GREETINGS = [
@@ -41,7 +41,7 @@ const RETURNING_GREETINGS = [
 ];
 
 /**
- * BrandInterview — The AI-powered interview chat embedded in the Brand Manager.
+ * BrandInterview — The Intelligence-driven interview chat embedded in the Brand Manager.
  * Reuses the same onboarding conversation engine with smart mode detection.
  * Users who skipped onboarding can complete their entire brand profile here.
  */
@@ -264,7 +264,7 @@ const BrandInterview: React.FC = () => {
                         accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                     />
                     <p className="mt-2 text-[9px] text-gray-600 font-bold uppercase tracking-[0.15em] text-center">
-                        Secure Interview • AI-Powered Analysis
+                        Secure Interview • Intelligence-driven Analysis
                     </p>
                 </div>
             </div>

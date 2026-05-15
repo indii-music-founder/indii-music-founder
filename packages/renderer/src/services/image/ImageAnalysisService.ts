@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
 import type { Part, Schema } from 'firebase/ai';
 
@@ -65,12 +65,12 @@ export class ImageAnalysisService {
                 { inlineData: { mimeType, data: cleanBase64 } }
             ];
             
-            const results = await GenAI.generateStructuredData<DetectedObject[]>(
+            const results = await AutonomousGenAI.generateStructuredData<DetectedObject[]>(
                 parts,
                 schema,
                 undefined,
                 undefined,
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
             
             logger.info(`Detected ${results?.length || 0} objects.`);
@@ -114,16 +114,16 @@ Return ONLY valid JSON containing a single field "maskBase64" which is a base64-
                 { inlineData: { mimeType, data: cleanBase64 } }
             ];
 
-            const result = await GenAI.generateStructuredData<{ maskBase64: string }>(
+            const result = await AutonomousGenAI.generateStructuredData<{ maskBase64: string }>(
                 parts,
                 schema,
                 { thinkingBudget: 0, includeThoughts: false }, // config with thinking budget
                 undefined, // system instructions
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
 
             if (!result || !result.maskBase64) {
-                throw new Error('Failed to extract a valid segmentation mask from the AI response.');
+                throw new Error('Failed to extract a valid segmentation mask from the Intelligence response.');
             }
 
             return result.maskBase64;

@@ -230,7 +230,7 @@ describe('DistributorContext', () => {
     });
 
     describe('getDistributorPromptContext', () => {
-        it('generates AI context string with all constraints', () => {
+        it('generates Intelligence context string with all constraints', () => {
             const context = getDistributorPromptContext(createProfile('distrokid'));
 
             expect(context).toContain('DistroKid');

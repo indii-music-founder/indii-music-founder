@@ -347,10 +347,10 @@
 /* Sonic Brand Animations */
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * BOLT UI ANIMATIONS - Unified dynamics for AI-driven updates
+ * BOLT UI ANIMATIONS - Unified dynamics for Intelligence-driven updates
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Standard animation for AI/automation updates - applies department color */
+/* Standard animation for Intelligence/automation updates - applies department color */
 .indii-auto-update {
   animation: bolt-pulse 1.5s var(--transition-timing);
   border: 1px solid transparent;

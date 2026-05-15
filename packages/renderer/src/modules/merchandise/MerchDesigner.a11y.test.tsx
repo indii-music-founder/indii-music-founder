@@ -82,9 +82,9 @@ describe('MerchDesigner Accessibility', () => {
       </MemoryRouter>
     );
 
-    // Verify AI Gen button is accessible (might appear in ToolButton and AssetLibrary)
-    const aiGenBtns = screen.queryAllByRole('button', { name: /AI Gen/i });
-    expect(aiGenBtns.length).toBeGreaterThan(0);
+    // Verify Autonomous tool button is accessible (might appear in ToolButton and AssetLibrary)
+    const autonomousBtns = screen.queryAllByRole('button', { name: /Autonomous/i });
+    expect(autonomousBtns.length).toBeGreaterThan(0);
 
     // Verify Text tool
     const textBtns = screen.queryAllByRole('button', { name: /Text/i });

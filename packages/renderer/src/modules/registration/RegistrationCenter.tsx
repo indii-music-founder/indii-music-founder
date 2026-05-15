@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { CatalogRail } from './components/CatalogRail';
 import { RegistrationSheet } from './components/RegistrationSheet';
-import { RegistrationAIRail } from './components/RegistrationAIRail';
+import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
 import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
@@ -240,9 +240,9 @@ export default function RegistrationCenter() {
         />
       </div>
 
-      {/* Right: AI Co-Pilot Rail */}
+      {/* Right: Intelligence Co-Pilot Rail */}
       <div className="w-72 flex-shrink-0">
-        <RegistrationAIRail
+        <RegistrationAutonomousRail
           focusedAdapter={focusedAdapter}
           track={selectedTrack}
         />

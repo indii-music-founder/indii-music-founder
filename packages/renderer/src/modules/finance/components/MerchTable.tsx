@@ -74,7 +74,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             await MarketplaceService.createProduct({
                 sellerId: userProfile.id,
                 title: title || selectedAsset.description || 'Untitled Asset',
-                description: selectedAsset.description || 'AI Generated Asset',
+                description: selectedAsset.description || 'Autonomous Generated Asset',
                 price: parseFloat(price) * 100, // Cents
                 currency: 'USD',
                 type: 'digital-asset',

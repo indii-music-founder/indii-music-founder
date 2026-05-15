@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { z } from 'zod';
@@ -56,7 +56,7 @@ export const LicensingTools = {
         For each match, explain WHY it fits the brief.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousGenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

@@ -3,7 +3,7 @@
  *
  * Integration tests that verify the runtime tool authorization enforcement
  * pipeline end-to-end.  Every test exercises actual BaseAgent.execute()
- * with a mocked AI model response, so the assertion lives inside the
+ * with a mocked Autonomous model response, so the assertion lives inside the
  * real enforcement code at BaseAgent.ts lines 548-567.
  *
  * Test Suite:
@@ -49,31 +49,31 @@ vi.mock('@/services/firebase', () => ({
 
 const mockGenerateContent = vi.fn();
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: mockGenerateContent,
         generateContentStream: vi.fn(),
         generateSpeech: vi.fn(),
     },
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/services/ai/AIResponseCache', () => ({
-    AIResponseCache: class {
+vi.mock('@/services/intelligence/IntelligenceResponseCache', () => ({
+    IntelligenceResponseCache: class {
         get() { return null; }
         set() { /* no-op */ }
     },
@@ -128,7 +128,7 @@ vi.mock('../fine-tuned-models', () => ({
     getFineTunedModel: vi.fn().mockReturnValue(undefined),
 }));
 
-vi.mock('@/services/ai/context/ContextManager', () => ({
+vi.mock('@/services/intelligence/context/ContextManager', () => ({
     ContextManager: {
         truncateContext: vi.fn((content: unknown[]) => content),
     },
@@ -172,8 +172,8 @@ function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): Ba
 
 /**
  * Helper to mock a single-shot function call followed by a text response.
- * The first GenAI call returns a function call for `toolName`.
- * The second GenAI call returns plain text to end the loop.
+ * The first AutonomousGenAutonomous call returns a function call for `toolName`.
+ * The second AutonomousGenAutonomous call returns plain text to end the loop.
  */
 function mockFunctionCallThenText(toolName: string, args: Record<string, unknown> = {}): void {
     mockGenerateContent
@@ -309,7 +309,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
         if (toolCall) {
             expect(toolCall.result).not.toMatchObject({ success: false, error: expect.stringContaining('not authorized') });
         }
-        // GenAI was called (loop ran)
+        // AutonomousGenAI was called (loop ran)
         expect(mockGenerateContent).toHaveBeenCalled();
     });
 

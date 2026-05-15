@@ -13,7 +13,7 @@ interface FeatureRow {
 }
 
 const features: FeatureRow[] = [
-    { label: 'AI Creative Studio', icon: Zap, web: true, desktop: true },
+    { label: 'Creative Studio', icon: Zap, web: true, desktop: true },
     { label: 'Agent Orchestration', icon: Cpu, web: true, desktop: true },
     { label: 'Distribution Pipeline', icon: Upload, web: 'limited', desktop: true },
     { label: 'Audio DNA Analyzer', icon: Headphones, web: 'limited', desktop: true },
@@ -122,7 +122,7 @@ export function PlatformCard() {
                                     </span>
                                 </div>
                                 <p className="text-[11px] text-gray-500 mb-2 max-w-lg leading-snug">
-                                    Explore every module and meet the AI agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.
+                                    Explore every module and meet the Intelligence agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.
                                 </p>
 
                                 {/* Feature comparison grid */}

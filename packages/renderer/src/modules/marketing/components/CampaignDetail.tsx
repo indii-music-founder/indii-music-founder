@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CampaignAsset, CampaignStatus, ScheduledPost } from '../types';
 import { ArrowLeft, Calendar, LayoutGrid, List, Play, CheckCircle, AlertCircle, Clock, MoreVertical, Edit3, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import AIPredictionPanel from './AIPredictionPanel';
+import IntelligencePredictionPanel from './IntelligencePredictionPanel';
 
 import { LucideIcon } from 'lucide-react';
 
@@ -74,7 +74,7 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                             </button>
                         </div>
 
-                        {/* AI Generate Images Button */}
+                        {/* Autonomous Generate Images Button */}
                         {onGenerateImages && postsWithoutImages > 0 && (
                             <button
                                 onClick={onGenerateImages}
@@ -123,9 +123,9 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                     </AnimatePresence>
                 </div>
 
-                {/* AI Prediction Panel - Sidebar */}
+                {/* Autonomous Prediction Panel - Sidebar */}
                 <div className="w-80 flex-shrink-0 overflow-y-auto hidden xl:block">
-                    <AIPredictionPanel campaign={campaign} />
+                    <IntelligencePredictionPanel campaign={campaign} />
                 </div>
             </div>
         </div>

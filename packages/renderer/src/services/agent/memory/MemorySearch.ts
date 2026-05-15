@@ -8,8 +8,8 @@ import {
     orderBy,
     limit as firestoreLimit,
 } from 'firebase/firestore';
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
-import { APPROVED_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import type {

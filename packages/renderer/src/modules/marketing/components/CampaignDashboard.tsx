@@ -3,7 +3,7 @@ import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
-import AIGenerateCampaignModal from './AIGenerateCampaignModal';
+import IntelligenceCampaignModal from './IntelligenceCampaignModal';
 import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
 import AdBuyingPanel from './AdBuyingPanel';
 import EmailMarketingPanel from './EmailMarketingPanel';
@@ -33,7 +33,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 /*  │  Mktg    │    Campaign Manager       │   Perf       │            */
 /*  │  Sidebar │    (workspace)            │   Snapshot   │            */
 /*  │  (nav)   │                           │   Assets     │            */
-/*  │          │                           │   AI Tips    │            */
+/*  │          │                           │   Autonomous Tips    │            */
 /*  └──────────┴───────────────────────────┴──────────────┘            */
 /* ================================================================== */
 
@@ -73,7 +73,7 @@ const CampaignDashboard: React.FC = () => {
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
         } catch (error: unknown) {
-            logger.error("Failed to save AI campaign", error);
+            logger.error("Failed to save Autonomous campaign", error);
         }
     }, []);
 
@@ -191,7 +191,7 @@ const CampaignDashboard: React.FC = () => {
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <PerformanceSnapshotPanel campaigns={campaigns} />
                     <AssetLibraryPanel />
-                    <AISuggestionsPanel />
+                    <IntelligenceSuggestionsPanel />
                 </aside>
 
                 {isCreateModalOpen && (
@@ -202,7 +202,7 @@ const CampaignDashboard: React.FC = () => {
                 )}
 
                 {isAIModalOpen && (
-                    <AIGenerateCampaignModal
+                    <IntelligenceCampaignModal
                         onClose={() => setIsAIModalOpen(false)}
                         onSave={handleAISave}
                     />
@@ -283,11 +283,11 @@ function AssetLibraryPanel() {
     );
 }
 
-function AISuggestionsPanel() {
+function IntelligenceSuggestionsPanel() {
     return (
         <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
             <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
-                <Sparkles size={10} /> AI Suggestions
+                <Sparkles size={10} /> Autonomous Suggestions
             </h3>
             <div className="flex flex-col items-center justify-center py-4 text-center">
                 <Sparkles size={16} className="text-gray-600 mb-2" />

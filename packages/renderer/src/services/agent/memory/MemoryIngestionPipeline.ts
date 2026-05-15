@@ -1,5 +1,5 @@
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
@@ -469,7 +469,7 @@ export class MemoryIngestionPipeline {
                 Provide a comprehensive description that preserves all important details.
             `);
 
-            // Use Firebase AI Service for multimodal content
+            // Use Firebase Intelligence Service for multimodal content
             const result = await AIService.getInstance().generateContent(
                 [{
                     role: 'user',
@@ -483,7 +483,7 @@ export class MemoryIngestionPipeline {
                         },
                     ],
                 }] as Content[],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { temperature: 0.3 } as GenerationConfig,
             );
 

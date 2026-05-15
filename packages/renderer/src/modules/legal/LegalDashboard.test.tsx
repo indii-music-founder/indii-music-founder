@@ -11,8 +11,8 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => JSON.stringify({
@@ -33,9 +33,9 @@ vi.mock('@/services/agent/tools/LegalTools', () => ({
     },
 }));
 
-vi.mock('@/core/config/ai-models', () => ({
+vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             FAST: 'fast-model',
             AGENT: 'agent-model',

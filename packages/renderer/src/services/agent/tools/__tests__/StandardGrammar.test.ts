@@ -3,12 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScreenwriterTools } from '../ScreenwriterTools';
 import { ProducerTools } from '../ProducerTools';
 import { LegalTools } from '../LegalTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
-// Mock AI Models
-vi.mock('@/core/config/ai-models', () => ({
+// Mock Autonomous Models
+vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             AGENT: 'gemini-pro',
             FAST: 'gemini-flash'
@@ -40,7 +40,7 @@ describe('Standard Grammar Tools', () => {
                 title: "Test Scene",
                 elements: [{ type: "slugline", text: "INT. TEST - DAY" }]
             });
-            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
+            vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce({
                 response: { text: () => mockJson }
             } as any);
 
@@ -58,7 +58,7 @@ describe('Standard Grammar Tools', () => {
                 callTime: "08:00 AM",
                 cast: []
             });
-            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
+            vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce({
                 response: { text: () => mockJson }
             } as any);
 
@@ -78,7 +78,7 @@ describe('Standard Grammar Tools', () => {
         it('draft_contract includes mandatory header', async () => {
             const mockContent = '# LEGAL AGREEMENT\n\nThis agreement...';
             const mockResponse = { response: { text: () => mockContent } };
-            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+            vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
 
             const result = await LegalTools.draft_contract!({
                 type: 'NDA',

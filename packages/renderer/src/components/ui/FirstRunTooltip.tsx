@@ -81,7 +81,7 @@ export function resetAllTips(): void {
 export const TIPS = {
     COMMAND_BAR: 'command-bar',
     MODULE_SWITCHER: 'module-switcher',
-    AI_CHAT: 'ai-chat',
+    INTELLIGENCE_CHAT: 'intelligence-chat',
     CREATIVE_STUDIO: 'creative-studio',
     DISTRIBUTION: 'distribution',
     VIDEO_STUDIO: 'video-studio',

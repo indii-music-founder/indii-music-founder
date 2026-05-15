@@ -266,7 +266,7 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-creative',
     },
     agent: {
-        // Agent — Signature Green for AI intelligence
+        // Agent — Signature Green for Autonomous intelligence
         text: 'text-dept-creative',
         bg: 'bg-dept-creative/10',
         border: 'border-dept-creative',
