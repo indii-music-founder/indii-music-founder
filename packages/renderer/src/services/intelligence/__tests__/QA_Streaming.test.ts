@@ -50,7 +50,7 @@ vi.mock('../billing/TokenUsageService', () => ({
 
 // Mock Google AutonomousGenAI SDK (Fallback) - new @google/genai package
 vi.mock('@google/genai', () => ({
-    GoogleAutonomousGenAI: vi.fn(function () {
+    GoogleGenAI: vi.fn(function () {
         return {
             models: {
                 generateContent: mockGenerateContent,
