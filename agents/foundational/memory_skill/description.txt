@@ -1,0 +1,2 @@
+trigger_labels: ["Review the back and forth", "remember this", "forget how we used to do this", "update preference"]
+description: Physically writes or deletes procedural knowledge within an agent's instruction files. Used to enforce persistent memory, handle corrections, and update user preferences to ensure compounding system intelligence.
