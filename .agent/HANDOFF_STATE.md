@@ -1,30 +1,45 @@
 # Handoff State
-**Updated:** 2026-05-15 18:57 EDT
+**Updated:** 2026-05-15 18:59 EDT
 **Branch:** `fix/intelligence-emergency-killswitch`
 
 ## Recent Commits
 ```
+8259bdf95 docs(error-ledger): add 2026-05-15 cost-control TypeScript mistakes
+07c18332e chore(agent-memory): add knowledge in prompt.md
+6e88dfa60 chore(agent-memory): add knowledge in prompt.md
+e5f924084 chore(agent-memory): add knowledge in prompt.md
+502e0d60c chore(agent-memory): add knowledge in prompt.md
+d31ff6896 chore(agent-memory): add knowledge in prompt.md
+6d95312c0 chore: session checkpoint [18:57]
 ebb7c644d fix(ci): resolve TypeScript duplicate userId declaration and missing logger import
 203bfa104 feat(billing): emergency intelligence kill-switch and mock-mode bypass
 5e5203ae0 chore(agent-memory): add knowledge in prompt.md
-5dbdfb8cf chore: update storage target to match project indiios-v-1-1
-8bee89e6f Merge pull request #11 from indii-music/release-please--branches--main--components--indii.music
-07701d90e Merge branch 'main' into release-please--branches--main--components--indii.music
-e7494eb2e chore: stabilize CI, fix @google/genai nomenclature, and resolve intelligence caption type regressions
-33d74ae39 fix(ci): resolve @google/genai mock export regressions in intelligence tests
-28ab68cd8 chore(branding): finalize repository-wide Intelligence branding and resolve SDK import regressions
-a7834183b chore: session checkpoint [21:45]
 ```
 
 ## Working State
 ```
+?? agents/analytics/skills/
+?? agents/brand/skills/
 ?? agents/capability_registry.json
+?? agents/conductor/skills/tools/
+?? agents/creative/skills/
+?? agents/default/skills/
+?? agents/distribution/skills/
 ?? agents/finance/skills/
 ?? agents/foundational/
+?? agents/generalist/skills/
+?? agents/indii_curriculum/skills/
+?? agents/indii_executor/skills/
 ?? agents/legal/skills/
+?? agents/licensing/skills/
+?? agents/marketing/skills/
 ?? agents/merchandise/skills/
 ?? agents/music/skills/
+?? agents/publicist/skills/
+?? agents/publishing/skills/
+?? agents/road/skills/
 ?? agents/social/skills/
+?? agents/video/skills/
 ```
 
 ## Decisions
