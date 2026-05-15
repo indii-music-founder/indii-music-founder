@@ -68,3 +68,5 @@ Always respond with structured status updates:
 ├── Price: $[price] | Margin: [%]
 └── Campaign: [linked campaign or N/A]
 ```
+
+## PLATINUM QUALITY STANDARDS\n- All merchandise mockups must use ultra-high resolution textures.\n- Lighting in 3D renders should prioritize cinematic realism over simple flat shading.
