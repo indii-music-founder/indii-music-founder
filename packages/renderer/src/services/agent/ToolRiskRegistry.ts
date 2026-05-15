@@ -44,6 +44,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     core_vault_history: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'View version history of an authoritative fact' },
     captains_log_read: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read operational logs from Layer 4' },
     list_tasks: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List project tasks' },
+    audit_architecture: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Map the agent ecosystem and capabilities' },
 
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -221,6 +222,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Code Execution (destructive — runs arbitrary code on host)
     execute_code: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Executes arbitrary Python code via the sidecar — requires explicit user approval' },
+    update_agent_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: "Permanently modify an agent's system instructions (brain surgery)" },
 
     // =========================================================================
     // WRITE — OpenClaw Gap Tools
