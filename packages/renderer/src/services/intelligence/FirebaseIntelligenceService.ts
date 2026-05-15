@@ -345,7 +345,25 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                         await this.ensureInitialized();
 
-                        // 3. Quota & Rate Limit (Backend)
+                        // 1. MOCK MODE CHECK (Fast-path for development survival)
+                        if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                            logger.info(`[FirebaseIntelligenceService] MOCK MODE ACTIVE for ${modelName}`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            return {
+                                response: {
+                                    candidates: [{
+                                        content: {
+                                            role: 'model',
+                                            parts: [{ text: "This is a MOCK response from Indii Intelligence. Cloud services are currently paused for maintenance." }]
+                                        },
+                                        finishReason: 'STOP'
+                                    }],
+                                    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 }
+                                }
+                            } as any;
+                        }
+
+                        // 2. Quota & Rate Limit (Backend)
                         const userId = auth.currentUser?.uid;
                         // 1. MOCK MODE CHECK (Fast-path for development survival)
                         if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
