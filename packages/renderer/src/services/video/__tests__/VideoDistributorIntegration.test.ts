@@ -7,7 +7,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // Mocks
 vi.mock('@/core/store');
 
-vi.mock('../../ai/FirebaseIntelligenceService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

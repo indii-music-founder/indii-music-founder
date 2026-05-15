@@ -20,10 +20,10 @@ interface AutonomousMessage {
 }
 
 export function RegistrationAutonomousRail({ focusedAdapter, track, className }: RegistrationAutonomousRailProps) {
-  const { registrationAutonomousMessage, setRegistrationAutonomousMessage } = useStore(
+  const { registrationIntelligenceMessage, setRegistrationIntelligenceMessage } = useStore(
     useShallow(s => ({
-      registrationAutonomousMessage: s.registrationAutonomousMessage,
-      setRegistrationAutonomousMessage: s.setRegistrationAutonomousMessage,
+      registrationIntelligenceMessage: s.registrationIntelligenceMessage,
+      setRegistrationIntelligenceMessage: s.setRegistrationIntelligenceMessage,
     }))
   );
 
@@ -35,12 +35,12 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
 
   // Consume one-shot message from store (pushed by AgentOrchestrator / navigate_to)
   useEffect(() => {
-    if (registrationAutonomousMessage) {
-      setMessages(prev => [...prev, { role: 'ai', text: registrationAutonomousMessage, ts: Date.now() }]);
+    if (registrationIntelligenceMessage) {
+      setMessages(prev => [...prev, { role: 'ai', text: registrationIntelligenceMessage, ts: Date.now() }]);
       setIsActive(true);
-      setRegistrationAutonomousMessage('');
+      setRegistrationIntelligenceMessage('');
     }
-  }, [registrationAutonomousMessage, setRegistrationAutonomousMessage]);
+  }, [registrationIntelligenceMessage, setRegistrationIntelligenceMessage]);
 
   // Greet when a new org is focused — intentionally keyed by .id to avoid
   // duplicate greetings on every shallow prop reference change.

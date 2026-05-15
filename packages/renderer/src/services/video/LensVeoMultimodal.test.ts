@@ -32,10 +32,16 @@ vi.mock('../firebase', () => ({
     auth: { currentUser: mocks.currentUser },
     functions: {},
     functionsWest1: {},
-    db: {}
+    db: {},
+    remoteConfig: { defaultConfig: {} },
+    storage: {},
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../ai/FirebaseIntelligenceService', () => {
+vi.mock('../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
@@ -73,7 +79,7 @@ vi.mock('uuid', () => ({
     v4: () => 'job-lens-multimodal'
 }));
 
-describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', () => {
+describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {

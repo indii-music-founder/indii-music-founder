@@ -64,7 +64,7 @@ const { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedC
     return { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents };
 });
 
-vi.mock('../../ai/FirebaseIntelligenceService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: mockGenerateText,
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

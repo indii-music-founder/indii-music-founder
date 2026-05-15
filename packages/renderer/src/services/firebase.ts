@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
-import { getAI, VertexAIBackend, Autonomous } from 'firebase/ai';
+import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 

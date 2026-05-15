@@ -12,7 +12,7 @@
  * editing pipeline to avoid 401 errors in dev and provide lower latency.
  */
 
-import { GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
 import { AI_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
@@ -159,7 +159,7 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
         }
 
         // Find the image part
-        const imagePart = responseParts.find(
+        const imagePart = (responseParts as any[]).find(
             p => p.inlineData && p.inlineData.mimeType?.startsWith('image/')
         );
 
@@ -188,7 +188,7 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
         }
 
         // Check for text-only response (likely safety block)
-        const textPart = responseParts.find(p => 'text' in p);
+        const textPart = (responseParts as any[]).find(p => 'text' in p);
         if (textPart && 'text' in textPart && typeof textPart.text === 'string') {
             logger.warn('[DirectImageEditor] Received text instead of image (likely safety block):', textPart.text);
         }
