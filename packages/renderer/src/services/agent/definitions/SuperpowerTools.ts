@@ -283,5 +283,26 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             type: 'OBJECT',
             properties: {}
         }
+    },
+    {
+        name: 'audit_architecture',
+        description: 'Scans the INDII agent directory to map the current state and capabilities. Use this to audit existing agents and prevent redundant tool creation.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {}
+        }
+    },
+    {
+        name: 'update_agent_memory',
+        description: "Updates an agent's persistent procedural knowledge (instructions.md). Use this to remember user preferences or enforce new rules across sessions.",
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                agentId: { type: 'STRING', description: "The ID of the agent to update (e.g., 'merchandise', 'generalist')." },
+                action: { type: 'STRING', enum: ['add', 'remove'], description: "Whether to add a new instruction or remove an existing string." },
+                knowledge: { type: 'STRING', description: "The specific procedural instruction or rule to persist." }
+            },
+            required: ['agentId', 'action', 'knowledge']
+        }
     }
 ];
