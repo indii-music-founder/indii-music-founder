@@ -93,7 +93,7 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('@google/genai', () => {
     return {
         serverTimestamp: vi.fn(),
-        GoogleAutonomousGenAI: class {
+        GoogleGenAI: class {
             models = {
                 generateContent: mockGenerateContent,
                 generateContentStream: vi.fn().mockResolvedValue(
