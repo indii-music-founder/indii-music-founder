@@ -15,15 +15,15 @@
  * 5. Hard cap at maxIterations (3) prevents runaway costs
  *
  * Design Decisions:
- * - Uses FirebaseAIService (not direct GoogleGenAI) for consistency
+ * - Uses FirebaseIntelligenceService (not direct GoogleAutonomousGenAI) for consistency
  * - Uses AI_MODELS.TEXT.FAST for evaluation (structured judgment task)
  * - Temperature 0.2 for consistent scoring
  * - Evaluation failure is non-blocking (accepts output on error)
  * - Preserves backward compat: reflect() / runLoop() still work
  */
 
-import { AI_MODELS } from '@/core/config/ai-models';
-import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
+import { AI_MODELS } from '@/core/config/intelligence-models';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
 import type { ReflectionResult, AgentContext } from '@/services/agent/types';
 
@@ -72,7 +72,7 @@ interface ReflectionLoopState {
 // Evaluation Rubric (Phase 2)
 // ============================================================================
 
-const EVALUATION_SYSTEM_PROMPT = `You are a quality evaluation critic for AI agent responses. Your job is to evaluate how well an agent response fulfills the original task.
+const EVALUATION_SYSTEM_PROMPT = `You are a quality evaluation critic for Autonomous agent responses. Your job is to evaluate how well an agent response fulfills the original task.
 
 ## Scoring Rubric (0-10 scale):
 
@@ -188,7 +188,7 @@ export class ReflectionLoop {
     ].join('\n');
 
     try {
-      const aiService = FirebaseAIService.getInstance();
+      const aiService = FirebaseIntelligenceService.getInstance();
       const genResult = await aiService.generateContent(
         evaluationPrompt,
         AI_MODELS.TEXT.FAST,

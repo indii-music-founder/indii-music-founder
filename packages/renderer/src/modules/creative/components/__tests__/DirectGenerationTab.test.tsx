@@ -58,7 +58,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock dynamic import for DirectImageGenerator
-vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
+vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
     generateImageDirectly: vi.fn()
 }));
 
@@ -96,7 +96,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('handles image generation successfully', async () => {
-        const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
+        const { generateImageDirectly } = await import('@/services/intelligence/generators/DirectImageGenerator');
         (generateImageDirectly as import("vitest").Mock).mockResolvedValue(['data:image/png;base64,test']);
 
         render(<DirectGenerationTab />);
@@ -145,7 +145,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('displays error message when generation fails', async () => {
-        const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
+        const { generateImageDirectly } = await import('@/services/intelligence/generators/DirectImageGenerator');
         (generateImageDirectly as import("vitest").Mock).mockRejectedValue(new Error('API Timeout'));
 
         const mockToast = useToast();

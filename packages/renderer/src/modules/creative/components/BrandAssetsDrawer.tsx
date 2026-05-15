@@ -8,7 +8,7 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import type { BrandAsset } from '@/types/User';
-import { AI_CONFIG } from '@/core/config/ai-models';
+import { AI_CONFIG } from '@/core/config/intelligence-models';
 import type { StoreState } from '@/core/store';
 
 interface BrandAssetsDrawerProps {
@@ -204,11 +204,11 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         // StorageService now handles DEV-mode permission fallbacks internally
                         downloadUrl = await StorageService.uploadFile(blob, path);
                     } else {
-                        throw new Error("No image data in AI response");
+                        throw new Error("No image data in Autonomous response");
                     }
                 } catch (apiError: unknown) {
                     if (import.meta.env.DEV) {
-                        logger.error("[BrandAssets] AI API failed in dev, falling back to mock", apiError);
+                        logger.error("[BrandAssets] Autonomous API failed in dev, falling back to mock", apiError);
                         downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
                     } else {
                         throw apiError;

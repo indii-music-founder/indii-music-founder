@@ -10,7 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { voiceService } from '@/services/ai/VoiceService';
+import { voiceService } from '@/services/intelligence/VoiceService';
 import { cn } from '@/lib/utils';
 import {
     PromptInput,
@@ -401,7 +401,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     setKnowledgeBaseEnabled(next);
                                     if (isMobile) {
                                         toast.success(next
-                                            ? "Knowledge Base connected — AI will reference your docs"
+                                            ? "Knowledge Base connected — Intelligence will reference your docs"
                                             : "Knowledge Base disconnected"
                                         );
                                     }

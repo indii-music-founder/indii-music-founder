@@ -17,7 +17,7 @@ interface CandidateReviewProps {
 }
 
 /**
- * CandidateReview — A 2×2 grid overlay for reviewing up to 4 AI-generated options.
+ * CandidateReview — A 2×2 grid overlay for reviewing up to 4 Intelligence-generated options.
  * Supports multi-select via checkboxes, zoom preview, and batch apply.
  *
  * Replaces the old CandidatesCarousel's single-click-apply behavior with a deliberate

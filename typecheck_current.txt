@@ -1,0 +1,259 @@
+
+> indii.music@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/core/App.tsx(53,10): error TS2300: Duplicate identifier 'SubscriptionTier'.
+packages/renderer/src/core/App.tsx(54,10): error TS2300: Duplicate identifier 'useSubscription'.
+packages/renderer/src/core/App.tsx(67,10): error TS2300: Duplicate identifier 'useSubscription'.
+packages/renderer/src/core/App.tsx(68,10): error TS2300: Duplicate identifier 'SubscriptionTier'.
+packages/renderer/src/modules/legal/LegalDashboard.tsx(104,36): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/legal/tools.ts(14,27): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/legal/tools.ts(26,27): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx(68,34): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/marketing/components/EmailMarketingPanel.tsx(35,34): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/marketing/tools.ts(1,47): error TS2307: Cannot find module '../../services/ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/modules/marketing/tools.ts(24,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/publicist/components/PitchDraftingModal.tsx(62,34): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/social/tools.test.ts(3,47): error TS2307: Cannot find module '../../services/ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/modules/social/tools.test.ts(26,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/social/tools.test.ts(36,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/social/tools.test.ts(50,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/social/tools.ts(1,47): error TS2307: Cannot find module '../../services/ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/modules/social/tools.ts(23,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/social/tools.ts(62,26): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/workflow/components/WorkflowNodeInspector.tsx(41,36): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/workflow/services/WorkflowEngine.ts(248,35): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/workflow/services/WorkflowEngine.ts(255,42): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/workflow/services/WorkflowEngine.ts(271,35): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/modules/workflow/services/workflowGenerator.ts(145,29): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentCollaboration.test.ts(3,33): error TS2307: Cannot find module '../../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/agent/__tests__/AgentMultimodal.test.ts(3,33): error TS2307: Cannot find module '../../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(73,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(81,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(140,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(162,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(166,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(217,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentOrchestrator.test.ts(240,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentRouting.stress.test.ts(358,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentRouting.stress.test.ts(394,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentRouting.stress.test.ts(397,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentRouting.stress.test.ts(398,94): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts(2,47): error TS2307: Cannot find module '../../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts(86,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts(87,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts(114,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts(162,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentArchitecture.test.ts(204,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentArchitecture.test.ts(212,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentArchitecture.test.ts(218,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentArchitecture.test.ts(233,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentArchitecture.test.ts(277,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(238,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(249,72): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(253,60): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(266,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(270,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(273,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(277,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(284,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(339,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(340,88): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(341,88): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(353,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(363,63): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(367,64): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(377,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(384,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(393,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(396,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(400,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(415,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentIntegration.test.ts(416,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(141,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(148,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(150,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(160,56): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(161,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(181,33): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(182,45): error TS7006: Parameter 'args' implicitly has an 'any' type.
+packages/renderer/src/services/agent/AgentService.security.test.ts(464,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(471,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(473,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(483,56): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/AgentService.security.test.ts(484,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/BaseAgentUsage.test.ts(79,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/BaseAgentUsage.test.ts(103,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/BrowserAgentDriver.ts(75,40): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/BrowserAgentDriver.ts(97,30): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/BrowserAgentService.ts(22,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/agent/components/AgentOrchestrator.ts(99,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/components/AgentOrchestrator.ts(147,31): error TS2339: Property 'setRegistrationAIMessage' does not exist on type 'StoreState'.
+packages/renderer/src/services/agent/components/AgentOrchestrator.ts(234,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/components/AgentOrchestrator.ts(291,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/CostCircuitBreaker.test.ts(93,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/CostCircuitBreaker.test.ts(107,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/CostCircuitBreaker.test.ts(121,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/CostCircuitBreaker.test.ts(133,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/CostCircuitBreaker.test.ts(153,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/evolution/HelixGeminiRealMutation.test.ts(31,30): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/evolution/HelixGeminiRealMutation.test.ts(82,15): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/evolution/HelixGeminiRealMutation.test.ts(115,12): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/evolution/HelixGeminiRealMutation.test.ts(118,12): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(74,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(75,118): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(76,125): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(84,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(85,125): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(98,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(99,118): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(100,134): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(111,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/GeneralistAgent.test.ts(112,128): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/LedgerCircuitBreaker.test.ts(127,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/LedgerCircuitBreaker.test.ts(145,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/LedgerCircuitBreaker.test.ts(156,55): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/LedgerCircuitBreaker.test.ts(175,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts(15,58): error TS2307: Cannot find module '../../ai/FirebaseIntelligenceService' or its corresponding type declarations.
+packages/renderer/src/services/agent/memory/CoreVaultService.ts(334,34): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/memory/MemoryIngestionPipeline.ts(1,58): error TS2307: Cannot find module '../../ai/FirebaseIntelligenceService' or its corresponding type declarations.
+packages/renderer/src/services/agent/memory/MemorySearch.ts(11,58): error TS2307: Cannot find module '../../ai/FirebaseIntelligenceService' or its corresponding type declarations.
+packages/renderer/src/services/agent/memory/MemorySummarizer.ts(2,58): error TS2307: Cannot find module '../../ai/FirebaseIntelligenceService' or its corresponding type declarations.
+packages/renderer/src/services/agent/orchestration/GraphDecompositionService.ts(85,36): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts(81,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts(91,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts(94,38): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts(112,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts(125,51): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.ts(643,69): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgent.ts(658,57): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts(61,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts(101,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts(191,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts(237,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts(308,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/tools/__tests__/CoreTools.test.ts(135,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/tools/__tests__/CoreTools.test.ts(146,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/agent/tools/LegalTools.ts(222,15): error TS2339: Property 'setRegistrationAIMessage' does not exist on type 'StoreState'.
+packages/renderer/src/services/agent/tools/LegalTools.ts(245,15): error TS2339: Property 'setRegistrationAIMessage' does not exist on type 'StoreState'.
+packages/renderer/src/services/agent/tools/NavigationTools.ts(37,23): error TS2339: Property 'setRegistrationAIMessage' does not exist on type 'StoreState'.
+packages/renderer/src/services/agent/utils/SummaryService.ts(1,47): error TS2307: Cannot find module '../../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/agent/utils/SummaryService.ts(45,36): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/firebase.ts(6,34): error TS2305: Module '"firebase/ai"' has no exported member 'Autonomous'.
+packages/renderer/src/services/GeminiRetrievalService.ts(14,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/image/EditingService.ts(1,33): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/image/EditingService.ts(3,32): error TS2307: Cannot find module '../ai/utils/InputSanitizer' or its corresponding type declarations.
+packages/renderer/src/services/image/LikenessService.ts(148,21): error TS2339: Property 'GoogleAutonomousGenAI' does not exist on type 'typeof import("/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/node_modules/@google/genai/dist/genai")'.
+packages/renderer/src/services/intelligence/fallback/FallbackClient.ts(11,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts(13,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/intelligence/generators/DirectImageEditor.ts(15,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/intelligence/generators/DirectImageEditor.ts(163,13): error TS7006: Parameter 'p' implicitly has an 'any' type.
+packages/renderer/src/services/intelligence/generators/DirectImageEditor.ts(191,45): error TS7006: Parameter 'p' implicitly has an 'any' type.
+packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts(9,10): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts(109,17): error TS7006: Parameter 'p' implicitly has an 'any' type.
+packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts(119,65): error TS7006: Parameter 'p' implicitly has an 'any' type.
+packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts(124,55): error TS7006: Parameter 'p' implicitly has an 'any' type.
+packages/renderer/src/services/intelligence/generators/MediaGenerator.ts(14,15): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/intelligence/IntelligenceContext.ts(12,15): error TS2305: Module '"@google/genai"' has no exported member 'GoogleAutonomousGenAI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(3,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(74,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(89,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(93,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(106,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(113,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(134,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(196,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(215,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(228,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(234,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(251,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(257,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(258,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(281,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(306,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(307,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(311,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(315,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(316,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(349,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(352,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(393,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(400,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(414,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(418,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(468,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(499,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(523,31): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.test.ts(529,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.ts(1,23): error TS2307: Cannot find module '@/services/ai/GenAI' or its corresponding type declarations.
+packages/renderer/src/services/marketing/CampaignIntelligenceService.ts(2,27): error TS2307: Cannot find module '@/core/config/ai-models' or its corresponding type declarations.
+packages/renderer/src/services/onboarding/onboardingService.test.ts(5,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/onboarding/onboardingService.test.ts(273,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/onboarding/onboardingService.test.ts(273,114): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/onboarding/onboardingService.test.ts(281,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/onboarding/onboardingService.ts(14,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/onboarding/onboardingService.ts(284,32): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/onboarding/onboardingService.ts(501,28): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.test.ts(52,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/rag/ragService.test.ts(140,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.test.ts(159,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.test.ts(185,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.test.ts(198,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.test.ts(216,23): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.ts(1,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/rag/ragService.ts(71,34): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/rag/ragService.ts(123,36): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(3,47): error TS2307: Cannot find module '../../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(48,19): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(70,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(74,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(80,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/__tests__/SceneExtensionService.test.ts(89,16): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/SceneExtensionService.ts(10,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/video/SceneExtensionService.ts(233,27): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(78,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/video/VideoService.test.ts(94,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(104,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(107,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(112,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(113,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(117,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(127,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(128,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(134,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(142,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(152,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(153,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(161,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(168,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(178,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(179,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(188,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(195,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(203,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(211,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(222,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(234,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(248,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(256,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(263,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(272,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(288,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(297,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(314,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(318,20): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(326,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.test.ts(338,14): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(1,47): error TS2307: Cannot find module '../ai/AutonomousGenAI' or its corresponding type declarations.
+packages/renderer/src/services/video/VideoService.ts(60,39): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(74,26): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(78,52): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(85,13): error TS2322: Type '{} | null' is not assignable to type 'string | null'.
+  Type '{}' is not assignable to type 'string'.
+packages/renderer/src/services/video/VideoService.ts(147,52): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(175,13): error TS2322: Type '{} | null' is not assignable to type 'string | null'.
+  Type '{}' is not assignable to type 'string'.
+packages/renderer/src/services/video/VideoService.ts(185,52): error TS2304: Cannot find name 'AI'.
+packages/renderer/src/services/video/VideoService.ts(195,13): error TS2322: Type '{} | null' is not assignable to type 'string | null'.
+  Type '{}' is not assignable to type 'string'.
+packages/renderer/src/services/WhiskService.ts(205,38): error TS2304: Cannot find name 'AI'.

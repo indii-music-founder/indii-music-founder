@@ -35,7 +35,7 @@ export function TermsOfService() {
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">2. Description of Service</h2>
                     <p>
-                        indii is a multi-tenant creative platform providing AI-powered tools for music production,
+                        indii is a multi-tenant creative platform providing intelligence-driven tools for music production,
                         image generation, video production, distribution, and business operations for independent
                         artists, producers, and creators.
                     </p>
@@ -54,8 +54,8 @@ export function TermsOfService() {
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-semibold text-white mb-3">5. AI-Generated Content</h2>
-                    <p>Assets generated using our AI tools (powered by Google Gemini) are subject to the terms of the respective AI providers. While you are granted a commercial license to use the generated output, you acknowledge that under current US Copyright Office guidance, purely AI-generated works may not be eligible for copyright protection.</p>
+                    <h2 className="text-xl font-semibold text-white mb-3">5. Intelligence-Generated Content</h2>
+                    <p>Assets generated using our intelligence tools (powered by Google Gemini) are subject to the terms of the respective intelligence providers. While you are granted a commercial license to use the generated output, you acknowledge that under current US Copyright Office guidance, purely intelligence-generated works may not be eligible for copyright protection.</p>
                 </section>
 
                 <section>
@@ -73,7 +73,7 @@ export function TermsOfService() {
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">8. Prohibited Conduct</h2>
                     <p>Users must not upload copyrighted material they don't own or have license for,
-                        engage in prompt injection attacks against AI systems, or use the platform for
+                        engage in prompt injection attacks against intelligence systems, or use the platform for
                         illegal purposes.</p>
                 </section>
 
@@ -136,7 +136,7 @@ export function PrivacyPolicy() {
                     <h3 className="text-base font-medium text-gray-200 mb-2 mt-4">User Content</h3>
                     <ul className="list-disc list-inside space-y-1 text-gray-400">
                         <li>Music files, images, and videos uploaded by users</li>
-                        <li>AI-generated assets created through the platform</li>
+                        <li>Intelligence-generated assets created through the platform</li>
                         <li>Release metadata and distribution information</li>
                     </ul>
                 </section>
@@ -189,7 +189,7 @@ export function PrivacyPolicy() {
                         <li>Firebase (Google) — Authentication, database, storage, hosting</li>
                         <li>Stripe — Payment processing</li>
                         <li>Sentry — Error tracking (consent-gated)</li>
-                        <li>Google Gemini — AI content generation</li>
+                        <li>Google Gemini — Intelligence content generation</li>
                         <li>DSP APIs — Music distribution (Spotify, Apple Music, etc.)</li>
                     </ul>
                 </section>

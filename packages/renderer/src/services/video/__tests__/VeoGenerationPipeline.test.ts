@@ -6,17 +6,17 @@ import { onSnapshot } from 'firebase/firestore';
 // Mocks
 // -----------------------------------------------------------------------------
 
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../ai/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI

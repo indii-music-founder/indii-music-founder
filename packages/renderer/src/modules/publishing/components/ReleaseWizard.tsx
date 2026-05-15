@@ -459,16 +459,16 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     </div>
   );
 
-  // Render AI disclosure step
+  // Render Autonomous disclosure step
   const renderAIDisclosureStep = () => (
     <div className="space-y-6">
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
         <div className="flex gap-3">
           <Sparkles className="text-yellow-400 flex-shrink-0 mt-0.5" size={20} />
           <div>
-            <h4 className="font-medium text-yellow-400 mb-1">ERN 4.3 AI Content Disclosure</h4>
+            <h4 className="font-medium text-yellow-400 mb-1">ERN 4.3 Autonomous Content Disclosure</h4>
             <p className="text-sm text-yellow-300/70">
-              New DDEX standards require disclosure of AI-generated content.
+              New DDEX standards require disclosure of Intelligence-generated content.
               This helps platforms and listeners understand how the music was created.
             </p>
           </div>
@@ -491,7 +491,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white font-medium">Fully AI-Generated</span>
-            <p className="text-sm text-gray-400">The entire track was created using AI tools</p>
+            <p className="text-sm text-gray-400">The entire track was created using Autonomous tools</p>
           </div>
         </label>
 
@@ -510,7 +510,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white font-medium">Partially AI-Generated</span>
-            <p className="text-sm text-gray-400">Some elements were created using AI tools</p>
+            <p className="text-sm text-gray-400">Some elements were created using Autonomous tools</p>
           </div>
         </label>
       </div>
@@ -519,7 +519,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         <div className="space-y-4 mt-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              AI Tools Used
+              Autonomous Tools Used
             </label>
             <input
               type="text"
@@ -805,16 +805,16 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         </div>
       </div>
 
-      {/* AI Disclosure Summary */}
+      {/* Autonomous Disclosure Summary */}
       {(metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.aiGeneratedContent?.isPartiallyAIGenerated) && (
         <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
           <h4 className="font-medium text-yellow-400 mb-2 flex items-center gap-2">
-            <Sparkles size={18} /> AI Content Disclosure
+            <Sparkles size={18} /> Autonomous Content Disclosure
           </h4>
           <p className="text-sm text-gray-300">
             {metadata.aiGeneratedContent.isFullyAIGenerated
               ? 'This release is fully AI-generated'
-              : 'This release contains AI-generated elements'
+              : 'This release contains Intelligence-generated elements'
             }
             {metadata.aiGeneratedContent.aiToolsUsed?.length
               ? ` using ${metadata.aiGeneratedContent.aiToolsUsed.join(', ')}`

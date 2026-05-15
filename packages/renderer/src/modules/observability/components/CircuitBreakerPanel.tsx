@@ -174,7 +174,7 @@ export const CircuitBreakerPanel: React.FC = () => {
             {/* Explanation */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3">
                 <p className="text-xs text-slate-500 leading-relaxed">
-                    The cost circuit breaker monitors daily AI API spend. When budget thresholds
+                    The cost circuit breaker monitors daily Autonomous API spend. When budget thresholds
                     are exceeded, high-cost agent calls require explicit approval to prevent
                     unexpected charges. Budgets reset at midnight UTC.
                 </p>

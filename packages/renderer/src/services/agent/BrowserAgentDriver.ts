@@ -1,5 +1,5 @@
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 export interface AgentAction {
     thought: string;
@@ -95,8 +95,8 @@ export class BrowserAgentDriver {
                 );
 
                 const plan = AI.parseJSON(response.response.text()) as AgentAction;
-                logs.push(`[Driver] AI Thought: ${plan.thought}`);
-                logs.push(`[Driver] AI Action: ${plan.action} ${plan.params?.selector || ''}`);
+                logs.push(`[Driver] Autonomous Thought: ${plan.thought}`);
+                logs.push(`[Driver] Autonomous Action: ${plan.action} ${plan.params?.selector || ''}`);
 
                 // Execute Action
                 if (plan.action === 'finish') {

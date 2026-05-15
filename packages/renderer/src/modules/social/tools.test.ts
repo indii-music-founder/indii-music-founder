@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SOCIAL_TOOLS } from './tools';
-import { GenAI as AI } from '../../services/ai/GenAI';
+import { AutonomousGenAI as AI } from '../../services/intelligence/AutonomousGenAI';
 import { SchemaType } from 'firebase/ai';
 
 // Mock AIService
-vi.mock('../../services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('../../services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn()
     }
@@ -46,7 +46,7 @@ describe('SOCIAL_TOOLS', () => {
             expect(result).toEqual(mockResponse);
         });
 
-        it('should throw error if AI fails', async () => {
+        it('should throw error if Autonomous fails', async () => {
             (AI.generateStructuredData as import("vitest").Mock).mockRejectedValue(new Error('AI Error'));
 
             const args = {

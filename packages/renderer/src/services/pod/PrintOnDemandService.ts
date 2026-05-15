@@ -595,7 +595,7 @@ class InternalProvider implements PODProviderAdapter {
             const color = variant?.color || 'black';
             const type = product?.type || 'T-Shirt';
 
-            logger.debug(`[InternalPOD] Generating AI Mockup for ${type} (${color}) at ${printArea}`);
+            logger.debug(`[InternalPOD] Generating Autonomous Mockup for ${type} (${color}) at ${printArea}`);
 
             // 1. Convert Design URL to Base64 (if possible/needed) or pass as URL
             // The agent tool IndiiImageEdit expects image_bytes. 
@@ -617,7 +617,7 @@ class InternalProvider implements PODProviderAdapter {
                 }
             }
 
-            // AI mockup generation via Firebase Cloud Function
+            // Autonomous mockup generation via Firebase Cloud Function
             const { httpsCallable } = await import('firebase/functions');
             const { functionsWest1: functions } = await import('@/services/firebase');
             const editImageFn = httpsCallable(functions, 'editImage');
@@ -634,7 +634,7 @@ class InternalProvider implements PODProviderAdapter {
 
             return designUrl; // Fallback
         } catch (error: unknown) {
-            logger.error('[InternalPOD] AI Mockup generation error:', error);
+            logger.error('[InternalPOD] Autonomous Mockup generation error:', error);
             return designUrl; // Fallback
         }
     }

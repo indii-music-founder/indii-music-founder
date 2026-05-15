@@ -106,9 +106,9 @@ describe('Access: AI_Input_Search Accessibility', () => {
         render(<AI_Input_Search onSubmit={onSubmitMock} />);
 
         const textarea = screen.getByRole('textbox');
-        fireEvent.change(textarea, { target: { value: 'Hello AI' } });
+        fireEvent.change(textarea, { target: { value: 'Hello Intelligence' } });
         fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
-        expect(onSubmitMock).toHaveBeenCalledWith('Hello AI');
+        expect(onSubmitMock).toHaveBeenCalledWith('Hello Intelligence');
     });
 });

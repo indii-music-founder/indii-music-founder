@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import { GenAI } from '../../ai/GenAI';
+import { AutonomousGenAI } from '../../intelligence/AutonomousGenAI';
 import { agentService } from '../AgentService';
 
-vi.mock('../../ai/GenAI', () => ({
-    GenAI: {
+vi.mock('../../intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }
@@ -91,10 +91,10 @@ describe('Agent Collaboration', () => {
             }
         };
 
-        const generateContentSpy = vi.mocked(GenAI.generateContent);
+        const generateContentSpy = vi.mocked(AutonomousGenAI.generateContent);
         generateContentSpy
-            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>) // 1. Decide to delegate
-            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);   // 2. Report result
+            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>) // 1. Decide to delegate
+            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);   // 2. Report result
 
         // Mock the specialist response
         vi.mocked(agentService.runAgent).mockResolvedValue({
@@ -149,10 +149,10 @@ describe('Agent Collaboration', () => {
             }
         };
 
-        const generateContentSpy = vi.mocked(GenAI.generateContent);
+        const generateContentSpy = vi.mocked(AutonomousGenAI.generateContent);
         generateContentSpy
-            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
-            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>)
+            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
 
         // Mock specialist responses
         vi.mocked(agentService.runAgent).mockImplementation(async (id: string) => {

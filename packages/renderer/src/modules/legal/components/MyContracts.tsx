@@ -164,7 +164,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">No Contracts Yet</h3>
                 <p className="text-sm text-gray-400 max-w-sm mb-6">
-                    Contracts you draft via the AI chat or templates will appear here.
+                    Contracts you draft via the autonomous chat or templates will appear here.
                     Each one can be downloaded as a PDF or previewed.
                 </p>
                 {onNewContract && (
@@ -179,7 +179,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 <div className="mt-8 rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 max-w-sm">
                     <div className="flex items-start gap-2 text-xs text-amber-300/70">
                         <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-                        <span>Tip: Use the chat below to say "Draft a DJ performance agreement for…" and the AI will generate and save a contract here automatically.</span>
+                        <span>Tip: Use the chat below to say "Draft a DJ performance agreement for…" and the autonomous systems will generate and save a contract here automatically.</span>
                     </div>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 /**
  * Fine-Tuned Model Registry
  *
- * Maps each agent ID to its domain-specific fine-tuned Vertex AI endpoint.
+ * Maps each agent ID to its domain-specific fine-tuned Vertex Autonomous endpoint.
  * When `VITE_USE_FINE_TUNED_AGENTS=true`, BaseAgent will prefer these
  * endpoints over the default `AI_MODELS.TEXT.AGENT` base model.
  *
@@ -16,7 +16,7 @@ import type { ValidAgentId } from './types';
 export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS === 'true';
 
 /**
- * Registry mapping agent IDs to their fine-tuned Vertex AI model endpoints.
+ * Registry mapping agent IDs to their fine-tuned Vertex Autonomous model endpoints.
  * Entries set to `undefined` will fall back to the base model.
  *
  * Format: "projects/{project}/locations/{location}/endpoints/{endpointId}"

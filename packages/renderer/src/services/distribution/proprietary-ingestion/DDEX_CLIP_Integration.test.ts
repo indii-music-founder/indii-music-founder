@@ -4,7 +4,7 @@ import { ingestionNotificationService } from '@/services/distribution/proprietar
 import { ingestionValidator } from '@/services/distribution/proprietary-ingestion/IngestionValidator';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
 
@@ -71,7 +71,7 @@ describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
         releaseDate: '2025-12-31',
         territories: ['Worldwide'],
         distributionChannels: ['streaming', 'download'],
-        // User might not have set these yet, expecting AI to fill them:
+        // User might not have set these yet, expecting Autonomous to fill them:
         // genre, language, explicit, duration
         genre: '',
         explicit: false,
@@ -82,8 +82,8 @@ describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
         }
     };
 
-    it('should successfully translate AI analysis into a valid Ingestion IngestionNotification message', async () => {
-        // Step A: Map AI Profile to Ingestion Metadata fields
+    it('should successfully translate Intelligence analysis into a valid Ingestion IngestionNotification message', async () => {
+        // Step A: Map Autonomous Profile to Ingestion Metadata fields
         const aiMetadata = IngestionMapper.mapAudioProfileToMetadata(mockAIProfile);
 
         expect(aiMetadata.genre).toBe('Electronica');

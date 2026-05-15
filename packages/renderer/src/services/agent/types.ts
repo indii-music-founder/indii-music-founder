@@ -71,7 +71,7 @@ export interface ToolDefinition {
  * This is the single source of truth for agent ID validation.
  *
  * IMPORTANT: Keep this in sync when adding new agents.
- * Used to prevent AI hallucination of non-existent agent IDs.
+ * Used to prevent Autonomous hallucination of non-existent agent IDs.
  */
 export const VALID_AGENT_IDS = [
     'marketing',
@@ -107,7 +107,7 @@ export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 
 /**
  * Comma-separated list of valid agent IDs for use in tool descriptions.
- * Prevents AI from hallucinating non-existent agent names.
+ * Prevents Autonomous from hallucinating non-existent agent names.
  */
 export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 

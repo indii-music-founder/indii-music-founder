@@ -44,7 +44,7 @@ describe('IngestionNotificationService', () => {
         expect(result.xml).toContain('USM831100012');
     });
 
-    it('should include correct AI flags in generated XML', async () => {
+    it('should include correct Autonomous flags in generated XML', async () => {
         const aiMetadata = {
             ...MOCK_METADATA,
             aiGeneratedContent: {

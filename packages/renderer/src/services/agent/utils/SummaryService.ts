@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../../intelligence/AutonomousGenAI';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
 import { Logger } from '@/core/logger/Logger';
 
 /**

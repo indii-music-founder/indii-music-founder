@@ -165,20 +165,20 @@ export class AudioAnalysisService {
         const basicFeatures = await this.analyzeBuffer(audioBuffer);
         const features: DeepAudioFeatures = { ...basicFeatures };
 
-        // 2. AI DNA Extraction via Gemini File API
+        // 2. Intelligence DNA Extraction via Gemini File API
         try {
             logger.info("[AudioAnalysis] Extracting deep DNA via Gemini Files API...");
-            const { GenAI } = await import('@/services/ai/GenAI');
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
 
             // Upload the file via resumable upload
-            const fileMeta = await GenAI.fileService.uploadFile(file as File);
+            const fileMeta = await AutonomousGenAI.fileService.uploadFile(file as File);
             logger.info(`[AudioAnalysis] Gemini file uploaded: ${fileMeta.uri}`);
 
             // Wait for processing if necessary
-            await GenAI.fileService.waitForActive(fileMeta.name);
+            await AutonomousGenAI.fileService.waitForActive(fileMeta.name);
 
             // Analyze the URI
-            const result = await GenAI.analyzeFileURI(
+            const result = await AutonomousGenAI.analyzeFileURI(
                 fileMeta.uri,
                 fileMeta.mimeType,
                 `Analyze this audio track and extract its musical DNA.
@@ -202,7 +202,7 @@ export class AudioAnalysisService {
 
             // Cleanup the file explicitly because we no longer need the raw file on their servers after analysis
             try {
-                 await GenAI.fileService.deleteFile(fileMeta.name);
+                 await AutonomousGenAI.fileService.deleteFile(fileMeta.name);
             } catch (ce) {
                  logger.warn("[AudioAnalysis] Failed to cleanup Gemini file", ce);
             }

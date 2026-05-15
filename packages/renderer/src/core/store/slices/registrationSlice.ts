@@ -11,8 +11,8 @@ export interface RegistrationSlice {
 
   // One-shot message bus: AgentOrchestrator/navigate_to pushes a message here;
   // RegistrationAIRail consumes and clears it. Not persisted.
-  registrationAIMessage: string;
-  setRegistrationAIMessage: (message: string) => void;
+  registrationAutonomousMessage: string;
+  setRegistrationAutonomousMessage: (message: string) => void;
 }
 
 export const createRegistrationSlice: StateCreator<RegistrationSlice> = (set) => ({
@@ -46,6 +46,6 @@ export const createRegistrationSlice: StateCreator<RegistrationSlice> = (set) =>
       };
     }),
 
-  registrationAIMessage: '',
-  setRegistrationAIMessage: (message) => set({ registrationAIMessage: message }),
+  registrationAutonomousMessage: '',
+  setRegistrationAutonomousMessage: (message) => set({ registrationAutonomousMessage: message }),
 });

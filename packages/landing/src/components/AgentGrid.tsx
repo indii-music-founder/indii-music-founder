@@ -337,7 +337,7 @@ const agents: AgentDef[] = [
     title: 'Tour Logistics',
     tagline: 'Dominate the Stage.',
     description: 'Venues, routes, and logistics handled autonomously. Focus on the performance while your digital tour team secures the dates.',
-    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics AI', 'Live Execution'],
+    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics Intelligence', 'Live Execution'],
     icon: MapPin,
     colorClass: 'text-red-400',
     bgClass: 'bg-red-500/10',

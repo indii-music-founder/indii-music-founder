@@ -1,11 +1,11 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
 export const CommerceTools = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
-        // Use AI image generation to produce an actual product mockup
+        // Use Intelligence image generation to produce an actual product mockup
         const productDescriptions: Record<string, string> = {
             't-shirt':    'a flat-lay product photo of a black unisex t-shirt displayed on a white background',
             'hoodie':     'a flat-lay product photo of a black pullover hoodie on a white background',
@@ -21,7 +21,7 @@ export const CommerceTools = {
         const imagePrompt = `${productBase}, with the following artwork printed on it: ${args.designIdea}. Studio lighting, product photography style, high resolution, centered composition.`;
 
         try {
-            const mockupImageUrl = await GenAI.generateImage(imagePrompt);
+            const mockupImageUrl = await AutonomousGenAI.generateImage(imagePrompt);
 
             // Persist the generated mockup to Firestore for the merch module
             const { db, auth } = await import('@/services/firebase');
@@ -45,7 +45,7 @@ export const CommerceTools = {
             }, `Merchandise mockup generated for ${args.productType}. Image saved and ready for POD upload.`);
         } catch (err: unknown) {
             logger.error('[CommerceTools] mockup_merchandise image gen failed:', err);
-            return toolError('Failed to generate merchandise mockup. AI image service unavailable.', 'IMAGE_GEN_FAILED');
+            return toolError('Failed to generate merchandise mockup. Intelligence image service unavailable.', 'IMAGE_GEN_FAILED');
         }
     }),
 

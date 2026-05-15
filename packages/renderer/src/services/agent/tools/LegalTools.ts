@@ -1,7 +1,7 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -36,7 +36,7 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
         const prompt = `Draft a ${args.type} between ${args.parties.join(' and ')}.
 Key Terms: ${args.terms}`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousGenAI.generateContent(
             prompt,
             AI_MODELS.TEXT.AGENT,
             undefined,
@@ -227,7 +227,7 @@ Signature: ____________________________
             module: 'registration',
             orgId: 'loc',
             trackId: args.trackId ?? null,
-        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The AI co-pilot is pre-filling your catalog data now.`);
+        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The Autonomous co-pilot is pre-filling your catalog data now.`);
     }),
 
     start_pro_registration: wrapTool('start_pro_registration', async (args: {

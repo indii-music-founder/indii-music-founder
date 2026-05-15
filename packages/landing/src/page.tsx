@@ -169,7 +169,7 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indii is your personal tech collective. A specialist team of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
+          indii is your personal tech collective. A specialist team of creative minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
           <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
@@ -262,7 +262,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Unlock your sound\'s DNA. Extract the life force of your tracks—tempo, key, and emotional weight—to prime your creative universe.' },
-            { step: '02', icon: BrainCircuit, title: 'Your AI Team', desc: 'Deploy your specialist team of AI minds. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
+            { step: '02', icon: BrainCircuit, title: 'Your Team', desc: 'Deploy your specialist team of intelligences. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
             { step: '03', icon: Globe2, title: 'Global Impact', desc: 'Release your tracks directly to global platforms. No gatekeepers, no noise, just total independence and 100% of the bag.' },
           ].map((s, i) => (
             <motion.div

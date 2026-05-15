@@ -52,7 +52,7 @@ vi.mock('@/services/firebase', () => ({
 // Constants
 // ============================================================================
 
-/** Expected Vertex AI endpoint format */
+/** Expected Vertex Autonomous endpoint format */
 const ENDPOINT_FORMAT = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
 /** Expected GCP project number (from the existing registry) */
@@ -73,7 +73,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     // ─── Endpoint Format Validation ──────────────────────────────────────
 
     describe('Endpoint Format Validation (3 tests)', () => {
-        it('all non-undefined entries should match Vertex AI endpoint format', () => {
+        it('all non-undefined entries should match Vertex Autonomous endpoint format', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
             entries.forEach(([_agentId, endpoint]) => {

@@ -3,9 +3,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock the AI service before importing VideoService
-vi.mock('../ai/GenAI', () => ({
-    GenAI: {
+// Mock the Intelligence service before importing VideoService
+vi.mock('../intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateVideo: vi.fn(),
         parseJSON: vi.fn()
@@ -26,8 +26,8 @@ vi.mock('@/config/env', () => ({
     firebaseConfig: {}
 }));
 
-// Mock AI models config
-vi.mock('@/core/config/ai-models', () => ({
+// Mock Autonomous models config
+vi.mock('@/core/config/intelligence-models', () => ({
     APPROVED_MODELS: {
         TEXT_AGENT: 'gemini-3.1-pro-preview',
         TEXT_FAST: 'gemini-3.1-pro-preview',
@@ -75,7 +75,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 import { Video, VideoService } from './VideoService';
-import { GenAI as AI } from '../ai/GenAI';
+import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
 
 describe('VideoService', () => {
     let service: VideoService;
@@ -157,11 +157,11 @@ describe('VideoService', () => {
             expect(result).toBeNull();
         });
 
-        it('should throw error if AI content generation fails', async () => {
-            (AI.generateContent as import("vitest").Mock).mockRejectedValue(new Error('AI service unavailable'));
+        it('should throw error if Intelligence content generation fails', async () => {
+            (AI.generateContent as import("vitest").Mock).mockRejectedValue(new Error('Intelligence service unavailable'));
 
             await expect(service.generateMotionBrush(mockImage, mockMask))
-                .rejects.toThrow('AI service unavailable');
+                .rejects.toThrow('Intelligence service unavailable');
         });
 
         it('should throw error if video generation fails', async () => {

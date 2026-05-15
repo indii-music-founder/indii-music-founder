@@ -181,7 +181,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
     // ── Timeline Orchestrator Tools ─────────────────────────────────────────
     {
         name: 'create_timeline',
-        description: 'Create a progressive, multi-phase campaign timeline. Supports pre-built templates (single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w) or fully custom AI-generated plans.',
+        description: 'Create a progressive, multi-phase campaign timeline. Supports pre-built templates (single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w) or fully custom Intelligence-generated plans.',
         parameters: {
             type: 'OBJECT',
             properties: {
@@ -192,7 +192,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
                 templateId: { type: 'STRING', description: 'Optional template ID: single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w, or custom.' },
                 platforms: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Target platforms (e.g., ["Instagram", "TikTok", "Twitter"]).' },
                 releaseId: { type: 'STRING', description: 'Optional: ID of the release this timeline supports.' },
-                customInstructions: { type: 'STRING', description: 'Optional: custom AI instructions for plan generation.' },
+                customInstructions: { type: 'STRING', description: 'Optional: custom Autonomous instructions for plan generation.' },
                 assetStrategy: { type: 'STRING', description: 'Asset preference: create_new, use_existing, or auto.' }
             },
             required: ['goal', 'domain', 'durationWeeks', 'startDate']

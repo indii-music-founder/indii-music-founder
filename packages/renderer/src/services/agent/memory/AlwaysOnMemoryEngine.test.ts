@@ -50,7 +50,7 @@ vi.mock('firebase/firestore', () => ({
     getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => null }),
 }));
 
-// Mock AI Service
+// Mock Intelligence Service
 const { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents } = vi.hoisted(() => {
     const mockGenerateText = vi.fn().mockResolvedValue('Test summary of the content');
     const mockGenerateContent = vi.fn().mockResolvedValue({
@@ -64,7 +64,7 @@ const { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedC
     return { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents };
 });
 
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../ai/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: mockGenerateText,
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
@@ -74,15 +74,15 @@ vi.mock('../../ai/FirebaseAIService', () => {
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-// Mock AI models
-vi.mock('@/core/config/ai-models', () => ({
+// Mock Autonomous models
+vi.mock('@/core/config/intelligence-models', () => ({
     AI_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3-flash-preview' },
         EMBEDDING: { DEFAULT: 'gemini-embedding-001' },
@@ -165,7 +165,7 @@ describe('AlwaysOnMemoryEngine', () => {
             // Setup mock responses for extraction pipeline
             mockGenerateText.mockImplementation((prompt: string) => {
                 if (prompt.includes('Summarize')) {
-                    return Promise.resolve('AI agents are growing fast and reliability is a challenge.');
+                    return Promise.resolve('Autonomous agents are growing fast and reliability is a challenge.');
                 }
                 if (prompt.includes('Extract named entities')) {
                     return Promise.resolve(JSON.stringify({
@@ -199,7 +199,7 @@ describe('AlwaysOnMemoryEngine', () => {
         });
 
         it('should ingest text content', async () => {
-            const result = await engine.ingest('AI agents are growing fast but reliability is a challenge.');
+            const result = await engine.ingest('Autonomous agents are growing fast but reliability is a challenge.');
 
             expect(result).toContain('Stored');
             expect(mockAddDoc).toHaveBeenCalled();

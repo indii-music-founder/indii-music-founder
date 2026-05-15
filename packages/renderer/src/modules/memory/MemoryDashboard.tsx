@@ -597,7 +597,7 @@ function QueryPanel({
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-600">
                     <Search size={40} className="opacity-20" />
                     <p className="text-sm">Ask anything about your stored memories</p>
-                    <p className="text-xs text-gray-700">The AI will search, synthesize, and cite relevant memories.</p>
+                    <p className="text-xs text-gray-700">The Autonomous will search, synthesize, and cite relevant memories.</p>
                 </div>
             )}
         </div>
