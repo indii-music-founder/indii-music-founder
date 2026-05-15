@@ -7,7 +7,7 @@ import {
     AgentProgressCallback
 } from '../types';
 import { PipelineContext } from './ContextPipeline';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { DelegationLoopDetector } from '../LoopDetector';
 

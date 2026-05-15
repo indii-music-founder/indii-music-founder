@@ -7,7 +7,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { PromptImproverService } from '@/services/creative/PromptImproverService';
 import { useToast } from '@/core/context/ToastContext';
-import AIGenerateCampaignModal from '@/modules/marketing/components/AIGenerateCampaignModal';
+import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
 
@@ -21,7 +21,7 @@ interface PromptBuilderProps {
     /** Current prompt text from the input field. */
     currentPrompt?: string;
     /**
-     * Replace the entire prompt. Used by the AI improve action and by chip
+     * Replace the entire prompt. Used by the Autonomous improve action and by chip
      * removal. When omitted, the chip rail and Improve-with-AI button hide.
      */
     onSetPrompt?: (prompt: string) => void;
@@ -198,7 +198,7 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                 mode: mode as 'image' | 'video'
             });
             onSetPrompt(result.improved);
-            // Clear builder tags after improvement — the AI rewrites the prompt,
+            // Clear builder tags after improvement — the Autonomous rewrites the prompt,
             // so the original tag fragments no longer apply as discrete chips.
             setBuilderTags([]);
             toast.success(`Prompt improved: ${result.reasoning}`);
@@ -264,7 +264,7 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                     />
                 ))}
 
-                {/* AI Prompt Improver Button */}
+                {/* Autonomous Prompt Improver Button */}
                 {onSetPrompt && (
                     <button
                         onClick={handleImprove}

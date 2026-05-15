@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
+import { FirebaseIntelligenceService as AIService } from '../../ai/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { AlwaysOnMemory, ConsolidationInsight, MemoryConnection, MemoryEntity } from '@/types/AlwaysOnMemory';
@@ -7,7 +7,7 @@ import { cleanPrompt } from '@/utils/prompt';
 import { Timestamp } from 'firebase/firestore';
 
 /**
- * Robust JSON parser for AI responses.
+ * Robust JSON parser for Intelligence responses.
  * Strips markdown code fences (`\`\`\`json ... \`\`\``) and trims whitespace
  * before parsing. Returns a default value on failure instead of throwing.
  */
@@ -31,7 +31,7 @@ function safeParseJson<T>(raw: string, fallback: T): T {
                 // Final fallback
             }
         }
-        logger.warn('[MemorySummarizer] Failed to parse AI JSON response:', raw.slice(0, 200));
+        logger.warn('[MemorySummarizer] Failed to parse Autonomous JSON response:', raw.slice(0, 200));
         return fallback;
     }
 }

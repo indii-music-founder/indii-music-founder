@@ -1,5 +1,5 @@
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 export const LEGAL_TOOLS = {
     analyze_contract: async (args: { text: string }) => {

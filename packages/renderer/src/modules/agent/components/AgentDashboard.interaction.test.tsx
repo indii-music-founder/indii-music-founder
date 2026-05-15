@@ -101,7 +101,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     ToastProvider: ({ children }: any) => <>{children}</>
 }));
 
-describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
+describe('👁️ Pixel: AgentDashboard Autonomous Interaction', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -115,9 +115,9 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
     it('Scenario 1: Verifies "Scanning" feedback loop and map updates', async () => {
         // Pixel Rule: "Mock the AI, verify the UI"
 
-        // 1. Setup the mock AI behavior (Streaming events)
+        // 1. Setup the mock Autonomous behavior (Streaming events)
         (VenueScoutService.searchVenues as import("vitest").Mock).mockImplementation(async (city: string, genre: string, isAuto: boolean, onProgress: any) => {
-            // Simulate AI "Thinking" steps
+            // Simulate Autonomous "Thinking" steps
             onProgress({ step: 'SCANNING_MAP', message: 'Scanning sector 7...' });
             await new Promise(r => setTimeout(r, 10));
 

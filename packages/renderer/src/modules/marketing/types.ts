@@ -46,7 +46,7 @@ export interface MarketingStats {
     activeCampaigns: number;
 }
 
-// AI Campaign Generation Types
+// Autonomous Campaign Generation Types
 
 export type CampaignObjective = 'awareness' | 'engagement' | 'conversion' | 'launch';
 export type CampaignTone = 'professional' | 'casual' | 'edgy' | 'inspirational';
@@ -78,7 +78,7 @@ export interface GeneratedCampaignPlan {
     posts: GeneratedPostContent[];
 }
 
-// AI Post Enhancement Types
+// Autonomous Post Enhancement Types
 
 export type EnhancementType = 'improve' | 'shorter' | 'longer' | 'different_tone';
 
@@ -89,7 +89,7 @@ export interface PostEnhancement {
     toneAnalysis: string;
 }
 
-// AI Performance Prediction Types
+// Autonomous Performance Prediction Types
 
 export interface PlatformPrediction {
     platform: Platform;
@@ -110,7 +110,7 @@ export interface EngagementPrediction {
     riskFactors: string[];
 }
 
-// AI Batch Processing Types
+// Autonomous Batch Processing Types
 
 export interface BatchImageProgress {
     current: number;

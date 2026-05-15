@@ -7,8 +7,8 @@
  * - Respects MembershipService tier quotas
  */
 
-import { GenAI as AI } from '../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { VideoGenerationConfig } from '@/shared/types/ai.dto';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';

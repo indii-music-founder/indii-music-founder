@@ -1,4 +1,4 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 // useStore removed
@@ -65,7 +65,7 @@ export const MarketingTools = {
         ${assetIds ? `Attached Asset IDs: ${assetIds.join(', ')} (Incorporate these into the strategy)` : ''}
         `;
 
-        const data = await GenAI.generateStructuredData<z.infer<typeof CreateCampaignBriefSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousGenAI.generateStructuredData<z.infer<typeof CreateCampaignBriefSchema>>(prompt, schema as Record<string, unknown>);
         const parsed = CreateCampaignBriefSchema.parse(data);
 
         // AUTO-PERSIST: Save the generated brief to the database
@@ -96,13 +96,13 @@ export const MarketingTools = {
         You are a Market Researcher. Analyze the target audience for genre: ${genre}.
         ${similar_artists ? `Similar Artists: ${similar_artists.join(', ')}` : ''}
         `;
-        const data = await GenAI.generateStructuredData<z.infer<typeof AnalyzeAudienceSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousGenAI.generateStructuredData<z.infer<typeof AnalyzeAudienceSchema>>(prompt, schema as Record<string, unknown>);
         const validated = AnalyzeAudienceSchema.parse(data);
         return toolSuccess(validated, `Audience analysis completed for ${genre}. Estimated reach: ${validated.reach}.`);
     }),
 
     /**
-     * Enhanced Schedule Content: Uses real JS Dates instead of AI hallucination for the calendar.
+     * Enhanced Schedule Content: Uses real JS Dates instead of Autonomous hallucination for the calendar.
      */
     schedule_content: wrapTool('schedule_content', async ({ campaign_start, platforms, frequency }: { campaign_start: string; platforms: string[]; frequency: string }) => {
         const startDate = new Date(campaign_start);
@@ -145,7 +145,7 @@ export const MarketingTools = {
         const prompt = `
         You are a Marketing Analyst. Generate a simulated performance report for Campaign ID: ${campaignId}.
         `;
-        const data = await GenAI.generateStructuredData<z.infer<typeof TrackPerformanceSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousGenAI.generateStructuredData<z.infer<typeof TrackPerformanceSchema>>(prompt, schema as Record<string, unknown>);
         const validated = TrackPerformanceSchema.parse(data);
         return toolSuccess(validated, `Performance tracking report generated for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
     }),

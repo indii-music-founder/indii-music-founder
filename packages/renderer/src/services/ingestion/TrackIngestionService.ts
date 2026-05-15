@@ -96,7 +96,7 @@ export class TrackIngestionService {
             labelName: INGESTION_CONFIG.ENTITY_NAME,
             dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
 
-            // AI Content Disclosure (Goal 3 compliance — surfaced by Sonic Cortex aiArtifacts flag)
+            // Intelligence Content Disclosure (Goal 3 compliance — surfaced by Sonic Cortex aiArtifacts flag)
             aiGeneratedContent: {
                 isFullyAIGenerated: false,
                 isPartiallyAIGenerated: semantic.productionValue?.aiArtifacts ?? false

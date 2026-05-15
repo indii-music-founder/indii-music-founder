@@ -87,7 +87,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                     if (jsonMatch && userProfile?.id) {
                         const rawData = JSON.parse(jsonMatch[0]);
 
-                        // Zod Validation for AI Output
+                        // Zod Validation for Autonomous Output
                         const validation = ReceiptScanResultSchema.safeParse(rawData);
                         if (!validation.success) {
                             throw new Error("Invalid receipt format returned by AI.");
@@ -158,7 +158,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         </div>
                         Expense Tracker
                     </h2>
-                    <p className="text-sm text-gray-400 mt-1 ml-10">Drag & drop receipts for AI Analysis</p>
+                    <p className="text-sm text-gray-400 mt-1 ml-10">Drag & drop receipts for Autonomous Analysis</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <motion.button

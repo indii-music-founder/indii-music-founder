@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { HistoryItem } from '@/core/types/history';
 
 /**

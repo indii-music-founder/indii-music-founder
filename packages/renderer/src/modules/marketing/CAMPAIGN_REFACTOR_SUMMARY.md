@@ -11,7 +11,7 @@
   - Added "Execute Campaign" optimistic logic.
   - Added "AI Generate" integration.
 - **AI Generation**:
-  - Wired `AIGenerateCampaignModal` to `CampaignDashboard`.
+  - Wired `IntelligenceCampaignModal` to `CampaignDashboard`.
   - Implemented `handleAISave` to transform generated plan into a campaign and save via `MarketingService`.
   - Added `onAIGenerate` prop drill-down to trigger modal from the "AI Card".
 
@@ -39,4 +39,4 @@
 ## Next Steps
 
 - Full E2E test with backend in the loop (Maestro workflow).
-- Further refinement of AI prompt engineering in `CampaignAIService` (out of scope for UI refactor).
+- Further refinement of AI prompt engineering in `CampaignIntelligenceService` (out of scope for UI refactor).

@@ -56,7 +56,7 @@ export default function DirectGenerationTab() {
                         </div>
                         <p className="text-sm font-medium">Direct Generation Mode</p>
                         <p className="text-xs text-gray-500 max-w-xs text-center">
-                            Bypass the agent orchestration layer to directly test API integration and asset generation.
+                            Bypass the Autonomous orchestration layer to directly test API integration and asset generation.
                         </p>
                     </div>
                 ) : (

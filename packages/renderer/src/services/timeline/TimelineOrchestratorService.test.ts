@@ -49,9 +49,9 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP'),
 }));
 
-// Mock GenAI for AI-generated timelines
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+// Mock AutonomousGenAI for Intelligence-generated timelines
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateStructuredData: vi.fn().mockResolvedValue({
             phases: [
                 { name: 'Tease', startDay: 0, endDay: 14, cadence: 'sparse', agentId: 'marketing', description: 'Build anticipation' },
@@ -196,7 +196,7 @@ describe('TimelineOrchestratorService', () => {
             expect(mockSetDoc).toHaveBeenCalledOnce();
         });
 
-        it('should create a timeline with custom AI generation', async () => {
+        it('should create a timeline with custom Autonomous generation', async () => {
             const brief = createMockBrief({ templateId: 'custom' });
             const timeline = await service.createTimeline(brief);
 

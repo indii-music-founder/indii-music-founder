@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PromptImproverService, ImprovedPromptResult } from '../PromptImproverService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
-// Mock GenAI
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+// Mock AutonomousGenAI
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateStructuredData: vi.fn()
     }
 }));
@@ -62,13 +62,13 @@ describe('PromptImproverService', () => {
         ).rejects.toThrow('Cannot improve an empty prompt.');
     });
 
-    it('should call GenAI.generateStructuredData with image-mode system instructions', async () => {
+    it('should call AutonomousGenAI.generateStructuredData with image-mode system instructions', async () => {
         const mockResult: ImprovedPromptResult = {
             improved: 'Sony A7III, 85mm f/1.4, shallow depth of field, a rapper standing on a dark stage bathed in crimson neon, volumetric fog, low-key dramatic lighting',
             reasoning: 'Added camera specs, lens details, lighting, and atmospheric elements'
         };
 
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
         const result = await PromptImproverService.improve({
             rawPrompt: 'rapper on dark stage',
@@ -77,23 +77,23 @@ describe('PromptImproverService', () => {
 
         expect(result.improved).toBe(mockResult.improved);
         expect(result.reasoning).toBe(mockResult.reasoning);
-        expect(GenAI.generateStructuredData).toHaveBeenCalledTimes(1);
+        expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledTimes(1);
 
-        // Verify the prompt passed to GenAI includes image-specific instructions
-        const callArgs = (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
+        // Verify the prompt passed to AutonomousGenAI includes image-specific instructions
+        const callArgs = (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
         const promptText = callArgs![0] as string;
         expect(promptText).toContain('photographic image');
         expect(promptText).toContain('camera model');
         expect(promptText).toContain('rapper on dark stage');
     });
 
-    it('should call GenAI.generateStructuredData with video-mode system instructions', async () => {
+    it('should call AutonomousGenAI.generateStructuredData with video-mode system instructions', async () => {
         const mockResult: ImprovedPromptResult = {
             improved: 'Cinematic drone shot, slow dolly-in to a rapper on a dark stage, volumetric crimson lighting cascading through haze, 24fps, 8-second steady tracking shot',
             reasoning: 'Added camera movement, temporal pacing, and atmospheric details for video generation'
         };
 
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
         const result = await PromptImproverService.improve({
             rawPrompt: 'rapper on dark stage',
@@ -102,7 +102,7 @@ describe('PromptImproverService', () => {
 
         expect(result.improved).toBe(mockResult.improved);
 
-        const callArgs = (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
+        const callArgs = (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
         const promptText = callArgs![0] as string;
         expect(promptText).toContain('cinematic video');
         expect(promptText).toContain('camera movement');
@@ -114,14 +114,14 @@ describe('PromptImproverService', () => {
             reasoning: 'Injected brand colors and mood'
         };
 
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
         await PromptImproverService.improve({
             rawPrompt: 'portrait of me',
             mode: 'image'
         });
 
-        const callArgs = (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
+        const callArgs = (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
         const promptText = callArgs![0] as string;
 
         // Should include brand context from the mocked store
@@ -134,7 +134,7 @@ describe('PromptImproverService', () => {
     });
 
     it('should return original prompt as fallback if Gemini returns empty', async () => {
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
             improved: '',
             reasoning: 'Could not improve'
         });
@@ -149,7 +149,7 @@ describe('PromptImproverService', () => {
     });
 
     it('should provide default reasoning if Gemini returns empty reasoning', async () => {
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
             improved: 'A beautifully improved prompt',
             reasoning: ''
         });
@@ -163,8 +163,8 @@ describe('PromptImproverService', () => {
         expect(result.reasoning).toBe('Enhanced with technical details and brand context.');
     });
 
-    it('should throw a user-friendly error on GenAI failure', async () => {
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
+    it('should throw a user-friendly error on AutonomousGenAI failure', async () => {
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
             new Error('Network timeout')
         );
 
@@ -173,8 +173,8 @@ describe('PromptImproverService', () => {
         ).rejects.toThrow('Failed to improve prompt. Please try again.');
     });
 
-    it('should pass correct JSON schema to GenAI', async () => {
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
+    it('should pass correct JSON schema to AutonomousGenAI', async () => {
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
             improved: 'result',
             reasoning: 'reason'
         });
@@ -184,7 +184,7 @@ describe('PromptImproverService', () => {
             mode: 'image'
         });
 
-        const callArgs = (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
+        const callArgs = (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0];
         const schema = callArgs![1];
 
         expect(schema).toEqual({
@@ -205,7 +205,7 @@ describe('PromptImproverService', () => {
     });
 
     it('should trim the improved prompt output', async () => {
-        (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue({
             improved: '   padded result with whitespace   ',
             reasoning: 'reason'
         });

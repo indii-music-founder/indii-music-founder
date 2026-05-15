@@ -9,7 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
 
 /* ================================================================== */
-/*  Agent Workspace — Core AI Orchestration Interface                  */
+/*  Agent Workspace — Core Autonomous Orchestration Interface           */
 /*                                                                      */
 /*  Layout:                                                             */
 /*    - AgentHeader: top status bar (online, uptime, model)            */

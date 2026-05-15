@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -40,7 +40,7 @@ export const FinanceAgent: AgentConfig = {
             Query: ${args.query}`;
 
             try {
-                const response = await GenAI.generateText(prompt);
+                const response = await AutonomousGenAI.generateText(prompt);
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -54,7 +54,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
-                // Formatting the image data for Gemini Vision via FirebaseAIService
+                // Formatting the image data for Gemini Vision via FirebaseIntelligenceService
                 const contents = [
                     {
                         role: 'user' as const,
@@ -71,7 +71,7 @@ export const FinanceAgent: AgentConfig = {
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await GenAI.generateContent(contents, AI_MODELS.TEXT.FAST);
+                const result = await AutonomousGenAI.generateContent(contents, AI_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks
@@ -90,7 +90,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await GenAI.generateText(prompt);
+                const advice = await AutonomousGenAI.generateText(prompt);
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);

@@ -1,10 +1,10 @@
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { SchemaType } from 'firebase/ai';
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -40,8 +40,8 @@ export class VideoDirector {
                 }
 
                 // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
-                // FirebaseAIService expects Record<string, any> or Schema.
-                const feedback = await GenAI.generateStructuredData<DirectorFeedback>(
+                // FirebaseIntelligenceService expects Record<string, any> or Schema.
+                const feedback = await AutonomousGenAI.generateStructuredData<DirectorFeedback>(
                     [
                         { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] ?? '' } },
                         { text: critiquePrompt }

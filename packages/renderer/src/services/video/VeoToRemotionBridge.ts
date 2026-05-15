@@ -136,7 +136,7 @@ export class VeoToRemotionBridge {
             tracks: [
                 {
                     id: videoTrackId,
-                    name: 'AI Generated Video',
+                    name: 'Autonomous Generated Video',
                     type: 'video',
                 },
             ],
@@ -227,7 +227,7 @@ export class VeoToRemotionBridge {
             durationInFrames: framesPerSegment * segmentUrls.length,
             width,
             height,
-            tracks: [{ id: videoTrackId, name: 'AI Generated Video', type: 'video' }],
+            tracks: [{ id: videoTrackId, name: 'Autonomous Generated Video', type: 'video' }],
             clips: segmentUrls.map((url, index) => ({
                 id: `clip_veo_${uuidv4()}`,
                 type: 'video' as const,

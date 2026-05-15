@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Mock modules
-vi.mock('../ai/FirebaseAIService', () => ({
+vi.mock('../ai/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage,
@@ -100,8 +100,8 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
     });
 
     it('should proceed with generation (Resilience) when Temporal Context Analysis fails', async () => {
-        // Scenario: AI Service is down or returns 500
-        mocks.analyzeImage.mockRejectedValue(new Error('AI Service Unavailable'));
+        // Scenario: Intelligence Service is down or returns 500
+        mocks.analyzeImage.mockRejectedValue(new Error('Intelligence Service Unavailable'));
 
         const options = {
             prompt: 'A cinematic shot of a cyberpunk city',
@@ -156,7 +156,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
     });
 
     it('should correctly enrich prompt with Veo 3.1 parameters even during Fallback', async () => {
-        // Scenario: AI analysis fails, but we still want Camera/Motion control
+        // Scenario: Intelligence analysis fails, but we still want Camera/Motion control
         mocks.analyzeImage.mockRejectedValue(new Error('AI fail'));
 
         const options = {

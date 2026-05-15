@@ -1,9 +1,9 @@
-import { GenAI } from '../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '../intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart } from '@/shared/types/ai.dto';
-import { editImageDirectly } from '@/services/ai/generators/DirectImageEditor';
+import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';
 
 
 // Data URI regex - strict pattern for image MIME types
@@ -229,7 +229,7 @@ export class EditingService {
         parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
 
         // Use rawGenerateContent with DIRECT image model (NOT text model)
-        const response = await GenAI.rawGenerateContent(
+        const response = await AutonomousGenAI.rawGenerateContent(
             [{ role: 'user', parts }],
             AI_MODELS.IMAGE.DIRECT_PRO,
             { responseModalities: ['IMAGE'] },
@@ -282,7 +282,7 @@ export class EditingService {
             required: ['scenes']
         };
 
-        const plan = await GenAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
+        const plan = await AutonomousGenAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${sanitizedPrompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -292,7 +292,7 @@ export class EditingService {
         for (let i = 0; i < options.count; i++) {
             // Step 2: Analyze Context (if prev image exists)
             if (previousImage) {
-                visualContext = await GenAI.analyzeImage(
+                visualContext = await AutonomousGenAI.analyzeImage(
                     `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.`,
                     previousImage.data,
                     previousImage.mimeType
@@ -310,7 +310,7 @@ export class EditingService {
             parts.push({ text: promptText });
 
             // Use rawGenerateContent with DIRECT image model (NOT text model)
-            const response = await GenAI.rawGenerateContent(
+            const response = await AutonomousGenAI.rawGenerateContent(
                 [{ role: 'user', parts }],
                 AI_MODELS.IMAGE.DIRECT_PRO,
                 { responseModalities: ['IMAGE'] },
@@ -357,7 +357,7 @@ export class EditingService {
             { text: '[Style Reference - apply this visual style]' },
         ];
 
-        const response = await GenAI.rawGenerateContent(
+        const response = await AutonomousGenAI.rawGenerateContent(
             [{ role: 'user', parts }],
             modelId,
             { responseModalities: ['IMAGE'] },

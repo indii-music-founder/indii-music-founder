@@ -41,7 +41,7 @@ export interface VideoGenerationLimits {
 }
 
 /**
- * AI chat limits for a tier
+ * Intelligence chat limits for a tier
  */
 export interface ChatLimits {
   tokensPerMonth: number;
@@ -92,7 +92,7 @@ export interface TierLimits {
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
     name: 'indii Free',
-    description: 'Perfect for beginners to explore AI-powered creativity',
+    description: 'Perfect for beginners to explore Intelligence-powered creativity',
     price: 0,
     billingPeriod: 'once',
     imageGenerations: {

@@ -22,7 +22,7 @@ import {
     ToolFunctionResult,
     validateHubAndSpoke
 } from './types';
-import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
+import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
@@ -430,7 +430,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
-                const { GenAI } = await import('@/services/ai/GenAI');
+                const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
                 const { audioService } = await import('@/services/audio/AudioService');
 
                 const VOICE_MAP: Record<string, string> = {
@@ -444,7 +444,7 @@ export class BaseAgent implements SpecializedAgent {
                 const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
 
                 try {
-                    const response = await GenAI.generateSpeech(text, selectedVoice);
+                    const response = await AutonomousGenAI.generateSpeech(text, selectedVoice);
                     await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
                     return {
                         success: true,
@@ -465,7 +465,7 @@ export class BaseAgent implements SpecializedAgent {
 
     /**
      * Common method to execute a task using the agent's capabilities.
-     * This method handles the AI interaction loop, tool calls, and progress reporting.
+     * This method handles the Autonomous interaction loop, tool calls, and progress reporting.
      * 
      * @param task The mission or objective to achieve
      * @param context Execution context (org, project, brand, etc.)
@@ -586,8 +586,8 @@ export class BaseAgent implements SpecializedAgent {
      * Internal execution method (separated to support locking mechanism)
      */
     protected async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
-        // Lazy import AI Service to prevent circular deps during registry loading
-        const { GenAI } = await import('@/services/ai/GenAI');
+        // Lazy import Intelligence Service to prevent circular deps during registry loading
+        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
 
         // GEAP Agent Identity: Mint cryptographic identity on first execution.
         // Uses static WeakMap for deduplication — survives Object.freeze (FreezeDiagnostic).
@@ -674,7 +674,7 @@ export class BaseAgent implements SpecializedAgent {
         // KEEPER: Intelligent Context Truncation
         // Prefer structured history with token-aware truncation over raw character slicing.
         if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
-            const { ContextManager } = await import('@/services/ai/context/ContextManager');
+            const { ContextManager } = await import('@/services/intelligence/context/ContextManager');
             // Convert AgentMessage[] to Content[] for ContextManager
             const contentHistory = context.chatHistory.map(msg => ({
                 role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
@@ -880,13 +880,13 @@ export class BaseAgent implements SpecializedAgent {
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
-                console.log(`[DEBUG] BaseAgent calling GenAI.generateContent for ${this.id}, iteration ${iterations}`);
-                const result = await GenAI.generateContent(
+                console.log(`[DEBUG] BaseAgent calling AutonomousGenAI.generateContent for ${this.id}, iteration ${iterations}`);
+                const result = await AutonomousGenAI.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
                     { ...AI_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
-                    iterationTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
+                    iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
                     { thoughtSignature: currentThoughtSignature } // options
                 );
 
@@ -1096,7 +1096,7 @@ export class BaseAgent implements SpecializedAgent {
                         continue;
                     }
 
-                    // For most tools, we continue to let the AI process the result
+                    // For most tools, we continue to let the Autonomous process the result
                     continue;
                 } else {
                     let finalResponse = response.text?.() || '';

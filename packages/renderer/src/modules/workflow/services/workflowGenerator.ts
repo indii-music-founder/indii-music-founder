@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';
@@ -15,7 +15,7 @@ interface RegistryContextItem {
     jobs: JobSummary[];
 }
 
-// Helper to flatten registry for the AI context
+// Helper to flatten registry for the Autonomous context
 const getRegistryContext = (): RegistryContextItem[] => {
     const allDefs = { ...NODE_REGISTRY, ...LOGIC_REGISTRY };
     return Object.values(allDefs).map((def) => ({

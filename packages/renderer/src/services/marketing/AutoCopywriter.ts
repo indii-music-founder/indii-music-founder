@@ -11,8 +11,8 @@
  * - Social media captions (Twitter/X, Instagram, TikTok)
  * - Press release one-liner
  */
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -77,7 +77,7 @@ export class AutoCopywriter {
 
             const prompt = this.buildPrompt(input);
 
-            const copyPackage = await GenAI.generateStructuredData<MarketingCopyPackage>(
+            const copyPackage = await AutonomousGenAI.generateStructuredData<MarketingCopyPackage>(
                 [{ text: prompt }],
                 COPY_SCHEMA,
                 2048,
@@ -155,7 +155,7 @@ CRITICAL RULES:
 - Never use ALL CAPS for emphasis
 - Spotify pitch must be lowercase
 - All copy must feel earned from the track's actual sonic identity — not generic
-- If the track has AI artifacts (${semantic.productionValue.aiArtifacts ? 'YES — handle carefully, do not highlight this negatively' : 'No — safe to emphasize authenticity'})
+- If the track has Intelligence artifacts (${semantic.productionValue.aiArtifacts ? 'YES — handle carefully, do not highlight this negatively' : 'No — safe to emphasize authenticity'})
 `;
     }
 }

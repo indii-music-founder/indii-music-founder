@@ -8,15 +8,15 @@ import {
     VALID_AGENT_IDS,
     ValidAgentId
 } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator
  * 
  * Pillar 3: Graph-Based Orchestration
  * 
- * This service uses high-reasoning AI to decompose a novel user request 
+ * This service uses high-reasoning Autonomous to decompose a novel user request 
  * into a structured AgentGraph. This allows for truly autonomous, 
  * non-linear multi-agent coordination.
  */

@@ -4,7 +4,7 @@
  * The core engine for managing long-running, multi-phase progressive campaigns.
  * This service handles:
  *
- * 1. **Creating Timelines** — AI-generates a phased plan from a brief + template
+ * 1. **Creating Timelines** — Intelligence-generates a phased plan from a brief + template
  * 2. **Phase Management** — tracks the current phase and cadence
  * 3. **Milestone Execution** — fires due milestones via agent delegation
  * 4. **Asset Resolution** — creates new or retrieves existing assets
@@ -27,7 +27,7 @@ import {
     serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { getTimelineTemplate, listTimelineTemplates } from './TimelinePhaseTemplates';
 import { logger } from '@/utils/logger';
 
@@ -74,7 +74,7 @@ export class TimelineOrchestratorService {
 
     /**
      * Create a new progressive timeline from a brief.
-     * Uses a template if specified, then AI-enhances with domain-specific milestones.
+     * Uses a template if specified, then Intelligence-enhances with domain-specific milestones.
      */
     async createTimeline(brief: TimelineBrief): Promise<Timeline> {
         const userId = auth.currentUser?.uid;
@@ -99,7 +99,7 @@ export class TimelineOrchestratorService {
             phases = result.phases;
             milestones = result.milestones;
         } else {
-            // Fully AI-generated
+            // Fully Intelligence-generated
             const result = await this.generateWithAI(brief, startTs, durationMs);
             phases = result.phases;
             milestones = result.milestones;
@@ -198,7 +198,7 @@ export class TimelineOrchestratorService {
     }
 
     /**
-     * Generate a fully custom timeline using AI.
+     * Generate a fully custom timeline using Intelligence.
      */
     private async generateWithAI(
         brief: TimelineBrief,
@@ -289,12 +289,12 @@ Return a JSON object with:
         type AIMilestone = { phaseIndex: number; dayOffset: number; type: string; instruction: string; assetStrategy: string; platform?: string };
         type AIResult = { phases: AIPhase[]; milestones: AIMilestone[] };
 
-        const result = await GenAI.generateStructuredData<AIResult>(prompt, schema as Record<string, unknown>);
+        const result = await AutonomousGenAI.generateStructuredData<AIResult>(prompt, schema as Record<string, unknown>);
 
         const rawPhases = result?.phases ?? [];
         const rawMilestones = result?.milestones ?? [];
 
-        // Convert AI output to typed structures
+        // Convert Intelligence output to typed structures
         const phases: TimelinePhase[] = rawPhases.map((p: AIPhase, i: number) => ({
             id: `phase_${i}`,
             name: p.name || `Phase ${i + 1}`,

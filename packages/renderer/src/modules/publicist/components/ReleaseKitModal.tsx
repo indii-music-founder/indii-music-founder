@@ -84,7 +84,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-white">Release Kit Generator</h2>
-                                <p className="text-xs text-gray-400">AI-powered press releases, social posts, and email blasts</p>
+                                <p className="text-xs text-gray-400">Intelligence-driven press releases, social posts, and email blasts</p>
                             </div>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">

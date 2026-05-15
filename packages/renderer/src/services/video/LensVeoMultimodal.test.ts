@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
 // Mocks
 const mocks = vi.hoisted(() => ({
@@ -35,17 +35,17 @@ vi.mock('../firebase', () => ({
     db: {}
 }));
 
-vi.mock('../ai/FirebaseAIService', () => {
+vi.mock('../ai/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: mocks.generateVideo,
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: mocks.analyzeImage
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -106,12 +106,12 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', () => {
         );
 
         // 2. Verify Veo received the enriched prompt
-        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(geminiAnalysis),
         }));
 
         // 3. Verify original prompt is preserved
-        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(userPrompt)
         }));
     });
@@ -127,7 +127,7 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', () => {
 
         // Assert
         expect(mocks.analyzeImage).not.toHaveBeenCalled();
-        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.not.stringContaining("undefined") // basic sanity check
         }));
     });

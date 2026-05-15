@@ -1,4 +1,4 @@
-import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 
 export interface PromptOptions {
     userPrompt: string;

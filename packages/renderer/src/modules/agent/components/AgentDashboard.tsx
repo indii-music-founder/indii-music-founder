@@ -357,7 +357,7 @@ const AgentDashboard: React.FC = () => {
                                     {agentMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
                                             <Sparkles size={28} className="opacity-40" />
-                                            <p className="text-sm">Start a conversation with your AI team.</p>
+                                            <p className="text-sm">Start a conversation with your Autonomous team.</p>
                                         </div>
                                     )}
                                     {agentMessages.map((msg) => (

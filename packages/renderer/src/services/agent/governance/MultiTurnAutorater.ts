@@ -1,7 +1,7 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getFineTunedModel } from '../fine-tuned-models';
@@ -34,7 +34,7 @@ export class MultiTurnAutorater {
     ): Promise<AutoraterScore | null> {
         try {
             const prompt = `
-You are an expert AI Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an AI agent.
+You are an expert Intelligence Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an Autonomous agent.
 
 Goal of the conversation:
 ${goalDescription}
@@ -67,7 +67,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 required: ['goalCompletion', 'adherence', 'coherence', 'toolEfficiency', 'reasoning', 'overallPass']
             };
 
-            const result = await GenAI.generateStructuredData<AutoraterScore>(
+            const result = await AutonomousGenAI.generateStructuredData<AutoraterScore>(
                 prompt,
                 schema as unknown as Record<string, unknown>,
                 undefined,

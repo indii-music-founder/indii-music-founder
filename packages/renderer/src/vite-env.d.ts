@@ -107,7 +107,7 @@ interface ImportMetaEnv {
     // Meta / Instagram Graph API
     readonly VITE_META_APP_ID?: string
 
-    // Legacy AI Sidecar (no longer active — kept for backward compat)
+    // Legacy Autonomous Sidecar (no longer active — kept for backward compat)
     readonly VITE_A0_BASE_URL?: string
     readonly VITE_A0_RUNTIME_ID?: string
     readonly VITE_A0_AUTH_LOGIN?: string
