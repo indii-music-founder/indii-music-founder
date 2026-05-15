@@ -1,24 +1,30 @@
 # Handoff State
-**Updated:** 2026-05-14 21:45 EDT
-**Branch:** `main`
+**Updated:** 2026-05-15 18:57 EDT
+**Branch:** `fix/intelligence-emergency-killswitch`
 
 ## Recent Commits
 ```
-5daa0e3e3 chore: synchronize repository state (428+ files) and align local with remote
-c6ab44e77 ci: use secrets for all variables and trigger final deployment
-6c855f3b3 ci: pass env vars to landing build and trigger deployment
-cb8521ffa Merge pull request #8 from indii-music/release-please--branches--main--components--indii-monorepo
-acd0e1e4d fix(env): use static import.meta.env lookups for Vite compatibility
-ecb2848f3 chore: session checkpoint [17:57]
-1682bb4dd Merge branch 'main' into release-please--branches--main--components--indii-monorepo
-aa690d48d fix(ci): add firebase targets for indiios-v-1-1 to fix deployment failure
-11e8e99b1 Merge pull request #12 from indii-music/release/v1.63.0-hardened
-a7c459429 feat(creative): finalize design history and photo source features, fix test mocks
+ebb7c644d fix(ci): resolve TypeScript duplicate userId declaration and missing logger import
+203bfa104 feat(billing): emergency intelligence kill-switch and mock-mode bypass
+5e5203ae0 chore(agent-memory): add knowledge in prompt.md
+5dbdfb8cf chore: update storage target to match project indiios-v-1-1
+8bee89e6f Merge pull request #11 from indii-music/release-please--branches--main--components--indii.music
+07701d90e Merge branch 'main' into release-please--branches--main--components--indii.music
+e7494eb2e chore: stabilize CI, fix @google/genai nomenclature, and resolve intelligence caption type regressions
+33d74ae39 fix(ci): resolve @google/genai mock export regressions in intelligence tests
+28ab68cd8 chore(branding): finalize repository-wide Intelligence branding and resolve SDK import regressions
+a7834183b chore: session checkpoint [21:45]
 ```
 
 ## Working State
 ```
-clean working tree
+?? agents/capability_registry.json
+?? agents/finance/skills/
+?? agents/foundational/
+?? agents/legal/skills/
+?? agents/merchandise/skills/
+?? agents/music/skills/
+?? agents/social/skills/
 ```
 
 ## Decisions
