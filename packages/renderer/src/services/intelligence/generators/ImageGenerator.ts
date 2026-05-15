@@ -9,7 +9,7 @@
 import type { Tool } from 'firebase/ai';
 import type { IntelligenceContext } from '../IntelligenceContext';
 import type { GenerationConfig, GenerateImageOptions } from '@/shared/types/ai.dto';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 /**
  * Generate an image using the Gemini 3 native image generation model.
@@ -27,7 +27,7 @@ export async function generateImage(
         await ctx.ensureInitialized();
 
         let prompt: string;
-        let model = modelOverride || AI_MODELS.IMAGE.GENERATION;
+        let model = modelOverride || INTELLIGENCE_MODELS.IMAGE.GENERATION;
         let config = configOverride;
 
         if (typeof promptOrOptions === 'object' && 'prompt' in promptOrOptions) {
@@ -44,7 +44,7 @@ export async function generateImage(
         // 2. Setup Config
         const generationConfig: GenerationConfig = {
             responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
-            mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as GenerationConfig['mediaResolution'],
+            mediaResolution: INTELLIGENCE_CONFIG.IMAGE.DEFAULT.mediaResolution as GenerationConfig['mediaResolution'],
             imageConfig: {
                 aspectRatio: config?.aspectRatio || '1:1',
                 imageSize: '4K', // "Perfect" quality

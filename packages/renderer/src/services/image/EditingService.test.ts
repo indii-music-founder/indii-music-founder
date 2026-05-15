@@ -45,9 +45,9 @@ vi.mock('../intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-// Mock AI_MODELS config
+// Mock INTELLIGENCE_MODELS config
 vi.mock('@/core/config/intelligence-models', () => ({
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         IMAGE: {
             GENERATION: 'gemini-3-pro-image-preview',
             FAST: 'gemini-2.5-flash-image',
@@ -69,9 +69,9 @@ vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     },
 }));
 
-// Mock PromptBuilder
-vi.mock('./PromptBuilderService', () => ({
-    PromptBuilder: {
+// Mock IntelligenceImagePromptService
+vi.mock('./IntelligenceImagePromptService', () => ({
+    IntelligenceImagePromptService: {
         build: (opts: any) => opts.userPrompt,
     },
 }));

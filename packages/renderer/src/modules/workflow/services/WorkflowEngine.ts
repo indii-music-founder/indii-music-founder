@@ -3,7 +3,7 @@ import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -245,7 +245,7 @@ export class WorkflowEngine {
                     }]
                     : [{ role: 'user' as const, parts: [{ text: `Write marketing copy for: ${prompt}` }] }];
 
-                const res = await AI.generateContent(contents, AI_MODELS.TEXT.AGENT);
+                const res = await AI.generateContent(contents, INTELLIGENCE_MODELS.TEXT.AGENT);
                 return res.response.text();
             }
 
@@ -254,7 +254,7 @@ export class WorkflowEngine {
                 // Generate caption via Autonomous then schedule as a draft post
                 const captionRes = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Write a social media caption for: ${prompt}` }] }],
-                    AI_MODELS.TEXT.AGENT
+                    INTELLIGENCE_MODELS.TEXT.AGENT
                 );
                 const caption = captionRes.response.text();
 
@@ -270,7 +270,7 @@ export class WorkflowEngine {
             case 'Campaign Manager': {
                 const res = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Create a detailed campaign strategy for: ${prompt}` }] }],
-                    AI_MODELS.TEXT.AGENT
+                    INTELLIGENCE_MODELS.TEXT.AGENT
                 );
                 return res.response.text();
             }

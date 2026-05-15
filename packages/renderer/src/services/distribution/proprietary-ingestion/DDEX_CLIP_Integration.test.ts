@@ -4,14 +4,14 @@ import { ingestionNotificationService } from '@/services/distribution/proprietar
 import { ingestionValidator } from '@/services/distribution/proprietary-ingestion/IngestionValidator';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
 
     // 1. Mock the Output of Audio Intelligence (The "CLIP" part)
     const mockAIProfile: AudioIntelligenceProfile = {
         id: 'sonic-id-123',
-        modelVersion: AI_MODELS.TEXT.AGENT,
+        modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT,
         analyzedAt: Date.now(),
         technical: {
             bpm: 128,

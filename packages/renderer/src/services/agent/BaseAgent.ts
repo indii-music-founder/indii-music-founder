@@ -22,7 +22,7 @@ import {
     ToolFunctionResult,
     validateHubAndSpoke
 } from './types';
-import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
@@ -54,7 +54,7 @@ export class BaseAgent implements SpecializedAgent {
      *  If undefined, all declared functionDeclarations are allowed. */
     protected authorizedTools?: string[];
     /** Fine-tuned model endpoint for this agent. When set and feature flag is enabled,
-     *  this model is used instead of the default AI_MODELS.TEXT.AGENT. */
+     *  this model is used instead of the default INTELLIGENCE_MODELS.TEXT.AGENT. */
     private modelId?: string;
     private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
@@ -872,7 +872,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 // Resolve model: fine-tuned endpoint > default base model
-                const resolvedModel = this.modelId || AI_MODELS.TEXT.AGENT;
+                const resolvedModel = this.modelId || INTELLIGENCE_MODELS.TEXT.AGENT;
                 if (iterations === 1 && this.modelId) {
                     logger.info(`[${this.id}] Using fine-tuned endpoint: ${this.modelId}`);
                 }
@@ -884,7 +884,7 @@ export class BaseAgent implements SpecializedAgent {
                 const result = await AutonomousGenAI.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
-                    { ...AI_CONFIG.THINKING.LOW }, // config
+                    { ...INTELLIGENCE_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
                     iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
                     { thoughtSignature: currentThoughtSignature } // options
@@ -926,7 +926,7 @@ export class BaseAgent implements SpecializedAgent {
                 // LEDGER: Record Spend based on Token Usage
                 const usage = response.usage?.();
                 if (usage && context?.userId) {
-                    const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
+                    const pricing = MODEL_PRICING[INTELLIGENCE_MODELS.TEXT.AGENT];
                     // Ensure we are using a text model pricing schema (input/output)
                     if (pricing && 'input' in pricing && 'output' in pricing) {
                         const inputCost = ((usage.promptTokenCount || 0) / 1000000) * pricing.input;

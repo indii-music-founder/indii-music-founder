@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -71,7 +71,7 @@ export const FinanceAgent: AgentConfig = {
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await AutonomousGenAI.generateContent(contents, AI_MODELS.TEXT.FAST);
+                const result = await AutonomousGenAI.generateContent(contents, INTELLIGENCE_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks

@@ -1,6 +1,6 @@
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { logger } from '@/utils/logger';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { db, auth } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
@@ -167,7 +167,7 @@ export class VisualOutputAutorater {
                 schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
             );
 
             if (!result) {
@@ -282,7 +282,7 @@ export class VisualOutputAutorater {
                 correctivePrompt: score?.correctivePrompt || null,
                 metadata: {
                     evaluatedAt: new Date().toISOString(),
-                    autoraterModel: AI_MODELS.TEXT.FAST,
+                    autoraterModel: INTELLIGENCE_MODELS.TEXT.FAST,
                     version: '1.0.0',
                 },
                 createdAt: serverTimestamp(),

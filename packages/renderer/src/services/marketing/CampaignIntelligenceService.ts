@@ -1,5 +1,5 @@
 import { AutonomousGenAI as GenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 // useStore removed
 import {
     CampaignBrief,
@@ -274,7 +274,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
             return await GenAI.generateVideo({
                 jobId: `asset_${Date.now()}`,
                 prompt: enhancedPrompt,
-                model: AI_MODELS.VIDEO.GENERATION,
+                model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
                 config: {
                     durationSeconds: 15, // Default for short-form
                     aspectRatio: '9:16', // Vertical for reels/tiktok
@@ -331,7 +331,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                     ? await this.enhanceImagePrompt(post.imageAsset.caption)
                     : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-                const base64 = await GenAI.generateImage(imagePrompt, AI_MODELS.IMAGE.GENERATION);
+                const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
 
                 updatedPosts.set(post.id, {
                     ...post,
@@ -373,7 +373,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                 ? await this.enhanceImagePrompt(post.imageAsset.caption)
                 : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-            const base64 = await GenAI.generateImage(imagePrompt, AI_MODELS.IMAGE.GENERATION);
+            const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
 
             return `data:image/png;base64,${base64}`;
         } catch (_error: unknown) {

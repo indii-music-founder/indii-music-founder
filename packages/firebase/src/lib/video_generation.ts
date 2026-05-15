@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 interface VideoGenerateEventData {
     jobId: string;
@@ -62,8 +62,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
             const operation = await step.run("trigger-vertex-ai-video", async () => {
                 const { model: requestedModel, generateAudio: requestedAudio } = options || {};
                 const modelId = requestedModel === 'fast'
-                    ? FUNCTION_AI_MODELS.VIDEO.FAST
-                    : FUNCTION_AI_MODELS.VIDEO.PRO;
+                    ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+                    : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
                 const auth = new GoogleAuth({
                     scopes: ['https://www.googleapis.com/auth/cloud-platform']

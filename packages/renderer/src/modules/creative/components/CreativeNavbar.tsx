@@ -8,7 +8,7 @@ import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
     Palette, Clock, FlaskConical, Wand2, Rocket, Layers
 } from 'lucide-react';
-import PromptBuilder from './PromptBuilder';
+import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
@@ -211,7 +211,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         transition={{ duration: 0.15, ease: 'easeOut' }}
                         className="relative z-50 bg-[#0a0a0c]/98 backdrop-blur-xl border-b border-white/10 shadow-xl"
                     >
-                        <PromptBuilder
+                        <IntelligencePromptBuilder
                             onAddTag={(tag) => setCreativePrompt(creativePrompt ? `${creativePrompt}, ${tag}` : tag)}
                             currentPrompt={creativePrompt}
                             onSetPrompt={setCreativePrompt}

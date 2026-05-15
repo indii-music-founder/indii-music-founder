@@ -1,6 +1,6 @@
 import { AgentContext } from '../types';
 import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
 
@@ -98,9 +98,9 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW,
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW,
                     responseMimeType: 'application/json'
                 }
             );
@@ -233,8 +233,8 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
-                { ...AI_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
+                INTELLIGENCE_MODELS.TEXT.FAST,
+                { ...INTELLIGENCE_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
             );
 
             const textResponse = res.response.text() || '[]';
@@ -290,7 +290,7 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: complexityPrompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { responseMimeType: 'application/json' }
             );
             const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');

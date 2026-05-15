@@ -12,7 +12,7 @@ import { getFirebaseAI } from '@/services/firebase';
 import type { IntelligenceContext } from '../IntelligenceContext';
 import type { GenerationConfig, ContentPart, GenerateSpeechResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { isAppCheckError } from '../appcheck';
 import { logger } from '@/utils/logger';
 
@@ -35,7 +35,7 @@ export async function generateSpeech(
     return ctx.mediaBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
-        const modelName = modelOverride || AI_MODELS.AUDIO.PRO;
+        const modelName = modelOverride || INTELLIGENCE_MODELS.AUDIO.PRO;
 
         const config: GenerationConfig = {
             responseModalities: ['AUDIO'],

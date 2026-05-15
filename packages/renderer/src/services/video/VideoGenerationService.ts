@@ -1,5 +1,5 @@
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -19,7 +19,7 @@ import { neuralCortex, type RenderDirectives } from '@/services/intelligence/Neu
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
 /** Strip undefined values from an object to prevent Firestore rejection. */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -620,7 +620,7 @@ export class VideoGenerationService {
     /**
      * Await a job to reach a terminal state (completed or failed).
      */
-    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<VideoJob> {
+    async waitForJob(jobId: string, timeoutMs: number = INTELLIGENCE_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<VideoJob> {
         let unsub: (() => void) | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 

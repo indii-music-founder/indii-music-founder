@@ -5,13 +5,13 @@ import { ChevronDown, ChevronRight, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { PromptImproverService } from '@/services/creative/PromptImproverService';
+import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { useToast } from '@/core/context/ToastContext';
 import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
 
-interface PromptBuilderProps {
+interface IntelligencePromptBuilderProps {
     onAddTag: (tag: string) => void;
     mode?: 'image' | 'video';
     sequence?: SequenceBlock[];
@@ -21,8 +21,8 @@ interface PromptBuilderProps {
     /** Current prompt text from the input field. */
     currentPrompt?: string;
     /**
-     * Replace the entire prompt. Used by the Autonomous improve action and by chip
-     * removal. When omitted, the chip rail and Improve-with-AI button hide.
+     * Replace the entire prompt. Used by the Intelligence improve action and by chip
+     * removal. When omitted, the chip rail and Improve-with-Intelligence button hide.
      */
     onSetPrompt?: (prompt: string) => void;
 }
@@ -122,7 +122,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
 });
 CategoryDropdown.displayName = 'CategoryDropdown';
 
-function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onSetPrompt }: PromptBuilderProps) {
+function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onSetPrompt }: IntelligencePromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
     const [isImproving, setIsImproving] = useState(false);
     /** Tags explicitly selected from Builder categories (not parsed from prompt text). */
@@ -193,12 +193,12 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
 
         setIsImproving(true);
         try {
-            const result = await PromptImproverService.improve({
+            const result = await IntelligencePromptService.improve({
                 rawPrompt: currentPrompt,
                 mode: mode as 'image' | 'video'
             });
             onSetPrompt(result.improved);
-            // Clear builder tags after improvement — the Autonomous rewrites the prompt,
+            // Clear builder tags after improvement — the Intelligence rewrites the prompt,
             // so the original tag fragments no longer apply as discrete chips.
             setBuilderTags([]);
             toast.success(`Prompt improved: ${result.reasoning}`);
@@ -264,7 +264,7 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                     />
                 ))}
 
-                {/* Autonomous Prompt Improver Button */}
+                {/* Intelligence Prompt Improver Button */}
                 {onSetPrompt && (
                     <button
                         onClick={handleImprove}
@@ -281,7 +281,7 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                         ) : (
                             <Sparkles size={14} />
                         )}
-                        <span>Improve with AI</span>
+                        <span>Improve with Intelligence</span>
                     </button>
                 )}
             </div>
@@ -300,4 +300,4 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
     );
 }
 
-export default memo(PromptBuilder);
+export default memo(IntelligencePromptBuilder);

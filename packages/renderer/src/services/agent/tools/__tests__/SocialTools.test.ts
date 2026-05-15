@@ -34,7 +34,7 @@ vi.mock('@/services/social/SocialService', () => ({
 
 vi.mock('@/core/config/intelligence-models', () => ({
 
-  AI_MODELS: {
+  INTELLIGENCE_MODELS: {
     TEXT: {
       AGENT: 'mock-model',
     },

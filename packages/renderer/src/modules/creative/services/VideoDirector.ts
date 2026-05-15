@@ -4,7 +4,7 @@ import { SchemaType } from 'firebase/ai';
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -123,7 +123,7 @@ export class VideoDirector {
         const cloudPayload: Record<string, unknown> = {
             jobId,
             prompt,
-            model: AI_MODELS.VIDEO.GENERATION,
+            model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
             options: { aspectRatio: '16:9' },
         };
 

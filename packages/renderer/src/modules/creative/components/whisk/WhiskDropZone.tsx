@@ -290,7 +290,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                     }`}
                                                 role="checkbox"
                                                 aria-checked={item.checked}
-                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.aiCaption || 'Image reference')}`}
+                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.intelligenceCaption || 'Image reference')}`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
                                             </button>
@@ -303,7 +303,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                             <img src={item.content} className="w-full h-full object-cover" alt="" />
                                                         </div>
                                                         <span className="text-[10px] text-gray-300 truncate flex-1">
-                                                            {item.aiCaption || 'Image reference'}
+                                                            {item.intelligenceCaption || 'Image reference'}
                                                         </span>
                                                     </>
                                                 ) : (
@@ -315,8 +315,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => {
-                                                        const newCaption = window.prompt('Edit description:', item.aiCaption || item.content);
-                                                        if (newCaption !== null) onUpdate(item.id, { aiCaption: newCaption });
+                                                        const newCaption = window.prompt('Edit description:', item.intelligenceCaption || item.content);
+                                                        if (newCaption !== null) onUpdate(item.id, { intelligenceCaption: newCaption });
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"

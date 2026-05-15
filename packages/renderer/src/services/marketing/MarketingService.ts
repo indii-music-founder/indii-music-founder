@@ -16,7 +16,7 @@ import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketi
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class MarketingService {
     /**
@@ -47,10 +47,10 @@ export class MarketingService {
 
         const response = await AutonomousGenAI.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
+            INTELLIGENCE_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
             {
                 responseMimeType: 'application/json',
-                ...AI_CONFIG.THINKING.LOW
+                ...INTELLIGENCE_CONFIG.THINKING.LOW
             }
         );
 

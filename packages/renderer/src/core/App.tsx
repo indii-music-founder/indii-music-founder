@@ -199,7 +199,7 @@ function DevPortWarning() {
 
 // Modules that require a verified (non-anonymous) account
 const COMMERCIAL_MODULES = new Set<ModuleId>([
-    'distribution', 'finance', 'licensing', 'merch', 'publishing',
+    'distribution', 'licensing', 'merch', 'publishing',
 ]);
 
 function useOnboardingRedirect() {

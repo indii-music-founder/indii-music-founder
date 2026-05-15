@@ -18,7 +18,7 @@ import {
     collection, addDoc, getDocs, doc, setDoc, serverTimestamp
 } from 'firebase/firestore';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -196,7 +196,7 @@ RULES:
                 STYLE_COMPARISON_SCHEMA,
                 2048,
                 'You are indii\'s style recognition engine. Analyze with precision and creative intelligence.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
         });
     }
@@ -238,7 +238,7 @@ Be honest. Be specific. Brand narratives don't need to be flattering — they ne
                 BRAND_NARRATIVE_SCHEMA,
                 2048,
                 'You are a music brand strategist and A&R analyst.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             const dna: StyleDNA = {

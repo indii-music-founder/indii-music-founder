@@ -5,7 +5,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { OrgAdapter, CatalogTrack } from '../types';
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 interface RegistrationAutonomousRailProps {
   focusedAdapter: OrgAdapter | null;
@@ -74,7 +74,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
 
       const replyText = await AutonomousGenAI.generateText(
         text,
-        AI_MODELS.TEXT.FAST,
+        INTELLIGENCE_MODELS.TEXT.FAST,
         systemPrompt
       );
       setMessages(prev => [...prev, { role: 'ai', text: replyText || "I'm here — ask me anything about this registration.", ts: Date.now() }]);

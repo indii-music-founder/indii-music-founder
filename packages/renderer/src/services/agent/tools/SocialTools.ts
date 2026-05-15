@@ -1,6 +1,6 @@
 import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -15,7 +15,7 @@ export const SocialTools = {
 
         const result = await AutonomousGenAI.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
         const text = result.response.text();
 
@@ -87,7 +87,7 @@ Be specific and data-driven based on the post content above.`;
             } as Record<string, unknown>,
             undefined,
             undefined,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
 
         const normalizedTrendScore = Math.min(100, Math.max(0, Math.round(result.trend_score)));

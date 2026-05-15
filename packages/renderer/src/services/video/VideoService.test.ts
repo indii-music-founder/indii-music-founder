@@ -34,11 +34,11 @@ vi.mock('@/core/config/intelligence-models', () => ({
         IMAGE_GEN: 'gemini-3-pro-image-preview',
         VIDEO_GEN: 'veo-3.1-generate-preview'
     },
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' },
         VIDEO: { GENERATION: 'veo-3.1-generate-preview', EDIT: 'veo-3.1-generate-preview' }
     },
-    AI_CONFIG: {
+    INTELLIGENCE_CONFIG: {
         THINKING: { HIGH: { thinkingConfig: { thinkingLevel: 'HIGH' } } }
     },
     IMAGE_FAST: 'gemini-3-pro-image-preview',
