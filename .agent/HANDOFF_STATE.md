@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-15 19:01 EDT
+**Updated:** 2026-05-15 19:03 EDT
 **Branch:** `fix/intelligence-emergency-killswitch`
 
 ## Recent Commits
 ```
+1d23bb0b0 chore: session checkpoint [19:01]
 3cf9c6c27 chore: session checkpoint [18:59]
 8259bdf95 docs(error-ledger): add 2026-05-15 cost-control TypeScript mistakes
 07c18332e chore(agent-memory): add knowledge in prompt.md
@@ -13,7 +14,6 @@ e5f924084 chore(agent-memory): add knowledge in prompt.md
 d31ff6896 chore(agent-memory): add knowledge in prompt.md
 6d95312c0 chore: session checkpoint [18:57]
 ebb7c644d fix(ci): resolve TypeScript duplicate userId declaration and missing logger import
-203bfa104 feat(billing): emergency intelligence kill-switch and mock-mode bypass
 ```
 
 ## Working State
