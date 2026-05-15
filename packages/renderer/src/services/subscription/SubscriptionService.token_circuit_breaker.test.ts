@@ -132,7 +132,7 @@ describe('SubscriptionService (Token Circuit Breaker)', () => {
         }
 
         expect(check2.allowed).toBe(false);
-        expect(check2.reason).toContain('AI chat token quota exceeded');
+        expect(check2.reason).toContain('Intelligence chat token quota exceeded');
         expect(check2.upgradeRequired).toBe(true);
         expect(check2.currentUsage?.used).toBe(12000);
         expect(check2.currentUsage?.remaining).toBe(0);

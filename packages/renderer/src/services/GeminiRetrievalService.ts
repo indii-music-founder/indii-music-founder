@@ -11,7 +11,7 @@
  * The Files API is simpler, more reliable, and actively maintained.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleAutonomousGenAI } from '@google/genai';
 import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
 
@@ -84,7 +84,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 // ============================================================================
 
 export class GeminiRetrievalService {
-    private genAI: GoogleGenAI;
+    private genAI: GoogleAutonomousGenAI;
     private uploadedFiles: Map<string, UploadedFile> = new Map();
 
     constructor(apiKey?: string) {
@@ -92,7 +92,7 @@ export class GeminiRetrievalService {
         if (!key) {
             throw new Error('Gemini API key is required. Set VITE_API_KEY environment variable.');
         }
-        this.genAI = new GoogleGenAI({ apiKey: key });
+        this.genAI = new GoogleAutonomousGenAI({ apiKey: key });
     }
 
     // =========================================================================

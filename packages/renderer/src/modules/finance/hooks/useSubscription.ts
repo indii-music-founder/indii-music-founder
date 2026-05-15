@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -16,6 +16,15 @@ export function useSubscription() {
     const [error, setError] = useState<string | null>(null);
     const toast = useToast();
 
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
     const fetchSubscriptionData = useCallback(async (forceRefresh = false) => {
         if (!userProfile?.id || userProfile.id === 'pending') return;
 
@@ -28,15 +37,32 @@ export function useSubscription() {
                 subscriptionService.getUsageStats(userProfile.id, forceRefresh)
             ]);
 
+            if (!isMounted.current) return;
+
             setSubscription(subData);
             setUsage(usageData);
+
+            // If we got a fallback during a manual refresh, warn the user
+            if (forceRefresh && subData.isFallback) {
+                toast.error('Could not sync with billing server. Using local cache.');
+            }
         } catch (err: unknown) {
+            if (!isMounted.current) return;
+
+            // This block should technically never be hit now that the service has fallbacks,
+            // but we keep it for extra safety.
             const message = err instanceof Error ? err.message : 'Failed to fetch subscription data';
             logger.error('[useSubscription] Error:', err);
+            
+            // Only show toast for manual refreshes to avoid navigation spam
+            if (forceRefresh) {
+                toast.error(message);
+            }
             setError(message);
-            toast.error(message);
         } finally {
-            setLoading(false);
+            if (isMounted.current) {
+                setLoading(false);
+            }
         }
     }, [userProfile?.id, toast]);
 

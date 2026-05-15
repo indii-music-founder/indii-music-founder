@@ -1,9 +1,9 @@
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -251,7 +251,7 @@ export class WorkflowEngine {
 
             // ── Social Media Department ─────────────────────────────────────
             case 'Social Media Department': {
-                // Generate caption via AI then schedule as a draft post
+                // Generate caption via Autonomous then schedule as a draft post
                 const captionRes = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Write a social media caption for: ${prompt}` }] }],
                     AI_MODELS.TEXT.AGENT

@@ -445,7 +445,7 @@ export default function InfiniteCanvas() {
 
     /**
      * Draws the canvas content cleanly (no selection box, no selection borders, no tool overlays).
-     * Used for capturing clean image data before sending to AI editing.
+     * Used for capturing clean image data before sending to Autonomous editing.
      */
     const drawClean = () => {
         const canvas = canvasRef.current;

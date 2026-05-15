@@ -3,7 +3,7 @@
  *
  * Extends the existing Memory Agent by providing long-term vector
  * archival of career milestones, decisions, and events. This enables
- * the AI agents to recall historical context when advising the artist.
+ * the Autonomous agents to recall historical context when advising the artist.
  *
  * Unlike the real-time Memory Agent (which handles immediate context),
  * this service manages the "deep memory" — permanent career records

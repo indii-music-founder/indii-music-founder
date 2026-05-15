@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MultiTurnAutorater, TraceMessage } from '../MultiTurnAutorater';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateStructuredData: vi.fn()
     }
 }));
@@ -23,7 +23,7 @@ describe('MultiTurnAutorater', () => {
             overallPass: true
         };
 
-        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResult);
+        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResult);
 
         const messages: TraceMessage[] = [
             { role: 'user', content: 'Create a new project.' },
@@ -39,9 +39,9 @@ describe('MultiTurnAutorater', () => {
         );
 
         expect(result).toEqual(mockResult);
-        expect(GenAI.generateStructuredData).toHaveBeenCalledTimes(1);
+        expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledTimes(1);
         
-        const callArgs = vi.mocked(GenAI.generateStructuredData).mock.calls[0];
+        const callArgs = vi.mocked(AutonomousGenAI.generateStructuredData).mock.calls[0];
         expect(callArgs).toBeDefined();
         if (callArgs) {
             expect(callArgs[0]).toContain('Create a project'); // Check prompt contains goal
@@ -50,7 +50,7 @@ describe('MultiTurnAutorater', () => {
     });
 
     it('should handle failures in evaluation gracefully', async () => {
-        vi.mocked(GenAI.generateStructuredData).mockRejectedValue(new Error('AI Service down'));
+        vi.mocked(AutonomousGenAI.generateStructuredData).mockRejectedValue(new Error('Intelligence Service down'));
 
         const result = await MultiTurnAutorater.evaluateTrace(
             'trace-456',
@@ -62,7 +62,7 @@ describe('MultiTurnAutorater', () => {
     });
     
     it('should handle empty evaluation results', async () => {
-        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(null);
+        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(null);
 
         const result = await MultiTurnAutorater.evaluateTrace(
             'trace-789',

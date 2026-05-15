@@ -1,6 +1,6 @@
 import { createAgent } from '../sdk/AgentBuilder';
 import { PublicistService } from '../../publicist/PublicistService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
@@ -87,7 +87,7 @@ export const PublicistAgent = createAgent('publicist')
         Format as a standard press release.`;
 
         try {
-            const content = await GenAI.generateText(prompt);
+            const content = await AutonomousGenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -130,7 +130,7 @@ export const PublicistAgent = createAgent('publicist')
         Strategy: Acknowledge, Empathize, Redirect. Keep it professional.`;
 
         try {
-            const response = await GenAI.generateText(prompt);
+            const response = await AutonomousGenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -167,7 +167,7 @@ export const PublicistAgent = createAgent('publicist')
         Include relevant hashtags.`;
 
         try {
-            const post = await GenAI.generateText(prompt);
+            const post = await AutonomousGenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -423,9 +423,9 @@ Format as JSON array with keys: outlet, subject, body, angle
 Return only valid JSON, no markdown fences.`;
 
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const { AI_MODELS } = await import('@/core/config/ai-models');
-            const raw = await GenAI.generateText(prompt, AI_MODELS.TEXT.FAST);
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AI_MODELS } = await import('@/core/config/intelligence-models');
+            const raw = await AutonomousGenAI.generateText(prompt, AI_MODELS.TEXT.FAST);
             // Strip any markdown wrapping
             const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
             const pitches: Array<{ outlet: string; subject: string; body: string; angle: string }> = JSON.parse(cleaned);

@@ -1,4 +1,4 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { logger } from '@/utils/logger';
 
 /**
@@ -43,10 +43,10 @@ export class PromptImproverService {
         const brandContext = await this.getBrandContext();
 
         const systemInstruction = mode === 'video'
-            ? `You are an expert cinematic video prompt engineer specializing in AI video generation (Veo 3.1).
-You understand temporal pacing, camera movement, scene transitions, and how to describe motion for AI models.
+            ? `You are an expert cinematic video prompt engineer specializing in Intelligence video generation (Veo 3.1).
+You understand temporal pacing, camera movement, scene transitions, and how to describe motion for Autonomous models.
 Your output prompts produce stunning, production-quality video clips.`
-            : `You are an expert visual prompt engineer specializing in AI image generation (Gemini 3 Pro Image).
+            : `You are an expert visual prompt engineer specializing in Intelligence image generation (Gemini 3 Pro Image).
 You understand photographic composition, lighting, lens effects, film stocks, and artistic styles.
 Your output prompts produce stunning, gallery-quality images.`;
 
@@ -78,7 +78,7 @@ Return a JSON object with:
 `;
 
         try {
-            const result = await GenAI.generateStructuredData<ImprovedPromptResult>(
+            const result = await AutonomousGenAI.generateStructuredData<ImprovedPromptResult>(
                 prompt,
                 {
                     nullable: false,
@@ -120,7 +120,7 @@ Return a JSON object with:
 
     /**
      * Pull brand context from the user's profile/Brand Kit.
-     * Dynamically imports store to avoid circular dependencies (following CampaignAIService pattern).
+     * Dynamically imports store to avoid circular dependencies (following CampaignIntelligenceService pattern).
      */
     private static async getBrandContext(): Promise<string> {
         try {

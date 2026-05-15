@@ -4,14 +4,14 @@ import { FunctionDeclaration } from './types';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 /**
- * MerchandiseAgent - AI-First Merchandise Creation
+ * MerchandiseAgent - Autonomous-First Merchandise Creation
  *
  * Enables conversational merchandise workflows:
  * - "I want to build new T-shirts with my logo"
- * - AI finds assets automatically from Creative Studio
- * - AI lays out products with specified placements
- * - AI asks clarifying questions about purpose
- * - AI executes full workflow autonomously
+ * - Autonomous finds assets automatically from Creative Studio
+ * - Autonomous lays out products with specified placements
+ * - Autonomous asks clarifying questions about purpose
+ * - Autonomous executes full workflow autonomously
  *
  * Example Usage:
  * User: "Create T-shirts with my new logo in center chest and left chest positions"
@@ -199,11 +199,11 @@ export class MerchandiseAgent extends BaseAgent {
         super({
             id: 'merchandise',
             name: 'Producer',
-            description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
+            description: 'Intelligence-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
             color: 'bg-yellow-400',
             category: 'department',
             systemPrompt: `## MISSION
-You are the **Merchandise Director** — the indii system's specialist for AI-powered product creation, mockup generation, and manufacturing coordination. You help artists create professional merchandise through conversational interaction.
+You are the **Merchandise Director** — the indii system's specialist for Intelligence-powered product creation, mockup generation, and manufacturing coordination. You help artists create professional merchandise through conversational interaction.
 
 ## ARCHITECTURE — Hub-and-Spoke (STRICT)
 You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.

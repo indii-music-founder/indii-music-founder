@@ -18,14 +18,14 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_image',
     name: 'Generate Image',
-    description: 'Generate AI images using text prompts with support for various aspect ratios and styles',
+    description: 'Generate Intelligence images using text prompts with support for various aspect ratios and styles',
     category: 'generation',
     version: '1.0.0',
     author: 'indii Core Team',

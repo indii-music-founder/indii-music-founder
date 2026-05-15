@@ -3,14 +3,14 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
-import { getAI, VertexAIBackend, AI } from 'firebase/ai';
+import { getAI, VertexAIBackend, Autonomous } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
 // The app will show the login screen with an auth error rather than crashing.
@@ -21,29 +21,29 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 export const app = initializeApp(firebaseConfig);
 
 // ============================================================================
-// LAZY Firebase AI Initialization
+// LAZY Firebase Autonomous Initialization
 // Only initialize when App Check is configured to avoid Installations API errors
 // ============================================================================
-let _aiInstance: AI | null = null;
+let _aiInstance: Autonomous | null = null;
 
 /**
- * Check if App Check is configured (must match FirebaseAIService logic)
+ * Check if App Check is configured (must match FirebaseIntelligenceService logic)
  */
 function isAppCheckConfigured(): boolean {
     return !!(env.appCheckKey || env.appCheckDebugToken);
 }
 
 /**
- * Get the Firebase AI instance. Returns null if App Check is not configured,
- * which signals FirebaseAIService to use direct Gemini SDK fallback.
+ * Get the Firebase Autonomous instance. Returns null if App Check is not configured,
+ * which signals FirebaseIntelligenceService to use direct Gemini SDK fallback.
  */
-export function getFirebaseAI(): AI | null {
+export function getFirebaseAI(): Autonomous | null {
     if (_aiInstance) return _aiInstance;
 
-    // Only initialize Firebase AI if App Check is configured
+    // Only initialize Firebase Autonomous if App Check is configured
     // This prevents the Installations API error when App Check isn't set up
     if (!isAppCheckConfigured()) {
-        logger.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
+        logger.warn('[Firebase] App Check not configured, Firebase Autonomous will not be initialized (using fallback)');
         return null;
     }
 
@@ -52,7 +52,7 @@ export function getFirebaseAI(): AI | null {
             backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'us-central1'),
             useLimitedUseAppCheckTokens: false
         });
-        logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend (us-central1)');
+        logger.debug('[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (us-central1)');
         return _aiInstance;
     } catch (error: unknown) {
         logger.error('[Firebase] Failed to initialize Firebase AI:', error);
@@ -62,7 +62,7 @@ export function getFirebaseAI(): AI | null {
 
 // For backwards compatibility - lazy getter
 export const ai = {
-    get instance(): AI | null {
+    get instance(): Autonomous | null {
         return getFirebaseAI();
     }
 };

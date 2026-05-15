@@ -1,6 +1,6 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AI_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
@@ -46,7 +46,7 @@ Requirements:
 Return ONLY the complete Solidity source code, no markdown fences.`;
 
         try {
-            const result = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const result = await AutonomousGenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
             const sourceCode = result.response.text().trim();
 
             // Verify it looks like Solidity (basic sanity check)
@@ -82,7 +82,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
             }, `Generated ${args.tokenType} smart contract "${args.contractName}" with EIP-2981 royalty splits. Review source before deploying.`);
         } catch (err: unknown) {
             logger.error('[Web3Tools] Contract generation failed:', err);
-            return toolError('Smart contract generation failed. Check AI service connectivity.', 'GENERATION_FAILED');
+            return toolError('Smart contract generation failed. Check Intelligence service connectivity.', 'GENERATION_FAILED');
         }
     }),
 

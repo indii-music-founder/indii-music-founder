@@ -5,8 +5,8 @@ import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+    AutonomousGenAI: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
@@ -74,7 +74,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
     });
 
     it('🛑 should stop execution when budget is exceeded (Cost Circuit Breaker)', async () => {
-        const { GenAI: AI } = await import('@/services/ai/GenAI');
+        const { AutonomousGenAI: AI } = await import('@/services/intelligence/AutonomousGenAI');
 
         // Setup: Agent wants to run 5 iterations
         // 1. First iteration: Uses 0.10. Budget OK. -> Calls Tool "dummy_tool"
@@ -119,7 +119,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
                     usageMetadata: { promptTokenCount: 2500, candidatesTokenCount: 2500, totalTokenCount: 5000 }
                 }
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>)
-            // Iteration 3: AI should NOT be called.
+            // Iteration 3: Autonomous should NOT be called.
             .mockResolvedValue({
                 response: {
                     text: () => 'This should not be reached.',

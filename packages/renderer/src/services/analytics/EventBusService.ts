@@ -6,8 +6,8 @@
  * - track_created: New track/project created
  * - track_updated: Track metadata updated
  * - distribution_started: Release distribution initiated
- * - ai_generation_started: AI task started
- * - ai_generation_completed: AI task completed
+ * - ai_generation_started: Autonomous task started
+ * - ai_generation_completed: Autonomous task completed
  * - error_occurred: Application error
  * - performance_metric: Performance data
  */

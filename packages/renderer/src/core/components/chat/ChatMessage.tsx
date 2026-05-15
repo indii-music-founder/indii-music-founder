@@ -229,7 +229,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         <img
                             src={avatarUrl}
                             className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
-                            alt="AI"
+                            alt="Autonomous"
                         />
                     ) : agentIdentity ? (
                         <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-linear-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
@@ -385,7 +385,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 })}
 
                 {msg.isStreaming && (
-                    <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
+                    <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="Intelligence is thinking">
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}

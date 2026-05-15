@@ -78,7 +78,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             const merchMeta = {
                 id: 'merchandise',
                 name: 'Merchandise Specialist',
-                description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
+                description: 'Intelligence-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
                 color: '#FFE135',
                 category: 'specialist',
                 execute: async () => { throw new Error('Cannot execute metadata-only agent'); }

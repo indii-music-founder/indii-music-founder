@@ -2,7 +2,7 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 import systemPrompt from '@agents/road/prompt.md?raw';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
 import { Schema } from 'firebase/ai';
 
 export const RoadAgent: AgentConfig = {
@@ -25,7 +25,7 @@ Provide:
 3. Recommended Rest Stops`;
 
             try {
-                const response = await GenAI.generateText(prompt);
+                const response = await AutonomousGenAI.generateText(prompt);
                 return { success: true, data: { route_plan: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -35,7 +35,7 @@ Provide:
         calculate_tour_budget: async (args: { duration_days: number, crew_size: number }) => {
             const prompt = `Calculate a detailed tour budget. Duration: ${args.duration_days} days, Crew: ${args.crew_size}. Return a JSON with total_estimated_budget and breakdown (accommodation, travel, per_diem, contingency).`;
             try {
-                const response = await GenAI.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
+                const response = await AutonomousGenAI.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
                 return { success: true, data: response };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -44,12 +44,12 @@ Provide:
         },
         search_places: async (args: { query: string }) => {
             const prompt = `Simulate a Google Maps search for "${args.query}". Return a list of realistic venues / places with ratings and addresses.`;
-            const response = await GenAI.generateText(prompt);
+            const response = await AutonomousGenAI.generateText(prompt);
             return { success: true, data: { results: response } };
         },
         get_distance_matrix: async () => {
             const prompt = `Generate a realistic distance matrix for a tour route (e.g., LA to SF). Return distance and duration.`;
-            const response = await GenAI.generateText(prompt);
+            const response = await AutonomousGenAI.generateText(prompt);
             return { success: true, data: { matrix: response } };
         },
         generate_itinerary: async (args: { tour_name: string, start_date: string, end_date: string, cities: string[] }) => {
@@ -60,7 +60,7 @@ Provide:
             
             Include travel days, load-in times, soundchecks, show times, and load-out times. Return as structured JSON.`;
             try {
-                const response = await GenAI.generateStructuredData(prompt, { type: 'object' } as Schema);
+                const response = await AutonomousGenAI.generateStructuredData(prompt, { type: 'object' } as Schema);
                 return { success: true, data: response };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);

@@ -215,7 +215,7 @@ export class LicensingService {
 
     /**
      * Returns sync briefs from Firestore. If the collection is empty, generates
-     * realistic sample briefs with GenAI and caches them in Firestore so future
+     * realistic sample briefs with AutonomousGenAI and caches them in Firestore so future
      * sessions load instantly.
      */
     async getSyncBriefs(): Promise<SyncBrief[]> {
@@ -230,7 +230,7 @@ export class LicensingService {
                 return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SyncBrief));
             }
 
-            // Collection empty → generate and seed with AI
+            // Collection empty → generate and seed with Intelligence
             return this.seedSyncBriefs(userProfile.id);
         } catch (err: unknown) {
             logger.warn('[LicensingService] getSyncBriefs failed:', err);
@@ -239,13 +239,13 @@ export class LicensingService {
     }
 
     /**
-     * Uses GenAI to generate realistic sync licensing briefs and writes them
+     * Uses AutonomousGenAI to generate realistic sync licensing briefs and writes them
      * to Firestore so they survive page refreshes.
      */
     private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const { AI_MODELS } = await import('@/core/config/ai-models');
+            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AI_MODELS } = await import('@/core/config/intelligence-models');
 
             const today = new Date();
             const deadlines = [7, 14, 21, 30, 45, 60, 90].map(d => {
@@ -277,7 +277,7 @@ export class LicensingService {
                 }
             };
 
-            const generated = await GenAI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
+            const generated = await AutonomousGenAI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
                 `Generate 8 realistic sync licensing briefs for music supervisors seeking independent music.
 Use these upcoming deadlines: ${deadlines.join(', ')}.
 Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.

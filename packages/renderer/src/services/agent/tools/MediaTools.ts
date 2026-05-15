@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger';
 
 export const MediaTools = {
     /**
-     * Resizes and adapts an image for various social media platforms using AI outpainting.
+     * Resizes and adapts an image for various social media platforms using Autonomous outpainting.
      */
     resize_image_for_socials: wrapTool('resize_image_for_socials', async (args: { imageUrl: string, platforms?: string[], promptOverride?: string }) => {
         const { useStore } = await import('@/core/store');
@@ -89,7 +89,7 @@ export const MediaTools = {
             return toolSuccess({
                 count: results.length,
                 variants: results
-            }, `Successfully generated ${results.length} social media variants using AI outpainting.`);
+            }, `Successfully generated ${results.length} social media variants using Autonomous outpainting.`);
 
         } catch (error: unknown) {
             const err = error as Error;
@@ -152,7 +152,7 @@ export const MediaTools = {
     }),
 
     /**
-     * Crops an image to a specific aspect ratio or focus point using AI reframing.
+     * Crops an image to a specific aspect ratio or focus point using Autonomous reframing.
      */
     crop_image: wrapTool('crop_image', async (args: { imageUrl: string, aspect: string, focusPoint?: string }) => {
         const { useStore } = await import('@/core/store');

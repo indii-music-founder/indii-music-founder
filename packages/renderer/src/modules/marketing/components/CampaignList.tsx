@@ -49,7 +49,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 animate="show"
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"
             >
-                {/* AI Generate Card */}
+                {/* Autonomous Generate Card */}
                 {onAIGenerate && (
                     <motion.div variants={itemVars}>
                         <button
@@ -86,7 +86,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                             <p className="text-xs text-gray-600 group-hover:text-gray-500 mt-1 max-w-[160px]">Create manually from scratch</p>
                         </div>
 
-                        {/* Decorative AI Sparkles */}
+                        {/* Decorative Autonomous Sparkles */}
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <Plus size={16} className="text-dept-creative" />
                         </div>

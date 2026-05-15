@@ -115,7 +115,7 @@ export const createFirebaseMock = () => {
         getGenerativeModel: vi.fn(() => ({
             generateContent: vi.fn().mockResolvedValue({
                 response: {
-                    text: () => '{"result": "mock AI response"}',
+                    text: () => '{"result": "mock Autonomous response"}',
                     functionCalls: () => [],
                 },
             }),
