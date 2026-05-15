@@ -72,7 +72,7 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock other dependencies
 vi.mock('@google/genai', () => ({
-    serverTimestamp: vi.fn(), GoogleAutonomousGenAI: class { }
+    serverTimestamp: vi.fn(), GoogleGenAI: class { }
 }));
 vi.mock('@/config/env', () => ({
     serverTimestamp: vi.fn(),
