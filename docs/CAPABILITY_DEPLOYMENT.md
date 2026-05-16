@@ -40,9 +40,12 @@ Every agent in the swarm is seeded with a technical core to ensure they can perf
 | **Social** | `post_formatter.py` | Optimizes content for IG, TikTok, and X limits. |
 | **Legal** | `nda_generator.py` | Scaffolds standard non-disclosure agreements. |
 | **Finance** | `royalty_estimator.py` | Projects earnings from streaming play counts. |
+| **Analytics** | `viral_potential_score.py` | Analyzes genre/BPM trends for TikTok viral potential. |
+| **Road** | `tour_route_optimizer.py` | Solves TSP for tour logistics and fuel efficiency. |
+| **Distribution**| `format_validator.py` | Ensures audio/image assets meet DSP ingestion standards. |
 
 ### 4.2. Support Specialists
-All other agents (Analytics, Distribution, Road, etc.) are seeded with a `domain_readiness.py` prototype to ensure a baseline technical capability across the 20-agent swarm.
+All other agents (Strategy, Curator, etc.) are seeded with a `domain_readiness.py` prototype to ensure a baseline technical capability across the 20-agent swarm.
 
 ## 5. Deployment Workflow
 1. **Scaffold**: Create `skills/tools/` directory for the target agent.

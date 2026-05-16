@@ -130,6 +130,7 @@ The core of indii is the **Agent Swarm**, a decentralized orchestration protocol
 - **Audit Skill**: Decentralized capability discovery via `scan_directory.py`.
 - **Memory Skill**: Persistent procedural "Brain Surgery" via `update_knowledge.py`.
 - **Capability Registry**: Centralized `agents/capability_registry.json` for tool discovery.
+- **Swarm Dashboard**: Real-time visualization of agent capabilities in the Creative Studio UI.
 
 For more details on the autonomous evolution, see [CAPABILITY_DEPLOYMENT.md](docs/CAPABILITY_DEPLOYMENT.md).
 
