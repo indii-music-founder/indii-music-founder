@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-15 19:59 EDT
+**Updated:** 2026-05-15 20:02 EDT
 **Branch:** `fix/intelligence-emergency-killswitch`
 
 ## Recent Commits
 ```
+702242396 chore: session checkpoint [19:59]
 8ed2e0ecf chore: session checkpoint [19:15]
 5324bcd4a chore: session checkpoint [19:14]
 5176eca96 chore: session checkpoint [19:13]
@@ -13,7 +14,6 @@ ae5a1078c chore: session checkpoint [19:04]
 848ff3d32 chore: session checkpoint [19:03]
 1d23bb0b0 chore: session checkpoint [19:01]
 3cf9c6c27 chore: session checkpoint [18:59]
-8259bdf95 docs(error-ledger): add 2026-05-15 cost-control TypeScript mistakes
 ```
 
 ## Working State
@@ -45,7 +45,9 @@ ae5a1078c chore: session checkpoint [19:04]
 ?? agents/road/skills/
 ?? agents/social/skills/
 ?? agents/video/skills/
+?? docs/CAPABILITY_DEPLOYMENT.md
 ?? scripts/fix_readme.py
+?? scripts/fix_readme_emojis.py
 ```
 
 ## Decisions
