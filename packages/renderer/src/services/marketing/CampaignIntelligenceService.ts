@@ -1,4 +1,4 @@
-import { AutonomousGenAI as GenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as GenAI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 // useStore removed
 import {

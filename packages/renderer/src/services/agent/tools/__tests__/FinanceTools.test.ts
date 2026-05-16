@@ -33,12 +33,12 @@ vi.mock('@/core/config/distributors', () => ({
 }));
 
 describe('FinanceTools', () => {
-    let AutonomousGenAI: any;
+    let AutonomousIntelligence: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const module = await import('@/services/intelligence/AutonomousGenAI');
-        AutonomousGenAI = module.AutonomousGenAI;
+        const module = await import('@/services/intelligence/AutonomousIntelligence');
+        AutonomousIntelligence = module.AutonomousIntelligence;
     });
 
     describe('analyze_receipt', () => {
@@ -51,7 +51,7 @@ describe('FinanceTools', () => {
                 description: 'Printer Paper'
             });
 
-            AutonomousGenAI.generateContent.mockResolvedValue({
+            AutonomousIntelligence.generateContent.mockResolvedValue({
                 response: {
                     text: () => mockResponseText
                 }
@@ -64,7 +64,7 @@ describe('FinanceTools', () => {
 
             const result = await FinanceTools.analyze_receipt(args);
 
-            expect(AutonomousGenAI.generateContent).toHaveBeenCalledWith(
+            expect(AutonomousIntelligence.generateContent).toHaveBeenCalledWith(
                 expect.arrayContaining([
                     expect.objectContaining({
                         role: 'user',
@@ -86,7 +86,7 @@ describe('FinanceTools', () => {
         });
 
         it('should handle Autonomous errors gracefully via wrapTool', async () => {
-            AutonomousGenAI.generateContent.mockRejectedValue(new Error('AI Error'));
+            AutonomousIntelligence.generateContent.mockRejectedValue(new Error('AI Error'));
 
             const args = {
                 image_data: 'data',

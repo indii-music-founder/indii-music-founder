@@ -22,7 +22,7 @@ import { CoreTools } from '../CoreTools';
 import { useStore } from '@/core/store';
 import { agentRegistry } from '../../registry';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 const { mockAI } = vi.hoisted(() => ({
     mockAI: {
@@ -36,8 +36,8 @@ const { mockAI } = vi.hoisted(() => ({
     }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: mockAI
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: mockAI
 }));
 
 describe('CoreTools', () => {

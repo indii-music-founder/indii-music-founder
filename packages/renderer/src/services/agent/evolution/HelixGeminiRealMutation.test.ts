@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
-// Mock AutonomousGenAI
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-  AutonomousGenAI: {
+// Mock AutonomousIntelligence
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+  AutonomousIntelligence: {
     generateText: vi.fn(),
     generateContent: vi.fn()
   }

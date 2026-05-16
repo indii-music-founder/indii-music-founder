@@ -25,7 +25,7 @@ export const FEATURE_FLAG_NAMES = {
     // ---- Platform capabilities ----
     APP_CHECK: 'enable_app_check',
     VIDEO_INTERPOLATION: 'enable_video_interpolation',
-    AI_VOICE: 'enable_ai_voice',
+    INTELLIGENT_VOICE: 'enable_intelligent_voice',
     DDEX_EXPORT: 'enable_ddex_export',
     SOCIAL_FEED: 'enable_social_feed',
     KNOWLEDGE_API: 'enable_knowledge_api',
@@ -58,7 +58,7 @@ const DEFAULTS: Record<string, boolean> = {
     // Platform capabilities (enabled)
     [FEATURE_FLAG_NAMES.APP_CHECK]: false,
     [FEATURE_FLAG_NAMES.VIDEO_INTERPOLATION]: true,
-    [FEATURE_FLAG_NAMES.AI_VOICE]: true,
+    [FEATURE_FLAG_NAMES.INTELLIGENT_VOICE]: true,
     [FEATURE_FLAG_NAMES.DDEX_EXPORT]: true,
     [FEATURE_FLAG_NAMES.SOCIAL_FEED]: true,
     [FEATURE_FLAG_NAMES.KNOWLEDGE_API]: true,

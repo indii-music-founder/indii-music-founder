@@ -11,7 +11,7 @@ import { livingPlanService } from './LivingPlanService';
 
 // Workflow coordinator removed for indii Conductor standard routing
 import { maestroBatchingService } from './MaestroBatchingService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
@@ -1050,7 +1050,7 @@ The user will see this plan and can approve it to start execution.`;
             }
         }
 
-            const { stream } = await AutonomousGenAI.generateContentStream(
+            const { stream } = await AutonomousIntelligence.generateContentStream(
                 contents,
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 undefined,

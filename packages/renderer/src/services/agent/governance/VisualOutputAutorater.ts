@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { db, auth } from '@/services/firebase';
@@ -162,7 +162,7 @@ export class VisualOutputAutorater {
                 required: ['subjectMatch', 'sceneMatch', 'moodMatch', 'technicalAdherence', 'overallPass', 'gapsFound', 'correctivePrompt'],
             };
 
-            const result = await AutonomousGenAI.generateStructuredData<VisualEvaluationScore>(
+            const result = await AutonomousIntelligence.generateStructuredData<VisualEvaluationScore>(
                 parts,
                 schema as unknown as Record<string, unknown>,
                 undefined,

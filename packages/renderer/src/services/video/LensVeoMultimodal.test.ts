@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mocks
 const mocks = vi.hoisted(() => ({
@@ -112,12 +112,12 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, 
         );
 
         // 2. Verify Veo received the enriched prompt
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(geminiAnalysis),
         }));
 
         // 3. Verify original prompt is preserved
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(userPrompt)
         }));
     });
@@ -133,7 +133,7 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, 
 
         // Assert
         expect(mocks.analyzeImage).not.toHaveBeenCalled();
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.not.stringContaining("undefined") // basic sanity check
         }));
     });

@@ -1022,7 +1022,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 if (!this.fallbackClient) {
                     throw new AppException(
                         AppErrorCode.INTERNAL_ERROR,
-                        'Video generation requires the Google AutonomousGenAI SDK. Please configure VITE_API_KEY.'
+                        'Video generation requires the Google AutonomousIntelligence SDK. Please configure VITE_API_KEY.'
                     );
                 }
 

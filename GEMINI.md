@@ -504,20 +504,43 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 ### Agent Skills (`.agent/skills/`)
 
+#### Engineering (Matt Pocock Core Suite)
+
 | Trigger | Skill File |
-|---------|-----------|
+| --- | --- |
+| Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
+| Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
+| Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
+| Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
+| Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
+| Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
+
+#### Productivity (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
+| Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
+
+#### Misc (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
+| Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
+
+#### Indii-Specific Skills (Core & Essential)
+
+| Trigger | Skill File |
+| --- | --- |
+| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
 | Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
 | Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
 | Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
 | Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
-| Brand kit setup, onboarding artist identity | `.agent/skills/brand_kit/SKILL.md` |
-| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
 | Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
 | Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
 | Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Stress test image generation pipeline | `.agent/skills/live_test_creative/SKILL.md` |
-| Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
 | Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
 | **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
 

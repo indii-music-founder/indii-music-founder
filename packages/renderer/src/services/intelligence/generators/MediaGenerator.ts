@@ -37,7 +37,7 @@ const RESOLUTION_MAP: Record<string, string> = {
  * from the @google/genai SDK, then polling the returned operation until done.
  * Matches the pattern used by image generation (direct SDK call, no backend proxy).
  *
- * @param client - The initialized GoogleAutonomousGenAI client
+ * @param client - The initialized GoogleAutonomousIntelligence client
  * @param options - Video generation request + optional timeout override
  * @returns A blob URL or raw URI pointing at the generated video
  */

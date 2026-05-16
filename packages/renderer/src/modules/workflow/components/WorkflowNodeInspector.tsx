@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
