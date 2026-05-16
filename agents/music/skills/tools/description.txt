@@ -1,0 +1,2 @@
+description: Generates a standard metadata split sheet for a music track.
+trigger_labels: ["music", "splits", "legal"]

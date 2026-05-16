@@ -59,6 +59,18 @@ export class CostControlService {
    * Fail-secure: If ledger is unavailable, blocks the operation.
    */
   static async checkAndReserve(req: CostCheckRequest): Promise<CostCheckResponse> {
+    // MOCK MODE BYPASS: If local development is restricted by billing blocks, 
+    // allow mock responses to proceed without checking/writing to Firestore ledgers.
+    if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+      return {
+        allowed: true,
+        remainingBudget: 1000,
+        dailyUsed: 0,
+        monthlyUsed: 0,
+        operationId: `mock-${Date.now()}`
+      };
+    }
+
     const timestamp = new Date();
     const isoString = timestamp.toISOString();
     const today = (isoString.split('T')[0] as string) || isoString;
