@@ -171,6 +171,32 @@ export class AgentRegistry implements AgentRegistryProvider {
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
+        // Register Analytics Specialist
+        try {
+            const analyticsMeta = {
+                id: 'analytics',
+                name: 'Intelligence Analytics Specialist',
+                description: 'Analyzes intelligence and analytics data for artist insights and growth intelligence.',
+                color: '#9C27B0',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(analyticsMeta, async () => {
+                const agent: SpecializedAgent = {
+                    id: 'analytics',
+                    name: 'Intelligence Analytics Specialist',
+                    description: 'Analyzes intelligence and analytics data.',
+                    color: '#9C27B0',
+                    category: 'specialist',
+                    execute: async () => { throw new Error('Analytics agent not yet implemented'); }
+                };
+                return agent;
+            });
+        } catch (e: unknown) {
+            logger.warn("[AgentRegistry] Failed to register AnalyticsAgent:", e);
+        }
+
 
         // Register worker placeholders from DEPARTMENTS
         try {
