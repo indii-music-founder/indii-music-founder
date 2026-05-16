@@ -6,6 +6,20 @@
 
 ---
 
+## Your Team Structure
+
+**You are:** Solo operator + IDE + agent swarm (Claude, Gemini, DROID, JULES, CODEX)
+
+**Our role:** Execute your intent with guardrails that prevent mistakes, learn your patterns from memory, anticipate your needs.
+
+**How you work:** Fast, parallel agents, consolidation before push. You don't have time for friction — the system removes it.
+
+**What we expect:** Trust our routing decisions. Use `/skill – skill` as your primary entry point. We get smarter with every session.
+
+---
+
+---
+
 ## MANDATORY SESSION BOOTSTRAP
 
 > This section is non-negotiable. There are no lifecycle hooks in this environment —
