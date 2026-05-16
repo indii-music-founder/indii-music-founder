@@ -14,6 +14,7 @@
 import { GoogleGenAI as GoogleAutonomousIntelligence } from '@google/genai';
 import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================
 // Types
@@ -64,7 +65,7 @@ export interface RetrievalOptions {
 // ============================================================================
 
 const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
-const MODEL_NAME = 'gemini-2.5-flash'; // Use latest model with best retrieval
+const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST; // Use centralized model config
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Supported MIME types for upload
