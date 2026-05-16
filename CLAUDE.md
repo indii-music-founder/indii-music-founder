@@ -496,6 +496,38 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
+---
+
+## Agent Skills Configuration
+
+The engineering skills (from Matt Pocock's suite) read three config files to understand how indii tracks work, manages triage, and documents domain knowledge.
+
+### Issue Tracker
+
+**GitHub Issues** — issues live in `indii-music/indiiOS-Clean` GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+Skills use the `gh` CLI to create, list, and manage issues. Infer repo from `git remote -v` automatically.
+
+### Triage Labels
+
+**Canonical five-state triage vocabulary:**
+
+| Role | Label | Meaning |
+| --- | --- | --- |
+| Needs Eval | `triage/eval-needed` | Maintainer assessment required |
+| Awaiting Info | `triage/awaiting-info` | Blocked waiting on reporter |
+| Ready for Agent | `triage/ready-for-agent` | Fully specified, agent can pick up |
+| Ready for Human | `triage/ready-for-human` | Ready for human implementation |
+| Won't Fix | `wontfix` | Decided not to pursue |
+
+See `docs/agents/triage-labels.md` for full mapping.
+
+### Domain Context
+
+**Single-context** — all architectural decisions and domain knowledge live in `CLAUDE.md` (this file). No separate ADRs. See `docs/agents/domain.md` for consumer rules.
+
+---
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
