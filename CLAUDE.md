@@ -565,6 +565,7 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 | Trigger | Skill File |
 | --- | --- |
+| Assess task, evaluate available skills, route to best match | `.agent/skills/skill-selector/SKILL.md` |
 | Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
 | Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
 | Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
