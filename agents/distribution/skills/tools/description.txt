@@ -1,0 +1,2 @@
+description: Validates audio file formats and metadata against DSP standards.
+trigger_labels: [distribution, audio, validate, dsp]

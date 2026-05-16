@@ -1,0 +1,2 @@
+description: Technical readiness checker for the marketing domain.
+trigger_labels: ["marketing", "readiness", "status"]

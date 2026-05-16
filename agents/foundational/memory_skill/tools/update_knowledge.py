@@ -1,57 +1,56 @@
-import argparse
 import os
-
+import argparse
 import subprocess
 
-def update_knowledge(file_path: str, action: str, content: str) -> None:
+def update_agent_instructions(file_path, action, content):
     if not os.path.exists(file_path):
-        print(f"Error: Target file not found at {file_path}")
-        return
+        # Try prompt.md if instructions.md doesn't exist
+        if "instructions.md" in file_path:
+            file_path = file_path.replace("instructions.md", "prompt.md")
+        
+        if not os.path.exists(file_path):
+            return f"Error: File {file_path} not found."
 
-    content = content.strip()
-    with open(file_path, 'r') as file:
-        lines = [line.strip() for line in file.readlines()]
-
-    if action == 'add':
-        if content in lines:
-            print(f"Skipped: Rule already exists in {file_path}")
-            return
-        
-        with open(file_path, 'a') as file:
-            file.write(f"\n{content}\n")
-        status = f"Success: Content appended to {file_path}"
-        
-    elif action == 'remove':
-        original_count = len(lines)
-        lines = [line for line in lines if content not in line]
-        if len(lines) == original_count:
-            status = f"No Action: Target content not found in {file_path}"
-            print(status)
-            return
-        
-        with open(file_path, 'w') as file:
-            file.write("\n".join(lines) + "\n")
-        status = f"Success: Target content removed from {file_path}"
-        
-    else:
-        print("Error: Invalid action specified.")
-        return
-
-    # Git integration: Commit the change
     try:
-        subprocess.run(["git", "add", file_path], check=True, capture_output=True)
-        commit_msg = f"chore(agent-memory): {action} knowledge in {os.path.basename(file_path)}"
-        subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
-        status += " (Changes committed to Git)"
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+
+        if action == 'add':
+            # Deduplicate
+            if content.strip() in [l.strip() for l in lines]:
+                return f"Success: Content already exists in {file_path}"
+            
+            with open(file_path, 'a') as f:
+                f.write(f"\n{content}\n")
+            msg = f"Success: Content appended to {file_path}"
+        
+        elif action == 'remove':
+            new_lines = [l for l in lines if content not in l]
+            with open(file_path, 'w') as f:
+                f.writelines(new_lines)
+            msg = f"Success: Content removed from {file_path}"
+        
+        else:
+            return "Error: Invalid action. Use 'add' or 'remove'."
+
+        # Git commit
+        try:
+            subprocess.run(["git", "add", file_path], check=True)
+            subprocess.run(["git", "commit", "-m", f"chore(agent-memory): {action} knowledge in {os.path.basename(file_path)}"], check=True)
+            msg += " (Changes committed to Git)"
+        except Exception as ge:
+            msg += f" (Git commit failed: {ge})"
+
+        return msg
+
     except Exception as e:
-        status += f" (Git commit failed: {str(e)})"
-    
-    print(status)
+        return f"Error: {e}"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Rewrite agent instruction files")
-    parser.add_argument("--file_path", type=str, required=True, help="Path to the instruction.md file")
-    parser.add_argument("--action", choices=['add', 'remove'], required=True, help="Rewrite operation type")
-    parser.add_argument("--content", type=str, required=True, help="String to inject or excise")
+    parser = argparse.ArgumentParser(description="Update agent persistent knowledge")
+    parser.add_argument("--file_path", required=True)
+    parser.add_argument("--action", choices=['add', 'remove'], required=True)
+    parser.add_argument("--content", required=True)
     args = parser.parse_args()
-    update_knowledge(args.file_path, args.action, args.content)
+    
+    print(update_agent_instructions(args.file_path, args.action, args.content))

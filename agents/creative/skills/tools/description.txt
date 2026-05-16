@@ -1,0 +1,2 @@
+description: Technical readiness checker for the creative domain.
+trigger_labels: ["creative", "readiness", "status"]
