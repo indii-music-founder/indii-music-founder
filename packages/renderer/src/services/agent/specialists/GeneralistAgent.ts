@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger';
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';

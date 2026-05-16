@@ -4,16 +4,16 @@
 
 # indii: The Independent Creative Engine
 
-**The First AI-Native Operating System for Independent Artists & Producers.**
+**The First Intelligence-Native Operating System for Independent Artists & Producers.**
 
-indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indii enables creators to own their infrastructure, their data, and their future.
+indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/new-detroit-music-llc/indii-Alpha-Electron)
+[![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/new-detroit-music-llc/indii-Alpha-Electron)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
-[![Gemini](https://img.shields.io/badge/AI-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
+[![Intelligence](https://img.shields.io/badge/Intelligence-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22.0.0-339933?logo=node.js)](https://nodejs.org)
 
 ---

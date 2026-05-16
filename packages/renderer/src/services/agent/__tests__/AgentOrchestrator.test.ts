@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentOrchestrator } from '../components/AgentOrchestrator';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { agentRegistry } from '../registry';
 import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
 
 // Mock dependencies
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     }
 }));

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -58,7 +58,7 @@ Return ONLY a valid JSON object with the following structure:
             required: ["title", "beats"] as const
         };
 
-        const response = await AutonomousGenAI.generateStructuredData(
+        const response = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema,
             undefined,

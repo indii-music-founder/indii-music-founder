@@ -1,4 +1,4 @@
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';
@@ -143,7 +143,7 @@ export class VideoService {
                 ? { imageBytes: firstFrameSource.data, mimeType: firstFrameSource.mimeType }
                 : undefined;
 
-            // Generate with retry for rate limiting — direct SDK call through AutonomousGenAI alias
+            // Generate with retry for rate limiting — direct SDK call through AutonomousIntelligence alias
             const uri = await this.withRetry(() => AI.generateVideo({
                 model,
                 prompt: options.prompt,

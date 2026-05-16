@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PUBLICIST_TOOLS } from './tools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock MemoryService to avoid IndexedDB issues
 vi.mock('@/services/agent/MemoryService', () => ({
@@ -16,7 +16,7 @@ describe('PUBLICIST_TOOLS', () => {
     });
 
     it('write_press_release should return text', async () => {
-        vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce({
+        vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValueOnce({
             response: { text: () => 'Mocked Press Release', inlineDataParts: [], functionCalls: [], thoughtSummary: '' }
         } as any);
         const result = await PUBLICIST_TOOLS.write_press_release({
@@ -29,7 +29,7 @@ describe('PUBLICIST_TOOLS', () => {
     });
 
     it('generate_crisis_response should return text', async () => {
-        vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce({
+        vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     response: 'Crisis Response',
@@ -67,7 +67,7 @@ describe('PUBLICIST_TOOLS', () => {
             }
         };
 
-        vi.spyOn(AutonomousGenAI, 'generateContent').mockResolvedValueOnce({
+        vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify(mockCampaign),
                 inlineDataParts: [],

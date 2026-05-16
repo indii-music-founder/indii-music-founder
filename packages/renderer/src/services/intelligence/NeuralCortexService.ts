@@ -20,7 +20,7 @@ import {
     where, getDocs, Timestamp, serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import type { AudioIntelligenceProfile, AudioSemanticData } from '@/services/audio/types';
 import { logger } from '@/utils/logger';
@@ -99,7 +99,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 /** Embed a single text string using the approved embedding model. */
 async function embedText(text: string): Promise<number[]> {
-    const result = await AutonomousGenAI.embedContent({
+    const result = await AutonomousIntelligence.embedContent({
         model: EMBEDDING_MODEL,
         content: {
             role: 'user',

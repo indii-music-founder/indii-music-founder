@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioService } from '@/services/audio/AudioService';
 
 interface SpeechRecognitionInstance {
@@ -80,7 +80,7 @@ export class VoiceService {
         audioService.stop();
 
         try {
-            const response = await AutonomousGenAI.generateSpeech(text, voiceName || 'Kore');
+            const response = await AutonomousIntelligence.generateSpeech(text, voiceName || 'Kore');
             await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
         } catch {
             this.fallbackSpeak(text);

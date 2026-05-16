@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { OrgAdapter, CatalogTrack } from '../types';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 interface RegistrationAutonomousRailProps {
@@ -72,7 +72,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
         ? `You are indii, a creative assistant. The user is filling out the ${focusedAdapter.name} registration form for "${track?.title}". Answer concisely with relevant music industry knowledge.`
         : 'You are indii, a creative assistant in the Registration Center. Answer concisely.';
 
-      const replyText = await AutonomousGenAI.generateText(
+      const replyText = await AutonomousIntelligence.generateText(
         text,
         INTELLIGENCE_MODELS.TEXT.FAST,
         systemPrompt

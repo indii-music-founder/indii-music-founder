@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAgent } from './AgentBuilder';
 import { AgentTestHarness } from './test/AgentTestHarness';
 import { PromptService } from './PromptService';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock global dependencies
 vi.mock('@/services/firebase', () => ({
@@ -18,8 +18,8 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         embedContent: vi.fn(),
         generateContentStream: vi.fn()
@@ -65,7 +65,7 @@ describe('Agent SDK Integration', () => {
         const harness = new AgentTestHarness(agentConfig);
 
         // Mock Autonomous to respond "Echo: hi"
-        harness.mockAutonomousGenAIResponse('Echo: hi');
+        harness.mockAutonomousIntelligenceResponse('Echo: hi');
 
         const result = await harness.run('Say hi');
 
@@ -90,8 +90,8 @@ describe('Agent SDK Integration', () => {
         const harness = new AgentTestHarness(agentConfig);
 
         // Mock sequence for generateContent (Tool Call -> Final Result)
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-        const aiSpy = vi.mocked(AutonomousGenAI.generateContent);
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const aiSpy = vi.mocked(AutonomousIntelligence.generateContent);
 
         // 1. First call: Autonomous requests tool execution
         aiSpy.mockResolvedValueOnce({
@@ -104,7 +104,7 @@ describe('Agent SDK Integration', () => {
                 }],
                 usageMetadata: {}
             }
-        } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         // 2. Second call: Autonomous sees tool result and finishes
         aiSpy.mockResolvedValueOnce({
@@ -115,7 +115,7 @@ describe('Agent SDK Integration', () => {
                 }],
                 usageMetadata: {}
             }
-        } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         const result = await harness.run('Do work');
 

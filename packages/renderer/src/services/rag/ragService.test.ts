@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before imports
-vi.mock('../intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateText: vi.fn(),
         generateStructuredData: vi.fn(),
@@ -49,7 +49,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 }));
 
 import { runAgenticWorkflow, processForKnowledgeBase } from './ragService';
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 

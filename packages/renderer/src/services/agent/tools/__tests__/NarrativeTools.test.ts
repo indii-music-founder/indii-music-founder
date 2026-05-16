@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
@@ -23,8 +23,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateStructuredData: vi.fn(),
         generateVideo: vi.fn()
@@ -84,7 +84,7 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValueOnce(mockResponse);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValueOnce(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
 

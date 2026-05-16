@@ -11,7 +11,7 @@
  * - naturalFallback.ts   → Human-like fallback response generation
  */
 
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';

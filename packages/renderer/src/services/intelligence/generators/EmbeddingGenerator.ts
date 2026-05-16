@@ -16,7 +16,7 @@ import { INTELLIGENCE_CONFIG, APPROVED_MODELS } from '@/core/config/intelligence
 import { isAppCheckError } from '../appcheck';
 import { TokenUsageService } from '../billing/TokenUsageService';
 import { logger } from '@/utils/logger';
-import type { AutonomousGenAIEmbedResult, ExtendedGenerativeModel } from '../types';
+import type { AutonomousIntelligenceEmbedResult, ExtendedGenerativeModel } from '../types';
 
 /**
  * Embed a single content object and return the embedding values.
@@ -38,7 +38,7 @@ export async function embedContent(
                     contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
                     config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
                 });
-                const embedResult = result as unknown as AutonomousGenAIEmbedResult;
+                const embedResult = result as unknown as AutonomousIntelligenceEmbedResult;
                 return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
             } catch (error: unknown) {
                 throw ctx.handleError(error);
@@ -122,7 +122,7 @@ export async function batchEmbedContents(
                     contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
                     config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
                 });
-                const embedResult = result as unknown as AutonomousGenAIEmbedResult;
+                const embedResult = result as unknown as AutonomousIntelligenceEmbedResult;
                 return embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [];
             });
             return Promise.all(promises);

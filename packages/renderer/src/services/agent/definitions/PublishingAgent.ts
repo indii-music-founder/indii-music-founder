@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger';
 import { secureRandomInt } from '@/utils/crypto-random';
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { Schema } from 'firebase/ai';
 
 export const PublishingAgent: AgentConfig = {
@@ -18,10 +18,10 @@ export const PublishingAgent: AgentConfig = {
             const prompt = `Validate this music work registration. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Generate a valid ISWC format (T-XXX.XXX.XXX-X) and a registration status.`;
             try {
                 // Using "object" schema type
-                const response = await AutonomousGenAI.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { status: "Submitted", ...response } };
             } catch (error) {
-                const appException = AutonomousGenAI.handleError(error);
+                const appException = AutonomousIntelligence.handleError(error);
                 logger.warn('[PublishingAgent] Intelligence metadata generation failed, falling back to local fallback', appException);
                 const randomISWC = `T-${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}-${secureRandomInt(1, 10)}`;
                 return { success: true, data: { status: "Submitted", iswc: randomISWC } };
@@ -29,13 +29,13 @@ export const PublishingAgent: AgentConfig = {
         },
         analyze_contract: async (_args: { file_data: string, mime_type: string }) => {
             const prompt = `Analyze this publishing contract for fair royalty rates and reversion clauses. Return a summary.`;
-            const summary = await AutonomousGenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+            const summary = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { summary } };
         },
         package_release_assets: async (args: { releaseId: string, assets: Record<string, unknown> }) => {
             // This function handles the definitive packaging of assets for DDEX
             const prompt = `Prepare DDEX packaging metadata for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}`;
-            const response = await AutonomousGenAI.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+            const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { status: "Packaged", ...response } };
         }
     },
