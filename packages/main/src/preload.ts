@@ -101,6 +101,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
         scanDirectory: () => ipcRenderer.invoke('agent:scan-directory'),
         updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content),
+        getCapabilityRegistry: () => ipcRenderer.invoke('agent:get-capability-registry'),
     },
 
     // Video (Local Asset Management)

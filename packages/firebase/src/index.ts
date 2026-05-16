@@ -155,7 +155,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 
     // 3. Verify Membership
     if (!members.includes(userId)) {
-        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        functions.logger.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "You are not a member of this organization."
@@ -193,7 +193,7 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     // Note: If no admins exist yet, this securely defaults to deny-all.
     // Use the Firebase Admin SDK or a script to set `admin: true` on specific UIDs.
     if (!context.auth.token.admin) {
-        console.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
+        functions.logger.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "Access denied: Admin privileges required."
@@ -253,7 +253,7 @@ const corsHandler = corsLib({
         }
 
         // Reject unauthorized origins
-        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        functions.logger.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
         callback(new Error('CORS not allowed'));
     },
     credentials: true
@@ -362,13 +362,13 @@ export const triggerVideoJob = functions
             // 2. That's it — the Firestore document creation above will trigger
             //    executeVideoJob via Firestore onCreate. No self-invocation needed.
 
-            console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            functions.logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
             return { success: true, message: "Video generation job started." };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[VideoJob] Error triggering video generation:", error);
+            functions.logger.error("[VideoJob] Error triggering video generation:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue video job: ${error.message}`
@@ -400,7 +400,7 @@ export const executeVideoJob = functions
 
         // Only process documents with status "queued"
         if (data.status !== "queued") {
-            console.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
+            functions.logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
 
@@ -410,7 +410,7 @@ export const executeVideoJob = functions
         const options = data.options || {};
 
         if (!userId || !prompt) {
-            console.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
+            functions.logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 status: "failed",
                 error: "Missing required fields: userId or prompt",
@@ -419,7 +419,7 @@ export const executeVideoJob = functions
             return;
         }
 
-        console.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
+        functions.logger.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
 
         // Run the generation
         try {
@@ -433,7 +433,7 @@ export const executeVideoJob = functions
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
-            console.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
+            functions.logger.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
     });
 
@@ -592,7 +592,7 @@ export const triggerLongFormVideoJob = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[LongFormVideoJob] Error:", error);
+            functions.logger.error("[LongFormVideoJob] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
@@ -700,7 +700,7 @@ export const renderVideo = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[RenderVideo] Error:", error);
+            functions.logger.error("[RenderVideo] Error:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue render job: ${error.message}`
@@ -775,7 +775,7 @@ export const generateSpeech = functions
         const { text, voice, model } = validation.data;
 
         try {
-            console.log(`[generateSpeech] Generating speech with model: ${model}`);
+            functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
             const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
             const apiKey = getGeminiApiKey();
 
@@ -810,7 +810,7 @@ export const generateSpeech = functions
             const audioContent = part?.inlineData?.data;
 
             if (!audioContent) {
-                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
@@ -818,7 +818,7 @@ export const generateSpeech = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[generateSpeech] Error:", error);
+            functions.logger.error("[generateSpeech] Error:", error);
             throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
@@ -874,7 +874,7 @@ export const generateContentStream = functions
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
-                    console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
@@ -906,7 +906,7 @@ export const generateContentStream = functions
 
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
-                console.error("[generateContentStream] Error:", error);
+                functions.logger.error("[generateContentStream] Error:", error);
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
                 } else {
@@ -1450,7 +1450,7 @@ export const enrichFanData = functions
         // 2. Validate Org Access
         await validateOrgAccess(context.auth.uid, orgId);
 
-        console.info(`[FanEnrichment] Processing ${fans.length} records via ${provider || 'AI_FALLBACK'}`);
+        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${provider || 'AI_FALLBACK'}`);
 
         // 3. Enrichment Logic
         // In production, this calls Clearbit/Apollo API. 

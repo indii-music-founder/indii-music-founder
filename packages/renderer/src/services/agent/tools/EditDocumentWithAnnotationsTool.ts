@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
 
 /**
  * Tool for editing documents (PDFs, text files) using structured annotations.
@@ -41,7 +42,7 @@ export const EditDocumentWithAnnotationsTool: any = {
     },
 
     execute: async (args: any) => {
-        console.log('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
+        logger.debug('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
         
         let spatialPrompt = `Spatial Document Edit Request for ID: ${args.documentId}\n`;
         if (args.globalInstruction) {
