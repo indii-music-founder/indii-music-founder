@@ -215,7 +215,7 @@ export class LicensingService {
 
     /**
      * Returns sync briefs from Firestore. If the collection is empty, generates
-     * realistic sample briefs with AutonomousGenAI and caches them in Firestore so future
+     * realistic sample briefs with AutonomousIntelligence and caches them in Firestore so future
      * sessions load instantly.
      */
     async getSyncBriefs(): Promise<SyncBrief[]> {
@@ -239,12 +239,12 @@ export class LicensingService {
     }
 
     /**
-     * Uses AutonomousGenAI to generate realistic sync licensing briefs and writes them
+     * Uses AutonomousIntelligence to generate realistic sync licensing briefs and writes them
      * to Firestore so they survive page refreshes.
      */
     private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
         try {
-            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
             const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const today = new Date();
@@ -277,7 +277,7 @@ export class LicensingService {
                 }
             };
 
-            const generated = await AutonomousGenAI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
+            const generated = await AutonomousIntelligence.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
                 `Generate 8 realistic sync licensing briefs for music supervisors seeking independent music.
 Use these upcoming deadlines: ${deadlines.join(', ')}.
 Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.

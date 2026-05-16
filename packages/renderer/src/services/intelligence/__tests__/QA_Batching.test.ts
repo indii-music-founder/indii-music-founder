@@ -51,7 +51,7 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
-// Mock Google AutonomousGenAI SDK (Fallback) - new @google/genai package
+// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
 vi.mock('@google/genai', () => ({
     GoogleGenAI: vi.fn(function () {
         return {

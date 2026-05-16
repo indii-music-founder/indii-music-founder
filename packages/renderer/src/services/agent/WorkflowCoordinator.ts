@@ -1,6 +1,6 @@
 
 import { AgentContext } from './types';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
@@ -145,7 +145,7 @@ export class WorkflowCoordinator {
             Be direct, creative, and concise. Do not use tools.`;
 
             // We use generating content directly with the FAST model
-            const response = await AutonomousGenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [
                     { role: 'model', parts: [{ text: systemPrompt }] },
                     { role: 'user', parts: [{ text: message }] }

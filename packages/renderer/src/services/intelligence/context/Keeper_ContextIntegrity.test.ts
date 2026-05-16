@@ -80,9 +80,9 @@ const mockGenerateContent = vi.fn().mockResolvedValue({
     functionCalls: () => []
 });
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
   serverTimestamp: vi.fn(),
-    AutonomousGenAI: {
+    AutonomousIntelligence: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
   serverTimestamp: vi.fn(),

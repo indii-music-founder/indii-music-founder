@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AutonomousGenAI as AI } from '../../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 
 // Mock the entire Intelligence service
-vi.mock('../../intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn(),
         batchEmbedContents: vi.fn().mockResolvedValue([])

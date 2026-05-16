@@ -5,8 +5,8 @@ import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
@@ -74,7 +74,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
     });
 
     it('🛑 should stop execution when budget is exceeded (Cost Circuit Breaker)', async () => {
-        const { AutonomousGenAI: AI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence: AI } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // Setup: Agent wants to run 5 iterations
         // 1. First iteration: Uses 0.10. Budget OK. -> Calls Tool "dummy_tool"

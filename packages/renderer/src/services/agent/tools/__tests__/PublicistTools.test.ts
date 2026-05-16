@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublicistTools } from '../PublicistTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 // Mock Firebase AI
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -34,13 +34,13 @@ describe('PublicistTools', () => {
             contact_info: { name: 'PR', email: 'pr@example.com' },
             pdf: null
         };
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await PublicistTools.write_press_release({ topic: 'New Album' });
 
         expect(result.success).toBe(true);
         expect(result.data).toEqual(mockResponse); // result.data is the ToolFunctionResult.data
-        expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalled();
+        expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
     });
 
     it('generate_social_post calls database', async () => {
@@ -56,7 +56,7 @@ describe('PublicistTools', () => {
             internal_talking_points: ['Point 1'],
             actions_to_take: ['Action 1']
         };
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await PublicistTools.generate_crisis_response({ situation: 'Leak' });
 
@@ -73,7 +73,7 @@ describe('PublicistTools', () => {
             angle: 'Angle',
             target_outlets: ['Outlet 1']
         };
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
 
@@ -82,7 +82,7 @@ describe('PublicistTools', () => {
     });
 
     it('handles Autonomous failure gracefully', async () => {
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockRejectedValue(new Error("AI Down"));
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValue(new Error("AI Down"));
         const result = await PublicistTools.write_press_release({ topic: 'Fail' });
 
         expect(result.success).toBe(false);

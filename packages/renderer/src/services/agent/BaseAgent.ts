@@ -430,7 +430,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
-                const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+                const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
                 const { audioService } = await import('@/services/audio/AudioService');
 
                 const VOICE_MAP: Record<string, string> = {
@@ -444,7 +444,7 @@ export class BaseAgent implements SpecializedAgent {
                 const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
 
                 try {
-                    const response = await AutonomousGenAI.generateSpeech(text, selectedVoice);
+                    const response = await AutonomousIntelligence.generateSpeech(text, selectedVoice);
                     await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
                     return {
                         success: true,
@@ -587,7 +587,7 @@ export class BaseAgent implements SpecializedAgent {
      */
     protected async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import Intelligence Service to prevent circular deps during registry loading
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // GEAP Agent Identity: Mint cryptographic identity on first execution.
         // Uses static WeakMap for deduplication — survives Object.freeze (FreezeDiagnostic).
@@ -880,8 +880,8 @@ export class BaseAgent implements SpecializedAgent {
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
-                logger.debug(`BaseAgent calling AutonomousGenAI.generateContent for ${this.id}, iteration ${iterations}`);
-                const result = await AutonomousGenAI.generateContent(
+                logger.debug(`BaseAgent calling AutonomousIntelligence.generateContent for ${this.id}, iteration ${iterations}`);
+                const result = await AutonomousIntelligence.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
                     { ...INTELLIGENCE_CONFIG.THINKING.LOW }, // config

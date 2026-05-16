@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -67,7 +67,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 required: ['goalCompletion', 'adherence', 'coherence', 'toolEfficiency', 'reasoning', 'overallPass']
             };
 
-            const result = await AutonomousGenAI.generateStructuredData<AutoraterScore>(
+            const result = await AutonomousIntelligence.generateStructuredData<AutoraterScore>(
                 prompt,
                 schema as unknown as Record<string, unknown>,
                 undefined,

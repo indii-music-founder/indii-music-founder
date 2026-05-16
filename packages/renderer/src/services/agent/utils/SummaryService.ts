@@ -1,4 +1,4 @@
-import { AutonomousGenAI as AI } from '../../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { Logger } from '@/core/logger/Logger';
 

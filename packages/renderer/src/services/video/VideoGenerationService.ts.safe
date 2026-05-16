@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
@@ -225,7 +225,7 @@ export class VideoGenerationService {
 
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
-            return await AutonomousGenAI.analyzeImage(analysisPrompt, image);
+            return await AutonomousIntelligence.analyzeImage(analysisPrompt, image);
         } catch (__e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
@@ -491,7 +491,7 @@ export class VideoGenerationService {
                 }),
             };
 
-            logger.info('[VideoGeneration] 🚀 Calling AutonomousGenAI.generateVideo() with:', {
+            logger.info('[VideoGeneration] 🚀 Calling AutonomousIntelligence.generateVideo() with:', {
                 model: aiRequest.model,
                 promptLength: aiRequest.prompt.length,
                 hasImage: !!aiRequest.image,
@@ -499,7 +499,7 @@ export class VideoGenerationService {
             });
 
             const videoUrl = await this.withRetry(
-                () => AutonomousGenAI.generateVideo(aiRequest),
+                () => AutonomousIntelligence.generateVideo(aiRequest),
                 'generateVideo (atomic)',
                 3,
                 2000
@@ -795,7 +795,7 @@ export class VideoGenerationService {
                 //   - Fails fast on 400, 401, 403, quota, safety violations
                 //   - Respects Retry-After headers when present
                 const videoUrl = await this.withRetry(
-                    () => AutonomousGenAI.generateVideo({
+                    () => AutonomousIntelligence.generateVideo({
                         prompt: segmentPrompt,
                         model: options.model || DEFAULT_VIDEO_MODEL,
                         image: previousLastFrame

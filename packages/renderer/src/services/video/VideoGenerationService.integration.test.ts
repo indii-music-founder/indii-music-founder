@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/video/schemas';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Dependencies
 vi.mock('../intelligence/FirebaseIntelligenceService', () => {
@@ -90,7 +90,7 @@ describe('VideoGenerationService Integration', () => {
         const result = await service.generateVideo(validOptions);
 
         expect(result[0]!.id).toBe('job-123');
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining("A cyberpunk city")
         }));
     });

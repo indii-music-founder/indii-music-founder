@@ -1,5 +1,5 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
@@ -46,7 +46,7 @@ Requirements:
 Return ONLY the complete Solidity source code, no markdown fences.`;
 
         try {
-            const result = await AutonomousGenAI.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
+            const result = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
             const sourceCode = result.response.text().trim();
 
             // Verify it looks like Solidity (basic sanity check)

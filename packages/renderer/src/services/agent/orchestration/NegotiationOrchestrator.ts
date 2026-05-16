@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { AgentConfig } from '../types';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 /**
  * Requirement 116: Agent-to-Agent Negotiation
@@ -108,7 +108,7 @@ If you do not agree, propose a REVISED set of terms, explaining your reasoning.
         // Direct call to standard LLM wrapper for the agent response
         // In a full implementation, this might pipe through ContextPipeline or HybridOrchestrator
         try {
-            const result = await AutonomousGenAI.generateContent(prompt);
+            const result = await AutonomousIntelligence.generateContent(prompt);
             // FirebaseIntelligenceService returns an object wrapping the Gemini response
             return result.response?.text() || '';
         } catch (error: unknown) {
