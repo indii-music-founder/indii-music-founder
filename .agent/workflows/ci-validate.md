@@ -6,20 +6,62 @@ description: Comprehensive pre-push CI validation with commit consolidation to p
 
 // turbo-all
 
-Integrated four-phase validation before any push to `main`:
+Integrated five-phase validation before any push to `main`:
 
-1. **Commit Audit Phase** — Detect and consolidate excessive commits (>10 commits on this branch)
-2. **Auto-Fix Phase** — Fix Sentry issues + CodeRabbit comments
-3. **Hunter Phase** — Full-spectrum bug/security scan
-4. **CI Phase** — Run all 4 shards + typecheck + lint
+0. **Checkpoint & Commit Audit Phase** — Validate distributed agent checkpoints + detect commit bloat
+1. **Auto-Fix Phase** — Fix Sentry issues + CodeRabbit comments
+2. **Hunter Phase** — Full-spectrum bug/security scan
+3. **CI Phase** — Run all 4 shards + typecheck + lint
+4. **Final Verification** — Typecheck, build, tests all pass
 
-Prevents commit bloat cascades and the multi-hour CI debugging sessions they cause.
+Prevents commit bloat cascades, checkpoint conflicts, and multi-hour CI debugging sessions.
+
+**Note:** Even if you forget `/opp`, this workflow validates the checkpoint system upfront.
 
 ---
 
-## Step 0 — Commit Audit & Consolidation (CRITICAL)
+## Step 0 — Checkpoint & Commit Audit (CRITICAL)
 
-**Before any validation, check for commit bloat:**
+### 0.1 — Distributed Checkpoint Validation
+
+**Verify the distributed agent checkpoint system is being used correctly:**
+
+```bash
+# Check if checkpoints directory exists and has agent files
+if [ ! -d ".agent/checkpoints" ]; then
+  echo "ERROR: .agent/checkpoints directory missing. Run migration per HANDOFF_STRATEGY.md"
+  exit 1
+fi
+
+# List all agent checkpoints
+echo "=== Agent Checkpoints ==="
+ls -lh .agent/checkpoints/*.md 2>/dev/null || echo "WARNING: No agent checkpoints found"
+
+# Check for deprecated singleton handoff file with conflicts
+if grep -q "^<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
+  echo "ERROR: .agent/HANDOFF_STATE.md still has merge conflicts"
+  echo "This file is deprecated. Use distributed checkpoints in .agent/checkpoints/ instead"
+  echo "See: .agent/HANDOFF_STRATEGY.md for migration steps"
+  exit 1
+fi
+
+# Warn if old singleton file was modified recently
+if [ -f ".agent/HANDOFF_STATE.md" ]; then
+  MODIFIED=$(git log -1 --format=%ai .agent/HANDOFF_STATE.md 2>/dev/null | cut -d' ' -f1)
+  echo "WARNING: Old .agent/HANDOFF_STATE.md still exists (last modified: $MODIFIED)"
+  echo "Consider migrating to distributed checkpoints: .agent/checkpoints/*.md"
+fi
+```
+
+**IF checkpoint validation fails:**
+
+- Missing `checkpoints/` directory → Follow migration in `.agent/HANDOFF_STRATEGY.md`
+- Merge conflicts in old file → Resolve per Step 0.2 below
+- No agent checkpoints found → Ensure agents are writing to `.agent/checkpoints/{agent-id}.md` on session end
+
+### 0.2 — Commit Audit & Consolidation
+
+**Check for commit bloat:**
 
 ```bash
 # Count commits on this branch vs main
@@ -149,3 +191,45 @@ curl -sL -H "Accept: application/vnd.github+json" \
 - CI still fails because the root cause was commit #2, but it's buried
 
 **SOLUTION:** Commit consolidation in Step 0 prevents this. Always run it.
+
+---
+
+## Checkpoint Validation Checklist
+
+**Run this before pushing to ensure no conflicts occur:**
+
+```bash
+# Quick validation (can be run without full /ci-validate)
+bash << 'VALIDATE'
+echo "=== Checkpoint System Validation ==="
+
+# 1. Check directory exists
+[ -d ".agent/checkpoints" ] && echo "✓ Checkpoints directory exists" || echo "✗ Missing .agent/checkpoints"
+
+# 2. Check for recent agent checkpoints
+RECENT=$(find .agent/checkpoints -name "*.md" -mtime -1 2>/dev/null | wc -l)
+echo "✓ Recent agent checkpoints: $RECENT"
+
+# 3. Check for merge conflicts in old file
+if grep -q "<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
+  echo "✗ CONFLICT in HANDOFF_STATE.md — use distributed checkpoints instead"
+else
+  echo "✓ No conflicts in HANDOFF_STATE.md"
+fi
+
+# 4. Check commit count
+COMMITS=$(git rev-list --count main..HEAD)
+if [ "$COMMITS" -gt 10 ]; then
+  echo "⚠ WARNING: $COMMITS commits ahead of main (recommend consolidation)"
+else
+  echo "✓ Commit count acceptable ($COMMITS)"
+fi
+
+VALIDATE
+```
+
+If any checks fail:
+
+- **Missing directory** → Create: `mkdir -p .agent/checkpoints && touch .agent/checkpoints/.gitkeep`
+- **Merge conflict** → Resolve using distributed checkpoint protocol in `.agent/HANDOFF_STRATEGY.md`
+- **Too many commits** → Run Step 0.2 consolidation before proceeding
