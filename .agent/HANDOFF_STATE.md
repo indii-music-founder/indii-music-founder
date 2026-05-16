@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-16 08:09 EDT
+**Updated:** 2026-05-16 08:10 EDT
 **Branch:** `feat/autonomous-intelligence-swarm-v1.64.0`
 
 ## Recent Commits
 ```
-c072af363 chore: session checkpoint [08:08]
-c49bcc901 feat(skill – skill): add dynamic skill routing and sync all agent configs
+015183ad2 feat(workflows): integrate auto-fix and hunter into ci-validate
+b86cc2a1b chore: session checkpoint [08:09]
+e7d797bd5 chore: session checkpoint [08:08]
+cb928deb7 feat(skill – skill): add dynamic skill routing and sync all agent configs
+79ec5e448 chore: session checkpoint [08:07]
 d306df17e feat(skill-selector): add dynamic skill routing and sync all agent configs
 81023e707 Merge branch 'main' into feat/autonomous-intelligence-swarm-v1.64.0
 5f5c2d488 chore: session checkpoint [07:57]
 89a7c252f chore: session checkpoint [07:57]
 1f5d4848c chore: session checkpoint [07:56]
-d01c02fd8 docs(skills): update routing table - remove deleted skills
-85ffd4454 feat(skills): minimal viable set - remove low-value skills
-a06af6941 chore: session checkpoint [07:55]
 ```
 
 ## Working State
