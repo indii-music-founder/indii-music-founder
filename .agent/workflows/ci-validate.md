@@ -1,18 +1,51 @@
 ---
-description: Comprehensive pre-push CI validation — auto-fix issues, run full bug scan, then execute all 4 test shards locally before pushing to main
+description: Comprehensive pre-push CI validation with commit consolidation to prevent bloat. Auto-fix issues, run full bug scan, consolidate excessive commits, then execute all 4 test shards locally.
 ---
 
 # /ci-validate — Pre-Push CI Validation (Enhanced)
 
 // turbo-all
 
-Integrated three-phase validation before any push to `main` that touches test files, service files, or UI components:
+Integrated four-phase validation before any push to `main`:
 
-1. **Auto-Fix Phase** — Fix Sentry issues + CodeRabbit comments
-2. **Hunter Phase** — Full-spectrum bug/security scan
-3. **CI Phase** — Run all 4 shards + typecheck + lint
+1. **Commit Audit Phase** — Detect and consolidate excessive commits (>10 commits on this branch)
+2. **Auto-Fix Phase** — Fix Sentry issues + CodeRabbit comments
+3. **Hunter Phase** — Full-spectrum bug/security scan
+4. **CI Phase** — Run all 4 shards + typecheck + lint
 
-Prevents the class of failures that cause multi-hour CI debugging sessions.
+Prevents commit bloat cascades and the multi-hour CI debugging sessions they cause.
+
+---
+
+## Step 0 — Commit Audit & Consolidation (CRITICAL)
+
+**Before any validation, check for commit bloat:**
+
+```bash
+# Count commits on this branch vs main
+BRANCH_COMMITS=$(git rev-list --count main..HEAD)
+echo "Commits ahead of main: $BRANCH_COMMITS"
+```
+
+**IF commit count > 10:**
+
+This indicates excessive churn from parallel agent work. The branch is at risk of CI failure cascades.
+
+**ACTION: Consolidate commits by squashing into logical groups:**
+
+1. **Identify commit groups** by purpose (feature, fix, refactor, docs, chore)
+2. **Squash related commits** using `git rebase -i main` (interactive rebase)
+3. **Create clean commit message** per Conventional Commits (feat, fix, chore, etc.)
+4. **Force-push the consolidated branch** (only safe when multiple agents coordinate): `git push --force-with-lease origin $(git branch --show-current)`
+
+**IMPORTANT:** This step prevents cascading CI failures from commit bloat. If you have 100+ commits from parallel agent work, CI will struggle to isolate which commit caused the failure. Consolidation is mandatory.
+
+**After consolidation, verify:**
+
+```bash
+git log main..HEAD --oneline | head -20
+# Should show ~5-15 clean, atomic commits (not 50+)
+```
 
 ---
 
@@ -93,3 +126,26 @@ curl -sL -H "Accept: application/vnd.github+json" \
 | `Real-time sync failed / Fetch failed` | Expected stderr from mocked services. Not a failure. |
 | `Keeper_Persistence.test.ts > should persist... expected vi.fn() to be called at least once` | Shard-ordering isolation flakiness. Passes immediately when run alone (`npm test -- --run Keeper_Persistence`). Pre-existing, not caused by your changes. |
 | `test: FAILURE` shown on a PR that is marked `MERGEABLE` | Stale CI status from a previous run. GitHub recomputed overall mergeability from the latest run. Safe to merge if the **latest** run for that branch is `success`. Verify with `gh run list --branch <branch>`. |
+
+---
+
+## Multi-Agent Parallel Work Protocol
+
+**When working with multiple agents simultaneously (Claude Code + Antigravity agents):**
+
+1. **Establish Commit Discipline:** Each agent commits atomically (one feature = one commit, not one per micro-fix)
+2. **Use Feature Branches:** Each agent or task cluster gets its own branch to isolate work
+3. **Coordinate Merge Points:** Before `/ci-validate`, consolidate commits to prevent bloat (Step 0)
+4. **Avoid Churn Cycles:** If the same file is being fixed repeatedly, stop and let one agent fix it end-to-end
+5. **CI as Checkpoint:** `/ci-validate` should run cleanly FIRST TIME after consolidation. If you're running it 3+ times to fix the same issue, the parallel work strategy needs adjustment
+
+**Root Cause of 2-Day CI Debug Cycles:**
+
+- Multiple agents each commit fixes (10+ commits)
+- CI fails on commit #5, but you don't know which one
+- You ask Agent A to fix, Agent A makes 5 more commits
+- Agent B (in Antigravity) also makes 5 commits to "fix" the same thing
+- Now there are 20+ commits and 3 contradictory fixes applied
+- CI still fails because the root cause was commit #2, but it's buried
+
+**SOLUTION:** Commit consolidation in Step 0 prevents this. Always run it.
