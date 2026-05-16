@@ -1,0 +1,2 @@
+description: Technical readiness checker for the licensing domain.
+trigger_labels: ["licensing", "readiness", "status"]

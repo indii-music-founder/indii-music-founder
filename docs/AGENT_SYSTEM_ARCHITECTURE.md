@@ -3,15 +3,17 @@
 **Last Updated:** 2025-12-24
 **Author:** Lead Engineer (Antigravity/Gemini 3 Pro)
 
-## 1. System Overview: The "Hub-and-Spoke" Model
+## 1. System Overview: The A2A Swarm Protocol
 
-The **indii** agent system is built on a **Hub-and-Spoke** architecture designed for scalability and specialization, now powered exclusively by **Gemini 3** preview models.
+The **indii** agent system has evolved from a Hub-and-Spoke model into a decentralized **A2A (Agent-to-Agent) Swarm**, designed for autonomous collaboration and technical execution.
 
-* **The Hub (Orchestrator)**: `AgentService` ("indii"). It handles user interaction, context management, and high-level strategy. It leverages `gemini-3-pro-preview` with **High Thinking** for strategic planning.
-* **The Spokes (Specialists)**: Specialized agents (Legal, Marketing, Music, **Browser**) that extend `BaseAgent`. These use `gemini-3-flash-preview` for specialized tasks or `gemini-3-pro-preview` for complex domain analysis.
-* **Autonomous Browsing (Gemini Drive)**: A specialized capability that allows agents to actuate a Puppeteer instance via visual reasoning. See [AUTONOMOUS_BROWSER_AGENT.md](./AUTONOMOUS_BROWSER_AGENT.md) for details.
+* **The Swarm (Decentralized)**: 20 specialized agents (Legal, Music, Merch, etc.) that can delegate tasks directly to each other without a central orchestrator.
+* **Foundational Skills (The Bedrock)**:
+    * **Audit Skill**: Scans the ecosystem to discover and index agent capabilities in real-time.
+    * **Memory Skill**: Allows agents to persist procedural knowledge and user preferences across sessions via "Brain Surgery" on their instructions.
+* **Capability Registry**: A system-wide `agents/capability_registry.json` that maps agents to their functional tools, preventing redundancy and enabling discovery.
 * **The Memory/Context Layer**: Powered by the **Gemini File Search API**, providing native RAG capabilities with long-context awareness.
-* **The Glue**: `AgentRegistry` and the `delegate_task` tool.
+* **The Technical Core**: Every agent is seeded with functional Python tools (e.g., Margin Calculators, Split Sheets) for verifiable business operations.
 
 ## 2. Core Components
 
