@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { doc, getDoc } from 'firebase/firestore';
@@ -197,7 +197,7 @@ export const SecurityTools = {
         Identify potential risks (e.g., too many Admins, external guests).
         `;
 
-        const data = await AutonomousGenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

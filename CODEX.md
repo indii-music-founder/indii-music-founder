@@ -543,12 +543,9 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 | Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
 | Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
 | Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
-| Throwaway code to answer one question (terminal app or UI variants) | `.agent/skills/prototype/SKILL.md` |
-| Find shallow modules, refactor into deep ones for better testability | `.agent/skills/improve-codebase-architecture/SKILL.md` |
 | Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
 | Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
 | Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
-| First-time setup: configure issue tracker, labels, doc paths | `.agent/skills/setup-matt-pocock-skills/SKILL.md` |
 
 #### Productivity (Matt Pocock)
 
@@ -556,7 +553,6 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 | --- | --- |
 | Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
 | Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
-| Compact current chat into doc for fresh agent handoff | `.agent/skills/handoff/SKILL.md` |
 
 #### Misc (Matt Pocock)
 
@@ -565,15 +561,15 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 | Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
 | Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
 
-#### Indii-Specific Skills
+#### Indii-Specific Skills (Core & Essential)
 
 | Trigger | Skill File |
 | --- | --- |
+| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
 | Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
 | Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
 | Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
 | Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
 | Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
 | Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
 | Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |

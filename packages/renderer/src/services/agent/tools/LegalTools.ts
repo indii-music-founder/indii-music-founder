@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -36,7 +36,7 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
         const prompt = `Draft a ${args.type} between ${args.parties.join(' and ')}.
 Key Terms: ${args.terms}`;
 
-        const response = await AutonomousGenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT,
             undefined,

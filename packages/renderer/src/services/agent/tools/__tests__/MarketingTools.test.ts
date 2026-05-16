@@ -1,10 +1,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarketingTools } from '../MarketingTools';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { MarketingService } from '@/services/marketing/MarketingService';
 
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -68,7 +68,7 @@ describe('MarketingTools', () => {
             channels: [],
             kpis: []
         };
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(result.success).toBe(true);

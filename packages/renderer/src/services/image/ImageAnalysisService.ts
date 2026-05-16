@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
 import type { Part, Schema } from 'firebase/ai';
@@ -65,7 +65,7 @@ export class ImageAnalysisService {
                 { inlineData: { mimeType, data: cleanBase64 } }
             ];
             
-            const results = await AutonomousGenAI.generateStructuredData<DetectedObject[]>(
+            const results = await AutonomousIntelligence.generateStructuredData<DetectedObject[]>(
                 parts,
                 schema,
                 undefined,
@@ -114,7 +114,7 @@ Return ONLY valid JSON containing a single field "maskBase64" which is a base64-
                 { inlineData: { mimeType, data: cleanBase64 } }
             ];
 
-            const result = await AutonomousGenAI.generateStructuredData<{ maskBase64: string }>(
+            const result = await AutonomousIntelligence.generateStructuredData<{ maskBase64: string }>(
                 parts,
                 schema,
                 { thinkingBudget: 0, includeThoughts: false }, // config with thinking budget

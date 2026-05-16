@@ -10,8 +10,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: { text: () => 'AI generated text' }
         })
@@ -200,8 +200,8 @@ describe('WorkflowEngine', () => {
         const engine = new WorkflowEngine(nodes, edges, mockSetNodes);
         await engine.run();
 
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-        expect(AutonomousGenAI.generateContent).toHaveBeenCalledWith(
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        expect(AutonomousIntelligence.generateContent).toHaveBeenCalledWith(
             expect.arrayContaining([
                 expect.objectContaining({ role: 'user' })
             ]),
@@ -224,8 +224,8 @@ describe('WorkflowEngine', () => {
         const engine = new WorkflowEngine(nodes, edges, mockSetNodes);
         await engine.run();
 
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
-        expect(AutonomousGenAI.generateContent).toHaveBeenCalledWith(
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        expect(AutonomousIntelligence.generateContent).toHaveBeenCalledWith(
             expect.arrayContaining([expect.objectContaining({ role: 'user' })]),
             expect.anything()
         );
@@ -267,9 +267,9 @@ describe('WorkflowEngine', () => {
         await engine.run();
 
         // Marketing (true branch) should have run; Art (false branch) should not
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        expect(AutonomousGenAI.generateContent).toHaveBeenCalled();
+        expect(AutonomousIntelligence.generateContent).toHaveBeenCalled();
         expect(ImageGeneration.generateImages).not.toHaveBeenCalled();
     });
 
@@ -303,9 +303,9 @@ describe('WorkflowEngine', () => {
         await engine.run();
 
         const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         expect(ImageGeneration.generateImages).toHaveBeenCalled();
-        expect(AutonomousGenAI.generateContent).not.toHaveBeenCalled();
+        expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
     });
 
     // ── Variables blackboard ──────────────────────────────────────────────────
@@ -439,8 +439,8 @@ describe('WorkflowEngine', () => {
 
         // Art (reject branch) should have run; Marketing (approve branch) should not
         const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         expect(ImageGeneration.generateImages).toHaveBeenCalled();
-        expect(AutonomousGenAI.generateContent).not.toHaveBeenCalled();
+        expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
     });
 });

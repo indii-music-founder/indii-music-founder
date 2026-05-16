@@ -15,7 +15,7 @@
  * 5. Hard cap at maxIterations (3) prevents runaway costs
  *
  * Design Decisions:
- * - Uses FirebaseIntelligenceService (not direct GoogleAutonomousGenAI) for consistency
+ * - Uses FirebaseIntelligenceService (not direct GoogleAutonomousIntelligence) for consistency
  * - Uses INTELLIGENCE_MODELS.TEXT.FAST for evaluation (structured judgment task)
  * - Temperature 0.2 for consistent scoring
  * - Evaluation failure is non-blocking (accepts output on error)

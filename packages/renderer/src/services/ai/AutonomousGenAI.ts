@@ -1,4 +1,4 @@
-export * from '../intelligence/AutonomousGenAI';
-import { AutonomousGenAI } from '../intelligence/AutonomousGenAI';
-export const AI = AutonomousGenAI;
-export default AutonomousGenAI;
+export * from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
+export const AI = AutonomousIntelligence;
+export default AutonomousIntelligence;

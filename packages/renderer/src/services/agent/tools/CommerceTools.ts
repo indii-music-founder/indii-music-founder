@@ -1,5 +1,5 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
@@ -21,7 +21,7 @@ export const CommerceTools = {
         const imagePrompt = `${productBase}, with the following artwork printed on it: ${args.designIdea}. Studio lighting, product photography style, high resolution, centered composition.`;
 
         try {
-            const mockupImageUrl = await AutonomousGenAI.generateImage(imagePrompt);
+            const mockupImageUrl = await AutonomousIntelligence.generateImage(imagePrompt);
 
             // Persist the generated mockup to Firestore for the merch module
             const { db, auth } = await import('@/services/firebase');

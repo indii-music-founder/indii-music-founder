@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-05-15T22:30:57.965669",
-  "root": "./agents",
+  "last_updated": "2026-05-15T22:42:38.996600",
+  "root": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents",
   "agents": {
     "indii_curriculum": {
-      "path": "./agents/indii_curriculum",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/indii_curriculum",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the indii_curriculum domain.",
@@ -17,7 +17,7 @@
       "instructions_preview": "# CURRICULUM AGENT \u2014 The Architect/Oracle\n\n## MISSION\nYou are the **Curriculum Agent (The Architect/Oracle)** \u2014 the indii system's specialist for orchestrating the creative evolution loop. You define ..."
     },
     "music": {
-      "path": "./agents/music",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/music",
       "skills": {
         "tools": {
           "description": "Generates a standard metadata split sheet for a music track.",
@@ -31,7 +31,7 @@
       "instructions_preview": "# Sonic Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Sonic Director** for indii \u2014 an elite audio analyst, metadata specialist, and distribution quality assurance engineer. You perform professio..."
     },
     "publishing": {
-      "path": "./agents/publishing",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/publishing",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the publishing domain.",
@@ -45,7 +45,7 @@
       "instructions_preview": "# Publishing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publishing Director** \u2014 the indii system's specialist for music publishing, composition rights, and royalty administration. You ensure ..."
     },
     "video": {
-      "path": "./agents/video",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/video",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the video domain.",
@@ -59,7 +59,7 @@
       "instructions_preview": "# Video Director \u2014 System Prompt\n\n## MISSION\nYou are the **Video Director** for indii \u2014 the cinematic production specialist for independent music artists. You generate, edit, and compose high-fidelity..."
     },
     "merchandise": {
-      "path": "./agents/merchandise",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/merchandise",
       "skills": {
         "tools": {
           "description": "Calculates the profit margin for physical merchandise based on cost, price, and shipping.",
@@ -73,7 +73,7 @@
       "instructions_preview": "# Merchandise Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Merchandise Director**, a specialist agent within the indii system. You manage the full merchandise and print-on-demand pipeline \u2014 fro..."
     },
     "publicist": {
-      "path": "./agents/publicist",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/publicist",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the publicist domain.",
@@ -87,7 +87,7 @@
       "instructions_preview": "# PR Director \u2014 System Prompt\n\n## MISSION\nYou are the **PR Director** \u2014 the indii system's specialist for public relations, media strategy, and narrative control. You manage the artist's public image,..."
     },
     "brand": {
-      "path": "./agents/brand",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/brand",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the brand domain.",
@@ -101,12 +101,12 @@
       "instructions_preview": "# Brand Manager \u2014 System Prompt\n\n## MISSION\nYou are the **Brand Manager** for indii \u2014 the guardian of every artist's identity. You ensure that every output (visuals, copy, audio positioning) is perfec..."
     },
     "foundational": {
-      "path": "./agents/foundational",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/foundational",
       "skills": {},
       "instructions_preview": ""
     },
     "road": {
-      "path": "./agents/road",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/road",
       "skills": {
         "tools": {
           "description": "Optimizes tour routes and logistics between multiple cities.",
@@ -121,7 +121,7 @@
       "instructions_preview": "# Road Manager \u2014 System Prompt\n\n## MISSION\n\nYou are the **Road Manager** \u2014 the indii system's specialist for tour logistics, venue advancing, and travel operations. You ensure every show runs smoothly..."
     },
     "distribution": {
-      "path": "./agents/distribution",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/distribution",
       "skills": {
         "tools": {
           "description": "Validates audio file formats and metadata against DSP standards.",
@@ -136,7 +136,7 @@
       "instructions_preview": "# Distribution Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Distribution Director**, a specialist agent within the indii system. You orchestrate the entire release distribution pipeline \u2014 from ..."
     },
     "default": {
-      "path": "./agents/default",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/default",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the default domain.",
@@ -150,7 +150,7 @@
       "instructions_preview": "# Default Agent \u2014 indii Generalist\n\nYou are the **default fallback agent** for the indii platform. When no specialist agent matches the user's request, you handle it with general-purpose intelligence...."
     },
     "social": {
-      "path": "./agents/social",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/social",
       "skills": {
         "tools": {
           "description": "Formats social media posts for multiple platforms (IG, TikTok, X).",
@@ -164,7 +164,7 @@
       "instructions_preview": "# Social Media Director \u2014 System Prompt\n\n## MISSION\nYou are the **Social Media Director** for indii \u2014 the artist's voice on every platform. You manage social presence, community engagement, content cr..."
     },
     "generalist": {
-      "path": "./agents/generalist",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/generalist",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the generalist domain.",
@@ -178,7 +178,7 @@
       "instructions_preview": "# Generalist Agent\n\nYou are a generalist assistant. You handle tasks that do not fit into the other specific domain experts. You answer general questions, organize files, write documents, and help the..."
     },
     "indii_executor": {
-      "path": "./agents/indii_executor",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/indii_executor",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the indii_executor domain.",
@@ -192,7 +192,7 @@
       "instructions_preview": "# indii Executor Agent (The Sentinel/Executor)\n\nYou are the \"Roadie\" and \"Engineer\", powered by Gemini 3 Flash. Your goal is fast, precise tool execution and OS manipulation.\n\n**Specialized Toolset:**..."
     },
     "marketing": {
-      "path": "./agents/marketing",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/marketing",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the marketing domain.",
@@ -206,7 +206,7 @@
       "instructions_preview": "You are the **Music Campaign Manager**, a high-level specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
     },
     "finance": {
-      "path": "./agents/finance",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/finance",
       "skills": {
         "tools": {
           "description": "Estimates potential streaming royalties based on play counts.",
@@ -220,7 +220,7 @@
       "instructions_preview": "You are the **Music Industry Finance Specialist**, a specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
     },
     "licensing": {
-      "path": "./agents/licensing",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/licensing",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the licensing domain.",
@@ -234,7 +234,7 @@
       "instructions_preview": "## MISSION\nYou are the **Licensing Director** \u2014 the indii system's specialist for rights clearance, sync licensing, and third-party content authorization. You ensure every sample, loop, and third-part..."
     },
     "creative": {
-      "path": "./agents/creative",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/creative",
       "skills": {
         "tools": {
           "description": "Technical readiness checker for the creative domain.",
@@ -248,7 +248,7 @@
       "instructions_preview": "# Creative Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Creative Director** \u2014 the indii system's specialist for visual identity, image generation, and design production. Your mission is to tran..."
     },
     "legal": {
-      "path": "./agents/legal",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/legal",
       "skills": {
         "tools": {
           "description": "Generates a standard non-disclosure agreement (NDA).",
@@ -262,7 +262,7 @@
       "instructions_preview": "# Music Industry Legal Specialist \u2014 System Prompt\n\n## MISSION\n\nYou are the **Music Industry Legal Specialist** \u2014 the indii system's specialist for contract analysis, rights clearance, and IP protectio..."
     },
     "conductor": {
-      "path": "./agents/conductor",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/conductor",
       "skills": {
         "audio_engineering": {
           "description": "No description found.",
@@ -380,7 +380,7 @@
       "instructions_preview": "# indii Conductor \u2014 System Prompt\n\n## MISSION\nYou are the **indii Conductor** \u2014 the primary intelligence of indii. You are a proactive studio executive, not a static chatbot. You combine strategic rea..."
     },
     "analytics": {
-      "path": "./agents/analytics",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean/agents/analytics",
       "skills": {
         "tools": {
           "description": "Calculates the viral potential score of a track based on BPM and genre.",

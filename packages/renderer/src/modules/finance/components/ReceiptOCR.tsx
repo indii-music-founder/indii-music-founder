@@ -85,14 +85,14 @@ export function ReceiptOCR() {
 
         try {
             // Call Autonomous Vision service for receipt analysis via the GeminiFileService
-            const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
 
             // 1. Upload the file using resumable upload
-            const fileMeta = await AutonomousGenAI.fileService.uploadFile(uploadedFile);
+            const fileMeta = await AutonomousIntelligence.fileService.uploadFile(uploadedFile);
 
 
             // 2. Wait for it to be active
-            await AutonomousGenAI.fileService.waitForActive(fileMeta.name);
+            await AutonomousIntelligence.fileService.waitForActive(fileMeta.name);
 
             // 3. Analyze the URI
             const jsonPrompt = `
@@ -105,14 +105,14 @@ Analyze this receipt image and extract the following fields as JSON:
 }
 Return ONLY valid JSON, no markdown fences or extra text.`;
 
-            const responseText = await AutonomousGenAI.analyzeFileURI(
+            const responseText = await AutonomousIntelligence.analyzeFileURI(
                 fileMeta.uri,
                 fileMeta.mimeType,
                 jsonPrompt
             );
 
             // 4. Cleanup the file (fire and forget)
-            AutonomousGenAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
+            AutonomousIntelligence.fileService.deleteFile(fileMeta.name).catch((ce) => {
                 logger.warn('[ReceiptOCR] Failed to cleanup Gemini file', ce);
             });
 

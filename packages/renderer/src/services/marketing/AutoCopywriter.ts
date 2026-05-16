@@ -11,7 +11,7 @@
  * - Social media captions (Twitter/X, Instagram, TikTok)
  * - Press release one-liner
  */
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
@@ -77,7 +77,7 @@ export class AutoCopywriter {
 
             const prompt = this.buildPrompt(input);
 
-            const copyPackage = await AutonomousGenAI.generateStructuredData<MarketingCopyPackage>(
+            const copyPackage = await AutonomousIntelligence.generateStructuredData<MarketingCopyPackage>(
                 [{ text: prompt }],
                 COPY_SCHEMA,
                 2048,

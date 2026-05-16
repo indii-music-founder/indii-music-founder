@@ -19,7 +19,7 @@
  */
 
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { GoogleGenAI as GoogleAutonomousGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousIntelligence } from '@google/genai';
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 
@@ -104,7 +104,7 @@ export class BrowserAgentService {
     private config: BrowserAgentConfig;
     private currentTask: AgentTask | null = null;
     private apiKey: string;
-    private genAI: GoogleAutonomousGenAI | null = null;
+    private genAI: GoogleAutonomousIntelligence | null = null;
     private listeners: Map<string, Set<(step: AgentStep) => void>> = new Map();
 
     constructor(config: Partial<BrowserAgentConfig> = {}) {
@@ -112,7 +112,7 @@ export class BrowserAgentService {
         this.apiKey = import.meta.env.VITE_API_KEY || '';
 
         if (this.apiKey) {
-            this.genAI = new GoogleAutonomousGenAI({ apiKey: this.apiKey });
+            this.genAI = new GoogleAutonomousIntelligence({ apiKey: this.apiKey });
         }
     }
 
