@@ -1,0 +1,2 @@
+description: Technical readiness checker for the road domain.
+trigger_labels: ["road", "readiness", "status"]

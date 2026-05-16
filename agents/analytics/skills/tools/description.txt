@@ -1,0 +1,2 @@
+description: Technical readiness checker for the analytics domain.
+trigger_labels: ["analytics", "readiness", "status"]

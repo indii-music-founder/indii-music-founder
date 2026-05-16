@@ -20,20 +20,48 @@
    - FIX: Move import statements ABOVE all JSDoc comments and code. Top of file order: (1) imports, (2) JSDoc file header, (3) code.
    - PREVENTION: **Always add imports before any comments or JSDoc.** When swapping console.* → logger.*, verify the import is in the import section, not embedded in documentation.
 
-**LEARNING POINTS FOR ALL AGENTS:**
+3. **Duplicate Entire Code Block (Copy-Paste Error)**
+   - FILE: `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+   - ERROR: `TS2451: Cannot redeclare block-scoped variable 'userId'` at lines 367 and 388
+   - ROOT CAUSE: The MOCK MODE check block (lines 348–364) was accidentally duplicated immediately after itself (lines 368–385), creating two separate `const userId = auth.currentUser?.uid;` declarations in the same function scope.
+   - FIX: Remove the duplicate block entirely. Keep only the first MOCK MODE check with its early return.
+   - PREVENTION: After pasting or copying large blocks, **visually scan the next 20 lines to ensure no accidental duplication**. Use your IDE's diff view or a quick `git diff` to spot copy-paste artifacts before committing.
 
-When performing multi-file refactors (like console → logger swaps):
+---
+## **BINDING PROTOCOL FOR ALL AGENTS** (Claude, Gemini Antigravity, Codex, Jules, Droid)
+
+When performing multi-file refactors (like console → logger swaps) or adding conditional blocks (like MOCK MODE):
+
+### Pre-Commit Checklist (ALL AGENTS MUST FOLLOW)
+
 1. **Pre-check:** Identify ALL files that will be modified. List them explicitly.
-2. **Per-file checklist:** For each file, verify:
-   - ✅ Import statement added at top (above JSDoc/comments)
-   - ✅ All console.* calls replaced with logger.*
+
+
+2. **Per-file verification:**
+   - ✅ Import statements at file top (above JSDoc/comments)
+   - ✅ All refactored calls replaced consistently (no half-swaps)
    - ✅ No duplicate variable declarations in same scope
-3. **Post-change verification:** Run `npm run typecheck` **immediately after edits**, not after multiple files are changed.
-4. **Early returns:** Any conditional branch that handles an edge case must have an explicit return/break before continuing to the main logic path.
+   - ✅ No duplicate blocks after copy-pasting code
+3. **Immediate typecheck validation:** Run `npm run typecheck` **right after edits**, not after batching multiple files.
+4. **Early returns on conditionals:** Any edge-case branch must have explicit `return`/`break` before continuing main logic.
+5. **Copy-paste vigilance:** After pasting code, visually verify the pasted block doesn't immediately repeat (diff view helps).
 
-**REGISTRY:** Both errors appeared in PR #1 (fix/intelligence-emergency-killswitch) after the cost-control feature was added. The MOCK MODE check and logger swap were incomplete implementations that passed initial review but failed CI typecheck.
+### Why This Matters
 
-**HOW TO CATCH EARLIER:** `npm run typecheck` on individual files after each major change, or run it after every 2-3 files edited. Don't batch multiple refactored files and run typecheck once at the end.
+**REGISTRY:** Three TypeScript errors in PR #1 (fix/intelligence-emergency-killswitch):
+- userId redeclaration (lines 367, 388) — duplicate MOCK MODE block (FIXED 2026-05-15 19:15 by Claude Code)
+- userId redeclaration (earlier) — missing early return on MOCK MODE check (FIXED prior session)
+- logger import in JSDoc (EventBusService) — import nested in comment (FIXED prior session)
+
+**Common theme:** Incomplete refactors + new features were not validated with immediate typecheck. They passed local review but broke CI.
+
+### Enforcement
+
+- **When:** Before every `git push` on a branch with code changes
+- **How:** Run `npm run typecheck` locally. If it fails, fix before pushing.
+- **Escalation:** If typecheck passes locally but fails in CI, check this ledger — you may have hit a subtle scope issue or hidden duplicate.
+
+---
 
 ---
 
@@ -58,6 +86,33 @@ REGISTRY: `packages/renderer/src/services/agent/departments.ts` is the single so
 for who is a head vs worker, and which workers belong to which department.
 
 ENFORCEMENT: `packages/renderer/src/services/agent/BaseAgent.ts` (delegate_task ~L137, consult_experts ~L193).
+
+## 2026-05-15 Test Suite Failures: GLOBAL_EMERGENCY_STOP & Firebase Mock Issues
+
+**SEVERITY:** High (breaks CI test suite, 25+ test failures)
+
+**PROBLEMS:**
+
+1. **TokenUsageService.GLOBAL_EMERGENCY_STOP breaks all intelligence tests**
+   - FILE: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:31`
+   - ERROR: All tests that invoke quota checks throw "EMERGENCY STOP: Intelligence services are temporarily suspended..."
+   - TESTS AFFECTED: `TokenUsageService.test.ts`, `FirebaseIntelligenceService.test.ts`, `ChaosVerification.test.ts`, `QA_Batching.test.ts`
+   - ROOT CAUSE: `GLOBAL_EMERGENCY_STOP` is hardcoded to `true` (line 31) to prevent API costs. Tests inherit this and fail immediately on any quota check.
+   - NAIVE FIX (WRONG): Set `VITE_INTELLIGENCE_MOCK_MODE='true'` in test setup → this **breaks other tests** that expect real API responses, not mock responses. They get mock responses from the MOCK MODE early return, failing assertions that check for real behavior.
+   - PROPER FIX: Use `vi.spyOn()` to mock only `TokenUsageService.checkQuota()` method per-test, returning `true` when needed. Don't enable mock mode globally.
+
+2. **Firebase functions mock missing logger export**
+   - FILE: `packages/firebase/src/__tests__/triggerLongFormVideoJob.quota.test.ts`, `video.test.ts`
+   - ERROR: `[vitest] No "logger" export is defined on the "firebase-functions/v1" mock`
+   - ROOT CAUSE: The vi.mock for firebase-functions doesn't export logger. Code tries to use logger and fails.
+   - FIX: Update the mock to include logger using `importOriginal()` pattern to preserve real exports while adding mocks.
+
+**LEARNING:**
+
+- **Global env vars in test setup are risky** — if a flag enables/disables a whole code path, it affects multiple tests with different expectations. Instead, mock at the test level.
+- **Don't use MOCK_MODE as a test harness** — MOCK_MODE is for development survival (bypass costs). Tests should mock individual services/functions instead.
+- **Firebase function mocks must include all exports** — if code under test calls `logger.info()` from a mocked module, the mock must export logger.
+- **Verify mock side effects** — Setting `VITE_INTELLIGENCE_MOCK_MODE='true'` causes `FirebaseIntelligenceService` to return mock responses immediately (line 349-364), which breaks tests expecting real behavior. Audit before enabling globally.
 
 ## 2026-05-05 Web dev spinner — missing renderer Vite config
 

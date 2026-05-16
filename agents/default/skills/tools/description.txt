@@ -1,0 +1,2 @@
+description: Technical readiness checker for the default domain.
+trigger_labels: ["default", "readiness", "status"]
