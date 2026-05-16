@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2, Rocket, Layers
+    Palette, Clock, FlaskConical, Wand2, Rocket, Layers, Cpu
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
@@ -14,6 +14,7 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import PromptHistoryDrawer from './PromptHistoryDrawer';
 import DesignHistoryDrawer from './DesignHistoryDrawer';
+import AgentCapabilityRegistry from './AgentCapabilityRegistry';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -48,6 +49,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showDesignHistory, setShowDesignHistory] = useState(false);
+    const [showSwarmRegistry, setShowSwarmRegistry] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
@@ -143,6 +145,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             >
                                 <Layers size={10} /> Versions
                             </button>
+                            <button
+                                onClick={() => setShowSwarmRegistry(!showSwarmRegistry)}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                    ${showSwarmRegistry
+                                        ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                            >
+                                <Cpu size={10} /> Swarm
+                            </button>
                         </div>
                     ) : (
                         <DaisyChainControls
@@ -234,6 +245,13 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {showDesignHistory && (
                 <DesignHistoryDrawer onClose={() => setShowDesignHistory(false)} />
             )}
+
+            {/* Swarm Capability Registry */}
+            <AnimatePresence>
+                {showSwarmRegistry && (
+                    <AgentCapabilityRegistry onClose={() => setShowSwarmRegistry(false)} />
+                )}
+            </AnimatePresence>
 
 
             <FrameSelectionModal

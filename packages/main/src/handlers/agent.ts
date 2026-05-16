@@ -1,6 +1,8 @@
 import log from 'electron-log';
 import { ipcMain, app, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
+import fs from 'fs/promises';
+import path from 'path';
 import { AgentActionSchema, AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
@@ -46,6 +48,36 @@ export function registerAgentHandlers() {
             return { success: true };
         } catch (error) {
             log.error('Agent History Delete Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // Foundational Skills (Audit & Memory)
+    ipcMain.handle('agent:scan-directory', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const { foundationalSkillService } = await import('../services/FoundationalSkillService');
+            const result = await foundationalSkillService.scanDirectory();
+            return { success: true, data: result };
+        } catch (error) {
+            log.error('Agent Scan Directory Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string) => {
+        try {
+            validateSender(event);
+            // Basic path safety check
+            if (!filePath.includes('agents/') || filePath.includes('..')) {
+                throw new Error('Invalid file path for knowledge update');
+            }
+            
+            const { foundationalSkillService } = await import('../services/FoundationalSkillService');
+            const result = await foundationalSkillService.updateKnowledge(filePath, action, content);
+            return { success: true, ...result };
+        } catch (error) {
+            log.error('Agent Update Knowledge Failed:', error);
             return { success: false, error: String(error) };
         }
     });
@@ -123,17 +155,17 @@ export function registerAgentHandlers() {
                 return { success: false, error: String(error) };
             }
         });
-
-        ipcMain.handle('agent:capture-state', async (event: IpcMainInvokeEvent) => {
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            try {
-                validateSender(event);
-                const snapshot = await browserAgentService.captureSnapshot();
-                return { success: true, ...snapshot };
-            } catch (error) {
-                return { success: false, error: String(error) };
-            }
-        });
-
     }
+
+    ipcMain.handle('agent:get-capability-registry', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const registryPath = path.join(process.cwd(), 'agents/capability_registry.json');
+            const data = await fs.readFile(registryPath, 'utf-8');
+            return { success: true, data: JSON.parse(data) };
+        } catch (error) {
+            log.error('Failed to get capability registry:', error);
+            return { success: false, error: String(error) };
+        }
+    });
 }
