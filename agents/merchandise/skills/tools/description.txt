@@ -1,0 +1,2 @@
+description: Calculates the profit margin for physical merchandise based on cost, price, and shipping.
+trigger_labels: ["merchandise", "finance", "profit"]
