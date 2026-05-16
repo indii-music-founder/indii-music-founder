@@ -2,7 +2,7 @@ import { livingFileService } from './living/LivingFileService';
 import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface NucleusContext {
@@ -101,7 +101,7 @@ export class IndiiNucleus {
 
   /**
    * Execute a request through the native Gemini runtime with full indii DNA injected.
-   * All requests are handled by AutonomousGenAI — no external sidecar required.
+   * All requests are handled by AutonomousIntelligence — no external sidecar required.
    */
   async execute(
     userMessage: string,
@@ -146,7 +146,7 @@ export class IndiiNucleus {
       }
     }
 
-    const genResult = await AutonomousGenAI.generateContent(
+    const genResult = await AutonomousIntelligence.generateContent(
       [{ role: 'user', parts }],
       INTELLIGENCE_MODELS.TEXT.AGENT,
       { systemInstruction: systemPrompt }

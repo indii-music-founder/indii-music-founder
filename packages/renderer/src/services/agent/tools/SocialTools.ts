@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -13,7 +13,7 @@ export const SocialTools = {
     generate_social_post: wrapTool('generate_social_post', async ({ platform, topic, tone }: { platform: string; topic: string; tone?: string }) => {
         const prompt = `Generate a ${tone || 'professional'} social media post for ${platform} about ${topic}. Include hashtags.`;
 
-        const result = await AutonomousGenAI.generateContent(
+        const result = await AutonomousIntelligence.generateContent(
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT
         );
@@ -68,7 +68,7 @@ Return a JSON object with exactly these fields:
 }
 Be specific and data-driven based on the post content above.`;
 
-        const result = await AutonomousGenAI.generateStructuredData<{
+        const result = await AutonomousIntelligence.generateStructuredData<{
             sentiment: string;
             trend_score: number;
             insights: string[];

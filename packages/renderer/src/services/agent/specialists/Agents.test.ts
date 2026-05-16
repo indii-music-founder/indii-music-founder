@@ -21,8 +21,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 });
 
 // Also mock AIService because BaseAgent uses it
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             text: () => JSON.stringify({
                 score: 8,

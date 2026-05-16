@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SceneExtensionService } from '../SceneExtensionService';
-import { AutonomousGenAI as AI } from '../../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
 import { MembershipService } from '../../MembershipService';
 
 // Mock dependencies
-vi.mock('../../intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateVideo: vi.fn(),
     },
 }));

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
@@ -213,8 +213,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 fps: 24
             });
 
-            // Inspect the call to AutonomousGenAI.generateVideo (direct SDK path)
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            // Inspect the call to AutonomousIntelligence.generateVideo (direct SDK path)
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
 
             // Verify camera movement enrichment
             expect(callArgs.prompt).toContain('cinematic pan right camera movement');

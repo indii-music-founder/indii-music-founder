@@ -4,7 +4,7 @@ import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { MyContracts } from './components/MyContracts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { LegalService } from '@/services/legal/LegalService';
 import { logger } from '@/utils/logger';

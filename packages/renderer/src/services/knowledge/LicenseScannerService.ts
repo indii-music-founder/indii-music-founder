@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 
 export interface LicenseAnalysis {
@@ -63,7 +63,7 @@ export class LicenseScannerService {
                 },
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
             } satisfies JSONSchemaObject;
-            const analysis = await AutonomousGenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
+            const analysis = await AutonomousIntelligence.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
             return analysis;
 
         } catch (_error: unknown) {
