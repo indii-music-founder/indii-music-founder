@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Last Updated:** 2026-03-19
+**Last Updated:** 2026-05-16
 
 This directory contains detailed architectural and technical documentation for indii.
 
