@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AutonomousGenAI } from '../AutonomousGenAI';
+import { AutonomousIntelligence } from '../AutonomousIntelligence';
 import { wcpInstance } from '../../agent/WebSocketControlPlane';
 import { Content } from 'firebase/ai';
 
@@ -59,7 +59,7 @@ describe('ChaosVerification', () => {
         });
     });
 
-    describe('Native AutonomousGenAI Fallback Logic', () => {
+    describe('Native AutonomousIntelligence Fallback Logic', () => {
         it('should gracefully handle tool execution failure and propagate error', async () => {
             vi.mocked(wcpInstance.route).mockResolvedValueOnce({
                 message: 'I tried to use a tool but it failed.',
@@ -74,7 +74,7 @@ describe('ChaosVerification', () => {
     describe('FirebaseIntelligenceService Race Conditions', () => {
         it('should NOT coalesce requests with different multimodal data', async () => {
             // This test verifies if different binary payloads are correctly distinguished in the request coalescing map
-            const rawGenerateSpy = vi.spyOn(AutonomousGenAI as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
+            const rawGenerateSpy = vi.spyOn(AutonomousIntelligence as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
 
             const promptA: Content[] = [{
                 role: 'user',
@@ -91,14 +91,14 @@ describe('ChaosVerification', () => {
             // We need to mock the underlying model.generateContent or similar if possible
             // but for a quick check, we can just see if the Map 'activeRequests' handles them as different keys.
 
-            const activeRequests = (AutonomousGenAI as unknown as { activeRequests: Map<any, any> }).activeRequests;
+            const activeRequests = (AutonomousIntelligence as unknown as { activeRequests: Map<any, any> }).activeRequests;
 
             // Start Request A (don't wait)
-            const promiseA = AutonomousGenAI.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
+            const promiseA = AutonomousIntelligence.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
             const keyA = Array.from(activeRequests.keys())[0];
 
             // Start Request B
-            const promiseB = AutonomousGenAI.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
+            const promiseB = AutonomousIntelligence.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
             const keyB = Array.from(activeRequests.keys()).find(k => k !== keyA);
 
             // If keyB is undefined or same as keyA, we have a collision
@@ -117,12 +117,12 @@ describe('ChaosVerification', () => {
             const timeout = 100; // 100ms
 
             // Mock ensureInitialized to bypass bootstrap
-            vi.spyOn(AutonomousGenAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            vi.spyOn(AutonomousIntelligence as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
 
             // Mock a long running operation (e.g. rateLimiter.acquire)
-            vi.spyOn((AutonomousGenAI as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+            vi.spyOn((AutonomousIntelligence as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
 
-            const promise = AutonomousGenAI.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
+            const promise = AutonomousIntelligence.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
 
             await expect(promise).rejects.toThrow('AI Request timed out');
             const end = Date.now();
@@ -146,14 +146,14 @@ describe('ChaosVerification', () => {
                 });
 
             // Mock ensureInitialized to return a custom object with generateContent
-            vi.spyOn(AutonomousGenAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
-            (AutonomousGenAI as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
+            vi.spyOn(AutonomousIntelligence as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            (AutonomousIntelligence as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
 
             // Reset circuit breaker state from any prior test
-            (AutonomousGenAI as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
+            (AutonomousIntelligence as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
 
             // Trigger
-            const result = await AutonomousGenAI.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
+            const result = await AutonomousIntelligence.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
 
             // The first call fails with 503, then at least one subsequent call succeeds.
             // The exact count depends on internal retry/circuit-breaker timing (2 or 3).

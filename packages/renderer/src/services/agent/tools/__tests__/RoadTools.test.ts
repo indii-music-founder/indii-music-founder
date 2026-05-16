@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RoadTools } from '../RoadTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -50,7 +50,7 @@ describe('RoadTools', () => {
             estimatedDuration: "2 hours",
             legs: []
         };
-        vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await RoadTools.plan_tour_route({ locations: ["A", "B"] });
 
@@ -58,7 +58,7 @@ describe('RoadTools', () => {
         expect(result.data).toEqual(mockResponse);
 
         // Verify prompt enhancement
-        const callArgs = vi.mocked(AutonomousGenAI.generateStructuredData).mock.calls[0]!;
+        const callArgs = vi.mocked(AutonomousIntelligence.generateStructuredData).mock.calls[0]!;
         expect(callArgs[0]).toEqual(expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("You are a Logistics Engine") })]));
     });
 });

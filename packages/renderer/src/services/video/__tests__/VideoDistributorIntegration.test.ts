@@ -1,7 +1,7 @@
 import { VideoGeneration } from '../VideoGenerationService';
 import { useStore } from '@/core/store';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mocks
@@ -126,7 +126,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
@@ -137,7 +137,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('tunecore')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
@@ -150,7 +150,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('cdbaby')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             // Default aspect ratio is '16:9' when no distributor constraint applies
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
@@ -162,7 +162,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('ditto')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -173,7 +173,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('awal')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -184,7 +184,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unitedmasters')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -195,7 +195,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('amuse')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -208,7 +208,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile() // No distributor
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -219,7 +219,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 // No userProfile at all
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
@@ -230,7 +230,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid') // Would normally be 9:16
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
@@ -240,7 +240,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unknown_distributor')
             });
 
-            const callArgs = vi!.mocked(AutonomousGenAI.generateVideo).mock.calls[0]![0];
+            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
             // Should NOT crash, just use defaults
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
@@ -256,8 +256,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            // Long-form generates multiple segments, each calling AutonomousGenAI.generateVideo
-            const calls = vi.mocked(AutonomousGenAI.generateVideo).mock.calls;
+            // Long-form generates multiple segments, each calling AutonomousIntelligence.generateVideo
+            const calls = vi.mocked(AutonomousIntelligence.generateVideo).mock.calls;
             expect(calls.length).toBeGreaterThan(0);
 
             // Each segment should have 9:16 for DistroKid

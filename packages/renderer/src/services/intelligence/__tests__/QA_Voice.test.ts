@@ -19,7 +19,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-// Mock Google AutonomousGenAI SDK (Fallback) - new @google/genai package
+// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
 vi.mock('@google/genai', () => ({
     GoogleGenAI: vi.fn(function () {
         return {

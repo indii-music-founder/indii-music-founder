@@ -49,8 +49,8 @@ vi.mock('@/services/firebase', () => ({
 
 const mockGenerateContent = vi.fn();
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: mockGenerateContent,
         generateContentStream: vi.fn(),
         generateSpeech: vi.fn(),
@@ -309,7 +309,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
         if (toolCall) {
             expect(toolCall.result).not.toMatchObject({ success: false, error: expect.stringContaining('not authorized') });
         }
-        // AutonomousGenAI was called (loop ran)
+        // AutonomousIntelligence was called (loop ran)
         expect(mockGenerateContent).toHaveBeenCalled();
     });
 

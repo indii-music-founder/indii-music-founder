@@ -27,7 +27,7 @@ import {
     serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { getTimelineTemplate, listTimelineTemplates } from './TimelinePhaseTemplates';
 import { logger } from '@/utils/logger';
 
@@ -289,7 +289,7 @@ Return a JSON object with:
         type AIMilestone = { phaseIndex: number; dayOffset: number; type: string; instruction: string; assetStrategy: string; platform?: string };
         type AIResult = { phases: AIPhase[]; milestones: AIMilestone[] };
 
-        const result = await AutonomousGenAI.generateStructuredData<AIResult>(prompt, schema as Record<string, unknown>);
+        const result = await AutonomousIntelligence.generateStructuredData<AIResult>(prompt, schema as Record<string, unknown>);
 
         const rawPhases = result?.phases ?? [];
         const rawMilestones = result?.milestones ?? [];

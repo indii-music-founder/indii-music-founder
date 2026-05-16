@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from './VideoGenerationService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // --- MOCKS ---
 
@@ -87,9 +87,9 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
     return {
-        AutonomousGenAI: {
+        AutonomousIntelligence: {
             generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
             generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
             generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
@@ -118,8 +118,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (AutonomousGenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
+        const callArgs = (AutonomousIntelligence.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
@@ -140,8 +140,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (AutonomousGenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
+        const callArgs = (AutonomousIntelligence.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");
