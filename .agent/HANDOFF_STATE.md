@@ -14,6 +14,27 @@ ae5a1078c chore: session checkpoint [19:04]
 848ff3d32 chore: session checkpoint [19:03]
 1d23bb0b0 chore: session checkpoint [19:01]
 3cf9c6c27 chore: session checkpoint [18:59]
+**Updated:** 2026-05-15 18:47 EDT
+**Branch:** `chore/console-to-logger`
+
+## Recent Commits
+```
+8d3bca854 chore: session checkpoint [18:45]
+**Updated:** 2026-05-15 18:43 EDT
+**Branch:** `chore/changelog-dedupe-v1.64.0`
+
+## Recent Commits
+```
+5e5203ae0 chore(agent-memory): add knowledge in prompt.md
+5dbdfb8cf chore: update storage target to match project indiios-v-1-1
+8bee89e6f Merge pull request #11 from indii-music/release-please--branches--main--components--indii.music
+07701d90e Merge branch 'main' into release-please--branches--main--components--indii.music
+e7494eb2e chore: stabilize CI, fix @google/genai nomenclature, and resolve intelligence caption type regressions
+33d74ae39 fix(ci): resolve @google/genai mock export regressions in intelligence tests
+28ab68cd8 chore(branding): finalize repository-wide Intelligence branding and resolve SDK import regressions
+a7834183b chore: session checkpoint [21:45]
+5daa0e3e3 chore: synchronize repository state (428+ files) and align local with remote
+c6ab44e77 ci: use secrets for all variables and trigger final deployment
 ```
 
 ## Working State
@@ -48,6 +69,13 @@ ae5a1078c chore: session checkpoint [19:04]
 ?? docs/CAPABILITY_DEPLOYMENT.md
 ?? scripts/fix_readme.py
 ?? scripts/fix_readme_emojis.py
+ M packages/firebase/src/index.ts
+ M packages/renderer/src/services/OrganizationService.ts
+ M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/WorkflowRegistry.ts
+ M packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts
+ M packages/renderer/src/services/analytics/EventBusService.ts
+ M CHANGELOG.md
 ```
 
 ## Decisions
