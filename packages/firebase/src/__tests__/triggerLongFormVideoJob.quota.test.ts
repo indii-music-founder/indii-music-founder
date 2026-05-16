@@ -95,6 +95,13 @@ mockBuilder.runWith.mockReturnValue(mockBuilder);
 
 vi.mock('firebase-functions/v1', () => ({
     ...mockBuilder,
+    logger: {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
     region: vi.fn(() => mockBuilder),
     runWith: vi.fn(() => mockBuilder),
     https: {

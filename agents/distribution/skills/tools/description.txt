@@ -1,0 +1,2 @@
+description: Technical readiness checker for the distribution domain.
+trigger_labels: ["distribution", "readiness", "status"]

@@ -109,6 +109,13 @@ vi.mock('firebase-functions/v1', () => {
     const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
 
     const builder: Record<string, unknown> = {
+        logger: {
+            log: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn(),
+        },
         region: vi.fn().mockReturnThis(),
         runWith: vi.fn().mockReturnThis(),
         pubsub: {
