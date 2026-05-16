@@ -198,6 +198,37 @@ export class AgentRegistry implements AgentRegistryProvider {
         }
 
 
+        // Register Analytics Agent (Intelligence Analytics Specialist)
+        try {
+            const analyticsMeta = {
+                id: 'analytics',
+                name: 'Intelligence Analytics Specialist',
+                description: 'Analyzes audience intelligence, streaming data, and career metrics for independent artists.',
+                color: '#9C27B0',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(analyticsMeta, async () => {
+                const { BaseAgent } = await import('./BaseAgent');
+                const agent = new BaseAgent({
+                    id: 'analytics',
+                    name: 'Analytics',
+                    description: 'Intelligence Analytics Specialist',
+                    color: '#9C27B0',
+                    category: 'specialist',
+                    systemPrompt: 'You are the Intelligence Analytics Specialist for indii. Your role is to analyze audience intelligence, streaming data, and career metrics to provide insights for independent artists.',
+                    tools: []
+                });
+                agent.card = getCardForAgent('analytics');
+                freezeAgentConfig(agent);
+                return agent;
+            });
+        } catch (e: unknown) {
+            logger.warn("[AgentRegistry] Failed to register Analytics agent:", e);
+        }
+
+
         // Register worker placeholders from DEPARTMENTS
         try {
             for (const dept of Object.values(DEPARTMENTS)) {

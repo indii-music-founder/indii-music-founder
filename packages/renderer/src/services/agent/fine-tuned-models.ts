@@ -112,6 +112,7 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
     'analytics':       undefined,  // Intelligence Analytics Specialist — not yet fine-tuned
+    'analytics':       undefined,
 };
 
 /**
