@@ -1,34 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-16 07:57 EDT
+**Updated:** 2026-05-16 08:07 EDT
 **Branch:** `feat/autonomous-intelligence-swarm-v1.64.0`
 
 ## Recent Commits
 ```
+d306df17e feat(skill-selector): add dynamic skill routing and sync all agent configs
+81023e707 Merge branch 'main' into feat/autonomous-intelligence-swarm-v1.64.0
+5f5c2d488 chore: session checkpoint [07:57]
 89a7c252f chore: session checkpoint [07:57]
 1f5d4848c chore: session checkpoint [07:56]
 d01c02fd8 docs(skills): update routing table - remove deleted skills
 85ffd4454 feat(skills): minimal viable set - remove low-value skills
-5be8489de chore: session checkpoint [07:34]
-eff9a1478 feat(agent-skills): configure issue tracker, triage labels, domain context
-dbee33425 chore: session checkpoint [07:33]
-4bffb6f7f fix(agents): register analytics specialist in registry and FINE_TUNED_MODEL_REGISTRY
-db4ec7007 chore: session checkpoint [07:31]
-b30d97faf chore: session checkpoint [07:30]
-**Updated:** 2026-05-16 07:55 EDT
-**Branch:** `main`
-
-## Recent Commits
-```
+a06af6941 chore: session checkpoint [07:55]
 75d16252f fix(ci): register analytics agent in registry and fine-tuned models
 435859aad chore: session checkpoint [07:52]
-9642aff64 chore: session checkpoint [07:41]
-ba810aaa7 feat(sync): mirror agent skills config to all AI environments
-7ac642e84 Merge pull request #15 from indii-music/fix/intelligence-emergency-killswitch
-d45202e3d feat: hardens swarm registry and implements mastra service ui
-46ddd0f4b fix(tests): resolve GLOBAL_EMERGENCY_STOP failures and firebase-functions logger mock
-59906e334 chore: session checkpoint [20:34]
-ffb5a9d41 chore(agent-memory): add knowledge in prompt.md
-818ce7eb4 chore(agent-memory): add knowledge in prompt.md
 ```
 
 ## Working State
