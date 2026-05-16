@@ -14,16 +14,26 @@ ffa8fedc6 chore: session checkpoint [18:47]
 07701d90e Merge branch 'main' into release-please--branches--main--components--indii.music
 e7494eb2e chore: stabilize CI, fix @google/genai nomenclature, and resolve intelligence caption type regressions
 33d74ae39 fix(ci): resolve @google/genai mock export regressions in intelligence tests
+**Updated:** 2026-05-16 07:55 EDT
+**Branch:** `main`
+
+## Recent Commits
+```
+75d16252f fix(ci): register analytics agent in registry and fine-tuned models
+435859aad chore: session checkpoint [07:52]
+9642aff64 chore: session checkpoint [07:41]
+ba810aaa7 feat(sync): mirror agent skills config to all AI environments
+7ac642e84 Merge pull request #15 from indii-music/fix/intelligence-emergency-killswitch
+d45202e3d feat: hardens swarm registry and implements mastra service ui
+46ddd0f4b fix(tests): resolve GLOBAL_EMERGENCY_STOP failures and firebase-functions logger mock
+59906e334 chore: session checkpoint [20:34]
+ffb5a9d41 chore(agent-memory): add knowledge in prompt.md
+818ce7eb4 chore(agent-memory): add knowledge in prompt.md
 ```
 
 ## Working State
 ```
- M packages/firebase/src/index.ts
- M packages/renderer/src/services/OrganizationService.ts
- M packages/renderer/src/services/agent/BaseAgent.ts
- M packages/renderer/src/services/agent/WorkflowRegistry.ts
- M packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts
- M packages/renderer/src/services/analytics/EventBusService.ts
+clean working tree
 ```
 
 ## Decisions

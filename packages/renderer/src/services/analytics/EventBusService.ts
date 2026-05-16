@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * EventBusService — Collects and dispatches events throughout the application
  *
@@ -93,10 +95,10 @@ export class EventBusService {
     combined.forEach(handler => {
       try {
         Promise.resolve(handler(event)).catch(err => {
-          console.error(`[EventBus] Handler error for ${event.eventType}:`, err);
+          logger.error(`[EventBus] Handler error for ${event.eventType}:`, err);
         });
       } catch (err) {
-        console.error(`[EventBus] Error dispatching ${event.eventType}:`, err);
+        logger.error(`[EventBus] Error dispatching ${event.eventType}:`, err);
       }
     });
   }

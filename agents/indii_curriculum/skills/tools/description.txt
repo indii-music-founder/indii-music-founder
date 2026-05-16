@@ -1,0 +1,2 @@
+description: Technical readiness checker for the indii_curriculum domain.
+trigger_labels: ["indii_curriculum", "readiness", "status"]

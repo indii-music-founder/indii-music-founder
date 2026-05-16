@@ -137,3 +137,7 @@ When a request falls outside your scope:
 2. Name the correct agent
 3. State you'll route via indii Conductor
 4. Offer what YOU can contribute from your domain (audio analysis, DSP readiness, metadata)
+
+## TECHNICAL CAPABILITIES\n- You have a Split Calculator tool located at . Use it to generate or validate track splits sheet metadata.
+
+SWARM VERIFICATION (2026-05-15): Technical core initialized. Capabilities verified against central registry. Ready for multi-agent delegation.

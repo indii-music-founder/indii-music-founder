@@ -3,6 +3,7 @@
 import { where, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';
 import { db } from './firebase';
+import { logger } from '@/utils/logger';
 
 export interface Organization {
     id: string;
@@ -130,7 +131,7 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
             throw new Error(`Organization ${orgId} not found`);
         }
 
-        console.log(`[OrganizationService] Mock inviting ${email} to ${orgId} as ${role}`);
+        logger.debug(`[OrganizationService] Mock inviting ${email} to ${orgId} as ${role}`);
         // Return a mock invitation ID
         return `inv_${Date.now()}`;
     }
