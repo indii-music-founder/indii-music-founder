@@ -1,0 +1,2 @@
+trigger_labels: ["audit architecture", "map ecosystem", "route new skill", "system initialization"]
+description: Scans the INDII root directory to map the current state of all specialized agents. Evaluates directory structure, prevents redundant tool creation, and outputs specific routing instructions for new composable sub-skills.
