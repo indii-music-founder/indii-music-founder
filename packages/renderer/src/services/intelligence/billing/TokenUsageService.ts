@@ -21,6 +21,16 @@ export class TokenUsageService {
     private static readonly RATE_LIMIT_COLLECTION = 'user_rate_limits';
 
     /**
+     * EMERGENCY KILL-SWITCH
+     * Set this to true to immediately halt all intelligence operations.
+     * This bypasses all logic and throws an error to prevent API costs.
+     *
+     * HOLD: ON pending Firebase billing resolution (2026-05-15). Set to false
+     * once billing is restored. Local dev can bypass with VITE_INTELLIGENCE_MOCK_MODE=true.
+     */
+    private static readonly GLOBAL_EMERGENCY_STOP = true;
+
+    /**
      * Track usage for a user.
      * Increments daily counters for tokens and requests.
      */
@@ -60,6 +70,18 @@ export class TokenUsageService {
      * Throws QuotaExceededError if blocked.
      */
     static async checkQuota(userId: string): Promise<boolean> {
+        if (this.GLOBAL_EMERGENCY_STOP) {
+            // Bypass emergency stop only if MOCK_MODE is active for local development
+            if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                logger.warn('[TokenUsageService] EMERGENCY_STOP is ACTIVE but bypassed by MOCK_MODE');
+                return true;
+            }
+
+            throw new AppException(
+                AppErrorCode.QUOTA_EXCEEDED,
+                'EMERGENCY STOP: Intelligence services are temporarily suspended for cost protection. Please contact support.'
+            );
+        }
         if (!userId) return true; // Fail open if no user (e.g. system tasks)
 
         const today = new Date().toISOString().split('T')[0];
@@ -95,6 +117,17 @@ export class TokenUsageService {
      * Uses a minute-bucket strategy in Firestore.
      */
     static async checkRateLimit(userId: string): Promise<void> {
+        if (this.GLOBAL_EMERGENCY_STOP) {
+            // Bypass emergency stop only if MOCK_MODE is active for local development
+            if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                return;
+            }
+
+            throw new AppException(
+                AppErrorCode.RATE_LIMITED,
+                'EMERGENCY STOP: Intelligence services are temporarily suspended.'
+            );
+        }
         if (!userId) return;
 
         // Current minute bucket ID: e.g. "user123_28475920"

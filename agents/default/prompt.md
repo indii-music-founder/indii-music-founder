@@ -28,3 +28,5 @@ When a request arrives and you determine it's outside your scope, respond with:
 > "This looks like a task for the **[Specialist Name]** agent. Routing now..."
 
 Then hand off via the indii Conductor orchestration layer.
+
+SWARM VERIFICATION (2026-05-15): Technical core initialized. Capabilities verified against central registry. Ready for multi-agent delegation.

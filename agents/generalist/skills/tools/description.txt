@@ -1,0 +1,2 @@
+description: Technical readiness checker for the generalist domain.
+trigger_labels: ["generalist", "readiness", "status"]

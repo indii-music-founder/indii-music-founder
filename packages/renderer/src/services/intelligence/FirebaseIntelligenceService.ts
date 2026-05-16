@@ -43,6 +43,7 @@ import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
 import { secureRandomInt } from '@/utils/crypto-random';
+import { CostControlService } from '@/services/billing/CostControlService';
 
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
@@ -344,11 +345,42 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                         await this.ensureInitialized();
 
-                        // 3. Quota & Rate Limit (Backend)
+                        // 1. MOCK MODE CHECK (Fast-path for development survival)
+                        if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                            logger.info(`[FirebaseIntelligenceService] MOCK MODE ACTIVE for ${modelName}`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            return {
+                                response: {
+                                    candidates: [{
+                                        content: {
+                                            role: 'model',
+                                            parts: [{ text: "This is a MOCK response from Indii Intelligence. Cloud services are currently paused for maintenance." }]
+                                        },
+                                        finishReason: 'STOP'
+                                    }],
+                                    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 }
+                                }
+                            } as any;
+                        }
+
+                        // 2. Quota & Rate Limit
                         const userId = auth.currentUser?.uid;
                         if (userId) {
+                            // Check basic token quotas
                             await TokenUsageService.checkQuota(userId);
                             await TokenUsageService.checkRateLimit(userId);
+
+                            // Check hard-coded budget caps ($500/month kill-switch)
+                            const costCheck = await CostControlService.checkAndReserve({
+                                operationType: 'agent_stream', // Default for text
+                                estimatedCost: 0.001, // Estimate
+                                userId,
+                                metadata: { model: modelName }
+                            });
+
+                            if (!costCheck.allowed) {
+                                throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
+                            }
                         }
 
                         // 4. Sanitize & Prepare Prompt
@@ -574,11 +606,49 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     }
                     await this.ensureInitialized();
 
-                    // 1. Quota & Rate Limit (Backend)
+                    // 1. MOCK MODE CHECK
+                    if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                        logger.info(`[FirebaseIntelligenceService] MOCK MODE ACTIVE (STREAM) for ${modelName}`);
+                        return {
+                            stream: new ReadableStream({
+                                async start(controller) {
+                                    const mockParts = ["This ", "is ", "a ", "MOCK ", "streaming ", "response ", "from ", "Indii."];
+                                    for (const part of mockParts) {
+                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                        controller.enqueue({
+                                            candidates: [{
+                                                content: { parts: [{ text: part }] }
+                                            }],
+                                            usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+                                        });
+                                    }
+                                    controller.close();
+                                }
+                            }) as any,
+                            response: Promise.resolve({
+                                candidates: [{ content: { parts: [{ text: "This is a MOCK streaming response from Indii." }] } }]
+                            })
+                        } as any;
+                    }
+
+                    // 2. Quota & Rate Limit (Backend)
                     const userId = auth.currentUser?.uid;
                     if (userId) {
+                        // Check basic token quotas
                         await TokenUsageService.checkQuota(userId);
                         await TokenUsageService.checkRateLimit(userId);
+
+                        // Check hard-coded budget caps ($500/month kill-switch)
+                        const costCheck = await CostControlService.checkAndReserve({
+                            operationType: 'agent_stream', 
+                            estimatedCost: 0.001, 
+                            userId,
+                            metadata: { model: modelName, streaming: true }
+                        });
+
+                        if (!costCheck.allowed) {
+                            throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
+                        }
                     }
 
                     // 2. Sanitize & Prepare Prompt
