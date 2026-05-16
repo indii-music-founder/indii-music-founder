@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-16 07:52 EDT
+**Updated:** 2026-05-16 07:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+75d16252f fix(ci): register analytics agent in registry and fine-tuned models
+435859aad chore: session checkpoint [07:52]
 9642aff64 chore: session checkpoint [07:41]
 ba810aaa7 feat(sync): mirror agent skills config to all AI environments
 7ac642e84 Merge pull request #15 from indii-music/fix/intelligence-emergency-killswitch
@@ -12,14 +14,11 @@ d45202e3d feat: hardens swarm registry and implements mastra service ui
 59906e334 chore: session checkpoint [20:34]
 ffb5a9d41 chore(agent-memory): add knowledge in prompt.md
 818ce7eb4 chore(agent-memory): add knowledge in prompt.md
-8b44e4c7b chore(agent-memory): add knowledge in prompt.md
-8f6d15e09 chore(agent-memory): add knowledge in prompt.md
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/agent/fine-tuned-models.ts
-?? packages/renderer/src/services/agent/registry.ts.new
+clean working tree
 ```
 
 ## Decisions
