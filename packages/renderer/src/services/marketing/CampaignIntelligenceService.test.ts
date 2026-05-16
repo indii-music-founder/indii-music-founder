@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CampaignIntelligence, CampaignIntelligenceService } from './CampaignIntelligenceService';
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 import { CampaignStatus, Platform } from '@/modules/marketing/types';
 
 // Mock AIService
-vi.mock('../intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateStructuredData: vi.fn(),
         generateImage: vi.fn(),
         generateText: vi.fn()

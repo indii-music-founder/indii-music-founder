@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
@@ -109,7 +109,7 @@ describe('VideoGenerationService', () => {
             expect(result[0]!.id).toBeDefined();
             expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
             // Verify it calls the direct SDK path, not Cloud Functions
-            expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -129,7 +129,7 @@ describe('VideoGenerationService', () => {
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(AutonomousGenAI.analyzeImage).toHaveBeenCalled();
+            expect(AutonomousIntelligence.analyzeImage).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {
@@ -141,7 +141,7 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(AutonomousGenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
         });
     });
 

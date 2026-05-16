@@ -36,7 +36,7 @@ describe('FeatureFlagService', () => {
     describe('defaults', () => {
         it('loads platform capability flags as enabled by default', () => {
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.VIDEO_INTERPOLATION)).toBe(true);
-            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.AI_VOICE)).toBe(true);
+            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.INTELLIGENT_VOICE)).toBe(true);
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.DDEX_EXPORT)).toBe(true);
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.SOCIAL_FEED)).toBe(true);
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.KNOWLEDGE_API)).toBe(true);

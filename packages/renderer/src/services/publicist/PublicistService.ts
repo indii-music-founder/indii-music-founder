@@ -12,7 +12,7 @@ import { db } from '../firebase';
 import { Campaign, Contact } from '../../modules/publicist/types';
 import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class PublicistService {
@@ -52,7 +52,7 @@ export class PublicistService {
         
         Style: Sophisticated, trend-aware, and emotionally resonant. Use descriptive but direct language.`;
 
-        const response = await AutonomousGenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
             INTELLIGENCE_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
             {

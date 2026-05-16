@@ -73,7 +73,7 @@ import { auth } from '@/services/firebase';
 import { TokenUsageService } from '../billing/TokenUsageService';
 import type {
     ImportMetaEnvWithKeys,
-    AutonomousGenAIStreamChunk,
+    AutonomousIntelligenceStreamChunk,
 } from '../types';
 import type {
     FunctionCallPart,
@@ -275,7 +275,7 @@ export async function streamWithFallback(
                     chunks.push(chunk as unknown as GenerateContentResponse);
                     let chunkText = '';
                     try {
-                        const c = chunk as unknown as AutonomousGenAIStreamChunk;
+                        const c = chunk as unknown as AutonomousIntelligenceStreamChunk;
                         chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
                     } catch (e: unknown) { logger.debug('CAUGHT CHUNK ERROR', e); }
                     finalText += chunkText;

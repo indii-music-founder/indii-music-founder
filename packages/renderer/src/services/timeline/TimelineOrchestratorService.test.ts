@@ -49,9 +49,9 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP'),
 }));
 
-// Mock AutonomousGenAI for Intelligence-generated timelines
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+// Mock AutonomousIntelligence for Intelligence-generated timelines
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateStructuredData: vi.fn().mockResolvedValue({
             phases: [
                 { name: 'Tease', startDay: 0, endDay: 14, cadence: 'sparse', agentId: 'marketing', description: 'Build anticipation' },

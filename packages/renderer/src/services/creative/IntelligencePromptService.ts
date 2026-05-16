@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 
 /**
@@ -78,7 +78,7 @@ Return a JSON object with:
 `;
 
         try {
-            const result = await AutonomousGenAI.generateStructuredData<ImprovedPromptResult>(
+            const result = await AutonomousIntelligence.generateStructuredData<ImprovedPromptResult>(
                 prompt,
                 {
                     nullable: false,

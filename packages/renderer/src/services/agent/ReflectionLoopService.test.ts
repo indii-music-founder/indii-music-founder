@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReflectionLoop } from '@/services/agent/ReflectionLoop';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // ============================================================================
 // Mock FirebaseIntelligenceService.getInstance()
@@ -20,8 +20,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
                 return {
                     generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
                     generateContent: vi.fn().mockImplementation((...args: any[]) => {
-                        // Delegate to AutonomousGenAI mock which tests will configure
-                        return (vi.mocked(AutonomousGenAI.generateContent) as any)(...args);
+                        // Delegate to AutonomousIntelligence mock which tests will configure
+                        return (vi.mocked(AutonomousIntelligence.generateContent) as any)(...args);
                     }),
                     generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
                     generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
@@ -33,8 +33,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     }
 }));
@@ -79,7 +79,7 @@ function mockAIResponse(text: string) {
             functionCalls: () => [],
             thoughtSummary: () => "",
         },
-    } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>;
+    } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>;
 }
 
 // ============================================================================
@@ -103,7 +103,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('evaluate()', () => {
         it('should return shouldIterate=false for high-quality responses', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 9,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -119,7 +119,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should return shouldIterate=true for low-quality responses', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 4,
                 shouldIterate: true,
                 feedback: 'Response is too vague. Add specific distribution metrics.',
@@ -133,7 +133,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should clamp scores to 0-10 range', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 15,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -144,7 +144,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should clamp negative scores to 0', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: -3,
                 shouldIterate: true,
                 feedback: 'Terrible',
@@ -161,7 +161,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('Error Resilience', () => {
         it('should accept output when Intelligence evaluation fails', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockRejectedValueOnce(new Error('API timeout'));
+            vi.mocked(AutonomousIntelligence.generateContent).mockRejectedValueOnce(new Error('API timeout'));
 
             const result = await service.evaluate('task', 'response', 1);
 
@@ -171,7 +171,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should handle malformed JSON from the model', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse('not valid json at all'));
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse('not valid json at all'));
 
             // Should fallback to regex score extraction
             const result = await service.evaluate('task', 'response', 1);
@@ -182,7 +182,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should handle JSON wrapped in markdown code blocks', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(`
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(`
 \`\`\`json
 {
   "score": 8,
@@ -206,7 +206,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('Model Call Parameters', () => {
         it('should use the FAST model with low temperature', async () => {
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 7,
                 shouldIterate: false,
                 feedback: 'OK',
@@ -214,12 +214,12 @@ describe('🔍 ReflectionLoop', () => {
 
             await service.evaluate('task', 'response', 1);
 
-            expect(vi.mocked(AutonomousGenAI.generateContent)).toHaveBeenCalled();
+            expect(vi.mocked(AutonomousIntelligence.generateContent)).toHaveBeenCalled();
         });
 
         it('should truncate long responses before sending to evaluation', async () => {
             const longResponse = 'x'.repeat(10000);
-            vi.mocked(AutonomousGenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 7,
                 shouldIterate: false,
                 feedback: 'OK',
@@ -227,7 +227,7 @@ describe('🔍 ReflectionLoop', () => {
 
             await service.evaluate('task', longResponse, 1);
 
-            expect(vi.mocked(AutonomousGenAI.generateContent)).toHaveBeenCalled();
+            expect(vi.mocked(AutonomousIntelligence.generateContent)).toHaveBeenCalled();
         });
     });
 });

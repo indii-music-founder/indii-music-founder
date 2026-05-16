@@ -1,6 +1,6 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
@@ -40,7 +40,7 @@ export const FinanceAgent: AgentConfig = {
             Query: ${args.query}`;
 
             try {
-                const response = await AutonomousGenAI.generateText(prompt);
+                const response = await AutonomousIntelligence.generateText(prompt);
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -71,7 +71,7 @@ export const FinanceAgent: AgentConfig = {
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await AutonomousGenAI.generateContent(contents, INTELLIGENCE_MODELS.TEXT.FAST);
+                const result = await AutonomousIntelligence.generateContent(contents, INTELLIGENCE_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks
@@ -90,7 +90,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await AutonomousGenAI.generateText(prompt);
+                const advice = await AutonomousIntelligence.generateText(prompt);
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);

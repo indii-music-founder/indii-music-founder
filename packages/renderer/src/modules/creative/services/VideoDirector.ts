@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { SchemaType } from 'firebase/ai';
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
@@ -41,7 +41,7 @@ export class VideoDirector {
 
                 // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
                 // FirebaseIntelligenceService expects Record<string, any> or Schema.
-                const feedback = await AutonomousGenAI.generateStructuredData<DirectorFeedback>(
+                const feedback = await AutonomousIntelligence.generateStructuredData<DirectorFeedback>(
                     [
                         { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] ?? '' } },
                         { text: critiquePrompt }

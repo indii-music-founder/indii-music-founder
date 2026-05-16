@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { agentRegistry } from './registry';
 import { useStore } from '@/core/store';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Provide safe environment defaults to avoid failing validation during tests
 vi.mock('@/config/env', () => ({
@@ -117,8 +117,8 @@ vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
 }));
 
 // Mock Intelligence Service
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => '',

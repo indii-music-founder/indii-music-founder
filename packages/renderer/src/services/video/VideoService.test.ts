@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the Intelligence service before importing VideoService
-vi.mock('../intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateVideo: vi.fn(),
         parseJSON: vi.fn()
@@ -75,7 +75,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 import { Video, VideoService } from './VideoService';
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 
 describe('VideoService', () => {
     let service: VideoService;

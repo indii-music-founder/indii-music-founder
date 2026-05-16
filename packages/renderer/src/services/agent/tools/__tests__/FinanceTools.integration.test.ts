@@ -23,7 +23,7 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-// ── Mock AutonomousGenAI (used by negotiation) ────────────────────────────────────
+// ── Mock AutonomousIntelligence (used by negotiation) ────────────────────────────────────
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { useStore } from '@/core/store';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // --- MOCKS ---
 
@@ -37,8 +37,8 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // 3. Mock Intelligence Service
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
         generateStructuredData: vi.fn().mockResolvedValue({})

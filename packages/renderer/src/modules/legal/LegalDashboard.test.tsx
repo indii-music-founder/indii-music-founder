@@ -11,8 +11,8 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => JSON.stringify({

@@ -61,7 +61,7 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 import { MarketingTools } from '../MarketingTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { getDocs } from 'firebase/firestore';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ describe('MarketingTools — integration', () => {
                 channels: ['Instagram', 'TikTok'],
                 kpis: ['streams', 'playlist adds'],
             };
-            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
+            (AutonomousIntelligence.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
 
             const result = await MarketingTools.create_campaign_brief({
                 product: 'Summer EP',
@@ -138,11 +138,11 @@ describe('MarketingTools — integration', () => {
             expect(result.success).toBe(true);
             expect(result.data.campaignName).toBe('Summer Splash');
             expect(result.data.channels).toContain('Instagram');
-            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledOnce();
+            expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalledOnce();
         });
 
         it('returns a fallback result when Autonomous fails', async () => {
-            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
+            (AutonomousIntelligence.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
                 new Error('Quota exceeded')
             );
 
@@ -169,7 +169,7 @@ describe('MarketingTools — integration', () => {
                 interests: ['Hip-hop', 'R&B', 'Streetwear'],
                 reach: '250,000'
             };
-            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
+            (AutonomousIntelligence.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
 
             const result = await MarketingTools.analyze_audience({
                 genre: 'hip-hop',
@@ -252,7 +252,7 @@ describe('MarketingTools — integration', () => {
                 metrics: { impressions: 1000, clicks: 100, conversions: 10 },
                 roi: '150%'
             };
-            (AutonomousGenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
+            (AutonomousIntelligence.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
             
             const result = await MarketingTools.track_performance({ campaignId: 'camp-mock-001' });
             expect(result.success).toBe(true);

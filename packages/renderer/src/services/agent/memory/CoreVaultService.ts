@@ -22,7 +22,7 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================

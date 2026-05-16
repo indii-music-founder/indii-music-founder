@@ -24,12 +24,18 @@ class AgentCapabilityService {
     if (this.registry) return this.registry;
 
     try {
-      const response = await (window as any).electronAPI.agent.getCapabilityRegistry();
-      if (response.success) {
+      const electronAPI = (window as any).electronAPI;
+      if (!electronAPI || !electronAPI.agent) {
+        logger.warn('[AgentCapabilityService] electronAPI.agent not found. Possibly running outside Electron.');
+        return null;
+      }
+
+      const response = await electronAPI.agent.getCapabilityRegistry();
+      if (response && response.success) {
         this.registry = response.data;
         return this.registry;
       } else {
-        logger.error('[AgentCapabilityService] Failed to fetch registry:', response.error);
+        logger.error('[AgentCapabilityService] Failed to fetch registry:', response?.error || 'Unknown error');
         return null;
       }
     } catch (error) {

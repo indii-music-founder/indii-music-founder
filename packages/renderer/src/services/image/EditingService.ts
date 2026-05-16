@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
@@ -229,7 +229,7 @@ export class EditingService {
         parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
 
         // Use rawGenerateContent with DIRECT image model (NOT text model)
-        const response = await AutonomousGenAI.rawGenerateContent(
+        const response = await AutonomousIntelligence.rawGenerateContent(
             [{ role: 'user', parts }],
             INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
             { responseModalities: ['IMAGE'] },
@@ -282,7 +282,7 @@ export class EditingService {
             required: ['scenes']
         };
 
-        const plan = await AutonomousGenAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
+        const plan = await AutonomousIntelligence.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${sanitizedPrompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -292,7 +292,7 @@ export class EditingService {
         for (let i = 0; i < options.count; i++) {
             // Step 2: Analyze Context (if prev image exists)
             if (previousImage) {
-                visualContext = await AutonomousGenAI.analyzeImage(
+                visualContext = await AutonomousIntelligence.analyzeImage(
                     `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.`,
                     previousImage.data,
                     previousImage.mimeType
@@ -310,7 +310,7 @@ export class EditingService {
             parts.push({ text: promptText });
 
             // Use rawGenerateContent with DIRECT image model (NOT text model)
-            const response = await AutonomousGenAI.rawGenerateContent(
+            const response = await AutonomousIntelligence.rawGenerateContent(
                 [{ role: 'user', parts }],
                 INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
                 { responseModalities: ['IMAGE'] },
@@ -357,7 +357,7 @@ export class EditingService {
             { text: '[Style Reference - apply this visual style]' },
         ];
 
-        const response = await AutonomousGenAI.rawGenerateContent(
+        const response = await AutonomousIntelligence.rawGenerateContent(
             [{ role: 'user', parts }],
             modelId,
             { responseModalities: ['IMAGE'] },

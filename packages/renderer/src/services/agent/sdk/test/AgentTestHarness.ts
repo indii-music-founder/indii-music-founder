@@ -1,7 +1,7 @@
 import { vi, MockInstance } from 'vitest';
 import { BaseAgent } from '../../BaseAgent';
 import { AgentConfig, AgentContext } from '../../types';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { TraceService } from '../../observability/TraceService';
 
 /**
@@ -39,13 +39,13 @@ export class AgentTestHarness {
         vi.spyOn(TraceService, 'completeTrace').mockResolvedValue(undefined);
         vi.spyOn(TraceService, 'failTrace').mockResolvedValue(undefined);
 
-        // Spy on AutonomousGenAI if not already mocked
-        if (!vi.isMockFunction(AutonomousGenAI.generateContent)) {
-            vi.spyOn(AutonomousGenAI, 'generateContent');
+        // Spy on AutonomousIntelligence if not already mocked
+        if (!vi.isMockFunction(AutonomousIntelligence.generateContent)) {
+            vi.spyOn(AutonomousIntelligence, 'generateContent');
         }
-        if (!vi.isMockFunction(AutonomousGenAI.generateContentStream)) {
+        if (!vi.isMockFunction(AutonomousIntelligence.generateContentStream)) {
             try {
-                vi.spyOn(AutonomousGenAI, 'generateContentStream');
+                vi.spyOn(AutonomousIntelligence, 'generateContentStream');
             } catch (_e: unknown) {
                 // Ignore if it fails (already mocked or property descriptor issue)
             }
@@ -53,10 +53,10 @@ export class AgentTestHarness {
     }
 
     /**
-     * Mocks the next response from AutonomousGenAI.generateContent.
+     * Mocks the next response from AutonomousIntelligence.generateContent.
      * @param text The text response to return.
      */
-    public mockAutonomousGenAIResponse(text: string) {
+    public mockAutonomousIntelligenceResponse(text: string) {
         const mockResult = {
             response: {
                 text: () => text,
@@ -68,14 +68,14 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-        (AutonomousGenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
-        if (AutonomousGenAI.generateContentStream) {
-            (AutonomousGenAI.generateContentStream as unknown as MockInstance).mockResolvedValue({
+        (AutonomousIntelligence.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+        if (AutonomousIntelligence.generateContentStream) {
+            (AutonomousIntelligence.generateContentStream as unknown as MockInstance).mockResolvedValue({
                 stream: (async function* () {
                     yield { text: () => text };
                 })(),
-                response: Promise.resolve(mockResult as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>)
-            } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContentStream>>);
+                response: Promise.resolve(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>)
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContentStream>>);
         }
     }
 
@@ -83,7 +83,7 @@ export class AgentTestHarness {
      * Mocks an AutonomousGenIntelligence response that triggers tool calls.
      * @param toolCalls Array of tool calls (name + args)
      */
-    public mockAutonomousGenAIToolCall(toolCalls: { name: string, args: Record<string, unknown> }[]) {
+    public mockAutonomousIntelligenceToolCall(toolCalls: { name: string, args: Record<string, unknown> }[]) {
         const mockResult = {
             response: {
                 text: () => '',
@@ -95,7 +95,7 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-        (AutonomousGenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
+        (AutonomousIntelligence.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
     }
 
     /**

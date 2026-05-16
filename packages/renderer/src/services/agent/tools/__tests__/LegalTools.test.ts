@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LegalTools } from '../LegalTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -18,8 +18,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     }
 }));
@@ -30,7 +30,7 @@ describe('LegalTools', () => {
     });
 
     it('generate_nda returns generated NDA', async () => {
-        vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     ndaTitle: "Non-Disclosure Agreement",
@@ -49,7 +49,7 @@ describe('LegalTools', () => {
     });
 
     it('draft_contract generates contract text', async () => {
-        vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     contractTitle: "Service Agreement",

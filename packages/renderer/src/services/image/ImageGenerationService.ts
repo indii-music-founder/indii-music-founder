@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
@@ -544,7 +544,7 @@ export class ImageGenerationService {
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         return withServiceError('ImageGeneration', 'extractStyle', async () => {
-            const response = await AutonomousGenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -559,7 +559,7 @@ export class ImageGenerationService {
                 }
             );
 
-            return AutonomousGenAI.parseJSON(response.response.text());
+            return AutonomousIntelligence.parseJSON(response.response.text());
         });
     }
 
@@ -678,7 +678,7 @@ export class ImageGenerationService {
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            const response = await AutonomousGenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [{
                     role: 'user',
                     parts: [

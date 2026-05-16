@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialTools } from '../SocialTools';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
 
 // Mock Dependencies
@@ -20,8 +20,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     }
 }));
@@ -67,11 +67,11 @@ describe('SocialTools', () => {
       const mockGeneratedText = 'Exciting news! #LaunchDay';
       const mockPostId = 'post-123';
 
-      vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
+      vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
       vi.mocked(SocialService.createPost).mockResolvedValueOnce(mockPostId);
 
@@ -95,11 +95,11 @@ describe('SocialTools', () => {
       // Setup Mocks
       const mockGeneratedText = 'Resilience check! #Testing';
 
-      vi.mocked(AutonomousGenAI.generateContent).mockResolvedValueOnce({
+      vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
       // Simulate DB Failure
       vi.mocked(SocialService.createPost).mockRejectedValueOnce(new Error('Firestore unavailable'));
