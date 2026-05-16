@@ -117,7 +117,7 @@ export class VideoDirector {
         const jobId = crypto.randomUUID();
         const prompt = item.prompt || 'Animate this scene';
 
-        // --- Electron Path: Delegate to local Python API (AI sidecar) ---
+        // --- Electron Path: Delegate to local Python API (Intelligence sidecar) ---
         // --- Cloud Function (triggerVideoJob) ---
         // Build a payload that satisfies VideoJobSchema
         const cloudPayload: Record<string, unknown> = {
