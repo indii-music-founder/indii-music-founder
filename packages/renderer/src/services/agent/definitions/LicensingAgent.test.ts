@@ -37,7 +37,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('../tools/LegalTools', () => ({
     LegalTools: {
@@ -149,7 +149,7 @@ describe('LicensingAgent', () => {
 
     describe('analyze_contract', () => {
         it('should use Autonomous to analyze contract data', async () => {
-            vi.mocked(AutonomousGenAI.analyzeImage).mockResolvedValue("Mocked Intelligence analysis summary.");
+            vi.mocked(AutonomousIntelligence.analyzeImage).mockResolvedValue("Mocked Intelligence analysis summary.");
 
             const args = {
                 file_data: 'base64data',
@@ -158,7 +158,7 @@ describe('LicensingAgent', () => {
             type ResultType = { success: boolean; data: { summary?: string } };
             const result = await (LicensingAgent.functions!.analyze_contract as (args: unknown) => Promise<ResultType>)(args);
 
-            expect(AutonomousGenAI.analyzeImage).toHaveBeenCalled();
+            expect(AutonomousIntelligence.analyzeImage).toHaveBeenCalled();
             expect(result.success).toBe(true);
             expect(result.data.summary).toBe("Mocked Intelligence analysis summary.");
         });

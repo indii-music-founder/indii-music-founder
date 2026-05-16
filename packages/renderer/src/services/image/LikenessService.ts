@@ -145,8 +145,8 @@ class LikenessServiceImpl {
      */
     async assessQuality(dataUrl: string): Promise<{ score: LikenessImage['qualityScore']; notes: string }> {
         try {
-            const { GoogleGenAI: GoogleAutonomousGenAI } = await import('@google/genai');
-            const ai = new GoogleAutonomousGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+            const { GoogleGenAI: GoogleAutonomousIntelligence } = await import('@google/genai');
+            const ai = new GoogleAutonomousIntelligence({ apiKey: import.meta.env.VITE_API_KEY });
 
             const base64Data = dataUrl.split(',')[1] || '';
             const mimeType = dataUrl.split(':')[1]?.split(';')[0] || 'image/jpeg';

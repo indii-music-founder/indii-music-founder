@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 import { AGENT_CONFIGS } from '../agentConfig';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
@@ -57,8 +57,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => 'Mock Agent Response',

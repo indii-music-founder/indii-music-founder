@@ -5,7 +5,7 @@ The Debug module provides system-level diagnostics and "Gauntlet" style stress t
 ## 🛠️ Key Features
 
 - **Multimodal Gauntlet:** Executes parallel visual and video generation flows to ensure high-concurrency limits and API stabilities are functioning as expected.
-- **Latency & Throughput Monitoring:** Visualizers for tracking timing metrics from Firebase and Google AutonomousGenAI responses.
+- **Latency & Throughput Monitoring:** Visualizers for tracking timing metrics from Firebase and Google AutonomousIntelligence responses.
 
 ## 🏗️ Technical Architecture
 

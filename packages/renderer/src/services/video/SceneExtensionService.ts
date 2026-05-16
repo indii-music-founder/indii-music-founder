@@ -7,7 +7,7 @@
  * - Respects MembershipService tier quotas
  */
 
-import { AutonomousGenAI as AI } from '../intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { VideoGenerationConfig } from '@/shared/types/ai.dto';
 import { MembershipService } from '@/services/MembershipService';

@@ -56,7 +56,7 @@ vi.mock('../billing/TokenUsageService', () => ({
     }
 }));
 
-// Mock Google AutonomousGenAI SDK (Fallback) - new @google/genai package
+// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
 vi.mock('@google/genai', () => ({
     GoogleGenAI: vi.fn(function () {
         return {
@@ -85,7 +85,7 @@ describe('AI Caching (Browser Environment)', () => {
         await aiCache.clear(); // Start with empty cache
 
         // Setup default mock response
-        // Note: The Google AutonomousGenAI SDK (fallback client) returns a flat object with text/candidates,
+        // Note: The Google AutonomousIntelligence SDK (fallback client) returns a flat object with text/candidates,
         // unlike the Firebase SDK which wraps it in a response object.
         mockGenerateContent.mockResolvedValue({
             response: {

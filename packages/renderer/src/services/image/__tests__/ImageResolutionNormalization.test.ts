@@ -16,8 +16,8 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(),
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: { generateContent: vi.fn(), parseJSON: vi.fn() },
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: { generateContent: vi.fn(), parseJSON: vi.fn() },
 }));
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {

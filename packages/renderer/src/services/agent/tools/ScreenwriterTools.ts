@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -29,7 +29,7 @@ Attempt to infer scene headers if not explicit.
 `;
     const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
-    const response = await AutonomousGenAI.generateContent(
+    const response = await AutonomousIntelligence.generateContent(
       prompt,
       INTELLIGENCE_MODELS.TEXT.AGENT,
       undefined,
@@ -67,7 +67,7 @@ Return ONLY valid JSON with this structure:
 `;
     const prompt = `Analyze this script:\n\n${args.script}`;
 
-    const response = await AutonomousGenAI.generateContent(
+    const response = await AutonomousIntelligence.generateContent(
       prompt,
       INTELLIGENCE_MODELS.TEXT.AGENT,
       undefined,

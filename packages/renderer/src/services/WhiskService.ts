@@ -200,11 +200,11 @@ export class WhiskService {
      */
     static async generateInspiration(category: 'subject' | 'scene' | 'style' | 'motion'): Promise<string[]> {
         try {
-            const { AutonomousGenAI: AI } = await import('@/services/intelligence/AutonomousGenAI');
+            const { AutonomousIntelligence: AI } = await import('@/services/intelligence/AutonomousIntelligence');
 
             const { stream } = await AI.generateContentStream(
                 [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
-                undefined, // Default model configuration will be applied by AutonomousGenAI facade
+                undefined, // Default model configuration will be applied by AutonomousIntelligence facade
                 {
                     temperature: 1.0,
                     maxOutputTokens: 500,

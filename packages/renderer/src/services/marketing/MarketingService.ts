@@ -15,7 +15,7 @@ import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class MarketingService {
@@ -45,7 +45,7 @@ export class MarketingService {
           "summary": "string"
         }`;
 
-        const response = await AutonomousGenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
             INTELLIGENCE_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
             {
@@ -54,7 +54,7 @@ export class MarketingService {
             }
         );
 
-        const parsed = AutonomousGenAI.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
+        const parsed = AutonomousIntelligence.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
         return {
             score: typeof parsed.score === 'number' ? parsed.score : 0,
             label: parsed.label && ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label as 'positive' | 'neutral' | 'negative' : 'neutral',

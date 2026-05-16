@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
-import { AutonomousGenAI as AI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock dependencies
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     serverTimestamp: vi.fn(),
-    AutonomousGenAI: {
+    AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     },
@@ -64,8 +64,8 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITHOUT usage method gracefully', async () => {
-        const aiMock = await import('@/services/intelligence/AutonomousGenAI');
-        vi.mocked(aiMock.AutonomousGenAI.generateContent)
+        const aiMock = await import('@/services/intelligence/AutonomousIntelligence');
+        vi.mocked(aiMock.AutonomousIntelligence.generateContent)
             .mockResolvedValueOnce({
                 response: {
                     text: () => 'Response content',
@@ -84,8 +84,8 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITH usage method', async () => {
-        const aiMock = await import('@/services/intelligence/AutonomousGenAI');
-        vi.mocked(aiMock.AutonomousGenAI.generateContent)
+        const aiMock = await import('@/services/intelligence/AutonomousIntelligence');
+        vi.mocked(aiMock.AutonomousIntelligence.generateContent)
             .mockResolvedValueOnce({
                 response: {
                     text: () => 'Response content',

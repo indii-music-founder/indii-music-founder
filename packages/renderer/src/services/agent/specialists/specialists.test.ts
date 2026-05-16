@@ -58,8 +58,8 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => 'Mock Response',
@@ -120,13 +120,13 @@ describe('Specialist Agents Connection', () => {
         const brandAgent = await agentRegistry.getAsync('brand');
         if (!brandAgent) throw new Error('Brand agent not found');
 
-        // We can't easily inspect the private/protected execution logic without spying on AutonomousGenAI.generateContent
+        // We can't easily inspect the private/protected execution logic without spying on AutonomousIntelligence.generateContent
         // But we can check if the tools are being passed correctly
 
-        const { AutonomousGenAI } = await import('@/services/intelligence/AutonomousGenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         await brandAgent.execute('Test Task', {});
 
-        const tools = vi.mocked(AutonomousGenAI.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
+        const tools = vi.mocked(AutonomousIntelligence.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
 
         // Create a flat list of all function declarations from all tool objects
         const allFunctionDeclarations = tools.flatMap((t: unknown) => (t as { functionDeclarations?: { name: string }[] }).functionDeclarations || []);

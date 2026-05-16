@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MultiTurnAutorater, type AutoraterScore, type TraceMessage } from './MultiTurnAutorater';
 
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
-    AutonomousGenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateStructuredData: vi.fn(),
     },
 }));
@@ -22,7 +22,7 @@ vi.mock('firebase/firestore', async () => {
     };
 });
 
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 const goal = 'Test goal';
 const messages: TraceMessage[] = [
@@ -54,29 +54,29 @@ describe('MultiTurnAutorater', () => {
     });
 
     describe('evaluateTrace', () => {
-        it('returns the structured score from AutonomousGenAI', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
+        it('returns the structured score from AutonomousIntelligence', async () => {
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(passingScore);
             const result = await MultiTurnAutorater.evaluateTrace('trace-1', messages, goal);
             expect(result).toEqual(passingScore);
-            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalledOnce();
+            expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalledOnce();
         });
 
-        it('returns null when AutonomousGenAI returns null', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(null);
+        it('returns null when AutonomousIntelligence returns null', async () => {
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(null);
             const result = await MultiTurnAutorater.evaluateTrace('trace-2', messages, goal);
             expect(result).toBeNull();
         });
 
-        it('returns null and does not throw when AutonomousGenAI rejects', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockRejectedValue(new Error('boom'));
+        it('returns null and does not throw when AutonomousIntelligence rejects', async () => {
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValue(new Error('boom'));
             const result = await MultiTurnAutorater.evaluateTrace('trace-3', messages, goal);
             expect(result).toBeNull();
         });
 
         it('embeds guidelines into the prompt when provided', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(passingScore);
             await MultiTurnAutorater.evaluateTrace('trace-4', messages, goal, ['No looping', 'Use schemas']);
-            const prompt = vi.mocked(AutonomousGenAI.generateStructuredData).mock.calls[0]?.[0] as string;
+            const prompt = vi.mocked(AutonomousIntelligence.generateStructuredData).mock.calls[0]?.[0] as string;
             expect(prompt).toContain('No looping');
             expect(prompt).toContain('Use schemas');
         });
@@ -84,7 +84,7 @@ describe('MultiTurnAutorater', () => {
 
     describe('evaluateAndRegister', () => {
         it('registers high-quality traces (goalCompletion >= 9, toolEfficiency >= 9, overallPass)', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(passingScore);
             await MultiTurnAutorater.evaluateAndRegister('user-1', 'creative', 'trace-5', messages, goal);
             expect(addDocMock).toHaveBeenCalledOnce();
             const call = addDocMock.mock.calls[0] as unknown as unknown[];
@@ -97,13 +97,13 @@ describe('MultiTurnAutorater', () => {
         });
 
         it('does NOT register low-quality traces', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(failingScore);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(failingScore);
             await MultiTurnAutorater.evaluateAndRegister('user-2', 'creative', 'trace-6', messages, goal);
             expect(addDocMock).not.toHaveBeenCalled();
         });
 
         it('does NOT register when overallPass is false even with high scores', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue({
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue({
                 ...passingScore,
                 overallPass: false,
             });
@@ -112,7 +112,7 @@ describe('MultiTurnAutorater', () => {
         });
 
         it('does NOT register when toolEfficiency drops below 9', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue({
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue({
                 ...passingScore,
                 toolEfficiency: 8,
             });
@@ -121,13 +121,13 @@ describe('MultiTurnAutorater', () => {
         });
 
         it('returns the score regardless of registration outcome', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(failingScore);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(failingScore);
             const result = await MultiTurnAutorater.evaluateAndRegister('user-5', 'creative', 'trace-9', messages, goal);
             expect(result).toEqual(failingScore);
         });
 
         it('does not throw if Firestore write fails', async () => {
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(passingScore);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(passingScore);
             addDocMock.mockRejectedValueOnce(new Error('firestore down'));
             await expect(
                 MultiTurnAutorater.evaluateAndRegister('user-6', 'creative', 'trace-10', messages, goal)

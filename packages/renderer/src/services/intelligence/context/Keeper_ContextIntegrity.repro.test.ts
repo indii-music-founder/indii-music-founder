@@ -66,10 +66,10 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
-// Mock AutonomousGenAI
-vi.mock('@/services/intelligence/AutonomousGenAI', () => ({
+// Mock AutonomousIntelligence
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     serverTimestamp: vi.fn(),
-    AutonomousGenAI: {
+    AutonomousIntelligence: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
             serverTimestamp: vi.fn(),

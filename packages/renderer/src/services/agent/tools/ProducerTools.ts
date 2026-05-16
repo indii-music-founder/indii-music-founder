@@ -1,4 +1,4 @@
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -39,7 +39,7 @@ Location: ${args.location}
 Cast: ${args.cast.join(', ')}
 `;
 
-        const response = await AutonomousGenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT,
             undefined,
@@ -67,7 +67,7 @@ Output a JSON list of:
 `;
         const prompt = `Breakdown this script:\n\n${args.script}`;
 
-        const response = await AutonomousGenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT,
             undefined,

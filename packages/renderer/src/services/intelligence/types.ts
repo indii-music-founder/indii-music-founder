@@ -26,7 +26,7 @@ export interface ImportMetaEnvWithKeys {
 }
 
 /** Shape returned by @google/genai embedContent — differs from Firebase SDK */
-export interface AutonomousGenAIEmbedResult {
+export interface AutonomousIntelligenceEmbedResult {
     embeddings?: { values: number[] }[];
     embedding?: { values: number[] };
 }
@@ -51,14 +51,14 @@ export interface FirebaseModelOptions {
 }
 
 /** Result shape from @google/genai generateContent */
-export interface AutonomousGenAIGenerateResult {
+export interface AutonomousIntelligenceGenerateResult {
     candidates?: unknown[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
     text?: string;
 }
 
 /** Chunk shape from @google/genai generateContentStream */
-export interface AutonomousGenAIStreamChunk {
+export interface AutonomousIntelligenceStreamChunk {
     candidates?: { content?: { parts?: unknown[] } }[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
     text?: string | (() => string);

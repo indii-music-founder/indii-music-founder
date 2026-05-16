@@ -26,7 +26,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-import { AutonomousGenAI } from '@/services/intelligence/AutonomousGenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
@@ -116,7 +116,7 @@ describe('SecurityTools (Mocked)', () => {
             expect(viewerRole.count).toBe(2);
 
             // Autonomous should NOT be called
-            expect(AutonomousGenAI.generateStructuredData).not.toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateStructuredData).not.toHaveBeenCalled();
         });
 
         it('should fallback to Autonomous if Firestore returns empty/error', async () => {
@@ -131,13 +131,13 @@ describe('SecurityTools (Mocked)', () => {
                 recommendations: []
             };
 
-            vi.mocked(AutonomousGenAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof AutonomousGenAI.generateStructuredData>>);
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
             const result = await audit_permissions({ project_id: 'test-project' });
             const parsed = result.data;
 
             expect(parsed.status).toBe("AI Audit");
-            expect(AutonomousGenAI.generateStructuredData).toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
         });
     });
 
