@@ -12,7 +12,9 @@ import { auth, db, storage } from '@/services/firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { logger } from '@/utils/logger';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
+const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST;
 /** Maximum number of likeness images per user */
 export const MAX_LIKENESS_IMAGES = 5;
 
@@ -152,7 +154,7 @@ class LikenessServiceImpl {
             const mimeType = dataUrl.split(':')[1]?.split(';')[0] || 'image/jpeg';
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-preview-05-20',
+                model: INTELLIGENCE_MODELS.TEXT.FAST,
                 contents: [{
                     role: 'user',
                     parts: [
