@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-16 08:07 EDT
+**Updated:** 2026-05-16 08:08 EDT
 **Branch:** `feat/autonomous-intelligence-swarm-v1.64.0`
 
 ## Recent Commits
 ```
+c49bcc901 feat(skill – skill): add dynamic skill routing and sync all agent configs
 d306df17e feat(skill-selector): add dynamic skill routing and sync all agent configs
 81023e707 Merge branch 'main' into feat/autonomous-intelligence-swarm-v1.64.0
 5f5c2d488 chore: session checkpoint [07:57]
@@ -13,7 +14,6 @@ d01c02fd8 docs(skills): update routing table - remove deleted skills
 85ffd4454 feat(skills): minimal viable set - remove low-value skills
 a06af6941 chore: session checkpoint [07:55]
 75d16252f fix(ci): register analytics agent in registry and fine-tuned models
-435859aad chore: session checkpoint [07:52]
 ```
 
 ## Working State
