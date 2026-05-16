@@ -1,2 +1,2 @@
-description: Technical readiness checker for the distribution domain.
-trigger_labels: ["distribution", "readiness", "status"]
+description: Validates audio file formats and metadata against DSP standards.
+trigger_labels: [distribution, audio, validate, dsp]

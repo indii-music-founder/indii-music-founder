@@ -1,2 +1,2 @@
-description: Technical readiness checker for the analytics domain.
-trigger_labels: ["analytics", "readiness", "status"]
+description: Calculates the viral potential score of a track based on BPM and genre.
+trigger_labels: [analytics, viral, score, tiktok]

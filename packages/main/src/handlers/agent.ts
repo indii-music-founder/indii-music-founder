@@ -1,6 +1,8 @@
 import log from 'electron-log';
 import { ipcMain, app, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
+import fs from 'fs/promises';
+import path from 'path';
 import { AgentActionSchema, AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
@@ -153,17 +155,17 @@ export function registerAgentHandlers() {
                 return { success: false, error: String(error) };
             }
         });
-
-        ipcMain.handle('agent:capture-state', async (event: IpcMainInvokeEvent) => {
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            try {
-                validateSender(event);
-                const snapshot = await browserAgentService.captureSnapshot();
-                return { success: true, ...snapshot };
-            } catch (error) {
-                return { success: false, error: String(error) };
-            }
-        });
-
     }
+
+    ipcMain.handle('agent:get-capability-registry', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const registryPath = path.join(process.cwd(), 'agents/capability_registry.json');
+            const data = await fs.readFile(registryPath, 'utf-8');
+            return { success: true, data: JSON.parse(data) };
+        } catch (error) {
+            log.error('Failed to get capability registry:', error);
+            return { success: false, error: String(error) };
+        }
+    });
 }
