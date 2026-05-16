@@ -1,5 +1,7 @@
 # Master Execution Worksheet (Think First, Work Second)
 
+> **STATUS: SUPERSEDED 2026-05-15 — see WORKSHEET.md**
+
 **Status:** Planning Complete → Ready for Execution  
 **Philosophy:** Execute deterministically, top-to-bottom. No skipping.  
 **Date:** 2026-04-24  
