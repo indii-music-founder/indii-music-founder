@@ -301,3 +301,14 @@ Replace `Math.random` with proper ID generation in non-test service files.
 | WO-8 | Payment validation | 3 sub-tasks |
 | WO-9 | App Check enforcement | 3 sub-tasks |
 | WO-10 | MusicAgent scope correction | 3 sub-tasks |
+| WO-11 | Official Official Secret Rotation | 3 sub-tasks |
+
+---
+
+## WO-11: Official Official Secret Rotation
+
+| Task | Detail |
+|------|--------|
+| **Rotate All Secrets** | Execute a complete rotation of all production secrets prior to the "Official Official" launch. Ensure no legacy or compromised keys exist. |
+| **Verify SECRET_INVENTORY.md** | Cross-check the master list in `docs/SECRET_INVENTORY.md` to ensure all rotating keys are successfully migrated to Secret Manager. |
+| **License & Account Payments** | Pay/renew licenses mapped in the Inventory (Apple Developer, Microsoft Partner, GCP Billing, Firebase Blaze, etc.) to lift infrastructure blockers. |

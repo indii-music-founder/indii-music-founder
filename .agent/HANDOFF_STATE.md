@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-16 11:26 EDT
-**Branch:** `main`
+**Updated:** 2026-05-16 21:18 EDT
+**Branch:** `prep/intelligence-upgrade-readiness`
 
 ## Recent Commits
 ```
+e4f4dfba5 chore: session checkpoint [21:17]
+ad55d1ce5 chore: session checkpoint [21:13]
+a9dff481a feat(billing): add agent cost awareness tools (check_budget_status, estimate_cost)
+380b72b1e chore: session checkpoint [21:11]
+eaaa089fc chore: session checkpoint [21:06]
+45386bf62 feat(skills): add indii-director and indii-cinema-worldbuilder skills translated from Joey's Claude Skills
+268dd3ee4 feat: intelligence upgrade readiness and centralized configuration hardening
+3d3260277 chore: session checkpoint [11:26]
 3c78e121f chore: session checkpoint [11:26]
 fc69fab61 chore: session checkpoint [11:24]
-c8cad59bc chore: session checkpoint [11:23]
-93de7a124 docs(agents): sync team structure context to all agent files
-96b21370f chore: session checkpoint [09:39]
-8cf0f1e53 chore: session checkpoint [09:38]
-331862681 chore: session checkpoint [09:07]
-482928753 chore: session checkpoint [09:04]
-9d2c052f1 chore: session checkpoint [09:03]
-eafcd140e chore: session checkpoint [09:03]
 ```
 
 ## Working State
