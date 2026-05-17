@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-16 21:11 EDT
+**Updated:** 2026-05-16 21:13 EDT
 **Branch:** `prep/intelligence-upgrade-readiness`
 
 ## Recent Commits
 ```
+a9dff481a feat(billing): add agent cost awareness tools (check_budget_status, estimate_cost)
+380b72b1e chore: session checkpoint [21:11]
 eaaa089fc chore: session checkpoint [21:06]
 45386bf62 feat(skills): add indii-director and indii-cinema-worldbuilder skills translated from Joey's Claude Skills
 268dd3ee4 feat: intelligence upgrade readiness and centralized configuration hardening
@@ -12,17 +14,11 @@ eaaa089fc chore: session checkpoint [21:06]
 fc69fab61 chore: session checkpoint [11:24]
 c8cad59bc chore: session checkpoint [11:23]
 93de7a124 docs(agents): sync team structure context to all agent files
-96b21370f chore: session checkpoint [09:39]
-8cf0f1e53 chore: session checkpoint [09:38]
 ```
 
 ## Working State
 ```
- M agents/conductor/prompt.md
- M agents/video/prompt.md
- M docs/PRODUCTION_WORK_ORDER.md
- M packages/renderer/src/services/agent/tools/index.ts
-?? packages/renderer/src/services/agent/tools/BillingTools.ts
+clean working tree
 ```
 
 ## Decisions
