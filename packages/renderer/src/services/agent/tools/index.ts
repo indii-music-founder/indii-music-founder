@@ -48,11 +48,13 @@ import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
 import { consult_specialist } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
+import { BillingTools } from './BillingTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
     ...UniversalTools,
+    ...BillingTools,
     consult_specialist,
     ...DirectorTools,
     edit_image_with_annotations: EditImageWithAnnotationsTool.execute,
@@ -240,7 +242,10 @@ AVAILABLE TOOLS:
 113. request_feature(title: string, description: string, useCase?: string, priority?: string, category?: string, module?: string) - Capture a feature request or product idea. Use when user suggests new functionality, improvements, or says "it would be cool if...".
 114. edit_image_with_annotations(imageId: string, annotations: object[], colorPrompts?: object) - Edit an image using spatial annotations (circles) and color-coded instructions.
 115. edit_document_with_annotations(documentId: string, annotations: object[], globalInstruction?: string) - Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.
+--- BILLING & COST CONTROL ---
+116. check_budget_status() - Check current daily/monthly budget remaining and test mode status. REQUIRED before expensive operations.
+117. estimate_cost(operation_type: 'video'|'image'|'agent_stream', duration_seconds?: number, model?: 'fast'|'pro', image_count?: number) - Estimate cost before operation. Must return willFit=true before proceeding.
 --- FOUNDATIONAL (ADMIN & MEMORY) ---
-116. audit_architecture() - Map the agent ecosystem and capabilities.
-117. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
+118. audit_architecture() - Map the agent ecosystem and capabilities.
+119. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
 `;
