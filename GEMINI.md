@@ -54,7 +54,7 @@ bash .claude/scripts/checkpoint.sh
 
 - **Version:** 0.1.0-beta.2
 - **Org:** IndiiOS LLC
-- **Repo:** `the-walking-agency-det/indiiOS-Alpha-Electron`
+- **Repo:** `wiil-tech/indiiOS-Alpha-Electron`
 - **Node Requirement:** >= 22.0.0
 
 ---

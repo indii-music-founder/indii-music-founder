@@ -8,8 +8,8 @@
 
 indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.2-blue)](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron)
-[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta.2-blue)](https://github.com/wiil-tech/indiiOS-Alpha-Electron)
+[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://YOUR_FIREBASE_STUDIO_APP_ID.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
@@ -540,7 +540,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ### Installation
 
 ```bash
-git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
+git clone https://github.com/wiil-tech/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
 npm install
 ```
@@ -758,7 +758,7 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 **Remote Relay Hardening & Telegram Bot Adapter**
 
-- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indiios-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
+- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `YOUR_FIREBASE_ELECTRON_APP_ID` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
 - **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
 - **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
 

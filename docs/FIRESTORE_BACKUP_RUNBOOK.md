@@ -25,7 +25,7 @@ gcloud firestore export → gs://indiiOS-backups/firestore/YYYY-MM-DD/
 
 ```bash
 # Create a dedicated backup bucket with versioning
-gsutil mb -p indiios-v-1-1 -l us-central1 gs://indiiOS-backups
+gsutil mb -p YOUR_FIREBASE_PROJECT_ID -l us-central1 gs://indiiOS-backups
 
 # Enable versioning for additional protection
 gsutil versioning set on gs://indiiOS-backups
@@ -48,11 +48,11 @@ gsutil lifecycle set /tmp/lifecycle.json gs://indiiOS-backups
 
 ```bash
 # Get the default service account
-SA=$(gcloud iam service-accounts list --project=indiios-v-1-1 \
+SA=$(gcloud iam service-accounts list --project=YOUR_FIREBASE_PROJECT_ID \
   --filter="email:firebase-adminsdk" --format="value(email)")
 
 # Grant Firestore export permissions
-gcloud projects add-iam-policy-binding indiios-v-1-1 \
+gcloud projects add-iam-policy-binding YOUR_FIREBASE_PROJECT_ID \
   --member="serviceAccount:$SA" \
   --role="roles/datastore.importExportAdmin"
 
@@ -72,7 +72,7 @@ export const scheduledFirestoreBackup = functions
   .timeZone('America/New_York')
   .onRun(async () => {
     const client = new admin.firestore.v1.FirestoreAdminClient();
-    const projectId = process.env.GCP_PROJECT || 'indiios-v-1-1';
+    const projectId = process.env.GCP_PROJECT || 'YOUR_FIREBASE_PROJECT_ID';
     const databaseName = client.databasePath(projectId, '(default)');
 
     const date = new Date().toISOString().split('T')[0];
@@ -94,14 +94,14 @@ export const scheduledFirestoreBackup = functions
 ```bash
 # Using gcloud directly (alternative to Cloud Function above)
 gcloud scheduler jobs create http firestore-daily-backup \
-  --project=indiios-v-1-1 \
+  --project=YOUR_FIREBASE_PROJECT_ID \
   --schedule="0 2 * * *" \
   --time-zone="America/New_York" \
-  --uri="https://firestore.googleapis.com/v1/projects/indiios-v-1-1/databases/(default):exportDocuments" \
+  --uri="https://firestore.googleapis.com/v1/projects/YOUR_FIREBASE_PROJECT_ID/databases/(default):exportDocuments" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
   --message-body='{"outputUriPrefix":"gs://indiiOS-backups/firestore/"}' \
-  --oauth-service-account-email="firebase-adminsdk@indiios-v-1-1.iam.gserviceaccount.com"
+  --oauth-service-account-email="firebase-adminsdk@YOUR_FIREBASE_PROJECT_ID.iam.gserviceaccount.com"
 ```
 
 ---
@@ -123,14 +123,14 @@ gsutil ls gs://indiiOS-backups/firestore/ | tail -5
 ```bash
 # Import the latest backup
 gcloud firestore import gs://indiiOS-backups/firestore/YYYY-MM-DD/ \
-  --project=indiios-v-1-1
+  --project=YOUR_FIREBASE_PROJECT_ID
 ```
 
 ### Step 3: Verify Data
 
 ```bash
 # Run a count query to verify collections are populated
-firebase firestore:list --project=indiios-v-1-1
+firebase firestore:list --project=YOUR_FIREBASE_PROJECT_ID
 ```
 
 ### Step 4: Notify Users

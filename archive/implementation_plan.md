@@ -917,7 +917,7 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 
 | Component | Status |
 |-----------|--------|
-| Firebase Project | `indiios-v-1-1` (configured) |
+| Firebase Project | `YOUR_FIREBASE_PROJECT_ID` (configured) |
 | Current Auth | Email/Pass + Google + Anon |
 | User Profiles | Firestore (`users` collection) |
 | Organizations | Firestore with `members[]` |

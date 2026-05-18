@@ -60,7 +60,7 @@ def base_model_for(agent_id: str) -> str:
     return R5_BASE_MODELS.get(agent_id, "gemini-2.5-flash-lite")
 
 # ── GCP config ────────────────────────────────────────────────────────────────
-PROJECT   = "indiios-v-1-1"
+PROJECT   = "YOUR_FIREBASE_PROJECT_ID"
 LOCATION  = "us-central1"
 PROJECT_NUMBER = "223837784072"  # numeric project ID used in endpoint URLs
 

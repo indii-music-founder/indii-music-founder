@@ -47,7 +47,7 @@ function validateTokenStructure(token: string): { valid: boolean; error?: string
         const validIssuers = [
             'https://accounts.google.com',
             'accounts.google.com',
-            'https://securetoken.google.com/indiios-v-1-1',
+            'https://securetoken.google.com/YOUR_FIREBASE_PROJECT_ID',
         ];
         
         if (!validIssuers.some(iss => payload.iss === iss || payload.iss.includes('securetoken.google.com'))) {
@@ -167,7 +167,7 @@ function notifyAuthError(message: string) {
 
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
-        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login-bridge';
+        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://YOUR_FIREBASE_PROJECT_ID.web.app/login-bridge';
         console.log("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
         await shell.openExternal(LOGIN_BRIDGE_URL);
     });

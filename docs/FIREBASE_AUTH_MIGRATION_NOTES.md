@@ -3,21 +3,21 @@
 ## 1. The Mobile "Cycle" Problem (Root Cause)
 
 - **Symptom:** On iOS (iPhone/iPad), clicking Google Sign-In takes the user to Google but returns them to the login page without being authenticated.
-- **Cause:** Mobile browsers (Safari) block third-party cookies/storage. If the app is on `indiios-studio.web.app` and the `authDomain` is `indiios-v-1-1.firebaseapp.com`, the state cannot be shared between the handshake domain and the app domain.
-- **Solution:** Set `authDomain` to match the app's hosting domain (`indiios-studio.web.app`).
+- **Cause:** Mobile browsers (Safari) block third-party cookies/storage. If the app is on `YOUR_FIREBASE_STUDIO_APP_ID.web.app` and the `authDomain` is `YOUR_FIREBASE_PROJECT_ID.firebaseapp.com`, the state cannot be shared between the handshake domain and the app domain.
+- **Solution:** Set `authDomain` to match the app's hosting domain (`YOUR_FIREBASE_STUDIO_APP_ID.web.app`).
 
 ## 2. Firebase Dynamic Links (FDL) Deprecation
 
 - **Shutdown Date:** August 25, 2025.
 - **Current Impact:** Legacy `signInWithRedirect` implementation relies on FDL for deep-linking back to the app on mobile. As FDL degrades, these links fail to trigger the app's state change, leading to "cycles."
 - **Migration Path:**
-  - Use a **Custom Auth Domain** (configured now as `indiios-studio.web.app`).
-  - Must ensure `https://indiios-studio.web.app/__/auth/handler` is added to Authorized Redirect URIs in Google Cloud Console.
+  - Use a **Custom Auth Domain** (configured now as `YOUR_FIREBASE_STUDIO_APP_ID.web.app`).
+  - Must ensure `https://YOUR_FIREBASE_STUDIO_APP_ID.web.app/__/auth/handler` is added to Authorized Redirect URIs in Google Cloud Console.
   - Official migration requires "Firebase Authentication with Identity Platform" upgrade for custom subdomains (e.g., `auth.indiios.com`), but using the Firebase Hosting domain works as a shorter-term "nuclear" fix.
 
 ## 3. App Hosting & Extensions
 
-- **App Hosting:** `indii-backend` is active on `*.hosted.app`, but the Studio UI is currently served via standard Firebase Hosting on `indiios-studio.web.app`.
+- **App Hosting:** `indii-backend` is active on `*.hosted.app`, but the Studio UI is currently served via standard Firebase Hosting on `YOUR_FIREBASE_STUDIO_APP_ID.web.app`.
 - **Extensions:** Only `storage-resize-images` is installed. No auth-related extensions are complicating the flow.
 
 ## 4. API Key & App Registration Cleanup (Dec 28)
@@ -39,5 +39,5 @@
 
 - [x] Verify `/__/auth/handler` status in Google Cloud Console.
 - [x] Update Firebase API Key and App ID to active project credentials.
-- [ ] Monitor iOS login attempts for success on `indiios-studio.web.app`.
+- [ ] Monitor iOS login attempts for success on `YOUR_FIREBASE_STUDIO_APP_ID.web.app`.
 - [ ] Prepare for official Identity Platform upgrade if custom subdomains are needed.

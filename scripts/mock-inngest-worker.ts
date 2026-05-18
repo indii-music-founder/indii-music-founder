@@ -11,8 +11,8 @@ config({ path: path.join(__dirname, "../.env") });
 
 if (!admin.apps.length) {
     admin.initializeApp({
-        projectId: "indiios-v-1-1",
-        storageBucket: "indiios-alpha-electron" // Confirmed valid bucket via debug-buckets.ts
+        projectId: "YOUR_FIREBASE_PROJECT_ID",
+        storageBucket: "YOUR_FIREBASE_ELECTRON_APP_ID" // Confirmed valid bucket via debug-buckets.ts
     });
 }
 
@@ -33,7 +33,7 @@ async function processJob(jobId: string, data: any) {
         });
         const client = await auth.getClient();
         // IMPORTANT: Force project ID to prevent auth library from picking up wrong env var
-        const projectId = "indiios-v-1-1";
+        const projectId = "YOUR_FIREBASE_PROJECT_ID";
         const accessToken = await client.getAccessToken();
 
         console.log(`[Worker] Using Project ID: ${projectId}`);

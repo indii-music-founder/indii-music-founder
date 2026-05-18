@@ -53,7 +53,7 @@ async function run() {
     }
 
     // Explicitly set the default Storage bucket
-    const bucket = getStorage().bucket(process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indiios-alpha-electron');
+    const bucket = getStorage().bucket(process.env.VITE_FIREBASE_STORAGE_BUCKET || 'YOUR_FIREBASE_ELECTRON_APP_ID');
     const userId = jobData.userId || 'system';
     const storagePath = `videos/${userId}/${jobId}.mp4`;
     const file = bucket.file(storagePath);

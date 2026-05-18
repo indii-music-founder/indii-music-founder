@@ -28,7 +28,7 @@ import { generateThumbnail } from "./lib/image_resizing";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
-    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "YOUR_FIREBASE_PROJECT_ID";
 }
 
 // Initialize Firebase Admin
@@ -189,10 +189,10 @@ const requireAdmin = (context: functions.https.CallableContext) => {
  */
 const getAllowedOrigins = (): string[] => {
     const origins = [
-        'https://indiios-studio.web.app',
-        'https://indiios-studio.firebaseapp.com',
-        'https://indiios-v-1-1.web.app',
-        'https://indiios-v-1-1.firebaseapp.com',
+        'https://YOUR_FIREBASE_STUDIO_APP_ID.web.app',
+        'https://YOUR_FIREBASE_STUDIO_APP_ID.firebaseapp.com',
+        'https://YOUR_FIREBASE_PROJECT_ID.web.app',
+        'https://YOUR_FIREBASE_PROJECT_ID.firebaseapp.com',
         'https://studio.indiios.com',
         'https://indiios.com',
         'app://.',  // Electron app

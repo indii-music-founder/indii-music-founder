@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
   vertexai: true,
-  project: "indiios-v-1-1",
+  project: "YOUR_FIREBASE_PROJECT_ID",
   location: "us-central1"
 });
 

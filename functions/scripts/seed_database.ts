@@ -8,8 +8,8 @@ import { getAuth } from 'firebase-admin/auth';
 // Note: Requires GOOGLE_APPLICATION_CREDENTIALS or gcloud auth application-default login
 if (!admin.apps.length) {
     admin.initializeApp({
-        projectId: 'indiios-v-1-1',
-        storageBucket: 'indiios-alpha-electron'
+        projectId: 'YOUR_FIREBASE_PROJECT_ID',
+        storageBucket: 'YOUR_FIREBASE_ELECTRON_APP_ID'
     });
 }
 

@@ -31,7 +31,7 @@ To route Telegram events to the indiiOS remote relay, the following commands mus
 echo -n "YOUR_API_TOKEN" | gcloud secrets versions add TELEGRAM_BOT_TOKEN --data-file=-
 
 # 2. Register the Webhook Endpoint with Telegram
-curl -X POST "https://api.telegram.org/bot<YOUR_API_TOKEN>/setWebhook?url=https://us-central1-indiios-v-1-1.cloudfunctions.net/telegramWebhook"
+curl -X POST "https://api.telegram.org/bot<YOUR_API_TOKEN>/setWebhook?url=https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net/telegramWebhook"
 ```
 
 ### 3.3 Authorizing the User Connection

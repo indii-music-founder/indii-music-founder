@@ -32,7 +32,7 @@ import { stripe } from '../stripe/config';
 import { stripeSecretKey, githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 
-const GITHUB_REPO_OWNER = 'the-walking-agency-det';
+const GITHUB_REPO_OWNER = 'wiil-tech';
 const GITHUB_REPO_NAME = 'indiiOS-Alpha-Electron';
 const FOUNDERS_FILE_PATH = 'src/config/founders.ts';
 const MAX_FOUNDER_SEATS = 10;

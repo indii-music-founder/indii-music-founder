@@ -1,21 +1,18 @@
-# Implementation Plan - Image Resizing Pipeline
+# Implementation Plan - Project Isolation & Rebranding
 
 ## Context
-
-The user requested an automated image resizing solution using Cloud Functions. We chose the "Custom Cloud Function" approach using `sharp` on Cloud Functions 2nd Gen for performance.
+The goal is to sever the `indii-music-founder` project from its legacy agency roots (wiil-tech / The Walking Agency) and ensure a pristine, decoupled codebase ready for a fresh Google Cloud / Firebase deployment.
 
 ## Blockers
-
-- None currently. Dependencies installed.
+- None.
 
 ## Tasks
 
-- [x] **Install Dependencies**: `sharp` and `@types/sharp`.
-- [x] **Implement Function**: Create `functions/src/lib/image_resizing.ts` with `onObjectFinalized` trigger.
-- [x] **Export Function**: Update `functions/src/index.ts` to export `imageResizing`.
-- [x] **Build**: Verify `npm run build` succeeds (Done).
-- [ ] **Deploy**: `firebase deploy --only functions:imageResizing-generateThumbnail` (Pending user trigger).
+- [x] **Repository Rebranding:** GitHub remote set to `wiil-tech/indii-music-founder`.
+- [ ] **Codebase Audit:** Run regex/search for hardcoded legacy keys (`AIza`, `sk-`, `ghp_`, DPID, SFTP hosts, `indiios-v-1-1`, etc.).
+- [x] **Environment Security:** Sanitized `.env.example`.
+- [ ] **Firebase Prep:** Strip `indiios-v-1-1` references from `firebase.json` and `.firebaserc`.
+- [ ] **Final Audit Trail:** Generate a security clearance report in `.agent/artifacts`.
 
 ## Goal
-
-Automated generation of 200x200 thumbnails for all images uploaded to Cloud Storage.
+A completely decoupled project, independent from all previous organizational infrastructure, with zero leaked legacy credentials.

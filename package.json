@@ -258,7 +258,7 @@
     ],
     "publish": [
       {
-        "owner": "the-walking-agency-det",
+        "owner": "wiil-tech",
         "private": true,
         "provider": "github",
         "repo": "indiiOS-Alpha-Electron"

@@ -19,7 +19,7 @@ The landing page features a "Business Partner" copy style, emphasizing profitabi
   * "Smart Audio Analysis" (Blue)
   * "Career Strategy" (Pink)
   * "Rights Protection" (Green)
-* **CTA:** "Launch Studio" button pointing to `https://indiios-studio.web.app`.
+* **CTA:** "Launch Studio" button pointing to `https://YOUR_FIREBASE_STUDIO_APP_ID.web.app`.
 
 ## 2. Main Application (indiiOS)
 
