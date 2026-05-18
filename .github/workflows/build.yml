@@ -46,7 +46,7 @@ jobs:
       shell: bash
       run: |
         rm -rf node_modules package-lock.json pnpm-lock.yaml
-        pnpm install --no-frozen-lockfile
+        pnpm install --no-frozen-lockfile --config.engine-strict=false
 
     - name: Lint
       run: pnpm run lint
@@ -102,7 +102,7 @@ jobs:
       shell: bash
       run: |
         rm -rf node_modules package-lock.json pnpm-lock.yaml
-        pnpm install --no-frozen-lockfile
+        pnpm install --no-frozen-lockfile --config.engine-strict=false
 
     # Item 376: Windows code signing — inject WINDOWS_CERTIFICATE secret for NSIS installer
     - name: Decode Windows certificate
