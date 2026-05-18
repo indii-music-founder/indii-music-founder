@@ -83,3 +83,14 @@ __pycache__/
 
 # Agent skill tooling (external, not app code)
 .agent/antigravity-awesome-skills/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Service account and credential JSON keys
+*-key.json
+*service-account*.json
+firebase-adminsdk-*.json
+gcp-*.json
