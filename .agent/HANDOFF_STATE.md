@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-18 17:32 EDT
+**Updated:** 2026-05-18 17:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b3b46b0a chore: session checkpoint [17:32]
 96ecb54b chore: session checkpoint [17:26]
 1d9e6ba3 chore: session checkpoint [17:00]
 11a60433 feat(firebase): integrate full local emulator suite (Auth, Firestore, Storage, Functions, UI) for safe cost-free Spark plan development
@@ -13,7 +14,6 @@
 1203333d ci: fix bash shell quoting for self-hosted runners with spaces in workspace path
 693fcb62 ci: fix pnpm engine strictness failing on self-hosted runner
 6099251d ci: update sentry organization slug
-f2a0880f ci: inject Sentry credentials into CI pipeline
 ```
 
 ## Working State
