@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-18 16:59 EDT
+**Updated:** 2026-05-18 17:00 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+11a60433 feat(firebase): integrate full local emulator suite (Auth, Firestore, Storage, Functions, UI) for safe cost-free Spark plan development
+93100c40 chore: session checkpoint [16:59]
 6f24ca96 docs: compile isolation deliverables for final sign-off
 1ee7838e chore: purge all legacy agency hardcoded variables and bindings
 1203333d ci: fix bash shell quoting for self-hosted runners with spaces in workspace path
@@ -12,14 +14,11 @@
 f2a0880f ci: inject Sentry credentials into CI pipeline
 61e75fbd ci: quote github env variables to support spaces in path
 18df74e4 test: trigger self-hosted CI run
-280133f0 ci: configure workflows to run on self-hosted macOS runner
-4961407f chore: isolate project and strip agency credentials
 ```
 
 ## Working State
 ```
- M firebase.json
- M src/services/firebase.ts
+ M .agent/HANDOFF_STATE.md
 ```
 
 ---
