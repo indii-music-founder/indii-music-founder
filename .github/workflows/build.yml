@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+defaults:
+  run:
+    shell: bash --noprofile --norc -e -o pipefail "{0}"
+
 jobs:
   test:
     runs-on: self-hosted
@@ -24,7 +28,6 @@ jobs:
         version: 9
 
     - name: Get pnpm store directory
-      shell: bash
       run: |
         echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
@@ -43,7 +46,6 @@ jobs:
         sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
 
     - name: Clean install dependencies
-      shell: bash
       run: |
         rm -rf node_modules package-lock.json pnpm-lock.yaml
         pnpm install --no-frozen-lockfile --config.engine-strict=false
@@ -80,7 +82,6 @@ jobs:
         version: 9
 
     - name: Get pnpm store directory
-      shell: bash
       run: |
         echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
@@ -99,7 +100,6 @@ jobs:
         sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
 
     - name: Clean install dependencies
-      shell: bash
       run: |
         rm -rf node_modules package-lock.json pnpm-lock.yaml
         pnpm install --no-frozen-lockfile --config.engine-strict=false
