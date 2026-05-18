@@ -204,7 +204,7 @@ jobs:
           set -uo pipefail
           set +e
           OUTPUT=$(firebase hosting:channel:deploy staging \
-            --project indiios-v-1-1 \
+            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
             --expires 2h \
             --only app \
             --json 2>&1)
@@ -313,7 +313,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           firebase hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
-            --project indiios-v-1-1 \
+            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
             --expires 7d \
             --only app
         continue-on-error: true
@@ -321,28 +321,28 @@ jobs:
       - name: Deploy landing page to Firebase Hosting
         run: |
           echo "Deploying landing page to target: landing"
-          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive
+          firebase deploy --only hosting:landing --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
         run: |
           echo "Deploying studio app to target: app"
-          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
+          firebase deploy --only hosting:app --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
 
       # NOTE: Cloud Functions deploy requires Secret Manager API with active billing.
       # Billing account 013294-5C591F-1F43B9 is currently CLOSED.
-      # Reactivate at: https://console.cloud.google.com/billing?project=indiios-v-1-1
+      # Reactivate at: https://console.cloud.google.com/billing?project=${{ secrets.FIREBASE_PROJECT_ID }}
       # Once billing is active, remove continue-on-error to enforce strict deploys.
       - name: Deploy Cloud Functions
         continue-on-error: true
         run: |
           echo "Deploying Cloud Functions..."
           cd functions && npm install && npm run build && cd ..
-          firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project indiios-v-1-1 --non-interactive --force
+          firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
 
       - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
         run: |
           npm install -g @lhci/cli
-          lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
+          lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiimusic.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
         continue-on-error: true
 
       - name: Cleanup credentials
