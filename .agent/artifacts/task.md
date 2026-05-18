@@ -1,7 +1,26 @@
-# Task List
+# Task List: Project Isolation
 
-- [x] Rebrand the GitHub remote repository and update local git tracking to sever all agency-linked endpoints.
-- [x] Conduct an exhaustive audit of the codebase to identify all hardcoded credentials, API keys, and third-party service dependencies.
-- [x] Establish a secure, decoupled environment configuration using `.env.example` and remove all legacy agency-related hardcoding.
-- [x] Prepare the project for integration with a fresh, standalone Google Cloud and Firebase Blaze account.
-- [x] Create comprehensive audit trails and documentation to ensure no legacy relics remain in the codebase or CI/CD pipelines.
+## Phase 0: GitHub & Local Repository Re-Branding
+- [x] Rename remote repository to `indii-music-founder`.
+- [x] Update local git tracking via `git remote set-url`.
+- [x] Verify severance from legacy agency endpoint.
+
+## Phase 1: Python Repository Discovery & Exposure Audit
+- [x] Scan codebase for credential files (`*.env`, `*.json`).
+- [x] Analyze codebase for third-party API dependencies (Stripe, Sentry, Firebase, etc.).
+- [x] Generate Implementation Plan itemizing secrets and replacements.
+
+## Phase 2: Browsing & Documentation Verification
+- [x] Cross-reference APIs against standalone verification requirements (Firebase Blaze, OAuth Consent, Webhooks).
+- [x] Document target setup parameters explicitly inside the agent task list.
+
+## Phase 3: Configuration Purge & Environment Architecture
+- [x] Extract all existing environment variables from source logic.
+- [x] Enforce zero hardcoding (abstracting into environment parsers).
+- [x] Create standardized `.env.example` disconnected from legacy nomenclature.
+- [x] Generate robust `.gitignore` excluding `venv/`, `.venv/`, `*.json`, and `.env` files.
+
+## Phase 4: CI/CD & Pipeline Audit
+- [x] Locate and parse deployment pipelines (`.github/workflows`).
+- [x] Strip hardcoded authorization tokens and deployment hooks.
+- [x] Prepare clean configurations for new deployment secrets.
