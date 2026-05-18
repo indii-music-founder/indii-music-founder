@@ -9,7 +9,7 @@ on:
 jobs:
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         shard: [1, 2, 3, 4]
@@ -58,7 +58,7 @@ jobs:
 
   # ─── Build & Static Analysis ────────────────────────────────────────────────
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: unit-tests
 
     steps:
@@ -172,7 +172,7 @@ jobs:
   # Never suppress errors (no '|| echo') — a failed staging deploy must halt
   # the workflow to prevent E2E tests from running against the wrong env.
   deploy-staging:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     outputs:
       staging-url: ${{ steps.channel-deploy.outputs.staging_url }}
@@ -238,7 +238,7 @@ jobs:
 
   # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
   e2e-staging:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-staging
 
     steps:
@@ -287,7 +287,7 @@ jobs:
   # staging smoke tests fail (known preview channel asset issues).
   # The 'production' environment requires manual reviewer approval.
   deploy-production:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [deploy-staging, e2e-staging]
     environment: production
 
