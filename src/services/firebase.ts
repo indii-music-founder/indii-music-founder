@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger';
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, connectAuthEmulator } from 'firebase/auth';
 import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -87,19 +87,20 @@ export const storage = getStorage(app);
 export const functions = getFunctions(app); // Default (us-central1)
 export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
 
-// Connect to Functions emulator in development (when running locally)
-// Production builds skip this entirely - they call deployed Cloud Functions
+// Connect to Firebase emulators in development (when running locally)
+// Production builds skip this entirely
 const isDev = env.DEV;
 const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
 
 if (isDev && useEmulator && typeof window !== 'undefined') {
     try {
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        connectStorageEmulator(storage, '127.0.0.1', 9199);
         connectFunctionsEmulator(functions, '127.0.0.1', 5001);
         connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
-        logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+        logger.debug('[Firebase] Connected to Firestore, Storage, and Functions emulators');
     } catch (e: unknown) {
-        // Emulator connection may fail if already connected or emulator not running
-        logger.warn('[Firebase] Functions emulator connection skipped:', e);
+        logger.warn('[Firebase] Firestore/Storage/Functions emulator connection skipped:', e);
     }
 }
 
@@ -127,6 +128,15 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
     });
 }
 export { auth };
+
+if (isDev && useEmulator && typeof window !== 'undefined') {
+    try {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        logger.debug('[Firebase] Connected to Auth emulator on port 9099');
+    } catch (e: unknown) {
+        logger.warn('[Firebase] Auth emulator connection skipped:', e);
+    }
+}
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);
