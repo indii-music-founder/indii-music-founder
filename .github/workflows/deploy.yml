@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install root dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
 
       - name: Run unit tests (shard ${{ matrix.shard }}/4)
         timeout-minutes: 15
@@ -96,7 +96,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install root dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
 
       - name: Audit dependencies for vulnerabilities (Item 252)
         run: pnpm audit --audit-level=high
@@ -113,7 +113,7 @@ jobs:
         run: |
           cd landing-page
           rm -rf dist .next
-          pnpm install --no-frozen-lockfile --ignore-scripts
+          pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
           NODE_ENV=production pnpm run build
 
       - name: Build studio app
@@ -259,7 +259,7 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
