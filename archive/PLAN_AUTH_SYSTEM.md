@@ -280,11 +280,11 @@ landing-page/app/
 **Changes:**
 ```typescript
 // Before
-<Link href="https://indiios-studio.web.app">Sign In</Link>
+<Link href="https://YOUR_FIREBASE_STUDIO_APP_ID.web.app">Sign In</Link>
 
 // After
-<Link href="https://indiios-studio.web.app/auth/login">Sign In</Link>
-<Link href="https://indiios-studio.web.app/auth/signup">Get Started</Link>
+<Link href="https://YOUR_FIREBASE_STUDIO_APP_ID.web.app/auth/login">Sign In</Link>
+<Link href="https://YOUR_FIREBASE_STUDIO_APP_ID.web.app/auth/signup">Get Started</Link>
 ```
 
 **Also Update:**

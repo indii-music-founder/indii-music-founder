@@ -8,9 +8,9 @@ dotenv.config();
 
 const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indiios-v-1-1.firebaseapp.com",
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indiios-v-1-1",
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "gs://indiios-alpha-electron",
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_FIREBASE_PROJECT_ID.firebaseapp.com",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "YOUR_FIREBASE_PROJECT_ID",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "gs://YOUR_FIREBASE_ELECTRON_APP_ID",
     messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd"
 };
@@ -78,7 +78,7 @@ const MERCH_PRODUCTS = [
     {
         title: "Neon Dreams Oversized Tee",
         price: "$35.00",
-        image: "https://firebasestorage.googleapis.com/v0/b/indiios-v-1-1.appspot.com/o/merch%2Fstandard_tee.png?alt=media",
+        image: "https://firebasestorage.googleapis.com/v0/b/YOUR_FIREBASE_PROJECT_ID.appspot.com/o/merch%2Fstandard_tee.png?alt=media",
         tags: ["Streetwear", "Oversized"],
         category: "standard",
         status: "available"

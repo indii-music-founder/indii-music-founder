@@ -100,13 +100,13 @@ jobs:
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying landing page to target: landing"
-          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive --debug
+          firebase deploy --only hosting:landing --project YOUR_FIREBASE_PROJECT_ID --non-interactive --debug
 
       - name: Deploy studio app to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying studio app to target: app"
-          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug
+          firebase deploy --only hosting:app --project YOUR_FIREBASE_PROJECT_ID --non-interactive --debug
 
       - name: Lighthouse CI audit
         run: |

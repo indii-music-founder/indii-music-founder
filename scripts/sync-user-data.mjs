@@ -20,7 +20,7 @@ config({ path: resolve(__dirname, '../.env') });
 
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-studio',
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'YOUR_FIREBASE_STUDIO_APP_ID',
 });
 
 const db = admin.firestore();

@@ -7,7 +7,7 @@ import { fetch } from 'undici';
 // @ts-expect-error - testing invalid input for API resilience
 if (!global.fetch) global.fetch = fetch;
 
-const functionsUrl = process.env.VITE_FUNCTIONS_URL || 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
+const functionsUrl = process.env.VITE_FUNCTIONS_URL || 'https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net';
 
 async function testFilesApi() {
     console.log("Testing Models API via Proxy...");

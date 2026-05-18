@@ -21,7 +21,7 @@ export const options = {
     },
 };
 
-const BASE_URL = __ENV.FUNCTIONS_URL || 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
+const BASE_URL = __ENV.FUNCTIONS_URL || 'https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net';
 
 export default function () {
     const res = http.get(`${BASE_URL}/healthCheck`);

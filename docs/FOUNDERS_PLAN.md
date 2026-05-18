@@ -195,7 +195,7 @@ Create one new Stripe Product:
 ### GitHub Configuration (Manual)
 
 Add a `GITHUB_TOKEN_FOUNDERS` secret with a fine-grained PAT scoped to:
-- `contents: write` on `the-walking-agency-det/indiiOS-Alpha-Electron`
+- `contents: write` on `wiil-tech/indiiOS-Alpha-Electron`
 - Used only by `activateFounderPass` CF to commit the new founder entry
 
 ---

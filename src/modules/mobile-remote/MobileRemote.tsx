@@ -63,9 +63,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
   const [qrUrl, setQrUrl] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-      return isDev ? window.location.origin + '/remote' : 'https://indiios-studio.web.app/remote';
+      return isDev ? window.location.origin + '/remote' : 'https://YOUR_FIREBASE_STUDIO_APP_ID.web.app/remote';
     }
-    return 'https://indiios-studio.web.app/remote';
+    return 'https://YOUR_FIREBASE_STUDIO_APP_ID.web.app/remote';
   });
 
   useEffect(() => {

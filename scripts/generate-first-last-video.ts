@@ -41,8 +41,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
+    authDomain: "YOUR_FIREBASE_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_FIREBASE_PROJECT_ID",
 };
 
 const app = initializeApp(firebaseConfig);

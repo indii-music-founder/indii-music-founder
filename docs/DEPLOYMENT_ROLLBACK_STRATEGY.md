@@ -131,10 +131,10 @@ The app checks this flag via `FeatureFlagService` and can show a maintenance scr
 
 ```bash
 # 1. Check health endpoint
-curl -s https://us-central1-indiios-v-1-1.cloudfunctions.net/healthCheck | jq .
+curl -s https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net/healthCheck | jq .
 
 # 2. Verify hosting is serving (check HTTP 200)
-curl -s -o /dev/null -w "%{http_code}" https://indiios-v-1-1.web.app/
+curl -s -o /dev/null -w "%{http_code}" https://YOUR_FIREBASE_PROJECT_ID.web.app/
 
 # 3. Check function logs for errors
 firebase functions:log --only triggerVideoJob --limit 20

@@ -5,8 +5,8 @@
 - **App:** indiiOS Alpha (multi-tenant AI creative platform for independent artists)
 - **Stack:** React 18 + Vite + Electron | Firebase | Gemini 3 | Zustand
 - **Dev Server:** `http://localhost:4242` (Vite) | `http://localhost:3000` (Landing)
-- **Repo:** `the-walking-agency-det/indiiOS-Alpha-Electron`
-- **Firebase Project:** `indiios-v-1-1`
+- **Repo:** `wiil-tech/indiiOS-Alpha-Electron`
+- **Firebase Project:** `YOUR_FIREBASE_PROJECT_ID`
 
 ---
 

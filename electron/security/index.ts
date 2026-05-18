@@ -56,9 +56,9 @@ export function configureSecurity(session: Session) {
                         `style-src ${styleSrc}`,
                         `connect-src ${connectSrc}`,
                         `media-src ${mediaSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indiios-studio.web.app",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://YOUR_FIREBASE_STUDIO_APP_ID.web.app",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
-                        "manifest-src 'self' https://indiios-studio.web.app",
+                        "manifest-src 'self' https://YOUR_FIREBASE_STUDIO_APP_ID.web.app",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],

@@ -26,7 +26,7 @@ const __dirname = dirname(__filename);
 
 config({ path: resolve(__dirname, '../.env') });
 
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-v-1-1';
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'YOUR_FIREBASE_PROJECT_ID';
 const storageBucket = process.env.VITE_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
 
 admin.initializeApp({

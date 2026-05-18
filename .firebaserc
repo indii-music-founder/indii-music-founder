@@ -1,23 +1,23 @@
 {
   "projects": {
-    "default": "indiios-v-1-1"
+    "default": "YOUR_FIREBASE_PROJECT_ID"
   },
   "targets": {
-    "indiios-v-1-1": {
+    "YOUR_FIREBASE_PROJECT_ID": {
       "hosting": {
         "landing": [
-          "indiios-v-1-1"
+          "YOUR_FIREBASE_PROJECT_ID-landing"
         ],
         "app": [
-          "indiios-studio"
+          "YOUR_FIREBASE_PROJECT_ID-app"
         ]
       },
       "storage": {
         "main": [
-          "indiios-v-1-1.firebasestorage.app"
+          "YOUR_FIREBASE_PROJECT_ID.firebasestorage.app"
         ],
         "alpha": [
-          "indiios-alpha-electron"
+          "YOUR_FIREBASE_PROJECT_ID-alpha"
         ]
       }
     }

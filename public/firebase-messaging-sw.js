@@ -3,9 +3,9 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 
 const firebaseConfig = {
     apiKey: "", // REMOVED HARDCODED KEY - Inject via build or env
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: "indiios-alpha-electron",
+    authDomain: "YOUR_FIREBASE_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_FIREBASE_PROJECT_ID",
+    storageBucket: "YOUR_FIREBASE_ELECTRON_APP_ID",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
     measurementId: "G-KNWPRGE5JK"

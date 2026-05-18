@@ -14,7 +14,7 @@
  *
  * Run:
  *   k6 run scripts/load-test.js \
- *     -e BASE_URL=https://us-central1-indiios-v-1-1.cloudfunctions.net \
+ *     -e BASE_URL=https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net \
  *     -e AUTH_TOKEN=<firebase_id_token>
  *
  * Install k6: https://k6.io/docs/getting-started/installation/
@@ -55,7 +55,7 @@ export const options = {
 
 // ── Test Data ─────────────────────────────────────────────────────────────────
 
-const BASE_URL     = __ENV.BASE_URL || 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
+const BASE_URL     = __ENV.BASE_URL || 'https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net';
 const AUTH_TOKEN   = __ENV.AUTH_TOKEN || 'test_token_placeholder';
 
 const headers = {

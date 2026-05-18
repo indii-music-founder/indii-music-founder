@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 
 config({ path: resolve(__dirname, '../.env') });
 
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-v-1-1';
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'YOUR_FIREBASE_PROJECT_ID';
 
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),

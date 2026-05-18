@@ -5,12 +5,12 @@
 This project has **two separate deployments**:
 
 1. **Landing Page** - React + Vite static site with WebGL effects
-   - URL: <https://indiios-v-1-1.web.app>
+   - URL: <https://YOUR_FIREBASE_PROJECT_ID.web.app>
    - Source: `landing-page/`
    - Build output: `landing-page/dist/`
 
 2. **Studio App** - React + Vite main application
-   - URL: <https://indiios-studio.web.app>
+   - URL: <https://YOUR_FIREBASE_STUDIO_APP_ID.web.app>
    - Source: `src/`
    - Build output: `dist/`
 
@@ -57,7 +57,7 @@ npm run build:studio
 
 1. Install Firebase CLI: `npm install -g firebase-tools`
 2. Login: `firebase login`
-3. Select project: `firebase use indiios-v-1-1`
+3. Select project: `firebase use YOUR_FIREBASE_PROJECT_ID`
 
 ### Deploy Both Sites
 
@@ -129,8 +129,8 @@ npm run build:landing
 2. Set targets if missing:
 
    ```bash
-   firebase target:apply hosting landing indiios-v-1-1
-   firebase target:apply hosting app indiios-studio
+   firebase target:apply hosting landing YOUR_FIREBASE_PROJECT_ID
+   firebase target:apply hosting app YOUR_FIREBASE_STUDIO_APP_ID
    ```
 
 ### Build fails with "missing @esbuild/linux-x64"
@@ -168,10 +168,10 @@ Rndr-AI-v1/
 ```json
 {
   "targets": {
-    "indiios-v-1-1": {
+    "YOUR_FIREBASE_PROJECT_ID": {
       "hosting": {
-        "landing": ["indiios-v-1-1"],
-        "app": ["indiios-studio"]
+        "landing": ["YOUR_FIREBASE_PROJECT_ID"],
+        "app": ["YOUR_FIREBASE_STUDIO_APP_ID"]
       }
     }
   }
@@ -199,10 +199,10 @@ Rndr-AI-v1/
 
 After deployment, verify both sites are working:
 
-1. **Landing Page**: <https://indiios-v-1-1.web.app>
+1. **Landing Page**: <https://YOUR_FIREBASE_PROJECT_ID.web.app>
    - Should show WebGL effects and animation
    - Should have "Enter Studio" or similar CTA
 
-2. **Studio App**: <https://indiios-studio.web.app>
+2. **Studio App**: <https://YOUR_FIREBASE_STUDIO_APP_ID.web.app>
    - Should show the main indiiOS studio interface
    - Should load authentication and workspace features

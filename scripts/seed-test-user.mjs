@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 config({ path: resolve(__dirname, '../.env') });
 
 // Initialize Firebase Admin using Application Default Credentials
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-studio';
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'YOUR_FIREBASE_STUDIO_APP_ID';
 
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),

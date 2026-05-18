@@ -3,8 +3,8 @@ dotenv.config();
 
 // Mock Proxy URL if missing for test
 if (!process.env.VITE_FUNCTIONS_URL) {
-    process.env.VITE_FUNCTIONS_URL = 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
-    console.log("⚠️ VITE_FUNCTIONS_URL missing, using live: https://us-central1-indiios-v-1-1.cloudfunctions.net");
+    process.env.VITE_FUNCTIONS_URL = 'https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net';
+    console.log("⚠️ VITE_FUNCTIONS_URL missing, using live: https://us-central1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net");
 }
 
 const { GeminiRetrieval } = await import('../src/services/rag/GeminiRetrievalService.ts');

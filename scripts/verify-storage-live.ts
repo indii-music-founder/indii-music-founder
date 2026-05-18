@@ -24,10 +24,10 @@ const firebaseConfig = {
 };
 
 const BUCKET_CANDIDATES = [
-    "gs://indiios-alpha-electron",
-    "indiios-alpha-electron.appspot.com",
-    "indiios-alpha-electron.firebasestorage.app",
-    "indiios-alpha-electron"
+    "gs://YOUR_FIREBASE_ELECTRON_APP_ID",
+    "YOUR_FIREBASE_ELECTRON_APP_ID.appspot.com",
+    "YOUR_FIREBASE_ELECTRON_APP_ID.firebasestorage.app",
+    "YOUR_FIREBASE_ELECTRON_APP_ID"
 ];
 
 async function main() {
