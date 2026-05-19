@@ -268,7 +268,7 @@ export const marketingAgent = new Agent({
     
     Tone: Industry-savvy, narrative-driven, sharp, concise.
   `,
-    model: google('gemini-3.1-pro-preview'),
+    model: google('gemini-3.5-flash'),
     tools: [
         createCampaignBriefTool,
         analyzeAudienceTool,
