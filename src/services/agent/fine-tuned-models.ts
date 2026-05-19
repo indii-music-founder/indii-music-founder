@@ -23,50 +23,85 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  */
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
     // === MANAGER'S OFFICE ===
-    // R7 — gemini-2.5-pro base (~132 examples, ≥60% expert) — 2026-03-27
-    'generalist':    'projects/223837784072/locations/us-central1/endpoints/4735553150121934848',
+/*
+    // R5 — gemini-2.5-pro base (100 examples) — 2026-04-27
+    'generalist':      'projects/223837784072/locations/us-central1/endpoints/6477549004426051584',
+*/
 
     // === DEPARTMENTS ===
-    // R7 — gemini-2.5-flash base (~163 examples, ≥60% expert) — 2026-03-27
-    'finance':       'projects/223837784072/locations/us-central1/endpoints/6137298534141001728',
-    // R7 — gemini-2.5-flash base (~133 examples, ≥60% expert) — 2026-03-27
-    'legal':         'projects/223837784072/locations/us-central1/endpoints/4777774396628533248',
-    // R7 — gemini-2.5-flash base (~164 examples, ≥60% expert) — 2026-03-27
-    'distribution':  'projects/223837784072/locations/us-central1/endpoints/5237704508573745152',
-    // R7 — gemini-2.5-flash-lite base (~139 examples, ≥60% expert) — 2026-03-27
-    'marketing':     'projects/223837784072/locations/us-central1/endpoints/1319009882807992320',
-    // R7 — gemini-2.5-flash-lite base (~131 examples, ≥60% expert) — 2026-03-27
-    'social':        'projects/223837784072/locations/us-central1/endpoints/5771381064417148928',
-    // R7 — gemini-2.5-flash-lite base (~136 examples, ≥60% expert) — 2026-03-27
-    'publishing':    'projects/223837784072/locations/us-central1/endpoints/3258372472344412160',
-    // R7 — gemini-2.5-flash-lite base (~140 examples, ≥60% expert) — 2026-03-27
-    'licensing':     'projects/223837784072/locations/us-central1/endpoints/6679982289239146496',
+/*
+    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
+    'finance':         'projects/223837784072/locations/us-central1/endpoints/969646660151934976',
+    'finance.accounting': undefined,
+    'finance.tax':       undefined,
+    'finance.royalty':   undefined,
+    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
+    'legal':           'projects/223837784072/locations/us-central1/endpoints/5559518367884247040',
+    'legal.contracts':  undefined,
+    'legal.compliance': undefined,
+    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
+    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4660346554782056448',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'marketing':       'projects/223837784072/locations/us-central1/endpoints/4428411173972475904',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'social':          'projects/223837784072/locations/us-central1/endpoints/2635978522279018496',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'publishing':      'projects/223837784072/locations/us-central1/endpoints/649891086608629760',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'licensing':       'projects/223837784072/locations/us-central1/endpoints/3386953760143048704',
+*/
 
     // === SPECIALISTS ===
-    // R7 — gemini-2.5-flash-lite base (~119 examples, ≥60% expert) — 2026-03-27
-    'brand':         'projects/223837784072/locations/us-central1/endpoints/7567191415831134208',
-    // R7 — gemini-2.5-flash-lite base (~124 examples, ≥60% expert) — 2026-03-27
-    'road':          'projects/223837784072/locations/us-central1/endpoints/3656378089413279744',
-    // R7 — gemini-2.5-flash-lite base (~103 examples, ≥60% expert) — 2026-03-27
-    'publicist':     'projects/223837784072/locations/us-central1/endpoints/2417325241932972032',
-    // R7 — gemini-2.5-flash-lite base (~111 examples, ≥60% expert) — 2026-03-27
-    'music':         'projects/223837784072/locations/us-central1/endpoints/1795828493355843584',
-    // R7 — gemini-2.5-flash-lite base (~134 examples, ≥60% expert) — 2026-03-27
-    'video':         'projects/223837784072/locations/us-central1/endpoints/8143652168134557696',
-    // R7 — gemini-2.5-flash-lite base (~125 examples, ≥60% expert) — 2026-03-27
-    'devops':        'projects/223837784072/locations/us-central1/endpoints/4433249025134690304',
-    // R7 — gemini-2.5-flash-lite base (~88 examples, ≥60% expert) — 2026-03-27
-    'security':      'projects/223837784072/locations/us-central1/endpoints/1282418135835607040',
-    // R7 — gemini-2.5-flash-lite base (~97 examples, ≥60% expert) — 2026-03-27
-    'producer':      'projects/223837784072/locations/us-central1/endpoints/1620188107888394240',
-    // R7 — gemini-2.5-flash-lite base (~132 examples, ≥60% expert) — 2026-03-27
-    'director':      'projects/223837784072/locations/us-central1/endpoints/5993183346065145856',
-    // R7 — gemini-2.5-flash-lite base (~131 examples, ≥60% expert) — 2026-03-27
-    'screenwriter':  'projects/223837784072/locations/us-central1/endpoints/6342775267139780608',
-    // R7 — gemini-2.5-flash-lite base (~132 examples, ≥60% expert) — 2026-03-27
-    'merchandise':   'projects/223837784072/locations/us-central1/endpoints/7718062003348045824',
-    // R7 — gemini-2.5-flash-lite base (~120 examples, ≥60% expert) — 2026-03-27
-    'curriculum':    'projects/223837784072/locations/us-central1/endpoints/8815251462566182912',
+/*
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'brand':           'projects/223837784072/locations/us-central1/endpoints/8196798162174738432',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'road':            'projects/223837784072/locations/us-central1/endpoints/5522222933470085120',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'publicist':       'projects/223837784072/locations/us-central1/endpoints/3759626629307957248',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'music':           'projects/223837784072/locations/us-central1/endpoints/1381726026056335360',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'video':           'projects/223837784072/locations/us-central1/endpoints/7846080341193261056',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'security':        'projects/223837784072/locations/us-central1/endpoints/7299455936421167104',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'director':        'projects/223837784072/locations/us-central1/endpoints/7103549352630550528',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/1505012065855602688',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/2194625758796709888',
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
+    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
+*/
+
+    // === ROUND 8 (SWARM-NATIVE BURST) ===
+    // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
+    // Status: Training COMPLETE — 2026-05-10
+    'generalist':      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+    'finance':         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
+    'legal':           'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
+    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
+    'marketing':       'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
+    'social':          'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
+    'publishing':      'projects/223837784072/locations/us-central1/endpoints/8962594816781189120',
+    'licensing':       'projects/223837784072/locations/us-central1/endpoints/1071443844697948160',
+    'brand':           'projects/223837784072/locations/us-central1/endpoints/1396547442798755840',
+    'road':            'projects/223837784072/locations/us-central1/endpoints/6548665416510603264',
+    'publicist':       'projects/223837784072/locations/us-central1/endpoints/6584694213529567232',
+    'music':           'projects/223837784072/locations/us-central1/endpoints/6646900183382622208',
+    'video':           'projects/223837784072/locations/us-central1/endpoints/4778750762953998336',
+    'devops':          'projects/223837784072/locations/us-central1/endpoints/4200038210836889600',
+    'security':        'projects/223837784072/locations/us-central1/endpoints/3481714070271295488',
+    'producer':        'projects/223837784072/locations/us-central1/endpoints/8255529675284021248',
+    'director':        'projects/223837784072/locations/us-central1/endpoints/8584292448082067456',
+    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
+    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
+    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
 
     // Not yet fine-tuned
     'keeper':           undefined,
