@@ -264,7 +264,7 @@ const createTray = () => {
 
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: 'Show IndiiOS',
+            label: 'Show Indii Music Founder',
             click: () => {
                 mainWindow?.show();
                 if (process.platform === 'darwin') {
@@ -282,7 +282,7 @@ const createTray = () => {
         }
     ]);
 
-    tray.setToolTip('IndiiOS Studio');
+    tray.setToolTip('Indii Music Founder Studio');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {
@@ -321,10 +321,12 @@ if (process.defaultApp) {
     if (process.argv.length >= 2) {
         const scriptPath = path.resolve(process.argv[1]);
         log.info(`Setting default protocol client in DEV mode. Script: ${scriptPath}`);
+        app.setAsDefaultProtocolClient('indii-music-founder', process.execPath, [scriptPath]);
         app.setAsDefaultProtocolClient('indii-os', process.execPath, [scriptPath]);
     }
 } else {
     // Production/Bundled
+    app.setAsDefaultProtocolClient('indii-music-founder');
     app.setAsDefaultProtocolClient('indii-os');
 }
 
@@ -344,7 +346,7 @@ if (!gotTheLock) {
             if (win.isMinimized()) win.restore();
             win.focus();
         }
-        const url = commandLine.find(arg => arg.startsWith('indii-os://'));
+        const url = commandLine.find(arg => arg.startsWith('indii-music-founder://') || arg.startsWith('indii-os://'));
         if (url) {
             log.info(`Handling deep link from second-instance: ${url}`);
             handleDeepLink(url, mainWindow);

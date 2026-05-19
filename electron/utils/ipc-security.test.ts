@@ -38,6 +38,10 @@ describe('Sentinel: IPC Validation Security', () => {
             expect(() => validateSender(mockEvent('indii-os://open/project/123'))).not.toThrow();
         });
 
+        it('should accept indii-music-founder:// URLs (Deep Links)', () => {
+            expect(() => validateSender(mockEvent('indii-music-founder://open/project/123'))).not.toThrow();
+        });
+
         it('should accept Dev Server URL when configured', () => {
             process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
             expect(() => validateSender(mockEvent('http://localhost:4242/'))).not.toThrow();

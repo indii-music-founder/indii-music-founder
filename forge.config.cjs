@@ -32,7 +32,7 @@ module.exports = {
     }
   },
   packagerConfig: {
-    appBundleId: 'com.indii.os',
+    appBundleId: 'com.indii.music.founder',
     asar: {
       integrity: true // Enforces integrity checksums on the archive (Tamper Resistance)
     },
@@ -44,11 +44,11 @@ module.exports = {
       appleIdPassword: process.env.APPLE_PASSWORD,
       teamId: process.env.APPLE_TEAM_ID
     },
-    // Deep Link Protocol (indii-os://)
+    // Deep Link Protocol (indii-music-founder:// / indii-os://)
     protocols: [
       {
-        name: 'indiiOS Auth Protocol',
-        schemes: ['indii-os']
+        name: 'Indii Music Founder Auth Protocol',
+        schemes: ['indii-music-founder', 'indii-os']
       }
     ],
     // Exclude server-side code from Electron bundle

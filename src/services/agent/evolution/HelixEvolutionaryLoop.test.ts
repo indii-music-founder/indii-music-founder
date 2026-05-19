@@ -35,7 +35,7 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
     id: 'genesis',
     name: 'Genesis Agent',
     systemPrompt: 'You are a helpful AI.',
-    parameters: { temperature: 0.5, model: 'gemini-3.1-pro-preview' },
+    parameters: { temperature: 0.5, model: 'gemini-3.5-flash' },
     generation: 0,
     lineage: []
   };

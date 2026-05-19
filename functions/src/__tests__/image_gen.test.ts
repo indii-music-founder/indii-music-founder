@@ -151,7 +151,7 @@ describe('Image and Content Generation Functions', () => {
             const req: any = {
                 headers: { authorization: 'Bearer token' },
                 body: {
-                    model: 'gemini-3.1-pro-preview',
+                    model: 'gemini-3.5-flash',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
                 }
             };

@@ -1,23 +1,23 @@
 {
   "projects": {
-    "default": "YOUR_FIREBASE_PROJECT_ID"
+    "default": "indii-music-founder"
   },
   "targets": {
-    "YOUR_FIREBASE_PROJECT_ID": {
+    "indii-music-founder": {
       "hosting": {
         "landing": [
-          "YOUR_FIREBASE_PROJECT_ID-landing"
+          "indii-music-founder-landing"
         ],
         "app": [
-          "YOUR_FIREBASE_PROJECT_ID-app"
+          "indii-music-founder-app"
         ]
       },
       "storage": {
         "main": [
-          "YOUR_FIREBASE_PROJECT_ID.firebasestorage.app"
+          "indii-music-founder.firebasestorage.app"
         ],
         "alpha": [
-          "YOUR_FIREBASE_PROJECT_ID-alpha"
+          "indii-music-founder-alpha"
         ]
       }
     }

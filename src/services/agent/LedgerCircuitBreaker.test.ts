@@ -16,7 +16,7 @@ vi.mock('@/services/ai/GenAI', () => ({
         generateContent: vi.fn()
     },
     AI_MODELS: {
-        TEXT: { AGENT: 'gemini-3.1-pro-preview' }
+        TEXT: { AGENT: 'gemini-3.5-flash' }
     },
     AI_CONFIG: { THINKING: { LOW: {} } }
 }));

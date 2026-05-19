@@ -241,7 +241,7 @@ export class FirebaseAIService implements AIContext {
 
         const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
 
-        // Try to reverse-lookup the key (e.g. "gemini-3.1-pro-preview" -> "TEXT_AGENT")
+        // Try to reverse-lookup the key (e.g. "gemini-3.5-flash" -> "TEXT_AGENT")
         const configKey = getModelKey(candidateModel);
 
         if (configKey) {
