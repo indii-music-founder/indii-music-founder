@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-19 08:54 EDT
+**Updated:** 2026-05-19 10:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a2dc9675 fix(ci): wrap FIREBASE_BIN variable expansion in double quotes to support paths with spaces
+4db8d814 fix(ci): use pre-installed firebase binary from ~/.npm-global/bin instead of global npm install
+54b21582 chore: session checkpoint [08:54]
 74fb579a fix(ci): avoid global firebase-tools install to prevent permission denied errors on self-hosted runner
 30dd3a4c chore(ci): replace gitleaks with betterleaks in deployment workflow
 6148b8d3 fix(ci): clean stale gitleaks temp on self-hosted runner; allow Vertex AI in dev mode
@@ -11,9 +14,6 @@
 16c963d8 chore: session checkpoint [17:49]
 0d04aa94 chore: session checkpoint [17:46]
 b3b46b0a chore: session checkpoint [17:32]
-96ecb54b chore: session checkpoint [17:26]
-1d9e6ba3 chore: session checkpoint [17:00]
-11a60433 feat(firebase): integrate full local emulator suite (Auth, Firestore, Storage, Functions, UI) for safe cost-free Spark plan development
 ```
 
 ## Working State
