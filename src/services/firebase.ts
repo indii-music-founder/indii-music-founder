@@ -40,11 +40,14 @@ function isAppCheckConfigured(): boolean {
 export function getFirebaseAI(): AI | null {
     if (_aiInstance) return _aiInstance;
 
-    // Only initialize Firebase AI if App Check is configured
-    // This prevents the Installations API error when App Check isn't set up
-    if (!isAppCheckConfigured()) {
+    // In production, require App Check. In dev, allow Firebase AI without it
+    // so Vertex AI backend (and fine-tuned agent endpoints) work for demos.
+    if (!isAppCheckConfigured() && !env.DEV) {
         logger.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
         return null;
+    }
+    if (!isAppCheckConfigured() && env.DEV) {
+        logger.info('[Firebase] DEV mode: Initializing Firebase AI without App Check for Vertex AI access');
     }
 
     try {
