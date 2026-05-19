@@ -13,7 +13,7 @@ defaults:
 jobs:
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
   unit-tests:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         shard: [1, 2, 3, 4]
@@ -61,7 +61,7 @@ jobs:
 
   # ─── Build & Static Analysis ────────────────────────────────────────────────
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: unit-tests
 
     steps:
@@ -196,7 +196,7 @@ jobs:
   # Never suppress errors (no '|| echo') — a failed staging deploy must halt
   # the workflow to prevent E2E tests from running against the wrong env.
   deploy-staging:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     outputs:
       staging-url: ${{ steps.channel-deploy.outputs.staging_url }}
@@ -212,14 +212,8 @@ jobs:
 
       - name: Setup Firebase CLI
         run: |
-          # firebase-tools is pre-installed at ~/.npm-global on this self-hosted runner.
-          # We never do a global npm install (EACCES on Homebrew prefix).
-          # Just verify the binary is reachable and export its path.
-          FIREBASE_BIN="$HOME/.npm-global/bin/firebase"
-          if [ ! -f "$FIREBASE_BIN" ]; then
-            echo "::error::firebase binary not found at $FIREBASE_BIN — install it once on the runner with: npm install -g firebase-tools --prefix ~/.npm-global"
-            exit 1
-          fi
+          npm install -g firebase-tools
+          FIREBASE_BIN=$(which firebase)
           echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
           echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
 
@@ -272,7 +266,7 @@ jobs:
 
   # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
   e2e-staging:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: deploy-staging
 
     steps:
@@ -321,7 +315,7 @@ jobs:
   # staging smoke tests fail (known preview channel asset issues).
   # The 'production' environment requires manual reviewer approval.
   deploy-production:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [deploy-staging, e2e-staging]
     environment: production
 
@@ -336,11 +330,8 @@ jobs:
 
       - name: Setup Firebase CLI
         run: |
-          FIREBASE_BIN="$HOME/.npm-global/bin/firebase"
-          if [ ! -f "$FIREBASE_BIN" ]; then
-            echo "::error::firebase binary not found at $FIREBASE_BIN"
-            exit 1
-          fi
+          npm install -g firebase-tools
+          FIREBASE_BIN=$(which firebase)
           echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
           echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
 
