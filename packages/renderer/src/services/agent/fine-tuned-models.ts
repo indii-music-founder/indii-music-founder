@@ -79,10 +79,6 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
 */
 
-    // Not yet fine-tuned
-    'creative':      undefined,
-    'keeper':        undefined,
-
     // === ROUND 8 (SWARM-NATIVE BURST) ===
     // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
     // Status: Training COMPLETE — 2026-05-10
@@ -106,6 +102,15 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
+
+    // Not yet fine-tuned or sub-agents
+    'legal.contracts':  undefined,
+    'legal.compliance': undefined,
+    'finance.accounting': undefined,
+    'finance.tax':       undefined,
+    'finance.royalty':   undefined,
+    'creative':         undefined,
+    'keeper':           undefined,
 };
 
 /**

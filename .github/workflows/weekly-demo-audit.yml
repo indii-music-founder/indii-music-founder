@@ -253,8 +253,8 @@ jobs:
             const h1_dev_outcome = '${{ steps.h1_dev.outcome }}';
             const h2Content = (h2 === '_(not produced)_' && h2_outcome === 'skipped' && h1_dev_outcome !== 'success')
               ? `_(not produced)_\n\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.`
-              ? '_(not produced)_\\n\\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.'
               : h2;
+
             const verdictMd = safeRead('.agent/DEMO_GO_NOGO.md');
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
@@ -309,10 +309,4 @@ jobs:
                 body,
               });
             }
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
-              body,
-              labels: ['demo-audit', verdict === 'GO' ? 'audit:go' : 'audit:no-go'],
-            });
+
