@@ -210,7 +210,7 @@ jobs:
           set -uo pipefail
           set +e
           OUTPUT=$("$FIREBASE_BIN" hosting:channel:deploy staging \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --project "${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}" \
             --expires 2h \
             --only app \
             --json 2>&1)
@@ -323,7 +323,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           "$FIREBASE_BIN" hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --project "${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}" \
             --expires 7d \
             --only app
         continue-on-error: true
@@ -331,23 +331,23 @@ jobs:
       - name: Deploy landing page to Firebase Hosting
         run: |
           echo "Deploying landing page to target: landing"
-          "$FIREBASE_BIN" deploy --only hosting:landing --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+          "$FIREBASE_BIN" deploy --only hosting:landing --project "${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}" --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
         run: |
           echo "Deploying studio app to target: app"
-          "$FIREBASE_BIN" deploy --only hosting:app --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+          "$FIREBASE_BIN" deploy --only hosting:app --project "${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}" --non-interactive
 
       # NOTE: Cloud Functions deploy requires Secret Manager API with active billing.
       # Billing account 013294-5C591F-1F43B9 is currently CLOSED.
-      # Reactivate at: https://console.cloud.google.com/billing?project=${{ secrets.FIREBASE_PROJECT_ID }}
+      # Reactivate at: https://console.cloud.google.com/billing?project=${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}
       # Once billing is active, remove continue-on-error to enforce strict deploys.
       - name: Deploy Cloud Functions
         continue-on-error: true
         run: |
           echo "Deploying Cloud Functions..."
           cd functions && npm install && npm run build && cd ..
-          "$FIREBASE_BIN" deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
+          "$FIREBASE_BIN" deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project "${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}" --non-interactive --force
 
       - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
         run: |
