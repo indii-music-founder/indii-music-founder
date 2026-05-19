@@ -1,5 +1,5 @@
 {
-  "appId": "com.indii.os",
+  "appId": "com.indii.music.founder",
   "directories": {
     "output": "dist-electron"
   },
@@ -41,11 +41,12 @@
       "zip"
     ]
   },
-  "productName": "indiiOS",
+  "productName": "Indii Music Founder",
   "protocols": [
     {
-      "name": "indiiOS Auth Protocol",
+      "name": "Indii Music Founder Auth Protocol",
       "schemes": [
+        "indii-music-founder",
         "indii-os"
       ]
     }
