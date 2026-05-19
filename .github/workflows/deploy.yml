@@ -221,7 +221,7 @@ jobs:
             exit 1
           fi
           echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
-          echo "Firebase CLI: $($FIREBASE_BIN --version)"
+          echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
 
       - name: Authenticate with Firebase
         run: |
@@ -342,7 +342,7 @@ jobs:
             exit 1
           fi
           echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
-          echo "Firebase CLI: $($FIREBASE_BIN --version)"
+          echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
 
       - name: Authenticate with Firebase
         run: |
