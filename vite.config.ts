@@ -48,7 +48,7 @@ export default defineConfig({
       name: 'startup-log',
       configureServer(server) {
         server.httpServer?.on('listening', () => {
-          console.log('\n\x1b[36m%s\x1b[0m', '  🚀 INDII OS - STUDIO (ELECTRON)');
+          console.log('\n\x1b[36m%s\x1b[0m', '  🚀 INDII MUSIC FOUNDER - STUDIO (ELECTRON)');
           console.log('\x1b[36m%s\x1b[0m', '  Running at http://localhost:4242');
           console.log('\x1b[90m%s\x1b[0m', '  (Landing Page runs on :3000)\n');
         });
@@ -210,8 +210,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Indii OS - Creative Studio',
-        short_name: 'Indii',
+        name: 'Indii Music Founder - Studio',
+        short_name: 'Indii Music Founder',
         description: 'AI-Native music business studio',
         theme_color: '#0f0f0f',
         background_color: '#0f0f0f',

@@ -1,5 +1,5 @@
 {
-  "appId": "com.indii.os.studio",
+  "appId": "com.indii.music.founder.studio",
   "asarUnpack": [
     "**/node_modules/ffmpeg-static/**",
     "**/node_modules/ffprobe-static/**"
@@ -73,14 +73,15 @@
     ],
     "oneClick": false,
     "perMachine": false,
-    "uninstallDisplayName": "indiiOS Studio"
+    "uninstallDisplayName": "Indii Music Founder Studio"
   },
   "npmRebuild": false,
-  "productName": "indiiOS Studio",
+  "productName": "Indii Music Founder Studio",
   "protocols": [
     {
-      "name": "indiiOS Studio Auth Protocol",
+      "name": "Indii Music Founder Studio Auth Protocol",
       "schemes": [
+        "indii-music-founder-studio",
         "indii-os-studio"
       ]
     }
@@ -89,7 +90,7 @@
     {
       "provider": "github",
       "owner": "wiil-tech",
-      "repo": "indiiOS-Alpha-Electron",
+      "repo": "indii-music-founder",
       "publishAutoUpdate": true,
       "releaseType": "draft"
     }
