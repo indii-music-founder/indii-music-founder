@@ -1,6 +1,6 @@
 {
-  "name": "indii-os",
-  "version": "1.48.0",
+  "name": "indii-music-founder",
+  "version": "1.49.0",
   "description": "The Operating System for Independent Artists",
   "author": "IndiiOS LLC <info@indiios.com>",
   "private": true,
@@ -250,8 +250,9 @@
     "npmRebuild": false,
     "protocols": [
       {
-        "name": "indii-os",
+        "name": "indii-music-founder",
         "schemes": [
+          "indii-music-founder",
           "indii-os"
         ]
       }
@@ -261,7 +262,7 @@
         "owner": "wiil-tech",
         "private": true,
         "provider": "github",
-        "repo": "indiiOS-Alpha-Electron"
+        "repo": "indii-music-founder"
       }
     ],
     "win": {

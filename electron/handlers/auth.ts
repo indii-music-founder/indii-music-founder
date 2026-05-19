@@ -84,7 +84,7 @@ function validateDeepLinkOrigin(url: string): { valid: boolean; error?: string }
         const urlObj = new URL(url);
 
         // Must be our custom protocol
-        if (urlObj.protocol !== 'indii-os:') {
+        if (urlObj.protocol !== 'indii-os:' && urlObj.protocol !== 'indii-music-founder:') {
             return { valid: false, error: `Invalid protocol: ${urlObj.protocol}` };
         }
 

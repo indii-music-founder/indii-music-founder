@@ -167,7 +167,7 @@ export const creativeDirector = new Agent({
     - Include professional lighting and scene descriptions
     - Maintain brand colors and aesthetic
   `,
-  model: google('gemini-3.1-pro-preview'),
+  model: google('gemini-3.5-flash'),
   tools: [
     generateImageTool,
     searchKnowledgeTool,

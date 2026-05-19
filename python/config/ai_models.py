@@ -6,14 +6,14 @@ Centralized to prevent "hard coating" and ensure compliance with Model Policy.
 """
 
 APPROVED_MODELS = {
-    "TEXT_AGENT": "gemini-3.1-pro-preview",
-    "TEXT_FAST": "gemini-3-flash-preview",
-    "IMAGE_GEN": "gemini-3-pro-image-preview",
-    "IMAGE_FAST": "gemini-3.1-flash-image-preview",
-    "AUDIO_PRO": "gemini-1.5-pro", # Placeholder until 2.5/3.0 audio IDs confirmed
-    "AUDIO_FLASH": "gemini-1.5-flash",
+    "TEXT_AGENT": "gemini-3.5-flash",
+    "TEXT_FAST": "gemini-3.5-flash",
+    "IMAGE_GEN": "gemini-3.5-flash-image-preview",
+    "IMAGE_FAST": "gemini-3.5-flash-image-preview",
+    "AUDIO_PRO": "gemini-3.5-flash",
+    "AUDIO_FLASH": "gemini-3.5-flash",
     "VIDEO_GEN": "veo-3.1-generate-preview",
-    "AUDIO_ANALYSIS": "gemini-3-pro-preview", # Multimodal audio extraction
+    "AUDIO_ANALYSIS": "gemini-3.5-flash", # Multimodal audio extraction
 }
 
 class AIConfig:

@@ -41,7 +41,7 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     }
 
     // 2. Allow Deep Links
-    if (url.startsWith('indii-os:')) return;
+    if (url.startsWith('indii-os:') || url.startsWith('indii-music-founder:')) return;
 
     // 3. Allow Dev Server (Strict Origin Check)
     let devServerUrl = process.env.VITE_DEV_SERVER_URL;

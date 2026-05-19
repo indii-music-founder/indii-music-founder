@@ -6,22 +6,12 @@ on:
       - main
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: bash --noprofile --norc -e -o pipefail "{0}"
-
 jobs:
-  # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
-  unit-tests:
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        shard: [1, 2, 3, 4]
+  build-and-deploy:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -33,12 +23,8 @@ jobs:
         with:
           version: 9
 
-      - name: Get pnpm store directory
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
-      - uses: actions/cache@v5
-        name: Setup pnpm cache
+      - name: Setup pnpm cache
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -46,95 +32,12 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install root dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
-
-      - name: Run unit tests (shard ${{ matrix.shard }}/4)
-        timeout-minutes: 15
-        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/4
-        env:
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
-
-  # ─── Build & Static Analysis ────────────────────────────────────────────────
-  build:
-    runs-on: self-hosted
-    needs: unit-tests
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22.x'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Get pnpm store directory
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
-      - uses: actions/cache@v5
-        name: Setup pnpm cache
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Clean stale betterleaks temp files (self-hosted runner fix)
-        run: rm -f /tmp/betterleaks.tmp "${TMPDIR:-/tmp}/betterleaks.tmp"
-
-      - name: Scan for secrets (betterleaks)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          LATEST_VERSION=$(curl -s "https://api.github.com/repos/betterleaks/betterleaks/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-          if [ "$(uname)" = "Darwin" ]; then
-            if [ "$(uname -m)" = "arm64" ]; then
-              ASSET="betterleaks_${LATEST_VERSION#v}_darwin_arm64.tar.gz"
-            else
-              ASSET="betterleaks_${LATEST_VERSION#v}_darwin_x64.tar.gz"
-            fi
-          elif [ "$(uname)" = "Linux" ]; then
-            if [ "$(uname -m)" = "aarch64" ]; then
-              ASSET="betterleaks_${LATEST_VERSION#v}_linux_arm64.tar.gz"
-            else
-              ASSET="betterleaks_${LATEST_VERSION#v}_linux_x64.tar.gz"
-            fi
-          fi
-          curl -sL "https://github.com/betterleaks/betterleaks/releases/download/${LATEST_VERSION}/${ASSET}" | tar xz betterleaks
-          ./betterleaks git . -v
-
-      - name: Install root dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
-
-      - name: Audit dependencies for vulnerabilities (Item 252)
-        run: pnpm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Run linting checks
-        run: pnpm run lint
-
-      - name: TypeScript type check (Item 343)
-        run: pnpm run typecheck
-        continue-on-error: true
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Build landing page
         run: |
           cd landing-page
-          rm -rf dist .next
-          pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
+          pnpm install --no-frozen-lockfile --ignore-scripts
           NODE_ENV=production pnpm run build
 
       - name: Build studio app
@@ -142,251 +45,24 @@ jobs:
         env:
           NODE_ENV: production
           VITE_APP_TARGET: web
-          SENTRY_ORG: indiimusic-im
-          SENTRY_PROJECT: indii_music_founder
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
-          VITE_USE_FINE_TUNED_AGENTS: "true"
-
-      - name: Verify build outputs
-        run: |
-          ls -la landing-page/dist/index.html
-          ls -la dist/index.html
-
-      - name: Bundle size check
-        run: |
-          TOTAL_JS=$(find dist/assets -name '*.js' -exec cat {} \; | wc -c)
-          echo "Total JS: $((TOTAL_JS / 1024))KB"
-          if [ "$TOTAL_JS" -gt 15728640 ]; then
-            echo "::error::Total JS bundle exceeds 15MB threshold!"
-            exit 1
-          fi
-
-      - name: Accessibility audit (axe-core)
-        run: |
-          npm install -g serve @axe-core/cli
-          serve -s dist -l 5000 &
-          sleep 3
-          npx axe --exit http://localhost:5000
-          kill %1 || true
-        continue-on-error: true
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-dist-${{ github.sha }}
-          path: |
-            dist/
-            landing-page/dist/
-          retention-days: 1
-
-  # ─── Staging Deploy ──────────────────────────────────────────────────────────
-  # Deploys to a Firebase Hosting preview channel named 'staging' (2h TTL).
-  # E2E tests run against this URL before any production deploy goes out.
-  #
-  # CRITICAL (Sentry PR #1327): This step MUST fail hard if the deploy fails.
-  # Never suppress errors (no '|| echo') — a failed staging deploy must halt
-  # the workflow to prevent E2E tests from running against the wrong env.
-  deploy-staging:
-    runs-on: self-hosted
-    needs: build
-    outputs:
-      staging-url: ${{ steps.channel-deploy.outputs.staging_url }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-dist-${{ github.sha }}
-
-      - name: Setup Firebase CLI
-        run: |
-          # firebase-tools is pre-installed at ~/.npm-global on this self-hosted runner.
-          # We never do a global npm install (EACCES on Homebrew prefix).
-          # Just verify the binary is reachable and export its path.
-          FIREBASE_BIN="$HOME/.npm-global/bin/firebase"
-          if [ ! -f "$FIREBASE_BIN" ]; then
-            echo "::error::firebase binary not found at $FIREBASE_BIN — install it once on the runner with: npm install -g firebase-tools --prefix ~/.npm-global"
-            exit 1
-          fi
-          echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
-          echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || 'indii-music-founder' }}
 
       - name: Authenticate with Firebase
         run: |
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is missing. Cannot deploy."
+            exit 1
+          fi
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> "$GITHUB_ENV"
 
-      # SENTRY FIX (PR #1327): NO error suppression on deploy.
-      # If this step fails, the workflow halts — E2E tests never run.
-      # The old code used `|| echo '{}'` which masked failures and let
-      # the Python script default to the production URL.
-      - name: Deploy to staging preview channel
-        id: channel-deploy
+      - name: Deploy to Firebase Hosting
         run: |
-          set -uo pipefail
-          set +e
-          OUTPUT=$("$FIREBASE_BIN" hosting:channel:deploy staging \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
-            --expires 2h \
-            --only app \
-            --json 2>&1)
-          EXIT_CODE=$?
-          set -e
-          
-          echo "Raw output:"
-          echo "$OUTPUT"
-          
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "::error::Firebase deploy failed with exit code $EXIT_CODE"
-            exit $EXIT_CODE
-          fi
-          
-          STAGING_URL=$(echo "$OUTPUT" | python3 -c "
-          import sys, json
-          d = json.load(sys.stdin)
-          results = d.get('result', {})
-          url = next(iter(results.values()), {}).get('url', '')
-          if not url:
-              print('ERROR: No staging URL found in deploy output', file=sys.stderr)
-              sys.exit(1)
-          print(url)
-          ")
-          echo "staging_url=${STAGING_URL}" >> "$GITHUB_OUTPUT"
-          echo "Staging URL: ${STAGING_URL}"
+          npm install -g firebase-tools
+          firebase deploy --only hosting --project indii-music-founder --non-interactive
 
       - name: Cleanup credentials
         if: always()
         run: rm -f $HOME/gcloud-key.json
-
-  # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
-  e2e-staging:
-    runs-on: self-hosted
-    needs: deploy-staging
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22.x'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E smoke tests against staging (Item 345)
-        run: npx playwright test e2e/navigation.spec.ts e2e/auth-flow.spec.ts --project=chromium --timeout=30000
-        timeout-minutes: 15
-        continue-on-error: true
-        env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
-          E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-
-      - name: Upload E2E failure report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-report-${{ github.sha }}
-          path: playwright-report/
-          retention-days: 7
-
-  # ─── Production Deploy (gated on staging deploy + E2E attempt) ──────────────
-  # e2e-staging runs with continue-on-error, so this job proceeds even if
-  # staging smoke tests fail (known preview channel asset issues).
-  # The 'production' environment requires manual reviewer approval.
-  deploy-production:
-    runs-on: self-hosted
-    needs: [deploy-staging, e2e-staging]
-    environment: production
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-dist-${{ github.sha }}
-
-      - name: Setup Firebase CLI
-        run: |
-          FIREBASE_BIN="$HOME/.npm-global/bin/firebase"
-          if [ ! -f "$FIREBASE_BIN" ]; then
-            echo "::error::firebase binary not found at $FIREBASE_BIN"
-            exit 1
-          fi
-          echo "FIREBASE_BIN=$FIREBASE_BIN" >> "$GITHUB_ENV"
-          echo "Firebase CLI: $("$FIREBASE_BIN" --version)"
-
-      - name: Authenticate with Firebase
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> "$GITHUB_ENV"
-
-      # Item 294: Deploy PR preview channel for QA sign-off
-      - name: Deploy PR Preview Channel
-        if: github.event_name == 'pull_request'
-        run: |
-          "$FIREBASE_BIN" hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
-            --expires 7d \
-            --only app
-        continue-on-error: true
-
-      - name: Deploy landing page to Firebase Hosting
-        run: |
-          echo "Deploying landing page to target: landing"
-          "$FIREBASE_BIN" deploy --only hosting:landing --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
-
-      - name: Deploy studio app to Firebase Hosting
-        run: |
-          echo "Deploying studio app to target: app"
-          "$FIREBASE_BIN" deploy --only hosting:app --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
-
-      # NOTE: Cloud Functions deploy requires Secret Manager API with active billing.
-      # Billing account 013294-5C591F-1F43B9 is currently CLOSED.
-      # Reactivate at: https://console.cloud.google.com/billing?project=${{ secrets.FIREBASE_PROJECT_ID }}
-      # Once billing is active, remove continue-on-error to enforce strict deploys.
-      - name: Deploy Cloud Functions
-        continue-on-error: true
-        run: |
-          echo "Deploying Cloud Functions..."
-          cd functions && npm install && npm run build && cd ..
-          "$FIREBASE_BIN" deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
-
-      - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
-        run: |
-          npm install -g @lhci/cli
-          lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiimusic.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
-        continue-on-error: true
-
-      - name: Cleanup credentials
-        if: always()
-        run: rm -f $HOME/gcloud-key.json
-

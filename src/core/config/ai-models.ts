@@ -10,20 +10,20 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3-pro-preview',
-    TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3-pro-preview',           // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3-flash-preview',         // Fast image gen via responseModalities
+    TEXT_AGENT: 'gemini-3.5-flash',
+    TEXT_FAST: 'gemini-3.5-flash',
+    IMAGE_GEN: 'gemini-3.5-flash-image-preview',           // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.5-flash-image-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
-    DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
-    AUDIO_PRO: 'gemini-3-pro-preview',
-    AUDIO_FLASH: 'gemini-3-flash-preview',
+    DIRECT_PRO: 'gemini-3.5-flash-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3.5-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
+    AUDIO_PRO: 'gemini-3.5-flash',
+    AUDIO_FLASH: 'gemini-3.5-flash',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
     VIDEO_FAST: 'veo-3.1-generate-preview',
     VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
-    BROWSER_AGENT: 'gemini-3-pro-preview',
+    BROWSER_AGENT: 'gemini-3.5-flash',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
@@ -108,8 +108,7 @@ export const AI_CONFIG = {
  * gemini-2.5-flash: $0.15 input /  $0.60 output per 1M tokens
  */
 export const MODEL_PRICING = {
-    'gemini-3-pro-preview': { input: 1.25, output: 10.00 },
-    'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
+    'gemini-3.5-flash': { input: 0.15, output: 0.60 },
     'veo-3.1-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
@@ -122,8 +121,7 @@ export const MODEL_PRICING = {
     },
     'gemini-2.5-pro-tts': { input: 0.60, output: 4.00 },
     // Direct mode image models (token-based pricing, same tier as text)
-    'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },
-    'gemini-3.1-flash-image-preview': { input: 0.15, output: 0.60 },
+    'gemini-3.5-flash-image-preview': { input: 0.15, output: 0.60 },
 } as const;
 
 /**
@@ -142,9 +140,11 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-1\./i,            // Block all legacy 1.x models
     /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
+    /gemini-3\.1/i,           // Block legacy 3.1 models
     /imagen/i,                // Block all Imagen models (replaced by Nano Banana)
     /gemini-2\.5-flash-image/i, // Block legacy Nano Banana OG (use Nano Banana 2 or Pro only)
-    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED (Direct mode)
+    /gemini-3-pro-preview/i, // Block legacy 3.0 pro model
+    /gemini-3-flash-preview/i, // Block legacy 3.0 flash model
 ];
 
 function validateModels(): void {

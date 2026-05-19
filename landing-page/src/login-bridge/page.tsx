@@ -33,7 +33,7 @@ export default function LoginBridge() {
             params.append('idToken', idToken);
             if (accessToken) params.append('accessToken', accessToken);
 
-            const callbackUrl = `indii-os://auth/callback?${params.toString()}`;
+            const callbackUrl = `indii-music-founder://auth/callback?${params.toString()}`;
             window.location.href = callbackUrl;
         } catch (err) {
             console.error('Failed to redirect:', err);
@@ -72,7 +72,7 @@ export default function LoginBridge() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
             <div className="p-8 border border-neutral-800 rounded-xl bg-neutral-900/50 text-center max-w-md w-full">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold mb-2">indiiOS</h1>
+                    <h1 className="text-2xl font-bold mb-2">Indii Music Founder</h1>
                     <p className="text-neutral-400 text-sm">Sign in to continue to the app</p>
                 </div>
 
@@ -145,7 +145,7 @@ export default function LoginBridge() {
 
                 <div className="mt-6 pt-6 border-t border-neutral-800">
                     <p className="text-neutral-500 text-xs">
-                        This page authenticates you with Google and redirects back to the indiiOS desktop app.
+                        This page authenticates you with Google and redirects back to the Indii Music Founder desktop app.
                     </p>
                 </div>
             </div>

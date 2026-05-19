@@ -81,6 +81,7 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
 
     // === ROUND 8 (SWARM-NATIVE BURST) ===
     // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
+    // Upgrade Path: Round 9 fine-tuning planned upgrade base: gemini-3.5-flash-lite
     // Status: Training COMPLETE — 2026-05-10
     'generalist':      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
     'finance':         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
