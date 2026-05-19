@@ -36,9 +36,9 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 | Purpose                      | Model ID                        | Notes                                    |
 | ---------------------------- | ------------------------------- | ---------------------------------------- |
-| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks          |
-| **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput   |
-| **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)    |
+| **Text/Reasoning (Complex)** | `gemini-3-pro-preview` / `gemini-3.5-pro` | Agents, analysis, complex reasoning (3.5 Pro launching June 2026) |
+| **Text/Reasoning (Fast)**    | `gemini-3.5-flash`              | Primary engine for agentic & coding tasks |
+| **Image Generation**         | `gemini-3-pro-image-preview` / `gemini-3.5-flash-image-preview` | Image synthesis (Nano Banana Pro / Nano Banana 2) |
 | **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis            |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis             |
 | **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation                |
@@ -64,10 +64,14 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 'gemini-2.0-pro'          // BANNED
 'gemini-pro'              // BANNED (legacy)
 'gemini-pro-vision'       // BANNED (legacy)
+'gemini-3.1-pro-preview'  // BANNED (legacy 3.1)
+'gemini-3.1-flash-image'  // BANNED (legacy 3.1)
 
 // ANY model matching these patterns:
 /gemini-1\./              // ALL 1.x versions BANNED
 /gemini-2\.0/             // ALL 2.0 versions BANNED
+/gemini-3\.1/             // ALL 3.1 versions BANNED
+```
 ```
 
 ---

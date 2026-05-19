@@ -137,8 +137,8 @@ All shell/filesystem/network tool calls require approval via `ExecApprovalServic
 // ALWAYS import from this path — never hardcode strings
 import { AI_MODELS } from '@/core/config/ai-models';
 
-// Complex reasoning:   AI_MODELS.TEXT_AGENT      (gemini-3.1-pro-preview, Thinking: HIGH)
-// Fast routing:        AI_MODELS.TEXT_FAST        (gemini-3-flash-preview)
+// Complex reasoning:   AI_MODELS.TEXT_AGENT      (gemini-3.5-flash, Thinking: HIGH)
+// Fast routing:        AI_MODELS.TEXT_FAST        (gemini-3.5-flash)
 // Embeddings:          AI_MODELS.EMBEDDING_DEFAULT (gemini-embedding-001)
 ```
 

@@ -86,16 +86,16 @@ else
 fi
 
 # ============================================================================
-# Gemini CLI
+# Antigravity CLI
 # ============================================================================
-step "Gemini CLI"
+step "Antigravity CLI"
 
-if command -v gemini &>/dev/null; then
-  GEMINI_VERSION=$(gemini --version 2>/dev/null)
-  log_ok "Already installed: gemini $GEMINI_VERSION"
+if command -v antigravity &>/dev/null; then
+  ANTIGRAVITY_VERSION=$(antigravity --version 2>/dev/null)
+  log_ok "Already installed: antigravity $ANTIGRAVITY_VERSION"
 else
-  log_info "Installing Gemini CLI..."
-  npm install -g @anthropic-ai/claude-code 2>/dev/null || brew install gemini-cli 2>/dev/null || log_warn "Could not install Gemini CLI automatically"
+  log_info "Installing Antigravity CLI..."
+  npm install -g @google/antigravity 2>/dev/null || brew install antigravity-cli 2>/dev/null || log_warn "Could not install Antigravity CLI automatically"
 fi
 
 # ============================================================================
@@ -211,7 +211,7 @@ echo "  gcloud ........... $(gcloud --version 2>/dev/null | head -1 || echo 'not
 echo "  gsutil ........... $(gsutil --version 2>/dev/null || echo 'not found')"
 echo "  bq ............... $(bq version 2>/dev/null | head -1 || echo 'not found')"
 echo "  firebase ......... $(firebase --version 2>/dev/null || echo 'not found')"
-echo "  gemini ........... $(gemini --version 2>/dev/null || echo 'not found')"
+echo "  antigravity ...... $(antigravity --version 2>/dev/null || echo 'not found')"
 echo "  clasp ............ $(clasp --version 2>/dev/null || echo 'not found')"
 echo "  gws .............. $(which gws 2>/dev/null && echo 'installed' || echo 'not found')"
 echo "  python-fire ...... $(python3 -c 'import fire; print(fire.__version__)' 2>/dev/null || echo 'not found')"
