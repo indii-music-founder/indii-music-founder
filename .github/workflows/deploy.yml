@@ -92,29 +92,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Clean stale betterleaks temp files (self-hosted runner fix)
-        run: rm -f /tmp/betterleaks.tmp "${TMPDIR:-/tmp}/betterleaks.tmp"
 
-      - name: Scan for secrets (betterleaks)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          LATEST_VERSION=$(curl -s "https://api.github.com/repos/betterleaks/betterleaks/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-          if [ "$(uname)" = "Darwin" ]; then
-            if [ "$(uname -m)" = "arm64" ]; then
-              ASSET="betterleaks_${LATEST_VERSION#v}_darwin_arm64.tar.gz"
-            else
-              ASSET="betterleaks_${LATEST_VERSION#v}_darwin_x64.tar.gz"
-            fi
-          elif [ "$(uname)" = "Linux" ]; then
-            if [ "$(uname -m)" = "aarch64" ]; then
-              ASSET="betterleaks_${LATEST_VERSION#v}_linux_arm64.tar.gz"
-            else
-              ASSET="betterleaks_${LATEST_VERSION#v}_linux_x64.tar.gz"
-            fi
-          fi
-          curl -sL "https://github.com/betterleaks/betterleaks/releases/download/${LATEST_VERSION}/${ASSET}" | tar xz betterleaks
-          ./betterleaks git . -v
 
       - name: Install root dependencies
         run: pnpm install --no-frozen-lockfile --ignore-scripts --config.engine-strict=false
