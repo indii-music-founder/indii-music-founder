@@ -1,24 +1,64 @@
 # Handoff State
-**Updated:** 2026-05-19 10:30 EDT
+**Updated:** 2026-05-19 16:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+327aa2b9 fix: remove betterleaks to avoid false positives on legacy git history
+4958794e chore: migrate from self-hosted to ubuntu-latest runners
+71b65402 Merge pull request #4 from indii-music-founder/release-please--branches--main--components--indii-music-founder
+5d4a2190 chore(main): release 1.49.0
+61e0879c Merge pull request #3 from indii-music-founder/release-please--branches--main--components--indii-music-founder
+d8553091 chore(main): release 1.48.0
+4c18dff4 chore: rebrand legacy package configs and protocols to indii-music-founder
+fef7d8dd chore: session checkpoint [10:30]
 a2dc9675 fix(ci): wrap FIREBASE_BIN variable expansion in double quotes to support paths with spaces
 4db8d814 fix(ci): use pre-installed firebase binary from ~/.npm-global/bin instead of global npm install
-54b21582 chore: session checkpoint [08:54]
-74fb579a fix(ci): avoid global firebase-tools install to prevent permission denied errors on self-hosted runner
-30dd3a4c chore(ci): replace gitleaks with betterleaks in deployment workflow
-6148b8d3 fix(ci): clean stale gitleaks temp on self-hosted runner; allow Vertex AI in dev mode
-43a335b2 feat(ci): update fine-tuned endpoints to R8 and add weekly-demo-audit workflow
-16c963d8 chore: session checkpoint [17:49]
-0d04aa94 chore: session checkpoint [17:46]
-b3b46b0a chore: session checkpoint [17:32]
 ```
 
 ## Working State
 ```
-clean working tree
+ M agents/agent0/settings.json
+ M agents/creative-director/src/index.ts
+ M agents/default/settings.json
+ M agents/indii_curriculum/settings.json
+ M agents/indii_executor/settings.json
+ M agents/marketing/src/index.ts
+ M config/force_settings.json
+ M directives/secure_ai_os_architecture.md
+ M docs/MODEL_POLICY.md
+ M execution/verify_api_key.ts
+ M force_settings.json
+ M functions/src/__tests__/image_gen.test.ts
+ M python/config/ai_models.py
+ M scripts/setup-dev-environment.sh
+ M scripts/test-pdf-rag.ts
+ M scripts/verify-google-ai.js
+ M scripts/verify-rag-filedata.ts
+ M scripts/verify-rag-filesearch.ts
+ M settings.json
+ M src/core/config/ai-models.ts
+ M src/modules/tools/AudioAnalyzer.interaction.test.tsx
+ M src/services/agent/LedgerCircuitBreaker.test.ts
+ M src/services/agent/evolution/HelixEvolutionaryLoop.test.ts
+ M src/services/agent/evolution/HelixGeminiLoop.test.ts
+ M src/services/agent/evolution/HelixGeminiThinking.test.ts
+ M src/services/agent/evolution/HelixImmunity.test.ts
+ M src/services/agent/fine-tuned-models.ts
+ M src/services/agent/memory/AlwaysOnMemoryEngine.test.ts
+ M src/services/ai/FirebaseAIService.ts
+ M src/services/marketing/CampaignAIService.ts
+ M src/services/rag/ragService.test.ts
+ M src/services/video/VideoService.test.ts
+?? actions_screenshot.png
+?? betterleaks
+?? cancel_old_runs.cjs
+?? cdp_actions.cjs
+?? cdp_browser.cjs
+?? get_token.cjs
+?? new_runner_screenshot.png
+?? run_screenshot.png
+?? runners_screenshot.png
 ```
 
 ---
