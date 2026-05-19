@@ -2,6 +2,36 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.48.0](https://github.com/indii-music-founder/indii-music-founder/compare/v1.47.0...v1.48.0) (2026-05-19)
+
+
+### Features
+
+* **agent:** implement production-grade primitives 5, 6, and 9 ([90abcb6](https://github.com/indii-music-founder/indii-music-founder/commit/90abcb6376ddffa3f08129238e62bf62fa875e90))
+* **agent:** Implement Wiki-Based Knowledge Store pipeline ([bc048d8](https://github.com/indii-music-founder/indii-music-founder/commit/bc048d871e388ef83fc83c1a1801ab0590910a48))
+* **agents:** add Gemini API Docs MCP + purge Agent Zero branding ([3842d0a](https://github.com/indii-music-founder/indii-music-founder/commit/3842d0a2addd58d2a8419338a2f9f36b1d72bb71))
+* **agent:** Upgrade indii Conductor harness and Growth Protocol ([c1aa853](https://github.com/indii-music-founder/indii-music-founder/commit/c1aa853007920e3325761cc81da28cf4dddf503f))
+* **boardroom:** Implement zero-API offline mode interface ([11b4c04](https://github.com/indii-music-founder/indii-music-founder/commit/11b4c048d5dd5926683830e95e218f8e04729881))
+* **boardroom:** Integrate real multi-agent API calls via Conductor ([bd9187f](https://github.com/indii-music-founder/indii-music-founder/commit/bd9187f68b646e704cc06db745ce6eea77f31724))
+* **ci:** update fine-tuned endpoints to R8 and add weekly-demo-audit workflow ([43a335b](https://github.com/indii-music-founder/indii-music-founder/commit/43a335b296555e67e28ab316582efda2d6c17031))
+* **firebase:** integrate full local emulator suite (Auth, Firestore, Storage, Functions, UI) for safe cost-free Spark plan development ([11a6043](https://github.com/indii-music-founder/indii-music-founder/commit/11a60433692ec6e4a8b050c17b7d866744815edc))
+* **http:** add fetchWithTimeout utility and harden external API calls ([4025fda](https://github.com/indii-music-founder/indii-music-founder/commit/4025fda8468004b9a7ed365d49edfe84603c3921))
+* **knowledge:** finalize wiki knowledge store integration ([22bfdb0](https://github.com/indii-music-founder/indii-music-founder/commit/22bfdb0bf7dcdd69915255f7225bf7aca77a6a6a))
+* **registration:** build Registration Center — full Phase 1-6 ([ac39745](https://github.com/indii-music-founder/indii-music-founder/commit/ac39745428c4dc7786e562034d5c87a4c4a592dd))
+* **registration:** Registration Center — artist never leaves indiiOS ([ab8115e](https://github.com/indii-music-founder/indii-music-founder/commit/ab8115e1dd72929d5fd82020d2f37fba4150814f))
+
+
+### Bug Fixes
+
+* **ci:** avoid global firebase-tools install to prevent permission denied errors on self-hosted runner ([74fb579](https://github.com/indii-music-founder/indii-music-founder/commit/74fb579a3587308dcf1e9313061cad54655c3d3e))
+* **ci:** clean stale gitleaks temp on self-hosted runner; allow Vertex AI in dev mode ([6148b8d](https://github.com/indii-music-founder/indii-music-founder/commit/6148b8d3c1227dcea78771ad7ad359048de6d120))
+* **ci:** use pre-installed firebase binary from ~/.npm-global/bin instead of global npm install ([4db8d81](https://github.com/indii-music-founder/indii-music-founder/commit/4db8d814ec7fc229573886d6002e09441431afd3))
+* **ci:** wrap FIREBASE_BIN variable expansion in double quotes to support paths with spaces ([a2dc967](https://github.com/indii-music-founder/indii-music-founder/commit/a2dc96755d246c6c769ee1b135efd583d01b5512))
+* **deps:** resolve 2 critical npm vulns + activate image resizing function ([e67873b](https://github.com/indii-music-founder/indii-music-founder/commit/e67873bf2078f7030cbecc7f030f974dd983be15))
+* **deps:** resolve all critical and high-severity dependency vulnerabilities ([9d45082](https://github.com/indii-music-founder/indii-music-founder/commit/9d450829eab8e47565397a587cf36fb74edd2a97))
+* **deps:** upgrade firebase-admin to v13.7.0 and electron-forge to v7.11.1 ([40b3575](https://github.com/indii-music-founder/indii-music-founder/commit/40b3575ca07b6ad064a98943c12f65d86174fa25))
+* **registration:** resolve all lint violations and TypeScript errors in Registration Center module ([328a273](https://github.com/indii-music-founder/indii-music-founder/commit/328a27336fdd5b0df236ded949bf9208184fe313))
+
 ## [1.48.0](https://github.com/wiil-tech/indiiOS-Clean/compare/v1.47.0...v1.48.0) (2026-04-05)
 
 
