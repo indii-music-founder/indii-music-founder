@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-19 21:58 EDT
+**Updated:** 2026-05-19 22:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+22bef72fd fix: update firebase.json with correct project ID for deployment
+798aa412d chore: session checkpoint [21:58]
 aa66a5163 chore: session checkpoint [21:56]
 e7f99345b chore: session checkpoint [21:55]
 604aa37dc chore: session checkpoint [21:50]
@@ -12,13 +14,12 @@ e7f99345b chore: session checkpoint [21:55]
 5dbfdbdea chore: session checkpoint [21:35]
 17c8fb023 chore: session checkpoint [21:33]
 1ef888aad chore: session checkpoint [21:30]
-959516820 chore: session checkpoint [21:29]
-32eaaf671 chore: session checkpoint [21:28]
 ```
 
 ## Working State
 ```
-clean working tree
+ M package-lock.json
+ M package.json
 ```
 
 ## Decisions
