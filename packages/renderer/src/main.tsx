@@ -34,8 +34,8 @@ try {
     logger.warn('[Startup] Sentry initialization failed (non-blocking):', error);
 }
 
-logger.debug("indii.music Studio v1.2.6-manual-redeploy");
-document.title = "indii.music — Studio (v1.2.6)";
+logger.debug("indii.music");
+document.title = "indii.music";
 
 try {
     ReactDOM.createRoot(document.getElementById('root')!).render(

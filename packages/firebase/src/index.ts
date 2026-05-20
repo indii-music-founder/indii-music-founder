@@ -31,7 +31,7 @@ import { generateThumbnail } from "./lib/image_resizing";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
-    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-v-1-1";
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-music-founder";
 }
 
 // Initialize Firebase Admin

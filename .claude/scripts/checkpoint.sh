@@ -45,5 +45,6 @@ git add .agent/HANDOFF_STATE.md
 # Only commit if the file actually changed
 if git diff --cached --name-only | grep -q "HANDOFF_STATE.md"; then
   git commit -m "chore: session checkpoint [$(date '+%H:%M')]" .agent/HANDOFF_STATE.md 2>&1
-  git push origin "$BRANCH" 2>&1 || true
+  # Disabled: do not push to avoid retriggering CI workflows during development
+  # git push origin "$BRANCH" 2>&1 || true
 fi
