@@ -163,7 +163,7 @@
   "storage": [
     {
       "target": "main",
-      "bucket": "indiios-v-1-1.firebasestorage.app",
+      "bucket": "indii-music-founder.firebasestorage.app",
       "rules": "packages/firebase/storage.rules"
     }
   ]

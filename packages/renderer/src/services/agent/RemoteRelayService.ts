@@ -313,6 +313,8 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
+        if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return;
+        
         const ref = getRelayRef();
         if (!ref) return;
 

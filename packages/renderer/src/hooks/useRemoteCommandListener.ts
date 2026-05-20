@@ -34,6 +34,13 @@ import { delay } from '@/utils/async';
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
+    
+    // Skip diagnostics in E2E tests to prevent Firestore invalid segment errors
+    // when project ID is mocked/missing
+    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) {
+        return;
+    }
+
     try {
         await setDoc(doc(db, 'users', uid, 'remote-relay', 'diagnostics'), {
             stage,

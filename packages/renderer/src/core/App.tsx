@@ -62,6 +62,7 @@ import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
+import ChatOverlay from './components/ChatOverlay';
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 import { importWithRetry } from '@/utils/dynamicImport';
 
@@ -462,6 +463,13 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
     // Call subscription hook globally to leverage caching across module switches
     const { subscription, loading: subLoading } = useSubscription();
 
+    const { isAgentOpen, toggleAgentWindow } = useStore(
+        useShallow(s => ({
+            isAgentOpen: s.isAgentOpen,
+            toggleAgentWindow: s.toggleAgentWindow,
+        }))
+    );
+
     return (
         <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
             <GlobalDropZone>
@@ -563,6 +571,13 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
                 {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
                 <AgentCanvasPanel />
+
+                {/* Floating Chat Agent Overlay */}
+                {isAgentOpen && (
+                    <ErrorBoundary>
+                        <ChatOverlay onClose={toggleAgentWindow} />
+                    </ErrorBoundary>
+                )}
             </GlobalDropZone>
         </div>
     );
