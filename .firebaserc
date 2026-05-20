@@ -1,38 +1,20 @@
 {
   "projects": {
-    "default": "indii-music"
+    "default": "indii-music-founder"
   },
   "targets": {
-    "indii-music": {
+    "indii-music-founder": {
       "hosting": {
         "landing": [
-          "indii-music"
+          "indii-music-founder"
         ],
         "app": [
-          "indii-studio"
+          "indii-music-founder"
         ]
       },
       "storage": {
         "main": [
-          "indii-music.firebasestorage.app"
-        ],
-        "alpha": [
-          "indii-music-alpha"
-        ]
-      }
-    },
-    "indiios-v-1-1": {
-      "hosting": {
-        "landing": [
-          "indiios-v-1-1"
-        ],
-        "app": [
-          "indiios-studio"
-        ]
-      },
-      "storage": {
-        "main": [
-          "indiios-v-1-1.firebasestorage.app"
+          "indii-music-founder.firebasestorage.app"
         ]
       }
     }
