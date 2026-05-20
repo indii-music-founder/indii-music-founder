@@ -220,15 +220,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
-            console.log('[PromptArea] handleSubmit fired!', { commandBarInput });
             e?.preventDefault();
             const input = commandBarInput || '';
             if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
-                console.log('[PromptArea] Aborting submit: input is empty');
                 return;
             }
             if (isProcessing) {
-                console.log('[PromptArea] Aborting submit: already processing');
                 return;
             }
 

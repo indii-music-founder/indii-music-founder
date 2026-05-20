@@ -101,7 +101,7 @@ export class OfflineFirstService {
     data: Record<string, unknown>,
     id?: string
   ): Promise<string> {
-    const itemId = id || `${collection}_${Date.now()}_${Math.random()}`;
+    const itemId = id || `${collection}_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
 
     const item: SyncItem = {
       id: itemId,

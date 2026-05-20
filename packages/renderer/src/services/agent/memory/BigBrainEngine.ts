@@ -77,14 +77,14 @@ const DEFAULT_CONFIG: BigBrainConfig = {
 
 /** Map of agent IDs to the vault categories they should auto-fetch */
 const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
-    'marketing-agent': ['artist_identity', 'preferences', 'marketing' as any, 'goals'],
+    'marketing-agent': ['artist_identity', 'preferences', 'goals'],
     'creative-director': ['artist_identity', 'preferences', 'technical', 'goals'],
-    'brand-agent': ['artist_identity', 'brand_voice' as any, 'goals'],
+    'brand-agent': ['artist_identity', 'goals'],
     'music-agent': ['artist_identity', 'technical', 'preferences'],
-    'legal-agent': ['contract_terms' as any, 'artist_identity', 'publishing' as any],
-    'road-agent': ['tour_preferences' as any, 'artist_identity', 'technical'],
-    'finance-agent': ['revenue_targets' as any, 'artist_identity', 'financial'],
-    
+    'legal-agent': ['artist_identity', 'legal'],
+    'road-agent': ['artist_identity', 'technical'],
+    'finance-agent': ['artist_identity', 'financial'],
+
     // Module ID aliases (ContextPipeline passes activeModule, not agent folder name)
     'generalist': ['artist_identity', 'goals', 'preferences', 'team'],  // indii Conductor (Hub)
     'creative': ['artist_identity', 'preferences', 'technical'],        // alias for creative-director
