@@ -190,7 +190,9 @@ jobs:
           fi
 
       - name: Upload Sentry Sourcemaps
+        if: ${{ secrets.SENTRY_ORG != '' }}
         uses: getsentry/action-release@v1
+        continue-on-error: true
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
