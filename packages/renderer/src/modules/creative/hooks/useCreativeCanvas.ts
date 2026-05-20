@@ -76,7 +76,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 try {
                     const json = await canvasOps.toJSON();
                     if (json) {
-                        await saveCanvasStateToStorage(item.id, json);
+                        await saveCanvasStateToStorage(item.id, JSON.stringify(json));
                     }
                 } catch (err: unknown) {
                     logger.warn('[CreativeStudio] Auto-save failed', err);
@@ -456,7 +456,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             // 4. Persist canvas state (annotations / layers) for reload
             const json = await canvasOps.toJSON();
-            if (json) await saveCanvasStateToStorage(item.id, json);
+            if (json) await saveCanvasStateToStorage(item.id, JSON.stringify(json));
             toast.success('Saved to gallery & cloud!');
         } catch {
             toast.warning('Stored to disk only.');
