@@ -1,4 +1,7 @@
 {
+  "projects": {
+    "default": "indii-music-founder"
+  },
   "emulators": {
     "firestore": {
       "port": 8080
