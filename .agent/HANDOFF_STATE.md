@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-19 22:37 EDT
+**Updated:** 2026-05-19 22:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8c296ea37 fix(ci): disable auto release-please on push to unblock build pipeline
+a5dbc0503 chore: session checkpoint [22:37]
 becfa413b chore: session checkpoint [22:35]
 65786b438 chore: session checkpoint [22:35]
 9556d3bb2 chore: session checkpoint [22:34]
@@ -12,8 +14,6 @@ f17faae15 chore: session checkpoint [22:05]
 5c92e9e3c chore: session checkpoint [22:03]
 22bef72fd fix: update firebase.json with correct project ID for deployment
 798aa412d chore: session checkpoint [21:58]
-aa66a5163 chore: session checkpoint [21:56]
-e7f99345b chore: session checkpoint [21:55]
 ```
 
 ## Working State
