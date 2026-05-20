@@ -5,22 +5,38 @@ import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 import { useStore } from '@/core/store';
 
+// Uniforms object for Three.js shader material. The 'as any' casts are necessary here because
+// drei's shaderMaterial type signature doesn't fully align with THREE.js object types, even though
+// the runtime values are correct THREE.js instances (Color, Vector2, Vector4).
+type WaveUniforms = {
+    uTime: number;
+    uColorStart: THREE.Color;
+    uColorEnd: THREE.Color;
+    uMouse: THREE.Vector2;
+    uHover: number;
+    uAudioEQ: THREE.Vector4;
+    uColorBass: THREE.Color;
+    uColorLowMid: THREE.Color;
+    uColorHighMid: THREE.Color;
+    uColorTreble: THREE.Color;
+};
+
 // Custom Shader Material
+const uniformsConfig = {
+    uTime: 0,
+    uColorStart: new THREE.Color('#050a05'),
+    uColorEnd: new THREE.Color('#0a1a0a'),
+    uMouse: new THREE.Vector2(0, 0),
+    uHover: 0,
+    uAudioEQ: new THREE.Vector4(0, 0, 0, 0),
+    uColorBass: new THREE.Color('#00ff66'),
+    uColorLowMid: new THREE.Color('#bfff00'),
+    uColorHighMid: new THREE.Color('#10b981'),
+    uColorTreble: new THREE.Color('#ffffff'),
+} as unknown as WaveUniforms;
+
 const WaveShaderMaterial = shaderMaterial(
-    // Uniforms
-    {
-        uTime: 0,
-        uColorStart: new THREE.Color('#050a05') as any, // Dark Green Base
-        uColorEnd: new THREE.Color('#0a1a0a') as any,   // Forest Green
-        uMouse: new THREE.Vector2(0, 0) as any,
-        uHover: 0,
-        uAudioEQ: new THREE.Vector4(0, 0, 0, 0) as any,
-        // Brand Colors / Frequency Colors
-        uColorBass: new THREE.Color('#00ff66') as any,    // Spring Green
-        uColorLowMid: new THREE.Color('#bfff00') as any,  // Lime
-        uColorHighMid: new THREE.Color('#10b981') as any, // Emerald
-        uColorTreble: new THREE.Color('#ffffff') as any,  // White Sparkle
-    },
+    uniformsConfig as any,
     // Vertex Shader
     `
     varying vec2 vUv;
@@ -178,12 +194,12 @@ export default function WaveMesh() {
             <planeGeometry args={[25, 25, 64, 64]} />
             <waveShaderMaterial
                 ref={materialRef}
-                uColorStart={new THREE.Color('#050a05') as any}
-                uColorEnd={new THREE.Color('#0a1a0a') as any}
-                uColorBass={new THREE.Color('#00ff66') as any}   // Spring Green
-                uColorLowMid={new THREE.Color('#bfff00') as any} // Lime
-                uColorHighMid={new THREE.Color('#10b981') as any} // Emerald
-                uColorTreble={new THREE.Color('#ffffff') as any}
+                uColorStart={new THREE.Color('#050a05') as unknown as THREE.Color}
+                uColorEnd={new THREE.Color('#0a1a0a') as unknown as THREE.Color}
+                uColorBass={new THREE.Color('#00ff66') as unknown as THREE.Color}
+                uColorLowMid={new THREE.Color('#bfff00') as unknown as THREE.Color}
+                uColorHighMid={new THREE.Color('#10b981') as unknown as THREE.Color}
+                uColorTreble={new THREE.Color('#ffffff') as unknown as THREE.Color}
                 wireframe={true}
                 transparent={true}
                 opacity={1.0}
