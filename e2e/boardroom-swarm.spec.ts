@@ -11,7 +11,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         // Wait for store initialization and then open the boardroom overlay
         await page.waitForFunction(() => window.useStore !== undefined);
         await page.evaluate(() => {
-            window.useStore.getState().setBoardroomMode(true);
+            window.useStore.getState().setConversationMode('boardroom');
         });
         
         // Wait for the modal to be visible
