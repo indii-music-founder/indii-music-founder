@@ -103,7 +103,7 @@ jobs:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: indiios-v-1-1
+          VITE_FIREBASE_PROJECT_ID: indii-music-founder
           VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
 
   # ─── Build & Static Analysis ────────────────────────────────────────────────
@@ -239,8 +239,14 @@ jobs:
           name: build-dist-${{ github.sha }}
 
       - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > $HOME/gcloud-key.json
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Deploy to staging preview channel
@@ -249,7 +255,7 @@ jobs:
           set -uo pipefail
           set +e
           OUTPUT=$(npx firebase hosting:channel:deploy staging \
-            --project indiios-v-1-1 \
+            --project indii-music-founder \
             --expires 2h \
             --only app \
             --json 2>&1)
@@ -319,7 +325,7 @@ jobs:
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: indiios-v-1-1
+          VITE_FIREBASE_PROJECT_ID: indii-music-founder
 
   # ─── Production Deploy ──────────────────────────────────────────────────────
   deploy-production:
@@ -351,21 +357,27 @@ jobs:
           name: build-dist-${{ github.sha }}
 
       - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > $HOME/gcloud-key.json
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Deploy landing page to Firebase Hosting
-        run: npx firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
-        run: npx firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
+        run: npx firebase deploy --only hosting:app --project indii-music-founder --non-interactive
 
       - name: Deploy Cloud Functions
         continue-on-error: true
         run: |
           npm run build -w packages/firebase
-          npx firebase deploy --only functions --project indiios-v-1-1 --non-interactive --force
+          npx firebase deploy --only functions --project indii-music-founder --non-interactive --force
 
       - name: Pipeline health summary
         if: always()

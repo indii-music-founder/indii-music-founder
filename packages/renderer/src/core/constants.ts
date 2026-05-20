@@ -58,6 +58,53 @@ export function isValidModule(module: string): module is ModuleId {
 }
 
 // ============================================================================
+// Module to Agent Alignment
+// ============================================================================
+
+export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
+    'dashboard': 'conductor',
+    'maestro': 'conductor',
+    'workflow': 'conductor',
+    'history': 'conductor',
+    'memory': 'conductor',
+    'knowledge': 'conductor',
+    'creative': 'creative',
+    'video': 'video',
+    'video-popout': 'video',
+    'legal': 'legal',
+    'marketing': 'marketing',
+    'campaign': 'marketing',
+    'road': 'road',
+    'social': 'social',
+    'brand': 'brand',
+    'publicist': 'publicist',
+    'publishing': 'publishing',
+    'finance': 'finance',
+    'founders-checkout': 'finance',
+    'founders-portal': 'finance',
+    'licensing': 'licensing',
+    'distribution': 'distribution',
+    'merch': 'merchandise',
+    'audio-analyzer': 'music',
+    'analytics': 'analytics',
+    'onboarding': 'indii_curriculum',
+    'registration': 'indii_curriculum',
+    'observability': 'indii_executor',
+    'debug': 'indii_executor',
+    'desktop': 'indii_executor',
+    'security': 'indii_executor',
+    // Fallbacks to generalist for other modules
+    'select-org': 'generalist',
+    'agent': 'generalist',
+    'files': 'generalist',
+    'marketplace': 'generalist',
+    'investor': 'generalist',
+    'capture': 'generalist',
+    'settings': 'generalist',
+    'mobile-remote': 'generalist'
+};
+
+// ============================================================================
 // Theme CSS Variables (use in tailwind classes or inline styles)
 // ============================================================================
 
