@@ -69,8 +69,7 @@ export function useBoardroomContextHandshake() {
                 state.addReferencedAsset(asset);
             });
 
-            // Log the context handshake for debugging
-            if (assetsToAdd.length > 0) {
+            if (import.meta.env.DEV && assetsToAdd.length > 0) {
                 console.log(`[ISSUE-033] Boardroom context handshake: added ${assetsToAdd.length} assets`, assetsToAdd);
             }
         }

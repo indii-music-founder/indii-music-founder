@@ -2,8 +2,12 @@ import * as fabric from 'fabric';
 
 declare module 'fabric' {
     interface FabricObjectProps {
-        data?: any;
+        data?: Record<string, unknown>;
         id?: string;
+    }
+
+    interface Canvas {
+        toJSON(propertyFilter?: string[]): unknown;
     }
 }
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
@@ -289,7 +293,7 @@ export class CanvasOperationsService {
 
     private saveHistoryState(): void {
         if (!this.canvas) return;
-        const json = JSON.stringify((this.canvas as any).toJSON(['data', 'id']));
+        const json = JSON.stringify(this.canvas.toJSON(['data', 'id']));
         
         // Only push if it's different from the top of the stack
         if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
@@ -388,7 +392,7 @@ export class CanvasOperationsService {
     isAnnotation(obj: fabric.Object): boolean {
         if (!obj) return false;
         const type = obj.type?.toLowerCase();
-        const data = (obj as any).data;
+        const data = (obj as unknown as { data?: Record<string, unknown> }).data;
         
         // Explicitly marked as base image? Not an annotation.
         if (data?.isBaseImage) return false;
@@ -660,9 +664,9 @@ export class CanvasOperationsService {
     /**
      * Export canvas to JSON string
      */
-    async toJSON(): Promise<any> {
+    async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        return (this.canvas as any).toJSON(['data', 'id']);
+        return this.canvas.toJSON(['data', 'id']);
     }
 
     /**
@@ -1353,9 +1357,10 @@ export class CanvasOperationsService {
     getLayers(): any[] {
         if (!this.canvas) return [];
         return this.canvas.getObjects().map(obj => {
-            const data = (obj as any).data || {};
+            const fabricObj = obj as unknown as { data?: Record<string, unknown>; id?: string };
+            const data = fabricObj.data || {};
             return {
-                id: (obj as any).id || `layer_${Math.random().toString(36).substring(2, 9)}`,
+                id: fabricObj.id || `layer_${crypto.randomUUID().substring(0, 8)}`,
                 type: obj.type,
                 visible: obj.visible,
                 isBaseImage: !!data.isBaseImage,
