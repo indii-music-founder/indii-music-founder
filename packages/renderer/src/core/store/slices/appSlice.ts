@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { type ModuleId, isValidModule } from '@/core/constants';
+import { type ModuleId, isValidModule, MODULE_AGENT_MAP } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
 
@@ -148,9 +148,14 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         // This requires dynamic import of store to avoid circular dependency
         import('@/core/store').then(({ useStore }) => {
             const currentModule = get().currentModule;
+            const store = useStore.getState();
+            
+            // Auto-align the active agent for the new module
+            const targetAgent = MODULE_AGENT_MAP[module] || 'generalist';
+            store.setDirectTargetAgentId(targetAgent);
+
             // Only clear if actually switching modules
             if (currentModule !== module) {
-                const store = useStore.getState();
                 // Clean up Firestore subscriptions for the module we're leaving
                 // to prevent INTERNAL ASSERTION FAILED errors during rapid navigation
                 const prefixes: Partial<Record<string, string>> = {
@@ -167,7 +172,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
                     store.clearSubscriptionsByPrefix(prefix);
                 }
             }
-        }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions:', err));
+        }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions or align agent:', err));
 
         set({
             currentModule: module,

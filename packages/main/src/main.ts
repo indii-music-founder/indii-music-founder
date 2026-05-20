@@ -225,7 +225,7 @@ const createWindow = async () => {
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
         if (url.startsWith('https://indii.music')) return { action: 'allow' };
-        if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
+        if (url.startsWith('https://indii-music-founder.firebaseapp.com')) return { action: 'allow' };
 
         // Use logic similar to will-navigate for consistency
         const parsedUrl = new URL(url);
@@ -238,7 +238,7 @@ const createWindow = async () => {
     // Security Gate for WebNavigation
     win.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indiios-v-1-1.firebaseapp.com'];
+        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
 
         if (navigationUrl.startsWith(devServerUrl)) return;
 

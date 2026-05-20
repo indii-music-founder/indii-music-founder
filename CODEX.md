@@ -378,6 +378,13 @@ The `build` script runs three steps sequentially:
 
 ## Operating Principles
 
+### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
+
+> Token efficiency applies to **communication only**, NEVER to code.
+
+- **Terse Talk:** Adopt the `caveman` communication style for all chat, planning, and explanations. Drop pleasantries, filler words, and over-explanations.
+- **Complete Code:** When generating code, you MUST still output 100% functional, complete code with no placeholders. Use chunk-based replacement tools to edit specific blocks of code in-place rather than rewriting entire files.
+
 ### 1. Check for tools first
 
 Never reinvent the wheel. Before writing a new script, audit `execution/` for existing tools that fulfill the directive.
