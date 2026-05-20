@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-16 21:20 EDT
-**Branch:** `feature/agent-cost-awareness`
+**Updated:** 2026-05-19 20:50 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+354ac05cf fix: update firebase config for indii-music-founder project
+f9ad7f236 Merge pull request #21 from indii-music/feature/agent-cost-awareness
+14848b8a2 Merge pull request #22 from indii-music/prep/intelligence-upgrade-readiness
+7b3efb1eb chore: session checkpoint [21:20]
 272580dcf chore: session checkpoint [21:19]
 942ec4c2e chore: session checkpoint [21:18]
 e4f4dfba5 chore: session checkpoint [21:17]
 ad55d1ce5 chore: session checkpoint [21:13]
 a9dff481a feat(billing): add agent cost awareness tools (check_budget_status, estimate_cost)
 380b72b1e chore: session checkpoint [21:11]
-eaaa089fc chore: session checkpoint [21:06]
-45386bf62 feat(skills): add indii-director and indii-cinema-worldbuilder skills translated from Joey's Claude Skills
-268dd3ee4 feat: intelligence upgrade readiness and centralized configuration hardening
-3d3260277 chore: session checkpoint [11:26]
 ```
 
 ## Working State
 ```
-clean working tree
+ M package-lock.json
 ```
 
 ## Decisions
