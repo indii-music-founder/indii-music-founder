@@ -1,0 +1,31 @@
+# CodeRabbit Configuration
+# Enforces architectural integrity, security standards, and the "Platinum Quality Standards".
+
+language: "en-US"
+early_access: false
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  path_instructions:
+    - path: "packages/renderer/src/services/firebase/**/*.ts"
+      instructions: |
+        Reject any string concatenation with `//` in Firebase paths (e.g., `collection/` + id + `/subcollection`). 
+        Enforce the use of explicit `doc(db, "collection", id)` pattern. 
+        Verify that Firebase API Keys are not hardcoded.
+    
+    - path: "packages/renderer/src/core/store/slices/**/*.ts"
+      instructions: |
+        Enforce strict typing in Zustand store slices. 
+        Ensure `useShallow` from `zustand/react/shallow` is considered if it helps prevent re-renders.
+
+    - path: "**/*.ts"
+      instructions: |
+        Enforce the use of the `@/` path alias for imports instead of relative paths (e.g., `import X from '@/core/store'`).
+        Ensure there is no placeholder code like `// ... rest of code` or `// implementations here`. 
+        If placeholder code is found, strongly request changes.
+        Ensure there are no hardcoded secrets or API credentials outside of environment variables.
+        Check for any residual agency code or references to 'Blacksmith' and flag them.
