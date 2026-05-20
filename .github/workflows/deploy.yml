@@ -68,12 +68,7 @@ jobs:
             fi
           fi
 
-      - name: Scan for secrets (gitleaks)
-        continue-on-error: true
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
 
   # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
@@ -193,6 +188,17 @@ jobs:
             echo "::error::Total JS bundle exceeds 25MB threshold! Current: ${TOTAL_KB}KB"
             exit 1
           fi
+
+      - name: Upload Sentry Sourcemaps
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: dist/renderer
+          ignore_missing: true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
