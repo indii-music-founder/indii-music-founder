@@ -20,13 +20,13 @@ jobs:
       - id: set-matrix
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.build_all }}" == "true" ]]; then
-            echo 'matrix=["blacksmith-4vcpu-ubuntu-2204", "macos-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix=["ubuntu-latest", "macos-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'matrix=["blacksmith-4vcpu-ubuntu-2204"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
           fi
 
   test:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       checks: write
