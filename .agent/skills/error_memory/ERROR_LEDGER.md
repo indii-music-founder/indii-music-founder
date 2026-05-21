@@ -428,6 +428,20 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
    - FIX: Changed the second `proactive_tasks` composite index queryScope from `"COLLECTION"` to `"COLLECTION_GROUP"`.
 
 3. **Courtroom / Boardroom Sync In-Memory**
-   - FILE: `packages/renderer/src/services/agent/AgentService.ts`
-   - ROOT CAUSE: Messages exchanged by boardroom swarm agents were stored purely in-memory in Zustand, without database persistence, causing loss of context when reloading the view.
-   - FIX: Implemented `AgentFirebaseConnector` to map and sync `AgentMessage` in real-time directly to the `boardroom_messages` collection, and connected it to `AgentService.ts` boardroom dispatch hooks.
+    - FILE: `packages/renderer/src/services/agent/AgentService.ts`
+    - ROOT CAUSE: Messages exchanged by boardroom swarm agents were stored purely in-memory in Zustand, without database persistence, causing loss of context when reloading the view.
+    - FIX: Implemented `AgentFirebaseConnector` to map and sync `AgentMessage` in real-time directly to the `boardroom_messages` collection, and connected it to `AgentService.ts` boardroom dispatch hooks.
+
+---
+
+## 2026-05-21 Swarm Courtroom / Boardroom E2E Firebase Mocks and Write Bypasses
+
+**SEVERITY:** High (causes timeout crashes and unhandled Firestore writes during Playwright runs)
+
+**PROBLEMS:**
+
+1. **Firestore `setDoc` and Trace Writes Hanging in Playwright Tests**
+   - FILE: `packages/renderer/src/services/agent/components/AgentExecutor.ts`, `packages/renderer/src/services/agent/observability/TraceService.ts`
+   - ERROR: Room or swarm E2E execution tests fail or timeout because the test is offline/mocked, but code makes real Firestore writes to `agent_tasks` and `progress`.
+   - ROOT CAUSE: Unmocked firestore references in `AgentExecutor` and `TraceService` were attempting to connect to external servers or make unintercepted API calls during Playwright runs.
+   - FIX: Added `isE2EMode` utility checks checking `window.FIREBASE_E2E_MOCK` and `localStorage.getItem('FIREBASE_E2E_MOCK')` to immediately return mocked UUIDs or early returns, preventing any real firestore connection during testing.
