@@ -31,17 +31,35 @@ class MemoryBankService {
     }
 
     /**
+     * Redacts PII like credit card numbers and passwords/secrets from the text.
+     */
+    private redactPII(text: string): string {
+        // Redact credit cards (Luhn-like 13-16 digits grouped or contiguous)
+        let redacted = text.replace(
+            /\b(?:\d[ -]*?){13,16}\b/g,
+            '[REDACTED_CREDIT_CARD]'
+        );
+        // Redact common password patterns (e.g. password: value, pass: value, secret: value, etc.)
+        redacted = redacted.replace(
+            /(password|passwd|pass|secret|apiKey|api_key|client_secret|clientSecret)\s*([:=])\s*(['"]?)([^\s'"&?]{4,})\3/gi,
+            '$1$2$3[REDACTED_SECRET]$3'
+        );
+        return redacted;
+    }
+
+    /**
      * Add a new memory for a user.
      */
     async addMemory(userId: string, content: string): Promise<MemoryBankResult[]> {
         if (!this.apiKey) return [];
 
         try {
+            const redactedContent = this.redactPII(content);
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
                 headers: this.headers,
                 body: JSON.stringify({
-                    messages: [{ role: 'user', content }],
+                    messages: [{ role: 'user', content: redactedContent }],
                     user_id: userId,
                 }),
             });
@@ -67,11 +85,12 @@ class MemoryBankService {
         if (!this.apiKey) return [];
 
         try {
+            const redactedQuery = this.redactPII(query);
             const response = await fetch(`${this.baseUrl}search/`, {
                 method: 'POST',
                 headers: this.headers,
                 body: JSON.stringify({
-                    query,
+                    query: redactedQuery,
                     user_id: userId,
                     limit,
                 }),

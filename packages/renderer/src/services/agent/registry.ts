@@ -1,10 +1,7 @@
 import { logger } from '@/utils/logger';
 import { AGENT_CONFIGS } from './agentConfig';
-import { freezeAgentConfig } from './FreezeDiagnostic';
-
 import { SpecializedAgent, AgentRegistryProvider } from './types';
 import { DEPARTMENTS } from './departments';
-import { getCardForAgent } from './a2a/CardRegistry';
 
 export class AgentRegistry implements AgentRegistryProvider {
     private agents: Map<string, SpecializedAgent> = new Map();
@@ -58,16 +55,11 @@ export class AgentRegistry implements AgentRegistryProvider {
                 if (!module.GeneralistAgent) {
                     throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
-                const agent = new module.GeneralistAgent();
-                
-                // Attach A2A Card
-                agent.card = getCardForAgent(generalistKey);
-
-                // Check for initialize method using type guard
-                if ('initialize' in agent && typeof agent.initialize === 'function') {
-                    await agent.initialize();
-                }
-                return agent;
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent(
+                    generalistKey,
+                    module.GeneralistAgent
+                );
             });
         } catch (e: unknown) {
             logger.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
@@ -86,9 +78,8 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(merchMeta, async () => {
                 const { MerchandiseAgent } = await import('./MerchandiseAgent');
-                const agent = new MerchandiseAgent();
-                agent.card = getCardForAgent('merchandise');
-                return agent;
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent('merchandise', MerchandiseAgent);
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
@@ -108,13 +99,8 @@ export class AgentRegistry implements AgentRegistryProvider {
                     } as SpecializedAgent;
 
                     this.registerLazy(meta, async () => {
-                        const { RAGAgent } = await import('./RAGAgent');
-                        // Use RAGAgent which automatically queries File Search before execution
-                        // RAGAgent extends BaseAgent.
-                        const agent = new RAGAgent(config);
-                        agent.card = getCardForAgent(config.id);
-                        freezeAgentConfig(agent);
-                        return agent;
+                        const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                        return SpecialistAgentFactory.createConfigAgent(config);
                     });
                 } catch (e: unknown) {
                     logger.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
@@ -134,8 +120,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(keeperMeta, async () => {
-                const { BaseAgent } = await import('./BaseAgent');
-                const agent = new BaseAgent({
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createBaseAgent({
                     id: 'keeper',
                     name: 'Keeper',
                     description: 'Context Integrity Guardian',
@@ -144,13 +130,11 @@ export class AgentRegistry implements AgentRegistryProvider {
                     systemPrompt: 'You are Keeper, the Context Integrity Guardian for indii. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
                     tools: []
                 });
-                agent.card = getCardForAgent('keeper');
-                freezeAgentConfig(agent);
-                return agent;
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
+
         // Register Curriculum Agent (Music Business Education)
         try {
             const curriculumMeta = {
@@ -164,39 +148,12 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(curriculumMeta, async () => {
                 const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
-                const agent = new CurriculumAgent();
-                agent.card = getCardForAgent('curriculum');
-                return agent;
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent('curriculum', CurriculumAgent);
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
-        // Register Analytics Specialist
-        try {
-            const analyticsMeta = {
-                id: 'analytics',
-                name: 'Intelligence Analytics Specialist',
-                description: 'Analyzes intelligence and analytics data for artist insights and growth intelligence.',
-                color: '#9C27B0',
-                category: 'specialist',
-                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
-            } as SpecializedAgent;
-
-            this.registerLazy(analyticsMeta, async () => {
-                const agent: SpecializedAgent = {
-                    id: 'analytics',
-                    name: 'Intelligence Analytics Specialist',
-                    description: 'Analyzes intelligence and analytics data.',
-                    color: '#9C27B0',
-                    category: 'specialist',
-                    execute: async () => { throw new Error('Analytics agent not yet implemented'); }
-                };
-                return agent;
-            });
-        } catch (e: unknown) {
-            logger.warn("[AgentRegistry] Failed to register AnalyticsAgent:", e);
-        }
-
 
         // Register Analytics Agent (Intelligence Analytics Specialist)
         try {
@@ -210,8 +167,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(analyticsMeta, async () => {
-                const { BaseAgent } = await import('./BaseAgent');
-                const agent = new BaseAgent({
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createBaseAgent({
                     id: 'analytics',
                     name: 'Analytics',
                     description: 'Intelligence Analytics Specialist',
@@ -220,14 +177,10 @@ export class AgentRegistry implements AgentRegistryProvider {
                     systemPrompt: 'You are the Intelligence Analytics Specialist for indii. Your role is to analyze audience intelligence, streaming data, and career metrics to provide insights for independent artists.',
                     tools: []
                 });
-                agent.card = getCardForAgent('analytics');
-                freezeAgentConfig(agent);
-                return agent;
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register Analytics agent:", e);
         }
-
 
         // Register worker placeholders from DEPARTMENTS
         try {
@@ -247,8 +200,8 @@ export class AgentRegistry implements AgentRegistryProvider {
                         } as SpecializedAgent;
 
                         this.registerLazy(workerMeta, async () => {
-                            const { BaseAgent } = await import('./BaseAgent');
-                            const agent = new BaseAgent({
+                            const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                            return SpecialistAgentFactory.createBaseAgent({
                                 id: workerId,
                                 name: workerMeta.name,
                                 description: workerMeta.description,
@@ -257,9 +210,6 @@ export class AgentRegistry implements AgentRegistryProvider {
                                 systemPrompt: `You are a worker in the ${typedDept.displayName} department.`,
                                 tools: []
                             });
-                            agent.card = getCardForAgent(workerId);
-                            freezeAgentConfig(agent);
-                            return agent;
                         });
                     } catch (e: unknown) {
                         logger.warn(`[AgentRegistry] Failed to register worker agent '${workerId}':`, e);
