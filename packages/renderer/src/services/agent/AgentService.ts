@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 import { auth } from '@/services/firebase';
+import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -770,6 +771,14 @@ export class AgentService {
                     useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
                 }
 
+                // Sync initial message immediately
+                const initMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                if (initMsg) {
+                    agentFirebaseConnector.syncMessage(initMsg).catch(err => 
+                        logger.error(`[AgentService] Swarm initial sync failed for ${resId}:`, err)
+                    );
+                }
+
                 let currentStreamedText = '';
 
                 // Build the seated-agents manifest so the Conductor knows who is in the room
@@ -807,6 +816,12 @@ export class AgentService {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
                                 useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                                const tokenMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                                if (tokenMsg) {
+                                    agentFirebaseConnector.syncMessage(tokenMsg).catch(err => 
+                                        logger.error(`[AgentService] Swarm token sync failed for ${resId}:`, err)
+                                    );
+                                }
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                                 const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
@@ -824,6 +839,12 @@ export class AgentService {
                                     useStore.getState().updateBoardroomMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
+                                    const thoughtMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                                    if (thoughtMsg) {
+                                        agentFirebaseConnector.syncMessage(thoughtMsg).catch(err => 
+                                            logger.error(`[AgentService] Swarm thought sync failed for ${resId}:`, err)
+                                        );
+                                    }
                                 }
                             }
                         },
@@ -875,6 +896,13 @@ export class AgentService {
                             });
                         }
                     }
+
+                    // Sync final completed message state to Firestore
+                    const finalMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                    if (finalMsg) {
+                        await agentFirebaseConnector.syncMessage(finalMsg);
+                    }
+
                     return { agentId, result };
                 } catch (err) {
                     logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
@@ -888,6 +916,13 @@ export class AgentService {
                             type: 'error'
                         }]
                     });
+
+                    // Sync error/failure state
+                    const errMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                    if (errMsg) {
+                        await agentFirebaseConnector.syncMessage(errMsg);
+                    }
+
                     return { agentId, result: null };
                 }
             });
