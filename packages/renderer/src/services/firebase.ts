@@ -116,11 +116,11 @@ try {
 export { db, storage, functions, functionsWest1 };
 
 import { Auth, User } from 'firebase/auth';
-let auth: Auth;
+let rawAuth: Auth;
 if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).FIREBASE_E2E_MOCK) {
     logger.debug('[Firebase] Using E2E Auth Mock');
     const mockUser = (window as unknown as Record<string, unknown>).FIREBASE_USER_MOCK as User || null;
-    auth = {
+    rawAuth = {
         app,
         currentUser: mockUser,
         onAuthStateChanged: (cb: (user: User | null) => void) => {
@@ -136,12 +136,12 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
     } as unknown as Auth;
 } else {
     try {
-        auth = initializeAuth(app, {
+        rawAuth = initializeAuth(app, {
             persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
         });
     } catch (e: unknown) {
         logger.error('[Firebase] Failed to initialize Auth (likely missing API key):', e);
-        auth = {
+        rawAuth = {
             app,
             currentUser: null,
             onAuthStateChanged: (cb: (user: User | null) => void) => {
@@ -157,6 +157,29 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
         } as unknown as Auth;
     }
 }
+
+// Wrap Auth in a Proxy to dynamically support guest/founder-demo mock user
+const auth = new Proxy(rawAuth, {
+    get(target, prop, receiver) {
+        if (prop === 'currentUser') {
+            const realUser = target.currentUser;
+            if (realUser) return realUser;
+
+            if (typeof window !== 'undefined') {
+                if ((window as any).FIREBASE_E2E_MOCK && (window as any).FIREBASE_USER_MOCK) {
+                    return (window as any).FIREBASE_USER_MOCK;
+                }
+                if ((window as any).guestUserMock) {
+                    return (window as any).guestUserMock;
+                }
+            }
+            return null;
+        }
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === 'function' ? value.bind(target) : value;
+    }
+});
+
 export { auth };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
