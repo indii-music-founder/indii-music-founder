@@ -270,7 +270,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             console.log(`[VideoGenDirect] Attempting SDK file download for: ${videoObj.name}`);
             try {
                 const tmpPath = `/tmp/${jobId}.mp4`;
-                // Cast to any for the external API call where the SDK type is complex
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 await ai.files.download({ file: videoObj as any, downloadPath: tmpPath });
 
                 // Read from tmp and upload to Storage

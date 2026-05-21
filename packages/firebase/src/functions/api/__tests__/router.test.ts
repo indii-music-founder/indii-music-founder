@@ -4,7 +4,6 @@
  * Tests for HTTP handlers: authentication, CRUD operations, error handling
  */
 
-import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -36,7 +35,6 @@ vi.mock('firebase-admin', () => ({
 
 describe('API Router', () => {
   let mockRequest: any;
-  let mockResponse: any;
 
   beforeEach(() => {
     // Mock request/response
@@ -48,12 +46,6 @@ describe('API Router', () => {
       body: {},
       query: {},
       path: '/api/tracks/track123',
-    };
-
-    mockResponse = {
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn().mockReturnThis(),
-      send: vi.fn(),
     };
   });
 

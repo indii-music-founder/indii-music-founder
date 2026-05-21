@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as functions from "firebase-functions/v1";
 import { stripe } from "./config"; // Re-using the stripe config
 
