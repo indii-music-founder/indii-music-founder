@@ -263,7 +263,7 @@ jobs:
             --project indii-music-founder \
             --expires 2h \
             --only app \
-            --json 2>&1)
+            --json)
           EXIT_CODE=$?
           set -e
           
