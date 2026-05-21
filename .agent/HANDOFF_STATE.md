@@ -1,34 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-21 09:40 EDT
+**Updated:** 2026-05-21 11:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8a815c86a chore(seal): update error ledger with swarm e2e bypasses
+06baccddf feat(boardroom): add swarm integration and memory bank pii sanitizer
+fabf32487 fix: Type errors in printful.ts causing firebase build failure in deploy-production
+3d13f0ca2 fix(landing): resolve remaining any and unused var lint errors
+12bfd17b8 chore: session checkpoint [09:40]
 af79a49a4 chore: add gstack skill routing rules to CLAUDE.md
 06a623ed0 fix(firebase): resolve remaining unexpected any lint errors
 4e406dfed fix(firebase): resolve lint errors in factory.ts and secrets.ts
 e2f1ddb97 fix(ci): remove 2>&1 from firebase deploy json output to fix python parsing
 678be142c fix(ci): make Sentry sourcemap upload strictly conditional on secrets existence
-1a33b1cad fix: make Sentry sourcemap upload conditional and non-blocking
-77ee2fe47 chore: finalize CI/CD pipeline, CodeRabbit, and Firebase configs
-e3494667b feat(ci): add coderabbit guardrails and re-integrate sentry sourcemaps
-ca5b4c9ca fix(ci): replace deprecated blacksmith runners with ubuntu-latest
-b7be85a51 chore: session checkpoint [08:53]
 ```
 
 ## Working State
 ```
-M  .agent/skills/error_memory/ERROR_LEDGER.md
-M  AGENT_BRIDGE.md
-M  packages/firebase/firestore.indexes.json
-A  packages/renderer/src/services/agent/AgentAPIClient.ts
-A  packages/renderer/src/services/agent/AgentFirebaseConnector.ts
-M  packages/renderer/src/services/agent/AgentService.ts
-A  packages/renderer/src/services/agent/__tests__/AgentFirebaseIntegration.test.ts
-?? .agent/artifacts/qa_screenshots/
-?? distribution_clean.png
-?? distribution_verified.png
-?? root_page.png
+clean working tree
 ```
 
 ## Decisions
