@@ -466,6 +466,28 @@
       "queryScope": "COLLECTION_GROUP"
     },
     {
+      "collectionGroup": "proactive_tasks",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "triggerType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "executeAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "legal_agreements",
       "fields": [
         {
@@ -642,6 +664,20 @@
           "fieldPath": "category",
           "order": "ASCENDING"
         },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
         {
           "fieldPath": "isActive",
           "order": "ASCENDING"
