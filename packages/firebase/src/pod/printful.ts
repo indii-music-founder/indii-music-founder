@@ -116,19 +116,20 @@ export const pod_printfulGenerateMockup = onCall(async (req) => {
         })
     });
 
-    const taskId = result.task_key;
+    const taskId = (result as { task_key: string }).task_key;
     let attempts = 0;
     const maxAttempts = 30;
 
     while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         const status = await request<unknown>(`/mockup-generator/task?task_key=${taskId}`);
+        const typedStatus = status as { status: string, mockups?: Array<{ mockup_url: string }> };
 
-        if (status.status === 'completed') {
-            return status.mockups?.[0]?.mockup_url || '';
+        if (typedStatus.status === 'completed') {
+            return typedStatus.mockups?.[0]?.mockup_url || '';
         }
 
-        if (status.status === 'failed') {
+        if (typedStatus.status === 'failed') {
             throw new HttpsError('internal', 'Mockup generation failed');
         }
         attempts++;
