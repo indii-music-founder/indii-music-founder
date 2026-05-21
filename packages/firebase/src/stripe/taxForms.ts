@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * STATUS: STUB — NOT PRODUCTION READY
  *
