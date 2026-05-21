@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Firebase Cloud Function: Create One-Time Stripe Checkout Session
  *
