@@ -112,13 +112,16 @@ export class AgentExecutor {
                         args: event.content
                     });
                     // Item 401: Stream tool progress to Firestore so UI can subscribe in real-time
-                    setDoc(doc(db, 'agent_tasks', traceId, 'progress', String(Date.now())), {
-                        type: 'tool_call',
-                        toolName: event.toolName ?? null,
-                        content: typeof event.content === 'string' ? event.content : null,
-                        agentId: agent?.id ?? null,
-                        timestamp: serverTimestamp(),
-                    }, { merge: false }).catch(() => { /* best-effort */ });
+                    const isE2EMode = typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'));
+                    if (!isE2EMode) {
+                        setDoc(doc(db, 'agent_tasks', traceId, 'progress', String(Date.now())), {
+                            type: 'tool_call',
+                            toolName: event.toolName ?? null,
+                            content: typeof event.content === 'string' ? event.content : null,
+                            agentId: agent?.id ?? null,
+                            timestamp: serverTimestamp(),
+                        }, { merge: false }).catch(() => { /* best-effort */ });
+                    }
                 } else if (event.type === 'usage' && event.usage) {
                     await TraceService.addStepWithUsage(
                         traceId,
