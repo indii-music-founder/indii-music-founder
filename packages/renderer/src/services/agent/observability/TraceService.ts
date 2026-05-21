@@ -14,6 +14,11 @@ export class TraceService {
     // Part 1: Map to track local start times for duration calculation
     private static startTimeMap: Map<string, number> = new Map();
 
+    private static get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     /**
      * Start a new execution trace
      */
@@ -24,6 +29,10 @@ export class TraceService {
         metadata?: Record<string, unknown>,
         parentTraceId?: string
     ): Promise<string> {
+        if (this.isE2EMode) {
+            return crypto.randomUUID();
+        }
+
         if (!userId) {
             logger.warn('[TraceService] No userId provided, skipping trace.');
             return '';
@@ -139,6 +148,7 @@ export class TraceService {
         rawUsage?: Record<string, unknown>,
         metadata?: Record<string, unknown>
     ): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         let usage: UsageMetrics | undefined;
@@ -205,6 +215,7 @@ export class TraceService {
      * Mark trace as completed
      */
     static async completeTrace(traceId: string, output?: unknown): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
@@ -228,6 +239,7 @@ export class TraceService {
      * Mark trace as failed
      */
     static async failTrace(traceId: string, error: string): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
@@ -251,6 +263,7 @@ export class TraceService {
      * Get the recursion depth of a trace by traversing parentTraceIds
      */
     static async getTraceDepth(traceId: string): Promise<number> {
+        if (this.isE2EMode) return 0;
         if (!traceId || !db) return 0;
 
         try {

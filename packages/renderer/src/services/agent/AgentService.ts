@@ -31,6 +31,39 @@ export class AgentService {
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
     private responseCache = new Map<string, { text: string; thoughts: AgentThought[]; agentId: string }>();
+    private syncDebounceTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+    private debounceSyncMessage(resId: string, getMsg: () => AgentMessage | undefined) {
+        if (this.syncDebounceTimeouts.has(resId)) {
+            clearTimeout(this.syncDebounceTimeouts.get(resId)!);
+        }
+
+        const timeout = setTimeout(() => {
+            this.syncDebounceTimeouts.delete(resId);
+            const msg = getMsg();
+            if (msg) {
+                agentFirebaseConnector.syncMessage(msg).catch(err =>
+                    logger.error(`[AgentService] Swarm debounced sync failed for ${resId}:`, err)
+                );
+            }
+        }, 300);
+
+        this.syncDebounceTimeouts.set(resId, timeout);
+    }
+
+    private flushSyncMessage(resId: string, getMsg: () => AgentMessage | undefined) {
+        if (this.syncDebounceTimeouts.has(resId)) {
+            clearTimeout(this.syncDebounceTimeouts.get(resId)!);
+            this.syncDebounceTimeouts.delete(resId);
+        }
+        const msg = getMsg();
+        if (msg) {
+            agentFirebaseConnector.syncMessage(msg).catch(err =>
+                logger.error(`[AgentService] Swarm final sync failed for ${resId}:`, err)
+            );
+        }
+    }
+
 
     constructor() {
         // Components initialized. Agents are auto-registered in AgentRegistry singleton.
@@ -816,12 +849,7 @@ export class AgentService {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
                                 useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
-                                const tokenMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
-                                if (tokenMsg) {
-                                    agentFirebaseConnector.syncMessage(tokenMsg).catch(err => 
-                                        logger.error(`[AgentService] Swarm token sync failed for ${resId}:`, err)
-                                    );
-                                }
+                                this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                                 const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
@@ -839,12 +867,7 @@ export class AgentService {
                                     useStore.getState().updateBoardroomMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
-                                    const thoughtMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
-                                    if (thoughtMsg) {
-                                        agentFirebaseConnector.syncMessage(thoughtMsg).catch(err => 
-                                            logger.error(`[AgentService] Swarm thought sync failed for ${resId}:`, err)
-                                        );
-                                    }
+                                    this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                                 }
                             }
                         },
@@ -898,10 +921,7 @@ export class AgentService {
                     }
 
                     // Sync final completed message state to Firestore
-                    const finalMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
-                    if (finalMsg) {
-                        await agentFirebaseConnector.syncMessage(finalMsg);
-                    }
+                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
 
                     return { agentId, result };
                 } catch (err) {
@@ -918,10 +938,7 @@ export class AgentService {
                     });
 
                     // Sync error/failure state
-                    const errMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
-                    if (errMsg) {
-                        await agentFirebaseConnector.syncMessage(errMsg);
-                    }
+                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
 
                     return { agentId, result: null };
                 }
