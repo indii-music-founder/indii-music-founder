@@ -1,26 +1,34 @@
 # Handoff State
-**Updated:** 2026-05-20 08:53 EDT
+**Updated:** 2026-05-21 09:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-00842e569 chore: session checkpoint [08:52]
-57077f853 chore: session checkpoint [22:42]
-aa33d45e0 chore: session checkpoint [22:42]
-69aadfccb chore: session checkpoint [22:41]
-79c3c8433 chore: session checkpoint [22:39]
-8c296ea37 fix(ci): disable auto release-please on push to unblock build pipeline
-a5dbc0503 chore: session checkpoint [22:37]
-becfa413b chore: session checkpoint [22:35]
-65786b438 chore: session checkpoint [22:35]
-9556d3bb2 chore: session checkpoint [22:34]
+af79a49a4 chore: add gstack skill routing rules to CLAUDE.md
+06a623ed0 fix(firebase): resolve remaining unexpected any lint errors
+4e406dfed fix(firebase): resolve lint errors in factory.ts and secrets.ts
+e2f1ddb97 fix(ci): remove 2>&1 from firebase deploy json output to fix python parsing
+678be142c fix(ci): make Sentry sourcemap upload strictly conditional on secrets existence
+1a33b1cad fix: make Sentry sourcemap upload conditional and non-blocking
+77ee2fe47 chore: finalize CI/CD pipeline, CodeRabbit, and Firebase configs
+e3494667b feat(ci): add coderabbit guardrails and re-integrate sentry sourcemaps
+ca5b4c9ca fix(ci): replace deprecated blacksmith runners with ubuntu-latest
+b7be85a51 chore: session checkpoint [08:53]
 ```
 
 ## Working State
 ```
- M .claude/scripts/checkpoint.sh
- M package-lock.json
- M package.json
+M  .agent/skills/error_memory/ERROR_LEDGER.md
+M  AGENT_BRIDGE.md
+M  packages/firebase/firestore.indexes.json
+A  packages/renderer/src/services/agent/AgentAPIClient.ts
+A  packages/renderer/src/services/agent/AgentFirebaseConnector.ts
+M  packages/renderer/src/services/agent/AgentService.ts
+A  packages/renderer/src/services/agent/__tests__/AgentFirebaseIntegration.test.ts
+?? .agent/artifacts/qa_screenshots/
+?? distribution_clean.png
+?? distribution_verified.png
+?? root_page.png
 ```
 
 ## Decisions
