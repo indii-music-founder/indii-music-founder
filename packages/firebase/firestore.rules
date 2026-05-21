@@ -675,6 +675,18 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Boardroom & Session Synced Messages
+    // =========================================================================
+    match /sessions/{sessionId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+    match /boardroom_messages/{msgId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

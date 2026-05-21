@@ -101,7 +101,8 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
   try {
     const result = await table.insert(rows);
     console.log(`[BigQueryEventsPipeline] Inserted ${result.length} rows`);
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { errors?: unknown[] };
     if (err.name === 'PartialFailureError') {
       console.warn('[BigQueryEventsPipeline] Partial insert failure:', err.errors);
     } else {
