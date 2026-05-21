@@ -353,7 +353,7 @@
           "order": "DESCENDING"
         }
       ],
-      "queryScope": "COLLECTION"
+      "queryScope": "COLLECTION_GROUP"
     },
     {
       "collectionGroup": "analyzed_tracks",
@@ -463,7 +463,7 @@
           "order": "ASCENDING"
         }
       ],
-      "queryScope": "COLLECTION"
+      "queryScope": "COLLECTION_GROUP"
     },
     {
       "collectionGroup": "legal_agreements",

@@ -407,3 +407,27 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FIX: Catch rate limits, quota limits, and authentication errors within the specific tool wrapper and return them formatted as `toolError` with actionable hints for the agent (e.g., "Suggest the user try again in 1 minute").
 - RULE: **All agent tools calling external APIs (Gemini, Google GenAI, etc.) MUST have internal catch blocks that return known failure modes (429, 401, etc.) as `toolError` responses, NOT as thrown exceptions.**
 
+---
+
+## 2026-05-21 Missing Composite Index and Boardroom Swarm Sync
+
+**SEVERITY:** High (causes `FirebaseError` index crashes in UI and background poller)
+
+**PROBLEMS:**
+
+1. **Missing `distribution_tasks` Collection Group Index**
+   - FILE: `packages/firebase/firestore.indexes.json`
+   - ERROR: `FirebaseError: The query requires an index...` on `/distribution`
+   - ROOT CAUSE: Code executes a collection group query on `distribution_tasks`, but the index query scope was defined as `"COLLECTION"`.
+   - FIX: Changed `queryScope` of the `distribution_tasks` composite index from `"COLLECTION"` to `"COLLECTION_GROUP"`.
+
+2. **Missing `proactive_tasks` Collection Group Index**
+   - FILE: `packages/firebase/firestore.indexes.json`
+   - ERROR: `checkScheduledTasks query failed: FirebaseError: The query requires an index` in the background poller console.
+   - ROOT CAUSE: `ProactiveService` poller queries `proactive_tasks` via collectionGroup matching `status`, `triggerType`, `userId`, and `executeAt`, but query scope in indexes was defined as `"COLLECTION"`.
+   - FIX: Changed the second `proactive_tasks` composite index queryScope from `"COLLECTION"` to `"COLLECTION_GROUP"`.
+
+3. **Courtroom / Boardroom Sync In-Memory**
+   - FILE: `packages/renderer/src/services/agent/AgentService.ts`
+   - ROOT CAUSE: Messages exchanged by boardroom swarm agents were stored purely in-memory in Zustand, without database persistence, causing loss of context when reloading the view.
+   - FIX: Implemented `AgentFirebaseConnector` to map and sync `AgentMessage` in real-time directly to the `boardroom_messages` collection, and connected it to `AgentService.ts` boardroom dispatch hooks.
