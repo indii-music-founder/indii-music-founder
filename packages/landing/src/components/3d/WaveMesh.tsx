@@ -1,4 +1,4 @@
- 
+ /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useRef, useMemo } from 'react';
@@ -187,7 +187,7 @@ export default function WaveMesh() {
     // Helper to calculate average of a sub-array
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
 
-    useFrame((state, delta) => {
+    useFrame((state, _delta) => {
         if (materialRef.current) {
             // Slow down time for massive scale feeling
             materialRef.current.uTime = state.clock.elapsedTime * 0.4;
