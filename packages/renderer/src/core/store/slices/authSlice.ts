@@ -234,19 +234,23 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 await wrappedSignInAnonymously(auth);
             } catch (err: unknown) {
                 const firebaseError = err as FirebaseAuthError;
-                if (firebaseError.code === 'auth/admin-restricted-operation' || firebaseError.code?.includes('identitytoolkit')) {
+                if (firebaseError.code === 'auth/admin-restricted-operation' || firebaseError.code === 'auth/operation-not-allowed' || firebaseError.code?.includes('identitytoolkit')) {
                     logger.warn('[Auth] Anonymous Auth blocked by Firebase. Injecting local mock user for Founders Demo.');
                     if (typeof window !== 'undefined') {
                         (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true; // Tell listener to ignore nulls
                     }
+                    const mockUser = {
+                        uid: 'founder-demo-uid',
+                        email: 'founder@indii.local',
+                        displayName: 'Founder Demo',
+                        isAnonymous: true,
+                        getIdToken: async () => 'mock-token'
+                    } as unknown as User;
+                    if (typeof window !== 'undefined') {
+                        (window as any).guestUserMock = mockUser;
+                    }
                     set({
-                        user: {
-                            uid: 'founder-demo-uid',
-                            email: 'founder@indii.local',
-                            displayName: 'Founder Demo',
-                            isAnonymous: true,
-                            getIdToken: async () => 'mock-token'
-                        } as unknown as User,
+                        user: mockUser,
                         authLoading: false,
                         authError: null
                     });
