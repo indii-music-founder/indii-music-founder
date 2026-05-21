@@ -79,7 +79,7 @@ export function getStripeSecretKey(): string {
     try {
         const secret = stripeSecretKey.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY;
     }
 
@@ -96,7 +96,7 @@ export function getStripeWebhookSecret(): string {
     try {
         const secret = stripeWebhookSecret.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.STRIPE_WEBHOOK_SECRET) return process.env.STRIPE_WEBHOOK_SECRET;
     }
 
@@ -113,7 +113,7 @@ export function getPandaDocApiKey(): string {
     try {
         const secret = pandaDocApiKey.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.PANDADOC_API_KEY) return process.env.PANDADOC_API_KEY;
     }
 

@@ -78,7 +78,7 @@ export interface FunctionOptions {
     /** CPU allocation. Default: 1 */
     cpu?: number | 'gcf_gen1';
     /** Secret references */
-    secrets?: any[];
+    secrets?: unknown[];
     /** Whether to enforce App Check. Default: false */
     enforceAppCheck?: boolean;
     /** Concurrency per instance. Default: 80 */
@@ -111,7 +111,7 @@ export interface StableCallableRequest<T = unknown> {
  * Maps our stable FunctionOptions to the current generation's option format.
  * This is the ONLY function that needs updating when upgrading generations.
  */
-function mapOptions(opts: FunctionOptions): any {
+function mapOptions(opts: FunctionOptions): Record<string, unknown> {
     return {
         region: opts.region || 'us-central1',
         memory: opts.memory,
@@ -119,7 +119,7 @@ function mapOptions(opts: FunctionOptions): any {
         minInstances: opts.minInstances,
         maxInstances: opts.maxInstances,
         cpu: opts.cpu,
-        secrets: opts.secrets as any,
+        secrets: opts.secrets as unknown[],
         enforceAppCheck: opts.enforceAppCheck,
         concurrency: opts.concurrency,
         ingress: opts.ingress,
@@ -164,6 +164,7 @@ export function defineHttps(
     handler: (req: unknown, res: unknown) => void | Promise<void>
 ) {
     const mappedOptions = mapOptions(options) as HttpsOptions;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return onRequest(mappedOptions, handler as any);
 }
 
@@ -182,7 +183,7 @@ export function defineScheduled(
 ) {
     const scheduleOptions: ScheduleOptions = {
         schedule,
-        region: (options.region as any) || 'us-central1',
+        region: (options.region as string) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };
@@ -206,7 +207,7 @@ export function defineFirestoreTrigger(
 ) {
     const docOptions: DocumentOptions = {
         document: documentPath,
-        region: (options.region as any) || 'us-central1',
+        region: (options.region as string) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };
@@ -233,7 +234,7 @@ export function defineStorageTrigger(
 ) {
     const storageOpts = {
         bucket,
-        region: (options.region as any) || 'us-central1',
+        region: (options.region as string) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };
