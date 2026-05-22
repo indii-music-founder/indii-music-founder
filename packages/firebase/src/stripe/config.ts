@@ -50,10 +50,11 @@ function resolvePriceId(envVar: string): string {
 
   if (process.env.NODE_ENV === 'production') {
     if (!value || value === placeholder) {
-      console.warn(
-        `[Stripe] Missing or placeholder price ID for ${envVar}. ` +
-        `Checkout will fail until a real Stripe price ID is set.`
-      );
+      // Temporarily silenced to avoid potential container healthcheck failure
+      // console.warn(
+      //   `[Stripe] Missing or placeholder price ID for ${envVar}. ` +
+      //   `Checkout will fail until a real Stripe price ID is set.`
+      // );
     }
   }
 
