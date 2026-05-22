@@ -237,7 +237,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-alpha-electron.appspot.com').replace('.appspot.com', '');
+        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-music-founder.appspot.com').replace('.appspot.com', '');
 
         // Check for bytesBase64Encoded or videoBytes inline first
         const videoObj = video as Record<string, unknown>;

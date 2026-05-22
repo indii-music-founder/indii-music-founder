@@ -39,16 +39,53 @@ test.describe('Payment Flow (Item 278)', () => {
             });
         });
 
-        // ── Mock getSubscriptionStatus Cloud Function ────────────────────────
-        await page.route('**/cloudfunctions.net/**/getSubscriptionStatus**', async route => {
+        // ── Mock getSubscription and getUsageStats Cloud Functions ────────────────────────
+        await page.route('**/cloudfunctions.net/**/getSubscription**', async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    result: {
+                    data: {
+                        id: 'mock-sub-1',
+                        userId: 'test-user-1',
+                        tier: 'pro_monthly',
                         status: 'active',
-                        plan: 'pro',
-                        currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
+                        currentPeriodStart: Date.now(),
+                        currentPeriodEnd: Date.now() + 30 * 86400000,
+                        cancelAtPeriodEnd: false,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                    },
+                }),
+            });
+        });
+        await page.route('**/cloudfunctions.net/**/getUsageStats**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    data: {
+                        tier: 'pro_monthly',
+                        resetDate: Date.now() + 30 * 86400000,
+                        imagesGenerated: 0,
+                        imagesRemaining: 100,
+                        imagesPerMonth: 100,
+                        videoDurationSeconds: 0,
+                        videoDurationMinutes: 0,
+                        videoRemainingMinutes: 10,
+                        videoTotalMinutes: 10,
+                        aiChatTokensUsed: 0,
+                        aiChatTokensRemaining: 100000,
+                        aiChatTokensPerMonth: 100000,
+                        storageUsedGB: 0,
+                        storageRemainingGB: 10,
+                        storageTotalGB: 10,
+                        projectsCreated: 0,
+                        projectsRemaining: 10,
+                        maxProjects: 10,
+                        teamMembersUsed: 1,
+                        teamMembersRemaining: 4,
+                        maxTeamMembers: 5
                     },
                 }),
             });
@@ -190,12 +227,51 @@ test.describe('Payment Flow (Item 278)', () => {
     // ── Feature gating ────────────────────────────────────────────────────────
 
     test('Pro-gated features show upgrade prompt for free tier', async ({ page }) => {
-        // Mock subscription status as free tier
-        await page.route('**/cloudfunctions.net/**/getSubscriptionStatus**', async route => {
+        // Mock subscription as free tier
+        await page.route('**/cloudfunctions.net/**/getSubscription**', async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify({ result: { status: 'inactive', plan: 'free' } }),
+                body: JSON.stringify({ data: { 
+                    id: 'mock-sub-free',
+                    userId: 'test-user-1',
+                    status: 'active', 
+                    tier: 'free',
+                    currentPeriodStart: Date.now(),
+                    currentPeriodEnd: Date.now() + 30 * 86400000,
+                    cancelAtPeriodEnd: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                } }),
+            });
+        });
+        await page.route('**/cloudfunctions.net/**/getUsageStats**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ data: { 
+                    tier: 'free', 
+                    resetDate: Date.now() + 30 * 86400000, 
+                    imagesGenerated: 0,
+                    imagesRemaining: 0, 
+                    imagesPerMonth: 0,
+                    videoDurationSeconds: 0,
+                    videoDurationMinutes: 0,
+                    videoRemainingMinutes: 0, 
+                    videoTotalMinutes: 0,
+                    aiChatTokensUsed: 0,
+                    aiChatTokensRemaining: 0, 
+                    aiChatTokensPerMonth: 0,
+                    projectsCreated: 0,
+                    projectsRemaining: 1, 
+                    maxProjects: 1,
+                    teamMembersUsed: 1,
+                    teamMembersRemaining: 0,
+                    maxTeamMembers: 1,
+                    storageUsedGB: 0,
+                    storageRemainingGB: 1,
+                    storageTotalGB: 1
+                } }),
             });
         });
 
