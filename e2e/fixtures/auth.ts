@@ -142,6 +142,62 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
+      if (url.includes("getSubscription")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              id: 'mock-sub-global',
+              userId: 'test-user-uid-e2e',
+              tier: 'pro_monthly',
+              status: 'active',
+              currentPeriodStart: Date.now(),
+              currentPeriodEnd: Date.now() + 30 * 86400000,
+              cancelAtPeriodEnd: false,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            },
+          }),
+        });
+        return;
+      }
+
+      if (url.includes("getUsageStats")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              tier: 'pro_monthly',
+              resetDate: Date.now() + 30 * 86400000,
+              imagesGenerated: 0,
+              imagesRemaining: 100,
+              imagesPerMonth: 100,
+              videoDurationSeconds: 0,
+              videoDurationMinutes: 0,
+              videoRemainingMinutes: 10,
+              videoTotalMinutes: 10,
+              aiChatTokensUsed: 0,
+              aiChatTokensRemaining: 100000,
+              aiChatTokensPerMonth: 100000,
+              storageUsedGB: 0,
+              storageRemainingGB: 10,
+              storageTotalGB: 10,
+              projectsCreated: 0,
+              projectsRemaining: 10,
+              maxProjects: 10,
+              teamMembersUsed: 1,
+              teamMembersRemaining: 4,
+              maxTeamMembers: 5
+            },
+          }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         headers: corsHeaders,

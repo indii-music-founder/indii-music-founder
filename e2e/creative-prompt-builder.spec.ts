@@ -294,7 +294,10 @@ test.describe('Prompt Builder Hardening', () => {
                 expect(val1).toContain('Base prompt');
                 expect(val1).toContain('Arri Alexa LF');
 
-                // The dropdown closes after click (setOpenCategory(null))
+                // The dropdown stays open, click outside to close it
+                await promptInput.click();
+                await page.waitForTimeout(300);
+
                 // Open Layout category for a second tag
                 const layoutCat = page.locator('[data-testid="category-Layout-trigger"]');
                 if (await layoutCat.isVisible().catch(() => false)) {
@@ -309,6 +312,10 @@ test.describe('Prompt Builder Hardening', () => {
                         const val2 = await promptInput.inputValue();
                         expect(val2).toContain('Arri Alexa LF');
                         expect(val2).toContain('Film Strip');
+                        
+                        // Close Layout category
+                        await promptInput.click();
+                        await page.waitForTimeout(300);
                     }
                 }
             }
