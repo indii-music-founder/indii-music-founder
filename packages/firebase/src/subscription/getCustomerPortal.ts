@@ -13,7 +13,7 @@ import { stripeSecretKey } from '../config/secrets';
 export const getCustomerPortal = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
-  memory: '128MiB',
+  memory: '256MiB',
   enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request) => {
   const { userId, returnUrl } = request.data;

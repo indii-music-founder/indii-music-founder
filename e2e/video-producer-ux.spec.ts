@@ -45,16 +45,16 @@ test.describe('Video Producer UX Hardening', () => {
 
     // ─── TEST 1: Sidebar Highlight Sync ──────────────────────────────────
     test('should highlight Video Producer in sidebar upon navigation', async ({ authedPage: page }) => {
-        // Verify sidebar module indicator for video is active
-        const sidebarVideoItem = page.locator('[data-testid="sidebar-item-video"]');
+        // Check that the sidebar item for Video Producer is active/highlighted
+        const sidebarVideoItem = page.locator('[data-testid="nav-item-video"]');
         
         // The active item usually has specific styling or classes indicating selection
         // In indii, it typically uses text-white or bg-white/10
         await expect(sidebarVideoItem).toBeVisible();
         const className = await sidebarVideoItem.getAttribute('class');
         
-        // Ensure it contains active state markers (e.g. text-white)
-        expect(className).toContain('text-white');
+        // Ensure it contains active state markers (e.g. text-dept-creative)
+        expect(className).toContain('text-dept-creative');
     });
 
     // ─── TEST 2: Generate Button Guarding ────────────────────────────────
@@ -67,12 +67,29 @@ test.describe('Video Producer UX Hardening', () => {
         const generateBtn = page.locator('[data-testid="video-generate-btn"]');
         await expect(generateBtn).toBeEnabled();
 
+        // Delay the AI response to ensure the button stays disabled during assertion
+        let releaseAi: () => void;
+        const aiPromise = new Promise<void>(r => releaseAi = r);
+        await page.route(
+            /.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/,
+            async (route) => {
+                await aiPromise;
+                route.fallback();
+            }
+        );
+
         // Click generate
         await generateBtn.click();
         
         // Button should become disabled immediately while generating
         await expect(generateBtn).toBeDisabled();
         
+        // Release the AI response so the generation completes
+        releaseAi!();
+
+        // Wait a bit to ensure it doesn't crash
+        await page.waitForTimeout(500);
+
         // App stable
         await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
     });
@@ -109,7 +126,7 @@ test.describe('Video Producer UX Hardening', () => {
         await page.waitForTimeout(500);
 
         // Improve button should be disabled since prompt is initially empty
-        const improveBtn = page.locator('button[title="Improve with AI"]');
+        const improveBtn = page.locator('button[title="Improve with Intelligence"]');
         await expect(improveBtn).toBeDisabled();
 
         // Type into the prompt

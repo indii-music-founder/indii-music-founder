@@ -49,10 +49,10 @@ export function getFirebaseAI(): Autonomous | null {
 
     try {
         _aiInstance = getAI(app, {
-            backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'us-central1'),
+            backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'global'),
             useLimitedUseAppCheckTokens: false
         });
-        logger.debug('[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (us-central1)');
+        logger.debug('[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (global)');
         return _aiInstance;
     } catch (error: unknown) {
         logger.error('[Firebase] Failed to initialize Firebase AI:', error);
