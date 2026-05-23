@@ -37,7 +37,7 @@ export default function LicensingDashboard() {
     const toast = useToast();
 
     useEffect(() => {
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
             const win = window as unknown as Window & { licensingService: typeof licensingService };
             win.licensingService = licensingService;
         }
