@@ -68,11 +68,7 @@ export default function AssetSpotlight() {
 
     const openInStudio = (asset: (typeof assets)[0]) => {
         setSelectedItem(asset);
-        if (asset.type === 'video') {
-            setModule('video');
-        } else {
-            setModule('creative');
-        }
+        setModule('creative');
         setRightPanelTab('context');
     };
 

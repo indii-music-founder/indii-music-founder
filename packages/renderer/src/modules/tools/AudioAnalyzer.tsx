@@ -307,8 +307,8 @@ const AudioAnalyzer: React.FC = () => {
                                                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);
-                                                    setModule('video');
-                                                    toast.success('Video prompt loaded into Video Studio');
+                                                    setModule('creative');
+                                                    toast.success('Video prompt loaded into Creative Studio');
                                                 }}
                                             >
                                                 <Video size={16} className="mr-2" />

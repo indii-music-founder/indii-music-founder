@@ -206,7 +206,6 @@ export default function RightPanel() {
         // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
-            case 'video':
                 return <StudioControlsPanel toggleRightPanel={toggleRightPanel} />;
             case 'workflow':
                 return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;

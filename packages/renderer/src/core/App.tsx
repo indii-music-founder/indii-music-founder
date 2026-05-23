@@ -80,7 +80,6 @@ const lazyWithRetry = (componentImport: () => Promise<any>) => {
 const CreativeStudio = lazyWithRetry(() => import('../modules/creative/CreativeStudio'));
 const LegalDashboard = lazyWithRetry(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazyWithRetry(() => import('../modules/marketing/MarketingDashboard'));
-const VideoStudio = lazyWithRetry(() => import('../modules/video/VideoStudioContainer'));
 const WorkflowLab = lazyWithRetry(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazyWithRetry(() => import('../modules/dashboard/Dashboard'));
 const KnowledgeBase = lazyWithRetry(() => import('../modules/knowledge/KnowledgeBase'));
@@ -136,7 +135,6 @@ interface ModuleProps {
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<ModuleProps>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
-    'video': VideoStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,

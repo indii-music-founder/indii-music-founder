@@ -23,7 +23,6 @@ import { useMobile } from '@/hooks/useMobile';
 const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'dashboard': 'Home',
     'creative': 'Creative Director',
-    'video': 'Video Producer',
     'legal': 'Legal',
     'marketing': 'Marketing',
     'workflow': 'Workflow Lab',
