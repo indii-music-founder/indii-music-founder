@@ -54,7 +54,6 @@
 ---
 
 ### ISSUE-006: Direct Mode Delegation Block Not Enforced in Agent NLP Response
-- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Injected explicit `delegationScopeSection` into the agent's system prompt to enforce strict scoping bounds. Direct mode now explicitly bans cross-delegation at the NLP instruction layer.
 - **Files:** `AgentPromptBuilder.ts`, `BaseAgent.ts`
@@ -73,7 +72,6 @@
 ---
 
 ### ISSUE-007: Department Mode Cross-Delegation Feedback Missing
-- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Similar to ISSUE-006, Department mode now receives an explicit scope block forbidding coordination with out-of-scope departments, eliminating silent fail-overs and forcing clear NLP rejections.
 - **Files:** `AgentPromptBuilder.ts`, `BaseAgent.ts`
@@ -90,7 +88,6 @@
 ---
 
 ### ISSUE-008: Chat UI JSON Overflow/Overlap in Direct Mode
-- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Added `min-w-0` to the message flex container in `ChatMessage.tsx` so JSON blocks (`overflow-x-auto`) properly wrap and scroll without stretching their flex parent beyond its `max-w-[90%]`.
 - **Files:** `ChatMessage.tsx`
@@ -107,7 +104,6 @@
 ---
 
 ### ISSUE-009: "ONE-SHOT PLAN" Pop-up Layout & zIndex Issues
-- **Status:** OPEN
 - **Status:** ✅ FIXED (v1.59.0 - Hardening)
 - **Fix:** Removed the absolute `z-50` stacking context from `PlanCard.tsx`. This stops the "One-shot" popups from violently overlaying modals, headers, and the command bar.
 - **Files:** `PlanCard.tsx`
@@ -566,7 +562,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-038: Workflow Builder Unsaved Changes Navigation Bypass
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Workflow Builder
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #18)
@@ -637,7 +633,6 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-042: Memory Agent Lack of General Knowledge Fallback
 - **Status:** ✅ FIXED (884c33b6)
-- **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Module:** Memory Agent
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #32 equivalent)
@@ -651,7 +646,6 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-043: Sidebar Routing History Inconsistency Under Thrashing
 - **Status:** ✅ FIXED (884c33b6)
-- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** Sidebar Navigation
 - **Found:** 2026-05-08 by Browser Subagent Test (Test Plan Routine #8 equivalent)
@@ -666,7 +660,6 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-044: Module Resolution Crash in Browser Runtime (`@/core/store`)
 - **Status:** ✅ FIXED (884c33b6)
-- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Reliability
 - **Module:** Core App / AgentService / ModuleImportCache
@@ -962,7 +955,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Feature blocked by backend error.
 
 ### ISSUE-067: [REGRESSION] Canvas Z-Index Ceiling Enforcement
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (regression of previously fixed issue)
 - **Module:** Creative Director
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 112)
@@ -974,7 +967,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Broken feature due to backend crash.
 
 ### ISSUE-068: [REGRESSION] Text Shape Label Requirement
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (regression of previously fixed issue)
 - **Module:** Creative Director
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 113)
@@ -986,7 +979,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Broken feature due to backend crash.
 
 ### ISSUE-069: [REGRESSION] Line Shape Extent Requirement
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (regression of previously fixed issue)
 - **Module:** Creative Director
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 114)
@@ -998,7 +991,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Complete application crash.
 
 ### ISSUE-070: [REGRESSION] Semantic Tool Routing — Canvas vs. AI Generation
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (regression of previously fixed issue)
 - **Module:** Creative Director
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 115)
@@ -1010,7 +1003,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Complete application crash.
 
 ### ISSUE-071: [REGRESSION] Boardroom UI Interaction Blocked
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 MEDIUM
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 116)
@@ -1022,7 +1015,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Cannot interact with Boardroom swarm.
 
 ### ISSUE-072: [REGRESSION] moduleImportCache Global Reference
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 LOW
 - **Module:** Architecture
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 117)
@@ -1031,7 +1024,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** None for user, blocks QA testing.
 
 ### ISSUE-073: [REGRESSION] Marketing Director profile.createdAt error
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 116)
@@ -1039,7 +1032,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Marketing Agent fails to respond.
 
 ### ISSUE-074: [REGRESSION] Firestore Composite Index Missing
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7
@@ -1048,7 +1041,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Chat history fails to load or update.
 
 ### ISSUE-071: [REGRESSION] Boardroom UI Interaction Blocked
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 MEDIUM
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 116)
@@ -1057,7 +1050,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Cannot interact with Boardroom swarm.
 
 ### ISSUE-072: [REGRESSION] moduleImportCache Global Reference
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 LOW
 - **Module:** Architecture
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 117)
@@ -1065,7 +1058,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Expected:** Expose `window.moduleImportCache` in dev mode.
 
 ### ISSUE-073: [REGRESSION] Marketing Director profile.createdAt error
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7 (Routine 116)
@@ -1073,7 +1066,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Marketing Agent fails to respond.
 
 ### ISSUE-074: [REGRESSION] Firestore Composite Index Missing
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom
 - **Found:** 2026-05-22 by Mega Stress Test V7

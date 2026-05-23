@@ -88,7 +88,7 @@ export function VisualVerificationsPane() {
                             </span>
                             {record.createdAt?.toDate && (
                                 <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                                    {formatDistanceToNow(record.createdAt.toDate(), { addSuffix: true })}
+                                    {formatDistanceToNow(typeof record.createdAt.toDate === 'function' ? record.createdAt.toDate() : new Date(record.createdAt as any), { addSuffix: true })}
                                 </span>
                             )}
                         </div>

@@ -90,7 +90,8 @@ try {
     db = initializeFirestore(app, {
         localCache: persistentLocalCache({
             tabManager: persistentMultipleTabManager()
-        })
+        }),
+        experimentalForceLongPolling: true
     });
     storage = getStorage(app);
     functions = getFunctions(app); // Default (us-central1)

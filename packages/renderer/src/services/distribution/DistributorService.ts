@@ -658,7 +658,7 @@ class DistributorServiceImpl {
           title: d.title || 'Untitled Release',
           artist: d.artist || 'Unknown Artist',
           coverArtUrl: d.coverArtUrl,
-          releaseDate: d.submittedAt?.toDate().toISOString(),
+          releaseDate: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
           deployments: {},
         };
       }
