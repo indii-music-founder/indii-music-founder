@@ -17,6 +17,8 @@ import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
+import { WORKFLOW_REGISTRY, type WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
+import { protocolToReactFlow } from './utils/maestroAdapter';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { useMobile } from '@/hooks/useMobile';
@@ -156,11 +158,79 @@ export default function WorkflowLab() {
         if (nodes.length === 0) return;
         setIsRunning(true);
         try {
-            const engine = new WorkflowEngine(nodes, edges, setNodes);
-            await engine.run();
+            if (currentWorkflowId?.startsWith('protocol-')) {
+                // Execute using AgentGraphService (Maestro System Protocol)
+                const protocolId = currentWorkflowId.replace('protocol-', '');
+                const protocol = WORKFLOW_REGISTRY[protocolId];
+                if (!protocol) throw new Error("Protocol not found");
+
+                // Dynamic import to avoid circular dependency
+                const { agentGraphService } = await import('@/services/agent/orchestration/AgentGraphService');
+                const { agentGraphStateService } = await import('@/services/agent/orchestration/AgentGraphStateService');
+                const { useStore } = await import('@/core/store');
+                const user = useStore.getState().user;
+                if (!user) throw new Error("User not authenticated for graph execution");
+
+                // Convert protocol back to AgentGraph
+                const agentGraph = {
+                    id: protocol.id,
+                    name: protocol.name,
+                    entryNodeId: protocol.steps.find(s => !protocol.edges.some(e => e.to === s.id))?.id || protocol.steps[0]?.id || '',
+                    nodes: protocol.steps.map(s => ({
+                        id: s.id,
+                        agentId: s.agentId as any,
+                        taskTemplate: s.prompt,
+                        waitCondition: 'all' as const
+                    })),
+                    edges: protocol.edges.map(e => ({
+                        sourceId: e.from,
+                        targetId: e.to
+                    })),
+                    description: protocol.description || '',
+                    metadata: { version: '1.0', author: 'system', createdAt: Date.now() }
+                };
+
+                const executionId = await agentGraphService.executeGraph(
+                    agentGraph,
+                    { userId: user.uid, traceId: `manual-run-${Date.now()}` },
+                    '' // initial input
+                );
+
+                // Start polling state to update UI nodes
+                const interval = setInterval(async () => {
+                    const state = await agentGraphStateService.getExecution(user.uid, executionId);
+                    if (!state) return;
+
+                    setNodes(currentNodes => currentNodes.map(node => {
+                        const nodeState = state.nodeStates[node.id];
+                        if (nodeState) {
+                            let status = Status.PENDING;
+                            if (nodeState.status === 'executing') status = Status.WORKING;
+                            if (nodeState.status === 'step_complete') status = Status.DONE;
+                            if (nodeState.status === 'failed') status = Status.ERROR;
+                            
+                            return { ...node, data: { ...node.data, status, output: nodeState.output } };
+                        }
+                        return node;
+                    }));
+
+                    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+                        clearInterval(interval);
+                        setIsRunning(false);
+                    }
+                }, 1000);
+
+                // Note: We don't await the interval here because the UI should show the "Running" state while polling
+                return;
+            } else {
+                const engine = new WorkflowEngine(nodes, edges, setNodes);
+                await engine.run();
+            }
         } catch (e: unknown) {
             logger.error("Workflow failed", e);
-        } finally {
+            setIsRunning(false);
+        }
+        if (!currentWorkflowId?.startsWith('protocol-')) {
             setIsRunning(false);
         }
     };
@@ -258,6 +328,16 @@ export default function WorkflowLab() {
         setWorkflowName(workflow.name);
         setCurrentWorkflowId(workflow.id);
         setShowLoadModal(false);
+    };
+
+    const handleLoadProtocol = (protocol: WorkflowDefinition) => {
+        const { nodes: newNodes, edges: newEdges } = protocolToReactFlow(protocol);
+        setNodes(newNodes);
+        setEdges(newEdges);
+        setWorkflowName(protocol.name);
+        setCurrentWorkflowId(`protocol-${protocol.id}`);
+        // Let it auto-fit the view since new nodes might be out of viewport
+        setTimeout(() => rfInstanceRef.current?.fitView(), 100);
     };
 
     return (
@@ -373,7 +453,13 @@ export default function WorkflowLab() {
                     </div>
 
                     {/* Saved Workflows Quick List */}
-                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                        <SystemProtocolsWidget
+                            protocols={Object.values(WORKFLOW_REGISTRY)}
+                            onLoad={handleLoadProtocol}
+                            currentWorkflowId={currentWorkflowId}
+                        />
+
                         <SavedWorkflowsWidget
                             savedWorkflows={savedWorkflows}
                             onLoad={handleLoadSavedWorkflow}
@@ -590,6 +676,39 @@ function HelpDocsPanel() {
                             <p className="text-xs text-gray-300">{l.label}</p>
                             <p className="text-[10px] text-gray-600">{l.desc}</p>
                         </div>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function SystemProtocolsWidget({
+    protocols,
+    onLoad,
+    currentWorkflowId,
+}: {
+    protocols: WorkflowDefinition[];
+    onLoad: (protocol: WorkflowDefinition) => void;
+    currentWorkflowId?: string;
+}) {
+    if (protocols.length === 0) return null;
+
+    return (
+        <div className="rounded-xl bg-purple-500/5 border border-purple-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5"><Zap size={10} /> System Protocols</h3>
+            <div className="space-y-1">
+                {protocols.map((p) => (
+                    <button
+                        key={p.id}
+                        onClick={() => onLoad(p)}
+                        className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${`protocol-${p.id}` === currentWorkflowId
+                            ? 'bg-purple-500/20 text-purple-300'
+                            : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
+                            }`}
+                    >
+                        <GitBranch size={12} className="flex-shrink-0 text-purple-400" />
+                        <span className="truncate">{p.name}</span>
                     </button>
                 ))}
             </div>

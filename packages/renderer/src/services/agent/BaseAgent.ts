@@ -1091,6 +1091,17 @@ export class BaseAgent implements SpecializedAgent {
                         content: outputText
                     });
 
+                    // Phase 2: DNA Infusion - Planning Mode Halting
+                    if (result && typeof result === 'object' && result.status === 'awaiting_approval') {
+                        logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
+                        await executionContext.rollback();
+                        return {
+                            text: `Execution paused: The agent drafted an artifact or plan and is awaiting your explicit approval to proceed.`,
+                            toolCalls,
+                            error: 'AWAITING_USER_APPROVAL'
+                        };
+                    }
+
                     if (name === 'speak') {
                         // Keep going - don't let speak terminate the agent turn
                         continue;

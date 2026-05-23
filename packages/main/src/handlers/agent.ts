@@ -65,6 +65,92 @@ export function registerAgentHandlers() {
         }
     });
 
+    ipcMain.handle('agent:create-artifact', async (event: IpcMainInvokeEvent, filename: string, content: string, options: any) => {
+        try {
+            validateSender(event);
+            const artifactDir = path.join(process.cwd(), 'artifacts');
+            await fs.mkdir(artifactDir, { recursive: true });
+            
+            // Basic path safety check to prevent directory traversal
+            const safePath = path.resolve(artifactDir, filename);
+            if (!safePath.startsWith(artifactDir)) {
+                throw new Error('Invalid artifact filename');
+            }
+            
+            await fs.writeFile(safePath, content, 'utf-8');
+            return { success: true, data: { path: safePath, ...options } };
+        } catch (error) {
+            log.error('Agent Create Artifact Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:list-artifacts', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const artifactDir = path.join(process.cwd(), 'artifacts');
+            try {
+                await fs.access(artifactDir);
+            } catch {
+                return { success: true, data: [] }; // Directory doesn't exist yet
+            }
+            const files = await fs.readdir(artifactDir);
+            const artifacts = files.filter(f => f.endsWith('.md')).map(f => ({ filename: f }));
+            return { success: true, data: artifacts };
+        } catch (error) {
+            log.error('Agent List Artifacts Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:read-artifact', async (event: IpcMainInvokeEvent, filename: string) => {
+        try {
+            validateSender(event);
+            const artifactDir = path.join(process.cwd(), 'artifacts');
+            const safePath = path.resolve(artifactDir, filename);
+            if (!safePath.startsWith(artifactDir)) {
+                throw new Error('Invalid artifact filename');
+            }
+            const content = await fs.readFile(safePath, 'utf-8');
+            return { success: true, data: content };
+        } catch (error) {
+            log.error('Agent Read Artifact Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: any) => {
+        try {
+            validateSender(event);
+            const { targetFile, replacementChunks } = args;
+            
+            // Verify path safety
+            if (!targetFile || targetFile.includes('..')) {
+                 throw new Error('Invalid file path');
+            }
+
+            let content = await fs.readFile(targetFile, 'utf-8');
+            const lines = content.split('\n');
+
+            // Simplistic multi-replace implementation for agents
+            // In a real implementation this would need careful index handling
+            for (const chunk of replacementChunks) {
+                const { targetContent, replacementContent } = chunk;
+                if (content.includes(targetContent)) {
+                    content = content.replace(targetContent, replacementContent);
+                } else {
+                     throw new Error(`Target content not found in file: ${targetContent.substring(0, 30)}...`);
+                }
+            }
+
+            await fs.writeFile(targetFile, content, 'utf-8');
+            return { success: true, data: { file: targetFile } };
+        } catch (error) {
+            log.error('Agent Multi Replace Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
     ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string) => {
         try {
             validateSender(event);

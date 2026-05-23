@@ -298,6 +298,8 @@ export interface ToolFunctionResult {
     data?: any;
     error?: string;
     message?: string;
+    /** Allows tools to set explicit execution states (e.g., pausing for approval) */
+    status?: WorkflowExecutionStatus;
     /** URLs of generated or modified assets (images, audio, etc.) */
     urls?: string[];
     /** URL of a generated document (PDF, etc.) */

@@ -56,6 +56,16 @@ export const agentStreamResponse = onRequest(
     secrets: ["GEMINI_API_KEY"]
   },
   async (req: Request, res: Response): Promise<void> => {
+    // Handle CORS preflight
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
     // Validate request method
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method not allowed" });
@@ -198,6 +208,16 @@ export const agentStreamHealth = onRequest(
     region: "us-central1"
   },
   (req: Request, res: Response) => {
+    // Handle CORS preflight
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
     if (req.method !== "GET") {
       res.status(405).json({ error: "Method not allowed" });
       return;
