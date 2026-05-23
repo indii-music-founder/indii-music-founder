@@ -234,6 +234,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Notifications (write — sends alerts to the user)
     send_notification: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Send notification to user outside app' },
+
+    // Foundational (Artifacts)
+    create_artifact: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create an artifact document to present structured information to the user' },
+    multi_replace_file_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Modify multiple non-contiguous blocks of text in a single file' },
 };
 
 /**

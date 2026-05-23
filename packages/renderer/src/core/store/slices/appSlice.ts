@@ -81,16 +81,18 @@ export interface AppSlice {
     setApiKeyError: (error: boolean) => void;
     isSidebarOpen: boolean;
     isRightPanelOpen: boolean;
-    rightPanelTab: 'context' | 'assets' | 'agent';
+    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts';
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
-    setRightPanelTab: (tab: 'context' | 'assets' | 'agent') => void;
+    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts') => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
     isEntryAssistantDismissed: boolean;
     setEntryAssistantDismissed: (dismissed: boolean) => void;
+    pendingCostWarning: { estimatedCost: number; reason: string; resolve: (approved: boolean) => void } | null;
+    setPendingCostWarning: (warning: AppSlice['pendingCostWarning']) => void;
     /** @internal Debounce tracker for toggleSidebar */
     _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
@@ -106,6 +108,8 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentProjectId: 'default',
     projects: [],
     hasUnsavedChanges: false,
+    pendingCostWarning: null,
+    setPendingCostWarning: (warning) => set({ pendingCostWarning: warning }),
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
     isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indii_entryAssistantDismissed') === 'true' : false,
     setEntryAssistantDismissed: (dismissed) => {

@@ -151,11 +151,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const handleInputValueChange = useCallback((value: string) => {
         setCommandBarInput(value);
 
-        // Find last word matching @ or #
-        const match = value.match(/(?:^|\s)([@#])([\w-]*)$/);
+        // Find last word matching @, #, or /
+        const match = value.match(/(?:^|\s)([@#/])([\w-]*)$/);
         if (match && match.index !== undefined) {
             setTypeaheadContext({
-                type: match[1] as '@' | '#',
+                type: match[1] as '@' | '#' | '/',
                 query: match[2] || '',
                 position: match.index + (value[match.index] === ' ' ? 1 : 0)
             });
@@ -249,7 +249,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             }
 
             setIsProcessing(true);
-            const currentInput = input;
+            let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
             if (currentInput.trim() === '/deploy-andromeda') {
@@ -271,6 +271,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 setCommandBarAttachments([]);
                 setIsProcessing(false);
                 return;
+            }
+
+            // --- DNA INFUSION: Slash Command Interceptor ---
+            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-andromeda') && !currentInput.trim().startsWith('/status-blitz')) {
+                const parts = currentInput.trim().split(' ');
+                const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
+                
+                // Wrap the user's input with a system directive forcing the agent into the skill
+                currentInput = `[SYSTEM INTERCEPT: User executed slash command /${command}. Please immediately load the skill from \`.agent/skills/${command}/SKILL.md\` and follow its protocol strictly without deviating.]\n\n${currentInput}`;
             }
 
             setCommandBarInput('');

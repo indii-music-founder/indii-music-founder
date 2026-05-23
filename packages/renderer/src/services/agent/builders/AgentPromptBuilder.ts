@@ -103,7 +103,14 @@ export class AgentPromptBuilder {
         // User journey timeline
         const profile = context?.userProfile;
         if (profile?.createdAt) {
-            const joinDate = profile.createdAt.toDate();
+            let joinDate: Date;
+            if (typeof profile.createdAt.toDate === 'function') {
+                joinDate = profile.createdAt.toDate();
+            } else if ((profile.createdAt as any).seconds !== undefined) {
+                joinDate = new Date((profile.createdAt as any).seconds * 1000);
+            } else {
+                joinDate = new Date(profile.createdAt as unknown as string | number);
+            }
             const accountAgeDays = Math.floor((now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
 
             lines.push(`- **User Joined:** ${joinDate.toLocaleDateString('en-US', {
@@ -115,7 +122,14 @@ export class AgentPromptBuilder {
 
             // Last login for session freshness
             if (profile.lastLoginAt) {
-                const lastLogin = profile.lastLoginAt.toDate();
+                let lastLogin: Date;
+                if (typeof profile.lastLoginAt.toDate === 'function') {
+                    lastLogin = profile.lastLoginAt.toDate();
+                } else if ((profile.lastLoginAt as any).seconds !== undefined) {
+                    lastLogin = new Date((profile.lastLoginAt as any).seconds * 1000);
+                } else {
+                    lastLogin = new Date(profile.lastLoginAt as unknown as string | number);
+                }
                 const daysSinceLogin = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
                 if (daysSinceLogin > 0) {
                     lines.push(`- **Last Active:** ${this.formatDuration(daysSinceLogin)} ago`);

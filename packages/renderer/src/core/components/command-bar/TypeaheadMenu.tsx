@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 export type TypeaheadContext = {
-    type: '@' | '#';
+    type: '@' | '#' | '/';
     query: string;
     position: number;
 } | null;
@@ -27,6 +27,14 @@ const MOCK_ASSETS = [
     { id: 'campaign-brief', name: 'Campaign Brief', type: 'document' }
 ];
 
+const MOCK_SKILLS = [
+    { id: 'issue', name: 'Fix Agent', role: 'Resolve open issues' },
+    { id: 'mega', name: 'Mega Stress Test', role: 'Run all test suites' },
+    { id: 'real', name: 'Real Life Test', role: 'Adaptive scenario testing' },
+    { id: 'go', name: 'Go', role: 'Universal execution loop' },
+    { id: 'hunter', name: 'Bug Hunter', role: 'Autonomous codebase scan' }
+];
+
 export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
     if (!context) return null;
 
@@ -35,6 +43,8 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
     // Filter based on context
     const items = context.type === '@'
         ? MOCK_AGENTS.filter(a => a.name.toLowerCase().includes(query) || a.role.toLowerCase().includes(query))
+        : context.type === '/'
+        ? MOCK_SKILLS.filter(s => s.id.toLowerCase().includes(query) || s.name.toLowerCase().includes(query))
         : MOCK_ASSETS.filter(a => a.name.toLowerCase().includes(query));
 
     if (items.length === 0) return null;
@@ -48,7 +58,7 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
                 className="absolute bottom-full left-4 mb-2 w-64 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
             >
                 <div className="px-3 py-2 border-b border-white/5 bg-white/5 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    {context.type === '@' ? 'Select Agent' : 'Reference Asset'}
+                    {context.type === '@' ? 'Select Agent' : context.type === '/' ? 'Slash Command' : 'Reference Asset'}
                 </div>
                 <div className="max-h-60 overflow-y-auto p-1">
                     {items.map((item, i) => (
@@ -66,12 +76,12 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
                             )}
                         >
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center border border-white/5">
-                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : <FileText size={14} className="text-purple-400" />}
+                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : context.type === '/' ? <FileText size={14} className="text-amber-400" /> : <FileText size={14} className="text-purple-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-200 truncate">{item.name}</p>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {context.type === '@' ? ('role' in item ? item.role : '') : 'Asset Resource'}
+                                    {context.type === '@' ? ('role' in item ? item.role : '') : context.type === '/' ? ('role' in item ? item.role : '') : 'Asset Resource'}
                                 </p>
                             </div>
                         </button>

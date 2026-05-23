@@ -918,7 +918,7 @@ export const generateContentStream = functions
 
 export const ragProxy = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
         secrets: [geminiApiKey],
         timeoutSeconds: 60
     })
@@ -940,6 +940,21 @@ export const ragProxy = functions
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
+            }
+
+            // Verify App Check manually after CORS preflight has passed
+            if (ENFORCE_APP_CHECK) {
+                const appCheckToken = req.header('x-firebase-appcheck');
+                if (!appCheckToken) {
+                    res.status(401).send('Unauthorized: Missing App Check token');
+                    return;
+                }
+                try {
+                    await admin.appCheck().verifyToken(appCheckToken);
+                } catch (err) {
+                    res.status(401).send('Unauthorized: Invalid App Check token');
+                    return;
+                }
             }
 
             try {

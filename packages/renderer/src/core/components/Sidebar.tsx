@@ -167,7 +167,6 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
-        { id: 'maestro', icon: Layers, label: 'Maestro' },
     ];
 
     const departmentItems: SidebarItem[] = [
@@ -184,7 +183,6 @@ export default function Sidebar() {
 
     const toolItems: SidebarItem[] = [
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
-        { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
         { id: 'observability', icon: Activity, label: 'Observability' },

@@ -19,6 +19,7 @@ import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
 
 import { ApprovalModal } from './components/ApprovalModal';
+import CostWarningModal from './components/CostWarningModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { OfflineBanner } from './components/OfflineBanner';
 import { SyncQueueIndicator } from '@/components/sync/SyncQueueIndicator';
@@ -115,7 +116,6 @@ const FoundersCheckout = lazyWithRetry(() => import('../modules/founders/Founder
 const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersPortal'));
 const VideoPopout = lazyWithRetry(() => import('../modules/video/editor/VideoPopout'));
 const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
-const MaestroModule = lazyWithRetry(() => import('../modules/maestro/MaestroModule'));
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
@@ -170,7 +170,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'founders-portal': FoundersPortal,
     'video-popout': VideoPopout,
     'registration': RegistrationCenter,
-    'maestro': MaestroModule,
     'security': SecurityDashboard,
 };
 
@@ -538,6 +537,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
                 {/* Global Modals */}
                 <ApprovalModal />
+                <CostWarningModal />
                 <ApprovalManager />
                 <PWAInstallPrompt />
                 <TransmissionMonitor />

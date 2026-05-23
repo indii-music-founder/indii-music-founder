@@ -52,7 +52,7 @@ export interface DocumentLink {
     expiresAt: string;
 }
 
-const FUNCTIONS_REGION = 'us-west1';
+const FUNCTIONS_REGION = 'us-central1';
 
 export class PandaDocService {
     private functions = getFunctions(app, FUNCTIONS_REGION);
