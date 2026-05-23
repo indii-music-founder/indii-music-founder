@@ -55,7 +55,15 @@ vi.mock('@/services/agent/registry', () => ({
             { id: 'marketing', name: 'Marketing', category: 'department', color: 'bg-teal-500' },
         ],
         register: vi.fn(),
-        get: vi.fn(),
+        get: (id: string) => [
+            { id: 'creative', name: 'Creative Director', category: 'manager', color: 'bg-pink-500' },
+            { id: 'video', name: 'Video Producer', category: 'specialist', color: 'bg-purple-500' },
+            { id: 'brand', name: 'Brand Manager', category: 'manager', color: 'bg-amber-500' },
+            { id: 'road', name: 'Road Manager', category: 'manager', color: 'bg-yellow-500' },
+            { id: 'campaign', name: 'Campaign Manager', category: 'manager', color: 'bg-orange-500' },
+            { id: 'publicist', name: 'Publicist', category: 'manager', color: 'bg-orange-400' },
+            { id: 'marketing', name: 'Marketing', category: 'department', color: 'bg-teal-500' },
+        ].find(a => a.id === id),
     }
 }));
 
@@ -106,6 +114,7 @@ interface TestStoreState {
     agentMode: string;
     isAgentProcessing: boolean;
     conversationMode: 'direct' | 'department' | 'boardroom';
+    directTargetAgentId?: string;
     canvasItems: any[];
 }
 
@@ -250,16 +259,17 @@ describe('CommandBar', () => {
     });
 
     it('updates button text based on current module', () => {
-        useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
+        useTestStore.setState({ currentModule: 'road', chatChannel: 'agent', directTargetAgentId: 'road' });
 
         render(<CommandBar />);
-        expect(screen.getByPlaceholderText(/Message road/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Message Road Manager/i)).toBeInTheDocument();
     });
 
     it('sends a message when form is submitted', async () => {
+        useTestStore.setState({ directTargetAgentId: 'road', conversationMode: 'direct' });
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText('Message road...');
+        const input = screen.getByPlaceholderText(/Message Road Manager/i);
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
         const submitButton = document.querySelector('button[aria-label="Run command"]');

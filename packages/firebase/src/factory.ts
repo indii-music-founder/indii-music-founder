@@ -11,7 +11,7 @@
  *   import { defineCallable, defineScheduled, defineHttps, HttpsError } from '../factory';
  *
  *   export const myFunction = defineCallable(
- *       { region: 'us-west1', memory: '1GiB', secrets: [mySecret] },
+ *       { region: 'us-central1', memory: '1GiB', secrets: [mySecret] },
  *       async (request) => {
  *           if (!request.auth) throw new HttpsError('unauthenticated', '...');
  *           const data = request.data as MyType;
@@ -123,6 +123,7 @@ function mapOptions(opts: FunctionOptions): Record<string, unknown> {
         enforceAppCheck: opts.enforceAppCheck,
         concurrency: opts.concurrency,
         ingress: opts.ingress,
+        invoker: 'public',
     };
 }
 

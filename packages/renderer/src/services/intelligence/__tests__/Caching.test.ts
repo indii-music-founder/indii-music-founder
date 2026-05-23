@@ -85,8 +85,7 @@ describe('AI Caching (Browser Environment)', () => {
         await aiCache.clear(); // Start with empty cache
 
         // Setup default mock response
-        // Note: The Google AutonomousIntelligence SDK (fallback client) returns a flat object with text/candidates,
-        // unlike the Firebase SDK which wraps it in a response object.
+        // Note: The high-level APIs expect a response wrapper object containing candidates and a text() function.
         mockGenerateContent.mockResolvedValue({
             response: {
                 text: () => 'Fresh Autonomous Response',

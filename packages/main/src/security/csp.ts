@@ -92,6 +92,7 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
             'blob:',
             ...ALLOWED_ORIGINS.google,
             'https://*.googleusercontent.com',
+            'https://grainy-gradients.vercel.app',
         ],
 
         // Fonts: self + Google Fonts

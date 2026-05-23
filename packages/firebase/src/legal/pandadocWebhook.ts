@@ -16,7 +16,7 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { pandadocWebhookSecret } from "../config/secrets";
 
-const REGION = "us-west1";
+const REGION = "us-central1";
 
 interface PandaDocWebhookEvent {
     event: string; // e.g., "document_state_changed"

@@ -402,14 +402,57 @@ export class AgentService {
         }
 
         if (conversationMode === 'direct') {
-            // Check if direct flow should be bypassed to standard graph orchestration,
-            // or handled via the pure LLM path if provider is set to 'direct'
-            if (state.activeAgentProvider === 'direct') {
-                logger.debug('[AgentService] Routing to direct chat flow (provider override)');
+            const targetAgentId = state.directTargetAgentId || 'generalist';
+            if (state.activeAgentProvider === 'direct' && targetAgentId === 'generalist') {
+                logger.debug('[AgentService] Routing to direct chat flow (provider override) for generalist');
                 await this.handleDirectChatFlow(text, attachments, context, responseId);
                 return;
             }
-            // If direct mode, and provider is not 'direct', we proceed to standard orchestration
+            
+            // For targeted specialists, bypass orchestration and execute directly via their executor!
+            logger.debug(`[AgentService] Executing direct specialist agent: ${targetAgentId}`);
+            updateAgentMessage(responseId, { agentId: targetAgentId });
+            
+            let currentStreamedText = '';
+            const result = await this.executor.execute(targetAgentId, text, context as PipelineContext, (event) => {
+                if (event.type === 'token') {
+                    currentStreamedText += event.content;
+                    updateAgentMessage(responseId, { text: currentStreamedText });
+                }
+
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                    const currentMsg = useStore.getState().agentHistory.find((m: AgentMessage) => m.id === responseId);
+                    const newThought: AgentThought = {
+                        id: uuidv4(),
+                        text: event.content || '',
+                        timestamp: Date.now(),
+                        type: event.type as AgentThought["type"],
+                    };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) newThought.toolName = event.toolName;
+                    }
+
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    if (currentMsg) {
+                        updateAgentMessage(responseId, {
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
+                        });
+                    }
+                }
+            }, undefined, undefined, attachments);
+
+            if (result && result.text) {
+                updateAgentMessage(responseId, {
+                    text: result.text,
+                    thoughtSignature: result.thoughtSignature
+                });
+            } else {
+                updateAgentMessage(responseId, {
+                    thoughtSignature: result?.thoughtSignature
+                });
+            }
+            return;
         }
 
         // 1. Resolve Orchestration Path

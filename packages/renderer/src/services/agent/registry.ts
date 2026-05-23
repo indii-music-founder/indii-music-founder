@@ -232,8 +232,8 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     get(id: string): SpecializedAgent | undefined {
-        // Legacy synchronous get - only works if already loaded
-        return this.agents.get(id);
+        // Return loaded agent or metadata-only placeholder
+        return this.agents.get(id) || this.metadata.get(id);
     }
 
     async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {

@@ -11,6 +11,7 @@ import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { isAppCheckConfigured } from '@/services/intelligence/appcheck';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
 // The app will show the login screen with an auth error rather than crashing.
@@ -24,21 +25,18 @@ export const app = initializeApp(firebaseConfig);
 // LAZY Firebase Autonomous Initialization
 // Only initialize when App Check is configured to avoid Installations API errors
 // ============================================================================
-let _aiInstance: Autonomous | null = null;
-
-/**
- * Check if App Check is configured (must match FirebaseIntelligenceService logic)
- */
-function isAppCheckConfigured(): boolean {
-    return !!(env.appCheckKey || env.appCheckDebugToken);
-}
+const _aiInstances = new Map<string, Autonomous>();
 
 /**
  * Get the Firebase Autonomous instance. Returns null if App Check is not configured,
  * which signals FirebaseIntelligenceService to use direct Gemini SDK fallback.
+ * Allows passing an optional location (e.g. 'us-central1') for dynamic Vertex routing.
  */
-export function getFirebaseAI(): Autonomous | null {
-    if (_aiInstance) return _aiInstance;
+export function getFirebaseAI(location?: string): Autonomous | null {
+    const targetLocation = location || import.meta.env.VITE_VERTEX_LOCATION || 'global';
+    if (_aiInstances.has(targetLocation)) {
+        return _aiInstances.get(targetLocation)!;
+    }
 
     // Only initialize Firebase Autonomous if App Check is configured
     // This prevents the Installations API error when App Check isn't set up
@@ -48,14 +46,15 @@ export function getFirebaseAI(): Autonomous | null {
     }
 
     try {
-        _aiInstance = getAI(app, {
-            backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'global'),
+        const instance = getAI(app, {
+            backend: new VertexAIBackend(targetLocation),
             useLimitedUseAppCheckTokens: false
         });
-        logger.debug('[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (global)');
-        return _aiInstance;
+        _aiInstances.set(targetLocation, instance);
+        logger.info(`[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (${targetLocation})`);
+        return instance;
     } catch (error: unknown) {
-        logger.error('[Firebase] Failed to initialize Firebase AI:', error);
+        logger.error(`[Firebase] Failed to initialize Firebase AI for location ${targetLocation}:`, error);
         return null;
     }
 }

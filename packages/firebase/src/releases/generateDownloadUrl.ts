@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
 
 export const generateReleaseDownloadUrl = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 30,
