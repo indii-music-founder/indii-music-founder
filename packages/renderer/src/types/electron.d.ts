@@ -88,6 +88,8 @@ export interface ElectronAPI {
         saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
         getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
+        listArtifacts: () => Promise<{ success: boolean; data?: { filename: string }[]; error?: string }>;
+        readArtifact: (filename: string) => Promise<{ success: boolean; data?: string; error?: string }>;
     };
 
 

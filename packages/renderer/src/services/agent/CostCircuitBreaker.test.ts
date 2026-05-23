@@ -31,7 +31,8 @@ vi.mock('./AgentService', () => ({
     agentService: { runAgent: vi.fn() }
 }));
 vi.mock('./utils/ToolUtils', () => ({
-    toolError: (msg: string) => ({ success: false, error: msg })
+    toolError: (msg: string) => ({ success: false, error: msg }),
+    wrapTool: vi.fn((tool) => tool)
 }));
 vi.mock('./ProactiveService', () => ({
     proactiveService: { scheduleTask: vi.fn(), subscribeToEvent: vi.fn() }

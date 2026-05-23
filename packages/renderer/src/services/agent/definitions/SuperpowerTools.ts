@@ -1,5 +1,6 @@
 import { FunctionDeclaration } from '../types';
 import { VALID_AGENT_IDS_LIST } from '../types';
+import { ARTIFACT_TOOL_DECLARATIONS } from '../tools/ArtifactTools';
 
 /**
  * SUPERPOWER_TOOLS defines the advanced cross-cutting capabilities available to all agents.
@@ -304,5 +305,6 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             },
             required: ['agentId', 'action', 'knowledge']
         }
-    }
+    },
+    ...ARTIFACT_TOOL_DECLARATIONS as unknown as FunctionDeclaration[]
 ];

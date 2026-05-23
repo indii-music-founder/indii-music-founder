@@ -46,6 +46,7 @@ import { NotificationTools } from './NotificationTools';
 import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
+import { ArtifactTools } from './ArtifactTools';
 import { consult_specialist } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
@@ -107,6 +108,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     // Living Plans
     ...LivingPlanTools,
     ...MediaTools,
+    ...ArtifactTools,
     ...FoundationalTools,
 };
 
@@ -248,4 +250,6 @@ AVAILABLE TOOLS:
 --- FOUNDATIONAL (ADMIN & MEMORY) ---
 118. audit_architecture() - Map the agent ecosystem and capabilities.
 119. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
+120. create_artifact(filename: string, content: string, artifactType?: string, requestFeedback?: boolean) - Create an artifact document to present structured information to the user.
+121. multi_replace_file_content(targetFile: string, instruction: string, description: string, replacementChunks: array) - Modify multiple non-contiguous blocks of text in a single file.
 `;

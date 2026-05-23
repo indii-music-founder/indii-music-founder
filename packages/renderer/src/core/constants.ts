@@ -40,7 +40,6 @@ export const MODULE_IDS = [
     'founders-portal',
     'video-popout',
     'registration',
-    'maestro',
     'security'
 ] as const;
 
@@ -63,7 +62,6 @@ export function isValidModule(module: string): module is ModuleId {
 
 export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'dashboard': 'conductor',
-    'maestro': 'conductor',
     'workflow': 'conductor',
     'history': 'conductor',
     'memory': 'conductor',

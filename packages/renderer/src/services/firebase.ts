@@ -94,7 +94,7 @@ try {
     });
     storage = getStorage(app);
     functions = getFunctions(app); // Default (us-central1)
-    functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
+    functionsWest1 = getFunctions(app); // Migrated to us-central1
 
     const isDev = env.DEV;
     const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';

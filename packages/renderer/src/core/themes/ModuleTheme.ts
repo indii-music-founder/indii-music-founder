@@ -240,12 +240,7 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 30% 70%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 },
     },
-    'maestro': {
-        officeName: 'Maestro Orchestrator',
-        accent: '#00ff66', // Green (Strategic/High-level)
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.1), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'vectors', opacity: 0.3 }
-    },
+
     'security': {
         officeName: 'Security & Compliance',
         accent: '#ef4444', // Red for security

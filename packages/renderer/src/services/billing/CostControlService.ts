@@ -22,10 +22,12 @@ export interface CostCheckRequest {
   estimatedCost: number;
   userId: string;
   metadata?: Record<string, unknown>;
+  forceBypass?: boolean;
 }
 
 export interface CostCheckResponse {
   allowed: boolean;
+  requiresConfirmation?: boolean;
   reason?: string;
   remainingBudget: number;
   dailyUsed: number;
@@ -149,13 +151,16 @@ export class CostControlService {
             limit: TEST_MODE_DAILY_LIMIT,
           });
 
-          return {
-            allowed: false,
-            reason: `Testing budget exceeded ($${TEST_MODE_DAILY_LIMIT}/day). Used: $${testDailyUsed.toFixed(2)}, requested: $${req.estimatedCost.toFixed(2)}. Testing should never cost more than a few dollars.`,
-            remainingBudget: Math.max(0, TEST_MODE_DAILY_LIMIT - testDailyUsed),
-            dailyUsed: testDailyUsed,
-            monthlyUsed: 0,
-          };
+          if (!req.forceBypass) {
+            return {
+              allowed: false,
+              requiresConfirmation: true,
+              reason: `Testing budget exceeded ($${TEST_MODE_DAILY_LIMIT}/day). Used: $${testDailyUsed.toFixed(2)}, requested: $${req.estimatedCost.toFixed(2)}. Do you want to proceed and bypass this safety limit?`,
+              remainingBudget: Math.max(0, TEST_MODE_DAILY_LIMIT - testDailyUsed),
+              dailyUsed: testDailyUsed,
+              monthlyUsed: 0,
+            };
+          }
         }
       }
 
@@ -242,6 +247,23 @@ export class CostControlService {
         return {
           allowed: false,
           reason: `Hourly rate limit (${hourlyLimit}/hour) exceeded for ${userTier} tier`,
+          remainingBudget: limits.daily - dailyUsed,
+          dailyUsed,
+          monthlyUsed,
+        };
+      }
+
+      // 8.5 UI CONFIRMATION & HIGH COST SAFEGUARD
+      const USER_CONFIRMATION_THRESHOLD = 20; // $20
+      const TEST_CONFIRMATION_THRESHOLD = 2; // $2
+      const threshold = isTestMode ? TEST_CONFIRMATION_THRESHOLD : USER_CONFIRMATION_THRESHOLD;
+
+      if (req.estimatedCost >= threshold && !req.forceBypass) {
+        logger.warn(`[CostControl] High cost operation detected ($${req.estimatedCost}), requesting confirmation`);
+        return {
+          allowed: false,
+          requiresConfirmation: true,
+          reason: `This operation will cost $${req.estimatedCost.toFixed(2)}, which exceeds the automatic approval threshold of $${threshold.toFixed(2)}.`,
           remainingBudget: limits.daily - dailyUsed,
           dailyUsed,
           monthlyUsed,
