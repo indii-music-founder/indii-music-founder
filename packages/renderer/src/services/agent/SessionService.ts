@@ -24,7 +24,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
     async createSession(session: ConversationSession): Promise<string> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
-        const userId = auth.currentUser?.uid || 'anonymous';
+        const userId = auth.currentUser?.uid || 'founder-demo-uid';
 
         const doc: SessionDocument = {
             ...session,

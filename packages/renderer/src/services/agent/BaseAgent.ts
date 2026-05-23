@@ -360,7 +360,7 @@ export class BaseAgent implements SpecializedAgent {
                     // This is critical for Digital Handshake continuity across the swarm
                     const directive = context?.directive || {
                         id: crypto.randomUUID(),
-                        userId: context?.userId || auth.currentUser?.uid || 'anonymous',
+                        userId: context?.userId || auth.currentUser?.uid || 'founder-demo-uid',
                         title: `Consult ${targetAgentId}`,
                         status: 'IN_PROGRESS',
                         assignedAgent: targetAgentId as any,

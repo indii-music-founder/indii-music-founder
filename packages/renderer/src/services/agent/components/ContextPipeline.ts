@@ -134,7 +134,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         // 6. Generate A2A Swarm Directive
         const directive: Directive = {
             id: crypto.randomUUID(),
-            userId: userId || 'anonymous',
+            userId: userId || 'founder-demo-uid',
             title: stateContext.activeModule ? `Task: ${stateContext.activeModule}` : 'General Consultation',
             status: 'IN_PROGRESS',
             assignedAgent: (stateContext.activeModule || 'generalist') as any,

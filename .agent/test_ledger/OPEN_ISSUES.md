@@ -1072,3 +1072,20 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Found:** 2026-05-22 by Mega Stress Test V7
 - **Summary:** Console shows `Fatal Error: The query requires an index.` for Boardroom discussion history.
 - **Expected:** Required composite index is created via Firebase.
+
+### ISSUE-043: Guest Exploration and New Account Creation Blocked by Firestore Rules
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication & Click Efficiency
+- **Module:** Authentication / Road Manager / All
+- **Found:** 2026-05-23 by Tour Manager Persona
+- **Steps to Reproduce:**
+  1. Click "Explore as Guest" on landing page or "Create Account"
+  2. For Guest: App drops to an infinite loading spinner (dashboard fails to load).
+  3. For Create Account: Successfully logs in, but console throws widespread `FirebaseError: Missing or insufficient permissions.`
+  4. Navigate to Road Manager, enter route waypoints, and click "Initialize Route".
+  5. Nothing happens.
+- **User Impact:** New users and guests are completely blocked from using the app. They see no error messages on screen, only broken features or infinite loading screens.
+- **Screenshot:** `/tmp/map-render.png` (captured during test)
+- **Notes:** The Firestore Rules deployed during the re-auth patch are too restrictive for guests and new test users. Need to verify auth requirements for basic profile reads and writes.
+
