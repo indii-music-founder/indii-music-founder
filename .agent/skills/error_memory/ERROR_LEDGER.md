@@ -1,3 +1,14 @@
+## 2026-05-23 CI Failure: Fallback Mode Mock Structure
+
+**SEVERITY:** Medium (breaks CI test suite)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts`
+- ERROR: `AppException: Intelligence Service Failure: No candidates returned from TTS fallback model`
+- CAUSE: The CI environment was missing specific `.env` variables (e.g. `VITE_USE_FINE_TUNED_AGENTS`), causing `isAppCheckConfigured()` to return false. This forced `FirebaseIntelligenceService` to use the fallback `GoogleGenAI` SDK instead of the Firebase Autonomous SDK. The Vitest mock `mockGenerateContent` was only returning the Firebase SDK shape (`{ response: { candidates: [...] } }`), which caused `result.candidates` to be undefined when the fallback SDK shape was expected.
+- FIX: Modified `mockGenerateContent.mockResolvedValue` to include both the Firebase SDK structure (`response: { ... }`) and the direct Gemini SDK structure (`candidates: [...]`) so the mock works identically in both Normal and Fallback execution modes.
+- PREVENTION: When mocking Google Gen AI / Firebase Gen AI SDKs, always ensure the mock payload satisfies both the `firebase/ai` return shape (`{ response: ... }`) and the `@google/genai` fallback shape (direct properties on the object).
+
 # Error Ledger
 
 ## 2026-05-15 Cost-Control Feature: TypeScript & Code Generation Anti-Patterns
