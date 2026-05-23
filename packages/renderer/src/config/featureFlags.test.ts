@@ -127,7 +127,6 @@ describe('FeatureFlagService', () => {
             const gated = getGatedModuleIds();
             expect(gated.has('dashboard')).toBe(false);
             expect(gated.has('creative')).toBe(false);
-            expect(gated.has('video')).toBe(false);
         });
     });
 

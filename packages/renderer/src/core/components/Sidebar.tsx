@@ -166,7 +166,6 @@ export default function Sidebar() {
         { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
-        { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
     const departmentItems: SidebarItem[] = [
