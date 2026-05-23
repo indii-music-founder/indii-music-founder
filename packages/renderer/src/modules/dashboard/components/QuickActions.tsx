@@ -29,7 +29,6 @@ interface QuickAction {
  */
 const ACTIONS: QuickAction[] = [
     { id: 'creative', name: 'Creative', icon: Sparkles, hint: 'AI image generation studio' },
-    { id: 'video', name: 'Video', icon: Film, hint: 'AI video production' },
     { id: 'marketing', name: 'Marketing', icon: Megaphone, hint: 'Campaigns & brand copy' },
     { id: 'distribution', name: 'Distribution', icon: Globe, hint: 'Release management' },
     { id: 'finance', name: 'Finance', icon: DollarSign, hint: 'Revenue & royalties' },

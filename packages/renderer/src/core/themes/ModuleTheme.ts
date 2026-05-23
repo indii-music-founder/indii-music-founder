@@ -31,12 +31,6 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'linear-gradient(135deg, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'waves', opacity: 0.3, blendMode: 'screen' }
     },
-    'video': {
-        officeName: 'Video Editing Bay',
-        accent: '#00ff66', // Green (Shares with Creative)
-        backgroundGradient: 'radial-gradient(circle at 100% 50%, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'geometric', opacity: 0.1 }
-    },
     'legal': {
         officeName: 'Legal & IP Department',
         accent: '#455A64', // Slate (Official)

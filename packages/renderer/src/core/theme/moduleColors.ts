@@ -203,16 +203,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
     },
-    video: {
-        // Video shares Creative's purple aesthetic
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
-    },
     workflow: {
         // Workflow uses Social's connectivity cyan
         text: 'text-dept-social',

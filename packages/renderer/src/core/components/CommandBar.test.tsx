@@ -47,7 +47,6 @@ vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAll: () => [
             { id: 'creative', name: 'Creative Director', category: 'manager', color: 'bg-pink-500' },
-            { id: 'video', name: 'Video Producer', category: 'specialist', color: 'bg-purple-500' },
             { id: 'brand', name: 'Brand Manager', category: 'manager', color: 'bg-amber-500' },
             { id: 'road', name: 'Road Manager', category: 'manager', color: 'bg-yellow-500' },
             { id: 'campaign', name: 'Campaign Manager', category: 'manager', color: 'bg-orange-500' },
@@ -57,7 +56,6 @@ vi.mock('@/services/agent/registry', () => ({
         register: vi.fn(),
         get: (id: string) => [
             { id: 'creative', name: 'Creative Director', category: 'manager', color: 'bg-pink-500' },
-            { id: 'video', name: 'Video Producer', category: 'specialist', color: 'bg-purple-500' },
             { id: 'brand', name: 'Brand Manager', category: 'manager', color: 'bg-amber-500' },
             { id: 'road', name: 'Road Manager', category: 'manager', color: 'bg-yellow-500' },
             { id: 'campaign', name: 'Campaign Manager', category: 'manager', color: 'bg-orange-500' },
