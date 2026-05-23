@@ -1205,10 +1205,10 @@ The user will see this plan and can approve it to start execution.`;
                 planId,
                 thoughts: [{
                     id: crypto.randomUUID(),
-                    text: planId ? 'Drafted execution plan' : 'Direct Chat (Fast Path)',
+                    text: planId ? 'Drafted execution plan' : 'Analyzed Context',
                     timestamp: Date.now(),
                     type: planId ? 'logic' : 'logic',
-                    toolName: 'Direct LLM'
+                    toolName: 'Agent Core'
                 }]
             });
         } catch (err: unknown) {
