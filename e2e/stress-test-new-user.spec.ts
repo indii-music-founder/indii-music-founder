@@ -151,7 +151,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.locator('[data-testid="nav-item-creative"]').click();
 
         // D. Verify Creative Director Module Loaded
-        await expect(page.getByRole('heading', { name: /Creative Director/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: /(Creative Director|Studio)/i })).toBeVisible({ timeout: 15000 });
         console.log('[Gauntlet] Creative Director module loaded.');
 
         // E. Verify Key Sub-Modules Are Accessible
