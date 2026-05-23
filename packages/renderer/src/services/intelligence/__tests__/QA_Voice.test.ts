@@ -77,6 +77,7 @@ describe('Voice Interface QA', () => {
 
     it('should sanitize special characters', async () => {
         mockGenerateContent.mockResolvedValue({
+            // Firebase AI SDK format
             response: {
                 candidates: [{
                     content: {
@@ -88,7 +89,18 @@ describe('Voice Interface QA', () => {
                         }]
                     }
                 }]
-            }
+            },
+            // Direct @google/genai SDK format
+            candidates: [{
+                content: {
+                    parts: [{
+                        inlineData: {
+                            mimeType: 'audio/mp3',
+                            data: 'base64audio'
+                        }
+                    }]
+                }
+            }]
         });
 
         const result = await service.generateSpeech('Hello 🌍! @#$%^&*()', 'Kore');
