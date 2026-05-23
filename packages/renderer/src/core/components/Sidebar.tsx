@@ -180,15 +180,14 @@ export default function Sidebar() {
         { id: 'merch', icon: ShoppingBag, label: 'Art & Merch Dept' },
         { id: 'registration', icon: FileText, label: 'Registration Center' },
         { id: 'security', icon: Shield, label: 'Security Agent' },
-        { id: 'devops', icon: Server, label: 'DevOps Agent' },
-        { id: 'screenwriter', icon: PenTool, label: 'Screenwriter Agent' },
     ];
 
     const toolItems: SidebarItem[] = [
+        { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
-        { id: 'observability', icon: Activity, label: 'Observability' },
+        { id: 'observability', icon: Activity, label: 'Command Center' },
         { id: 'settings', icon: Settings, label: 'Settings' },
     ];
 

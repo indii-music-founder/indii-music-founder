@@ -823,12 +823,12 @@ CURRENT REQUEST: ${task}
 
         // Strip any [Tool: name]...[End Tool name] blocks from the final response.
         // These are internal Autonomous reasoning artifacts — users should only see the narrative text.
-        const cleanedResponse = (accumulatedResponse || 'Task completed.')
+        const cleanedResponse = (accumulatedResponse || '')
             .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
             .trim();
 
         return {
-            text: cleanedResponse || 'Task completed.',
+            text: cleanedResponse || lastToolMessage || 'Task completed.',
         };
     }
 }
