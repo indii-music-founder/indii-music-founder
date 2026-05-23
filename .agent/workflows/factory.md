@@ -23,8 +23,9 @@ When `/factory` is invoked, the primary agent acts as the **Floor Manager** and 
 - **Output:** Clean, working code that resolves the orchestrator's findings.
 
 ### 3. The QA & Publisher
-- **Role:** To seal and ship the app.
+- **Role:** To seal and ship the app, and investigate pipeline failures.
 - **Task:** Waits for the Test Orchestrator to complete its list and the Fix Agent to clear the queue. It then executes the `/ci-validate` workflow (`npm run typecheck`, `npm run lint`, `npm test`). 
+- **Auto-Healing CI:** If CI fails (e.g., GitHub Actions or local test suites), the Publisher immediately parses the failure logs, diagnoses the root cause, documents it in `.agent/skills/error_memory/ERROR_LEDGER.md` to build institutional memory, and routes the specific failures back to `OPEN_ISSUES.md` so the Fix Agent can patch them. It loops this until green.
 - **Output:** If the tests pass and the branch is green, it consolidates the commits, writes a detailed summary artifact, and pushes the branch to `origin main`.
 
 ---
