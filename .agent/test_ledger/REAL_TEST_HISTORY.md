@@ -393,3 +393,11 @@
     *   🟢 ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
     *   🔴 ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
     *   🟡 ISSUE-054: Boardroom Import Error (@/core/store)
+
+## 2026-05-23 - Tour Manager - Road Manager API Verification
+- **Modules Tested:** Auth, Dashboard, Road Manager
+- **Duration:** 15 minutes
+- **Findings:** 1 HIGH
+- **Key Issues:** New accounts and Guests are blocked by Firestore Permission Denied errors.
+- **Coverage Delta:** First live test of Road Manager map initialization.
+- **UX Score:** 12/30 (Blocked by errors)

@@ -39,7 +39,7 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
      */
     async syncMessage(msg: AgentMessage): Promise<void> {
         try {
-            const userId = auth.currentUser?.uid || 'anonymous';
+            const userId = auth.currentUser?.uid || 'founder-demo-uid';
 
             // Clean thoughts, converting timestamps to Firestore Timestamps
             const cleanedThoughts = msg.thoughts?.map(thought => ({

@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
-        const userId = auth.currentUser?.uid || 'anonymous';
+        const userId = auth.currentUser?.uid || 'founder-demo-uid';
 
         // Start Trace
         const traceId = await TraceService.startTrace(userId, 'orchestrator', userQuery, {
