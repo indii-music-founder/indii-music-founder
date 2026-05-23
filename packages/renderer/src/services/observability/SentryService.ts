@@ -6,8 +6,12 @@ const ENVIRONMENT = import.meta.env.MODE ?? 'development';
 const RELEASE = `indii@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
 const DEBUG = import.meta.env.DEV && import.meta.env.VITE_DEBUG_SENTRY === 'true';
 
+let isInitialized = false;
+
 /** Initialize Sentry for the React renderer. Call once before ReactDOM.render(). */
 export function initSentry(): void {
+    if (isInitialized) return;
+    
     // Item 303: Gate Sentry initialization on cookie consent.
     const consent = getConsentPreferences();
     if (!consent?.errorTracking) {
@@ -81,6 +85,7 @@ export function initSentry(): void {
     if (typeof window !== 'undefined') {
         (window as unknown as Record<string, unknown>).__sentryInstance = Sentry;
     }
+    isInitialized = true;
 }
 
 /**
