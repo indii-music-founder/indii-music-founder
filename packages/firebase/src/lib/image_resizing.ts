@@ -16,8 +16,8 @@ export const generateThumbnail = onObjectFinalized(
     {
         cpu: 2,
         memory: "1GiB",
-        region: "us-west1",
-        bucket: "indii-music-founder.appspot.com",
+        region: "us-central1",
+        bucket: "indii-music-founder.firebasestorage.app",
         timeoutSeconds: 300,
     },
     async (event) => {

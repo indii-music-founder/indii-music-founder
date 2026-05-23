@@ -114,6 +114,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         if (state.conversationMode === 'direct' && state.directTargetAgentId) {
             return state.directTargetAgentId;
         }
+        if (state.conversationMode === 'department' && state.activeDepartmentId) {
+            return state.activeDepartmentId;
+        }
         const session = state.sessions[state.activeSessionId || ''];
         return session?.participants[0] || 'generalist';
     });

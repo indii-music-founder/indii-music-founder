@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { vi } from 'vitest';
+vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
 import React from 'react';
 
 // Only import DOM-specific modules when running in jsdom environment

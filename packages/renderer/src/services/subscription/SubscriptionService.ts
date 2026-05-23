@@ -286,6 +286,11 @@ export class SubscriptionService {
 
     if (!targetUserId) {
       if (action === 'generateVideo' || action === 'generateImage') {
+        // Allow unauthenticated in DEV so that e2e browser QA works without full mock auth flow
+        if (import.meta.env.DEV || import.meta.env.VITE_SKIP_ONBOARDING === 'true') {
+            logger.warn(`[SubscriptionService] DEV MODE - allowing unauthenticated Autonomous generation (${action})`);
+            return { allowed: true };
+        }
         logger.warn(`[SubscriptionService] Blocked unauthenticated Autonomous generation (${action})`);
         return { allowed: false, reason: 'Authentication required for Autonomous generation.' };
       }

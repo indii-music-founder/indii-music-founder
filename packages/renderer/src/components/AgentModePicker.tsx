@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Users, User, LayoutGrid, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
+import { agentRegistry } from '@/services/agent/registry';
 
 /**
  * AgentModePicker — Three-mode hybrid hierarchical agent selector.
@@ -104,6 +105,8 @@ export function AgentModePicker({
                         <div className="grid grid-cols-2 gap-1.5 max-h-[240px] overflow-y-auto custom-scrollbar pr-1">
                             {Object.values(DEPARTMENTS).map((dept) => {
                                 const isSelected = activeDepartmentId === dept.id;
+                                const headMeta = agentRegistry.get(dept.headId);
+                                const headName = headMeta ? headMeta.name : dept.headId;
                                 return (
                                     <button
                                         key={dept.id}
@@ -121,7 +124,7 @@ export function AgentModePicker({
                                             <span className="text-[11px] font-semibold truncate">{dept.displayName}</span>
                                             {isSelected && <Check className="w-3 h-3 text-blue-400" />}
                                         </div>
-                                        <span className="text-[8px] opacity-60 truncate">Head: {dept.headId}</span>
+                                        <span className="text-[8px] opacity-60 truncate">Head: {headName}</span>
                                     </button>
                                 );
                             })}
@@ -154,6 +157,8 @@ export function AgentModePicker({
                                             <div className="grid grid-cols-1 gap-1">
                                                 {agentsInDept.map((agentId) => {
                                                     const isSelected = directTargetAgentId === agentId;
+                                                    const agentMeta = agentRegistry.get(agentId);
+                                                    const displayName = agentMeta ? agentMeta.name : agentId;
                                                     return (
                                                         <button
                                                             key={agentId}
@@ -168,7 +173,7 @@ export function AgentModePicker({
                                                             )}
                                                         >
                                                             <div className="flex flex-col text-left">
-                                                                <span className="text-[11px] font-semibold">{agentId}</span>
+                                                                <span className="text-[11px] font-semibold">{displayName}</span>
                                                                 <span className="text-[8px] opacity-40">{agentId === dept.headId ? 'Department Head' : 'Specialist Worker'}</span>
                                                             </div>
                                                             {isSelected && <Check className="w-3 h-3 text-purple-400" />}

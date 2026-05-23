@@ -69,7 +69,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         conversationMode,
         setConversationMode,
         stopAgent,
-        isAgentProcessing
+        isAgentProcessing,
+        directTargetAgentId,
+        activeDepartmentId
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -88,7 +90,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         conversationMode: state.conversationMode,
         setConversationMode: state.setConversationMode,
         stopAgent: state.stopAgent,
-        isAgentProcessing: state.isAgentProcessing
+        isAgentProcessing: state.isAgentProcessing,
+        directTargetAgentId: state.directTargetAgentId,
+        activeDepartmentId: state.activeDepartmentId
     })));
 
     const isBoardroom = conversationMode === 'boardroom';
@@ -126,6 +130,21 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
+
+    const activeAgentName = useMemo(() => {
+        if (conversationMode === 'direct' && directTargetAgentId) {
+            const agent = agentRegistry.get(directTargetAgentId);
+            return agent ? agent.name : directTargetAgentId;
+        }
+        if (conversationMode === 'department' && activeDepartmentId) {
+            const agent = agentRegistry.get(activeDepartmentId);
+            return agent ? agent.name : activeDepartmentId;
+        }
+        if (conversationMode === 'boardroom') {
+            return 'Boardroom';
+        }
+        return 'indii Conductor';
+    }, [conversationMode, directTargetAgentId, activeDepartmentId]);
 
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
 
@@ -336,8 +355,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
-                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${currentModule}...`)}
-                    aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
+                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${activeAgentName}...`)}
+                    aria-label={isIndiiMode ? "Ask indii" : `Message ${activeAgentName}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                     data-testid="main-prompt-input"
                 />

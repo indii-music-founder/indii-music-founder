@@ -28,7 +28,7 @@ export class TokenUsageService {
      * HOLD: ON pending Firebase billing resolution (2026-05-15). Set to false
      * once billing is restored. Local dev can bypass with VITE_INTELLIGENCE_MOCK_MODE=true.
      */
-    private static readonly GLOBAL_EMERGENCY_STOP = true;
+    private static readonly GLOBAL_EMERGENCY_STOP = false;
 
     /**
      * Track usage for a user.

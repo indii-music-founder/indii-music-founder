@@ -10,7 +10,7 @@
 import * as functions from "firebase-functions/v1";
 
 export const requestTaxForms = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
         memory: "256MB"

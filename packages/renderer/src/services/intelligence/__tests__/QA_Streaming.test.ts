@@ -78,6 +78,13 @@ describe('Streaming QA', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new FirebaseIntelligenceService();
+        service.useFallbackMode = true;
+        service.fallbackClient = {
+            models: {
+                generateContent: mockGenerateContent,
+                generateContentStream: mockGenerateContentStream
+            }
+        } as any;
     });
 
     it('should pass AbortSignal to SDK', async () => {

@@ -10,6 +10,7 @@ import type { Tool } from 'firebase/ai';
 import type { IntelligenceContext } from '../IntelligenceContext';
 import type { GenerationConfig, GenerateImageOptions } from '@/shared/types/ai.dto';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { generateWithFallback } from '../fallback/FallbackClient';
 
 /**
  * Generate an image using the Gemini 3 native image generation model.
@@ -56,16 +57,28 @@ export async function generateImage(
             generationConfig.candidateCount = config.numberOfImages as number;
         }
 
-        // 3. Generate
-        const result = await ctx.rawGenerateContent(
+        // 3. Ensure we have the fallback client (direct @google/genai SDK) without poisoning the global useFallbackMode
+        const fallbackClient = await ctx.ensureFallbackClient();
+
+        if (!fallbackClient) {
+            throw new Error('Image generation requires the Google AutonomousIntelligence SDK. Please configure VITE_API_KEY.');
+        }
+
+        // 4. Generate directly using the fallbackClient
+        const result = await generateWithFallback(
+            fallbackClient,
             prompt,
             model,
             generationConfig,
             undefined,
-            tools
+            tools,
+            undefined,
+            undefined,
+            undefined,
+            (e) => ctx.handleError(e)
         );
 
-        // 4. Extract Image
+        // 5. Extract Image
         // Gemini 3 returns images as inlineData in the parts
         const candidates = result.response.candidates;
         if (!candidates || candidates.length === 0) throw new Error('No candidates returned');

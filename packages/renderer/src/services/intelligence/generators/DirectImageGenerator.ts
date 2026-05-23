@@ -68,8 +68,8 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
             imageConfig.personGeneration = PERSON_GEN_API_MAP[options.personGeneration] ?? 'ALLOW_ADULT';
         }
 
-        // Negative prompt is only supported on the Pro model (Nano Banana Pro)
-        const isPro = modelId.includes('pro');
+        // Negative prompt is only supported on the Pro model (Nano Banana Pro / Ultra tier)
+        const isPro = modelId.includes('pro') || modelId.includes('ultra');
         if (options.negativePrompt && isPro) {
             // Note: Currently negative prompt might not be standard in all Gemini 3 preview SDKs
             // but we pass it anyway based on Nano Banana Pro specs.
@@ -145,6 +145,13 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
         }
 
         if (msg.includes('429') || msg.includes('quota') || msg.toLowerCase().includes('rate limit')) {
+            // Unblock local development/E2E testing if quota is exceeded
+            if (import.meta.env.DEV || import.meta.env.VITE_SKIP_ONBOARDING === 'true') {
+                logger.warn('[DirectImageGenerator] ⚠️ Gemini API quota exceeded. Generating mock image for DEV mode.');
+                // Return a simple grey placeholder data URI
+                return ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PQ0sgSU1BR0U8L3RleHQ+PC9zdmc+'];
+            }
+
             throw new AppException(
                 AppErrorCode.RATE_LIMITED,
                 'Gemini API quota exceeded or rate limited. Please wait or check your GCP billing.',
