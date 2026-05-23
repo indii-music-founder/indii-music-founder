@@ -396,6 +396,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
             size="18"
           />
         </button>
+        <button
+          aria-label="Security Agent"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-security"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Shield"
+            size="18"
+          />
+        </button>
       </div>
     </div>
     <div
@@ -405,6 +422,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         class="space-y-0.5 overflow-hidden"
         style="height: auto; opacity: 1;"
       >
+        <button
+          aria-label="Workflow Builder"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-workflow"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-GitBranch"
+            size="18"
+          />
+        </button>
         <button
           aria-label="Audio Analyzer"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
@@ -457,7 +491,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
         </button>
         <button
-          aria-label="Observability"
+          aria-label="Command Center"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-observability"
@@ -1059,6 +1093,27 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             Registration Center
           </span>
         </button>
+        <button
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-security"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Shield"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Security Agent
+          </span>
+        </button>
       </div>
     </div>
     <div
@@ -1082,6 +1137,27 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="space-y-0.5 overflow-hidden"
         style="height: auto; opacity: 1;"
       >
+        <button
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-workflow"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-GitBranch"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Workflow Builder
+          </span>
+        </button>
         <button
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
@@ -1163,7 +1239,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           <span
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
-            Observability
+            Command Center
           </span>
         </button>
         <button
