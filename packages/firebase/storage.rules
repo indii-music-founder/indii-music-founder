@@ -37,7 +37,14 @@ service firebase.storage {
     function isAllowedMediaType() {
       return isImageType() || isVideoType() || isAudioType() ||
              request.resource.contentType.matches('application/pdf') ||
-             request.resource.contentType.matches('application/json');
+             request.resource.contentType.matches('application/json') ||
+             request.resource.contentType.matches('text/.*') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+             request.resource.contentType.matches('application/zip') ||
+             request.resource.contentType.matches('application/x-zip-compressed') ||
+             request.resource.contentType.matches('font/.*') ||
+             request.resource.contentType.matches('application/x-font-.*');
     }
 
     // ========================================

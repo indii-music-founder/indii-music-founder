@@ -209,7 +209,14 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
                 releasesSnap.forEach(doc => {
                     const release = doc.data();
-                    const releaseDate = (release.releaseDate as { toDate(): Date }).toDate();
+                    let releaseDate: Date;
+                    if (typeof (release.releaseDate as any)?.toDate === 'function') {
+                        releaseDate = (release.releaseDate as any).toDate();
+                    } else if ((release.releaseDate as any)?.seconds !== undefined) {
+                        releaseDate = new Date((release.releaseDate as any).seconds * 1000);
+                    } else {
+                        releaseDate = new Date(release.releaseDate as unknown as string | number);
+                    }
                     const daysUntil = Math.ceil(
                         (releaseDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
                     );

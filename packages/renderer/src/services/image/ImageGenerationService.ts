@@ -240,10 +240,11 @@ export class ImageGenerationService {
 
         // Cost Control: Enforce budget limits before expensive API call
         const estimatedCost = count * 0.04; // $0.04 per image
-        const costCheck = await CostControlService.checkAndReserve({
+        const uid = userId || auth.currentUser?.uid || 'unknown';
+        let costCheck = await CostControlService.checkAndReserve({
             operationType: 'image',
             estimatedCost,
-            userId: userId || auth.currentUser?.uid || 'unknown',
+            userId: uid,
             metadata: {
                 imageCount: count,
                 prompt: options.prompt.substring(0, 100),
@@ -252,7 +253,40 @@ export class ImageGenerationService {
         });
 
         if (!costCheck.allowed) {
-            throw new Error(`Image generation blocked: ${costCheck.reason}`);
+            if (costCheck.requiresConfirmation) {
+                const approved = await new Promise<boolean>((resolve) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        useStore.getState().setPendingCostWarning({
+                            estimatedCost,
+                            reason: costCheck.reason || 'This operation is expensive.',
+                            resolve
+                        });
+                    });
+                });
+
+                if (!approved) {
+                    throw new Error('Image generation cancelled by user (cost too high)');
+                }
+
+                // Retry with forceBypass
+                costCheck = await CostControlService.checkAndReserve({
+                    operationType: 'image',
+                    estimatedCost,
+                    userId: uid,
+                    forceBypass: true,
+                    metadata: {
+                        imageCount: count,
+                        prompt: options.prompt.substring(0, 100),
+                        style: options.style,
+                    },
+                });
+
+                if (!costCheck.allowed) {
+                     throw new Error(`Image generation blocked: ${costCheck.reason}`);
+                }
+            } else {
+                throw new Error(`Image generation blocked: ${costCheck.reason}`);
+            }
         }
 
 

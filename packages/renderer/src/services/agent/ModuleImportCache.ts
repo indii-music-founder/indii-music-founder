@@ -112,3 +112,7 @@ class ModuleImportCache {
 }
 
 export const moduleImportCache = new ModuleImportCache();
+
+if (typeof window !== 'undefined') {
+    (window as any).moduleImportCache = moduleImportCache;
+}
