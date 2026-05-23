@@ -264,8 +264,12 @@ let appCheck = null;
 if (typeof window !== 'undefined') {
     // Debug token for local development
     // Set global debug token if provided in env
-    if (env.DEV && env.appCheckDebugToken) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+    if (env.DEV) {
+        if (env.appCheckDebugToken) {
+            window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+        } else {
+            window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
     }
 
     // SECURITY: Warn in production if App Check is not configured
@@ -332,7 +336,7 @@ declare global {
         functions: typeof functions;
         auth: typeof auth;
         httpsCallable: typeof httpsCallable;
-        FIREBASE_APPCHECK_DEBUG_TOKEN?: string;
+        FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
     }
 }
 
