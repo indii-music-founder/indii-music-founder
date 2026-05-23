@@ -117,6 +117,8 @@ const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersP
 const VideoPopout = lazyWithRetry(() => import('../modules/video/editor/VideoPopout'));
 const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
+const DevopsDashboard = lazyWithRetry(() => import('../modules/devops/DevopsDashboard'));
+const ScreenwriterDashboard = lazyWithRetry(() => import('../modules/screenwriter/ScreenwriterDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
 const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
@@ -171,6 +173,8 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'video-popout': VideoPopout,
     'registration': RegistrationCenter,
     'security': SecurityDashboard,
+    'devops': DevopsDashboard,
+    'screenwriter': ScreenwriterDashboard,
 };
 
 // ============================================================================

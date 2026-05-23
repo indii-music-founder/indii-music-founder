@@ -104,12 +104,16 @@ export class AgentPromptBuilder {
         const profile = context?.userProfile;
         if (profile?.createdAt) {
             let joinDate: Date;
-            if (typeof profile.createdAt.toDate === 'function') {
-                joinDate = profile.createdAt.toDate();
-            } else if ((profile.createdAt as any).seconds !== undefined) {
-                joinDate = new Date((profile.createdAt as any).seconds * 1000);
-            } else {
-                joinDate = new Date(profile.createdAt as unknown as string | number);
+            try {
+                if (typeof profile.createdAt.toDate === 'function') {
+                    joinDate = profile.createdAt.toDate();
+                } else if ((profile.createdAt as any).seconds !== undefined) {
+                    joinDate = new Date((profile.createdAt as any).seconds * 1000);
+                } else {
+                    joinDate = new Date(profile.createdAt as unknown as string | number);
+                }
+            } catch (err) {
+                joinDate = new Date();
             }
             const accountAgeDays = Math.floor((now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -123,12 +127,16 @@ export class AgentPromptBuilder {
             // Last login for session freshness
             if (profile.lastLoginAt) {
                 let lastLogin: Date;
-                if (typeof profile.lastLoginAt.toDate === 'function') {
-                    lastLogin = profile.lastLoginAt.toDate();
-                } else if ((profile.lastLoginAt as any).seconds !== undefined) {
-                    lastLogin = new Date((profile.lastLoginAt as any).seconds * 1000);
-                } else {
-                    lastLogin = new Date(profile.lastLoginAt as unknown as string | number);
+                try {
+                    if (typeof profile.lastLoginAt.toDate === 'function') {
+                        lastLogin = profile.lastLoginAt.toDate();
+                    } else if ((profile.lastLoginAt as any).seconds !== undefined) {
+                        lastLogin = new Date((profile.lastLoginAt as any).seconds * 1000);
+                    } else {
+                        lastLogin = new Date(profile.lastLoginAt as unknown as string | number);
+                    }
+                } catch (err) {
+                    lastLogin = new Date();
                 }
                 const daysSinceLogin = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
                 if (daysSinceLogin > 0) {

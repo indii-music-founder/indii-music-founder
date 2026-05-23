@@ -122,7 +122,7 @@ export class FinanceService {
       return {
         id: docRef.id,
         ...validExpense,
-        createdAt: now.toDate().toISOString()
+        createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as any).toISOString()
       };
     } catch (error: unknown) {
       Sentry.captureException(error);
@@ -152,7 +152,7 @@ export class FinanceService {
           id: doc.id,
           ...data,
           // Handle Timestamp conversion if coming from Firestore
-          createdAt: (data.createdAt instanceof Timestamp) ? data.createdAt.toDate().toISOString() : data.createdAt
+          createdAt: (data.createdAt && typeof (data.createdAt as any).toDate === 'function') ? (data.createdAt as any).toDate().toISOString() : data.createdAt
         } as Expense;
       });
     } catch (error: unknown) {

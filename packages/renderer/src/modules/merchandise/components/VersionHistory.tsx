@@ -64,10 +64,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         canvasJSON: data.canvasJSON || '{}',
                         thumbnail: data.thumbnail || '',
                         lastModified: data.lastModified instanceof Timestamp
-                            ? data.lastModified.toDate()
+                            ? (typeof data.lastModified.toDate === 'function' ? data.lastModified.toDate() : new Date(data.lastModified as any))
                             : new Date(data.lastModified),
                         createdAt: data.createdAt instanceof Timestamp
-                            ? data.createdAt.toDate()
+                            ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : new Date(data.createdAt as any))
                             : new Date(data.createdAt || data.lastModified)
                     });
                 });
