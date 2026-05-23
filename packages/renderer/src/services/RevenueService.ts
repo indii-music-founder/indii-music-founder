@@ -140,7 +140,7 @@ export class RevenueService {
 
             let dateObj = new Date();
             if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-              dateObj = data.createdAt.toDate();
+              dateObj = typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : (data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt));
             } else if (data.timestamp) {
               dateObj = new Date(data.timestamp);
             }

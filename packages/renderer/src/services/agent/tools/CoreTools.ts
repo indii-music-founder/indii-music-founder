@@ -211,7 +211,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     const release = doc.data();
                     let releaseDate: Date;
                     if (typeof (release.releaseDate as any)?.toDate === 'function') {
-                        releaseDate = (release.releaseDate as any).toDate();
+                        releaseDate = typeof (release.releaseDate as any).toDate === 'function' ? (release.releaseDate as any).toDate() : new Date(release.releaseDate as any);
                     } else if ((release.releaseDate as any)?.seconds !== undefined) {
                         releaseDate = new Date((release.releaseDate as any).seconds * 1000);
                     } else {

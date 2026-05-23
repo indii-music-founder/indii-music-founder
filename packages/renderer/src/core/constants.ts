@@ -40,7 +40,9 @@ export const MODULE_IDS = [
     'founders-portal',
     'video-popout',
     'registration',
-    'security'
+    'security',
+    'devops',
+    'screenwriter'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -69,6 +71,8 @@ export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'creative': 'creative',
     'video': 'video',
     'video-popout': 'video',
+    'devops': 'indii_executor',
+    'screenwriter': 'indii_executor',
     'legal': 'legal',
     'marketing': 'marketing',
     'campaign': 'marketing',
