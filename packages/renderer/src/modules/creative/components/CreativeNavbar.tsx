@@ -54,11 +54,11 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     const tabs = [
-        { id: 'direct', label: 'Generate', icon: Wand2, testId: 'direct-view-btn', always: true },
-        { id: 'canvas', label: 'Canvas', icon: ImageIcon, testId: 'canvas-view-btn', always: true },
-        { id: 'video_production', label: 'Director', icon: Video, testId: 'director-view-btn', always: false, showWhen: generationMode === 'video' },
-        { id: 'showroom', label: 'Showroom', icon: MonitorPlay, testId: 'showroom-view-btn', always: true },
-        { id: 'lab', label: 'Keyframes', icon: FlaskConical, testId: 'lab-view-btn', always: true },
+        { id: 'direct', label: 'Generate', icon: Wand2, testId: 'direct-view-btn' },
+        { id: 'canvas', label: 'Canvas', icon: ImageIcon, testId: 'canvas-view-btn' },
+        { id: 'video_production', label: 'Video', icon: Video, testId: 'director-view-btn' },
+        { id: 'showroom', label: 'Showroom', icon: MonitorPlay, testId: 'showroom-view-btn' },
+        { id: 'lab', label: 'Keyframes', icon: FlaskConical, testId: 'lab-view-btn' },
     ] as const;
 
     return (
@@ -83,13 +83,19 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     {/* View Mode Switcher */}
                     <div className="flex bg-white/4 p-0.5 rounded-lg border border-white/6 overflow-x-auto no-scrollbar">
                         {tabs.map(tab => {
-                            if (!tab.always && tab.showWhen === false) return null;
                             const Icon = tab.icon;
                             const isActive = viewMode === tab.id;
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setViewMode(tab.id as typeof viewMode)}
+                                    onClick={() => {
+                                        setViewMode(tab.id as typeof viewMode);
+                                        if (tab.id === 'video_production') {
+                                            useStore.getState().setGenerationMode('video');
+                                        } else if (tab.id === 'direct' || tab.id === 'canvas' || tab.id === 'showroom') {
+                                            useStore.getState().setGenerationMode('image');
+                                        }
+                                    }}
                                     data-testid={tab.testId}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'

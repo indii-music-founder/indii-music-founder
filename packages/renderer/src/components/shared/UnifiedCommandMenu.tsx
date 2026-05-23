@@ -100,10 +100,6 @@ export function UnifiedCommandMenu() {
                             <PenTool className="w-4 h-4 text-pink-400" />
                             <span>Creative Studio</span>
                         </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('video'))} className="flex items-center gap-3 cursor-pointer">
-                            <Video className="w-4 h-4 text-sky-400" />
-                            <span>Video Studio</span>
-                        </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('files'))} className="flex items-center gap-3 cursor-pointer">
                             <FolderOpen className="w-4 h-4 text-emerald-400" />
                             <span>Inbox & Project Files</span>
