@@ -165,7 +165,7 @@ Object.values(WORKFLOW_REGISTRY).forEach(workflow => {
     } catch (error) {
         logger.error(`[WorkflowRegistry] Validation failed for ${workflow.id}:`, error);
         // In a production environment, we might just log, but in dev we want to know.
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
             throw error;
         }
     }
