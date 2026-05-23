@@ -175,7 +175,9 @@
     "url": "https://github.com/the-walking-agency-det/indii-Clean.git"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "express": "4.22.1",
+    "firebase-admin": "^13.10.0",
     "jspdf": "^4.2.1",
     "react-router-dom": "7.14.2",
     "resend": "6.1.3",

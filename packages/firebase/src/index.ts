@@ -299,7 +299,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
         memory: "2GB",
@@ -387,7 +387,7 @@ export const triggerVideoJob = functions
  * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
  */
 export const executeVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
@@ -443,7 +443,7 @@ export const executeVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -610,7 +610,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -1408,7 +1408,7 @@ export const healthCheck = functions
  * Part of PRODUCTION_100 Item 12 (Multi-region Deployment)
  */
 export const healthCheckWest1 = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
@@ -1425,7 +1425,7 @@ export const healthCheckWest1 = functions
  * Integration points: Clearbit, Apollo via AI fallback.
  */
 export const enrichFanData = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 300,
         memory: "1GB",

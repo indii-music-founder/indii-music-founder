@@ -21,6 +21,7 @@ const repoRoot = resolve(__dirname, '..', '..');
 
 export default defineConfig({
     root: __dirname,
+    envDir: repoRoot,
     plugins: [
         react(),
         tailwindcss(),

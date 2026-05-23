@@ -27,8 +27,8 @@ describe('Intelligence Model Validation', () => {
     it('should ensure all approved models are within the correct namespace/format', () => {
         const models = Object.values(APPROVED_MODELS);
         for (const modelId of models) {
-            // All recent models should contain 'gemini' or 'veo', or be an embedding model
-            expect(modelId).toMatch(/^(gemini|veo|models\/)/);
+            // All recent models should contain 'gemini', 'veo', 'imagen', or be an embedding model
+            expect(modelId).toMatch(/^(gemini|veo|imagen|models\/)/);
         }
     });
 });

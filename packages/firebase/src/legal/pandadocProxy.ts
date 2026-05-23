@@ -14,7 +14,7 @@ const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
 // Common enforcements
 const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true";
-const REGION = "us-west1";
+const REGION = "us-central1";
 
 function getHeaders(apiKey: string): Record<string, string> {
     return {
