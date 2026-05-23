@@ -40,13 +40,14 @@ import 'driver.js/dist/driver.css';
 
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
-    const { nodes, edges, setNodes, setEdges, user, selectedNodeId } = useStore(useShallow(state => ({
+    const { nodes, edges, setNodes, setEdges, user, selectedNodeId, setHasUnsavedChanges } = useStore(useShallow(state => ({
         nodes: state.nodes,
         edges: state.edges,
         setNodes: state.setNodes,
         setEdges: state.setEdges,
         user: state.user,
-        selectedNodeId: state.selectedNodeId
+        selectedNodeId: state.selectedNodeId,
+        setHasUnsavedChanges: state.setHasUnsavedChanges
     })));
     const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
@@ -93,6 +94,11 @@ export default function WorkflowLab() {
         return () => clearTimeout(saveTimer);
     }, [nodes, edges, workflowName, currentWorkflowId, currentUser, setNodes]);
 
+    useEffect(() => {
+        setHasUnsavedChanges(saveStatus === 'unsaved');
+        return () => setHasUnsavedChanges(false);
+    }, [saveStatus, setHasUnsavedChanges]);
+
     // Reactive mobile detection via centralized hook
     const { isAnyPhone: isMobile } = useMobile();
 
@@ -121,6 +127,7 @@ export default function WorkflowLab() {
         if (!currentWorkflowId && nodes.length > 0) {
             const draft = JSON.stringify({ nodes, edges, name: workflowName });
             localStorage.setItem('workflow_draft', draft);
+            setSaveStatus('unsaved');
         } else if (currentWorkflowId) {
             // If we have a real ID, clear the draft to avoid confusion
             localStorage.removeItem('workflow_draft');

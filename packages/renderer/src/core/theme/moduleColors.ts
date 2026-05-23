@@ -469,6 +469,24 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-red-500/5',
         cssVar: '--color-dept-default',
     },
+    'devops': {
+        text: 'text-purple-500',
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500',
+        ring: 'focus-within:ring-purple-500/50',
+        hoverText: 'hover:text-purple-400',
+        hoverBg: 'hover:bg-purple-500/5',
+        cssVar: '--color-dept-default',
+    },
+    'screenwriter': {
+        text: 'text-purple-500',
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500',
+        ring: 'focus-within:ring-purple-500/50',
+        hoverText: 'hover:text-purple-400',
+        hoverBg: 'hover:bg-purple-500/5',
+        cssVar: '--color-dept-default',
+    }
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {

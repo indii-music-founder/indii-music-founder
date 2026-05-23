@@ -108,7 +108,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
         return {
             ...doc,
             distributorId: doc.distributorId as DistributorId,
-            lastUpdated: doc.updatedAt.toDate().toISOString()
+            lastUpdated: (doc.updatedAt && typeof (doc.updatedAt as any).toDate === 'function') ? (doc.updatedAt as any).toDate().toISOString() : (doc.updatedAt ? new Date(doc.updatedAt as any).toISOString() : new Date().toISOString())
         };
     }
 }
