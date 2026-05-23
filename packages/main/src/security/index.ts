@@ -56,7 +56,7 @@ export function configureSecurity(session: Session) {
                         `style-src ${styleSrc}`,
                         `connect-src ${connectSrc}`,
                         `media-src ${mediaSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indii.music",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indii.music https://grainy-gradients.vercel.app",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
                         "manifest-src 'self' https://indii.music",
                         "worker-src 'self' blob:"

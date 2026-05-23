@@ -5,7 +5,6 @@
 export const MODULE_IDS = [
     'dashboard',
     'creative',
-    'video',
     'legal',
     'marketing',
     'workflow',
@@ -69,7 +68,6 @@ export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'memory': 'conductor',
     'knowledge': 'conductor',
     'creative': 'creative',
-    'video': 'video',
     'video-popout': 'video',
     'devops': 'indii_executor',
     'screenwriter': 'indii_executor',

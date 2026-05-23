@@ -81,7 +81,7 @@ export function buildCreativeHistoryState(
                         filename,
                         null, // root
                         currentProjectId,
-                        user?.uid || 'anonymous',
+                        user?.uid || 'founder-demo-uid',
                         enrichedItem.type as any,
                         { url: enrichedItem.url, origin: enrichedItem.origin }
                     ).catch(err => logger.error("CreativeSlice: File system sync error", err));

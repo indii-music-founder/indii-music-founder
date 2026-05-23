@@ -174,7 +174,6 @@ service cloud.firestore {
       match /analyzed_tracks/{trackId} { allow read, write: if isOwner(userId); }
       match /neural_cortex/{cortexId} { allow read, write: if isOwner(userId); }
       match /knowledge_base/{docId} { allow read, write: if isOwner(userId); }
-      match /workflows/{flowId} { allow read, write: if isOwner(userId); }
       // DEPRECATED: Dual project paths. Use root /projects collection instead.
       // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
@@ -620,8 +619,13 @@ service cloud.firestore {
             get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
             isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
           ) ||
-          (request.auth == null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
+          get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
         );
+    }
+    match /workflows/{flowId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
     }
     match /bountyLinks/{bountyId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
@@ -667,7 +671,9 @@ service cloud.firestore {
     // =========================================================================
     match /agent_traces/{traceId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create, update, delete: if false;
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow delete: if false;
     }
     match /agent_tasks/{traceId}/{allPaths=**} {
       allow read: if (isAuthenticated() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (request.auth == null && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
