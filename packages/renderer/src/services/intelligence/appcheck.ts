@@ -39,6 +39,12 @@ export function isAppCheckConfigured(): boolean {
         key: env.appCheckKey
     });
 
+    // Escape hatch for Vertex AI / Fine-Tuned Agent development
+    if (import.meta.env.VITE_USE_VERTEX === 'true' || import.meta.env.VITE_USE_FINE_TUNED_AGENTS === 'true') {
+        logger.info('[FirebaseIntelligenceService] VITE_USE_VERTEX or VITE_USE_FINE_TUNED_AGENTS is true. Forcing App Check activation to attempt Vertex connection.');
+        return true;
+    }
+
     if (env.DEV && !env.appCheckDebugToken) {
         logger.warn('[FirebaseIntelligenceService] DEV mode detected without Debug Token. Disabling App Check.');
         return false;

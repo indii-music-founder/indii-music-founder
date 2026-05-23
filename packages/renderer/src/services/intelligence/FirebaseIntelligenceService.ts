@@ -220,6 +220,17 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     }
 
     /**
+     * Lazy-initializes the fallback client for direct Developer API calls (e.g. image/video)
+     * without setting the global useFallbackMode to true, keeping text/agent routing on Vertex AI.
+     */
+    public async ensureFallbackClient(): Promise<GoogleGenAI> {
+        if (!this.fallbackClient) {
+            this.fallbackClient = await initializeFallbackClient();
+        }
+        return this.fallbackClient;
+    }
+
+    /**
      * Get the model name, either from remote config or fallback
      * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
@@ -418,10 +429,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
                         }
 
+                        const isVertexCustomPath = modelName.startsWith('projects/') || modelName.includes('/endpoints/');
+
                         // 7. Normal vs Fallback Generation
                         const result = await (async () => {
                             // FALLBACK MODE
-                            if (this.useFallbackMode && this.fallbackClient) {
+                            if (this.useFallbackMode && this.fallbackClient && !isVertexCustomPath) {
                                 const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
                                 return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                             }
@@ -465,7 +478,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                 (modelOptions as FirebaseModelOptions).cachedContent = cachedContent;
                             }
 
-                            const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
+                            const locationMatch = modelName.match(/locations\/([a-zA-Z0-9-]+)/);
+                            const targetLocation = locationMatch ? locationMatch[1] : undefined;
+                            const aiInstance = getFirebaseAI(targetLocation);
+                            if (!aiInstance) {
+                                throw new Error('Firebase Autonomous not initialized.');
+                            }
+                            const modelCallback = getGenerativeModel(aiInstance, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
                             try {
                                 return await (modelCallback as unknown as { generateContent(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentResult> }).generateContent(
                                     typeof sanitizedPrompt === 'string'
@@ -474,7 +493,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                     { signal: internalSignal }
                                 );
                             } catch (error: unknown) {
-                                if (isAppCheckError(error) && !this.useFallbackMode) {
+                                if (isAppCheckError(error) && !this.useFallbackMode && !isVertexCustomPath) {
                                     await this.triggerGlobalFallback();
                                     return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
@@ -663,8 +682,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
 
+                    const isVertexCustomPath = modelName.startsWith('projects/') || modelName.includes('/endpoints/');
+
                     // 4. Case analysis for Normal vs Fallback
-                    if (this.useFallbackMode && this.fallbackClient) {
+                    if (this.useFallbackMode && this.fallbackClient && !isVertexCustomPath) {
                         return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                     }
 
@@ -704,7 +725,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         modelOptions.cachedContent = cachedContent;
                     }
 
-                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
+                    const locationMatch = modelName.match(/locations\/([a-zA-Z0-9-]+)/);
+                    const targetLocation = locationMatch ? locationMatch[1] : undefined;
+                    const aiInstance = getFirebaseAI(targetLocation);
+                    if (!aiInstance) {
+                        throw new Error('Firebase Autonomous not initialized.');
+                    }
+                    const modelCallback = getGenerativeModel(aiInstance, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
 
                     try {
                         const result: GenerateContentStreamResult = await (modelCallback as unknown as { generateContentStream(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentStreamResult> }).generateContentStream(
@@ -788,7 +815,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                         return { stream: transformedStream, response: wrappedResponsePromise };
                     } catch (error: unknown) {
-                        if (isAppCheckError(error) && !this.useFallbackMode) {
+                        if (isAppCheckError(error) && !this.useFallbackMode && !isVertexCustomPath) {
                             await this.triggerGlobalFallback();
                             return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                         }
@@ -1014,12 +1041,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             const result = await this.mediaBreaker.execute(async () => {
                 await this.ensureInitialized();
 
-                // Ensure we have the fallback client (direct @google/genai SDK)
-                if (!this.fallbackClient) {
-                    await this.initializeFallbackMode();
-                }
+                // Ensure we have the fallback client (direct @google/genai SDK) without poisoning global text agent state
+                const fallbackClient = await this.ensureFallbackClient();
 
-                if (!this.fallbackClient) {
+                if (!fallbackClient) {
                     throw new AppException(
                         AppErrorCode.INTERNAL_ERROR,
                         'Video generation requires the Google AutonomousIntelligence SDK. Please configure VITE_API_KEY.'
@@ -1027,7 +1052,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 }
 
                 logger.info('[FirebaseAI] Delegating to MediaGenerator...');
-                return mediaGenerateVideo(this.fallbackClient, options);
+                return mediaGenerateVideo(fallbackClient, options);
             });
 
             logger.info('[FirebaseAI] generateVideo() — success. URL length:', result?.length ?? 0);

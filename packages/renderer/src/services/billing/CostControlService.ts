@@ -332,10 +332,23 @@ export class CostControlService {
         operationId,
       };
     } catch (err) {
-      logger.error('[CostControl] Check failed (fail-secure: blocking)', err);
+      logger.error('[CostControl] Check failed', err);
 
-      // FAIL-SECURE: If ledger is unavailable, block the operation
+      // In local development, fail-open to allow developers to work offline or without Firestore write permissions.
+      if (import.meta.env.DEV) {
+        logger.warn('[CostControl] Local dev fallback: failing open.');
+        return {
+          allowed: true,
+          remainingBudget: 100,
+          dailyUsed: 0,
+          monthlyUsed: 0,
+          operationId: `local-dev-${Date.now()}`
+        };
+      }
+
+      // FAIL-SECURE in production: If ledger is unavailable, block the operation
       // This prevents cost overruns if Firestore is down
+      logger.error('[CostControl] Fail-secure triggered: blocking operation.');
       return {
         allowed: false,
         reason: 'Cost control system unavailable. Operation blocked for safety.',

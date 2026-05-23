@@ -753,7 +753,7 @@ const service = new GeminiImageService();
  * Enforces authentication, rate limits, and schema validation.
  */
 export const generateImageV3Fn = () => functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],
@@ -790,7 +790,7 @@ export const generateImageV3Fn = () => functions
  * Supports reference images, masks, and iterative turns.
  */
 export const editImageFn = () => functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],

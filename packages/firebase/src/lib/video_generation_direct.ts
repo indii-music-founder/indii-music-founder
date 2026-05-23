@@ -90,7 +90,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         const ai = new GoogleGenAI({
             vertexai: true,
             project: projectId,
-            location: 'us-central1',
+            location: process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1',
         });
 
         console.log(`[VideoGenDirect] Using Vertex AI SDK with model: ${modelId}, project: ${projectId}`);
@@ -237,7 +237,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-music-founder.appspot.com').replace('.appspot.com', '');
+        const targetBucketName = process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-music-founder.firebasestorage.app';
 
         // Check for bytesBase64Encoded or videoBytes inline first
         const videoObj = video as Record<string, unknown>;

@@ -36,7 +36,7 @@ Return ONLY a JSON object that adheres to the following schema:
  * Uses Gemini 3 Pro (Multimodal) for high-fidelity extraction.
  */
 export const analyzeAudioFn = () => functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,

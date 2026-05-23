@@ -44,6 +44,7 @@ export interface IntelligenceContext {
     // ── Infrastructure Methods ────────────────────────────────────────
     ensureInitialized(): Promise<void>;
     initializeFallbackMode(): Promise<void>;
+    ensureFallbackClient(): Promise<GoogleGenAI>;
     handleError(error: unknown): AppException;
     sanitizePrompt(prompt: string | Content[]): string | Content[];
     getModelName(override?: string): string;
