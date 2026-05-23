@@ -110,7 +110,7 @@ describe('AgentFirebaseConnector Integration Tests', () => {
         expect(savedData.metadata).toBeUndefined();
     });
 
-    it('should fall back to anonymous userId if auth is not available', async () => {
+    it('should fall back to founder-demo-uid userId if auth is not available', async () => {
         // Temp override currentUser
         const originalCurrentUser = auth.currentUser;
         Object.defineProperty(auth, 'currentUser', {
@@ -130,7 +130,7 @@ describe('AgentFirebaseConnector Integration Tests', () => {
         const callArgs = vi.mocked(setDoc).mock.calls[0];
         expect(callArgs).toBeDefined();
         const savedData = callArgs![1] as any;
-        expect(savedData.userId).toBe('anonymous');
+        expect(savedData.userId).toBe('founder-demo-uid');
 
         // Restore
         Object.defineProperty(auth, 'currentUser', {

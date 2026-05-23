@@ -75,7 +75,7 @@ export class AgentExecutor {
             throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load. ${errorDetail}`);
         }
 
-        const userId = auth.currentUser?.uid || 'anonymous';
+        const userId = auth.currentUser?.uid || 'founder-demo-uid';
 
         // Propagate swarmId (highest level traceId)
         const swarmId = parentTraceId ? context.swarmId || parentTraceId : null;
