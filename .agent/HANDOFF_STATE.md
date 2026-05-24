@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-24 08:27 EDT
+**Updated:** 2026-05-24 08:30 EDT
 **Branch:** `feat/hierarchical-agent-modes`
 
 ## Recent Commits
 ```
+a40b9eca2 chore: session checkpoint [08:27]
 ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
 40c49e3f4 fix(legal): parse AI response texts and tool returns defensively
 9c27812bf docs: mark verification & release step as fully complete in master worksheet
@@ -13,7 +14,6 @@ da99790d6 chore: session checkpoint [08:08]
 fe18727a1 chore: session checkpoint [08:03]
 7ea77e819 test: verify guest onboarding and road manager flows
 124610469 chore: session checkpoint [08:00]
-75d595d41 chore: session checkpoint [07:59]
 ```
 
 ## Working State
