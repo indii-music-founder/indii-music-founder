@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-24 13:03 EDT
+**Updated:** 2026-05-24 13:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3049de4f4 chore: session checkpoint [13:03]
 761f55243 feat(billing): guest bypass and fallback allowance in cost control and profile store improvements
 665bdbd2a fix(onboarding): resolve fallback API schema type error and integrate microphone voice input
 e70a24efe chore: session checkpoint [11:32]
@@ -13,7 +14,6 @@ b5e19addf feat: merge hierarchical-agent-modes branch
 fd3ee48da chore(optimization): add check_git_changes utility and ignore polling state
 dead087c8 chore: session checkpoint [08:30]
 a40b9eca2 chore: session checkpoint [08:27]
-ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
 ```
 
 ## Working State
