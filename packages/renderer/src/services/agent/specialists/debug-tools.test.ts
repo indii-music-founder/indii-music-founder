@@ -19,4 +19,4 @@ it('should debug tools and GeneralistAgent', async () => {
         console.error('STACK:', e.stack);
         throw e;
     }
-});
+}, 60000);

@@ -25,7 +25,8 @@ export const MARKETING_TOOLS = {
                 [{ role: 'user', parts: [{ text: prompt }] }],
                 INTELLIGENCE_MODELS.TEXT.AGENT
             );
-            return res.response.text() || "Failed to generate strategy.";
+            const rawText = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+            return rawText || "Failed to generate strategy.";
         } catch (_e: unknown) {
             return JSON.stringify({ error: "AI Service Unavailable" });
         }
