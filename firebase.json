@@ -1,4 +1,10 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "anonymous": true
+    }
+  },
   "projects": {
     "default": "indii-music-founder"
   },
