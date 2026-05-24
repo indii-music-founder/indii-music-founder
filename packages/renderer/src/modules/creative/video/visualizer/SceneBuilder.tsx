@@ -34,6 +34,25 @@ class ModelErrorBoundary extends Component<{ children: React.ReactNode }, { hasE
     }
 }
 
+// Error boundary so an environment preset load failure (e.g. offline/network block) doesn't crash the whole canvas
+class EnvironmentErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError(_: Error) { return { hasError: true }; }
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        logger.warn('Failed to load Environment preset (might be offline):', error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            // Fall back gracefully by rendering nothing for environment map, relying on default scene lights
+            return null;
+        }
+        return this.props.children;
+    }
+}
+
 // useGLTF must be called unconditionally (rules-of-hooks). Suspense + ModelErrorBoundary handle failures.
 const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
     const { scene } = useGLTF(url);
@@ -183,7 +202,9 @@ export const SceneBuilder = () => {
                         ))}
 
                         {/* Environment & Shadows */}
-                        <Environment preset="night" />
+                        <EnvironmentErrorBoundary>
+                            <Environment preset="night" />
+                        </EnvironmentErrorBoundary>
                         <ContactShadows position={[0, -0.01, 0]} resolution={512} scale={20} blur={2} opacity={0.6} />
                     </Suspense>
 
