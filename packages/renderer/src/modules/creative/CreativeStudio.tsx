@@ -3,7 +3,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
 import AutonomousLab from './components/AutonomousLab';
-import VideoWorkflow from '../video/VideoWorkflow';
+import VideoWorkflow from './video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';

@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '../../services/video/VideoGenerationService';
+import { VideoGeneration } from '../../../services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
 
 // --- Mocks ---

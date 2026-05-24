@@ -1181,7 +1181,7 @@ The user will see this plan and can approve it to start execution.`;
 
                     if (planDraft && context.projectId) {
                         const { auth } = await import('@/services/firebase');
-                        const userId = auth.currentUser?.uid || 'unknown';
+                        const userId = auth.currentUser?.uid || 'founder-demo-uid';
 
                         const plan = await livingPlanService.create(
                             userId,

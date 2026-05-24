@@ -17,7 +17,7 @@
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { useVideoEditorStore, VideoProject } from '@/modules/video/store/videoEditorStore';
+import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 import { videoRenderOrchestrator } from './VideoRenderOrchestrator';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';

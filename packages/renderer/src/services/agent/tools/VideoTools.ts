@@ -1,7 +1,7 @@
 
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { VideoGenerationOptions } from '@/modules/video/schemas';
+import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -303,7 +303,7 @@ export const VideoTools = {
     }),
 
     update_keyframe: wrapTool('update_keyframe', async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
-        const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+        const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
         const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
         const clip = project.clips.find(c => c.id === args.clipId);
 
