@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useStore } from '@/core/store';
 import * as fabric from 'fabric';
 import { MerchLayout } from './components/Layout';
 import { MerchButton } from './components/MerchButton';
@@ -107,6 +108,25 @@ export default function MerchDesigner() {
         designId,
         { interval: 30000, enabled: true }
     );
+
+    // Staged Handoff Hook Interceptor
+    const consumeHandoff = useStore(state => state.consumeHandoff);
+    
+    useEffect(() => {
+        if (!fabricCanvas) return;
+        
+        const payload = consumeHandoff('merch');
+        if (payload) {
+            addImage(payload.assetUrl, payload.prompt || 'Imported Graphic')
+                .then(() => {
+                    toast.success(`Handoff graphic "${payload.prompt}" loaded onto canvas!`);
+                })
+                .catch(err => {
+                    logger.error('[MerchDesigner] Handoff load failed:', err);
+                    toast.error('Failed to load staged handoff graphic.');
+                });
+        }
+    }, [fabricCanvas, consumeHandoff, addImage, toast]);
 
     // Handle canvas initialization
     const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {

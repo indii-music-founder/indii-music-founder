@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
     Loader2, Image as ImageIcon, Video, Send, Settings2, Download, 
-    ChevronDown, ChevronUp, Film, Sparkles, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass
+    ChevronDown, ChevronUp, Film, Sparkles, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass, Pin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
@@ -12,20 +12,24 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
 import { WhiskService } from '@/services/WhiskService';
+import { useToast } from '@/core/context/ToastContext';
 
 export default function DirectGenerationTab() {
+    const toast = useToast();
     const { 
         setGenerationMode, 
         isPromptBuilderOpen, 
         togglePromptBuilder, 
         whiskState,
-        setStudioControls 
+        setStudioControls,
+        pinToClipboard
     } = useStore(useShallow(state => ({
         setGenerationMode: state.setGenerationMode,
         isPromptBuilderOpen: state.isPromptBuilderOpen,
         togglePromptBuilder: state.togglePromptBuilder,
         whiskState: state.whiskState,
-        setStudioControls: state.setStudioControls
+        setStudioControls: state.setStudioControls,
+        pinToClipboard: state.pinToClipboard
     })));
 
     const {
@@ -579,20 +583,39 @@ export default function DirectGenerationTab() {
                                             <p className="text-white text-[10px] leading-normal font-medium line-clamp-2 mb-3">{item.prompt}</p>
                                             <div className="flex justify-between items-center border-t border-white/10 pt-2">
                                                 <span className="text-[8.5px] uppercase font-bold tracking-widest text-dept-creative">Open Editor</span>
-                                                <button 
-                                                    aria-label="Download asset" 
-                                                    className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // Simple download anchor logic
-                                                        const a = document.createElement('a');
-                                                        a.href = item.url;
-                                                        a.download = `${item.type}_${item.id}.png`;
-                                                        a.click();
-                                                    }}
-                                                >
-                                                    <Download size={11} />
-                                                </button>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button 
+                                                        aria-label="Pin to visual clipboard" 
+                                                        className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-violet-400 hover:text-white hover:bg-violet-600/35 transition-colors" 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            pinToClipboard({
+                                                                id: item.id,
+                                                                url: item.url,
+                                                                prompt: item.prompt || 'Direct Asset',
+                                                                type: item.type as 'image' | 'video',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Pinned to Creative Clipboard!");
+                                                        }}
+                                                    >
+                                                        <Pin size={11} />
+                                                    </button>
+                                                    <button 
+                                                        aria-label="Download asset" 
+                                                        className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            // Simple download anchor logic
+                                                            const a = document.createElement('a');
+                                                            a.href = item.url;
+                                                            a.download = `${item.type}_${item.id}.png`;
+                                                            a.click();
+                                                        }}
+                                                    >
+                                                        <Download size={11} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
