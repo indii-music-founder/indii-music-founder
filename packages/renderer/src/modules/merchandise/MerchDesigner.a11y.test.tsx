@@ -28,16 +28,19 @@ vi.mock('fabric', () => {
   };
 });
 
-// Mock useStore
 vi.mock('@/core/store', () => ({
-  useStore: vi.fn(() => ({
-    userProfile: { displayName: 'Test User' },
-    generatedHistory: [],
-    uploadedImages: [],
-    currentProjectId: 'test-project',
-    organizations: [{ id: 'test-org', name: 'Test Org' }],
-    currentOrganizationId: 'test-org'
-  })),
+  useStore: vi.fn((selector) => {
+    const state = {
+      userProfile: { displayName: 'Test User' },
+      generatedHistory: [],
+      uploadedImages: [],
+      currentProjectId: 'test-project',
+      organizations: [{ id: 'test-org', name: 'Test Org' }],
+      currentOrganizationId: 'test-org',
+      consumeHandoff: vi.fn().mockReturnValue(null),
+    };
+    return selector ? selector(state) : state;
+  }),
 }));
 
 describe('MerchDesigner Accessibility', () => {

@@ -16,6 +16,9 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
+import CreativeClipboard from './components/CreativeClipboard';
+import OmniWorkflow from './video/OmniWorkflow';
+
 /** Map UI-friendly person generation values to Intelligence API uppercase constants. */
 const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_adult': 'ALLOW_ADULT',
@@ -322,6 +325,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
+                        {viewMode === 'omni' && <OmniWorkflow />}
                         {viewMode === 'showroom' && <ShowroomUI />}
                         {viewMode === "lab" && <AutonomousLab />}
                         {viewMode === 'editor' && selectedItem && (
@@ -345,6 +349,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 </div>
 
                 {/* Main Prompt Bar Removed - Using Global CommandBar */}
+
+                {/* Visual Clipboard Dock */}
+                <CreativeClipboard />
 
                 {/* Transitions handled via viewMode === 'editor' above */}
             </div>

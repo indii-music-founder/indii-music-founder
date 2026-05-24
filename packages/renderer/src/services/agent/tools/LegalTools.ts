@@ -1,4 +1,4 @@
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -43,7 +43,7 @@ Key Terms: ${args.terms}`;
             systemPrompt
         );
 
-        const content = response.response.text();
+        const content = getResponseText(response);
 
         // Auto-persist the contract
         const title = `${args.type} - ${args.parties.join(' & ')}`;

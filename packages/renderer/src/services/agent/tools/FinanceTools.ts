@@ -37,7 +37,7 @@ let _ecbCache = loadEcbCache();
 
 export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // Construct Multimodal Prompt
         const prompt = `You are an expert accountant. Extract the following data from this receipt image:
@@ -63,7 +63,7 @@ export const FinanceTools = {
         );
 
         // Access the text from the response object
-        const text = res.response.text();
+        const text = getResponseText(res);
 
         return {
             raw_data: text,
@@ -413,7 +413,7 @@ export const FinanceTools = {
 
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
         // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
 
         const prompt = `
         You are a music industry financial analyst. The following CSV files have been uploaded 
@@ -429,7 +429,7 @@ export const FinanceTools = {
 
         try {
             const response = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
-            const analysisText = response.response.text();
+            const analysisText = getResponseText(response);
 
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
