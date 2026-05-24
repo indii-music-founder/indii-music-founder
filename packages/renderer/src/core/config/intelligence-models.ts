@@ -13,12 +13,12 @@ export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3.1-flash-lite',
     TEXT_LITE: 'gemini-3.1-flash-lite',
-    IMAGE_GEN: 'imagen-4.0-ultra-generate-001',           // Native image gen via responseModalities
-    IMAGE_FAST: 'imagen-4.0-fast-generate-001',         // Fast image gen via responseModalities
+    IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
-    DIRECT_PRO: 'imagen-4.0-ultra-generate-001',      // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'imagen-4.0-generate-001',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
-    DIRECT_LEGACY: 'imagen-4.0-fast-generate-001',        // Nano Banana OG — high-volume, low-latency
+    DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
+    DIRECT_LEGACY: 'gemini-3.1-flash-image-preview',        // Nano Banana OG — high-volume, low-latency
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',

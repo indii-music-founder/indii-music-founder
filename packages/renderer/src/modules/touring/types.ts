@@ -88,3 +88,13 @@ export interface LogisticsReport {
     summary?: string;
 }
 
+export interface EmergencyContact {
+    id: string;
+    userId: string;
+    name: string;
+    phone: string;
+    relationship: string;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+}
+
