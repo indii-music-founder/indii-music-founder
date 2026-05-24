@@ -8,7 +8,8 @@
  * This service just marshals data and calls the function.
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,6 @@ class ResendEmailServiceImpl {
      */
     async send(options: SendEmailOptions): Promise<SendEmailResult> {
         try {
-            const functions = getFunctions(undefined, 'us-central1');
             const sendEmailFn = httpsCallable<SendEmailOptions, SendEmailResult>(
                 functions,
                 'sendEmail'
