@@ -151,9 +151,9 @@ We use the philosophy "Think First, Work Second". This worksheet represents all 
   - [x] Update Living Plans tracker to show worker steps under their head's plan node.
   - [x] Populate the 21 head AgentCards with real `capabilities[]` arrays based on `AgentConfig.tools` and system prompts.
 
-- [ ] **8.7. Verification & Release**
+- [x] **8.7. Verification & Release**
   - [x] Run `npm run typecheck`.
   - [x] Run `npm test -- --run packages/renderer/src/services/agent/__tests__/scopeEnforcement.test.ts`.
   - [x] Run `npm test -- --run` to ensure no regressions in the full suite.
   - [x] Run `/plat` command for pre-push checklist.
-  - [ ] Open a PR for `feat/hierarchical-agent-modes` (do not push to main).
+  - [x] Open a PR for `feat/hierarchical-agent-modes` (do not push to main).
