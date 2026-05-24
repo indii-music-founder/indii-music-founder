@@ -108,7 +108,10 @@ Only return valid JSON.
                 systemPrompt
             );
 
-            const data = JSON.parse(response.response.text());
+            const responseText = typeof response.response.text === 'function'
+                ? response.response.text()
+                : (typeof response.response.text === 'string' ? response.response.text : JSON.stringify(response.response));
+            const data = JSON.parse(responseText);
 
             const result = {
                 score: data.score || 0,
