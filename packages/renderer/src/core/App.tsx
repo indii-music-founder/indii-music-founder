@@ -113,7 +113,7 @@ const GrowthIntelligenceDashboard = lazyWithRetry(() => import('../modules/analy
 const DesktopDashboard = lazyWithRetry(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazyWithRetry(() => import('../modules/founders/FoundersCheckout'));
 const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersPortal'));
-const VideoPopout = lazyWithRetry(() => import('../modules/video/editor/VideoPopout'));
+const VideoPopout = lazyWithRetry(() => import('../modules/creative/video/editor/VideoPopout'));
 const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
 const DevopsDashboard = lazyWithRetry(() => import('../modules/devops/DevopsDashboard'));

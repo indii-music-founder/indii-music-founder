@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useVideoEditorStore } from './videoEditorStore';
 import { vi } from 'vitest';
 
-vi.unmock('@/modules/video/store/videoEditorStore');
+vi.unmock('@/modules/creative/video/store/videoEditorStore');
 
 describe('useVideoEditorStore', () => {
     beforeEach(() => {

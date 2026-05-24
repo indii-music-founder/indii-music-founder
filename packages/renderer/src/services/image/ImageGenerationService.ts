@@ -240,7 +240,7 @@ export class ImageGenerationService {
 
         // Cost Control: Enforce budget limits before expensive API call
         const estimatedCost = count * 0.04; // $0.04 per image
-        const uid = userId || auth.currentUser?.uid || 'unknown';
+        const uid = userId || auth.currentUser?.uid || 'founder-demo-uid';
         let costCheck = await CostControlService.checkAndReserve({
             operationType: 'image',
             estimatedCost,
