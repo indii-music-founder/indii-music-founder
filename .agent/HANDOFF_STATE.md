@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-24 16:52 EDT
+**Updated:** 2026-05-24 17:49 EDT
 **Branch:** `feature/gemini-omni`
 
 ## Recent Commits
 ```
+1a0772b7c chore: update session checkpoint
+88a526c86 fix(agent): mock getResponseText in SocialTools.test.ts for CI stability
+18fefd056 chore: update session checkpoint
+ed978231b fix(workflow): mock getResponseText in WorkflowEngine.test.ts for CI stability
+23a854b9d chore: session checkpoint [16:52]
 24444bf58 fix(agent): resolve Sentry issues and increase debug-tools test timeout for stability
 34e301b2a chore: session checkpoint [16:46]
 b5e25ea1f chore: session checkpoint [16:44]
 3febe72f4 chore(gatekeeper): configure vitest 20000ms test timeout in on_stop script to prevent local CPU thrashing and flakiness
 404cb305a feat(creative): integrate storyboarding, clipboard & handoffs
-258c6b3fb chore: session checkpoint [14:39]
-6fce59573 chore: session checkpoint [14:37]
-017132be3 chore: session checkpoint [14:34]
-47281e3cb chore: session checkpoint [14:15]
-619f4f75b chore: session checkpoint [14:05]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/workflow/services/WorkflowEngine.test.ts
+clean working tree
 ```
 
 ## Decisions
