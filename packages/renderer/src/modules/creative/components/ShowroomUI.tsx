@@ -11,7 +11,8 @@ import {
     Info,
     Trash2,
     Zap,
-    Video
+    Video,
+    Pin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
@@ -27,12 +28,14 @@ export default function ShowroomUI() {
         showroomState, 
         setShowroomState,
         currentProjectId,
-        addToHistory
+        addToHistory,
+        pinToClipboard
     } = useStore(useShallow((state: any) => ({
         showroomState: state.showroomState,
         setShowroomState: state.setShowroomState,
         currentProjectId: state.currentProjectId,
-        addToHistory: state.addToHistory
+        addToHistory: state.addToHistory,
+        pinToClipboard: state.pinToClipboard
     })));
 
     const toast = useToast();
@@ -256,15 +259,35 @@ export default function ShowroomUI() {
                     <div className="aspect-video bg-black/60 rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl shadow-dept-creative/10">
                         <AnimatePresence mode="wait">
                             {showroomState.mockupResult ? (
-                                <motion.img 
-                                    key="mockup"
-                                    initial={{ opacity: 0, scale: 1.1 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    src={showroomState.mockupResult.url} 
-                                    className="w-full h-full object-cover" 
-                                    alt="Mockup result" 
-                                />
+                                <div className="relative w-full h-full group/preview">
+                                    <motion.img 
+                                        key="mockup"
+                                        initial={{ opacity: 0, scale: 1.1 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        src={showroomState.mockupResult.url} 
+                                        className="w-full h-full object-cover" 
+                                        alt="Mockup result" 
+                                    />
+                                    {/* Hover Pin Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            pinToClipboard({
+                                                id: showroomState.mockupResult.id,
+                                                url: showroomState.mockupResult.url,
+                                                prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
+                                                type: showroomState.mockupResult.type || 'image',
+                                                timestamp: Date.now()
+                                            });
+                                            toast.success("Pinned to Creative Clipboard!");
+                                        }}
+                                        className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 transition-all opacity-0 group-hover/preview:opacity-100 flex items-center justify-center z-20"
+                                        title="Pin to Visual Clipboard"
+                                    >
+                                        <Pin size={14} className="text-violet-400" />
+                                    </button>
+                                </div>
                             ) : showroomState.productAsset ? (
                                 <motion.div 
                                     key="asset"

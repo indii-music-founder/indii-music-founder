@@ -57,6 +57,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         { id: 'direct', label: 'Generate', icon: Wand2, testId: 'direct-view-btn' },
         { id: 'canvas', label: 'Canvas', icon: ImageIcon, testId: 'canvas-view-btn' },
         { id: 'video_production', label: 'Video', icon: Video, testId: 'director-view-btn' },
+        { id: 'omni', label: 'Omni Remix', icon: Sparkles, testId: 'omni-view-btn' },
         { id: 'showroom', label: 'Showroom', icon: MonitorPlay, testId: 'showroom-view-btn' },
         { id: 'lab', label: 'Keyframes', icon: FlaskConical, testId: 'lab-view-btn' },
     ] as const;
@@ -90,7 +91,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                     key={tab.id}
                                     onClick={() => {
                                         setViewMode(tab.id as typeof viewMode);
-                                        if (tab.id === 'video_production') {
+                                        if (tab.id === 'video_production' || tab.id === 'omni') {
                                             useStore.getState().setGenerationMode('video');
                                         } else if (tab.id === 'direct' || tab.id === 'canvas' || tab.id === 'showroom') {
                                             useStore.getState().setGenerationMode('image');

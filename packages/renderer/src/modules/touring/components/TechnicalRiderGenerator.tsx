@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { useToast } from '@/core/context/ToastContext';
 
 type ArtistCategory = 'dj' | 'solo' | 'duo' | 'band' | 'producer' | 'hiphop';
 
@@ -28,6 +29,7 @@ interface RiderState {
     artistName: string;
     actName: string;
     memberCount: string;
+    stageLayoutAsset?: string;
     // Stage
     stageWidth: string;
     stageDepth: string;
@@ -347,6 +349,13 @@ function generatePdfContent(r: RiderState): string {
 <tr><td>${depthLabel}</td><td>${r.stageDepth} ft</td></tr>
 <tr><td>${heightLabel}</td><td>${r.stageHeight} ft</td></tr></table>
 
+${r.stageLayoutAsset ? `
+<h2>Stage Plot Schematic</h2>
+<div style="text-align:center;margin:15px 0;border:1px solid #ddd;padding:12px;background:#fcfcfc;border-radius:8px">
+  <img src="${r.stageLayoutAsset}" alt="Stage Plot Schematic" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:4px" />
+</div>
+` : ''}
+
 <h2>${paTitle}</h2>
 <table><tr><th>Item</th><th>Spec</th></tr>
 <tr><td>${paSystemLabel}</td><td>${r.paSystem}</td></tr>
@@ -380,11 +389,32 @@ ${r.additionalNotes ? `<h2>Additional Notes</h2><div class="note">${r.additional
 }
 
 export function TechnicalRiderGenerator() {
-    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
+    const toast = useToast();
+    const { userProfile, consumeHandoff } = useStore(useShallow(state => ({ 
+        userProfile: state.userProfile,
+        consumeHandoff: state.consumeHandoff
+    })));
     const [rider, setRider] = useState<RiderState>(DEFAULT_STATE);
     const [exported, setExported] = useState(false);
     const hasInitializedRef = useRef(false);
     const linkRef = useRef<HTMLAnchorElement>(null);
+
+    // Staged Handoff Hook Interceptor
+    useEffect(() => {
+        const payload = consumeHandoff('touring');
+        if (payload) {
+            requestAnimationFrame(() => {
+                setRider(prev => {
+                    if (prev.stageLayoutAsset === payload.assetUrl) return prev;
+                    return {
+                        ...prev,
+                        stageLayoutAsset: payload.assetUrl
+                    };
+                });
+            });
+            toast.success(`Stage schematic loaded: "${payload.prompt || 'staged asset'}"!`);
+        }
+    }, [consumeHandoff, toast]);
 
     // Dynamic Labels based on Category
     const isProducer = rider.artistCategory === 'producer';
@@ -451,14 +481,15 @@ export function TechnicalRiderGenerator() {
                 defaultCat = 'hiphop';
             }
 
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setRider(prev => ({
-                ...prev,
-                artistCategory: defaultCat,
-                artistName: userProfile.displayName || '',
-                actName: userProfile.brandKit?.releaseDetails?.title || '',
-                ...PRESETS[defaultCat]
-            }));
+            requestAnimationFrame(() => {
+                setRider(prev => ({
+                    ...prev,
+                    artistCategory: defaultCat,
+                    artistName: userProfile.displayName || '',
+                    actName: userProfile.brandKit?.releaseDetails?.title || '',
+                    ...PRESETS[defaultCat]
+                }));
+            });
         }
     }, [userProfile]);
 
@@ -586,6 +617,39 @@ export function TechnicalRiderGenerator() {
                         <input type="number" className={inputCls} value={rider.stageHeight} onChange={e => set('stageHeight', e.target.value)} />
                     </Field>
                 </div>
+            </Section>
+
+            {/* Stage Plot / Visual Layout */}
+            <Section title="Stage Plot / Visual Layout" icon={<FileText size={13} />}>
+                {rider.stageLayoutAsset ? (
+                    <div className="space-y-3">
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 p-2 max-w-lg mx-auto">
+                            <img
+                                src={rider.stageLayoutAsset}
+                                alt="Stage Layout Plot"
+                                className="w-full max-h-64 object-contain rounded-lg shadow-lg"
+                            />
+                            <button
+                                onClick={() => set('stageLayoutAsset', undefined)}
+                                className="absolute top-4 right-4 px-2 py-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded uppercase tracking-wider transition-colors shadow-lg"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-neutral-500 italic text-center">
+                            This schematic will be embedded center-stage in your exported technical rider document.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="border border-dashed border-white/5 rounded-xl p-5 text-center bg-white/[0.01]">
+                        <p className="text-xs text-neutral-400">
+                            No stage plot or schematic visual attached.
+                        </p>
+                        <p className="text-[10px] text-neutral-600 mt-1">
+                            Tip: Generate a 3D stage layout in the Creative Studio and select "Send to Tour Rider" to load it here instantly.
+                        </p>
+                    </div>
+                )}
             </Section>
 
             {/* PA / FOH */}

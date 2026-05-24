@@ -2,10 +2,11 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Sparkles } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Sparkles, Pin, Send } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
+import { SendToTarget, SendToPayload } from '@/types/handoff';
 
 import { HistoryItem } from '@/core/store';
 
@@ -32,9 +33,12 @@ interface GalleryItemProps {
     resumeTrack: () => void;
     currentTrack: HistoryItem | null;
     isPlaying: boolean;
+    pinToClipboard: (item: HistoryItem) => void;
+    sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {
+    const [showSendMenu, setShowSendMenu] = useState(false);
     return (
         <div
             draggable
@@ -118,6 +122,114 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 >
                                     <ArrowRightToLine size={14} />
                                 </button>
+                            </>
+                        )}
+                        {item.type !== 'music' && (
+                            <>
+                                {/* Pin Action */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        pinToClipboard(item);
+                                        toast.success("Pinned to Creative Clipboard!");
+                                    }}
+                                    className="p-1.5 bg-gray-800/50 hover:bg-violet-600 text-violet-400 hover:text-white rounded transition-colors"
+                                    title="Pin to Visual Clipboard"
+                                    aria-label="Pin to Visual Clipboard"
+                                >
+                                    <Pin size={14} />
+                                </button>
+
+                                {/* Send To dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowSendMenu(!showSendMenu); }}
+                                        className={`p-1.5 rounded transition-colors ${showSendMenu ? 'bg-violet-600 text-white' : 'bg-gray-800/50 text-white hover:bg-violet-500'}`}
+                                        title="Send to workspace..."
+                                        aria-label="Send to workspace"
+                                    >
+                                        <Send size={14} />
+                                    </button>
+                                    {showSendMenu && (
+                                        <div className="absolute bottom-8 right-0 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl py-1 w-36 z-30 overflow-hidden text-left">
+                                            <div className="px-2.5 py-1 text-[8px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                                                Destinations
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    sendToModule('merch', {
+                                                        assetId: item.id,
+                                                        assetUrl: item.url,
+                                                        assetType: item.type as any,
+                                                        prompt: item.prompt || 'Gallery Asset',
+                                                        originModule: 'creative',
+                                                        timestamp: Date.now()
+                                                    });
+                                                    toast.success("Sent to Merch Designer!");
+                                                    setShowSendMenu(false);
+                                                }}
+                                                className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-violet-600/20 hover:text-violet-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <span>Merch Designer</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    sendToModule('marketing', {
+                                                        assetId: item.id,
+                                                        assetUrl: item.url,
+                                                        assetType: item.type as any,
+                                                        prompt: item.prompt || 'Gallery Asset',
+                                                        originModule: 'creative',
+                                                        timestamp: Date.now()
+                                                    });
+                                                    toast.success("Sent to Campaigns!");
+                                                    setShowSendMenu(false);
+                                                }}
+                                                className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-violet-600/20 hover:text-violet-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <span>Campaign Kit</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    sendToModule('boardroom', {
+                                                        assetId: item.id,
+                                                        assetUrl: item.url,
+                                                        assetType: item.type as any,
+                                                        prompt: item.prompt || 'Gallery Asset',
+                                                        originModule: 'creative',
+                                                        timestamp: Date.now()
+                                                    });
+                                                    toast.success("Sent to Boardroom!");
+                                                    setShowSendMenu(false);
+                                                }}
+                                                className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-violet-600/20 hover:text-violet-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <span>Boardroom Deck</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    sendToModule('touring', {
+                                                        assetId: item.id,
+                                                        assetUrl: item.url,
+                                                        assetType: item.type as any,
+                                                        prompt: item.prompt || 'Gallery Asset',
+                                                        originModule: 'creative',
+                                                        timestamp: Date.now()
+                                                    });
+                                                    toast.success("Sent to Tour Rider!");
+                                                    setShowSendMenu(false);
+                                                }}
+                                                className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-violet-600/20 hover:text-violet-300 transition-colors flex items-center justify-between"
+                                            >
+                                                <span>Tour Tech Rider</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
                         <button
@@ -244,7 +356,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         generatedHistory, removeItemFromProject, uploadedImages, addUploadedImage, removeUploadedImage,
         uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
-        playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack
+        playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
+        pinToClipboard, sendToModule
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -267,7 +380,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         currentTrack: state.currentTrack,
         isPlaying: state.isPlaying,
         pauseTrack: state.pauseTrack,
-        resumeTrack: state.resumeTrack
+        resumeTrack: state.resumeTrack,
+        pinToClipboard: state.pinToClipboard,
+        sendToModule: state.sendToModule
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -470,7 +585,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             setSelectedItem={setSelectedItem}
                                             toast={toast}
                                             generationMode={generationMode}
-                                            onDelete={item.origin === 'uploaded' ? (item.type === 'music' ? removeUploadedAudio : removeUploadedImage) : removeItemFromProject}
+                                            onDelete={_handleDelete}
                                             setPrompt={setPrompt}
                                             setViewMode={setViewMode}
                                             playTrack={playTrack}
@@ -478,6 +593,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             resumeTrack={resumeTrack}
                                             currentTrack={currentTrack}
                                             isPlaying={isPlaying}
+                                            pinToClipboard={pinToClipboard}
+                                            sendToModule={sendToModule}
                                         />
                                     ))}
                                 </div>
