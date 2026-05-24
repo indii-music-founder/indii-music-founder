@@ -22,6 +22,7 @@ export function isAppCheckError(error: unknown): boolean {
         msg.includes('The caller does not have permission') ||
         msg.includes('403') ||
         msg.includes('unauthenticated') ||
+        msg.includes('Missing or insufficient permissions') ||
         msg.toLowerCase().includes('verification failed')
     );
 }

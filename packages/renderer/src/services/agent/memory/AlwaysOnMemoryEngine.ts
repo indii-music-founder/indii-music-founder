@@ -480,28 +480,33 @@ If appropriate, suggest that the user can ingest relevant information to build a
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId) return [];
 
-        const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
-        let q = query(
-            memoryRef,
-            where('isActive', '==', true),
-            orderBy('createdAt', 'desc')
-        );
+        try {
+            const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
+            let q = query(
+                memoryRef,
+                where('isActive', '==', true),
+                orderBy('createdAt', 'desc')
+            );
 
-        if (filters?.projectId) {
-            q = query(q, where('sourceProjectId', '==', filters.projectId));
-        }
-        if (filters?.sessionId) {
-            q = query(q, where('sourceSessionId', '==', filters.sessionId));
-        }
-        if (filters?.category) {
-            q = query(q, where('category', '==', filters.category));
-        }
+            if (filters?.projectId) {
+                q = query(q, where('sourceProjectId', '==', filters.projectId));
+            }
+            if (filters?.sessionId) {
+                q = query(q, where('sourceSessionId', '==', filters.sessionId));
+            }
+            if (filters?.category) {
+                q = query(q, where('category', '==', filters.category));
+            }
 
-        const snapshot = await getDocs(query(q, limit(maxCount)));
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        })) as AlwaysOnMemory[];
+            const snapshot = await getDocs(query(q, limit(maxCount)));
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as AlwaysOnMemory[];
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] getAllMemories failed:', error);
+            return [];
+        }
     }
 
     /**
@@ -523,11 +528,16 @@ If appropriate, suggest that the user can ingest relevant information to build a
         // and let the agent filter them further if needed.
         // True vector search happens in the query() method, but for raw retrieval,
         // we provide this interface for compatibility with legacy systems.
-        return this.getAllMemories(options.limit || 10, {
-            projectId: options.projectId,
-            sessionId: options.sessionId,
-            category: options.categories?.[0] // Simplified for now
-        });
+        try {
+            return await this.getAllMemories(options.limit || 10, {
+                projectId: options.projectId,
+                sessionId: options.sessionId,
+                category: options.categories?.[0] // Simplified for now
+            });
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] retrieve failed:', error);
+            return [];
+        }
     }
 
     /**
@@ -536,18 +546,23 @@ If appropriate, suggest that the user can ingest relevant information to build a
     public async getInsights(maxCount: number = 10): Promise<ConsolidationInsight[]> {
         if (!this.userId) return [];
 
-        const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
-        const q = query(
-            insightRef,
-            orderBy('createdAt', 'desc'),
-            limit(maxCount)
-        );
+        try {
+            const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
+            const q = query(
+                insightRef,
+                orderBy('createdAt', 'desc'),
+                limit(maxCount)
+            );
 
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        })) as ConsolidationInsight[];
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as ConsolidationInsight[];
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] getInsights failed:', error);
+            return [];
+        }
     }
 
     /**
