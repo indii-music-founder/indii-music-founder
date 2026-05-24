@@ -16,6 +16,7 @@ export interface DesignVersion {
     name: string;
     createdAt: number;
     projectId: string;
+    userId: string;
     state: DesignVersionState;
 }
 
@@ -43,11 +44,20 @@ export function buildDesignHistoryState(
                 return;
             }
 
+            let userId = 'founder-demo-uid';
+            try {
+                const { getAuth } = await import('firebase/auth');
+                userId = getAuth().currentUser?.uid || userId;
+            } catch (e) {
+                // ignore
+            }
+
             const newVersion: DesignVersion = {
                 id: `version_${Date.now()}`,
                 name: name || `Version ${new Date().toLocaleString()}`,
                 createdAt: Date.now(),
                 projectId: currentProjectId,
+                userId,
                 state: {
                     studioControls: JSON.parse(JSON.stringify(studioControls)), // Deep clone
                     canvasImages: JSON.parse(JSON.stringify(canvasImages)),
@@ -105,13 +115,23 @@ export function buildDesignHistoryState(
 
             try {
                 const { FirestoreService } = await import('@/services/FirestoreService');
-                const { where, orderBy } = await import('firebase/firestore');
+                const { where } = await import('firebase/firestore');
                 const service = new FirestoreService<DesignVersion>('design_versions');
                 
+                let userId = 'founder-demo-uid';
+                try {
+                    const { getAuth } = await import('firebase/auth');
+                    userId = getAuth().currentUser?.uid || userId;
+                } catch (e) {
+                    // ignore
+                }
+
                 const versions = await service.list([
                     where('projectId', '==', projectId),
-                    orderBy('createdAt', 'desc')
+                    where('userId', '==', userId)
                 ]);
+
+                versions.sort((a, b) => b.createdAt - a.createdAt);
 
                 set({ designVersions: versions });
                 logger.info("DesignHistory: Initialized with", versions.length, "versions");
