@@ -328,10 +328,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             const timeoutController = new AbortController();
             let timeoutId: NodeJS.Timeout | number | undefined;
 
-            if (options?.timeout && options.timeout > 0) {
+            const requestTimeout = options?.timeout || 25000;
+            if (requestTimeout > 0) {
                 timeoutId = setTimeout(() => {
                     timeoutController.abort('TIMEOUT');
-                }, options.timeout);
+                }, requestTimeout);
             }
 
             // Combine with user signal if provided
@@ -350,7 +351,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         // Check if already aborted
                         if (internalSignal.aborted) {
                             if (internalSignal.reason === 'TIMEOUT') {
-                                throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${options?.timeout}ms`);
+                                throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${requestTimeout}ms`);
                             }
                             throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled by user');
                         }
@@ -495,7 +496,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                     { signal: internalSignal }
                                 );
                             } catch (error: unknown) {
-                                if (isAppCheckError(error) && !this.useFallbackMode && !isVertexCustomPath) {
+                                const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
+                                if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode && !isVertexCustomPath) {
                                     await this.triggerGlobalFallback();
                                     return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
@@ -603,10 +605,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const timeoutController = new AbortController();
         let timeoutId: NodeJS.Timeout | number | undefined;
 
-        if (options?.timeout && options.timeout > 0) {
+        const requestTimeout = options?.timeout || 25000;
+        if (requestTimeout > 0) {
             timeoutId = setTimeout(() => {
                 timeoutController.abort('TIMEOUT');
-            }, options.timeout);
+            }, requestTimeout);
         }
 
         // Combine with user signal if provided
@@ -621,7 +624,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 return this.withRetry(async () => {
                     if (internalSignal.aborted) {
                         if (internalSignal.reason === 'TIMEOUT') {
-                            throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${options?.timeout}ms`);
+                            throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${requestTimeout}ms`);
                         }
                         throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled by user');
                     }
@@ -697,6 +700,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                     // 4. Case analysis for Normal vs Fallback
                     if (this.useFallbackMode && this.fallbackClient) {
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = undefined;
+                        }
                         return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                     }
 
@@ -749,6 +756,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt as Content[] },
                             { signal: internalSignal }
                         );
+
+                        // Connection established! Clear the timeout now to let long streams run freely.
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = undefined;
+                        }
 
                         // Accumulate chunks for the final WrappedResponse
                         let finalText = '';
@@ -826,8 +839,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                         return { stream: transformedStream, response: wrappedResponsePromise };
                     } catch (error: unknown) {
-                        if (isAppCheckError(error) && !this.useFallbackMode && !isVertexCustomPath) {
+                        const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
+                        if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode && !isVertexCustomPath) {
                             await this.triggerGlobalFallback();
+                            if (timeoutId) {
+                                clearTimeout(timeoutId);
+                                timeoutId = undefined;
+                            }
                             return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                         }
                         throw this.handleError(error);

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
 import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
 import { logger } from '@/utils/logger';
+import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
 
@@ -121,9 +122,15 @@ interface VideoEditorState {
     timelineZoom: number;
     setTimelineZoom: (zoom: number) => void;
 
-    // View Mode (Director vs Editor vs Visualizer)
-    viewMode: 'director' | 'editor' | 'visualizer';
-    setViewMode: (mode: 'director' | 'editor' | 'visualizer') => void;
+    // View Mode (Director vs Editor vs Visualizer vs Storyboard)
+    viewMode: 'director' | 'editor' | 'visualizer' | 'storyboard';
+    setViewMode: (mode: 'director' | 'editor' | 'visualizer' | 'storyboard') => void;
+
+    // Storyboard Timeline
+    storyboardProject: StoryboardProject | null;
+    setStoryboardProject: (project: StoryboardProject | null) => void;
+    updateStoryboardSlot: (slotId: string, updates: Partial<StoryboardSlot>) => void;
+    generateStoryboardSlots: (bpm: number, durationSeconds: number) => void;
 
     // Popout Viewer State
     isPopoutActive: boolean;
@@ -229,6 +236,48 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         viewMode: 'director',
         setViewMode: (mode) => set({ viewMode: mode }),
 
+        storyboardProject: null,
+        setStoryboardProject: (project: StoryboardProject | null) => set({ storyboardProject: project }),
+        updateStoryboardSlot: (slotId: string, updates: Partial<StoryboardSlot>) => set((state: VideoEditorState) => {
+            if (!state.storyboardProject) return {};
+            return {
+                storyboardProject: {
+                    ...state.storyboardProject,
+                    slots: state.storyboardProject.slots.map((s: StoryboardSlot) =>
+                        s.id === slotId ? { ...s, ...updates } : s
+                    )
+                }
+            };
+        }),
+        generateStoryboardSlots: (bpm: number, durationSeconds: number) => set((state: VideoEditorState) => {
+            const barDuration = 4 * (60 / bpm); // 4 beats per bar
+            const slotDuration = 4 * barDuration; // 4 bars per slot
+            const numSlots = Math.ceil(durationSeconds / slotDuration);
+            
+            const slots: StoryboardSlot[] = Array.from({ length: numSlots }).map((_, idx) => ({
+                id: uuidv4(),
+                barIndex: idx,
+                startBar: idx * 4,
+                durationBars: 4,
+                prompt: '',
+                isGenerating: false,
+                progress: 0,
+                useVocalSync: false,
+                useDaisyChain: true
+            }));
+
+            return {
+                storyboardProject: {
+                    id: state.storyboardProject?.id || uuidv4(),
+                    name: state.storyboardProject?.name || 'New Audio Sync Storyboard',
+                    bpm,
+                    durationSeconds,
+                    slots,
+                    audioUrl: state.storyboardProject?.audioUrl
+                }
+            };
+        }),
+
         isPopoutActive: false,
         setIsPopoutActive: (active) => set({ isPopoutActive: active }),
 
@@ -240,7 +289,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         // Scene Extension actions
         setExtendedProject: (project) => set({ extendedProject: project }),
         updateExtendedSegment: (segmentId, updates) => set((state) => {
-            if (!state.extendedProject) return state;
+            if (!state.extendedProject) return {};
             return {
                 extendedProject: {
                     ...state.extendedProject,
@@ -256,7 +305,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         addReferenceImage: (image) => set((state) => {
             if (state.referenceImages.length >= 3) {
                 logger.warn('[VideoEditor] Max 3 reference images allowed');
-                return state;
+                return {};
             }
             return { referenceImages: [...state.referenceImages, image] };
         }),
@@ -356,7 +405,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
         addKeyframe: (clipId: string, property: string, frame: number, value: number) => set((state) => {
             const clip = state.project.clips.find(c => c.id === clipId);
-            if (!clip) return state;
+            if (!clip) return {};
 
             const currentKeyframes = clip.keyframes?.[property] || [];
             // Remove existing keyframe at same frame if any
@@ -379,7 +428,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
         removeKeyframe: (clipId: string, property: string, frame: number) => set((state) => {
             const clip = state.project.clips.find(c => c.id === clipId);
-            if (!clip || !clip.keyframes || !clip.keyframes[property]) return state;
+            if (!clip || !clip.keyframes || !clip.keyframes[property]) return {};
 
             return {
                 project: {
@@ -397,7 +446,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
         updateKeyframe: (clipId: string, property: string, frame: number, updates: Partial<{ value: number, easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }>) => set((state) => {
             const clip = state.project.clips.find(c => c.id === clipId);
-            if (!clip || !clip.keyframes || !clip.keyframes[property]) return state;
+            if (!clip || !clip.keyframes || !clip.keyframes[property]) return {};
 
             return {
                 project: {

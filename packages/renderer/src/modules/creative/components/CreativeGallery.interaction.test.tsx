@@ -91,7 +91,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         fireEvent.click(deleteBtn);
 
         // ✅ Assert Action: Verify removeItemFromProject was called
-        expect(mockRemoveItemFromProject).toHaveBeenCalledWith('test-123', 'image', 'generated');
+        expect(mockRemoveItemFromProject).toHaveBeenCalledWith('test-123');
     });
 
     it('verifies the Video Set Frame lifecycle in Video Mode (Click → Action → Feedback)', async () => {
