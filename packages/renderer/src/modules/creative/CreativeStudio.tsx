@@ -16,6 +16,8 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
+import CreativeClipboard from './components/CreativeClipboard';
+
 /** Map UI-friendly person generation values to Intelligence API uppercase constants. */
 const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_adult': 'ALLOW_ADULT',
@@ -345,6 +347,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 </div>
 
                 {/* Main Prompt Bar Removed - Using Global CommandBar */}
+
+                {/* Visual Clipboard Dock */}
+                <CreativeClipboard />
 
                 {/* Transitions handled via viewMode === 'editor' above */}
             </div>

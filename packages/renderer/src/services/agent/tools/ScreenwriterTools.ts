@@ -1,4 +1,4 @@
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -36,7 +36,7 @@ Attempt to infer scene headers if not explicit.
       systemPrompt
     );
 
-    const textResponse = response.response.text();
+    const textResponse = getResponseText(response);
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
@@ -74,7 +74,7 @@ Return ONLY valid JSON with this structure:
       systemPrompt
     );
 
-    const textResponse = response.response.text();
+    const textResponse = getResponseText(response);
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
