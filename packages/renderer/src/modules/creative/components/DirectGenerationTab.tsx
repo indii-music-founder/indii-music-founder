@@ -413,6 +413,7 @@ export default function DirectGenerationTab() {
                             placeholder={`Describe your ${mode}...`}
                             disabled={isGenerating}
                             rows={3}
+                            data-testid="direct-prompt-input"
                             className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 focus:outline-none resize-none px-2 py-1.5 no-scrollbar"
                         />
 
