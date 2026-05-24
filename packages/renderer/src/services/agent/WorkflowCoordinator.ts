@@ -1,6 +1,6 @@
 
 import { AgentContext } from './types';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
@@ -153,7 +153,7 @@ export class WorkflowCoordinator {
                 INTELLIGENCE_MODELS.TEXT.FAST
             );
 
-            const text = response.response.text() || "";
+            const text = getResponseText(response) || "";
             if (onStream) onStream(text);
             return text;
 

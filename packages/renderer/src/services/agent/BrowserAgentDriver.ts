@@ -1,4 +1,4 @@
-import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface AgentAction {
@@ -94,7 +94,7 @@ export class BrowserAgentDriver {
                     }
                 );
 
-                const plan = AI.parseJSON(response.response.text()) as AgentAction;
+                const plan = AI.parseJSON(getResponseText(response)) as AgentAction;
                 logs.push(`[Driver] Autonomous Thought: ${plan.thought}`);
                 logs.push(`[Driver] Autonomous Action: ${plan.action} ${plan.params?.selector || ''}`);
 
