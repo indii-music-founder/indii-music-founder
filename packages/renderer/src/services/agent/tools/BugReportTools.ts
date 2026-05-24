@@ -92,8 +92,8 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let issueUrl: string | undefined;
 
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const reportBug = httpsCallable<{
                 title: string;
                 description: string;
