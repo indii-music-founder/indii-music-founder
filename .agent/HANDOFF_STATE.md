@@ -1,27 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-24 08:13 EDT
-**Branch:** `main`
+**Updated:** 2026-05-24 08:27 EDT
+**Branch:** `feat/hierarchical-agent-modes`
 
 ## Recent Commits
 ```
+ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
+40c49e3f4 fix(legal): parse AI response texts and tool returns defensively
+9c27812bf docs: mark verification & release step as fully complete in master worksheet
+44e7b5752 chore: relocate SystemProtocolsWidget and fix mock genai streaming responses
+09d93b562 chore: session checkpoint [08:13]
 da99790d6 chore: session checkpoint [08:08]
 fe18727a1 chore: session checkpoint [08:03]
 7ea77e819 test: verify guest onboarding and road manager flows
 124610469 chore: session checkpoint [08:00]
 75d595d41 chore: session checkpoint [07:59]
-e80cc0cc5 chore(system): Commit final uncommitted test outputs and auto-fixed files
-47b22a577 refactor(optimization): add autoagent optimizer python script and stabilize summary service
-17756dbc9 fix(system): Finalize Vertex fallback fixes, Boardroom swarms, and deploy updated Firestore rules
-0420f8b24 refactor: simplify AutoAgent task environment configuration and tighten system prompt optimization guidelines
-cbe322ed1 feat(agent): enhance resilience to permission/app check errors and update store defaults
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/legal/LegalDashboard.tsx
- M packages/renderer/src/modules/legal/tools.ts
- M packages/renderer/src/modules/workflow/WorkflowLab.tsx
- M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+clean working tree
 ```
 
 ## Decisions
