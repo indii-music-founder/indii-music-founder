@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { z } from 'zod';
 
@@ -75,7 +75,7 @@ export const PUBLICIST_TOOLS = {
 
         try {
             const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
-            const text = res.response.text();
+            const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
             const result = PressReleaseSchema.parse(parsed);
@@ -103,7 +103,7 @@ export const PUBLICIST_TOOLS = {
 
         try {
             const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
-            const text = res.response.text();
+            const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
             const result = CrisisResponseSchema.parse(parsed);
@@ -164,7 +164,7 @@ export const PUBLICIST_TOOLS = {
 
         try {
             const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
-            const text = res.response.text();
+            const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
             const result = CampaignAssetsSchema.parse(parsed);
