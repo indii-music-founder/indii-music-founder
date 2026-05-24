@@ -540,8 +540,8 @@ export const DistributionTools = {
 
         // 2. Call Cloud Function for DSP-specific ingestion pipeline
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const distributeVideo = httpsCallable(functions, 'distributeVideoToDSP');
             const result = await distributeVideo({
                 releaseDocId: videoReleaseRef.id,
@@ -701,8 +701,8 @@ export const DistributionTools = {
 
         // 3. Fallback: Cloud Function for server-side SFTP
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
             const result = await sftpDeliver({
                 ingestionId: ingestionRef.id,
