@@ -112,6 +112,23 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             return;
         }
 
+        // Guest Explorer Bypass: Avoid any Firestore queries/logs for the local mock session
+        if (uid === 'founder-demo-uid') {
+            logger.info('[Profile] Initializing mock guest profile for:', uid);
+            const mockProfile = {
+                id: 'founder-demo-uid',
+                uid: 'founder-demo-uid',
+                email: 'founder@indii.local',
+                displayName: 'Founder Demo',
+                bio: 'Exploring indii as guest.',
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                preferences: { theme: 'system', notifications: true }
+            } as any;
+            set({ userProfile: mockProfile });
+            return;
+        }
+
         try {
             // Try to get from Firestore first (via Service/Repo) 
             const profile = await getProfileFromStorage(uid);
