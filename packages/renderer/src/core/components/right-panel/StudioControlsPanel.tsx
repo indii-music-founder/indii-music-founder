@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2 } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
@@ -51,8 +51,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const {
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
-        videoInputs, setVideoInput
-    } = useStore(useShallow((state: StoreState) => ({
+        videoInputs, setVideoInput, viewMode
+    } = useStore(useShallow((state: any) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
         whiskState: state.whiskState,
@@ -63,7 +63,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         setPreciseReference: state.setPreciseReference,
         setTargetMedia: state.setTargetMedia,
         videoInputs: state.videoInputs,
-        setVideoInput: state.setVideoInput
+        setVideoInput: state.setVideoInput,
+        viewMode: state.viewMode
     })));
     const toast = useToast();
 

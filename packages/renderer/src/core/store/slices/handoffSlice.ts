@@ -45,6 +45,7 @@ export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
                 if (target === 'boardroom') {
                     // Open the boardroom overlay instantly
                     (store as any).addActiveAgent('generalist');
+                    (store as any).setConversationMode('boardroom');
                 }
             }
         }).catch(err => logger.error('[HandoffSlice] Routing switch failed:', err));
