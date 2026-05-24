@@ -212,8 +212,8 @@ export interface CreativeControlsSlice {
  * Factory that returns the controls/inputs portion of the creative slice.
  */
 export function buildCreativeControlsState(
-    set: Parameters<StateCreator<CreativeControlsSlice>>[0],
-    _get: Parameters<StateCreator<CreativeControlsSlice>>[1]
+    set: any,
+    _get: any
 ): CreativeControlsSlice {
     const whiskKeyMap: Record<WhiskCategory, keyof WhiskState> = {
         subject: 'subjects',
