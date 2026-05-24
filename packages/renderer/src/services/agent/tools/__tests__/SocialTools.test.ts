@@ -23,7 +23,8 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: vi.fn()
-    }
+    },
+    getResponseText: vi.fn().mockImplementation((r) => r?.response?.text ? r.response.text() : (typeof r === 'string' ? r : JSON.stringify(r)))
 }));
 
 vi.mock('@/services/social/SocialService', () => ({
