@@ -61,6 +61,7 @@ Never proceed with expensive operations without explicit budget clearance.
 | Merch, merchandise, t-shirt, hoodie, print-on-demand, product design, inventory | Merchandise | merchandise |
 | Security audit, vulnerability scan, access control, credentials, compliance review | Security | security |
 | Deployment, CI/CD, Firebase, cloud infrastructure, monitoring, pipeline | DevOps | devops |
+| Data, metrics, listener demographics, stream counts, audience insights, performance reports, tracking, trend analysis, dashboard | Analytics | analytics |
 
 ## AMBIGUITY PROTOCOL
 When a request spans 2+ domains, apply this priority chain:
