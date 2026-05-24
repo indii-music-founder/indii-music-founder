@@ -1,24 +1,38 @@
 # Handoff State
-**Updated:** 2026-05-24 14:39 EDT
-**Branch:** `main`
+**Updated:** 2026-05-24 15:49 EDT
+**Branch:** `feature/gemini-omni`
 
 ## Recent Commits
 ```
+d576c0e0b chore(creative): sync minor studio controls slice imports
+e9e410720 fix(creative): resolve compilation errors and enable robust getResponseText integration
+6e7e49c03 feat(creative): align integration style and set up feature/gemini-omni branch
+258c6b3fb chore: session checkpoint [14:39]
 6fce59573 chore: session checkpoint [14:37]
 017132be3 chore: session checkpoint [14:34]
 47281e3cb chore: session checkpoint [14:15]
 619f4f75b chore: session checkpoint [14:05]
 0b5255b51 chore: session checkpoint [14:02]
 0deafc55d chore: session checkpoint [14:02]
-037789107 chore: session checkpoint [13:59]
-f20b27f6a test(creative): add data-testid for prompt input in DirectGenerationTab
-f688d4a5a fix(touring): resolve pre-commit lint issues, fix JSX errors in optimizer, and restore fully compiling state
-474b9cab2 chore: session checkpoint [13:29]
 ```
 
 ## Working State
 ```
-?? packages/renderer/src/types/handoff.ts
+MM packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx
+M  packages/renderer/src/core/store/slices/creative/creativeControlsSlice.ts
+ M packages/renderer/src/core/store/slices/profileSlice.ts
+M  packages/renderer/src/modules/boardroom/BoardroomModule.test.tsx
+ M packages/renderer/src/modules/creative/components/CreativeGallery.interaction.test.tsx
+ M packages/renderer/src/modules/creative/components/IngredientDropZone.tsx
+ M packages/renderer/src/modules/creative/video/VideoWorkflow.tsx
+ M packages/renderer/src/modules/creative/video/store/videoEditorStore.ts
+M  packages/renderer/src/modules/marketing/components/BrandManager.test.tsx
+ M packages/renderer/src/modules/touring/components/TechnicalRiderGenerator.tsx
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+MM packages/renderer/src/test/setup.ts
+?? packages/renderer/src/modules/creative/video/components/StoryboardTimeline.tsx
+?? packages/renderer/src/modules/creative/video/schemas/
+?? packages/renderer/src/modules/creative/video/storyboard.test.ts
 ```
 
 ## Decisions
