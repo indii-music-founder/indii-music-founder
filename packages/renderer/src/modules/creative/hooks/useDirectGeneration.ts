@@ -9,7 +9,7 @@ import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoJob } from '@/types/video';
-import { VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export function useDirectGeneration() {

@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { StoreState } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
 import { z } from 'zod';
-import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/creative/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
 import { motion } from 'motion/react';

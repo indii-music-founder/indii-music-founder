@@ -1,17 +1,17 @@
 import { logger } from '@/utils/logger';
-import { VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '../../services/video/VideoGenerationService';
-import { WhiskService } from '../../services/WhiskService';
+import { VideoGeneration } from "@/services/video/VideoGenerationService";
+import { WhiskService } from "@/services/WhiskService";
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
-import { IntelligencePromptInput } from '../creative/components/veo/IntelligencePromptInput';
+import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -382,7 +382,7 @@ export default function VideoWorkflow() {
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model,
-                    onProgress: (current, total) => {
+                                    onProgress: (current: number, total: number) => {
                         // Optional: Could wire this up to a local progress update if store supports it
                         logger.info(`Segment ${current}/${total}`);
                     }

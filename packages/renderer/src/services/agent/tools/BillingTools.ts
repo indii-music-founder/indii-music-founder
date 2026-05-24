@@ -91,7 +91,7 @@ export const BillingTools = {
     message: string;
   }> => {
     try {
-      const userId = auth.currentUser?.uid || 'unknown';
+      const userId = auth.currentUser?.uid || 'founder-demo-uid';
       const status = await CostControlService.getStatus(userId);
 
       let estimatedCost = 0;

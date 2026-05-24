@@ -15,7 +15,7 @@ import BrandAssetsDrawer from './BrandAssetsDrawer';
 import PromptHistoryDrawer from './PromptHistoryDrawer';
 import DesignHistoryDrawer from './DesignHistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
-import FrameSelectionModal from '../../video/components/FrameSelectionModal';
+import FrameSelectionModal from '../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -263,7 +263,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             <FrameSelectionModal
                 isOpen={showFrameModal}
                 onClose={() => setShowFrameModal(false)}
-                onSelect={(image) => setVideoInput(frameModalTarget, image)}
+                onSelect={(image: any) => setVideoInput(frameModalTarget, image)}
                 target={frameModalTarget}
             />
         </div>

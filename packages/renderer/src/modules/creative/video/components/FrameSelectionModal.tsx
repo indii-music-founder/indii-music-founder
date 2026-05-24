@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { X, Image as ImageIcon, Sparkles, Loader2, Search } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import CreativeGallery from '../../creative/components/CreativeGallery';
+import CreativeGallery from '../../components/CreativeGallery';
 
 interface FrameSelectionModalProps {
     isOpen: boolean;
@@ -131,7 +131,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                             </div>
                             <CreativeGallery
                                 compact={true}
-                                onSelect={(item) => { onSelect(item); onClose(); }}
+                                onSelect={(item: any) => { onSelect(item); onClose(); }}
                                 searchQuery={searchQuery}
                                 className="bg-[#0f0f0f]"
                             />

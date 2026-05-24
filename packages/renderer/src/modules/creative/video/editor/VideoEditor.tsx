@@ -8,9 +8,9 @@ import { StudioToolbar } from '@/components/studio/StudioToolbar';
 import { useTimelineDrag } from './hooks/useTimelineDrag';
 import { VideoEditorSidebar } from './components/VideoEditorSidebar';
 import { useVideoEditor } from './hooks/useVideoEditor';
-import AnnotationPalette from '../../creative/components/AnnotationPalette';
-import EditDefinitionsPanel from '../../creative/components/EditDefinitionsPanel';
-import { STUDIO_COLORS, CreativeColor } from '../../creative/constants';
+import AnnotationPalette from "../../components/AnnotationPalette";
+import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
+import { STUDIO_COLORS, CreativeColor } from '../../constants';
 
 interface VideoEditorProps {
     initialVideo?: HistoryItem;

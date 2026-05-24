@@ -592,7 +592,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock video editor store globally
-vi.mock('@/modules/video/store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockState = {
         project: { id: 'test-project', clips: [], tracks: [], duration: 0 },
         currentTime: 0,
