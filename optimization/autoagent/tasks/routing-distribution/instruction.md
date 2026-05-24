@@ -1,7 +1,1 @@
-# Task Instruction: Distribution Routing
-
-An indii artist asks:
-> "When can I release my track to Spotify? Does it take a week to clear?"
-
-You should identify that this is a release and DSP delivery question.
-Delegate this task to the **Distribution Agent** using the `delegate_task` tool.
+When will my track go live on Spotify if I submit it today?

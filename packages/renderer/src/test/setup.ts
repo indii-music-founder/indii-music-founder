@@ -419,7 +419,11 @@ vi.mock('firebase/storage', () => ({
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn(() => Promise.resolve(true)),
     getValue: vi.fn((rc, key) => ({
-        asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1',
+        asString: () => {
+            if (key === 'model_name') return 'mock-model-v1';
+            if (key === 'ai_system_config') return JSON.stringify({ overrides: {}, pricing: {}, config: { think_budget_multiplier: 1.0 } });
+            return 'us-central1';
+        },
         asBoolean: () => false,
         asNumber: () => 1
     })),
