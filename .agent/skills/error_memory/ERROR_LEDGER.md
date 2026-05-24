@@ -1,3 +1,14 @@
+## 2026-05-24 Environment HDR Preset Failed to Fetch (offline crash)
+
+**SEVERITY:** High (crashes whole 3D stage builder canvas with 'Studio encountered an error' message)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx`
+- ERROR: `Could not load dikhololo_night_1k.hdr: Failed to fetch`
+- CAUSE: The R3F Canvas renders Drei's `<Environment preset="night" />` component which attempts to download the HDR texture from its default remote CDN. If the user is offline, has a restricted network, or is in an environment where the CDN domain is blocked/failing, this fetch fails, throwing an unhandled promise rejection/error. Since the `<Environment>` tag was outside the `ModelErrorBoundary` and the SceneBuilder Canvas lacked custom error boundary wrapping around it, the error bubbled up to the module-level ErrorBoundary, rendering the "Studio encountered an error" overlay.
+- FIX: Wrapped `<Environment preset="night" />` in a dedicated custom `EnvironmentErrorBoundary` class component that catches any texture loading error, logs it as a warning, and returns `null` to degrade gracefully. The scene already includes excellent stage-like lighting (ambient, spot, and directional lights), meaning the canvas stays fully visible and interactive even without the environment reflections map.
+- PREVENTION: Never place remote-fetching Drei tags (like `<Environment preset="..." />` or similar third-party CDN asset loaders) inside the R3F Canvas without an ErrorBoundary wrapped around them. Always ensure fallback lighting is sufficient so that environment maps can degrade gracefully if the network is disconnected or blocked.
+
 ## 2026-05-23 CI Failure: Fallback Mode Mock Structure
 
 **SEVERITY:** Medium (breaks CI test suite)
