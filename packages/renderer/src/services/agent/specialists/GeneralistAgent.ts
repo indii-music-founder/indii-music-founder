@@ -810,7 +810,8 @@ CURRENT REQUEST: ${task}
                 const isFatal = message.includes('Verification Failed') ||
                     message.includes('PERMISSION_DENIED') ||
                     message.includes('Unauthenticated') ||
-                    message.includes('App Check');
+                    message.includes('App Check') ||
+                    message.includes('Missing or insufficient permissions');
 
                 if (isFatal || iterations >= MAX_ITERATIONS) {
                     return {

@@ -694,6 +694,36 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Cost Control & Billing Ledgers
+    // =========================================================================
+    match /costLedger/{ledgerId} {
+      allow read: if isAuthenticated();
+      // Allow atomic updates/increments for global and user ledgers
+      allow create, update: if isAuthenticated();
+      allow delete: if false;
+    }
+
+    match /incidents/{incidentId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+
+    // =========================================================================
+    // Token Usage & Rate Limits
+    // =========================================================================
+    match /user_usage_stats/{statId} {
+      allow read: if isAuthenticated() && statId.matches(request.auth.uid + '.*');
+      allow create, update: if isAuthenticated() && statId.matches(request.auth.uid + '.*');
+      allow delete: if false;
+    }
+
+    match /user_rate_limits/{limitId} {
+      allow read: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
+      allow create, update: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
+      allow delete: if false;
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {
