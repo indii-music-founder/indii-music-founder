@@ -17,9 +17,10 @@ interface IngredientDropZoneProps {
     ingredients: Ingredient[];
     onChange: (ingredients: Ingredient[]) => void;
     mode?: IngredientMode;
+    className?: string;
 }
 
-export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }: IngredientDropZoneProps) {
+export function IngredientDropZone({ ingredients, onChange, mode = 'reference', className }: IngredientDropZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { error } = useToast();
     const [showCamera, setShowCamera] = React.useState(false);
