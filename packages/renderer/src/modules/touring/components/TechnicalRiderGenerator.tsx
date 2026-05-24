@@ -403,11 +403,6 @@ export function TechnicalRiderGenerator() {
     useEffect(() => {
         const payload = consumeHandoff('touring');
         if (payload) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setRider(prev => ({
-                ...prev,
-                stageLayoutAsset: payload.assetUrl
-            }));
             requestAnimationFrame(() => {
                 setRider(prev => {
                     if (prev.stageLayoutAsset === payload.assetUrl) return prev;
