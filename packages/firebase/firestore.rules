@@ -63,7 +63,8 @@ service cloud.firestore {
       // Users can update their own profile with validation
       allow update: if isOwner(userId) &&
         // Prevent changing uid
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']));
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']) ||
+         (!('uid' in resource.data) && request.resource.data.uid == userId));
 
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
@@ -454,9 +455,9 @@ service cloud.firestore {
     // Publishing Registrations (verified users only — PRO/MLC filings)
     // =========================================================================
     match /publishing_registrations/{registrationId} {
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow read: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow delete: if false;
     }
 
@@ -464,12 +465,15 @@ service cloud.firestore {
     // Split Escrows (verified users only — financial holds)
     // =========================================================================
     match /split_escrows/{escrowId} {
-      allow read: if isVerifiedUser() && (
+      allow read: if (isVerifiedUser() && (
         resource.data.initiatorUid == request.auth.uid ||
         request.auth.uid in resource.data.parties
-      );
-      allow create: if isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid;
-      allow update: if isVerifiedUser() && request.auth.uid in resource.data.parties;
+      )) || (isGuest() && (
+        resource.data.initiatorUid == 'founder-demo-uid' ||
+        'founder-demo-uid' in resource.data.parties
+      ));
+      allow create: if (isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid) || (isGuest() && request.resource.data.initiatorUid == 'founder-demo-uid');
+      allow update: if (isVerifiedUser() && request.auth.uid in resource.data.parties) || (isGuest() && 'founder-demo-uid' in resource.data.parties);
       allow delete: if false;
     }
 
@@ -515,8 +519,8 @@ service cloud.firestore {
     // Licensing Clearances
     // =========================================================================
     match /licensing_clearances/{clearanceId} {
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow read: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update, delete: if false;
     }
 
@@ -524,9 +528,9 @@ service cloud.firestore {
     // Label Deals
     // =========================================================================
     match /label_deals/{dealId} {
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow read: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow delete: if false;
     }
 
@@ -662,11 +666,11 @@ service cloud.firestore {
       allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
     match /earnings/{earningId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.labelId == request.auth.uid);
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.labelId == request.auth.uid)) || (isGuest() && (resource.data.userId == 'founder-demo-uid' || resource.data.labelId == 'founder-demo-uid'));
       allow write: if false;
     }
     match /payouts/{payoutId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow write: if false;
     }
     match /timelines/{userId}/items/{itemId} {
@@ -704,9 +708,9 @@ service cloud.firestore {
     // Cost Control & Billing Ledgers
     // =========================================================================
     match /costLedger/{ledgerId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       // Allow atomic updates/increments for global and user ledgers
-      allow create, update: if isAuthenticated();
+      allow create, update: if isAuthenticated() || isGuest();
       allow delete: if false;
     }
 
@@ -719,14 +723,14 @@ service cloud.firestore {
     // Token Usage & Rate Limits
     // =========================================================================
     match /user_usage_stats/{statId} {
-      allow read: if isAuthenticated() && statId.matches(request.auth.uid + '.*');
-      allow create, update: if isAuthenticated() && statId.matches(request.auth.uid + '.*');
+      allow read: if (isAuthenticated() && statId.matches(request.auth.uid + '.*')) || (isGuest() && statId.matches('founder-demo-uid.*'));
+      allow create, update: if (isAuthenticated() && statId.matches(request.auth.uid + '.*')) || (isGuest() && statId.matches('founder-demo-uid.*'));
       allow delete: if false;
     }
 
     match /user_rate_limits/{limitId} {
-      allow read: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
-      allow create, update: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
+      allow read: if (isAuthenticated() && limitId.matches(request.auth.uid + '.*')) || (isGuest() && limitId.matches('founder-demo-uid.*'));
+      allow create, update: if (isAuthenticated() && limitId.matches(request.auth.uid + '.*')) || (isGuest() && limitId.matches('founder-demo-uid.*'));
       allow delete: if false;
     }
 

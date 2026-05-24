@@ -11,17 +11,17 @@ import { Camera, Save, X, RefreshCw } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import { doc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { db, auth } from '@/services/firebase';
+import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';
 import { SectionHeader } from './SettingsShared';
 
 const ProfileSection: React.FC = () => {
-    const { user, userProfile } = useStore(useShallow((s: StoreState) => ({
+    const { user, userProfile, setUserProfile } = useStore(useShallow((s: StoreState) => ({
         user: s.user,
         userProfile: s.userProfile,
+        setUserProfile: s.setUserProfile,
     })));
     const { showToast } = useToast();
 
@@ -43,13 +43,19 @@ const ProfileSection: React.FC = () => {
             if (displayName !== user.displayName) {
                 await updateProfile(user, { displayName });
             }
-            // Update Firestore user document
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
+            
+            // Systematically update the userProfile through setUserProfile store action
+            const updatedProfile = {
+                ...(userProfile || {}),
+                id: user.uid,
+                uid: user.uid,
+                email: user.email || (userProfile?.email || ''),
                 displayName,
                 bio,
-                updatedAt: new Date().toISOString(),
-            });
+            };
+
+            await setUserProfile(updatedProfile);
+
             setDirty(false);
             showToast('Profile updated', 'success');
             logger.info('[Settings] Profile updated');

@@ -444,6 +444,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
                             if (!userSnap.exists()) {
                                 await setDoc(userRef, {
+                                    uid: currentUser.uid,
                                     email: currentUser.email,
                                     displayName: currentUser.displayName,
                                     photoURL: currentUser.photoURL,
@@ -485,6 +486,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
                     if (!userSnap.exists()) {
                         await setDoc(userRef, {
+                            uid: user.uid,
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL,
