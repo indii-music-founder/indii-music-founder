@@ -46,7 +46,7 @@ vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testi
 vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
 vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
 vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
+vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
 vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));

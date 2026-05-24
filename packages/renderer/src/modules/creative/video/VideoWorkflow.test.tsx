@@ -1,11 +1,7 @@
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
-import { useStore } from '@/core/store';
-import { extractVideoFrame } from '../../utils/video';
-import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { extractVideoFrame } from '../../../utils/video';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
 
 // --- Mocks ---
@@ -100,7 +96,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock extractVideoFrame
-vi.mock('../../utils/video', () => ({
+vi.mock('../../../utils/video', () => ({
     serverTimestamp: vi.fn(),
     extractVideoFrame: vi.fn()
 }));

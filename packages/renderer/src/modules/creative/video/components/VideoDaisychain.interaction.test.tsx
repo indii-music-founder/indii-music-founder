@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React, { useState } from 'react';
-import CreativeStudio from '../../creative/CreativeStudio';
+import CreativeStudio from '../../CreativeStudio';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -110,7 +110,7 @@ vi.mock('../../video/editor/VideoEditor', () => ({
     VideoEditor: () => <div data-testid="video-editor" />
 }));
 
-vi.mock('../../creative/components/CreativeGallery', () => ({
+vi.mock('../../components/CreativeGallery', () => ({
     default: () => (
         <div data-testid="creative-gallery">
             <button data-testid="set-first-frame-btn" onClick={() => {
@@ -125,7 +125,7 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
     )
 }));
 
-vi.mock('../../creative/components/CreativeNavbar', () => ({
+vi.mock('../../components/CreativeNavbar', () => ({
     default: () => (
         <div data-testid="creative-navbar">
             <button data-testid="director-view-btn" onClick={() => mockSetViewMode('video_production')}>Director</button>

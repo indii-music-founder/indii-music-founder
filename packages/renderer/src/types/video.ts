@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VideoJobStatusSchema } from "@/modules/video/schemas";
+import { VideoJobStatusSchema } from "@/modules/creative/video/schemas";
 
 export type VideoJobStatus = z.infer<typeof VideoJobStatusSchema>;
 

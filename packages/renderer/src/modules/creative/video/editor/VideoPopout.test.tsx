@@ -31,8 +31,8 @@ vi.mock('../remotion/MyComposition', () => ({
 }));
 
 // ── Static imports ────────────────────────────────────────────────────────
-import VideoPopout from '@/modules/video/editor/VideoPopout';
-import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
+import VideoPopout from '@/modules/creative/video/editor/VideoPopout';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 // ── BroadcastChannel mock ──────────────────────────────────────────────────
 

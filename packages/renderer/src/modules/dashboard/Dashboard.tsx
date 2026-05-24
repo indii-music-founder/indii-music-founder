@@ -43,7 +43,6 @@ function DashboardMeshBackground() {
                 className="absolute top-[20%] right-[10%] w-[35%] h-[35%] rounded-full bg-dept-marketing/10 blur-[100px]" 
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,102,0.03),transparent_70%)]" />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay" />
         </div>
     );
 }

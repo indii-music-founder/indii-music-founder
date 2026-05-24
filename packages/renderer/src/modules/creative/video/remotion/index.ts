@@ -9,4 +9,4 @@
 // if both entry points were ever loaded in the same bundle.
 
 export { MyComposition } from './MyComposition';
-export { RemotionRoot } from '../../../remotion/Root';
+export { RemotionRoot } from '../../../../remotion/Root';

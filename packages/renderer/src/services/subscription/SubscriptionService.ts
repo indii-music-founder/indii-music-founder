@@ -111,14 +111,15 @@ export class SubscriptionService {
         message: lastError instanceof Error ? lastError.message : String(lastError)
       });
 
-      // SAFE FALLBACK: Return a mock FREE subscription to unblock UI if backend is down/failing
+      // SAFE FALLBACK: Return a mock subscription to unblock UI if backend is down/failing
       // This prevents the "Failed to fetch subscription" block during navigation.
-      logger.warn(`[SubscriptionService] Returning fallback FREE subscription for ${userId}`);
+      const fallbackTier = import.meta.env.DEV ? SubscriptionTier.STUDIO : SubscriptionTier.FREE;
+      logger.warn(`[SubscriptionService] Returning fallback ${fallbackTier} subscription for ${userId}`);
       const now = Date.now();
       const fallback: Subscription & { isFallback: boolean } = {
         id: `fallback-${userId}`,
         userId,
-        tier: SubscriptionTier.FREE,
+        tier: fallbackTier,
         status: 'active',
         currentPeriodStart: now,
         currentPeriodEnd: now + (30 * 24 * 60 * 60 * 1000),

@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { VideoGenerationOptions } from '@/modules/video/schemas';
+import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Dependencies

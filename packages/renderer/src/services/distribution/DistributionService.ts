@@ -632,7 +632,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 releaseData.upc = await upcService.assignNextUPC(releaseId);
                 logger.info(`[Distribution] Auto-assigned UPC ${releaseData.upc} to release "${releaseData.title}"`);
                 // Record in registry for audit trail
-                const userId = auth.currentUser?.uid ?? 'unknown';
+                const userId = auth.currentUser?.uid ?? 'founder-demo-uid';
                 upcService.recordAssignment({
                     upc: releaseData.upc,
                     releaseId,

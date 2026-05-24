@@ -115,7 +115,7 @@ vi.mock('./components/DailiesStrip', () => ({
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
-vi.mock('@/services/video/VideoGenerationService', () => ({
+vi.mock('../../../services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),

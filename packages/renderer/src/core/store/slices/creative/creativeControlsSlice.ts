@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { z } from 'zod';
-import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/creative/video/schemas';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
