@@ -8,8 +8,8 @@
  * - Stripe checkout sessions
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { auth } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '@/services/firebase';
 import {
   UsageWarningLevel
 } from './types';
@@ -68,7 +68,6 @@ export class SubscriptionService {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          const functions = getFunctions();
           const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
 
           const result = await getSubscriptionFn({ userId });
@@ -171,7 +170,6 @@ export class SubscriptionService {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          const functions = getFunctions();
           const getUsageStatsFn = httpsCallable(functions, 'getUsageStats');
 
           const result = await getUsageStatsFn({ userId });
@@ -459,7 +457,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const createSessionFn = httpsCallable(functions, 'createCheckoutSession');
 
       const result = await createSessionFn(params);
@@ -478,7 +475,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const getPortalFn = httpsCallable(functions, 'getCustomerPortal');
 
       const result = await getPortalFn({
@@ -501,7 +497,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const cancelFn = httpsCallable(functions, 'cancelSubscription');
 
       await cancelFn({ userId: targetUserId });
@@ -524,7 +519,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const resumeFn = httpsCallable(functions, 'resumeSubscription');
 
       await resumeFn({ userId: targetUserId });

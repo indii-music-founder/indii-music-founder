@@ -434,7 +434,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         // 7. Normal vs Fallback Generation
                         const result = await (async () => {
                             // FALLBACK MODE
-                            if (this.useFallbackMode && this.fallbackClient && !isVertexCustomPath) {
+                            if (this.useFallbackMode && this.fallbackClient) {
                                 const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
                                 return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                             }
@@ -685,7 +685,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     const isVertexCustomPath = modelName.startsWith('projects/') || modelName.includes('/endpoints/');
 
                     // 4. Case analysis for Normal vs Fallback
-                    if (this.useFallbackMode && this.fallbackClient && !isVertexCustomPath) {
+                    if (this.useFallbackMode && this.fallbackClient) {
                         return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                     }
 

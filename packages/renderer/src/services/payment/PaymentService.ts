@@ -11,7 +11,8 @@
  * Item 210: Removed dead LemonSqueezy reference.
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import type { PaymentTransaction } from './types';
 
@@ -42,7 +43,6 @@ export interface OneTimePaymentRequest {
  * Returns the Stripe session URL. Call `window.location.href = url` to redirect.
  */
 export async function createOneTimePayment(request: OneTimePaymentRequest): Promise<string> {
-    const functions = getFunctions();
     const createOneTimeCheckout = httpsCallable<OneTimePaymentRequest, { checkoutUrl: string; sessionId: string }>(
         functions,
         'createOneTimeCheckout'
@@ -75,7 +75,6 @@ export async function createOneTimePayment(request: OneTimePaymentRequest): Prom
  * Returns structured invoice data for PDF rendering.
  */
 export async function getLatestInvoice(invoiceId?: string): Promise<Record<string, unknown>> {
-    const functions = getFunctions();
     const generateInvoice = httpsCallable<{ invoiceId?: string }, Record<string, unknown>>(
         functions,
         'generateInvoice'
