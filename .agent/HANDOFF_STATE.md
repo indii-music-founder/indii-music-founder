@@ -1,9 +1,20 @@
 # Handoff State
+**Updated:** 2026-05-24 15:58 EDT
 **Updated:** 2026-05-24 17:49 EDT
 **Branch:** `feature/gemini-omni`
 
 ## Recent Commits
 ```
+4952a9a98 chore: record distributed checkpoint for Antigravity
+c64a570d6 fix: restore guest profile persistence and prevent messenger connection hangs
+5b5f76307 feat(creative): fully integrate Gemini Omni Stage video-to-video editing
+16815ca90 chore: session checkpoint [15:49]
+d576c0e0b chore(creative): sync minor studio controls slice imports
+e9e410720 fix(creative): resolve compilation errors and enable robust getResponseText integration
+6e7e49c03 feat(creative): align integration style and set up feature/gemini-omni branch
+258c6b3fb chore: session checkpoint [14:39]
+6fce59573 chore: session checkpoint [14:37]
+017132be3 chore: session checkpoint [14:34]
 1a0772b7c chore: update session checkpoint
 88a526c86 fix(agent): mock getResponseText in SocialTools.test.ts for CI stability
 18fefd056 chore: update session checkpoint
