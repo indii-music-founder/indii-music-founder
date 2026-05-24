@@ -96,6 +96,14 @@ export interface CreativeControlsSlice {
         responseFormat: 'image_only' | 'image_and_text';
         /** Whether to include the model's thinking/reasoning in the response. */
         includeThoughts: boolean;
+
+        // ── Gemini Omni API Extensions ──────────────────────────────────────
+        posePreservation: number;
+        beatPulse: number;
+        characterXRay: boolean;
+        synthIdEnabled: boolean;
+        selectedLanguage: string;
+        omniReferenceVideo: string | null;
     };
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
@@ -136,8 +144,8 @@ export interface CreativeControlsSlice {
     clearCharacterReferences: () => void;
     updateCharacterReference: (id: string, updates: Partial<{ referenceType: 'subject' | 'style' | 'reference'; name: string }>) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni') => void;
 
     // Showroom Mode State
     showroomState: {
@@ -240,6 +248,13 @@ export function buildCreativeControlsState(
             useImageSearch: false,
             responseFormat: 'image_only',
             includeThoughts: false,
+            // Gemini Omni defaults
+            posePreservation: 0.8,
+            beatPulse: 0.5,
+            characterXRay: true,
+            synthIdEnabled: true,
+            selectedLanguage: 'es',
+            omniReferenceVideo: null,
         },
         setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
         enableCoverArtMode: () => set((state) => ({
