@@ -1,4 +1,4 @@
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -17,7 +17,7 @@ export const SocialTools = {
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT
         );
-        const text = result.response.text();
+        const text = getResponseText(result);
 
         // Auto-persist using the robust SocialService
         let postId: string | null = null;

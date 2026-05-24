@@ -408,6 +408,15 @@ export function TechnicalRiderGenerator() {
                 ...prev,
                 stageLayoutAsset: payload.assetUrl
             }));
+            requestAnimationFrame(() => {
+                setRider(prev => {
+                    if (prev.stageLayoutAsset === payload.assetUrl) return prev;
+                    return {
+                        ...prev,
+                        stageLayoutAsset: payload.assetUrl
+                    };
+                });
+            });
             toast.success(`Stage schematic loaded: "${payload.prompt || 'staged asset'}"!`);
         }
     }, [consumeHandoff, toast]);
@@ -477,14 +486,15 @@ export function TechnicalRiderGenerator() {
                 defaultCat = 'hiphop';
             }
 
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setRider(prev => ({
-                ...prev,
-                artistCategory: defaultCat,
-                artistName: userProfile.displayName || '',
-                actName: userProfile.brandKit?.releaseDetails?.title || '',
-                ...PRESETS[defaultCat]
-            }));
+            requestAnimationFrame(() => {
+                setRider(prev => ({
+                    ...prev,
+                    artistCategory: defaultCat,
+                    artistName: userProfile.displayName || '',
+                    actName: userProfile.brandKit?.releaseDetails?.title || '',
+                    ...PRESETS[defaultCat]
+                }));
+            });
         }
     }, [userProfile]);
 
