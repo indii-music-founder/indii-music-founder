@@ -8,7 +8,7 @@ import {
     VALID_AGENT_IDS,
     ValidAgentId
 } from '../types';
-import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 /**
@@ -91,7 +91,7 @@ export class GraphDecompositionService {
                 }
             );
 
-            const jsonText = response.response.text() || '{}';
+            const jsonText = getResponseText(response) || '{}';
             const rawGraph = JSON.parse(jsonText);
 
             // Validate and Polish

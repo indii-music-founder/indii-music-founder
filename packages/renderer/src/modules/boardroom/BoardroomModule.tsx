@@ -11,6 +11,8 @@ import { useMobile } from '@/hooks/useMobile';
 import { ArrowLeft, Users, Layers } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 
+import { useToast } from '@/core/context/ToastContext';
+
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
  *
@@ -28,12 +30,22 @@ import { LivingPlansTracker } from './components/LivingPlansTracker';
  *
  */
 export function BoardroomModule() {
-    const { conversationMode, boardroomMessages, activeAgents, setConversationMode } = useStore(
+    const toast = useToast();
+    const { 
+        conversationMode, 
+        boardroomMessages, 
+        activeAgents, 
+        setConversationMode,
+        consumeHandoff,
+        addReferencedAsset
+    } = useStore(
         useShallow(state => ({
             conversationMode: state.conversationMode,
             boardroomMessages: state.boardroomMessages,
             activeAgents: state.activeAgents,
-            setConversationMode: state.setConversationMode
+            setConversationMode: state.setConversationMode,
+            consumeHandoff: state.consumeHandoff,
+            addReferencedAsset: state.addReferencedAsset
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
@@ -42,6 +54,22 @@ export function BoardroomModule() {
 
     const activeCount = activeAgents?.length || 0;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
+
+    // Staged Handoff Hook Interceptor
+    React.useEffect(() => {
+        if (isBoardroomMode) {
+            const payload = consumeHandoff('boardroom');
+            if (payload) {
+                addReferencedAsset({
+                    id: payload.assetId,
+                    name: payload.prompt || 'Creative Asset Plot',
+                    type: 'url',
+                    value: payload.assetUrl
+                });
+                toast.success(`Creative graphic "${payload.prompt || 'staged asset'}" loaded into Boardroom references!`);
+            }
+        }
+    }, [isBoardroomMode, consumeHandoff, addReferencedAsset, toast]);
 
     if (!isBoardroomMode) return null;
 

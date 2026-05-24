@@ -66,7 +66,7 @@ vi.mock('@/services/agent/registry', () => ({
 }));
 
 // Store mock state
-let mockStoreState: Record<string, unknown> = {};
+const mockStoreState: Record<string, any> = {};
 
 vi.mock('@/core/store', () => ({
     useStore: (selector: (state: Record<string, unknown>) => unknown) => selector(mockStoreState),
@@ -90,7 +90,8 @@ import { BoardroomTable } from './components/BoardroomTable';
 
 describe('BoardroomModule', () => {
     beforeEach(() => {
-        mockStoreState = {
+        Object.keys(mockStoreState).forEach(key => delete mockStoreState[key]);
+        Object.assign(mockStoreState, {
             isBoardroomMode: true,
             activeAgents: [],
             boardroomMessages: [],
@@ -101,7 +102,9 @@ describe('BoardroomModule', () => {
             currentModule: 'dashboard',
             chatChannel: 'indii',
             conversationMode: 'boardroom',
-        };
+            consumeHandoff: vi.fn(() => null),
+            addReferencedAsset: vi.fn(),
+        });
     });
 
     it('renders nothing when boardroom mode is off', () => {

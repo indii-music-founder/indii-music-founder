@@ -88,9 +88,10 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
 
             if (response.generatedImages && response.generatedImages.length > 0) {
                 for (const generatedImage of response.generatedImages) {
-                    if (generatedImage.image) {
-                        const base64Bytes = generatedImage.image.imageBytes;
-                        const mimeType = generatedImage.image.mimeType || 'image/jpeg';
+                    const img = generatedImage.image;
+                    if (img) {
+                        const base64Bytes = img.imageBytes;
+                        const mimeType = img.mimeType || 'image/jpeg';
                         const dataUri = `data:${mimeType};base64,${base64Bytes}`;
                         generatedImages.push(dataUri);
                     }
