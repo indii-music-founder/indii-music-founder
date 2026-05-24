@@ -1,4 +1,4 @@
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -46,7 +46,7 @@ Cast: ${args.cast.join(', ')}
             systemPrompt
         );
 
-        const textResponse = response.response.text();
+        const textResponse = getResponseText(response);
         const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
         const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
@@ -74,7 +74,7 @@ Output a JSON list of:
             systemPrompt
         );
 
-        const textResponse = response.response.text();
+        const textResponse = getResponseText(response);
         const jsonMatch = textResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
         const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
