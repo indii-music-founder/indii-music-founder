@@ -24,7 +24,8 @@ export const SOCIAL_TOOLS = {
                 [{ role: 'user', parts: [{ text: prompt }] }],
                 INTELLIGENCE_MODELS.TEXT.AGENT
             );
-            return res.response.text() || "Failed to generate copy.";
+            const rawText = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+            return rawText || "Failed to generate copy.";
         } catch (_e: unknown) {
             return "Error generating copy.";
         }
