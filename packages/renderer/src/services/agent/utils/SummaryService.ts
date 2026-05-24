@@ -51,7 +51,13 @@ export class SummaryService {
                 }
             );
 
-            const summary = response.response.text().trim();
+            if (!response || !response.response) {
+                throw new Error('Invalid response structure from AutonomousIntelligence');
+            }
+            const rawText = typeof response.response.text === 'function'
+                ? response.response.text()
+                : (response.response.text as unknown as string || '');
+            const summary = rawText.trim();
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
         } catch (error: unknown) {
