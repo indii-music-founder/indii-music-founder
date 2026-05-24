@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-24 13:05 EDT
+**Updated:** 2026-05-24 13:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4f68d46a8 chore: session checkpoint [13:05]
 3049de4f4 chore: session checkpoint [13:03]
 761f55243 feat(billing): guest bypass and fallback allowance in cost control and profile store improvements
 665bdbd2a fix(onboarding): resolve fallback API schema type error and integrate microphone voice input
@@ -13,7 +14,6 @@ e70a24efe chore: session checkpoint [11:32]
 b5e19addf feat: merge hierarchical-agent-modes branch
 fd3ee48da chore(optimization): add check_git_changes utility and ignore polling state
 dead087c8 chore: session checkpoint [08:30]
-a40b9eca2 chore: session checkpoint [08:27]
 ```
 
 ## Working State
@@ -21,11 +21,21 @@ a40b9eca2 chore: session checkpoint [08:27]
 M  packages/firebase/firestore.indexes.json
 M  packages/firebase/firestore.rules
 M  packages/firebase/src/lib/touring.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
-M  packages/renderer/src/modules/touring/RoadManager.tsx
+M  packages/renderer/src/core/store/slices/profileSlice.ts
+M  packages/renderer/src/hooks/useRemoteCommandListener.ts
+M  packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
+MM packages/renderer/src/modules/touring/RoadManager.test.tsx
+MM packages/renderer/src/modules/touring/RoadManager.tsx
+M  packages/renderer/src/modules/touring/components/SetlistAnalytics.tsx
 M  packages/renderer/src/modules/touring/components/TechnicalRiderGenerator.tsx
+MM packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
+M  packages/renderer/src/modules/touring/components/VisaChecklist.tsx
+M  packages/renderer/src/modules/touring/hooks/useTouring.ts
 M  packages/renderer/src/modules/touring/types.ts
+M  packages/renderer/src/services/agent/RemoteRelayService.ts
+MM packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts
 M  packages/renderer/src/services/touring/RiderService.ts
+M  packages/renderer/src/services/touring/TouringService.ts
 ```
 
 ## Decisions
