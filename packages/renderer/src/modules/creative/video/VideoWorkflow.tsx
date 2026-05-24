@@ -8,8 +8,9 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
-import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
+import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { StoryboardTimeline } from './components/StoryboardTimeline';
 
 import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
@@ -527,6 +528,13 @@ export default function VideoWorkflow() {
                     >
                         <Settings size={18} />
                     </button>
+                    <button
+                        onClick={() => setViewMode('storyboard')}
+                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all shadow-xl backdrop-blur-md"
+                        title="Open Storyboard Sync"
+                    >
+                        <Layers size={18} />
+                    </button>
                 </div>
 
                 {/* Technical Settings Panel (Collapsible, Bottom-Right) */}
@@ -737,6 +745,32 @@ export default function VideoWorkflow() {
                         <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading 3D Stage...</div>}>
                             <SceneBuilder />
                         </Suspense>
+                    </div>
+                </div>
+            )}
+
+            {/* Storyboard Sync Container */}
+            {viewMode === 'storyboard' && (
+                <div className="absolute inset-0 z-50 bg-background flex flex-col">
+                    <div className="flex justify-between items-center p-4 border-b border-white/5 bg-[#0e1117]/40 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setViewMode('director')}
+                                className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                title="Back to Director View"
+                            >
+                                <ChevronDown size={20} className="rotate-90" />
+                            </button>
+                            <h2 className="text-white font-bold uppercase tracking-wider text-xs flex items-center gap-2">
+                                <Layers size={14} className="text-purple-400 animate-pulse" />
+                                Audio-Storyboard Sync Workspace
+                            </h2>
+                        </div>
+                    </div>
+                    <div className="flex-1 min-h-0">
+                        <ErrorBoundary fallback={<div className="p-10 text-red-500">Storyboard Sync Error</div>}>
+                            <StoryboardTimeline />
+                        </ErrorBoundary>
                     </div>
                 </div>
             )}

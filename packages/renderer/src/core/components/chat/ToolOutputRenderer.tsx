@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { Sparkles, Edit2, Bug, Lightbulb } from 'lucide-react';
+import { Sparkles, Edit2, Bug, Lightbulb, Pin } from 'lucide-react';
 import { ImageAnnotator } from './annotator/ImageAnnotator';
 import { DocumentAnnotator } from './annotator/DocumentAnnotator';
+import { useToast } from '@/core/context/ToastContext';
 
 interface ImageRendererProps {
     src?: string;
@@ -12,8 +13,9 @@ interface ImageRendererProps {
 }
 
 export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt, messageId, agentId }) => {
-    const { openImageInStudio } = useStore.getState();
+    const { openImageInStudio, pinToClipboard } = useStore.getState();
     const [showAnnotator, setShowAnnotator] = useState(false);
+    const toast = useToast();
 
     const handleClick = () => {
         if (!src || !messageId || !agentId) return;
@@ -51,6 +53,25 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt, messageI
                         <span>✏️ Open in Studio</span>
                     </div>
                 </div>
+
+                {/* Pin/Clipboard Button */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        pinToClipboard({
+                            id: messageId || crypto.randomUUID(),
+                            url: src || '',
+                            prompt: alt || 'Chat Asset',
+                            type: 'image',
+                            timestamp: Date.now()
+                        });
+                        toast.success("Pinned to Creative Clipboard!");
+                    }}
+                    className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white p-2 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                    title="Pin to Visual Clipboard"
+                >
+                    <Pin size={13} className="text-violet-400 group-hover:text-white" />
+                </button>
 
                 {/* Annotator Toggle Button */}
                 <button

@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-24 14:39 EDT
-**Branch:** `main`
+**Updated:** 2026-05-24 16:40 EDT
+**Branch:** `feature/gemini-omni`
 
 ## Recent Commits
 ```
-6fce59573 chore: session checkpoint [14:37]
-017132be3 chore: session checkpoint [14:34]
-47281e3cb chore: session checkpoint [14:15]
-619f4f75b chore: session checkpoint [14:05]
-0b5255b51 chore: session checkpoint [14:02]
-0deafc55d chore: session checkpoint [14:02]
-037789107 chore: session checkpoint [13:59]
-f20b27f6a test(creative): add data-testid for prompt input in DirectGenerationTab
-f688d4a5a fix(touring): resolve pre-commit lint issues, fix JSX errors in optimizer, and restore fully compiling state
-474b9cab2 chore: session checkpoint [13:29]
+08822e5ad chore: session checkpoint [16:35]
+a5556a259 chore: session checkpoint [16:02]
+d25ee322f test: resolve store handoff mocks and render phase state sync across dashboard modules
+9f88372d6 chore: session checkpoint [15:58]
+4952a9a98 chore: record distributed checkpoint for Antigravity
+c64a570d6 fix: restore guest profile persistence and prevent messenger connection hangs
+5b5f76307 feat(creative): fully integrate Gemini Omni Stage video-to-video editing
+16815ca90 chore: session checkpoint [15:49]
+d576c0e0b chore(creative): sync minor studio controls slice imports
+e9e410720 fix(creative): resolve compilation errors and enable robust getResponseText integration
 ```
 
 ## Working State
 ```
-?? packages/renderer/src/types/handoff.ts
+?? validation_log.txt
 ```
 
 ## Decisions
