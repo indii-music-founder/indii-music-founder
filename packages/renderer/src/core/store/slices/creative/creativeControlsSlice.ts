@@ -23,6 +23,15 @@ export interface SavedPrompt {
     date: number;
 }
 
+export interface ClipboardItem {
+    id: string;
+    url: string;
+    thumbnailUrl?: string;
+    prompt?: string;
+    type: 'image' | 'video';
+    timestamp: number;
+}
+
 export interface ShotItem {
     id: string;
     title: string;
@@ -183,6 +192,12 @@ export interface CreativeControlsSlice {
     addVideoJob: (job: ActiveVideoJob) => void;
     updateVideoJob: (id: string, updates: Partial<ActiveVideoJob>) => void;
     removeVideoJob: (id: string) => void;
+
+    // Clipboard State
+    clipboardItems: ClipboardItem[];
+    pinToClipboard: (item: HistoryItem | ClipboardItem) => void;
+    unpinFromClipboard: (id: string) => void;
+    clearClipboard: () => void;
 }
 
 /**
@@ -405,5 +420,24 @@ export function buildCreativeControlsState(
             delete newJobs[id];
             return { activeVideoJobs: newJobs };
         }),
+
+        // Clipboard Actions
+        clipboardItems: [],
+        pinToClipboard: (item) => set((state) => {
+            if (state.clipboardItems.some(i => i.id === item.id)) return state;
+            const newItem: ClipboardItem = {
+                id: item.id,
+                url: item.url,
+                thumbnailUrl: item.thumbnailUrl || item.url,
+                prompt: item.prompt || 'Untitled Asset',
+                type: item.type as 'image' | 'video',
+                timestamp: Date.now()
+            };
+            return { clipboardItems: [newItem, ...state.clipboardItems] };
+        }),
+        unpinFromClipboard: (id) => set((state) => ({
+            clipboardItems: state.clipboardItems.filter(i => i.id !== id)
+        })),
+        clearClipboard: () => set({ clipboardItems: [] }),
     };
 }
