@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-23 20:18 EDT
+**Updated:** 2026-05-23 20:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+541757a21 feat(creative): scope design history versions to current user
 c153fbf18 test(creative): fix mock paths and imports after video module consolidation
 c70a7761a fix(agent): rename Direct LLM to Agent Core
 bd79ba8c5 refactor: deprecate video module and consolidate functionality into the creative studio
@@ -13,12 +14,11 @@ bd79ba8c5 refactor: deprecate video module and consolidate functionality into th
 49bf7e13b fix(env): use import.meta.env instead of process.env in vite build context
 a10d275a2 test(core): update sidebar snapshot for command center rename
 166c29a74 fix(core): secure observability dashboard, fix agent summary bug, resolve UI layout issues
-30fa69c27 fix(ai): Fix QA_Voice.test.ts to support fallback mode mocking
 ```
 
 ## Working State
 ```
- M packages/renderer/src/core/store/slices/creative/designHistorySlice.ts
+clean working tree
 ```
 
 ## Decisions
