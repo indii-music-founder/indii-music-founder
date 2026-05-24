@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-24 13:29 EDT
+**Updated:** 2026-05-24 13:58 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f20b27f6a test(creative): add data-testid for prompt input in DirectGenerationTab
+f688d4a5a fix(touring): resolve pre-commit lint issues, fix JSX errors in optimizer, and restore fully compiling state
+474b9cab2 chore: session checkpoint [13:29]
 4f68d46a8 chore: session checkpoint [13:05]
 3049de4f4 chore: session checkpoint [13:03]
 761f55243 feat(billing): guest bypass and fallback allowance in cost control and profile store improvements
@@ -11,31 +14,11 @@
 e70a24efe chore: session checkpoint [11:32]
 231ccf297 chore(optimization): add wait workflow file
 1f844c6c9 chore: session checkpoint [09:09]
-b5e19addf feat: merge hierarchical-agent-modes branch
-fd3ee48da chore(optimization): add check_git_changes utility and ignore polling state
-dead087c8 chore: session checkpoint [08:30]
 ```
 
 ## Working State
 ```
-M  packages/firebase/firestore.indexes.json
-M  packages/firebase/firestore.rules
-M  packages/firebase/src/lib/touring.ts
-M  packages/renderer/src/core/store/slices/profileSlice.ts
-M  packages/renderer/src/hooks/useRemoteCommandListener.ts
-M  packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
-MM packages/renderer/src/modules/touring/RoadManager.test.tsx
-MM packages/renderer/src/modules/touring/RoadManager.tsx
-M  packages/renderer/src/modules/touring/components/SetlistAnalytics.tsx
-M  packages/renderer/src/modules/touring/components/TechnicalRiderGenerator.tsx
-MM packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
-M  packages/renderer/src/modules/touring/components/VisaChecklist.tsx
-M  packages/renderer/src/modules/touring/hooks/useTouring.ts
-M  packages/renderer/src/modules/touring/types.ts
-M  packages/renderer/src/services/agent/RemoteRelayService.ts
-MM packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts
-M  packages/renderer/src/services/touring/RiderService.ts
-M  packages/renderer/src/services/touring/TouringService.ts
+clean working tree
 ```
 
 ## Decisions
