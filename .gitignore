@@ -116,6 +116,7 @@ HANDOFF_STATE.md
 **/CHECKPOINT*.md
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+**/polling_state.json
 test-results.json
 
 build_output.txt

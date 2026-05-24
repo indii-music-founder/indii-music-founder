@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-24 08:03 EDT
-**Branch:** `main`
+**Updated:** 2026-05-24 08:30 EDT
+**Branch:** `feat/hierarchical-agent-modes`
 
 ## Recent Commits
 ```
+a40b9eca2 chore: session checkpoint [08:27]
+ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
+40c49e3f4 fix(legal): parse AI response texts and tool returns defensively
+9c27812bf docs: mark verification & release step as fully complete in master worksheet
+44e7b5752 chore: relocate SystemProtocolsWidget and fix mock genai streaming responses
+09d93b562 chore: session checkpoint [08:13]
+da99790d6 chore: session checkpoint [08:08]
+fe18727a1 chore: session checkpoint [08:03]
 7ea77e819 test: verify guest onboarding and road manager flows
 124610469 chore: session checkpoint [08:00]
-75d595d41 chore: session checkpoint [07:59]
-e80cc0cc5 chore(system): Commit final uncommitted test outputs and auto-fixed files
-47b22a577 refactor(optimization): add autoagent optimizer python script and stabilize summary service
-17756dbc9 fix(system): Finalize Vertex fallback fixes, Boardroom swarms, and deploy updated Firestore rules
-0420f8b24 refactor: simplify AutoAgent task environment configuration and tighten system prompt optimization guidelines
-cbe322ed1 feat(agent): enhance resilience to permission/app check errors and update store defaults
-6599981fa chore: session checkpoint [20:22]
-541757a21 feat(creative): scope design history versions to current user
 ```
 
 ## Working State
