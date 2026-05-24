@@ -2,7 +2,7 @@ import { livingFileService } from './living/LivingFileService';
 import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface NucleusContext {
@@ -151,7 +151,7 @@ export class IndiiNucleus {
       INTELLIGENCE_MODELS.TEXT.AGENT,
       { systemInstruction: systemPrompt }
     );
-    const responseText = genResult.response.text();
+    const responseText = getResponseText(genResult);
 
     // Log to EPISODIC (non-blocking)
     try {
