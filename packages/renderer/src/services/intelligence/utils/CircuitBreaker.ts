@@ -25,6 +25,8 @@ const NON_RECOVERABLE_APP_CODES = new Set<AppErrorCode>([
     AppErrorCode.CANCELLED,
     AppErrorCode.SAFETY_VIOLATION,
     AppErrorCode.CONTENT_FILTERED,
+    AppErrorCode.QUOTA_EXCEEDED,
+    AppErrorCode.RATE_LIMITED,
 ]);
 
 /**
