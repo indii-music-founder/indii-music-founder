@@ -10,7 +10,7 @@ import {
     calculateProfileStatus,
     TopicKey
 } from '@/services/onboarding/onboardingService';
-import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music } from 'lucide-react';
+import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
@@ -18,6 +18,8 @@ import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 import { secureRandomPick } from '@/utils/crypto-random';
+import { voiceService } from '@/services/intelligence/VoiceService';
+import { cn } from '@/lib/utils';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
@@ -33,6 +35,29 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     const [files, setFiles] = useState<ConversationFile[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isListening, setIsListening] = useState(false);
+
+    const handleMicClick = () => {
+        if (isListening) {
+            voiceService.stopListening();
+            setIsListening(false);
+        } else {
+            if (voiceService.isSupported()) {
+                setIsListening(true);
+                voiceService.startListening((text) => {
+                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                    setIsListening(false);
+                }, () => setIsListening(false));
+            }
+        }
+    };
+
+    // Cleanup voice listening on close/unmount
+    useEffect(() => {
+        return () => {
+            voiceService.stopListening();
+        };
+    }, []);
 
     // Dynamic opening greetings - more natural and varied
     const OPENING_GREETINGS = [
@@ -272,6 +297,22 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             >
                                 <Paperclip size={20} />
                             </button>
+                            {voiceService.isSupported() && (
+                                <button
+                                    onClick={handleMicClick}
+                                    className={cn(
+                                        "min-w-11 min-h-11 flex items-center justify-center rounded-lg transition-colors",
+                                        isListening
+                                            ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                            : "text-gray-400 hover:text-white hover:bg-gray-800"
+                                    )}
+                                    aria-label="Voice Input"
+                                    title="Voice Input"
+                                    type="button"
+                                >
+                                    <Mic size={20} className={cn(isListening && "animate-pulse")} />
+                                </button>
+                            )}
                             <input
                                 type="text"
                                 data-testid="prompt-input"
