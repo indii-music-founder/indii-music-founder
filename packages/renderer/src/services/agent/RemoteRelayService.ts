@@ -77,7 +77,11 @@ export interface DesktopState {
 // ---------------------------------------------------------------------------
 
 function getUserId(): string | null {
-    return auth.currentUser?.uid ?? null;
+    const uid = auth.currentUser?.uid;
+    if (!uid || typeof uid !== 'string' || uid === 'undefined' || uid === 'null' || uid === 'founder-demo-uid') {
+        return null;
+    }
+    return uid;
 }
 
 function getRelayRef() {

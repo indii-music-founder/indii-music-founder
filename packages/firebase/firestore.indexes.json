@@ -488,6 +488,20 @@
       "queryScope": "COLLECTION"
     },
     {
+      "collectionGroup": "tour_rider_items",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "riders",
       "fields": [
         {

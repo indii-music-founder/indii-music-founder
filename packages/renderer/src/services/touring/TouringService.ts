@@ -8,11 +8,12 @@ import {
     orderBy,
     doc,
     updateDoc,
+    deleteDoc,
     serverTimestamp,
     onSnapshot,
     Timestamp
 } from 'firebase/firestore';
-import { VehicleStats, Itinerary } from '@/modules/touring/types';
+import { VehicleStats, Itinerary, EmergencyContact } from '@/modules/touring/types';
 import { TourVehicleDocument, TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
@@ -168,5 +169,83 @@ export const TouringService = {
                 updatedAt: serverTimestamp()
             });
         }
+    },
+
+    /**
+     * Subscribe to emergency contacts for a user.
+     */
+    subscribeToEmergencyContacts: (userId: string, callback: (contacts: EmergencyContact[]) => void) => {
+        const q = query(
+            collection(db, 'tour_emergency_contacts'),
+            where('userId', '==', userId)
+        );
+
+        return onSnapshot(q, {
+            next: (snapshot) => {
+                const items = snapshot.docs.map(docSnapshot => {
+                    const data = docSnapshot.data();
+                    try {
+                        EmergencyContactSchema.passthrough().parse(data);
+                        return {
+                            id: docSnapshot.id,
+                            ...data
+                        } as EmergencyContact;
+                    } catch (validationError: unknown) {
+                        logger.warn(`Skipping invalid emergency contact ${docSnapshot.id}:`, validationError);
+                        return null;
+                    }
+                }).filter((item): item is EmergencyContact => item !== null);
+                callback(items);
+            },
+            error: (error) => {
+                logger.error("Error in subscribeToEmergencyContacts listener:", error);
+                callback([]);
+            }
+        });
+    },
+
+    /**
+     * Save/Create/Update an emergency contact
+     */
+    saveEmergencyContact: async (userId: string, contact: { id?: string; name: string; phone: string; relationship: string }) => {
+        const payload = {
+            userId,
+            name: contact.name.trim(),
+            phone: contact.phone.trim(),
+            relationship: contact.relationship.trim()
+        };
+
+        EmergencyContactSchema.parse(payload);
+
+        if (contact.id) {
+            const docRef = doc(db, 'tour_emergency_contacts', contact.id);
+            await updateDoc(docRef, {
+                ...payload,
+                updatedAt: serverTimestamp()
+            });
+        } else {
+            await addDoc(collection(db, 'tour_emergency_contacts'), {
+                ...payload,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
+    },
+
+    /**
+     * Delete an emergency contact
+     */
+    deleteEmergencyContact: async (id: string) => {
+        const docRef = doc(db, 'tour_emergency_contacts', id);
+        await deleteDoc(docRef);
     }
 };
+
+export const EmergencyContactSchema = z.object({
+    userId: z.string(),
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    relationship: z.string().min(1),
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
+});
