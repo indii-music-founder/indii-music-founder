@@ -52,7 +52,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
         videoInputs, setVideoInput, viewMode
-    } = useStore(useShallow((state: any) => ({
+    } = useStore(useShallow((state: StoreState) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
         whiskState: state.whiskState,
@@ -71,6 +71,12 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
 
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
+    const [prevViewMode, setPrevViewMode] = useState(viewMode);
+
+    if (viewMode !== prevViewMode) {
+        setPrevViewMode(viewMode);
+        setExpandedSection(viewMode === 'omni' ? 'omni_lab' : 'mixer');
+    }
 
     const estimatedCost = useMemo(() => {
         if (!whiskState || whiskState.targetMedia === 'image') return null;
@@ -120,20 +126,113 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                    {viewMode === 'omni' && (
+                        <SectionCard
+                            isOpen={expandedSection === 'omni_lab'}
+                            onToggle={() => setExpandedSection(expandedSection === 'omni_lab' ? '' : 'omni_lab')}
+                            title={
+                                <div className="flex items-center justify-between w-full">
+                                    <span>Omni Stage Controls</span>
+                                    <span className="text-[9px] text-purple-400 font-mono font-medium ml-2 bg-purple-500/10 px-1.5 py-0.5 rounded animate-pulse">
+                                        V2V Active
+                                    </span>
+                                </div>
+                            }
+                            icon={<Sparkles className="text-purple-400" size={14} />}
+                        >
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
+                                            <Eye size={11} className={studioControls.characterXRay ? 'text-emerald-400' : 'text-gray-400'} />
+                                            Character X-Ray
+                                        </span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Lock skeletal posture</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setStudioControls({ characterXRay: !studioControls.characterXRay })}
+                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.characterXRay ? 'bg-emerald-600' : 'bg-gray-800'}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.characterXRay ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-405 uppercase font-mono tracking-wide">
+                                        <span>Pose Preservation</span>
+                                        <span className="text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0" max="1" step="0.05"
+                                        value={studioControls.posePreservation}
+                                        onChange={(e) => setStudioControls({ posePreservation: parseFloat(e.target.value) })}
+                                        className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-405 uppercase font-mono tracking-wide">
+                                        <span>Beat Motion Pulse</span>
+                                        <span className="text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0" max="1" step="0.05"
+                                        value={studioControls.beatPulse}
+                                        onChange={(e) => setStudioControls({ beatPulse: parseFloat(e.target.value) })}
+                                        className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono flex items-center gap-1">
+                                        <Languages size={11} className="text-purple-400" />
+                                        Lip-Sync Dubbing
+                                    </span>
+                                    <select
+                                        value={studioControls.selectedLanguage}
+                                        onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="es">Spanish Dub</option>
+                                        <option value="ja">Japanese Dub</option>
+                                        <option value="fr">French Dub</option>
+                                        <option value="de">German Dub</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
+                                            <Shield size={11} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
+                                            Synth ID Mark
+                                        </span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Secure digital watermark</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}
+                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.synthIdEnabled ? 'bg-emerald-600' : 'bg-gray-800'}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.synthIdEnabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
+                        </SectionCard>
+                    )}
+
                     <SectionCard
                         isOpen={expandedSection === 'mixer'}
                         onToggle={() => setExpandedSection(expandedSection === 'mixer' ? '' : 'mixer')}
                         title={<div className="flex items-center justify-between w-full">
                             <span>Reference Mixer</span>
-                            {((whiskState.subjects?.filter(i => i.checked).length || 0) +
-                                (whiskState.scenes?.filter(i => i.checked).length || 0) +
-                                (whiskState.styles?.filter(i => i.checked).length || 0) +
-                                (whiskState.motion?.filter(i => i.checked).length || 0)) > 0 && (
+                            {((whiskState.subjects?.filter((i: any) => i.checked).length || 0) +
+                                (whiskState.scenes?.filter((i: any) => i.checked).length || 0) +
+                                (whiskState.styles?.filter((i: any) => i.checked).length || 0) +
+                                (whiskState.motion?.filter((i: any) => i.checked).length || 0)) > 0 && (
                                     <span className="text-[9px] text-purple-400 normal-case ml-2">
-                                        {(whiskState.subjects?.filter(i => i.checked).length || 0) +
-                                            (whiskState.scenes?.filter(i => i.checked).length || 0) +
-                                            (whiskState.styles?.filter(i => i.checked).length || 0) +
-                                            (whiskState.motion?.filter(i => i.checked).length || 0)} locked
+                                        {(whiskState.subjects?.filter((i: any) => i.checked).length || 0) +
+                                            (whiskState.scenes?.filter((i: any) => i.checked).length || 0) +
+                                            (whiskState.styles?.filter((i: any) => i.checked).length || 0) +
+                                            (whiskState.motion?.filter((i: any) => i.checked).length || 0)} locked
                                     </span>
                                 )}
                         </div>}
@@ -313,9 +412,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             </div>
                             <div className="pt-2 border-t border-white/10">
                                 <WhiskPresetStyles onSelectPreset={(preset) => {
-                                    const exists = whiskState.styles.some(s => s.content === preset.prompt);
+                                    const exists = whiskState.styles.some((s: any) => s.content === preset.prompt);
                                     if (exists) {
-                                        const item = whiskState.styles.find(s => s.content === preset.prompt);
+                                        const item = whiskState.styles.find((s: any) => s.content === preset.prompt);
                                         if (item) toggleWhiskItem('style', item.id);
                                     } else {
                                         addWhiskItem('style', 'text', preset.prompt, preset.label);

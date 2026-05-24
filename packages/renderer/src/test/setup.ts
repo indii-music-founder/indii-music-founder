@@ -252,6 +252,9 @@ vi.mock('@/core/store', () => {
         setActiveSessionId: vi.fn(),
         registerSubscription: vi.fn(() => () => { }),
         setHasUnsavedChanges: vi.fn(),
+        consumeHandoff: vi.fn(() => null),
+        pinToClipboard: vi.fn(),
+        sendToModule: vi.fn(),
         // Agent UI slice — required by AgentService.sendMessage (ISSUE-045)
         isAgentProcessing: false,
         setAgentProcessing: vi.fn(),
@@ -442,7 +445,8 @@ vi.mock('firebase/messaging', () => ({
 // Mock Firebase App Check
 vi.mock('firebase/app-check', () => ({
     initializeAppCheck: vi.fn(() => ({})),
-    getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' }))
+    getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' })),
+    ReCaptchaV3Provider: class ReCaptchaV3Provider {}
 }));
 // Mock Firebase AI
 vi.mock('firebase/ai', () => ({
