@@ -111,7 +111,7 @@ export default function CreativeClipboard() {
                                     {/* Thumbnail Preview */}
                                     <div className="w-16 h-12 bg-black rounded overflow-hidden border border-white/10 flex-shrink-0 relative">
                                         {item.type === 'video' ? (
-                                            <video src={item.url} className="w-full h-full object-cover" muted loops />
+                                            <video src={item.url} className="w-full h-full object-cover" muted loop />
                                         ) : (
                                             <img src={item.url} alt="thumbnail" className="w-full h-full object-cover" />
                                         )}
