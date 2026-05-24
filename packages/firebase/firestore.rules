@@ -20,12 +20,18 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && request.auth.token.admin == true;
     }
+    // Check if user is a guest explorer (either unauthenticated, signed in anonymously, or using founder-demo-uid)
+    function isGuest() {
+      return request.auth == null || 
+             (request.auth.token.firebase.sign_in_provider == 'anonymous') || 
+             request.auth.uid == 'founder-demo-uid';
+    }
     
     // Check if user owns this resource
     function isOwner(userId) {
-      return (isAuthenticated() && request.auth.uid == userId) || (userId == 'founder-demo-uid' && request.auth == null);
+      return (isAuthenticated() && request.auth.uid == userId) || (userId == 'founder-demo-uid' && isGuest());
     }
-    
+
     // Check if user is member of organization
     function isOrgMember(orgId) {
       return isAuthenticated() && 
@@ -388,34 +394,34 @@ service cloud.firestore {
       // Users can read their own history or org history
       allow read: if (isAuthenticated() &&
         (resource.data.userId == request.auth.uid ||
-         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       
       // Users can create history entries
       allow create: if (isAuthenticated() &&
-        request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+        request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       
       // Users can update their own history
       allow update: if (isAuthenticated() &&
-        resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       
       // Users can delete their own history
       allow delete: if (isAuthenticated() &&
-        resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
 
     match /design_versions/{versionId} {
       allow read: if (isAuthenticated() &&
         (resource.data.userId == request.auth.uid ||
-         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       
       allow create: if (isAuthenticated() &&
-        request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+        request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       
       allow update: if (isAuthenticated() &&
-        resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       
       allow delete: if (isAuthenticated() &&
-        resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
 
     // Check if the authenticated user is Anonymous
@@ -435,13 +441,13 @@ service cloud.firestore {
     match /knowledge/{docId} {
       allow read: if (isAuthenticated() &&
         (resource.data.userId == request.auth.uid ||
-         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       
       allow create: if (isAuthenticated() &&
-        request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+        request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       
       allow update, delete: if (isAuthenticated() &&
-        resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
 
     // =========================================================================
@@ -538,35 +544,35 @@ service cloud.firestore {
     // =========================================================================
 
     match /ddexReleases/{releaseId} {
-      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     // Root-level projects (user-owned, with org-member fallback).
     // NOTE: This is distinct from /organizations/{orgId}/projects/{projectId}
     // which is the org-scoped subcollection. Both paths are intentional.
     match /projects/{projectId} {
-      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /proactive_tasks/{taskId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /videoJobs/{jobId} {
-      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)))) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /distribution_audit/{releaseId}/{allPaths=**} {
-      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid) || (request.auth == null && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update, delete: if false; // immutable audit logs
     }
     match /distribution_tasks/{taskId} {
@@ -598,23 +604,24 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /campaigns/{campaignId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /publicist_campaigns/{campaignId} {
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /publicist_contacts/{contactId} {
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /projects/{projectId}/livingPlans/{planId} {
       allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
         (
-          get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
+          (request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
           (
+            request.auth != null &&
             ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
             get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
             isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
@@ -623,23 +630,23 @@ service cloud.firestore {
         );
     }
     match /workflows/{flowId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /bountyLinks/{bountyId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /scheduled_posts/{postId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || (request.auth == null && resource.data.authorId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.authorId == request.auth.uid) || (request.auth == null && request.resource.data.authorId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || (isGuest() && resource.data.authorId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.authorId == request.auth.uid) || (isGuest() && request.resource.data.authorId == 'founder-demo-uid');
     }
     match /posts/{postId} {
-      allow read: if isAuthenticated() || request.auth == null;
-      allow update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || (request.auth == null && resource.data.authorId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.authorId == request.auth.uid) || (request.auth == null && request.resource.data.authorId == 'founder-demo-uid');
+      allow read: if isAuthenticated() || isGuest();
+      allow update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || (isGuest() && resource.data.authorId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.authorId == request.auth.uid) || (isGuest() && request.resource.data.authorId == 'founder-demo-uid');
     }
     match /legal_audit_ledger/{auditId} {
       allow read: if isAuthenticated();
@@ -651,8 +658,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /expenses/{expenseId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
     match /earnings/{earningId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.labelId == request.auth.uid);
@@ -670,27 +677,27 @@ service cloud.firestore {
     // Agent Orchestration (Traces & Tasks)
     // =========================================================================
     match /agent_traces/{traceId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow delete: if false;
     }
     match /agent_tasks/{traceId}/{allPaths=**} {
-      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (request.auth == null && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
 
     // =========================================================================
     // Boardroom & Session Synced Messages
     // =========================================================================
     match /sessions/{sessionId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
     match /boardroom_messages/{msgId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (request.auth == null && resource.data.userId == 'founder-demo-uid');
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (request.auth == null && request.resource.data.userId == 'founder-demo-uid');
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
 
     // =========================================================================
@@ -721,6 +728,23 @@ service cloud.firestore {
       allow read: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
       allow create, update: if isAuthenticated() && limitId.matches(request.auth.uid + '.*');
       allow delete: if false;
+    }
+
+    // =========================================================================
+    // Touring Manager (Vehicles & Itineraries)
+    // =========================================================================
+    match /tour_vehicles/{docId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+    }
+
+    match /tour_itineraries/{docId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
 
     // =========================================================================

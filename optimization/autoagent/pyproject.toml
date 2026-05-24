@@ -1,15 +1,19 @@
 [project]
 name = "indii-autoagent"
 version = "0.1.0"
-description = "System prompt optimization for indii agents"
-requires-python = ">=3.11"
+description = "AutoAgent sidecar for system prompt hill-climbing optimization"
+readme = "README.md"
+requires-python = ">=3.12"
 dependencies = [
-    "google-genai>=1.73.1",
-    "pydantic>=2.0.0",
-    "python-dotenv>=1.2.2",
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
     "requests>=2.31.0",
-    "harbor>=0.1.0",
+    "docker>=7.0.0",
+    "pydantic>=2.0.0",
+    "toml>=0.10.2",
+    "autoagent @ git+https://github.com/kevinrgu/autoagent.git"
 ]
 
-[tool.uv]
-managed = true
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

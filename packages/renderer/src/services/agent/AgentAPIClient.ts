@@ -39,9 +39,9 @@ export class AgentAPIClient {
 
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
-                // Return mock response if baseUrl is empty or if we are in local development testing mode
-                if (!this.baseUrl || env.DEV) {
-                    logger.debug(`[AgentAPIClient] Local/Dev mode active: returning mock response for agent ${agentId}`);
+                // Return mock response if baseUrl is empty or if we are in local development testing mode with mock mode enabled
+                if (!this.baseUrl || import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+                    logger.debug(`[AgentAPIClient] Mock mode active: returning mock response for agent ${agentId}`);
                     return {
                         success: true,
                         text: `[MOCK_RESPONSE] Agent '${agentId}' successfully processed courtroom request.`,

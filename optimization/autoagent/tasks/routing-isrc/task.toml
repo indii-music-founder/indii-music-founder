@@ -1,9 +1,3 @@
 [task]
-id = "routing-isrc-v1"
-name = "ISRC Assignment Routing"
-description = "Verify the agent correctly routes ISRC assignment requests to the Music specialist."
-timeout = 60
-
-[criteria]
-success_pattern = "delegated to music"
-failure_pattern = "generalist"
+name = "routing-isrc"
+timeout = 120
