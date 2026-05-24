@@ -17,7 +17,16 @@ describe('PUBLICIST_TOOLS', () => {
 
     it('write_press_release should return text', async () => {
         vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValueOnce({
-            response: { text: () => 'Mocked Press Release', inlineDataParts: [], functionCalls: [], thoughtSummary: '' }
+            response: {
+                text: () => JSON.stringify({
+                    headline: "Test Headline",
+                    content: "Mocked Press Release content",
+                    contactInfo: "test@example.com"
+                }),
+                inlineDataParts: [],
+                functionCalls: [],
+                thoughtSummary: ''
+            }
         } as any);
         const result = await PUBLICIST_TOOLS.write_press_release({
             headline: "Test Headline",
@@ -25,7 +34,7 @@ describe('PUBLICIST_TOOLS', () => {
             key_points: ["Point 1", "Point 2"],
             contact_info: "test@example.com"
         });
-        expect(result.success || !result.success).toBe(true); // Just check it returns a result
+        expect(result.success).toBe(true);
     });
 
     it('generate_crisis_response should return text', async () => {

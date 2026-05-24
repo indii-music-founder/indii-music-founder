@@ -15,7 +15,8 @@ export const LEGAL_TOOLS = {
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT
         );
-        return res.response.text() || "Analysis failed.";
+        const text = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+        return text || "Analysis failed.";
     },
     check_compliance: async (args: { region: string }) => {
         const prompt = `
@@ -27,7 +28,8 @@ export const LEGAL_TOOLS = {
             prompt,
             INTELLIGENCE_MODELS.TEXT.AGENT
         );
-        return res.response.text() || "Compliance check failed.";
+        const text = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+        return text || "Compliance check failed.";
     }
 };
 
