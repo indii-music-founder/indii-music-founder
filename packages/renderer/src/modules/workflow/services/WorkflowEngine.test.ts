@@ -15,7 +15,8 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
         generateContent: vi.fn().mockResolvedValue({
             response: { text: () => 'AI generated text' }
         })
-    }
+    },
+    getResponseText: vi.fn().mockImplementation((r) => r?.response?.text ? r.response.text() : (typeof r === 'string' ? r : JSON.stringify(r)))
 }));
 
 vi.mock('@/services/image/ImageGenerationService', () => ({

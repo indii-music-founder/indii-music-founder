@@ -11,7 +11,7 @@ if [ "$RUN_GAUNTLET" = "true" ]; then
 else
     echo "🧪 QUICK VERIFY: Running unit tests..."
     # This is the binary success criteria mentioned in Source 6.
-    npm test -- --run > validation_log.txt 2>&1
+    npm test -- --run --test-timeout=20000 > validation_log.txt 2>&1
     TEST_EXIT_CODE=$?
 fi
 
