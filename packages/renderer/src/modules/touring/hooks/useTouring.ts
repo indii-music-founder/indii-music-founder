@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
-import { VehicleStats, Itinerary, ItineraryStop } from '../types';
+import { VehicleStats, Itinerary, ItineraryStop, EmergencyContact } from '../types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -13,6 +13,7 @@ export const useTouring = () => {
     const [vehicleStats, setVehicleStats] = useState<VehicleStats | null>(null);
     const [itineraries, setItineraries] = useState<Itinerary[]>([]);
     const [currentItinerary, setCurrentItinerary] = useState<Itinerary | null>(null);
+    const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
     const [loading, setLoading] = useState(true);
     const toast = useToast();
 
@@ -77,7 +78,16 @@ export const useTouring = () => {
             setLoading(false);
         });
 
-        return () => safeUnsubscribe(unsubscribe);
+        // Subscribe to emergency contacts
+        const unsubscribeEmergency = TouringService.subscribeToEmergencyContacts(userProfile.id, (data) => {
+            if (!isMountedRef.current) return;
+            setEmergencyContacts(data);
+        });
+
+        return () => {
+            safeUnsubscribe(unsubscribe);
+            safeUnsubscribe(unsubscribeEmergency);
+        };
     }, [userProfile?.id]);
 
     const updateItineraryStop = async (index: number, stop: ItineraryStop) => {
@@ -124,14 +134,38 @@ export const useTouring = () => {
         }
     };
 
+    const saveEmergencyContact = async (contact: { id?: string; name: string; phone: string; relationship: string }) => {
+        if (!userProfile?.id) return;
+        try {
+            await TouringService.saveEmergencyContact(userProfile.id, contact);
+            toast.success("Emergency contact saved");
+        } catch (error: unknown) {
+            logger.error("Failed to save emergency contact", error);
+            toast.error("Failed to save emergency contact");
+        }
+    };
+
+    const deleteEmergencyContact = async (id: string) => {
+        try {
+            await TouringService.deleteEmergencyContact(id);
+            toast.success("Emergency contact deleted");
+        } catch (error: unknown) {
+            logger.error("Failed to delete emergency contact", error);
+            toast.error("Failed to delete emergency contact");
+        }
+    };
+
     return {
         vehicleStats,
         itineraries,
         currentItinerary,
         setCurrentItinerary,
+        emergencyContacts,
         loading,
         updateItineraryStop,
         saveItinerary,
-        saveVehicleStats
+        saveVehicleStats,
+        saveEmergencyContact,
+        deleteEmergencyContact
     };
 };
