@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-24 14:15 EDT
+**Updated:** 2026-05-24 14:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+47281e3cb chore: session checkpoint [14:15]
 619f4f75b chore: session checkpoint [14:05]
 0b5255b51 chore: session checkpoint [14:02]
 0deafc55d chore: session checkpoint [14:02]
@@ -13,7 +14,6 @@ f688d4a5a fix(touring): resolve pre-commit lint issues, fix JSX errors in optimi
 474b9cab2 chore: session checkpoint [13:29]
 4f68d46a8 chore: session checkpoint [13:05]
 3049de4f4 chore: session checkpoint [13:03]
-761f55243 feat(billing): guest bypass and fallback allowance in cost control and profile store improvements
 ```
 
 ## Working State
