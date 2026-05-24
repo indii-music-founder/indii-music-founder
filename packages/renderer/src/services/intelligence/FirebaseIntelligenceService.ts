@@ -369,7 +369,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                         },
                                         finishReason: 'STOP'
                                     }],
-                                    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 }
+                                    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 },
+                                    text: () => "This is a MOCK response from Indii Intelligence. Cloud services are currently paused for maintenance.",
+                                    functionCalls: () => []
                                 }
                             } as any;
                         }
@@ -638,14 +640,23 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                             candidates: [{
                                                 content: { parts: [{ text: part }] }
                                             }],
-                                            usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+                                            usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+                                            text: () => part,
+                                            functionCalls: () => []
                                         });
                                     }
                                     controller.close();
                                 }
                             }) as any,
                             response: Promise.resolve({
-                                candidates: [{ content: { parts: [{ text: "This is a MOCK streaming response from Indii." }] } }]
+                                response: {
+                                    candidates: [{ content: { parts: [{ text: "This is a MOCK streaming response from Indii." }] } }],
+                                    text: () => "This is a MOCK streaming response from Indii.",
+                                    functionCalls: () => []
+                                } as any,
+                                text: () => "This is a MOCK streaming response from Indii.",
+                                functionCalls: () => [],
+                                usage: () => ({ promptTokenCount: 8, candidatesTokenCount: 8, totalTokenCount: 16 })
                             })
                         } as any;
                     }
