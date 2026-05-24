@@ -11,6 +11,7 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore';
+import { Directive } from '../directive/DirectiveTypes';
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
@@ -282,11 +283,37 @@ export class LivingPlanService {
         const agentId = step.toolName.split('.')[0] || 'generalist';
         const method = step.toolName.split('.')[1] || 'execute';
 
+        // Construct a fully type-safe Directive object to satisfy A2AClient
+        const stepDirective: Directive = {
+          id: `dir_step_${step.id}`,
+          userId: plan.userId,
+          title: step.title,
+          status: 'IN_PROGRESS',
+          assignedAgent: agentId,
+          goalAncestry: [
+            {
+              type: 'task',
+              description: plan.goal,
+              id: plan.id,
+            }
+          ],
+          computeAllocation: {
+            maxTokens: 50000,
+            tokensUsed: 0,
+            isMaximizerModeActive: false,
+          },
+          contextFiles: [],
+          conversationThread: [],
+          requiresDigitalHandshake: false,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        };
+
         const result = await a2aClient.invoke(
           agentId, 
           method, 
           step.input || {}, 
-          { id: crypto.randomUUID(), type: 'PLAN_STEP', status: 'in_progress', title: step.title, steps: [], createdAt: Date.now(), updatedAt: Date.now() } as any
+          stepDirective
         );
 
         await this.updateStepStatus(projectId, planId, stepId, 'complete', undefined, result);
