@@ -124,6 +124,52 @@ export async function initializeFallbackClient(): Promise<GoogleGenAI> {
 }
 
 /**
+ * Recursively converts all "type" properties inside a schema definition
+ * to lowercase to satisfy the Gemini Developer API specifications.
+ */
+function lowercaseSchemaTypes(schema: any): any {
+    if (!schema || typeof schema !== 'object') return schema;
+
+    const newSchema = { ...schema };
+    if (typeof newSchema.type === 'string') {
+        newSchema.type = newSchema.type.toLowerCase();
+    }
+
+    if (newSchema.properties && typeof newSchema.properties === 'object') {
+        const newProperties: Record<string, any> = {};
+        for (const [key, value] of Object.entries(newSchema.properties)) {
+            newProperties[key] = lowercaseSchemaTypes(value);
+        }
+        newSchema.properties = newProperties;
+    }
+
+    if (newSchema.items) {
+        newSchema.items = lowercaseSchemaTypes(newSchema.items);
+    }
+
+    return newSchema;
+}
+
+function sanitizeToolsForDeveloperAPI(tools?: Tool[]): any[] | undefined {
+    if (!tools) return undefined;
+
+    return tools.map(tool => {
+        const anyTool = tool as any;
+        const newTool: any = { ...anyTool };
+        if (Array.isArray(anyTool.functionDeclarations)) {
+            newTool.functionDeclarations = anyTool.functionDeclarations.map((decl: any) => {
+                const newDecl: any = { ...decl };
+                if (decl.parameters) {
+                    newDecl.parameters = lowercaseSchemaTypes(decl.parameters);
+                }
+                return newDecl;
+            });
+        }
+        return newTool;
+    });
+}
+
+/**
  * Generate content using direct Gemini SDK (fallback mode).
  * This bypasses Firebase Autonomous SDK and App Check requirements.
  * Uses the new @google/genai SDK (GA).
@@ -161,6 +207,8 @@ export async function generateWithFallback(
             delete (cleanConfig as Record<string, unknown>).thinkingConfig;
         }
 
+        const sanitizedTools = sanitizeToolsForDeveloperAPI(tools);
+
         // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
         // NOT nested inside config (which maps to generation_config in the API payload).
         const result = await fallbackClient.models.generateContent({
@@ -169,7 +217,7 @@ export async function generateWithFallback(
             config: {
                 ...cleanConfig,
                 safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
-                tools: tools as unknown as Record<string, unknown>[],
+                tools: sanitizedTools as unknown as Record<string, unknown>[],
                 toolConfig,
                 systemInstruction,
                 abortSignal: options?.signal
@@ -241,6 +289,8 @@ export async function streamWithFallback(
         delete (cleanConfig as Record<string, unknown>).thinkingConfig;
     }
 
+    const sanitizedTools = sanitizeToolsForDeveloperAPI(tools);
+
     // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
     // NOT nested inside config (which maps to generation_config in the API payload).
     const result = await fallbackClient.models.generateContentStream({
@@ -249,7 +299,7 @@ export async function streamWithFallback(
         config: {
             ...cleanConfig,
             safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
-            tools: tools as unknown as Record<string, unknown>[],
+            tools: sanitizedTools as unknown as Record<string, unknown>[],
             toolConfig: options?.toolConfig,
             systemInstruction,
             abortSignal: options?.signal
