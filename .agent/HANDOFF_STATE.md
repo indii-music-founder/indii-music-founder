@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-24 08:30 EDT
-**Branch:** `feat/hierarchical-agent-modes`
+**Updated:** 2026-05-24 09:09 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+b5e19addf feat: merge hierarchical-agent-modes branch
+fd3ee48da chore(optimization): add check_git_changes utility and ignore polling state
+dead087c8 chore: session checkpoint [08:30]
 a40b9eca2 chore: session checkpoint [08:27]
 ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
 40c49e3f4 fix(legal): parse AI response texts and tool returns defensively
@@ -11,14 +14,11 @@ ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_re
 44e7b5752 chore: relocate SystemProtocolsWidget and fix mock genai streaming responses
 09d93b562 chore: session checkpoint [08:13]
 da99790d6 chore: session checkpoint [08:08]
-fe18727a1 chore: session checkpoint [08:03]
-7ea77e819 test: verify guest onboarding and road manager flows
-124610469 chore: session checkpoint [08:00]
 ```
 
 ## Working State
 ```
-clean working tree
+?? .agent/workflows/wait.md
 ```
 
 ## Decisions
