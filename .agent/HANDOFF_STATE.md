@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-24 11:32 EDT
+**Updated:** 2026-05-24 13:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+761f55243 feat(billing): guest bypass and fallback allowance in cost control and profile store improvements
+665bdbd2a fix(onboarding): resolve fallback API schema type error and integrate microphone voice input
+e70a24efe chore: session checkpoint [11:32]
 231ccf297 chore(optimization): add wait workflow file
 1f844c6c9 chore: session checkpoint [09:09]
 b5e19addf feat: merge hierarchical-agent-modes branch
@@ -11,14 +14,18 @@ fd3ee48da chore(optimization): add check_git_changes utility and ignore polling 
 dead087c8 chore: session checkpoint [08:30]
 a40b9eca2 chore: session checkpoint [08:27]
 ac9ca6850 test(publicist): resolve mocked json schema mismatch in write_press_release test
-40c49e3f4 fix(legal): parse AI response texts and tool returns defensively
-9c27812bf docs: mark verification & release step as fully complete in master worksheet
-44e7b5752 chore: relocate SystemProtocolsWidget and fix mock genai streaming responses
 ```
 
 ## Working State
 ```
-clean working tree
+M  packages/firebase/firestore.indexes.json
+M  packages/firebase/firestore.rules
+M  packages/firebase/src/lib/touring.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+M  packages/renderer/src/modules/touring/RoadManager.tsx
+M  packages/renderer/src/modules/touring/components/TechnicalRiderGenerator.tsx
+M  packages/renderer/src/modules/touring/types.ts
+M  packages/renderer/src/services/touring/RiderService.ts
 ```
 
 ## Decisions
