@@ -11,9 +11,19 @@ dependencies = [
     "docker>=7.0.0",
     "pydantic>=2.0.0",
     "toml>=0.10.2",
+    "google-genai>=1.0.0",
+    "python-dotenv>=1.0.0",
     "autoagent @ git+https://github.com/kevinrgu/autoagent.git"
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.uv]
+package = false
+
+

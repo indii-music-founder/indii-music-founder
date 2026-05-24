@@ -10,6 +10,13 @@ test.describe('Road Manager Module', () => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
+
+        // Click guest explore button to bypass login screen
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible().catch(() => false)) {
+            await guestBtn.click();
+            await page.waitForSelector('[data-testid="nav-item-road"]', { timeout: 20_000 });
+        }
     });
 
     test('navigates to road manager module without crash', async ({ page }) => {
