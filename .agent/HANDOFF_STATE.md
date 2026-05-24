@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-21 11:50 EDT
+**Updated:** 2026-05-23 20:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-8a815c86a chore(seal): update error ledger with swarm e2e bypasses
-06baccddf feat(boardroom): add swarm integration and memory bank pii sanitizer
-fabf32487 fix: Type errors in printful.ts causing firebase build failure in deploy-production
-3d13f0ca2 fix(landing): resolve remaining any and unused var lint errors
-12bfd17b8 chore: session checkpoint [09:40]
-af79a49a4 chore: add gstack skill routing rules to CLAUDE.md
-06a623ed0 fix(firebase): resolve remaining unexpected any lint errors
-4e406dfed fix(firebase): resolve lint errors in factory.ts and secrets.ts
-e2f1ddb97 fix(ci): remove 2>&1 from firebase deploy json output to fix python parsing
-678be142c fix(ci): make Sentry sourcemap upload strictly conditional on secrets existence
+c153fbf18 test(creative): fix mock paths and imports after video module consolidation
+c70a7761a fix(agent): rename Direct LLM to Agent Core
+bd79ba8c5 refactor: deprecate video module and consolidate functionality into the creative studio
+4339576b0 feat(auth): align firestore rules with founder fallback
+335aa6b61 fix: restore swarm agent default, fix appcheck debug init, prevent multiple sentry init
+32b88244c test(e2e): fix locators and timeouts based on fix agent audit
+49bf7e13b fix(env): use import.meta.env instead of process.env in vite build context
+a10d275a2 test(core): update sidebar snapshot for command center rename
+166c29a74 fix(core): secure observability dashboard, fix agent summary bug, resolve UI layout issues
+30fa69c27 fix(ai): Fix QA_Voice.test.ts to support fallback mode mocking
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/core/store/slices/creative/designHistorySlice.ts
 ```
 
 ## Decisions
