@@ -1,30 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-24 15:58 EDT
-**Updated:** 2026-05-24 17:49 EDT
-**Branch:** `feature/gemini-omni`
+**Updated:** 2026-05-24 18:59 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-4952a9a98 chore: record distributed checkpoint for Antigravity
-c64a570d6 fix: restore guest profile persistence and prevent messenger connection hangs
-5b5f76307 feat(creative): fully integrate Gemini Omni Stage video-to-video editing
-16815ca90 chore: session checkpoint [15:49]
-d576c0e0b chore(creative): sync minor studio controls slice imports
-e9e410720 fix(creative): resolve compilation errors and enable robust getResponseText integration
-6e7e49c03 feat(creative): align integration style and set up feature/gemini-omni branch
-258c6b3fb chore: session checkpoint [14:39]
-6fce59573 chore: session checkpoint [14:37]
-017132be3 chore: session checkpoint [14:34]
+6509c0596 Merge pull request #7 from indii-music-founder/feature/gemini-omni
+c6c5a42e4 fix(ci): update Ubuntu dependency installation to support libasound2t64 for Ubuntu 24.04 compatibility
+b9b57c536 fix(touring): remove duplicate setRider hook inside TechnicalRiderGenerator after merge
+30f265162 Merge branch 'main' into feature/gemini-omni
+e8cc06898 chore: session checkpoint [17:49]
 1a0772b7c chore: update session checkpoint
 88a526c86 fix(agent): mock getResponseText in SocialTools.test.ts for CI stability
 18fefd056 chore: update session checkpoint
 ed978231b fix(workflow): mock getResponseText in WorkflowEngine.test.ts for CI stability
 23a854b9d chore: session checkpoint [16:52]
-24444bf58 fix(agent): resolve Sentry issues and increase debug-tools test timeout for stability
-34e301b2a chore: session checkpoint [16:46]
-b5e25ea1f chore: session checkpoint [16:44]
-3febe72f4 chore(gatekeeper): configure vitest 20000ms test timeout in on_stop script to prevent local CPU thrashing and flakiness
-404cb305a feat(creative): integrate storyboarding, clipboard & handoffs
 ```
 
 ## Working State
