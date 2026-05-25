@@ -52,15 +52,20 @@ test('Boardroom Live Visual Verification', async ({ page }) => {
         await textbox.press('Enter');
     }
 
-    // Wait for the Conductor to respond and call the seat_agent tool
-    console.log('[E2E:Live] Waiting for seating and Conductor response...');
-    await page.waitForTimeout(15000);
+    // Dynamic Wait: Wait for the Conductor to automatically call the seat_agent tool and add 'finance'
+    console.log('[E2E:Live] Dynamically polling Zustand store for "finance" seating...');
+    await page.waitForFunction(() => {
+        const store = (window as any).useStore;
+        if (!store) return false;
+        const active = store.getState().activeAgents || [];
+        return active.includes('finance');
+    }, { timeout: 45000 });
 
-    // Verify if the finance agent is now seated in the store
+    // Verify final active agents
     const activeAgents = await page.evaluate(() => {
         return (window as any).useStore ? (window as any).useStore.getState().activeAgents : [];
     });
-    console.log('[E2E:Live] Active Boardroom Agents in store:', activeAgents);
+    console.log('[E2E:Live] Active Boardroom Agents in store after seating:', activeAgents);
 
     // Capture Boardroom after seating the finance agent
     await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779690559030.png' });
