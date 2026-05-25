@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-25 02:18 EDT
+**Updated:** 2026-05-25 03:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d578ab3ca fix(boardroom): implement automated Spoke Agent seating and robust App Check fetch fallback
+fff8a62c2 fix(billing): handle firestore permission errors
+ad0a9f8ac chore: session checkpoint [02:18]
 b6aa6c8ad chore: session checkpoint [02:16]
 ef9bee837 chore: session checkpoint [02:13]
 e844850a1 chore: session checkpoint [02:12]
@@ -11,16 +14,11 @@ e844850a1 chore: session checkpoint [02:12]
 29a4abacb chore: session checkpoint [19:38]
 17fe9f42e fix(creative): wrap <Environment> with error boundary to prevent offline load crash and document in Error Ledger
 56ff9077b chore: session checkpoint [19:37]
-4429e9899 chore: session checkpoint [18:59]
-6509c0596 Merge pull request #7 from indii-music-founder/feature/gemini-omni
-c6c5a42e4 fix(ci): update Ubuntu dependency installation to support libasound2t64 for Ubuntu 24.04 compatibility
 ```
 
 ## Working State
 ```
-?? .agents/skills/
-?? skills-lock.json
-?? validation_log.txt
+clean working tree
 ```
 
 ## Decisions
