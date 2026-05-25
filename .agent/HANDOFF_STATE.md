@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-25 09:01 EDT
+**Updated:** 2026-05-25 09:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3602570e0 docs(workflow): add centralized flowcharts folder and 3d canvas chart
+d284c6399 test(video): implement headed puppy image-to-video visual verification spec
+7b9b4d161 chore: session checkpoint [09:01]
 0cfe1a5b7 test(boardroom): make E2E live verify wait dynamically for finance seating
 ae53a508e chore(store): expose useStore globally on window context to enable live visual E2E inspections
 96409c6b2 chore: session checkpoint [03:41]
@@ -11,14 +14,17 @@ d578ab3ca fix(boardroom): implement automated Spoke Agent seating and robust App
 fff8a62c2 fix(billing): handle firestore permission errors
 ad0a9f8ac chore: session checkpoint [02:18]
 b6aa6c8ad chore: session checkpoint [02:16]
-ef9bee837 chore: session checkpoint [02:13]
-e844850a1 chore: session checkpoint [02:12]
-07b80a19f fix(intelligence): remove Vertex custom path restrictions and resolve direct SDK key bindings
 ```
 
 ## Working State
 ```
-clean working tree
+ M agents/conductor/prompt.md
+ M packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/tools/SwarmTools.ts
+ M packages/renderer/src/services/agent/tools/index.ts
+?? e2e/boardroom-real-user-scenario.spec.ts
+?? e2e/workflow-strategic-goal.spec.ts
 ```
 
 ## Decisions
