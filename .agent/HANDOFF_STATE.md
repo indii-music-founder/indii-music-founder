@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-24 19:38 EDT
+**Updated:** 2026-05-25 02:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+07b80a19f fix(intelligence): remove Vertex custom path restrictions and resolve direct SDK key bindings
+29a4abacb chore: session checkpoint [19:38]
 17fe9f42e fix(creative): wrap <Environment> with error boundary to prevent offline load crash and document in Error Ledger
 56ff9077b chore: session checkpoint [19:37]
 4429e9899 chore: session checkpoint [18:59]
@@ -12,13 +14,13 @@ c6c5a42e4 fix(ci): update Ubuntu dependency installation to support libasound2t6
 b9b57c536 fix(touring): remove duplicate setRider hook inside TechnicalRiderGenerator after merge
 30f265162 Merge branch 'main' into feature/gemini-omni
 e8cc06898 chore: session checkpoint [17:49]
-1a0772b7c chore: update session checkpoint
-88a526c86 fix(agent): mock getResponseText in SocialTools.test.ts for CI stability
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/creative/components/DaisyChainControls.tsx
+?? .agents/skills/
+?? skills-lock.json
+?? validation_log.txt
 ```
 
 ## Decisions
