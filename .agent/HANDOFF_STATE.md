@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-25 03:41 EDT
+**Updated:** 2026-05-25 09:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+0cfe1a5b7 test(boardroom): make E2E live verify wait dynamically for finance seating
+ae53a508e chore(store): expose useStore globally on window context to enable live visual E2E inspections
+96409c6b2 chore: session checkpoint [03:41]
 d578ab3ca fix(boardroom): implement automated Spoke Agent seating and robust App Check fetch fallback
 fff8a62c2 fix(billing): handle firestore permission errors
 ad0a9f8ac chore: session checkpoint [02:18]
@@ -11,9 +14,6 @@ b6aa6c8ad chore: session checkpoint [02:16]
 ef9bee837 chore: session checkpoint [02:13]
 e844850a1 chore: session checkpoint [02:12]
 07b80a19f fix(intelligence): remove Vertex custom path restrictions and resolve direct SDK key bindings
-29a4abacb chore: session checkpoint [19:38]
-17fe9f42e fix(creative): wrap <Environment> with error boundary to prevent offline load crash and document in Error Ledger
-56ff9077b chore: session checkpoint [19:37]
 ```
 
 ## Working State
