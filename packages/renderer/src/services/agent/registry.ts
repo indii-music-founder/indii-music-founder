@@ -330,4 +330,7 @@ export class AgentRegistry implements AgentRegistryProvider {
 }
 
 export const agentRegistry = new AgentRegistry();
+if (typeof window !== 'undefined') {
+    (window as any).agentRegistry = agentRegistry;
+}
 
