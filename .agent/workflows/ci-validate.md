@@ -122,7 +122,15 @@ After auto-fixes, run the full-spectrum bug hunt. This covers:
 npm run ci
 ```
 
+**Unified CI Steps:**
+1. **Duplicate Identifier Check:** Scans `appSlice.ts` for duplicate identifiers.
+2. **Missing Electron Mocks Check:** Ensures all main-process tests correctly mock Electron via `vi.mock('electron')`.
+3. **TypeScript Typecheck:** Executes `npm run typecheck` across all workspace targets.
+4. **Flowchart Syntax & Sanity Check:** Executes `node scripts/validate-flowcharts.js` to ensure all architectural flowcharts under `docs/flowcharts/` contain valid headers, Mermaid blocks, transition breakdowns, and safe syntax.
+5. **Sharded Unit Tests:** Runs all unit test suites in parallel across 4 sharded runners (`shard=1/4` to `4/4`).
+
 If the script fails, **the agent MUST analyze the output and fix the code** before completing the workflow.
+
 
 ---
 

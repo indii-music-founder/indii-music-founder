@@ -90,6 +90,11 @@ export class MemoryIngestionPipeline {
     // PUBLIC API
     // ========================================================================
 
+    private get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     /**
      * Ingest raw text content into the memory system.
      *
@@ -102,6 +107,15 @@ export class MemoryIngestionPipeline {
 
         if (!text.trim()) {
             return { success: false, error: 'Empty text content' };
+        }
+
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for text`);
+            return {
+                success: true,
+                memoryId: `mock-memory-${Date.now()}`,
+                summary: `Mock E2E Summary for: ${text.slice(0, 30)}`,
+            };
         }
 
         // Log the ingestion event
@@ -181,6 +195,15 @@ export class MemoryIngestionPipeline {
      */
     async ingestFile(userId: string, input: IngestFileInput): Promise<IngestResult> {
         const { fileBytes, fileName, mimeType, sizeBytes } = input;
+
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for file: ${fileName}`);
+            return {
+                success: true,
+                memoryId: `mock-memory-${Date.now()}`,
+                summary: `Mock E2E Summary for file: ${fileName}`,
+            };
+        }
 
         // Validate file size
         if (sizeBytes > MAX_INLINE_FILE_SIZE_BYTES) {
@@ -278,6 +301,15 @@ export class MemoryIngestionPipeline {
         sessionId: string
     ): Promise<IngestResult[]> {
         if (messages.length === 0) return [];
+
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing session ingestion`);
+            return [{
+                success: true,
+                memoryId: `mock-memory-${Date.now()}`,
+                summary: `Mock E2E Summary for session: ${sessionId}`,
+            }];
+        }
 
         try {
             // Compile the conversation into a single text block

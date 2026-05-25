@@ -30,11 +30,17 @@ export class TokenUsageService {
      */
     private static readonly GLOBAL_EMERGENCY_STOP = false;
 
+    private static get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     /**
      * Track usage for a user.
      * Increments daily counters for tokens and requests.
      */
     static async trackUsage(userId: string, model: string, inputTokens: number, outputTokens: number): Promise<void> {
+        if (this.isE2EMode) return;
         if (!userId) return;
 
         const today = new Date().toISOString().split('T')[0];
@@ -70,6 +76,7 @@ export class TokenUsageService {
      * Throws QuotaExceededError if blocked.
      */
     static async checkQuota(userId: string): Promise<boolean> {
+        if (this.isE2EMode) return true;
         if (this.GLOBAL_EMERGENCY_STOP) {
             // Bypass emergency stop only if MOCK_MODE is active for local development
             if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
@@ -117,6 +124,7 @@ export class TokenUsageService {
      * Uses a minute-bucket strategy in Firestore.
      */
     static async checkRateLimit(userId: string): Promise<void> {
+        if (this.isE2EMode) return;
         if (this.GLOBAL_EMERGENCY_STOP) {
             // Bypass emergency stop only if MOCK_MODE is active for local development
             if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {

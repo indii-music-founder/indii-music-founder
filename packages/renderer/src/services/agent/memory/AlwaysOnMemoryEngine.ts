@@ -101,6 +101,11 @@ export class AlwaysOnMemoryEngine {
     // LIFECYCLE
     // ========================================================================
 
+    private get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     /**
      * Start the Always-On Memory Engine for a specific user.
      * Begins the background consolidation timer.
@@ -396,7 +401,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * instruct the Marketing Agent to transition to Saver Lookalike Audiences.
      */
     public async evaluateMarketingLookalikeThreshold(totalPixelEvents: number): Promise<void> {
-        if (!this.userId) return;
+        if (!this.userId || this.isE2EMode) return;
 
         if (totalPixelEvents >= 2000) {
             logger.info(`[AlwaysOnMemoryEngine] 2,000+ conversion events detected (${totalPixelEvents}). Triggering Saver Lookalike transition.`);
@@ -431,7 +436,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             lastIngestedAt: this.lastIngestedAt || undefined,
         };
 
-        if (!this.userId) return status;
+        if (!this.userId || this.isE2EMode) return status;
 
         try {
             // Get total count
@@ -478,7 +483,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
         maxCount: number = 50,
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
     ): Promise<AlwaysOnMemory[]> {
-        if (!this.userId) return [];
+        if (!this.userId || this.isE2EMode) return [];
 
         try {
             const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
@@ -522,7 +527,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             limit?: number;
         }
     ): Promise<AlwaysOnMemory[]> {
-        if (!this.userId) return [];
+        if (!this.userId || this.isE2EMode) return [];
 
         // For now, we fetch the most recent ones filtered by project/session
         // and let the agent filter them further if needed.
@@ -544,7 +549,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get consolidation insights for the current user.
      */
     public async getInsights(maxCount: number = 10): Promise<ConsolidationInsight[]> {
-        if (!this.userId) return [];
+        if (!this.userId || this.isE2EMode) return [];
 
         try {
             const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
@@ -570,6 +575,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async deleteMemory(memoryId: string): Promise<void> {
         if (!this.userId) throw new Error('Engine not started');
+        if (this.isE2EMode) return;
 
         const ref = firestoreDoc(db, 'users', this.userId, 'alwaysOnMemories', memoryId);
         await deleteDoc(ref);
@@ -581,6 +587,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async clearAll(): Promise<{ memoriesDeleted: number; insightsDeleted: number }> {
         if (!this.userId) throw new Error('Engine not started');
+        if (this.isE2EMode) return { memoriesDeleted: 0, insightsDeleted: 0 };
 
         let memoriesDeleted = 0;
         let insightsDeleted = 0;

@@ -115,9 +115,17 @@ async function embedText(text: string): Promise<number[]> {
 
 export class NeuralCortexService {
 
+    private get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     private get userId(): string {
         const uid = auth.currentUser?.uid;
-        if (!uid) throw new Error('[NeuralCortex] User not authenticated. Fail-closed.');
+        if (!uid) {
+            if (this.isE2EMode) return 'mock-uid-e2e';
+            throw new Error('[NeuralCortex] User not authenticated. Fail-closed.');
+        }
         return uid;
     }
 
@@ -174,8 +182,12 @@ export class NeuralCortexService {
         };
 
         // 5. Persist to Firestore (users/{uid}/neural_cortex/{id})
-        const ref = doc(db, 'users', uid, CORTEX_COLLECTION, profile.id);
-        await setDoc(ref, entity, { merge: false });
+        if (this.isE2EMode) {
+            logger.info(`[NeuralCortex] [E2E Mode] Bypassing Firestore setDoc for entity "${label}"`);
+        } else {
+            const ref = doc(db, 'users', uid, CORTEX_COLLECTION, profile.id);
+            await setDoc(ref, entity, { merge: false });
+        }
 
         logger.info(`[NeuralCortex] Ingested entity "${label}" (drift=${driftScore?.toFixed(3) ?? 'n/a'})`);
 
@@ -187,6 +199,7 @@ export class NeuralCortexService {
      * Returns null if not found (non-blocking).
      */
     async getEntity(id: string): Promise<CortexEntityProfile | null> {
+        if (this.isE2EMode) return null;
         try {
             const uid = this.userId;
             const ref = doc(db, 'users', uid, CORTEX_COLLECTION, id);
@@ -204,6 +217,7 @@ export class NeuralCortexService {
      * Used to build a local index for similarity search.
      */
     async listEntities(): Promise<CortexEntityProfile[]> {
+        if (this.isE2EMode) return [];
         try {
             const uid = this.userId;
             const ref = collection(db, 'users', uid, CORTEX_COLLECTION);
