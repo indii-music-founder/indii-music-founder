@@ -70,3 +70,30 @@ export const seat_agent = wrapTool(
     }
 );
 
+/**
+ * unseat_agent - Swarm unseating tool.
+ * Enables the Conductor to dynamically unseat/remove an agent from the boardroom table when they are no longer needed.
+ */
+export const unseat_agent = wrapTool(
+    'unseat_agent',
+    async (args: { targetAgentId: string }): Promise<ToolFunctionResult> => {
+        const { targetAgentId } = args;
+        const { useStore } = await import('@/core/store');
+        const { VALID_AGENT_IDS } = await import('../types');
+
+        if (!(VALID_AGENT_IDS as readonly string[]).includes(targetAgentId)) {
+            return toolError(`Invalid agent ID "${targetAgentId}". Valid IDs: ${VALID_AGENT_IDS.join(', ')}`);
+        }
+
+        try {
+            useStore.getState().removeActiveAgent(targetAgentId as any);
+            logger.info(`[A2A:Swarm] Unseated agent "${targetAgentId}" from the Boardroom table.`);
+            return toolSuccess({ unseated: true }, `Successfully unseated the ${targetAgentId} agent from the Boardroom.`);
+        } catch (error: any) {
+            logger.error(`[A2A:Swarm] Failed to unseat agent "${targetAgentId}":`, error);
+            return toolError(`Failed to unseat agent: ${error.message}`);
+        }
+    }
+);
+
+
