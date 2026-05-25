@@ -102,6 +102,11 @@ class BigBrainEngine {
         this.config = { ...DEFAULT_CONFIG, ...config };
     }
 
+    private get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     /**
      * Assemble the complete auto-injected context from all 4 memory layers.
      *
@@ -119,6 +124,23 @@ class BigBrainEngine {
         userMessage: string,
         _projectId?: string
     ): Promise<BigBrainContext> {
+        if (this.isE2EMode) {
+            return {
+                dailyLog: '',
+                vaultFacts: '',
+                episodicRecall: '',
+                alignmentRules: [],
+                totalCharacters: 0,
+                meta: {
+                    dailyLogEntries: 0,
+                    vaultFactCount: 0,
+                    episodicMatches: 0,
+                    alignmentRuleCount: 0,
+                    layerErrors: [],
+                }
+            };
+        }
+
         const meta = {
             dailyLogEntries: 0,
             vaultFactCount: 0,

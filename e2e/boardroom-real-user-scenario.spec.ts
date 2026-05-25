@@ -19,8 +19,10 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 const postData = route.request().postData() || '';
                 console.log(`[E2E:MockAI] Intercepted request. Payload size: ${postData.length} chars.`);
 
-                // Parse the user message from the payload to avoid matching prompt history keywords
+                // Parse the user message, system instruction, and agent ID from the payload
                 let userMessage = '';
+                let systemInstructionText = '';
+                let extractedAgentId = '';
                 try {
                     const parsed = JSON.parse(postData);
                     const contents = parsed.contents || [];
@@ -29,168 +31,280 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                         const lastUser = userContents[userContents.length - 1];
                         userMessage = lastUser.parts?.map((p: any) => p.text || '').join(' ') || '';
                     }
+                    if (parsed.systemInstruction?.parts?.[0]?.text) {
+                        systemInstructionText = parsed.systemInstruction.parts[0].text;
+                    }
+                    
+                    // Attempt to extract agent ID from the context block in the payload
+                    // In indii, context is serialized inside the prompt or history contents as JSON
+                    const match = postData.match(/"agentId":\s*"([^"]+)"/);
+                    if (match) {
+                        extractedAgentId = match[1];
+                    }
                 } catch (e) {
                     console.error('[E2E:MockAI] Failed to parse postData:', e);
                 }
                 console.log(`[E2E:MockAI] Extracted User Message: "${userMessage}"`);
+                console.log(`[E2E:MockAI] Extracted Agent ID: "${extractedAgentId}"`);
 
+                // 1. Check if this is an Autorater request (which expects structured JSON matching scorecard)
+                if (userMessage.includes('Intelligence Autorater') || postData.includes('overallPass') || postData.includes('goalCompletion')) {
+                    console.log('[E2E:MockAI] Intercepted Autorater request. Returning mock scorecard.');
+                    const scorecard = {
+                        goalCompletion: 10,
+                        adherence: 10,
+                        coherence: 10,
+                        toolEfficiency: 10,
+                        reasoning: "Mock evaluation trace passes.",
+                        overallPass: true
+                    };
+                    const autoraterResponse = {
+                        candidates: [
+                            {
+                                content: {
+                                    role: 'model',
+                                    parts: [
+                                        { text: JSON.stringify(scorecard) }
+                                    ]
+                                },
+                                finishReason: 'STOP'
+                            }
+                        ]
+                    };
+                    await route.fulfill({
+                        status: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': '*',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(autoraterResponse)
+                    });
+                    return;
+                }
+
+                // 2. Extract the actual request text from the full system prompt/context block cleanly
+                let actualRequest = '';
+                if (userMessage.includes('CURRENT REQUEST:')) {
+                    const parts = userMessage.split('CURRENT REQUEST:');
+                    actualRequest = parts[parts.length - 1].split('\n')[0].trim();
+                } else if (userMessage.includes('# CURRENT OBJECTIVE')) {
+                    const parts = userMessage.split('# CURRENT OBJECTIVE');
+                    actualRequest = parts[parts.length - 1].split('\n')[0].trim();
+                    if (!actualRequest) {
+                        actualRequest = parts[parts.length - 1].split('\n')[1]?.trim() || '';
+                    }
+                } else {
+                    const firstLine = userMessage.split('\n')[0].trim();
+                    if (firstLine && !firstLine.startsWith('Continue.')) {
+                        actualRequest = firstLine;
+                    }
+                }
+                console.log(`[E2E:MockAI] Extracted Actual Request: "${actualRequest}"`);
+                const isConductor = extractedAgentId === 'generalist' || (!extractedAgentId && (postData.includes('You are the **indii Conductor**') || postData.includes('You are the indii Conductor')));
+                console.log(`[E2E:MockAI] Evaluated isConductor: ${isConductor}`);
                 let parts: any[] = [];
 
-                if (userMessage.includes('done for today') || userMessage.includes('Clear the table') || userMessage.includes('clear the table')) {
-                    // Turn 7: Unseating Legal, Brand, and Music
-                    const hasUnseatedLegal = postData.includes('"name": "unseat_agent"') && postData.includes('"targetAgentId": "legal"');
-                    const hasUnseatedBrand = postData.includes('"name": "unseat_agent"') && postData.includes('"targetAgentId": "brand"');
-                    const hasUnseatedMusic = postData.includes('"name": "unseat_agent"') && postData.includes('"targetAgentId": "music"');
-
-                    if (!hasUnseatedLegal) {
-                        parts = [
-                            { text: "[Executor]: Clearing the boardroom table. Excusing Legal department." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'legal' } } }
-                        ];
-                    } else if (!hasUnseatedBrand) {
-                        parts = [
-                            { text: "Legal has been excused. Unseating Brand next." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'brand' } } }
-                        ];
-                    } else if (!hasUnseatedMusic) {
-                        parts = [
-                            { text: "Brand has been excused. Unseating Music Director finally." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'music' } } }
-                        ];
-                    } else {
-                        parts = [
-                            { text: "Cleared the boardroom table! Excellent session today." }
-                        ];
+                if (!isConductor) {
+                    let responseText = "*(Specialist review complete)*";
+                    if (postData.includes('Marketing') || postData.includes('marketing')) {
+                        responseText = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release.";
+                    } else if (postData.includes('Finance') || postData.includes('finance')) {
+                        responseText = "[Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
+                    } else if (postData.includes('Legal') || postData.includes('legal')) {
+                        responseText = "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature.";
+                    } else if (postData.includes('Creative') || postData.includes('creative')) {
+                        responseText = "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds.";
+                    } else if (postData.includes('Video') || postData.includes('video')) {
+                        responseText = "[Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic.";
+                    } else if (postData.includes('Social') || postData.includes('social')) {
+                        responseText = "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags.";
+                    } else if (postData.includes('Publicist') || postData.includes('publicist')) {
+                        responseText = "[Publicist Agent]: Press release draft is finalized for standard distribution outlets.";
+                    } else if (postData.includes('Brand') || postData.includes('brand')) {
+                        responseText = "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights.";
+                    } else if (postData.includes('Music') || postData.includes('music')) {
+                        responseText = "[Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks.";
                     }
-                } else if (userMessage.includes('artistic vibe') || userMessage.includes('Brand and Music') || userMessage.includes('align on')) {
-                    // Turn 6: Seating Brand and Music
-                    const hasSeatedBrand = postData.includes('"name": "seat_agent"') && postData.includes('"targetAgentId": "brand"');
-                    const hasSeatedMusic = postData.includes('"name": "seat_agent"') && postData.includes('"targetAgentId": "music"');
-
-                    if (!hasSeatedBrand) {
-                        parts = [
-                            { text: "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe and release design." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'brand' } } }
-                        ];
-                    } else if (!hasSeatedMusic) {
-                        parts = [
-                            { text: "Brand is seated. Summoning Music Director next." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'music' } } }
-                        ];
-                    } else {
-                        parts = [
-                            { text: "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights. [Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks." }
-                        ];
-                    }
-                } else if (userMessage.includes('split sheet') || userMessage.includes('templates are we using')) {
-                    // Turn 5: Ask Legal about licensing templates and split sheet agreements
-                    parts = [
-                        { text: "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature." }
-                    ];
-                } else if (userMessage.includes('good to go') || userMessage.includes('excused') || userMessage.includes('thank you')) {
-                    // Turn 4: Unseating Marketing and Finance
-                    const hasUnseatedMarketing = postData.includes('"name": "unseat_agent"') && postData.includes('"targetAgentId": "marketing"');
-                    const hasUnseatedFinance = postData.includes('"name": "unseat_agent"') && postData.includes('"targetAgentId": "finance"');
-
-                    if (!hasUnseatedMarketing) {
-                        parts = [
-                            {
-                                text: "[Executor]: Marketing and Finance, thank you for the budget details. You are excused."
-                            },
-                            {
-                                functionCall: {
-                                    name: 'unseat_agent',
-                                    args: { targetAgentId: 'marketing' }
-                                }
-                            }
-                        ];
-                    } else if (!hasUnseatedFinance) {
-                        parts = [
-                            {
-                                text: "Marketing unseated. Excusing Finance."
-                            },
-                            {
-                                functionCall: {
-                                    name: 'unseat_agent',
-                                    args: { targetAgentId: 'finance' }
-                                }
-                            }
-                        ];
-                    } else {
-                        parts = [
-                            {
-                                text: "Marketing and Finance have successfully left the Boardroom table."
-                            }
-                        ];
-                    }
-                } else if (userMessage.includes('check the agreements') || userMessage.includes('Legal') || userMessage.includes('legal')) {
-                    // Turn 3: Summoning Legal
-                    const hasSeatedLegal = postData.includes('"name": "seat_agent"') && postData.includes('"targetAgentId": "legal"');
-
-                    if (!hasSeatedLegal) {
-                        parts = [
-                            {
-                                text: "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements."
-                            },
-                            {
-                                functionCall: {
-                                    name: 'seat_agent',
-                                    args: { targetAgentId: 'legal' }
-                                }
-                            }
-                        ];
-                    } else {
-                        parts = [
-                            {
-                                text: "[Legal Dept.]: I have reviewed the visual licensing templates. Everything aligns with our standard terms. The NDA is drafted and ready for review."
-                            }
-                        ];
-                    }
-                } else if (userMessage.includes('How much should we spend') || userMessage.includes('spend on this campaign')) {
-                    // Turn 2: Marketing and Finance both respond to budget question
-                    parts = [
-                        {
-                            text: "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release."
-                        },
-                        {
-                            text: "[Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first."
-                        }
-                    ];
+                    parts = [{ text: responseText }];
+                    console.log(`[E2E:MockAI] Spoke Agent response simulated. Text length: ${responseText.length}`);
                 } else {
-                    // Turn 1: Seating Marketing and Finance (Initial prompt)
-                    const hasSeatedMarketing = postData.includes('"name": "seat_agent"') && postData.includes('"targetAgentId": "marketing"');
-                    const hasSeatedFinance = postData.includes('"name": "seat_agent"') && postData.includes('"targetAgentId": "finance"');
+                    if (actualRequest.includes('done for today') || actualRequest.includes('Clear the table') || actualRequest.includes('clear the table')) {
+                        // Turn 9: Unseating Legal, Creative, Video, Social, Publicist, Brand, and Music
+                        const hasUnseatedLegal = postData.includes('unseated the legal agent');
+                        const hasUnseatedCreative = postData.includes('unseated the creative agent');
+                        const hasUnseatedVideo = postData.includes('unseated the video agent');
+                        const hasUnseatedSocial = postData.includes('unseated the social agent');
+                        const hasUnseatedPublicist = postData.includes('unseated the publicist agent');
+                        const hasUnseatedBrand = postData.includes('unseated the brand agent');
+                        const hasUnseatedMusic = postData.includes('unseated the music agent');
 
-                    if (!hasSeatedMarketing) {
+                        if (!hasUnseatedLegal) {
+                            parts = [
+                                { text: "[Executor]: Excusing Legal department." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'legal' } } }
+                            ];
+                        } else if (!hasUnseatedCreative) {
+                            parts = [
+                                { text: "Legal excused. Excusing Creative." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } }
+                            ];
+                        } else if (!hasUnseatedVideo) {
+                            parts = [
+                                { text: "Creative excused. Excusing Video." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'video' } } }
+                            ];
+                        } else if (!hasUnseatedSocial) {
+                            parts = [
+                                { text: "Video excused. Excusing Social." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } }
+                            ];
+                        } else if (!hasUnseatedPublicist) {
+                            parts = [
+                                { text: "Social excused. Excusing Publicist." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'publicist' } } }
+                            ];
+                        } else if (!hasUnseatedBrand) {
+                            parts = [
+                                { text: "Publicist excused. Excusing Brand." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'brand' } } }
+                            ];
+                        } else if (!hasUnseatedMusic) {
+                            parts = [
+                                { text: "Brand excused. Excusing Music Director." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'music' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "Cleared the boardroom table! Excellent session today." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('artistic vibe') || actualRequest.includes('Brand and Music') || actualRequest.includes('align on')) {
+                        // Turn 8: Seating Brand and Music
+                        const hasSeatedBrand = postData.includes('seated the brand agent');
+                        const hasSeatedMusic = postData.includes('seated the music agent');
+
+                        if (!hasSeatedBrand) {
+                            parts = [
+                                { text: "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'brand' } } }
+                            ];
+                        } else if (!hasSeatedMusic) {
+                            parts = [
+                                { text: "Brand is seated. Summoning Music Director next." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'music' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights. [Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('social copy') || actualRequest.includes('Social and Publicist') || actualRequest.includes('press release')) {
+                        // Turn 7: Seating Social and Publicist
+                        const hasSeatedSocial = postData.includes('seated the social agent');
+                        const hasSeatedPublicist = postData.includes('seated the publicist agent');
+
+                        if (!hasSeatedSocial) {
+                            parts = [
+                                { text: "[Executor]: Summoning Social and Publicist agents to outline copy and press releases." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'social' } } }
+                            ];
+                        } else if (!hasSeatedPublicist) {
+                            parts = [
+                                { text: "Social is seated. Summoning Publicist agent." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'publicist' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags. [Publicist Agent]: Press release draft is finalized for standard distribution outlets." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('marketing visual') || actualRequest.includes('Creative and Video') || actualRequest.includes('visual for this campaign')) {
+                        // Turn 6: Seating Creative and Video
+                        const hasSeatedCreative = postData.includes('seated the creative agent');
+                        const hasSeatedVideo = postData.includes('seated the video agent');
+
+                        if (!hasSeatedCreative) {
+                            parts = [
+                                { text: "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'creative' } } }
+                            ];
+                        } else if (!hasSeatedVideo) {
+                            parts = [
+                                { text: "Creative is seated. Summoning Video agent next." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'video' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds. [Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('split sheet') || actualRequest.includes('templates are we using')) {
+                        // Turn 5: Ask Legal about licensing templates and split sheet agreements
                         parts = [
-                            {
-                                text: "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session."
-                            },
-                            {
-                                functionCall: {
-                                    name: 'seat_agent',
-                                    args: { targetAgentId: 'marketing' }
-                                }
-                            }
+                            { text: "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature." }
                         ];
-                    } else if (!hasSeatedFinance) {
+                    } else if (actualRequest.includes('good to go') || actualRequest.includes('excused') || actualRequest.includes('thank you')) {
+                        // Turn 4: Unseating Marketing and Finance
+                        const hasUnseatedMarketing = postData.includes('unseated the marketing agent');
+                        const hasUnseatedFinance = postData.includes('unseated the finance agent');
+
+                        if (!hasUnseatedMarketing) {
+                            parts = [
+                                { text: "[Executor]: Marketing and Finance, thank you for the budget details. You are excused." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'marketing' } } }
+                            ];
+                        } else if (!hasUnseatedFinance) {
+                            parts = [
+                                { text: "Marketing unseated. Excusing Finance." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'finance' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "Marketing and Finance have successfully left the Boardroom table." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('check the agreements') || actualRequest.includes('Legal') || actualRequest.includes('legal')) {
+                        // Turn 3: Summoning Legal
+                        const hasSeatedLegal = postData.includes('seated the legal agent');
+
+                        if (!hasSeatedLegal) {
+                            parts = [
+                                { text: "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'legal' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[Legal Dept.]: I have reviewed the visual licensing templates. Everything aligns with our standard terms. The NDA is drafted and ready for review." }
+                            ];
+                        }
+                    } else if (actualRequest.includes('How much should we spend') || actualRequest.includes('spend on this campaign')) {
+                        // Turn 2: Marketing and Finance both respond to budget question
                         parts = [
-                            {
-                                text: "Marketing is seated. Now seating Finance."
-                            },
-                            {
-                                functionCall: {
-                                    name: 'seat_agent',
-                                    args: { targetAgentId: 'finance' }
-                                }
-                            }
+                            { text: "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release." },
+                            { text: "[Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first." }
                         ];
                     } else {
-                        parts = [
-                            {
-                                text: "Marketing and Finance are both seated at the table. Ready to discuss the campaign budget!"
-                            }
-                        ];
+                        // Turn 1: Seating Marketing and Finance (Initial prompt)
+                        const hasSeatedMarketing = postData.includes('seated the marketing agent');
+                        const hasSeatedFinance = postData.includes('seated the finance agent');
+                        console.log(`[E2E:MockAI] Turn 1 Evaluated Seated States: hasSeatedMarketing=${hasSeatedMarketing}, hasSeatedFinance=${hasSeatedFinance}`);
+
+                        if (!hasSeatedMarketing) {
+                            parts = [
+                                { text: "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }
+                            ];
+                        } else if (!hasSeatedFinance) {
+                            parts = [
+                                { text: "Marketing is seated. Now seating Finance." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'finance' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "Marketing and Finance are both seated at the table. Ready to discuss the campaign budget!" }
+                            ];
+                        }
                     }
                 }
 
@@ -234,9 +348,11 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
             }
         );
 
-        // Open Boardroom production origin
-        console.log('[E2E:Scenario] Navigating to studio web app...');
-        await page.goto('https://indii-music-studio.web.app', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Open Boardroom local or custom origin
+        const rawUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4242";
+        const origin = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+        console.log(`[E2E:Scenario] Navigating to studio origin: ${origin}...`);
+        await page.goto(origin, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
         // Set local storage items on the production origin to bypass onboarding and tours completely
         console.log('[E2E:Scenario] Injecting E2E localStorage bypasses to production origin...');
@@ -296,24 +412,33 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         await cleanOverlays();
 
         // ----------------------------------------------------
+        // HELPER: Synchronized multi-turn message submission
+        // ----------------------------------------------------
+        const submitMessageAndWaitForIdle = async (promptText: string) => {
+            console.log(`[E2E:Scenario] Submitting prompt: "${promptText}"`);
+            await cleanOverlays();
+            await page.fill('[data-testid="main-prompt-input"]', promptText);
+            await page.click('[data-testid="command-bar-run-btn"]');
+            
+            // Wait 1.5 seconds for the processing state to initialize and start E2E mock loop
+            await page.waitForTimeout(1500);
+            
+            // Wait for isAgentProcessing to become false, signifying the entire turn completion
+            await page.waitForFunction(() => {
+                return window.useStore.getState().isAgentProcessing === false;
+            }, { timeout: 45000 });
+            console.log(`[E2E:Scenario] Prompt processing completed for: "${promptText}"`);
+        };
+
+        // ----------------------------------------------------
         // TURN 1: Greet and Seat Marketing & Finance
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 1: Submitting request to seat Marketing and Finance...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Let's bring in Marketing and Finance");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Let's bring in Marketing and Finance");
 
-        // Wait for Marketing to be seated
-        console.log('[E2E:Scenario] Waiting for Marketing to seat...');
-        await page.waitForFunction(() => {
-            return window.useStore.getState().activeAgents.includes('marketing');
-        }, { timeout: 20000 });
-
-        // Wait for Finance to be seated
-        console.log('[E2E:Scenario] Waiting for Finance to seat...');
-        await page.waitForFunction(() => {
-            return window.useStore.getState().activeAgents.includes('finance');
-        }, { timeout: 20000 });
+        // Verify active agents seated
+        const seatedAfterTurn1 = await page.evaluate(() => window.useStore.getState().activeAgents);
+        expect(seatedAfterTurn1).toContain('marketing');
+        expect(seatedAfterTurn1).toContain('finance');
 
         // Take Turn 1 screenshot
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779694161957.png' });
@@ -322,116 +447,106 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // ----------------------------------------------------
         // TURN 2: Campaign Budget Discussion
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 2: Asking budget question...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "How much should we spend on this campaign?");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("How much should we spend on this campaign?");
 
-        // Wait for responses
-        await page.waitForFunction(() => {
-            const msgs = window.useStore.getState().boardroomMessages || [];
-            return msgs.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
-        }, { timeout: 20000 });
+        // Verify responses are stored
+        const messagesAfterTurn2 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        const hasBudgetDetail = messagesAfterTurn2.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
+        expect(hasBudgetDetail).toBe(true);
         console.log('[E2E:Scenario] Turn 2 responses verified.');
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn2_budget.png' });
 
         // ----------------------------------------------------
         // TURN 3: Summon Legal
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 3: Asking to bring in Legal...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Let's bring in Legal to check the agreements");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Let's bring in Legal to check the agreements");
 
-        // Wait for Legal to be seated
-        await page.waitForFunction(() => {
-            return window.useStore.getState().activeAgents.includes('legal');
-        }, { timeout: 20000 });
+        // Verify active agents
+        const seatedAfterTurn3 = await page.evaluate(() => window.useStore.getState().activeAgents);
+        expect(seatedAfterTurn3).toContain('legal');
         console.log('[E2E:Scenario] Turn 3 Legal seating verified.');
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn3_legal_seated.png' });
 
         // ----------------------------------------------------
         // TURN 4: Dismiss Marketing & Finance
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 4: Asking to excuse Marketing and Finance...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Marketing and Finance, you are good to go, thank you");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Marketing and Finance, you are good to go, thank you");
 
-        // Wait for Marketing and Finance to be unseated (removed from the table)
-        console.log('[E2E:Scenario] Waiting for Marketing & Finance to be unseated...');
-        await page.waitForFunction(() => {
-            const active = window.useStore.getState().activeAgents;
-            return !active.includes('marketing') && !active.includes('finance');
-        }, { timeout: 20000 });
-
-        // Verify remaining active agents
+        // Verify unseated
         const seatedAfterTurn4 = await page.evaluate(() => window.useStore.getState().activeAgents);
-        console.log('[E2E:Scenario] Seated Agents after Turn 4:', seatedAfterTurn4);
         expect(seatedAfterTurn4).toContain('legal');
         expect(seatedAfterTurn4).not.toContain('marketing');
         expect(seatedAfterTurn4).not.toContain('finance');
+        console.log('[E2E:Scenario] Turn 4 Marketing and Finance unseating verified.');
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn4_unseated.png' });
 
         // ----------------------------------------------------
         // TURN 5: Ask Legal about Split Agreement
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 5: Asking Legal about visual split sheets...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Legal, what templates are we using and what is the visual split sheet agreement?");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Legal, what templates are we using and what is the visual split sheet agreement?");
 
-        // Wait for response
-        await page.waitForFunction(() => {
-            const msgs = window.useStore.getState().boardroomMessages || [];
-            return msgs.some(m => m.text?.includes('50/50 split') && m.agentId === 'legal');
-        }, { timeout: 20000 });
+        // Verify Legal response contains standard 50/50 split
+        const messagesAfterTurn5 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        const hasLegalSplit = messagesAfterTurn5.some(m => m.text?.includes('50/50 split') && m.agentId === 'legal');
+        expect(hasLegalSplit).toBe(true);
         console.log('[E2E:Scenario] Turn 5 Legal response verified.');
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn5_legal_split.png' });
 
         // ----------------------------------------------------
-        // TURN 6: Seat Brand and Music
+        // TURN 6: Summon Creative & Video
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 6: Seating Brand and Music Directors...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Brand and Music, let's align on the artistic vibe");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Creative and Video, let's generate a marketing visual for this campaign.");
 
-        // Wait for Brand to be seated
-        await page.waitForFunction(() => {
-            return window.useStore.getState().activeAgents.includes('brand');
-        }, { timeout: 20000 });
-
-        // Wait for Music to be seated
-        await page.waitForFunction(() => {
-            return window.useStore.getState().activeAgents.includes('music');
-        }, { timeout: 20000 });
-
-        console.log('[E2E:Scenario] Turn 6 Brand and Music seating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn6_swarm_seated.png' });
+        // Verify active agents
+        const seatedAfterTurn6 = await page.evaluate(() => window.useStore.getState().activeAgents);
+        expect(seatedAfterTurn6).toContain('creative');
+        expect(seatedAfterTurn6).toContain('video');
+        console.log('[E2E:Scenario] Turn 6 Creative and Video seating verified.');
+        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn6_creative_video_seated.png' });
 
         // ----------------------------------------------------
-        // TURN 7: Clear the boardroom table
+        // TURN 7: Summon Social & Publicist
         // ----------------------------------------------------
-        console.log('[E2E:Scenario] Turn 7: Clearing the boardroom table...');
-        await cleanOverlays();
-        await page.fill('[data-testid="main-prompt-input"]', "Thank you team, we are done for today. Clear the table.");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await submitMessageAndWaitForIdle("Social and Publicist, let's outline the social copy and write a press release hook.");
 
-        // Wait for Legal, Brand, and Music to be unseated
-        await page.waitForFunction(() => {
-            const active = window.useStore.getState().activeAgents;
-            return !active.includes('legal') && !active.includes('brand') && !active.includes('music');
-        }, { timeout: 20000 });
+        // Verify active agents
+        const seatedAfterTurn7 = await page.evaluate(() => window.useStore.getState().activeAgents);
+        expect(seatedAfterTurn7).toContain('social');
+        expect(seatedAfterTurn7).toContain('publicist');
+        console.log('[E2E:Scenario] Turn 7 Social and Publicist seating verified.');
+        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn7_social_publicist_seated.png' });
 
+        // ----------------------------------------------------
+        // TURN 8: Align on Brand and Music
+        // ----------------------------------------------------
+        await submitMessageAndWaitForIdle("Brand and Music, let's align on the artistic vibe");
+
+        // Verify Brand & Music seated
+        const seatedAfterTurn8 = await page.evaluate(() => window.useStore.getState().activeAgents);
+        expect(seatedAfterTurn8).toContain('brand');
+        expect(seatedAfterTurn8).toContain('music');
+        console.log('[E2E:Scenario] Turn 8 Brand and Music seating verified.');
+        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn8_brand_music_seated.png' });
+
+        // ----------------------------------------------------
+        // TURN 9: Clear the boardroom table
+        // ----------------------------------------------------
+        await submitMessageAndWaitForIdle("Thank you team, we are done for today. Clear the table.");
+
+        // Verify all agents unseated
         const finalSeated = await page.evaluate(() => window.useStore.getState().activeAgents);
         console.log('[E2E:Scenario] Final Seated Agents:', finalSeated);
         expect(finalSeated).not.toContain('legal');
+        expect(finalSeated).not.toContain('creative');
+        expect(finalSeated).not.toContain('video');
+        expect(finalSeated).not.toContain('social');
+        expect(finalSeated).not.toContain('publicist');
         expect(finalSeated).not.toContain('brand');
         expect(finalSeated).not.toContain('music');
 
-        // Capture final boardroom state screenshot (showing labels, empty table, Conductor seated)
+        // Capture final empty boardroom state screenshot
         await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/.tempmediaStorage/media_3e1aa88c-2608-40c1-a35b-af5e12444c40_1779714383863.png' });
-        console.log('[E2E:Scenario] Multi-turn test completely successful! Seated agents correct and visual proof captured.');
+        console.log('[E2E:Scenario] Multi-turn test completely successful! All 9 turns seated, unseated, and verified correctly.');
     });
 });
+
