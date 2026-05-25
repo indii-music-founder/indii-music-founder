@@ -7,6 +7,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         await page.setViewportSize({ width: 1280, height: 800 });
 
         let currentActivePrompt = '';
+        (globalThis as any).unseatedAgentsInTest = new Set<string>();
 
         // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
         await page.route(
@@ -16,8 +17,23 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 if (method === 'OPTIONS') {
                     await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
                     return;
+                }                const url = route.request().url();
+                if (url.includes('embedContent') || url.includes('batchEmbedContents')) {
+                    console.log(`[E2E:MockAI] Intercepted embedding request to URL: ${url}. Returning mock values.`);
+                    const mockEmbeddingResponse = url.includes('batchEmbedContents') 
+                        ? { embeddings: [{ values: Array(768).fill(0.01) }] }
+                        : { embedding: { values: Array(768).fill(0.01) } };
+                    await route.fulfill({
+                        status: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': '*',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(mockEmbeddingResponse)
+                    });
+                    return;
                 }
-
                 const postData = route.request().postData() || '';
                 console.log(`[E2E:MockAI] Intercepted request. Payload size: ${postData.length} chars.`);
 
@@ -37,8 +53,11 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                         const lastUser = userTextContents.length > 0 ? userTextContents[userTextContents.length - 1] : userContents[userContents.length - 1];
                         userMessage = lastUser.parts?.map((p: any) => p.text || '').join(' ') || '';
                     }
-                    if (parsed.systemInstruction?.parts?.[0]?.text) {
-                        systemInstructionText = parsed.systemInstruction.parts[0].text;
+                    const systemInstructionObj = parsed.systemInstruction || parsed.system_instruction || parsed.config?.systemInstruction || parsed.config?.system_instruction;
+                    if (systemInstructionObj?.parts?.[0]?.text) {
+                        systemInstructionText = systemInstructionObj.parts[0].text;
+                    } else if (typeof systemInstructionObj === 'string') {
+                        systemInstructionText = systemInstructionObj;
                     }
                     
                     // Attempt to extract agent ID from the context block in the payload
@@ -125,60 +144,44 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 console.log(`[E2E:MockAI] Extracted Actual Request from Test Scope: "${actualRequest}"`);
                 console.log(`[E2E:MockAI] Extracted System Instruction: "${(systemInstructionText || '').substring(0, 100)}..."`);
 
-                // Prioritize matching executing agent ID by unique system prompt / mission markers
+                // Prioritize matching executing agent ID by checking the system instruction first
+                // 1. Tool loops or continuations ALWAYS belong to the Conductor (generalist) in this boardroom spec
                 let executingAgentId = 'generalist';
-                const lowerUserMsg = userMessage.toLowerCase();
+                const first1500 = userMessage.substring(0, 1500);
 
-                // 1. First, check if this is guaranteed to be a Conductor/generalist call (continuation, tool loop, or Conductor system instruction)
-                if (userMessage.includes('Continue. Previous output:') || userMessage.includes('Continue.') || postData.includes('functionCall') || postData.includes('function_call') || postData.includes('functionResponse') || postData.includes('function_response') || postData.includes('indii Conductor — System Prompt') || postData.includes('Conductor — System Prompt')) {
+                if (userMessage.includes('Continue. Previous output:') || userMessage.includes('Continue.') || postData.includes('functionCall') || postData.includes('function_call') || postData.includes('functionResponse') || postData.includes('function_response')) {
                     executingAgentId = 'generalist';
                 }
-                // 2. Otherwise, check for highly-specific specialist system prompt / mission markers inside the clean extracted userMessage
-                else if (userMessage.includes('Music Campaign Manager') || userMessage.includes('Campaign Manager') || (lowerUserMsg.includes('marketing') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'marketing';
-                } else if (userMessage.includes('Music Industry Finance Specialist') || userMessage.includes('Finance Specialist') || (lowerUserMsg.includes('finance') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'finance';
-                } else if (userMessage.includes('Music Industry Legal Counsel') || userMessage.includes('Legal Counsel') || userMessage.includes('Legal Director') || (lowerUserMsg.includes('legal') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'legal';
-                } else if (userMessage.includes('Creative Director') || (lowerUserMsg.includes('creative') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'creative';
-                } else if (userMessage.includes('Video Agent') || (lowerUserMsg.includes('video') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'video';
-                } else if (userMessage.includes('Social Agent') || (lowerUserMsg.includes('social') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'social';
-                } else if (userMessage.includes('Publicist Agent') || (lowerUserMsg.includes('publicist') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'publicist';
-                } else if (userMessage.includes('Brand Agent') || (lowerUserMsg.includes('brand') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'brand';
-                } else if (userMessage.includes('Music Director') || (lowerUserMsg.includes('music') && !userMessage.includes('Seated Specialist Registry'))) {
-                    executingAgentId = 'music';
+                // 2. Check if the prompt belongs to the Conductor first to prevent spoke agent name match hijackings
+                else if (userMessage.includes('indii Conductor') || userMessage.includes('Conductor — System Prompt') || userMessage.includes('Conductor — Hub-and-Spoke') || (systemInstructionText && (systemInstructionText.includes('indii Conductor') || systemInstructionText.includes('Conductor — System Prompt')))) {
+                    executingAgentId = 'generalist';
                 }
-
-                // Fallback 1: Raw postData search (ignoring the full registry description blocks to prevent generalist matches)
-                if (executingAgentId === 'generalist' && !postData.includes('indii Conductor — System Prompt') && !postData.includes('Conductor — System Prompt')) {
-                    if (postData.includes('Legal Director') || postData.includes('legal.contracts') || postData.includes('legal.compliance') || postData.includes('Legal Counsel') || postData.includes('Legal Agent')) {
+                // 3. Otherwise, check spoke agent signatures
+                else {
+                    const checkStr = (systemInstructionText || '') + '\n' + first1500;
+                    if (checkStr.includes('Music Industry Legal Specialist') || checkStr.includes('Legal Director') || checkStr.includes('Legal Specialist') || checkStr.includes('Legal Counsel') || checkStr.includes('General Counsel')) {
                         executingAgentId = 'legal';
-                    } else if (postData.includes('Campaign Manager') || postData.includes('Marketing Director') || postData.includes('Marketing Agent')) {
+                    } else if (checkStr.includes('Music Campaign Manager') || checkStr.includes('Campaign Manager') || checkStr.includes('Marketing Director') || checkStr.includes('Marketing Agent')) {
                         executingAgentId = 'marketing';
-                    } else if (postData.includes('Finance Specialist') || postData.includes('Finance Director') || postData.includes('Finance Agent')) {
+                    } else if (checkStr.includes('Music Industry Finance Specialist') || checkStr.includes('Finance Specialist') || checkStr.includes('Finance Director') || checkStr.includes('Finance Agent')) {
                         executingAgentId = 'finance';
-                    } else if (postData.includes('Creative Director')) {
+                    } else if (checkStr.includes('Creative Director')) {
                         executingAgentId = 'creative';
-                    } else if (postData.includes('Video Agent') || postData.includes('Video Director')) {
+                    } else if (checkStr.includes('Video Agent') || checkStr.includes('Video Director')) {
                         executingAgentId = 'video';
-                    } else if (postData.includes('Social Agent') || postData.includes('Social Media')) {
+                    } else if (checkStr.includes('Social Agent') || checkStr.includes('Social Media')) {
                         executingAgentId = 'social';
-                    } else if (postData.includes('Publicist Agent') || postData.includes('Publicist Director')) {
+                    } else if (checkStr.includes('Publicist Agent') || checkStr.includes('Publicist Director')) {
                         executingAgentId = 'publicist';
-                    } else if (postData.includes('Brand Agent') || postData.includes('Brand Director')) {
+                    } else if (checkStr.includes('Brand Agent') || checkStr.includes('Brand Director')) {
                         executingAgentId = 'brand';
-                    } else if (postData.includes('Music Director') || postData.includes('Music Agent')) {
+                    } else if (checkStr.includes('Music Director') || checkStr.includes('Music Agent')) {
                         executingAgentId = 'music';
                     }
                 }
 
-                // Fallback 2: Extract executing agent ID from agentIdentity card by finding the LAST match in the payload
-                if (executingAgentId === 'generalist') {
+                // Fallback: Extract executing agent ID from agentIdentity card by finding the LAST match in the payload
+                if (executingAgentId === 'generalist' && !userMessage.includes('Continue. Previous output:') && !userMessage.includes('Continue.')) {
                     const identityMatches = [...postData.matchAll(/agentIdentity\\*"\s*:\s*\{\s*[^}]+?agentId\\*"\s*:\s*\\*"([^"\\]+)/gi)];
                     if (identityMatches.length > 0) {
                         const lastMatch = identityMatches[identityMatches.length - 1];
@@ -192,45 +195,52 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 console.log(`[E2E:MockAI] Evaluated isConductor: ${isConductor}`);
                 let parts: any[] = [];
  
+                const normalized = postData.toLowerCase();
                 const hasUnseated = (agentId: string) => {
-                    const normalized = postData.toLowerCase();
                     return normalized.includes(`unseated the ${agentId} agent`) || 
                            normalized.includes(`successfully unseated the ${agentId}`);
                 };
 
                 if (!isConductor) {
                     let responseText = "*(Specialist review complete)*";
-                    if (executingAgentId === 'marketing' || postData.includes('Marketing') || postData.includes('marketing')) {
+                    if (executingAgentId === 'marketing') {
                         responseText = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release.";
-                    } else if (executingAgentId === 'finance' || postData.includes('Finance') || postData.includes('finance')) {
+                    } else if (executingAgentId === 'finance') {
                         responseText = "[Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
-                    } else if (executingAgentId === 'legal' || postData.includes('Legal') || postData.includes('legal')) {
+                    } else if (executingAgentId === 'legal') {
                         responseText = "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature.";
-                    } else if (executingAgentId === 'creative' || postData.includes('Creative') || postData.includes('creative')) {
+                    } else if (executingAgentId === 'creative') {
                         responseText = "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds.";
-                    } else if (executingAgentId === 'video' || postData.includes('Video') || postData.includes('video')) {
+                    } else if (executingAgentId === 'video') {
                         responseText = "[Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic.";
-                    } else if (executingAgentId === 'social' || postData.includes('Social') || postData.includes('social')) {
+                    } else if (executingAgentId === 'social') {
                         responseText = "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags.";
-                    } else if (executingAgentId === 'publicist' || postData.includes('Publicist') || postData.includes('publicist')) {
+                    } else if (executingAgentId === 'publicist') {
                         responseText = "[Publicist Agent]: Press release draft is finalized for standard distribution outlets.";
-                    } else if (executingAgentId === 'brand' || postData.includes('Brand') || postData.includes('brand')) {
+                    } else if (executingAgentId === 'brand') {
                         responseText = "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights.";
-                    } else if (executingAgentId === 'music' || postData.includes('Music') || postData.includes('music')) {
+                    } else if (executingAgentId === 'music') {
                         responseText = "[Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks.";
                     }
                     parts = [{ text: responseText }];
                     console.log(`[E2E:MockAI] Spoke Agent response simulated for Executing ID "${executingAgentId}". Text length: ${responseText.length}`);
                 } else {
                     if (actualRequest.includes('done for today') || actualRequest.includes('Clear the table') || actualRequest.includes('clear the table')) {
-                        // Turn 9: Unseating Legal, Creative, Video, Social, Publicist, Brand, and Music
-                        const hasUnseatedLegal = hasUnseated('legal');
-                        const hasUnseatedCreative = hasUnseated('creative');
-                        const hasUnseatedVideo = hasUnseated('video');
-                        const hasUnseatedSocial = hasUnseated('social');
-                        const hasUnseatedPublicist = hasUnseated('publicist');
-                        const hasUnseatedBrand = hasUnseated('brand');
-                        const hasUnseatedMusic = hasUnseated('music');
+                        if (normalized.includes('unseat_agent') && normalized.includes('targetagentid')) {
+                            // Extract target agent ID being unseated in this request
+                            const match = normalized.match(/"targetagentid"\s*:\s*"([^"]+)"/);
+                            if (match) {
+                                (globalThis as any).unseatedAgentsInTest.add(match[1].toLowerCase());
+                            }
+                        }
+
+                        const hasUnseatedLegal = (globalThis as any).unseatedAgentsInTest.has('legal') || hasUnseated('legal');
+                        const hasUnseatedCreative = (globalThis as any).unseatedAgentsInTest.has('creative') || hasUnseated('creative');
+                        const hasUnseatedVideo = (globalThis as any).unseatedAgentsInTest.has('video') || hasUnseated('video');
+                        const hasUnseatedSocial = (globalThis as any).unseatedAgentsInTest.has('social') || hasUnseated('social');
+                        const hasUnseatedPublicist = (globalThis as any).unseatedAgentsInTest.has('publicist') || hasUnseated('publicist');
+                        const hasUnseatedBrand = (globalThis as any).unseatedAgentsInTest.has('brand') || hasUnseated('brand');
+                        const hasUnseatedMusic = (globalThis as any).unseatedAgentsInTest.has('music') || hasUnseated('music');
 
                         if (!hasUnseatedLegal) {
                             parts = [
@@ -579,8 +589,19 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // ----------------------------------------------------
         await submitMessageAndWaitForIdle("Legal, what templates are we using and what is the visual split sheet agreement?");
 
+        // Evaluate and log any loading error for legal agent in registry
+        const registryError = await page.evaluate(() => {
+            const err = (window as any).agentRegistry?.getLoadError('legal');
+            if (err) {
+                return { message: err.error.message, attempts: err.attempts, stack: err.error.stack };
+            }
+            return null;
+        });
+        console.log('[E2E:Diagnostic] Legal agent load error in browser:', registryError);
+
         // Verify Legal response contains standard 50/50 split
         const messagesAfterTurn5 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        console.log('[E2E:Diagnostic] Turn 5 Boardroom Messages:', JSON.stringify(messagesAfterTurn5, null, 2));
         const hasLegalSplit = messagesAfterTurn5.some(m => m.text?.includes('50/50 split') && m.agentId === 'legal');
         expect(hasLegalSplit).toBe(true);
         console.log('[E2E:Scenario] Turn 5 Legal response verified.');
