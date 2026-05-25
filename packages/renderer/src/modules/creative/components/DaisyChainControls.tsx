@@ -42,6 +42,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                                 className="absolute inset-0 bg-black/75 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                             >
                                 <X size={14} className="text-red-400 hover:text-red-300 hover:scale-110 transition-transform" />
+                                <span className="sr-only">×</span>
                             </button>
                         </>
                     ) : (
@@ -55,9 +56,9 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
 
             {/* Flow Connector Link Line */}
             <div className="flex items-center gap-1 shrink-0">
-                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500/60' : 'bg-white/10'}`} />
+                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-white/10'}`} />
                 <ArrowRight size={10} className={`transition-colors duration-300 ${videoInputs.isDaisyChain ? 'text-purple-400 animate-pulse' : 'text-gray-600'}`} />
-                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500/60' : 'bg-white/10'}`} />
+                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-white/10'}`} />
             </div>
 
             {/* Last Frame Slot */}
@@ -79,6 +80,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                                 className="absolute inset-0 bg-black/75 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                             >
                                 <X size={14} className="text-red-400 hover:text-red-300 hover:scale-110 transition-transform" />
+                                <span className="sr-only">×</span>
                             </button>
                         </>
                     ) : (
