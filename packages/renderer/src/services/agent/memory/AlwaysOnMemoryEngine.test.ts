@@ -71,7 +71,9 @@ vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
         generateContent: mockGenerateContent,
-        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} }),
+        embedContent: mockEmbedContent,
+        batchEmbedContents: mockBatchEmbedContents
     };
     return {
         FirebaseIntelligenceService: class {
