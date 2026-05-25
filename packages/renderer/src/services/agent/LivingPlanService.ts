@@ -76,6 +76,11 @@ export interface LivingPlan {
 }
 
 export class LivingPlanService {
+  private get isE2EMode(): boolean {
+    if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
+    try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+  }
+
   /**
    * Create a new living plan.
    */
@@ -85,6 +90,19 @@ export class LivingPlanService {
     goal: string,
     initialDraft: PlanDraft,
   ): Promise<LivingPlan> {
+    if (this.isE2EMode) {
+      return {
+        id: `mock_plan_${Date.now()}`,
+        projectId,
+        userId,
+        goal,
+        draft: initialDraft,
+        history: [],
+        status: 'drafting',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+    }
     const now = serverTimestamp();
     const planData: Omit<LivingPlan, 'id'> = {
       projectId,
@@ -112,6 +130,9 @@ export class LivingPlanService {
    * Retrieve a specific plan by ID.
    */
   async getPlan(projectId: string, planId: string): Promise<LivingPlan | null> {
+    if (this.isE2EMode) {
+      return null;
+    }
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists()
@@ -130,6 +151,9 @@ export class LivingPlanService {
    * List all plans for a project, optionally filtered by status.
    */
   async getPlansForProject(projectId: string, status?: PlanStatus): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = status 
       ? query(
           collection(db, 'projects', projectId, 'livingPlans'),
@@ -154,6 +178,7 @@ export class LivingPlanService {
     planId: string,
     status: PlanStatus
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       status,
@@ -170,6 +195,7 @@ export class LivingPlanService {
     planId: string,
     draft: PlanDraft,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       draft,
@@ -185,6 +211,7 @@ export class LivingPlanService {
     planId: string,
     revision: Omit<Revision, 'timestamp'>,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
     if (!plan) throw new Error('Plan not found');
@@ -222,6 +249,7 @@ export class LivingPlanService {
     error?: string,
     result?: unknown,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
     if (!plan || !plan.draft.steps) return;
@@ -247,6 +275,7 @@ export class LivingPlanService {
     planId: string,
     executionRef: LivingPlan['executionRef'],
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       status: 'executing',
@@ -368,6 +397,9 @@ export class LivingPlanService {
    * List plans for a project that are currently in a "live" state.
    */
   async listByProject(projectId: string): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', 'in', ['drafting', 'awaiting_approval', 'executing', 'proposed']),
@@ -383,6 +415,9 @@ export class LivingPlanService {
    * List plans awaiting approval.
    */
   async listAwaitingApproval(projectId: string): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', '==', 'awaiting_approval'),
