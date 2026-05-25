@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-25 02:12 EDT
+**Updated:** 2026-05-25 02:13 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e844850a1 chore: session checkpoint [02:12]
 07b80a19f fix(intelligence): remove Vertex custom path restrictions and resolve direct SDK key bindings
 29a4abacb chore: session checkpoint [19:38]
 17fe9f42e fix(creative): wrap <Environment> with error boundary to prevent offline load crash and document in Error Ledger
@@ -13,7 +14,6 @@
 c6c5a42e4 fix(ci): update Ubuntu dependency installation to support libasound2t64 for Ubuntu 24.04 compatibility
 b9b57c536 fix(touring): remove duplicate setRider hook inside TechnicalRiderGenerator after merge
 30f265162 Merge branch 'main' into feature/gemini-omni
-e8cc06898 chore: session checkpoint [17:49]
 ```
 
 ## Working State
