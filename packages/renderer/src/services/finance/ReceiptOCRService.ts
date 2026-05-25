@@ -27,8 +27,6 @@ export class ReceiptOCRService {
      */
     async processReceipt(file: File): Promise<ReceiptData> {
         try {
-            await this.aiService.bootstrap();
-
             // Convert file to base64 for Gemini parts API
             const base64Data = await this.fileToBase64(file);
 

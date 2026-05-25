@@ -432,8 +432,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
                         }
 
-                        const isVertexCustomPath = modelName.startsWith('projects/') || modelName.includes('/endpoints/');
-
                         // 7. Normal vs Fallback Generation
                         const result = await (async () => {
                             // FALLBACK MODE
@@ -497,7 +495,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                 );
                             } catch (error: unknown) {
                                 const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                                if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode && !isVertexCustomPath) {
+                                if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
                                     await this.triggerGlobalFallback();
                                     return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
@@ -696,8 +694,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
 
-                    const isVertexCustomPath = modelName.startsWith('projects/') || modelName.includes('/endpoints/');
-
                     // 4. Case analysis for Normal vs Fallback
                     if (this.useFallbackMode && this.fallbackClient) {
                         if (timeoutId) {
@@ -840,7 +836,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         return { stream: transformedStream, response: wrappedResponsePromise };
                     } catch (error: unknown) {
                         const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                        if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode && !isVertexCustomPath) {
+                        if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
                             await this.triggerGlobalFallback();
                             if (timeoutId) {
                                 clearTimeout(timeoutId);
