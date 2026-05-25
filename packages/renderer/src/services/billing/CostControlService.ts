@@ -373,11 +373,14 @@ export class CostControlService {
 
       // Grace fallback for permission errors in production
       const errMsg = err instanceof Error ? err.message : String(err);
-      const isPermissionError = errMsg.includes('permission-denied') || 
-                                errMsg.includes('PERMISSION_DENIED') ||
-                                errMsg.includes('unauthorized') ||
-                                errMsg.includes('unauthenticated') ||
-                                errMsg.includes('not have permission');
+      const lowerMsg = errMsg.toLowerCase();
+      const isPermissionError = lowerMsg.includes('permission') || 
+                                lowerMsg.includes('unauthorized') ||
+                                lowerMsg.includes('unauthenticated') ||
+                                lowerMsg.includes('forbidden') ||
+                                lowerMsg.includes('appcheck') ||
+                                lowerMsg.includes('app-check') ||
+                                lowerMsg.includes('auth');
 
       if (isPermissionError) {
         logger.warn('[CostControl] Permission/Auth error on costLedger read/write. Falling back to grace allowance.', err);
