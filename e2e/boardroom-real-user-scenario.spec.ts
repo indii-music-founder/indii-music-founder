@@ -6,9 +6,11 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
 
+        let currentActivePrompt = '';
+
         // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
         await page.route(
-            /.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/,
+            /.*(firebasevertexai|generativelanguage|ragProxy).*/,
             async (route) => {
                 const method = route.request().method();
                 if (method === 'OPTIONS') {
@@ -28,7 +30,11 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     const contents = parsed.contents || [];
                     const userContents = contents.filter((c: any) => c.role === 'user');
                     if (userContents.length > 0) {
-                        const lastUser = userContents[userContents.length - 1];
+                        // Find the last user content that actually contains non-empty text parts and does NOT start with "Continue." to handle tool loops correctly
+                        const userTextContents = userContents.filter((c: any) => 
+                            c.parts?.some((p: any) => p.text && p.text.trim() && !p.text.trim().startsWith('Continue.'))
+                        );
+                        const lastUser = userTextContents.length > 0 ? userTextContents[userTextContents.length - 1] : userContents[userContents.length - 1];
                         userMessage = lastUser.parts?.map((p: any) => p.text || '').join(' ') || '';
                     }
                     if (parsed.systemInstruction?.parts?.[0]?.text) {
@@ -44,9 +50,9 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 } catch (e) {
                     console.error('[E2E:MockAI] Failed to parse postData:', e);
                 }
-                console.log(`[E2E:MockAI] Extracted User Message: "${userMessage}"`);
+                console.log(`[E2E:MockAI] Extracted User Message: "${userMessage.substring(0, 80)}..."`);
                 console.log(`[E2E:MockAI] Extracted Agent ID: "${extractedAgentId}"`);
-
+ 
                 // 1. Check if this is an Autorater request (which expects structured JSON matching scorecard)
                 if (userMessage.includes('Intelligence Autorater') || postData.includes('overallPass') || postData.includes('goalCompletion')) {
                     console.log('[E2E:MockAI] Intercepted Autorater request. Returning mock scorecard.');
@@ -82,62 +88,149 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     });
                     return;
                 }
-
-                // 2. Extract the actual request text from the full system prompt/context block cleanly
-                let actualRequest = '';
-                if (userMessage.includes('CURRENT REQUEST:')) {
-                    const parts = userMessage.split('CURRENT REQUEST:');
-                    actualRequest = parts[parts.length - 1].split('\n')[0].trim();
-                } else if (userMessage.includes('# CURRENT OBJECTIVE')) {
-                    const parts = userMessage.split('# CURRENT OBJECTIVE');
-                    actualRequest = parts[parts.length - 1].split('\n')[0].trim();
-                    if (!actualRequest) {
-                        actualRequest = parts[parts.length - 1].split('\n')[1]?.trim() || '';
+                // 1.5. Check if this is a utility/helper request (like guidelines extraction or search)
+                if (postData.length < 5000 && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
+                    console.log(`[E2E:MockAI] Fulfilling short utility request (size: ${postData.length} chars).`);
+                    let utilityText = "*(Analysis complete)*";
+                    if (postData.includes('Extract any') || userMessage.includes('Extract any')) {
+                        utilityText = "No conflicting guidelines or specific restrictions found.";
                     }
-                } else {
-                    const firstLine = userMessage.split('\n')[0].trim();
-                    if (firstLine && !firstLine.startsWith('Continue.')) {
-                        actualRequest = firstLine;
+                    const utilityResponse = {
+                        candidates: [
+                            {
+                                content: {
+                                    role: 'model',
+                                    parts: [
+                                        { text: utilityText }
+                                    ]
+                                },
+                                finishReason: 'STOP'
+                            }
+                        ]
+                    };
+                    await route.fulfill({
+                        status: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': '*',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(utilityResponse)
+                    });
+                    return;
+                }
+
+                // 2. Extract the actual request text directly from the test-scoped currentActivePrompt variable for 100% fidelity
+                let actualRequest = currentActivePrompt;
+                console.log(`[E2E:MockAI] Extracted Actual Request from Test Scope: "${actualRequest}"`);
+                console.log(`[E2E:MockAI] Extracted System Instruction: "${(systemInstructionText || '').substring(0, 100)}..."`);
+
+                // Prioritize matching executing agent ID by unique system prompt / mission markers
+                let executingAgentId = 'generalist';
+                const lowerUserMsg = userMessage.toLowerCase();
+
+                // 1. First, check if this is guaranteed to be a Conductor/generalist call (continuation, tool loop, or Conductor system instruction)
+                if (userMessage.includes('Continue. Previous output:') || userMessage.includes('Continue.') || postData.includes('functionCall') || postData.includes('function_call') || postData.includes('functionResponse') || postData.includes('function_response') || postData.includes('indii Conductor — System Prompt') || postData.includes('Conductor — System Prompt')) {
+                    executingAgentId = 'generalist';
+                }
+                // 2. Otherwise, check for highly-specific specialist system prompt / mission markers inside the clean extracted userMessage
+                else if (userMessage.includes('Music Campaign Manager') || userMessage.includes('Campaign Manager') || (lowerUserMsg.includes('marketing') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'marketing';
+                } else if (userMessage.includes('Music Industry Finance Specialist') || userMessage.includes('Finance Specialist') || (lowerUserMsg.includes('finance') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'finance';
+                } else if (userMessage.includes('Music Industry Legal Counsel') || userMessage.includes('Legal Counsel') || userMessage.includes('Legal Director') || (lowerUserMsg.includes('legal') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'legal';
+                } else if (userMessage.includes('Creative Director') || (lowerUserMsg.includes('creative') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'creative';
+                } else if (userMessage.includes('Video Agent') || (lowerUserMsg.includes('video') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'video';
+                } else if (userMessage.includes('Social Agent') || (lowerUserMsg.includes('social') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'social';
+                } else if (userMessage.includes('Publicist Agent') || (lowerUserMsg.includes('publicist') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'publicist';
+                } else if (userMessage.includes('Brand Agent') || (lowerUserMsg.includes('brand') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'brand';
+                } else if (userMessage.includes('Music Director') || (lowerUserMsg.includes('music') && !userMessage.includes('Seated Specialist Registry'))) {
+                    executingAgentId = 'music';
+                }
+
+                // Fallback 1: Raw postData search (ignoring the full registry description blocks to prevent generalist matches)
+                if (executingAgentId === 'generalist' && !postData.includes('indii Conductor — System Prompt') && !postData.includes('Conductor — System Prompt')) {
+                    if (postData.includes('Legal Director') || postData.includes('legal.contracts') || postData.includes('legal.compliance') || postData.includes('Legal Counsel') || postData.includes('Legal Agent')) {
+                        executingAgentId = 'legal';
+                    } else if (postData.includes('Campaign Manager') || postData.includes('Marketing Director') || postData.includes('Marketing Agent')) {
+                        executingAgentId = 'marketing';
+                    } else if (postData.includes('Finance Specialist') || postData.includes('Finance Director') || postData.includes('Finance Agent')) {
+                        executingAgentId = 'finance';
+                    } else if (postData.includes('Creative Director')) {
+                        executingAgentId = 'creative';
+                    } else if (postData.includes('Video Agent') || postData.includes('Video Director')) {
+                        executingAgentId = 'video';
+                    } else if (postData.includes('Social Agent') || postData.includes('Social Media')) {
+                        executingAgentId = 'social';
+                    } else if (postData.includes('Publicist Agent') || postData.includes('Publicist Director')) {
+                        executingAgentId = 'publicist';
+                    } else if (postData.includes('Brand Agent') || postData.includes('Brand Director')) {
+                        executingAgentId = 'brand';
+                    } else if (postData.includes('Music Director') || postData.includes('Music Agent')) {
+                        executingAgentId = 'music';
                     }
                 }
-                console.log(`[E2E:MockAI] Extracted Actual Request: "${actualRequest}"`);
-                const isConductor = extractedAgentId === 'generalist' || (!extractedAgentId && (postData.includes('You are the **indii Conductor**') || postData.includes('You are the indii Conductor')));
+
+                // Fallback 2: Extract executing agent ID from agentIdentity card by finding the LAST match in the payload
+                if (executingAgentId === 'generalist') {
+                    const identityMatches = [...postData.matchAll(/agentIdentity\\*"\s*:\s*\{\s*[^}]+?agentId\\*"\s*:\s*\\*"([^"\\]+)/gi)];
+                    if (identityMatches.length > 0) {
+                        const lastMatch = identityMatches[identityMatches.length - 1];
+                        executingAgentId = lastMatch[1].toLowerCase();
+                    }
+                }
+                console.log(`[E2E:MockAI] Detected Executing Agent ID: "${executingAgentId}"`);
+
+                const isSpoke = executingAgentId !== 'generalist';
+                const isConductor = !isSpoke;
                 console.log(`[E2E:MockAI] Evaluated isConductor: ${isConductor}`);
                 let parts: any[] = [];
+ 
+                const hasUnseated = (agentId: string) => {
+                    const normalized = postData.toLowerCase();
+                    return normalized.includes(`unseated the ${agentId} agent`) || 
+                           normalized.includes(`successfully unseated the ${agentId}`);
+                };
 
                 if (!isConductor) {
                     let responseText = "*(Specialist review complete)*";
-                    if (postData.includes('Marketing') || postData.includes('marketing')) {
+                    if (executingAgentId === 'marketing' || postData.includes('Marketing') || postData.includes('marketing')) {
                         responseText = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release.";
-                    } else if (postData.includes('Finance') || postData.includes('finance')) {
+                    } else if (executingAgentId === 'finance' || postData.includes('Finance') || postData.includes('finance')) {
                         responseText = "[Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
-                    } else if (postData.includes('Legal') || postData.includes('legal')) {
+                    } else if (executingAgentId === 'legal' || postData.includes('Legal') || postData.includes('legal')) {
                         responseText = "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature.";
-                    } else if (postData.includes('Creative') || postData.includes('creative')) {
+                    } else if (executingAgentId === 'creative' || postData.includes('Creative') || postData.includes('creative')) {
                         responseText = "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds.";
-                    } else if (postData.includes('Video') || postData.includes('video')) {
+                    } else if (executingAgentId === 'video' || postData.includes('Video') || postData.includes('video')) {
                         responseText = "[Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic.";
-                    } else if (postData.includes('Social') || postData.includes('social')) {
+                    } else if (executingAgentId === 'social' || postData.includes('Social') || postData.includes('social')) {
                         responseText = "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags.";
-                    } else if (postData.includes('Publicist') || postData.includes('publicist')) {
+                    } else if (executingAgentId === 'publicist' || postData.includes('Publicist') || postData.includes('publicist')) {
                         responseText = "[Publicist Agent]: Press release draft is finalized for standard distribution outlets.";
-                    } else if (postData.includes('Brand') || postData.includes('brand')) {
+                    } else if (executingAgentId === 'brand' || postData.includes('Brand') || postData.includes('brand')) {
                         responseText = "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights.";
-                    } else if (postData.includes('Music') || postData.includes('music')) {
+                    } else if (executingAgentId === 'music' || postData.includes('Music') || postData.includes('music')) {
                         responseText = "[Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks.";
                     }
                     parts = [{ text: responseText }];
-                    console.log(`[E2E:MockAI] Spoke Agent response simulated. Text length: ${responseText.length}`);
+                    console.log(`[E2E:MockAI] Spoke Agent response simulated for Executing ID "${executingAgentId}". Text length: ${responseText.length}`);
                 } else {
                     if (actualRequest.includes('done for today') || actualRequest.includes('Clear the table') || actualRequest.includes('clear the table')) {
                         // Turn 9: Unseating Legal, Creative, Video, Social, Publicist, Brand, and Music
-                        const hasUnseatedLegal = postData.includes('unseated the legal agent');
-                        const hasUnseatedCreative = postData.includes('unseated the creative agent');
-                        const hasUnseatedVideo = postData.includes('unseated the video agent');
-                        const hasUnseatedSocial = postData.includes('unseated the social agent');
-                        const hasUnseatedPublicist = postData.includes('unseated the publicist agent');
-                        const hasUnseatedBrand = postData.includes('unseated the brand agent');
-                        const hasUnseatedMusic = postData.includes('unseated the music agent');
+                        const hasUnseatedLegal = hasUnseated('legal');
+                        const hasUnseatedCreative = hasUnseated('creative');
+                        const hasUnseatedVideo = hasUnseated('video');
+                        const hasUnseatedSocial = hasUnseated('social');
+                        const hasUnseatedPublicist = hasUnseated('publicist');
+                        const hasUnseatedBrand = hasUnseated('brand');
+                        const hasUnseatedMusic = hasUnseated('music');
 
                         if (!hasUnseatedLegal) {
                             parts = [
@@ -242,12 +335,12 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     } else if (actualRequest.includes('split sheet') || actualRequest.includes('templates are we using')) {
                         // Turn 5: Ask Legal about licensing templates and split sheet agreements
                         parts = [
-                            { text: "[Legal Dept.]: The visual split sheet agreement is drafted with a standard 50/50 split between producer and artist. Ready to send for signature." }
+                            { text: "[Executor]: Directing the templates inquiry to our Legal department." }
                         ];
                     } else if (actualRequest.includes('good to go') || actualRequest.includes('excused') || actualRequest.includes('thank you')) {
                         // Turn 4: Unseating Marketing and Finance
-                        const hasUnseatedMarketing = postData.includes('unseated the marketing agent');
-                        const hasUnseatedFinance = postData.includes('unseated the finance agent');
+                        const hasUnseatedMarketing = hasUnseated('marketing');
+                        const hasUnseatedFinance = hasUnseated('finance');
 
                         if (!hasUnseatedMarketing) {
                             parts = [
@@ -415,6 +508,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // HELPER: Synchronized multi-turn message submission
         // ----------------------------------------------------
         const submitMessageAndWaitForIdle = async (promptText: string) => {
+            currentActivePrompt = promptText;
             console.log(`[E2E:Scenario] Submitting prompt: "${promptText}"`);
             await cleanOverlays();
             await page.fill('[data-testid="main-prompt-input"]', promptText);
