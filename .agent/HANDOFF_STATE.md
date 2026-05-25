@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-25 09:27 EDT
+**Updated:** 2026-05-25 09:45 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1fa05bc41 docs(flowcharts): archive video daisy chain composition flowchart
+6590db051 chore: session checkpoint [09:27]
 3602570e0 docs(workflow): add centralized flowcharts folder and 3d canvas chart
 d284c6399 test(video): implement headed puppy image-to-video visual verification spec
 7b9b4d161 chore: session checkpoint [09:01]
@@ -12,17 +14,26 @@ ae53a508e chore(store): expose useStore globally on window context to enable liv
 96409c6b2 chore: session checkpoint [03:41]
 d578ab3ca fix(boardroom): implement automated Spoke Agent seating and robust App Check fetch fallback
 fff8a62c2 fix(billing): handle firestore permission errors
-ad0a9f8ac chore: session checkpoint [02:18]
-b6aa6c8ad chore: session checkpoint [02:16]
 ```
 
 ## Working State
 ```
+M  .agent/workflows/ci-validate.md
  M agents/conductor/prompt.md
+A  docs/flowcharts/album-release-swarm-timeline.md
+A  docs/flowcharts/flowchart-workflow-execution.md
+ M e2e/fixtures/auth.ts
+ M packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx
+ M packages/renderer/src/core/store/slices/creative/creativeControlsSlice.ts
  M packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx
+ M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
  M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
  M packages/renderer/src/services/agent/tools/SwarmTools.ts
  M packages/renderer/src/services/agent/tools/index.ts
+ M packages/renderer/src/services/billing/CostControlService.ts
+ M packages/renderer/src/services/intelligence/billing/TokenUsageService.ts
+M  scripts/ci.sh
+A  scripts/validate-flowcharts.js
 ?? e2e/boardroom-real-user-scenario.spec.ts
 ?? e2e/workflow-strategic-goal.spec.ts
 ```
