@@ -131,7 +131,5 @@ export const useStore = create<StoreState>()(
 
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
-    if (import.meta.env.DEV) {
-        window.useStore = useStore;
-    }
+    window.useStore = useStore;
 }
