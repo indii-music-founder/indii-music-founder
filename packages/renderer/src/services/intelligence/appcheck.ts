@@ -43,6 +43,12 @@ export function isAppCheckConfigured(): boolean {
         key: env.appCheckKey
     });
 
+    // Escape hatch for E2E testing to force fallback to direct Gemini SDK
+    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) {
+        logger.info('[FirebaseIntelligenceService] FIREBASE_E2E_MOCK is true. Disabling App Check for testing fallback.');
+        return false;
+    }
+
     // Escape hatch for Vertex AI / Fine-Tuned Agent development
     if (import.meta.env.VITE_USE_VERTEX === 'true' || import.meta.env.VITE_USE_FINE_TUNED_AGENTS === 'true') {
         logger.info('[FirebaseIntelligenceService] VITE_USE_VERTEX or VITE_USE_FINE_TUNED_AGENTS is true. Forcing App Check activation to attempt Vertex connection.');

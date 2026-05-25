@@ -47,10 +47,10 @@ import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
 import { ArtifactTools } from './ArtifactTools';
-import { consult_specialist, seat_agent } from './SwarmTools';
+import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
-import { AnyToolFunction, VALID_AGENT_IDS_LIST } from '../types';
+import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
@@ -58,6 +58,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...BillingTools,
     consult_specialist,
     seat_agent,
+    unseat_agent,
     ...DirectorTools,
     edit_image_with_annotations: EditImageWithAnnotationsTool.execute,
     edit_document_with_annotations: EditDocumentWithAnnotationsTool.execute,

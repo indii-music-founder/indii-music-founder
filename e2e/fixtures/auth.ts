@@ -50,6 +50,29 @@ export type AuthFixtures = {
 
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
+    // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
+    const originalRoute = page.route.bind(page);
+    (page as any).route = (url: any, handler: any, options: any) => {
+      return originalRoute(url, async (route: any) => {
+        const req = route.request();
+        const originalFulfill = route.fulfill.bind(route);
+        route.fulfill = async (fulfillOptions: any) => {
+          const reqHeaders = req.headers();
+          const reqOrigin = reqHeaders['origin'] || reqHeaders['Origin'] || 'https://indii-music-studio.web.app';
+          const patchedHeaders = {
+            ...fulfillOptions.headers,
+            "Access-Control-Allow-Origin": reqOrigin,
+            "Access-Control-Allow-Credentials": "true",
+          };
+          return originalFulfill({
+            ...fulfillOptions,
+            headers: patchedHeaders
+          });
+        };
+        return handler(route);
+      }, options);
+    };
+
     // Log browser console messages to terminal for CI debugging
     page.on("console", (msg) => {
       const type = msg.type();
