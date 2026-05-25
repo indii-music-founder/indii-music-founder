@@ -3,7 +3,6 @@ import { ReceiptOCRService } from './ReceiptOCRService';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        bootstrap: vi.fn().mockResolvedValue(true),
         rawGenerateContent: vi.fn().mockResolvedValue({ response: { text: () => '{}' } }),
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
@@ -12,7 +11,6 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
     return {
         FirebaseIntelligenceService: class {
-            bootstrap = mockFirebaseAI.bootstrap;
             rawGenerateContent = mockFirebaseAI.rawGenerateContent;
             generateText = mockFirebaseAI.generateText;
             generateStructuredData = mockFirebaseAI.generateStructuredData;
@@ -75,7 +73,6 @@ describe('ReceiptOCRService', () => {
             const result = await service.processReceipt(mockFile);
 
             // Assertions
-            expect(aiServiceMock.bootstrap).toHaveBeenCalled();
             expect(aiServiceMock.rawGenerateContent).toHaveBeenCalled();
 
             const [contentsArgs, modelArgs, configArgs] = aiServiceMock.rawGenerateContent.mock.calls[0];
@@ -92,7 +89,7 @@ describe('ReceiptOCRService', () => {
             const mockFile = new File(['mock content'], 'receipt.jpg', { type: 'image/jpeg' });
 
             const aiServiceMock = (service as any).aiService;
-            aiServiceMock.bootstrap.mockRejectedValueOnce(new Error('Intelligence Service unavailable'));
+            aiServiceMock.rawGenerateContent.mockRejectedValueOnce(new Error('Intelligence Service unavailable'));
 
             await expect(service.processReceipt(mockFile)).rejects.toThrow('Intelligence Service unavailable');
         });

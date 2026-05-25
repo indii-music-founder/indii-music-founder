@@ -444,7 +444,7 @@ export class VideoGenerationService {
             firstFrameBytes = options.firstFrame;
             // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,...")
             const commaIndex = firstFrameBytes.indexOf(',');
-            if (firstFrameBytes.startsWith('data:') && commaIndex !== -1) {
+            if (typeof firstFrameBytes === 'string' && firstFrameBytes.startsWith('data:') && commaIndex !== -1) {
                 firstFrameBytes = firstFrameBytes.substring(commaIndex + 1);
             }
         }
@@ -463,7 +463,7 @@ export class VideoGenerationService {
             let lastFrameBytes = options.lastFrame;
             // Strip data URI prefix if present safely
             const commaIndex = lastFrameBytes.indexOf(',');
-            if (lastFrameBytes.startsWith('data:') && commaIndex !== -1) {
+            if (typeof lastFrameBytes === 'string' && lastFrameBytes.startsWith('data:') && commaIndex !== -1) {
                 lastFrameBytes = lastFrameBytes.substring(commaIndex + 1);
             }
             lastFrameConfig = {
@@ -641,7 +641,7 @@ export class VideoGenerationService {
                         const videoUrl = job.output?.url;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (videoUrl && !videoUrl.startsWith('blob:')) {
+                        if (videoUrl && typeof videoUrl === 'string' && !videoUrl.startsWith('blob:')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(videoUrl, { method: 'HEAD' });
