@@ -43,3 +43,30 @@ export const consult_specialist = wrapTool(
         }
     }
 );
+
+/**
+ * seat_agent - Swarm seating tool.
+ * Enables the Conductor to dynamically seat an agent at the boardroom table.
+ */
+export const seat_agent = wrapTool(
+    'seat_agent',
+    async (args: { targetAgentId: string }): Promise<ToolFunctionResult> => {
+        const { targetAgentId } = args;
+        const { useStore } = await import('@/core/store');
+        const { VALID_AGENT_IDS } = await import('../types');
+
+        if (!(VALID_AGENT_IDS as readonly string[]).includes(targetAgentId)) {
+            return toolError(`Invalid agent ID "${targetAgentId}". Valid agent IDs are: ${VALID_AGENT_IDS.join(', ')}`);
+        }
+
+        try {
+            useStore.getState().addActiveAgent(targetAgentId as any);
+            logger.info(`[A2A:Swarm] Seated agent "${targetAgentId}" at the Boardroom table.`);
+            return toolSuccess({ seated: true }, `Successfully seated the ${targetAgentId} agent in the Boardroom.`);
+        } catch (error: any) {
+            logger.error(`[A2A:Swarm] Failed to seat agent "${targetAgentId}":`, error);
+            return toolError(`Failed to seat agent: ${error.message}`);
+        }
+    }
+);
+

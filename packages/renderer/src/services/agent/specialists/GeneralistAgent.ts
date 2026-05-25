@@ -42,7 +42,8 @@ export class GeneralistAgent extends BaseAgent {
         'list_organizations', 'switch_organization',
         'propose_plan', 'get_plan', 'refine_plan', 'cancel_plan',
         'report_bug', 'request_feature',
-        'edit_image_with_annotations', 'edit_document_with_annotations'
+        'edit_image_with_annotations', 'edit_document_with_annotations',
+        'seat_agent'
     ];
 
     constructor() {
@@ -208,6 +209,17 @@ export class GeneralistAgent extends BaseAgent {
                         query: { type: 'STRING', description: 'Search query to find relevant memories.' }
                     },
                     required: ['query']
+                }
+            },
+            {
+                name: 'seat_agent',
+                description: 'Seat or bring a specialist agent (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security) into the Boardroom discussion. Use this automatically when the user asks to "bring in", "seat", "invite", "add", or "summon" a department or agent, or when a task is delegated to an absent department.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the specialist agent to seat (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security).' }
+                    },
+                    required: ['targetAgentId']
                 }
             },
             {
