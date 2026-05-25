@@ -14,6 +14,7 @@ import { logger } from '@/utils/logger';
  */
 export function isAppCheckError(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error);
+    const lowerMsg = msg.toLowerCase();
     return (
         msg.includes('installations/request-failed') ||
         msg.includes('PERMISSION_DENIED') ||
@@ -23,7 +24,9 @@ export function isAppCheckError(error: unknown): boolean {
         msg.includes('403') ||
         msg.includes('unauthenticated') ||
         msg.includes('Missing or insufficient permissions') ||
-        msg.toLowerCase().includes('verification failed')
+        lowerMsg.includes('verification failed') ||
+        lowerMsg.includes('failed to fetch') ||
+        lowerMsg.includes('fetch')
     );
 }
 
