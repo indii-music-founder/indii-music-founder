@@ -41,7 +41,15 @@ else
   echo "✅ Typecheck passed."
 fi
 
-echo "--> Step 4: Running Sharded Tests"
+echo "--> Step 4: Flowchart Syntax & Sanity Check"
+if ! node scripts/validate-flowcharts.js; then
+  echo "❌ Flowchart validation failed."
+  fail=1
+else
+  echo "✅ Flowchart validation passed."
+fi
+
+echo "--> Step 5: Running Sharded Tests"
 npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4 &
 PID1=$!
 npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4 &
@@ -63,3 +71,4 @@ else
   echo "✅ All CI checks passed successfully! Ready to push."
   exit 0
 fi
+

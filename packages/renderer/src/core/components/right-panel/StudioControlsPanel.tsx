@@ -141,6 +141,24 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             icon={<Sparkles className="text-purple-400" size={14} />}
                         >
                             <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Pipeline Mode</span>
+                                    <div className="grid grid-cols-2 gap-1 p-1 bg-black/60 rounded-lg border border-white/5 font-mono text-[9px]">
+                                        <button
+                                            onClick={() => setStudioControls({ omniPipelineMode: 'pure-omni' })}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            Pure Omni
+                                        </button>
+                                        <button
+                                            onClick={() => setStudioControls({ omniPipelineMode: 'hybrid-veo' })}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            Hybrid Veo
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
@@ -157,8 +175,23 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </button>
                                 </div>
 
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Performance Pose Preset</span>
+                                    <select
+                                        value={studioControls.activePosePreset}
+                                        onChange={(e) => setStudioControls({ activePosePreset: e.target.value })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="guitar_solo">Guitar Solo</option>
+                                        <option value="mic_stand_lean">Mic Stand Lean</option>
+                                        <option value="dj_stance">DJ Mixer Deck</option>
+                                        <option value="vocal_belting">Vocal Belting</option>
+                                        <option value="t_pose">Skeletal T-Pose</option>
+                                    </select>
+                                </div>
+
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-405 uppercase font-mono tracking-wide">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Pose Preservation</span>
                                         <span className="text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
                                     </div>
@@ -171,7 +204,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-405 uppercase font-mono tracking-wide">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Beat Motion Pulse</span>
                                         <span className="text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
                                     </div>
@@ -181,6 +214,56 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         onChange={(e) => setStudioControls({ beatPulse: parseFloat(e.target.value) })}
                                         className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
                                     />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase font-mono tracking-widest">
+                                        <span>Waveform Theme Color</span>
+                                        <span className="font-mono text-purple-400 text-[8px]">{studioControls.visualizerColor}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-1.5 bg-black/40 rounded-lg border border-white/5">
+                                        <input
+                                            type="color"
+                                            value={studioControls.visualizerColor}
+                                            onChange={(e) => setStudioControls({ visualizerColor: e.target.value })}
+                                            className="w-6 h-5 rounded border border-white/20 bg-transparent outline-none cursor-pointer"
+                                        />
+                                        <div className="flex gap-1.5">
+                                            {['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map((color) => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => setStudioControls({ visualizerColor: color })}
+                                                    className="w-4 h-4 rounded-full border border-white/10"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 border-t border-white/5 pt-3">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-purple-400" /> Kinetic Lyric Text</span>
+                                    <textarea
+                                        value={studioControls.lyricsText}
+                                        onChange={(e) => setStudioControls({ lyricsText: e.target.value })}
+                                        rows={2}
+                                        placeholder="Type song lyrics to overlay..."
+                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-purple-500/30"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Typography Style</span>
+                                    <select
+                                        value={studioControls.typographyStyle}
+                                        onChange={(e) => setStudioControls({ typographyStyle: e.target.value as any })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="cyberpunk">Cyberpunk Glitch</option>
+                                        <option value="kinetic-neon">Kinetic Neon Grid</option>
+                                        <option value="liquid-gold">Volumetric Liquid Gold</option>
+                                        <option value="minimal-infographic">Minimalist Layout</option>
+                                    </select>
                                 </div>
 
                                 <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">

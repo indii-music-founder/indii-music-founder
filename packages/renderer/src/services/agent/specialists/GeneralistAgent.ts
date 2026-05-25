@@ -43,7 +43,7 @@ export class GeneralistAgent extends BaseAgent {
         'propose_plan', 'get_plan', 'refine_plan', 'cancel_plan',
         'report_bug', 'request_feature',
         'edit_image_with_annotations', 'edit_document_with_annotations',
-        'seat_agent'
+        'seat_agent', 'unseat_agent'
     ];
 
     constructor() {
@@ -218,6 +218,17 @@ export class GeneralistAgent extends BaseAgent {
                     type: 'OBJECT',
                     properties: {
                         targetAgentId: { type: 'STRING', description: 'ID of the specialist agent to seat (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security).' }
+                    },
+                    required: ['targetAgentId']
+                }
+            },
+            {
+                name: 'unseat_agent',
+                description: 'Unseat or remove a specialist agent from the Boardroom discussion when their expertise is no longer needed or their task is fully complete. Use this to keep the boardroom focused and clean.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the agent to unseat (e.g. finance, legal, marketing).' }
                     },
                     required: ['targetAgentId']
                 }

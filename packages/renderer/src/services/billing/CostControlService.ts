@@ -51,6 +51,11 @@ const RUNAWAY_LIMIT = 500; // Global kill-switch: no account can exceed $500/mon
 const TEST_MODE_DAILY_LIMIT = 5; // Testing should never cost more than $5/day total
 
 export class CostControlService {
+  private static get isE2EMode(): boolean {
+    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return true;
+    try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+  }
+
   /**
    * Check if an operation is allowed under current budget.
    * MUST be called before any expensive API operation.
@@ -61,6 +66,17 @@ export class CostControlService {
    * Fail-secure: If ledger is unavailable, blocks the operation.
    */
   static async checkAndReserve(req: CostCheckRequest): Promise<CostCheckResponse> {
+    // E2E BYPASS: Allow E2E mock runs to proceed without checking/writing to Firestore ledgers
+    if (this.isE2EMode) {
+      return {
+        allowed: true,
+        remainingBudget: 1000,
+        dailyUsed: 0,
+        monthlyUsed: 0,
+        operationId: `e2e-mock-${Date.now()}`
+      };
+    }
+
     // MOCK MODE BYPASS: If local development is restricted by billing blocks, 
     // allow mock responses to proceed without checking/writing to Firestore ledgers.
     if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {

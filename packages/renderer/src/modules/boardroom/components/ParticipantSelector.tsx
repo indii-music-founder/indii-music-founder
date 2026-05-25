@@ -137,6 +137,18 @@ export default function ParticipantSelector() {
                                             <div className="absolute inset-0 rounded-full animate-ping opacity-25 border border-emerald-400/40 pointer-events-none scale-125 [animation-delay:0.3s]" />
                                         </>
                                     )}
+
+                                    {/* Glassmorphic Text Label Underneath */}
+                                    <span className={cn(
+                                        "absolute top-full mt-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold tracking-wider uppercase bg-black/60 backdrop-blur-md px-2 py-0.5 rounded border pointer-events-none transition-all duration-500 shadow-lg",
+                                        isExecuting
+                                            ? "text-emerald-400 border-emerald-400/30 font-extrabold shadow-[0_0_10px_rgba(52,211,153,0.15)]"
+                                            : isActive
+                                                ? "text-white border-white/10 font-bold"
+                                                : "text-white/30 border-white/5 opacity-60"
+                                    )}>
+                                        {agent.name.replace(' Dept.', '').replace(' Manager', '').replace(' Producer', '').replace(' Director', '')}
+                                    </span>
                                 </motion.button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">

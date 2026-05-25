@@ -104,6 +104,11 @@ export interface CreativeControlsSlice {
         synthIdEnabled: boolean;
         selectedLanguage: string;
         omniReferenceVideo: string | null;
+        omniPipelineMode: 'pure-omni' | 'hybrid-veo';
+        activePosePreset: string;
+        lyricsText: string;
+        typographyStyle: 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic';
+        visualizerColor: string;
     };
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
@@ -255,6 +260,11 @@ export function buildCreativeControlsState(
             synthIdEnabled: true,
             selectedLanguage: 'es',
             omniReferenceVideo: null,
+            omniPipelineMode: 'pure-omni',
+            activePosePreset: 'guitar_solo',
+            lyricsText: '',
+            typographyStyle: 'cyberpunk',
+            visualizerColor: '#8B5CF6',
         },
         setStudioControls: (controls) => set((state: CreativeControlsSlice) => ({ studioControls: { ...state.studioControls, ...controls } })),
         enableCoverArtMode: () => set((state: CreativeControlsSlice) => ({
