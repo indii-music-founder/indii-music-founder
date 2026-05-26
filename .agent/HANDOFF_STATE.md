@@ -1,35 +1,25 @@
 # Handoff State
-**Updated:** 2026-05-26 11:21 EDT
+**Updated:** 2026-05-26 11:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c2b349822 chore(workflow): update command manifests and founder configurations
+2c78d6625 chore(workflow): track proceed workflow file
+5a73399f0 feat(creative): secure direct generation pipelines and resolve test suite timers
+134eb87d9 docs: add boardroom strategic seating sequence flowchart
+28eb7376a docs: add Firestore E2E offline deadlock pattern to Error Ledger
+17d672430 chore: session checkpoint [11:21]
 adbd369ef perf(ci): implement concurrency cancels and path ignores to conserve GHA minutes
 dfaec2be0 fix(main/security): update CSP policies for reCAPTCHA/AppCheck and indexPath loading routing
 1078b4d6a fix(e2e): fix courtroom and boardroom E2E unseating race conditions and compilation errors
 5705c4007 test: verify indii Conductor Strategic goal E2E flow chain and implement Firestore E2E bypasses
-45605efc1 feat(e2e): implement isE2EMode check bypasses for LivingPlanService and BigBrainEngine
-80b33c51a chore: session checkpoint [09:51]
-9e6cb546a feat(creative/boardroom): integrate skeletal pose library, real-time beat-sync visualizers, and unseat-agent swarm capability
-65b731644 chore: session checkpoint [09:45]
-1fa05bc41 docs(flowcharts): archive video daisy chain composition flowchart
-6590db051 chore: session checkpoint [09:27]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/core/config/intelligence-models.ts
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
- M packages/renderer/src/modules/creative/video/schemas.ts
- M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
- M packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts
- M packages/renderer/src/services/intelligence/generators/MediaGenerator.ts
- M packages/renderer/src/services/video/VideoGenerationService.ts
-?? docs/flowcharts/secure-generation-execution-isolation.md
-?? docs/flowcharts/security-csp-appcheck-integration.md
+ M .agent/checkpoints/antigravity.md
+ M docs/flowcharts/core-pipeline-architecture.md
 ```
 
 ## Decisions
