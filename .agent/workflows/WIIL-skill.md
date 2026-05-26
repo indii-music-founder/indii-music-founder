@@ -8,7 +8,7 @@ This document serves as the single source of truth for all active, approved `/co
 
 ## The Core Pipeline
 
-These four commands form the backbone of the agent's development workflow.
+These five commands form the backbone of the agent's development workflow.
 
 ### `/start` — The Genesis Workflow
 - **Purpose:** Initializes a new session, feature, or prompt.
@@ -29,6 +29,11 @@ These four commands form the backbone of the agent's development workflow.
 - **Purpose:** Wraps up a session leaving a pristine repository.
 - **Actions:** Summarizes learnings, updates checkpoints, finalizes architecture flowcharts, and runs the entire testing and verification gauntlet (via `/ci-validate`).
 - **When to use:** When the task is complete and ready to be merged or handed off.
+
+### `/skill-skill` — The Intelligent Skill Router
+- **Purpose:** Dynamic search and decision gate that selects and matches the perfect tool, skill, or workflow for any goal.
+- **Actions:** Evaluates active context, checks available manifests (WIIL-skill) and skills inventory, and outputs prioritized routing recommendations.
+- **When to use:** At any point during a session when you need guidance, have architectural questions, or need to decide on the next workflow.
 
 ---
 
@@ -52,6 +57,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Dynamic flowchart and visual diagram engine using Mermaid.
 - **When to use:** Used automatically by `/start`, `/middle`, and `/end`. Can be invoked anytime to map out complex architecture. Always saves to `docs/flowcharts/`.
 
+### `/db-sync` — Security Rules & Schema Auditor
+- **Purpose:** Scans codebase changes against firestore.rules and storage.rules to audit access privileges and prevent security leaks.
+- **When to use:** Used automatically in `/middle` when schemas shift, or manually before checking in rule modifications.
+
 ### `/auto-fix` — Auto-Fix Sentry & CodeRabbit
 - **Purpose:** Automatically fetch and fix Sentry issues and CodeRabbit PR comments.
 - **When to use:** Used automatically within `/ci-validate`.
@@ -64,9 +73,47 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Full closed-loop cycle of fixing all CodeRabbit/Sentry issues, validating, and generating tests.
 - **When to use:** Run after any significant block of work or when focusing on stabilization.
 
+### `/better` — Universal Improvement Engine
+- **Purpose:** Audits, elevates, and polishes whatever you're currently working on. Checks style alignment, performance, and formatting.
+- **When to use:** Drop it anywhere during execution to polish a feature.
+
+### `/devex-review` — Developer Experience Audit
+- **Purpose:** Comprehensive Developer Experience audit to ensure coding environment, aliases, and dependencies are optimized.
+- **When to use:** Run periodically to keep DX (Developer Experience) at 10/10.
+
+### `/factory` — Automated Test & Fix Loop
+- **Purpose:** Spins up test orchestrators, fix agents, and CI publishers to run overnight systems, auto-patch bugs, and deploy.
+- **When to use:** For completely autonomous overnight quality loops.
+
 ### `/test` — Context-Aware Test Runner
 - **Purpose:** Automatically identify and run relevant tests based on current modified files.
 - **When to use:** When writing code that needs quick unit/E2E verification before the final gauntlet.
+
+---
+
+## Creative, Design & Architectural Skills
+
+These skills reside inside `.agent/skills/` and are actively used by the agent swarm for design, architectural planning, and feature mapping.
+
+### `/to-prd` — Product Requirement Document (PRD) Generator
+- **Purpose:** Compiles current conversation, goals, and technical boundaries into a formal PRD.
+- **When to use:** At the very beginning of a feature design process.
+
+### `/to-issues` — vertical-Slice Ticketer
+- **Purpose:** Breaks down complex implementation plans or PRDs into vertical-slice issue tickets that agents can grab.
+- **When to use:** After generating an implementation plan to create actionable TODOs.
+
+### `/grill-me` — Architect Interviewer
+- **Purpose:** Challenges and refines your implementation strategies and ADR decisions through a rigorous mock interview.
+- **When to use:** When aligning on technical strategy before writing code.
+
+### `/zoom-out` — Codebase Dependency Mapper
+- **Purpose:** Recursively maps file dependencies, imports, and callers to prevent regressions in adjacent components.
+- **When to use:** Before refactoring existing codebase logic or service layers.
+
+### `/tdd` — Test-Driven Development Loop
+- **Purpose:** Launches a strict Red-Green-Refactor loop to ensure robust test coverage.
+- **When to use:** When writing high-risk logical functions or services.
 
 ---
 
