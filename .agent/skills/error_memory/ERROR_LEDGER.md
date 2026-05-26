@@ -1,3 +1,24 @@
+## 2026-05-26 Vitest / React Router v7 Location Mock Failure (No window.location.origin|href)
+
+**SEVERITY:** Medium (causes React Router v7 mount failures inside Vitest tests)
+
+**MISTAKE:**
+- FILE: `packages/landing/src/App.test.tsx`
+- ERROR: `Error: No window.location.(origin|href) available to create URL` when attempting to render a component containing React Router v7 `<BrowserRouter>` or `<Routes>`.
+- CAUSE: When mocking `window.location` in jsdom/Vitest using `Object.defineProperty(window, 'location', { value: { hostname: 'indii.music' } })`, properties expected by React Router (like `href` and `origin`) are lost. The React Router v7 runtime uses these properties internally to resolve path matches; if missing, it throws a fatal execution invariant error.
+- FIX: Ensure mock declarations include all expected location fields:
+  ```typescript
+  Object.defineProperty(window, 'location', {
+    value: { 
+      hostname: 'indii.music', 
+      href: 'http://indii.music/',
+      origin: 'http://indii.music',
+    },
+    writable: true,
+  });
+  ```
+- PREVENTION: Always provide complete Mock URIs containing `href`, `origin`, and `hostname` when stubbing `window.location` for React Router routing checks.
+
 ## 2026-05-26 Vitest Fake Timers / waitFor Timeout Pattern (test pipeline hang)
 
 **SEVERITY:** High (causes entire unit test suites to time out at 5000ms and fail)
