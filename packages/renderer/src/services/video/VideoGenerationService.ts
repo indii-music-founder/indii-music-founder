@@ -392,10 +392,10 @@ export class VideoGenerationService {
 
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
-        const jobId = uuidv4();
+        const jobId = options.jobId || uuidv4();
 
         // Write initial job record to Firestore for UI subscription
-        const { setDoc, serverTimestamp } = await import('firebase/firestore');
+        const { setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
         const jobRef = doc(db, 'videoJobs', jobId);
         await setDoc(jobRef, stripUndefined({
             id: jobId,
@@ -499,7 +499,18 @@ export class VideoGenerationService {
             });
 
             const videoUrl = await this.withRetry(
-                () => AutonomousIntelligence.generateVideo(aiRequest),
+                () => AutonomousIntelligence.generateVideo({
+                    ...aiRequest,
+                    onProgress: (status, attempt, maxAttempts) => {
+                        const progressPercent = Math.min(99, Math.round((attempt / maxAttempts) * 100));
+                        logger.info(`[VideoGeneration] Real-time polling progress: ${progressPercent}% (attempt ${attempt}/${maxAttempts})`);
+                        updateDoc(jobRef, {
+                            status: 'processing',
+                            progress: progressPercent,
+                            updatedAt: serverTimestamp(),
+                        }).catch(e => logger.warn('[VideoGeneration] Failed to update progress:', e));
+                    }
+                }),
                 'generateVideo (atomic)',
                 3,
                 2000

@@ -43,7 +43,8 @@ vi.mock('@/core/config/intelligence-models', async (importOriginal) => {
 const mockGenerateVideo = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: (...args: any[]) => mockGenerateVideo(...args)
+        generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        subscribeToJob: vi.fn(() => () => {})
     }
 }));
 

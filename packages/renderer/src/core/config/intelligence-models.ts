@@ -205,6 +205,15 @@ function validateModels(): void {
     }
 }
 
+// Centralized mapping of Model IDs to display names in UI components to prevent hardcoding.
+export const MODEL_DISPLAY_NAMES: Record<string, string> = {
+    [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
+    [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
+    [APPROVED_MODELS.VIDEO_PRO]: 'Veo 3.1',
+    [APPROVED_MODELS.VIDEO_FAST]: 'Veo 3.1 Fast',
+    [APPROVED_MODELS.VIDEO_LITE]: 'Veo 3.1 Lite',
+} as const;
+
 // Run validation on module load
 validateModels();
 
