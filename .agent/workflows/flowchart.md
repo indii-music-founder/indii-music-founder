@@ -68,20 +68,40 @@ graph TD
 
 ---
 
-## Step 4 — Detail the Transition Breakdown
+## Step 4 — Self-Review & Self-Correction Loop (Self-Healing)
+
+Before finalizing, the agent MUST run the generated diagram through a three-phase self-healing loop:
+
+1. **Phase A: Syntax Auditing**
+   - Check the Mermaid code for missing quotes around labels with special characters (brackets, parentheses, hyphens).
+   - Ensure all arrows (`-->`) are correct and nodes have valid syntax (no trailing open brackets `[` or unclosed quotes).
+   - *Fix Action:* Automatically repair any broken characters or formatting.
+
+2. **Phase B: Semantic & Logic Check**
+   - Check if there are orphan nodes with no connections.
+   - Trace the logical flow. Does it represent the exact execution path of the feature? Are there illogical deadlocks or disjointed links?
+   - *Fix Action:* Re-map links to mirror the correct lifecycle of the request/response.
+
+3. **Phase C: Filesystem Verification**
+   - Cross-reference every mapped codebase file path (e.g. `packages/renderer/src/...`) with the actual directory structure.
+   - *Fix Action:* If a file is missing or renamed, use read tools to find its real path and update the diagram node target.
+
+---
+
+## Step 5 — Detail the Transition Breakdown
 
 Directly below the Mermaid block, provide a clear, numbered walkthrough of the flow transitions. Do not just restate the nodes; explain **how** the state moves, **what parameters** are passed, **where validations occur**, and how the **two-strike pivot protocol** or fallback logic triggers if an error is encountered.
 
 ---
 
-## Step 5 — Verify Layout & Flow Logic
+## Step 6 — Verify Layout & Flow Logic
 
 1. Confirm all connections are logical and represent the actual codebase files (e.g. `packages/renderer/src/services/...`).
 2. Verify that any system dependencies (e.g., "Step B must complete before Step C is unblocked") are visually represented in the chart using distinct gate nodes.
 
 ---
 
-## Step 6 — Save to Consolidated Flowcharts Folder
+## Step 7 — Save to Consolidated Flowcharts Folder
 
 To maintain all visual architecture maps in a central, structured registry:
 
