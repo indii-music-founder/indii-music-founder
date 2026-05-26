@@ -1,3 +1,14 @@
+## 2026-05-25 Firestore E2E Client Offline Deadlock (context pipeline hang)
+
+**SEVERITY:** High (blocks entire Conductor prompt routing pipeline and causes infinite E2E timeouts)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/LivingPlanService.ts` & `packages/renderer/src/services/agent/memory/BigBrainEngine.ts`
+- ERROR: Playwright test hangs indefinitely during AI prompt submission while the red "Run/Stop" command bar button stays active.
+- CAUSE: Firestore's client SDK operates in offline-mode when there is no network connection (or under sandbox testing). However, calling asynchronous queries (such as `getDocs()` or `getDoc()`) on uncached collections (such as `livingPlans` or `alwaysOnMemories`) under Playwright causes the queries to wait/retry indefinitely without throwing immediately. Since `ContextPipeline` and `BigBrainEngine` execute these inside a blocking `Promise.allSettled` block before every prompt submission, the entire context assembly pipeline was deadlocked.
+- FIX: Implemented a private `isE2EMode` getter that checks `window.FIREBASE_E2E_MOCK` and `localStorage.getItem('FIREBASE_E2E_MOCK')`. In E2E mode, we immediately intercept all query/mutation methods inside `LivingPlanService` and `BigBrainEngine` to return safe mocked structures or return early, preventing real Firestore network calls.
+- PREVENTION: Never execute real Firestore queries or writes inside blocking pre-prompt pipeline services during E2E testing without an `isE2EMode` mock intercept/bypass.
+
 ## 2026-05-24 Environment HDR Preset Failed to Fetch (offline crash)
 
 **SEVERITY:** High (crashes whole 3D stage builder canvas with 'Studio encountered an error' message)
