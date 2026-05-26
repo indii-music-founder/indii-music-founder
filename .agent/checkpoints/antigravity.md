@@ -2,21 +2,17 @@
 **Last Updated:** 2026-05-26
 
 ## 1. What Was Built (Latest Session)
-- **Secure Backend Execution Isolation:** Fully transitioned both direct image and video generation pipelines to authenticated backend Cloud Function proxies (`generateImageV3` and `triggerVideoJob`). Removed direct `@google/genai` client instances and client-side `VITE_API_KEY` from client codebase (`DirectImageGenerator.ts` and `useDirectGeneration.ts`), completely removing credential exposure risk.
-- **Micro-Progress Visualizations:** Preserved the premium visual canvas progress loader cards and dynamic model display status pills in `DirectGenerationTab.tsx`, ensuring real-time Firestore progress polling integrates perfectly.
-- **Vitest Fake Timers Integration:** Patched the `DirectGenerationTab.test.tsx` test suite using `vi.useFakeTimers()`, `vi.useRealTimers()` and `vi.advanceTimersByTimeAsync(3010)` to cleanly simulate the 3000ms delay in filtering `activeJobs` completed state, achieving a 100% green unit test suite (all 3,848 tests passing).
-- **Architectural Flowcharts:** Created and stored dynamic flowcharts for the secure proxy routing (`secure-generation-execution-isolation.md`) and the Electron CSP + Firebase App Check security integration (`security-csp-appcheck-integration.md`) under the central `/docs/flowcharts/` repository.
-- **TypeScript Compile Correctness:** Pinned the duplicate model config key collision in `packages/renderer/src/core/config/intelligence-models.ts` to solve the TS1117 object literal duplication error.
+- **5-Phase Pristine Core Pipeline:** Built the core `/start`, `/proceed`, `/middle`, `/end`, and `/skill-skill` command workflows inside `.agent/workflows/` to standardize the AI-native developer lifecycle.
+- **Unified Command Manifest (WIIL-skill):** Deployed `WIIL-skill.md` listing the entire active, approved command suite and utility routines while purging 30+ legacy, undocumented, and redundant workflow files.
+- **Self-Healing Flowchart Engine:** Upgraded the `/flowchart` utility in `.agent/workflows/flowchart.md` to include automated self-healing checks (syntax checking, logical transition tracing, and physical file path existence verification).
+- **Security Rule Sync Workflow:** Created the `/db-sync` utility inside `.agent/workflows/db-sync.md` for safe, audited deployment and validation of `firestore.rules` and `storage.rules`.
+- **Aesthetic Visual Architectures:** Deployed architectural flowcharts under `docs/flowcharts/` mapping the dynamic core pipeline (`core-pipeline-architecture.md`) and database security sync flows (`database-security-sync.md`).
+- **Backend Image Generation Fix:** Resolved a critical 404/500 image generation crash by applying the correct model suffixes (`gemini-3-pro-image-preview` and `gemini-3.1-flash-image-preview`) in `packages/firebase/src/config/models.ts` and successfully verified 15/15 Vitest test cases in `packages/firebase/src/lib/image_generation.test.ts`.
+- **Dynamic Route Testing:** Deployed a complete router simulation suite in `packages/landing/src/App.test.tsx` to verify dynamic hostname checks for the premium $2,500 Founders Program page.
 
 ## 2. Pending Items / Next Steps
-- The secure backend execution isolation is completely implemented, verified, and passing typecheck and vitest suite.
-- Push the consolidated commit to the main branch.
-- Perform the closing procedures as requested by the user.
+- **Visual QA Verification:** Prompt the user to run `/auto_qa` or the `/mega-test` suite in subsequent sessions to visually check canvas placements, z-indices, and loading states.
+- **Ongoing Manifest Registration:** Ensure that any newly authored subagent skills in `.agent/skills/` are dynamically registered inside `WIIL-skill.md` to maintain swarm discoverability.
 
 ## 3. Active Task Context
-- **Status:** IDEAL / 100% GREEN / COMPLETED.
-- **Branch/Task:** Direct Generation Model Correctness & Secure Backend Execution Isolation has been fully resolved and verified.
-
-## 4. Key Learnings & Error Patterns
-- **Learning:** When a React component updates state or filters renders based on `setTimeout` schedules (e.g. filtering out items in `activeJobs` after 3000ms), standard test `waitFor` polls will fail or time out under Vitest if fake timers are left active or if time is not advanced. Wrapping inside `vi.useFakeTimers()` and invoking `await vi.advanceTimersByTimeAsync(3010)` inside `act()` ensures microtasks and timers settle synchronously.
-- **Ledger Update:** Restored `vi.useRealTimers()` in the global `beforeEach` block of unit test suites to guarantee fake timers never leak across subsequent tests and cause silent `waitFor` timeouts.
+- **Status:** IDEAL / CLEAN REPOSITORY. All tasks fully validated, tests passing, and workflows deployed under standard paths.
