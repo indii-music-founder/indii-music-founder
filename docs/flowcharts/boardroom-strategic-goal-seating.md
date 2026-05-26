@@ -79,3 +79,14 @@ sequenceDiagram
 1. **Boardroom Seating Bounds**: The Conductor dynamically updates `activeAgents` in the state slice. Seating workers instead of heads is correctly checked by scope bounds.
 2. **Pulse Task Dependency Checklist**: Downstream nodes evaluate completion bits on upstream resources (Firebase Gallery assets and Confirmed Tour Dates JSON fields) before unlocking tool calls.
 3. **Stateless AI Routing Logic**: Multi-turn tool execution maintains context stability via the backward message lookback strategy during play runs.
+
+## Step-by-Step Transition Breakdown
+
+1. **Goal Submission (`User -> C`):** The founder types the tour planning strategic goal, triggering the Conductor Hub.
+2. **First Seating Action (`C -> Cr` & `C -> R`):** The Conductor executes `seat_agent("creative")` and `seat_agent("road")` sequentially. The app registers these agents as seated inside Zustand.
+3. **Seated Swarm Active (`C -> User`):** Once both dynamic seats are finalized, the boardroom transitions to the active strategic swarm phase.
+4. **Artwork and Logistics Generation (`User -> C -> Cr/R`):** The user commands task execution. Creative Director produces visuals (Firebase Gallery asset registered), and Road Manager establishes logistics (Confirmed Tour Dates routing confirmed).
+5. **Pulse Evaluation Check (`User -> C -> P`):** The user triggers rollout. The Pulse Engine evaluates the completed artwork and dates, automatically unlocking the `"Generate Tour Flyers with Dates"` dependency.
+6. **Second Seating Action (`C -> M` & `C -> S`):** The Conductor seats the Marketing Specialist and Social Specialist at the table for rollout campaign execution.
+7. **Social Draft Scheduling (`User -> C -> M/S`):** Rollout materials are drafted (EPK aligned) and flyer announcement drafts scheduled for Instagram/Twitter release.
+8. **Swarm Dismissal (`User -> C -> Cr/R/M/S`):** Upon complete Strategic Goal finalization, the Conductor calls `unseat_agent` on all specialists, restoring the boardroom table to its clean, idle state ('generalist' only).
