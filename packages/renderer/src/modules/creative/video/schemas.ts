@@ -60,7 +60,8 @@ export const VideoGenerationOptionsSchema = z.object({
     inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)
     thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
     orgId: z.string().optional(),
-    userProfile: z.custom<UserProfile>().optional() // Typed UserProfile for service compatibility
+    userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
+    jobId: z.string().optional()
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

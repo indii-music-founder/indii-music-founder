@@ -115,7 +115,9 @@ export default function DirectGenerationTab() {
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                             <span className="text-[9px] font-mono text-gray-400 font-bold uppercase tracking-wider">
-                                {mode === 'image' ? 'Imagen 4' : 'Veo 3.1'}
+                                {mode === 'image' 
+                                    ? (studioControls.model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana 2') 
+                                    : 'Veo 3.1'}
                             </span>
                         </div>
                     </div>

@@ -43,7 +43,10 @@ const RESOLUTION_MAP: Record<string, string> = {
  */
 export async function generateVideo(
     client: GoogleGenAI,
-    options: GenerateVideoRequest & { timeoutMs?: number }
+    options: GenerateVideoRequest & { 
+        timeoutMs?: number; 
+        onProgress?: (status: 'queued' | 'processing', attempt: number, maxAttempts: number) => void;
+    }
 ): Promise<string> {
     const { calculateVideoTimeout, INTELLIGENCE_CONFIG } = await import('@/core/config/intelligence-models');
     
@@ -168,6 +171,9 @@ export async function generateVideo(
                     operation: operation,
                 });
                 consecutivePollErrors = 0; // Reset on successful poll
+
+                // Trigger real-time progress callback
+                options.onProgress?.('processing', attempts, maxAttempts);
 
                 // Log every poll attempt for full diagnostics
                 logger.info(`[MediaGenerator] Poll ${attempts}/${maxAttempts}:`, {

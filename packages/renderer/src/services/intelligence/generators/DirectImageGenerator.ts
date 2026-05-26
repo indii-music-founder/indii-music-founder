@@ -1,13 +1,14 @@
 /**
- * Direct Image Generator — Direct client-side calls to Gemini 3 Image models.
+ * Direct Image Generator — Secure backend-proxy calls to Gemini 3 Image models.
  * 
- * This module bypasses Firebase Cloud Functions entirely. It uses the
- * @google/genai SDK directly from the client to call Nano Banana Pro
- * and Nano Banana 2 models using responseModalities: ['IMAGE'].
+ * This module eliminates all client-side GoogleGenAI SDK usage and key exposures.
+ * It routes generation requests to the secure generateImageV3 Cloud Function,
+ * returning standard data URIs for perfect backwards compatibility.
  */
 
-import { GoogleGenAI } from '@google/genai';
-import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 
@@ -27,185 +28,71 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_all': 'ALLOW_ALL',
 };
 
-/**
- * Direct call to Gemini 3.1 Image generation via the @google/genai SDK.
- */
 export async function generateImageDirectly(options: DirectImageOptions): Promise<string[]> {
-    // Determine the environment API key
-    const apiKey = import.meta.env.VITE_API_KEY;
-    if (!apiKey) {
-        throw new AppException(AppErrorCode.UNAUTHORIZED, 'Missing Gemini API Key for Direct Generation.');
-    }
+    logger.info('[DirectImageGenerator] Calling generateImageV3 Cloud Function securely for:', options.prompt);
+    
+    try {
+        const generateImageV3 = httpsCallable(functions, 'generateImageV3');
+        
+        const payload = {
+            prompt: options.prompt,
+            aspectRatio: options.aspectRatio || '1:1',
+            count: options.numberOfImages || 1,
+            model: options.model?.includes('pro') ? 'pro' : 'fast',
+            personGeneration: options.personGeneration ? PERSON_GEN_API_MAP[options.personGeneration] : undefined,
+            negativePrompt: options.negativePrompt
+        };
 
-    // Initialize direct client
-    const client = new GoogleGenAI({ apiKey });
+        const result = await generateImageV3(payload);
+        
+        interface GenerateImageResponse {
+            images: Array<{
+                bytesBase64Encoded?: string;
+                mimeType?: string;
+            }>;
+        }
 
-    // Determine model (default to Pro)
-    const modelId = options.model || INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO;
-
-    const modelAttempts = [
-        modelId,
-        'imagen-3.0-generate-002', // Standard production fallback
-    ];
-
-    let lastError: unknown;
-
-    async function executeGeneration(attemptModel: string): Promise<string[]> {
-        const isImagen = attemptModel.includes('imagen-');
+        const data = result.data as GenerateImageResponse;
         const generatedImages: string[] = [];
-
-        if (isImagen) {
-            // Setup the configuration for generateImages
-            const imageConfig: Record<string, unknown> = {
-                numberOfImages: options.numberOfImages || 1,
-            };
-
-            if (options.aspectRatio) {
-                imageConfig.aspectRatio = options.aspectRatio;
-            }
-
-            if (options.personGeneration) {
-                imageConfig.personGeneration = PERSON_GEN_API_MAP[options.personGeneration] ?? 'ALLOW_ADULT';
-            }
-
-            // Negative prompt is only supported on Pro/Ultra models
-            const isPro = attemptModel.includes('pro') || attemptModel.includes('ultra') || attemptModel.includes('3.0-generate');
-            if (options.negativePrompt && isPro) {
-                imageConfig.negativePrompt = options.negativePrompt;
-            }
-
-            logger.info('[DirectImageGenerator] Calling generateImages with:', { 
-                model: attemptModel, 
-                config: imageConfig 
-            });
-
-            // Call the correct SDK method
-            const response = await client.models.generateImages({
-                model: attemptModel,
-                prompt: options.prompt,
-                config: imageConfig as any,
-            });
-
-            if (response.generatedImages && response.generatedImages.length > 0) {
-                for (const generatedImage of response.generatedImages) {
-                    const img = generatedImage.image;
-                    if (img) {
-                        const base64Bytes = img.imageBytes;
-                        const mimeType = img.mimeType || 'image/jpeg';
-                        const dataUri = `data:${mimeType};base64,${base64Bytes}`;
-                        generatedImages.push(dataUri);
-                    }
-                }
-            } else {
-                throw new Error('No images returned from generateImages SDK call.');
-            }
-        } else {
-            // Legacy/Gemini responseModalities path for multimodal models
-            const config: Record<string, unknown> = {
-                responseModalities: ['IMAGE'],
-                candidateCount: options.numberOfImages || 1,
-            };
-
-            const imageConfig: Record<string, unknown> = {};
-
-            if (options.aspectRatio) {
-                imageConfig.aspectRatio = options.aspectRatio;
-            }
-
-            if (options.personGeneration) {
-                imageConfig.personGeneration = PERSON_GEN_API_MAP[options.personGeneration] ?? 'ALLOW_ADULT';
-            }
-
-            if (Object.keys(imageConfig).length > 0) {
-                config.imageConfig = imageConfig;
-            }
-
-            logger.info('[DirectImageGenerator] Calling generateContent with responseModalities for model:', attemptModel);
-
-            const response = await client.models.generateContent({
-                model: attemptModel,
-                contents: options.prompt,
-                config: config as any,
-            });
-
-            const candidates = response.candidates;
-            if (!candidates || candidates.length === 0) {
-                throw new Error('No candidates returned from direct API call.');
-            }
-
-            for (const candidate of candidates) {
-                const imagePart = candidate.content?.parts?.find(
-                    (p: any) => p.inlineData && p.inlineData.mimeType?.startsWith('image/')
-                );
-
-                if (imagePart && imagePart.inlineData?.data) {
-                    const mimeType = imagePart.inlineData.mimeType || 'image/jpeg';
-                    const base64Bytes = imagePart.inlineData.data;
-                    const dataUri = `data:${mimeType};base64,${base64Bytes}`;
+        
+        if (data.images && data.images.length > 0) {
+            for (const img of data.images) {
+                if (img.bytesBase64Encoded) {
+                    const mimeType = img.mimeType || 'image/jpeg';
+                    const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
                     generatedImages.push(dataUri);
                 }
             }
         }
-
+        
         if (generatedImages.length === 0) {
-            throw new Error('Generation completed but no valid image data was extracted.');
+            throw new Error('No images returned from backend generateImageV3 call.');
         }
 
-        logger.info(`[DirectImageGenerator] ✅ Successfully generated ${generatedImages.length} image(s) directly.`);
+        logger.info(`[DirectImageGenerator] ✅ Successfully generated ${generatedImages.length} image(s) via backend proxy.`);
         return generatedImages;
-    }
-
-    for (const attemptModel of modelAttempts) {
-        try {
-            logger.info(`[DirectImageGenerator] Attempting generation with model: ${attemptModel}`);
-            const result = await executeGeneration(attemptModel);
-            return result;
-        } catch (error: unknown) {
-            lastError = error;
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.warn(`[DirectImageGenerator] Model ${attemptModel} failed: ${msg}`);
-
-            // If the key is invalid (403), don't try other models since it will fail anyway
-            if (msg.includes('403') || msg.includes('API_KEY_INVALID')) {
-                break;
-            }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.error('[DirectImageGenerator] Secure backend generation failed:', msg);
+        
+        if (msg.includes('unauthenticated')) {
+            throw new AppException(
+                AppErrorCode.UNAUTHORIZED,
+                'You must be signed in to generate images.'
+            );
         }
-    }
-
-    // If we reach here, all attempts failed. Handle error / dev mock fallback
-    const msg = lastError instanceof Error ? lastError.message : String(lastError);
-    logger.error('[DirectImageGenerator] Direct image generation failed across all models:', msg);
-
-    if (msg.includes('403') || msg.includes('API_KEY_INVALID')) {
-        throw new AppException(
-            AppErrorCode.UNAUTHORIZED,
-            'Invalid Gemini API Key. Direct generation requires a valid VITE_API_KEY in your environment.'
-        );
-    }
-
-    if (msg.includes('429') || msg.includes('quota') || msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('resource exhausted')) {
-        // Unblock local development/E2E testing if quota is exceeded
-        if (import.meta.env.DEV || import.meta.env.VITE_SKIP_ONBOARDING === 'true') {
-            logger.warn('[DirectImageGenerator] ⚠️ Gemini API quota exceeded. Generating mock image for DEV mode.');
-            return ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PQ0sgSU1BR0U8L3RleHQ+PC9zdmc+'];
+        
+        if (msg.includes('resource-exhausted') || msg.toLowerCase().includes('rate limit')) {
+            throw new AppException(
+                AppErrorCode.RATE_LIMITED,
+                'Image generation quota exceeded or rate limited. Please wait or upgrade your plan.',
+                { retryable: true }
+            );
         }
 
         throw new AppException(
-            AppErrorCode.RATE_LIMITED,
-            'Gemini API quota exceeded or rate limited. Please wait or check your GCP billing.',
-            { retryable: true }
+            AppErrorCode.INTERNAL_ERROR,
+            `Secure direct generation failed: ${msg}`
         );
     }
-
-    // Default mock fallback for general development failures
-    if (import.meta.env.DEV) {
-        logger.warn('[DirectImageGenerator] ⚠️ Fallback to mock image in DEV mode due to failure:', msg);
-        return ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PQ0sgSU1BR0U8L3RleHQ+PC9zdmc+'];
-    }
-
-    throw new AppException(
-        AppErrorCode.INTERNAL_ERROR,
-        `Direct generation failed: ${msg}`
-    );
 }
-
