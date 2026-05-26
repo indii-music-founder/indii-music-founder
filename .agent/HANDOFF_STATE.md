@@ -1,24 +1,35 @@
 # Handoff State
-**Updated:** 2026-05-25 09:51 EDT
+**Updated:** 2026-05-26 11:21 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+adbd369ef perf(ci): implement concurrency cancels and path ignores to conserve GHA minutes
+dfaec2be0 fix(main/security): update CSP policies for reCAPTCHA/AppCheck and indexPath loading routing
+1078b4d6a fix(e2e): fix courtroom and boardroom E2E unseating race conditions and compilation errors
+5705c4007 test: verify indii Conductor Strategic goal E2E flow chain and implement Firestore E2E bypasses
+45605efc1 feat(e2e): implement isE2EMode check bypasses for LivingPlanService and BigBrainEngine
+80b33c51a chore: session checkpoint [09:51]
 9e6cb546a feat(creative/boardroom): integrate skeletal pose library, real-time beat-sync visualizers, and unseat-agent swarm capability
 65b731644 chore: session checkpoint [09:45]
 1fa05bc41 docs(flowcharts): archive video daisy chain composition flowchart
 6590db051 chore: session checkpoint [09:27]
-3602570e0 docs(workflow): add centralized flowcharts folder and 3d canvas chart
-d284c6399 test(video): implement headed puppy image-to-video visual verification spec
-7b9b4d161 chore: session checkpoint [09:01]
-0cfe1a5b7 test(boardroom): make E2E live verify wait dynamically for finance seating
-ae53a508e chore(store): expose useStore globally on window context to enable live visual E2E inspections
-96409c6b2 chore: session checkpoint [03:41]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/core/config/intelligence-models.ts
+ M packages/renderer/src/modules/creative/components/DirectGenerationTab.test.tsx
+ M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
+ M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
+ M packages/renderer/src/modules/creative/video/schemas.ts
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+ M packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts
+ M packages/renderer/src/services/intelligence/generators/MediaGenerator.ts
+ M packages/renderer/src/services/video/VideoGenerationService.ts
+?? docs/flowcharts/secure-generation-execution-isolation.md
+?? docs/flowcharts/security-csp-appcheck-integration.md
 ```
 
 ## Decisions
