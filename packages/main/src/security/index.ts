@@ -31,7 +31,7 @@ export function configureSecurity(session: Session) {
         // This allows WASM (needed for Essentia.js, PDF.js, Tesseract.js) but blocks JS eval()
         const scriptSrc = isDev
             ? "* 'unsafe-inline' 'unsafe-eval'"
-            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net";
+            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net";
 
         const defaultSrc = isDev ? "*" : "'none'";
         const styleSrc = isDev
@@ -59,6 +59,7 @@ export function configureSecurity(session: Session) {
                         "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indii.music https://grainy-gradients.vercel.app",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
                         "manifest-src 'self' https://indii.music",
+                        "frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net https://*.google.com",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],

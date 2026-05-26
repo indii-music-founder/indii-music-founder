@@ -256,7 +256,7 @@ const createWindow = async () => {
         win.loadURL(devServerUrl).catch(err => log.error(`Failed to load URL: ${err}`));
         win.webContents.openDevTools();
     } else {
-        const indexPath = path.join(__dirname, '../dist/index.html');
+        const indexPath = path.join(__dirname, '../renderer/index.html');
         log.info(`Loading Production File: ${indexPath}`);
         win.loadFile(indexPath).catch(err => log.error(`Failed to load file: ${err}`));
     }

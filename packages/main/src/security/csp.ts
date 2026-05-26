@@ -80,7 +80,14 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
         // Scripts: self + inline (needed for Vite HMR in dev)
         'script-src': isDevelopment
             ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"] // Dev needs eval for HMR
-            : ["'self'"], // Production: strict, no inline/eval
+            : [
+                "'self'", 
+                ...ALLOWED_ORIGINS.google, 
+                'https://www.google.com/recaptcha/', 
+                'https://www.gstatic.com/recaptcha/',
+                'https://recaptcha.net',
+                'https://*.recaptcha.net'
+              ], // Production: allow Firebase and Google reCAPTCHA scripts
 
         // Styles: self + inline (many UI libs need inline styles)
         'style-src': ["'self'", "'unsafe-inline'", ...ALLOWED_ORIGINS.cdn],
