@@ -3,6 +3,12 @@ name: Build and Test
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'artifacts/**'
+      - '.agent/**'
+      - 'deep-test-*.png'
   workflow_dispatch:
     inputs:
       build_all:
@@ -10,6 +16,10 @@ on:
         required: false
         type: boolean
         default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   setup-matrix:
