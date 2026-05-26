@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-26 11:46 EDT
+**Updated:** 2026-05-26 11:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+17aa23abe docs: standardize transition breakdown headers in flowcharts to H2 to pass CI syntax checks
+1afe87ca3 chore: session checkpoint [11:46]
 a23f5fcb6 chore: session checkpoint [11:46]
 c2b349822 chore(workflow): update command manifests and founder configurations
 2c78d6625 chore(workflow): track proceed workflow file
@@ -12,14 +14,13 @@ c2b349822 chore(workflow): update command manifests and founder configurations
 28eb7376a docs: add Firestore E2E offline deadlock pattern to Error Ledger
 17d672430 chore: session checkpoint [11:21]
 adbd369ef perf(ci): implement concurrency cancels and path ignores to conserve GHA minutes
-dfaec2be0 fix(main/security): update CSP policies for reCAPTCHA/AppCheck and indexPath loading routing
-1078b4d6a fix(e2e): fix courtroom and boardroom E2E unseating race conditions and compilation errors
 ```
 
 ## Working State
 ```
  M .agent/checkpoints/antigravity.md
- M docs/flowcharts/core-pipeline-architecture.md
+ M .agent/workflows/WIIL-skill.md
+?? packages/landing/src/App.test.tsx
 ```
 
 ## Decisions
