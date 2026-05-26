@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-26 12:04 EDT
+**Updated:** 2026-05-26 12:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4575a82c0 chore: session checkpoint [12:04]
 a9a26525a chore: session checkpoint [12:01]
 f827e566a chore: session checkpoint [11:56]
 59ddaaea5 chore: session checkpoint [11:52]
@@ -13,7 +14,6 @@ a23f5fcb6 chore: session checkpoint [11:46]
 c2b349822 chore(workflow): update command manifests and founder configurations
 2c78d6625 chore(workflow): track proceed workflow file
 5a73399f0 feat(creative): secure direct generation pipelines and resolve test suite timers
-134eb87d9 docs: add boardroom strategic seating sequence flowchart
 ```
 
 ## Working State
@@ -22,6 +22,8 @@ c2b349822 chore(workflow): update command manifests and founder configurations
  M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/workflows/WIIL-skill.md
  M docs/flowcharts/core-pipeline-architecture.md
+ M packages/firebase/src/config/models.ts
+ M packages/firebase/src/lib/image_generation.test.ts
 ?? .agent/workflows/db-sync.md
 ?? .agent/workflows/skill-skill.md
 ?? docs/flowcharts/database-security-sync.md
