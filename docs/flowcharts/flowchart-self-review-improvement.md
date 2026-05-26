@@ -35,7 +35,7 @@ graph TD
     style I fill:#39FF14,stroke:#228B22,stroke-width:2px
 ```
 
-### Transition Breakdown
+## Step-by-Step Transition Breakdown
 
 1. **Syntax Integrity Verification (`D1 -> E -> C`):** The agent runs a quick regex/lint audit on the generated Mermaid code. If brackets are unclosed, or node IDs have unquoted special characters (e.g. `(`, `)`, `-`), `Phase A` fires to clean syntax before compile.
 2. **Semantic Verification (`D2 -> F -> B`):** The agent reviews the trace. Do nodes hang without inputs or outputs? Does the flow represent a logical request/response cycle? If not, `Phase B` aligns the diagram to match actual directory execution.
