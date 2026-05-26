@@ -8,12 +8,17 @@ This document serves as the single source of truth for all active, approved `/co
 
 ## The Core Pipeline
 
-These three commands form the backbone of the agent's development workflow.
+These four commands form the backbone of the agent's development workflow.
 
 ### `/start` — The Genesis Workflow
 - **Purpose:** Initializes a new session, feature, or prompt.
 - **Actions:** Scans environment, checks handoff states (via `/opp`), asks clarifying questions, and maps macro-level architecture (via `/flowchart`).
 - **When to use:** At the very beginning of any task.
+
+### `/proceed` — The Resume & Audit Gate
+- **Purpose:** Resumes an active task and runs a comprehensive compliance check before editing code.
+- **Actions:** Syncs handoff checkpoints, reviews git diff, runs checks for Anti-Laziness, security keys, model constants, and CSS alignment.
+- **When to use:** Whenever the user says "continue", or when resuming work after an interruption.
 
 ### `/middle` — The Execution Engine
 - **Purpose:** Drives the iterative coding and building process.
