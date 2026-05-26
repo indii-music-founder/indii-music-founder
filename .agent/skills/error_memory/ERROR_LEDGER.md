@@ -1,3 +1,17 @@
+## 2026-05-26 Vitest Fake Timers / waitFor Timeout Pattern (test pipeline hang)
+
+**SEVERITY:** High (causes entire unit test suites to time out at 5000ms and fail)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx`
+- ERROR: `Error: Test timed out in 5000ms.` when using `waitFor` inside tests.
+- CAUSE: When components or hooks schedule asynchronous state transitions via `setTimeout` (such as clearing completed jobs in `activeJobs` list after 3000ms), unit tests must simulate this elapsed time. However, enabling `vi.useFakeTimers()` in a test case without properly advancing the clock, or leaving it active for subsequent tests, causes `testing-library`'s `waitFor` internal polling timers to stall, leading to 5000ms timeouts.
+- FIX: 
+  1. Use `vi.useFakeTimers()` at the start of the specific test needing mock clock manipulation.
+  2. Use `await act(async () => { await vi.advanceTimersByTimeAsync(3010); });` to correctly flush microtasks and advance time.
+  3. Prepend `vi.useRealTimers()` in the global `beforeEach` to guarantee fake timers never leak to other tests.
+- PREVENTION: Never mix `vi.useFakeTimers()` with un-advanced `waitFor` polling loops. Always ensure `vi.useRealTimers()` is invoked in `beforeEach` or `afterEach` to isolate fake timers safely.
+
 ## 2026-05-25 Firestore E2E Client Offline Deadlock (context pipeline hang)
 
 **SEVERITY:** High (blocks entire Conductor prompt routing pipeline and causes infinite E2E timeouts)

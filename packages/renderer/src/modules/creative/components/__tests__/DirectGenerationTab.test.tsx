@@ -16,6 +16,12 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => mockToastObject)
 }));
 
+const mockHttpsCallable = vi.fn(() => vi.fn().mockResolvedValue({ data: { success: true } }));
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(),
+    httpsCallable: () => mockHttpsCallable
+}));
+
 vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
         synthesizeWhiskPrompt: vi.fn((p) => p),
@@ -25,7 +31,22 @@ vi.mock('@/services/WhiskService', () => ({
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: vi.fn()
+        generateVideo: vi.fn(),
+        subscribeToJob: vi.fn((jobId, callback) => {
+            setTimeout(() => {
+                callback({
+                    id: jobId,
+                    status: 'completed',
+                    progress: 100,
+                    videoUrl: 'https://test.com/video.mp4',
+                    output: {
+                        url: 'https://test.com/video.mp4',
+                        metadata: { mime_type: 'video/mp4', quality: 'pro' }
+                    }
+                });
+            }, 10);
+            return () => {};
+        })
     }
 }));
 
@@ -64,6 +85,7 @@ vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
 
 describe('DirectGenerationTab', () => {
     beforeEach(() => {
+        vi.useRealTimers();
         vi.clearAllMocks();
         useMockStore.setState({
             studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
@@ -117,9 +139,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('handles video generation successfully', async () => {
-        const mockVideoResult = [{ id: 'job-123', url: 'https://test.com/video.mp4' }];
-        (VideoGeneration.generateVideo as import("vitest").Mock).mockResolvedValue(mockVideoResult);
-
+        vi.useFakeTimers();
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
 
@@ -132,16 +152,17 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        await waitFor(() => {
-            expect(VideoGeneration.generateVideo).toHaveBeenCalled();
+        expect(mockHttpsCallable).toHaveBeenCalled();
+
+        // Fast-forward all pending timers including the 10ms subscription callback
+        // and the 3000ms job cleanup timer.
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(3010);
         });
 
         // Results grid should show the video
-        // Note: querySelector('video') might be safer if getByRole('video') fails in jsdom
-        await waitFor(() => {
-            const video = document.querySelector('video');
-            expect(video).toBeTruthy();
-        });
+        const video = document.querySelector('video');
+        expect(video).toBeTruthy();
     });
 
     it('displays error message when generation fails', async () => {

@@ -1055,7 +1055,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * from the @google/genai SDK, then polling the returned operation until done.
      * Matches the pattern used by image generation (direct SDK call, no backend proxy).
      */
-    async generateVideo(options: GenerateVideoRequest & { timeoutMs?: number }): Promise<string> {
+    async generateVideo(options: GenerateVideoRequest & { 
+        timeoutMs?: number; 
+        onProgress?: (status: 'queued' | 'processing', attempt: number, maxAttempts: number) => void;
+    }): Promise<string> {
         logger.info('[FirebaseAI] generateVideo() — entering circuit breaker...', {
             model: options.model || '(default)',
             promptLength: options.prompt?.length ?? 0,

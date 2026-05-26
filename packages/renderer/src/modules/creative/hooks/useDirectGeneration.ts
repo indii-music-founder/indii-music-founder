@@ -11,6 +11,9 @@ import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoJob } from '@/types/video';
 import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+
 
 export function useDirectGeneration() {
     const {
@@ -239,13 +242,29 @@ export function useDirectGeneration() {
         const validatedAspectRatio = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
         const effectiveAspectRatio = validatedAspectRatio.success ? validatedAspectRatio.data : '16:9';
 
-        const generated = await VideoGeneration.generateVideo({
+        const jobId = crypto.randomUUID();
+
+        // Immediately add to activeJobs as 'queued' so the card renders in real-time instantly!
+        setActiveJobs(prev => [
+            ...prev,
+            {
+                id: jobId,
+                prompt: localPrompt,
+                status: 'queued' as const,
+                progress: 0
+            }
+        ]);
+        toast.info('Video job queued. Check gallery for progress.');
+
+        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+        await triggerVideoJob({
+            jobId,
             prompt: sequencePrompt,
             resolution: effectiveResolution,
             aspectRatio: effectiveAspectRatio,
             duration: finalDuration,
             durationSeconds: finalDuration,
-            model: studioControls.model, // Will be resolved by FirebaseIntelligenceService
+            model: studioControls.model,
             fps: 24,
             orgId: 'personal', // Force personal for direct test
             referenceImages: [
@@ -257,7 +276,7 @@ export function useDirectGeneration() {
                     }
                     return {
                         image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                        referenceType: 'asset' as const
+                        referenceType: 'ASSET' as const
                     };
                 }),
                 ...ingredientsList.map(ing => {
@@ -268,46 +287,12 @@ export function useDirectGeneration() {
                     }
                     return {
                         image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
-                        referenceType: 'asset' as const
+                        referenceType: 'ASSET' as const
                     };
                 })
             ]
         });
-
-        if (generated && generated.length > 0) {
-            const newItems: HistoryItem[] = generated.map(g => ({
-                id: g.id || crypto.randomUUID(),
-                url: g.url || '', // Might be empty if queued
-                type: 'video' as const,
-                prompt: localPrompt,
-                timestamp: Date.now(),
-                projectId: currentProjectIdRef.current,
-                origin: 'generated' as const
-            }));
-
-            const immediatelyReady = newItems.filter(i => i.url);
-            const queuedJobs = newItems.filter(i => !i.url);
-
-            if (immediatelyReady.length > 0) {
-                setResults(prev => [...immediatelyReady, ...prev]);
-                immediatelyReady.forEach(item => addToHistory({ ...item }));
-                toast.success('Video generated successfully');
-            }
-
-            if (queuedJobs.length > 0) {
-                setActiveJobs(prev => [
-                    ...prev,
-                    ...queuedJobs.map(job => ({
-                        id: job.id,
-                        prompt: job.prompt || localPrompt,
-                        status: 'queued' as const,
-                        progress: 0
-                    }))
-                ]);
-                toast.info('Video job queued. Check gallery for results.');
-            }
-        }
-    }, [studioControls, localPrompt, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
+    }, [studioControls, localPrompt, addToHistory, toast, sequence, bpm, videoInputs?.ingredients, characterReferences]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) {
