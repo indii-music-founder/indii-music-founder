@@ -41,6 +41,10 @@ These five commands form the backbone of the agent's development workflow.
 
 These commands are called by the Core Pipeline or can be invoked directly as needed.
 
+### `/review` — Specialization & Context Alignment
+- **Purpose:** Activates a conversational Q&A loop to review current state, clarify ambiguity, and specialize the agent's persona.
+- **When to use:** Use to set up the agent in a new chat or to pause and review a drifted conversation mid-session.
+
 ### `/opp` — Operator Persona Activation
 - **Purpose:** Comprehensive environment audit and handoff state check.
 - **When to use:** Used automatically by `/start`. Can be run manually if the agent loses context.

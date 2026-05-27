@@ -13,6 +13,7 @@ Before taking any action, analyze the current workspace:
 - Check `git branch` and `git status`. Are we on a clean slate?
 - Review any open files or recently modified files.
 - **Clarification Gate:** If the user's prompt is underspecified, ASK clarifying questions right now to determine *exactly what* needs to be built.
+- **Alignment:** If the task requires deep specialization, invoke **`/review`** to explicitly align on persona and constraints before proceeding.
 
 ## 2. Environment Bootstrap (via `/opp`)
 Invoke the **Operator Persona Activation**:
