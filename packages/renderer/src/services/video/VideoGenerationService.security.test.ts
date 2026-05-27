@@ -7,7 +7,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 // 1. Hoist httpsCallable mock
 const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
-    triggerVideoJob: vi.fn(),
+    generateVideoV3: vi.fn(),
 }));
 
 // 2. Mock Firebase
@@ -30,8 +30,8 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('firebase/functions', () => ({
     httpsCallable: (functionsInstance: any, name: string) => {
         mocks.httpsCallable(name);
-        if (name === 'triggerVideoJob') {
-            return mocks.triggerVideoJob;
+        if (name === 'generateVideoV3') {
+            return mocks.generateVideoV3;
         }
         return vi.fn();
     }
@@ -102,7 +102,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
 describe('🛡️ Shield: Video Generation PII Security Test', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.triggerVideoJob.mockResolvedValue({ data: { jobId: 'job-123' } });
+        mocks.generateVideoV3.mockResolvedValue({ data: { jobId: 'job-123' } });
     });
 
     it('should REDACT Credit Card numbers from prompt before triggering backend generation', async () => {
@@ -118,8 +118,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
-        const callArgs = (AutonomousIntelligence.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(mocks.generateVideoV3).toHaveBeenCalled();
+        const callArgs = mocks.generateVideoV3.mock.calls[0][0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
@@ -140,8 +140,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
-        const callArgs = (AutonomousIntelligence.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(mocks.generateVideoV3).toHaveBeenCalled();
+        const callArgs = mocks.generateVideoV3.mock.calls[0][0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");
