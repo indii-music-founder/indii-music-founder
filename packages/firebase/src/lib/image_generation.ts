@@ -93,21 +93,31 @@ interface GeminiGenerateContentResponse {
 export class GeminiImageService {
     private client: GoogleGenAI | null = null;
 
-    /**
-     * Lazily initializes and returns the Google Gen AI client.
-     * @returns The initialized GoogleGenAI instance.
-     * @throws {functions.https.HttpsError} If the API key is missing or invalid.
-     */
     private getClient(): GoogleGenAI {
         if (!this.client) {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey || apiKey.includes("PLACEHOLDER")) {
-                console.error("[GeminiImageService] Invalid or missing GEMINI_API_KEY. Operations will fail.");
-                throw new functions.https.HttpsError("permission-denied", "Gemini API Key is missing or invalid.");
-            }
+            const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+            const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
 
-            console.log(`[GeminiImageService] Initializing Google Gen AI Client (API_KEY: ${apiKey.substring(0, 4)}...)`);
-            this.client = new GoogleGenAI({ apiKey });
+            if (!isTest && projectId) {
+                // Production environment: Use Vertex AI with ADC (Application Default Credentials)
+                const location = process.env.VERTEX_LOCATION || 'us-central1';
+                console.log(`[GeminiImageService] Initializing with VERTEX AI (Project: ${projectId}, Location: ${location})`);
+                this.client = new GoogleGenAI({
+                    vertexai: true,
+                    project: projectId,
+                    location: location
+                });
+            } else {
+                // Local development / Test: Use Google AI Studio with API key
+                const apiKey = getGeminiApiKey();
+                if (!apiKey || apiKey.includes("PLACEHOLDER")) {
+                    console.error("[GeminiImageService] Invalid or missing GEMINI_API_KEY. Operations will fail.");
+                    throw new functions.https.HttpsError("permission-denied", "Gemini API Key is missing or invalid.");
+                }
+
+                console.log(`[GeminiImageService] Initializing with API KEY (API_KEY: ${apiKey.substring(0, 4)}...)`);
+                this.client = new GoogleGenAI({ apiKey });
+            }
         }
         return this.client;
     }
