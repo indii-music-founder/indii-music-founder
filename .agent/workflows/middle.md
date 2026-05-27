@@ -11,6 +11,7 @@ This command is used during the core build phase to manage iterative execution, 
 ## 1. Smart Execution Analysis
 - Analyze the active `task.md` and `implementation_plan.md` to understand where the execution currently stands.
 - Dynamically decide which tools, sub-agents, or commands are needed for the current iteration.
+- **Context Drift:** If the conversation has drifted or feels misaligned, invoke **`/review`** to pause, summarize progress, and explicitly realign with the user.
 
 ## 2. Recursive Execution Loop (via `/go`)
 Invoke the **Recursive Execution Loop**:
