@@ -143,7 +143,7 @@ export const createFirebaseMock = () => {
     };
 
     return {
-        app: { name: '[DEFAULT]', options: {}, delete: vi.fn().mockResolvedValue(undefined) },
+        app: { name: '[DEFAULT]', options: { storageBucket: 'mock-bucket.appspot.com' }, delete: vi.fn().mockResolvedValue(undefined) },
         auth: mockAuth,
         db: mockFirestore,
         firestore: mockFirestore, // Alias
