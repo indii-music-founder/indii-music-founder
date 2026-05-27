@@ -19,10 +19,11 @@ graph TD
     end
 
     subgraph Service_Proxy_Layer ["2. Client Service Proxy Layer"]
-        DirectImg["DirectImageGenerator.ts"]
+        CreativeStore["CreativeStorageService.ts (Base64 to gs:// URIs)"]
+        DirectImg["ImageGenerationService.ts"]
         VideoGen["VideoGenerationService.ts"]
         HttpCallImg["httpsCallable: generateImageV3"]
-        HttpCallVid["httpsCallable: triggerVideoJob"]
+        HttpCallVid["httpsCallable: generateVideoV3"]
     end
 
     subgraph Firebase_Cloud_Layer ["3. Authenticated Cloud Gateway"]
@@ -51,12 +52,15 @@ graph TD
     ActiveJobs -- "2. Immediate loader render" --> Gallery
     
     %% Image Pipeline path
-    Hook -- "Image mode: trigger" --> DirectImg
+    Hook -- "Image mode: trigger" --> CreativeStore
+    CreativeStore -- "1. Upload ref -> gs://" --> DirectImg
     DirectImg -- "No client-side key used" --> HttpCallImg
     HttpCallImg --> AuthCheck
     
     %% Video Pipeline path
-    Hook -- "Video mode: trigger" --> HttpCallVid
+    Hook -- "Video mode: trigger" --> CreativeStore
+    CreativeStore -- "1. Upload ref -> gs://" --> VideoGen
+    VideoGen -- "Video mode: generate" --> HttpCallVid
     HttpCallVid --> AuthCheck
     
     %% Cloud Gateways
@@ -111,9 +115,10 @@ graph TD
 * **Trigger:** When the user clicks the "Generate" button within `DirectGenerationTab.tsx`, execution is delegated to the `useDirectGeneration` hook's handlers.
 * **UX Optimistic Update:** A unique `jobId` is instantly allocated on the client side using `crypto.randomUUID()`. The hook pushes a mock job record with `{ id: jobId, status: 'queued', progress: 0 }` to the local React component state (`activeJobs`), which triggers the immediate visual rendering of a premium glassmorphic loader card in the canvas gallery.
 
-### 2. Client-Side Proxy Service Call
-* **Image Path:** The generator redirects the payload to `DirectImageGenerator.ts` which invokes `httpsCallable(functions, 'generateImageV3')`. It passes the prompt, aspect ratio, model tier, and configuration parameters.
-* **Video Path:** The hook bypasses direct client-side generation and immediately invokes `httpsCallable(functions, 'triggerVideoJob')`. It formats the payload to strictly satisfy the server's `VideoJobSchema` rules, passing along `jobId`, the enriched timeline sequence prompt, resolutions, duration, and reference/ingredient byte structures.
+### 2. Client-Side Proxy Service Call & Storage Pre-Upload
+* **Pre-Upload Optimization:** To avoid passing massive base64 payloads through HTTPS callable connections, both image and video modes utilize `CreativeStorageService.uploadReferenceMedia` first. This service converts raw base64 reference images into deterministic `gs://` URIs by uploading them securely to Firebase Storage.
+* **Image Path:** The generator redirects the payload to `ImageGenerationService.ts` which invokes `httpsCallable(functions, 'generateImageV3')`. It passes the prompt, aspect ratio, model tier, configuration parameters, and the newly acquired `referenceUri` (gs:// format).
+* **Video Path:** The hook bypasses direct client-side generation and immediately invokes `httpsCallable(functions, 'generateVideoV3')`. It formats the payload to strictly satisfy the server's `VideoJobSchema` rules, passing along the `firstFrameUri` (gs:// format) instead of inline bytes, along with the prompt and parameters.
 
 ### 3. Server-Side Security & Token Verification (Cloud Layer)
 * **Auth & App Check:** The Cloud Function verifies that the Firebase ID token is valid and refreshed, blocking all unauthorized access. 
