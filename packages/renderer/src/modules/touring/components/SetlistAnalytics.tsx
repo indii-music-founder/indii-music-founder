@@ -132,7 +132,7 @@ export function SetlistAnalytics() {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setCategory(defaultCat);
             // Default first track to align with category
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             setSongs([{ id: generateId(), title: '', type: defaultCat === 'dj' ? 'original' : 'original' }]);
         }
     }, [userProfile]);
@@ -171,18 +171,18 @@ export function SetlistAnalytics() {
                     });
                 });
                 setPerformances(loaded);
-                // eslint-disable-next-line react-hooks/set-state-in-effect
+                 
                 setLoading(false);
             }, (error) => {
                 logger.error('[SetlistAnalytics] Firestore subscription failed:', error);
-                // eslint-disable-next-line react-hooks/set-state-in-effect
+                 
                 setLoading(false);
             });
 
             return () => unsubscribe();
         } catch (err) {
             logger.error('[SetlistAnalytics] Failed to setup Firestore connection:', err);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             setLoading(false);
         }
     }, [userProfile]);

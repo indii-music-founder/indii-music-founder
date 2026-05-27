@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock electron before importing PythonBridge

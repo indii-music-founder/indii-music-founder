@@ -513,3 +513,14 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
    - ERROR: Room or swarm E2E execution tests fail or timeout because the test is offline/mocked, but code makes real Firestore writes to `agent_tasks` and `progress`.
    - ROOT CAUSE: Unmocked firestore references in `AgentExecutor` and `TraceService` were attempting to connect to external servers or make unintercepted API calls during Playwright runs.
    - FIX: Added `isE2EMode` utility checks checking `window.FIREBASE_E2E_MOCK` and `localStorage.getItem('FIREBASE_E2E_MOCK')` to immediately return mocked UUIDs or early returns, preventing any real firestore connection during testing.
+
+## 2026-05-27 Vite manualChunks Cyclic Dependency (React forwardRef crash)
+
+**SEVERITY:** Critical (causes complete white screen crash on app load in production builds)
+
+**MISTAKE:**
+- FILE: `electron.vite.config.ts`
+- ERROR: `TypeError: Cannot read properties of undefined (reading 'forwardRef')` inside chunked files (like `vendor-motion.js` or `vendor-three.js`) upon application boot.
+- CAUSE: Aggressive chunk splitting in `manualChunks` separated React-reliant heavy libraries (e.g. `@remotion`, `@react-three`) from the core `react` / `react-dom` chunks. Due to how Vite/Rollup resolved the import graph, the separated libraries attempted to initialize and call `React.forwardRef` before the core `react` chunk had finished loading into the browser context.
+- FIX: Grouped `@remotion` and `@react-three` explicitly into a `vendor-react` chunk alongside `react`, `react-dom`, and `react-router`, forcing Vite to bundle the core reconciler and these dependent libraries together in the correct loading order.
+- PREVENTION: When creating `manualChunks` in Vite, never split UI libraries that heavily depend on React internals into separate chunks unless `react` itself is guaranteed to be in the shared vendor chunk and hoisted properly. Group highly entangled dependencies together.

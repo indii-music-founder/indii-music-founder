@@ -16,6 +16,13 @@ service firebase.storage {
         request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
     }
 
+    // Check if user is a guest explorer (either unauthenticated, signed in anonymously, or using founder-demo-uid)
+    function isGuest() {
+      return request.auth == null || 
+             (request.auth.token.firebase.sign_in_provider == 'anonymous') || 
+             request.auth.uid == 'founder-demo-uid';
+    }
+
     // File size limits (in bytes)
     function isUnderSizeLimit(maxMB) {
       return request.resource.size < maxMB * 1024 * 1024;
@@ -59,6 +66,16 @@ service firebase.storage {
                       request.auth.uid == userId &&
                       isUnderSizeLimit(500) &&
                       isAllowedMediaType();
+    }
+
+    // Creative Suite thin client asset uploads
+    match /creative/{userId}/{allPaths=**} {
+      // Owner can read their own uploaded assets and results
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid');
+      // Owner can upload reference media
+      allow write: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
+                      isUnderSizeLimit(100) && // limit references to 100MB
+                      (isImageType() || isVideoType() || isAudioType());
     }
 
     // ========================================
