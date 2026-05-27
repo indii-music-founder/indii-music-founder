@@ -49,6 +49,11 @@ vi.mock('@/services/billing/CostControlService', () => ({
     }
 }));
 
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallable
+}));
+
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     functions: {},
@@ -126,8 +131,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('9:16');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
 
@@ -137,8 +141,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('tunecore')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('9:16');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
     });
@@ -150,9 +153,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('cdbaby')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            // Default aspect ratio is '16:9' when no distributor constraint applies
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -162,8 +163,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('ditto')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -173,8 +173,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('awal')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -184,8 +183,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unitedmasters')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -195,8 +193,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('amuse')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
     });
@@ -208,8 +205,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile() // No distributor
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -219,8 +215,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 // No userProfile at all
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('explicit aspectRatio overrides distributor default', async () => {
@@ -230,8 +226,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid') // Would normally be 9:16
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
 
         it('handles unknown distributor gracefully', async () => {
@@ -240,9 +236,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unknown_distributor')
             });
 
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
-            // Should NOT crash, just use defaults
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
     });
 

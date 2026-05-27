@@ -16,10 +16,37 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => mockToastObject)
 }));
 
-const mockHttpsCallable = vi.fn(() => vi.fn().mockResolvedValue({ data: { success: true } }));
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(),
     httpsCallable: () => mockHttpsCallable
+}));
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(),
+        onSnapshot: vi.fn((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    data: () => ({
+                        status: 'completed',
+                        progress: 100,
+                        resultUri: 'https://test.com/video.mp4'
+                    })
+                });
+            }, 10);
+            return () => {};
+        })
+    };
+});
+
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    getDownloadURL: vi.fn().mockResolvedValue('https://test.com/video.mp4')
 }));
 
 vi.mock('@/services/WhiskService', () => ({
@@ -118,10 +145,13 @@ describe('DirectGenerationTab', () => {
     });
 
     it('handles image generation successfully', async () => {
-        const { generateImageDirectly } = await import('@/services/intelligence/generators/DirectImageGenerator');
-        (generateImageDirectly as import("vitest").Mock).mockResolvedValue(['data:image/png;base64,test']);
-
+        vi.useFakeTimers();
         render(<DirectGenerationTab />);
+        
+        // Ensure image mode is selected
+        const imageBtn = screen.getByTestId('direct-image-mode-btn');
+        fireEvent.click(imageBtn);
+        
         const input = screen.getByTestId('direct-prompt-input');
         const generateBtn = screen.getByTestId('direct-generate-btn');
 
@@ -131,11 +161,15 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        await waitFor(() => {
-            expect(generateImageDirectly).toHaveBeenCalled();
+        expect(mockHttpsCallable).toHaveBeenCalled();
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(3010);
         });
 
-        expect(screen.getByRole('img')).toBeDefined();
+        // Results grid should show the image
+        const img = document.querySelector('img');
+        expect(img).toBeTruthy();
     });
 
     it('handles video generation successfully', async () => {
@@ -166,8 +200,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('displays error message when generation fails', async () => {
-        const { generateImageDirectly } = await import('@/services/intelligence/generators/DirectImageGenerator');
-        (generateImageDirectly as import("vitest").Mock).mockRejectedValue(new Error('API Timeout'));
+        mockHttpsCallable.mockRejectedValueOnce(new Error('API Error'));
 
         const mockToast = useToast();
 
@@ -179,7 +212,7 @@ describe('DirectGenerationTab', () => {
         });
 
         await waitFor(() => {
-            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: API Timeout');
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: API Error');
         });
     });
 });
