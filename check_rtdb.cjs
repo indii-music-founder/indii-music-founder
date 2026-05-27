@@ -6,7 +6,7 @@ async function check() {
   console.log('Checking default database...');
   const appDefault = admin.initializeApp({
     credential: admin.credential.cert(oldKeyPath),
-    databaseURL: 'https://indiios-v-1-1-default-rtdb.firebaseio.com'
+    databaseURL: 'https://indii-music-founder-default-rtdb.firebaseio.com'
   }, 'defaultApp');
   
   try {

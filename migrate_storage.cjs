@@ -3,7 +3,7 @@ const { Storage } = require('@google-cloud/storage');
 const oldKeyPath = '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/99d0961b-4202-4447-b399-80811b7e0228/scratch/old_project_key.json';
 const newKeyPath = '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/99d0961b-4202-4447-b399-80811b7e0228/scratch/new_project_key.json';
 
-const srcBucketName = 'indiios-v-1-1.firebasestorage.app';
+const srcBucketName = 'indii-music-founder.firebasestorage.app';
 const destBucketName = 'indii-music-assets';
 
 async function migrate() {
