@@ -28,6 +28,7 @@ vi.mock("firebase/storage", () => ({
     getStorage: vi.fn(),
     ref: vi.fn(),
     uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    uploadBytes: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
     getDownloadURL: vi.fn().mockResolvedValue('gs://mock-bucket/mock-file')
 }));
 

@@ -476,6 +476,17 @@ Every code change, review, and agent-authored diff must meet the standards in th
 
 Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
 
+### 7. ASSET DELETION & PRUNING FAIL-SAFE (STRICT)
+
+> Never suggest deleting skills, workflows, or files simply because they do not appear in a manifest.
+
+Before suggesting the deletion or pruning of any tool, plugin, skill, or workflow to save context tokens, you MUST:
+1. **Check for prefixes:** Files/folders prefixed with `indii-` (e.g., `indii-cinema-worldbuilder`, `indii-director`) are explicitly built for this platform.
+2. **Check restricted zones:** Treat all files within `.agent/skills/`, `.agent/workflows/`, and `execution/` as MISSION CRITICAL by default.
+3. **Ask before acting:** Explicitly ask the user "What is [asset] used for?" before ever classifying it as obsolete or suggesting removal.
+
+Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds for deletion.
+
 ---
 
 ## Key Files Quick Reference

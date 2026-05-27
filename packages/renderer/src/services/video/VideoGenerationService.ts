@@ -320,6 +320,12 @@ export class VideoGenerationService {
         }
         const userId = currentUser.uid;
 
+        const quotaCheck = await this.checkVideoQuota();
+        if (!quotaCheck.canGenerate) {
+            const tierInfo = await subscriptionService.getCurrentSubscription();
+            throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
+        }
+
         logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
             promptPreview: options.prompt.substring(0, 100),
             userId,

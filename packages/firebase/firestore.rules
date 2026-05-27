@@ -55,10 +55,10 @@ service cloud.firestore {
     // =========================================================================
     match /users/{userId} {
       // Users can read their own profile
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isPublicProfile() || (isGuest() && userId == 'founder-demo-uid');
 
       // Users can create their own profile
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
 
       // Users can update their own profile with validation
       allow update: if isOwner(userId) &&
@@ -68,6 +68,12 @@ service cloud.firestore {
 
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
+
+      // ── User Stats (Dashboard Analytics) ──────────────────────────
+      match /stats/{statId} {
+        allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
+        allow write: if false; // Stats should be updated via backend functions
+      }
 
       // ── Memory Inbox (agent handshake requests) ──────────────────────────
       match /memoryInbox/{itemId} {
@@ -208,21 +214,21 @@ service cloud.firestore {
     // Organizations
     // =========================================================================
     match /organizations/{orgId} {
-      // Members can read org data
-      allow read: if isOrgMember(orgId);
+      // Members can read org data. Do NOT use get() here to allow query execution.
+      allow read: if (isAuthenticated() && request.auth.uid in resource.data.members) || isGuest();
       
       // Authenticated users with email can create orgs
-      allow create: if isEmailAuthenticated() &&
+      allow create: if (isEmailAuthenticated() &&
         request.resource.data.ownerId == request.auth.uid &&
-        request.auth.uid in request.resource.data.members;
+        request.auth.uid in request.resource.data.members) || isGuest();
       
       // Only org owner can update
-      allow update: if isOrgOwner(orgId) &&
+      allow update: if (isAuthenticated() && resource.data.ownerId == request.auth.uid &&
         // Cannot change owner without explicit transfer
-        request.resource.data.ownerId == resource.data.ownerId;
+        request.resource.data.ownerId == resource.data.ownerId) || isGuest();
       
       // Only org owner can delete
-      allow delete: if isOrgOwner(orgId);
+      allow delete: if (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isGuest();
       
       // Projects subcollection
       match /projects/{projectId} {
@@ -246,7 +252,7 @@ service cloud.firestore {
     // Follow relationships
     match /social_follows/{followId} {
       // Anyone can read follow relationships (public social graph)
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       
       // Users can create follows where they are the follower
       allow create: if isAuthenticated() &&
@@ -265,7 +271,7 @@ service cloud.firestore {
     // Activity feed items
     match /social_activity/{activityId} {
       // Anyone authenticated can read activity (for feeds)
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       
       // Users can create activity for themselves
       allow create: if isAuthenticated() &&
@@ -284,7 +290,7 @@ service cloud.firestore {
     // User social stats (follower/following counts)
     match /social_stats/{userId} {
       // Public read for profile display
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       
       // Initial stats can be created by the user
       allow create: if isOwner(userId);
@@ -301,7 +307,7 @@ service cloud.firestore {
     // Products / Marketplace listings
     match /products/{productId} {
       // Anyone authenticated can browse products
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       
       // Sellers can create products
       allow create: if isAuthenticated() &&
@@ -325,9 +331,10 @@ service cloud.firestore {
     // Transactions / Purchase records
     match /transactions/{transactionId} {
       // Users can read their own transactions (as buyer or seller)
-      allow read: if isAuthenticated() &&
+      allow read: if (isAuthenticated() &&
         (resource.data.buyerId == request.auth.uid || 
-         resource.data.sellerId == request.auth.uid);
+         resource.data.sellerId == request.auth.uid)) ||
+         (isGuest() && (resource.data.buyerId == 'founder-demo-uid' || resource.data.sellerId == 'founder-demo-uid'));
       
       // Buyers can create transactions (initiate purchase)
       allow create: if isAuthenticated() &&
@@ -376,7 +383,7 @@ service cloud.firestore {
     // Seller stats/profiles
     match /seller_stats/{userId} {
       // Public read for marketplace display
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       
       // Only the seller can initialize
       allow create: if isOwner(userId);
@@ -586,31 +593,31 @@ service cloud.firestore {
       allow update, delete: if false; // immutable audit logs
     }
     match /distribution_tasks/{taskId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /distribution_takedowns/{releaseId}/{allPaths=**} {
-      allow read: if isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /isrc_pool/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       allow create, update, delete: if false;
     }
     match /isrc_registry/{docId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() || isGuest();
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update, delete: if false;
     }
     match /upc_pool/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       allow create, update, delete: if false;
     }
     match /upc_registry/{docId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() || isGuest();
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update, delete: if false;
     }
     match /campaigns/{campaignId} {
@@ -659,12 +666,12 @@ service cloud.firestore {
       allow create: if (isAuthenticated() && request.resource.data.authorId == request.auth.uid) || (isGuest() && request.resource.data.authorId == 'founder-demo-uid');
     }
     match /legal_audit_ledger/{auditId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update, delete: if false;
     }
     match /legal_templates/{templateId}/{allPaths=**} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || isGuest();
       allow write: if isAdmin();
     }
     match /expenses/{expenseId} {
@@ -674,6 +681,14 @@ service cloud.firestore {
     match /earnings/{earningId} {
       allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.labelId == request.auth.uid)) || (isGuest() && (resource.data.userId == 'founder-demo-uid' || resource.data.labelId == 'founder-demo-uid'));
       allow write: if false;
+    }
+    match /revenue/{revenueId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /manufacture_requests/{requestId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
     match /payouts/{payoutId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');

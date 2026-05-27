@@ -7,7 +7,7 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary, NearbyPlace, FuelLogistics, LogisticsReport, EmergencyContact } from './types';
+import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics, LogisticsReport, EmergencyContact } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
@@ -293,10 +293,21 @@ const RoadManager: React.FC = () => {
         try {
             const generateItinerary = httpsCallable(functions, 'generateItinerary');
             const response = await generateItinerary({ locations, dates: { start: startDate, end: endDate } });
-            const result = response.data as Itinerary;
+            const rawResult = response.data as any;
+
+            const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
+                city: stop.city || '',
+                date: stop.date || '',
+                venue: stop.venue || '',
+                activity: stop.activity || '',
+                type: stop.type || 'Travel',
+                notes: stop.notes || '',
+            }));
 
             await saveItinerary({
-                ...result,
+                stops: mappedStops,
+                totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : '0 miles',
+                estimatedBudget: 'TBD',
                 tourName: `Tour ${startDate} - ${locations[0]}`
             });
 
