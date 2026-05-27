@@ -51,6 +51,7 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('../firebase', () => ({
     functionsWest1: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn(() => mocks.httpsCallableFn) })) },
     db: {},
     auth: mocks.auth,
     remoteConfig: {},
