@@ -24,6 +24,13 @@ vi.mock("firebase/functions", () => ({
   httpsCallable: vi.fn(),
 }));
 
+vi.mock("firebase/storage", () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    getDownloadURL: vi.fn().mockResolvedValue('gs://mock-bucket/mock-file')
+}));
+
 vi.mock("@/services/intelligence/AutonomousIntelligence", () => ({
   AutonomousIntelligence: {
     generateContent: vi.fn(),
