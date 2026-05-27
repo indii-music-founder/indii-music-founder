@@ -17,8 +17,8 @@ vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     db: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
-    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn(() => vi.fn()) })) },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -35,13 +35,15 @@ vi.mock('@/core/store', () => ({
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
         canPerformAction: vi.fn()
+    ,
+        getCurrentSubscription: vi.fn().mockResolvedValue({ tier: 'pro' })
     }
 }));
 
 // Mock Firebase Functions
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(),
-    httpsCallable: vi.fn()
+    httpsCallable: vi.fn(() => vi.fn())
 }));
 
 // Mock Firebase Autonomous (used in analyzeTemporalContext)
@@ -88,7 +90,7 @@ describe('VideoGenerationService (Ledger Circuit Breaker)', () => {
 
         // 3. Verification: Expect Error & No Spending
         await expect(VideoGeneration.generateVideo(options)).rejects.toThrow(
-            'Quota exceeded: Circuit Breaker Active: Monthly limit reached.'
+            'Quota exceeded: video_duration. Circuit Breaker Active: Monthly limit reached.'
         );
 
         console.log('   ✅ Circuit Breaker tripped successfully.');

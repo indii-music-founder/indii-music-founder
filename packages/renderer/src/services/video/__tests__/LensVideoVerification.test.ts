@@ -46,6 +46,10 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     }
 }));
 
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
+}));
+
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
@@ -206,6 +210,10 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
             // Use real timers for generateVideo (no onSnapshot-based job waiting)
             vi.useRealTimers();
 
+            const { httpsCallable } = await import('firebase/functions');
+            const mockGenerateVideoV3 = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+            vi.mocked(httpsCallable).mockReturnValue(mockGenerateVideoV3 as any);
+
             await VideoGeneration.generateVideo({
                 prompt: 'A Cyberpunk city',
                 cameraMovement: 'Pan Right',
@@ -213,8 +221,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 fps: 24
             });
 
-            // Inspect the call to AutonomousIntelligence.generateVideo (direct SDK path)
-            const callArgs = vi!.mocked(AutonomousIntelligence.generateVideo).mock.calls[0]![0];
+            // Inspect the call to httpsCallable's returned function
+            const callArgs = mockGenerateVideoV3.mock.calls[0]![0];
 
             // Verify camera movement enrichment
             expect(callArgs.prompt).toContain('cinematic pan right camera movement');
