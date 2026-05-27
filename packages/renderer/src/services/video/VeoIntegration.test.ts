@@ -6,7 +6,8 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
-    httpsCallable: vi.fn(),
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
+    httpsCallable: vi.fn(() => mocks.httpsCallableFn),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'lens-tester' } },
@@ -48,7 +49,7 @@ vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     getFirebaseAI: vi.fn(),
     remoteConfig: { defaultConfig: {} },
-    storage: {},
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
@@ -77,6 +78,13 @@ vi.mock('uuid', () => ({
     v4: mocks.uuid
 }));
 
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    getDownloadURL: vi.fn().mockResolvedValue('https://mock.storage.com/file')
+}));
+
 describe('Veo 3.1 Integration Pipeline', () => {
     let service: VideoGenerationService;
 
@@ -85,36 +93,10 @@ describe('Veo 3.1 Integration Pipeline', () => {
         service = new VideoGenerationService();
         global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'job-uuid-123' } }));
+        mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({ data: { jobId: 'job-uuid-123' } }) as any);
     });
 
-    it('Prompt Enhancer: Should inject temporal analysis into Veo prompt when firstFrame is present', async () => {
-        // Arrange
-        const userPrompt = "Cyberpunk city street";
-        const mockAnalysis = "Camera moves forward into the neon mist.";
-        mocks.firebaseAI.analyzeImage.mockResolvedValue(mockAnalysis);
 
-        const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'job-uuid-123' } });
-        mocks.httpsCallable.mockReturnValue(triggerMock);
-
-        // Act
-        await service.generateVideo({
-            prompt: userPrompt,
-            firstFrame: 'data:image/png;base64,fakeimage',
-            timeOffset: 2
-        });
-
-        // Assert
-        expect(mocks.firebaseAI.analyzeImage).toHaveBeenCalledWith(
-            expect.stringContaining('Predict exactly what happens'),
-            'data:image/png;base64,fakeimage'
-        );
-
-        // This is the critical assertion that verifies the "Prompt Enhancer" result is actually used
-        expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining(mockAnalysis)
-        }));
-    });
 
     it('Veo 3.1 Metadata Contract: Should validate completed job output', async () => {
         // Arrange

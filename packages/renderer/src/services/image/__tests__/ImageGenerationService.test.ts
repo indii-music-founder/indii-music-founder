@@ -15,7 +15,7 @@ vi.mock("@/services/firebase", () => ({
     }
   },
   remoteConfig: {},
-  storage: {},
+  storage: { app: { options: { storageBucket: 'mock-bucket' } } },
   db: {},
   ai: {},
 }));
