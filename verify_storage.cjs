@@ -20,8 +20,8 @@ async function verify() {
   const expectedFiles = [];
   for (const line of fileLines) {
     const cleanLine = line.replace(/^\d+:\s*/, '').trim();
-    if (cleanLine.startsWith('gs://indiios-v-1-1.firebasestorage.app/')) {
-      const filePath = cleanLine.substring('gs://indiios-v-1-1.firebasestorage.app/'.length);
+    if (cleanLine.startsWith('gs://indii-music-founder.firebasestorage.app/')) {
+      const filePath = cleanLine.substring('gs://indii-music-founder.firebasestorage.app/'.length);
       if (filePath && !filePath.endsWith('/') && !filePath.endsWith('/:') && filePath !== ':') {
         expectedFiles.push(filePath);
       }
