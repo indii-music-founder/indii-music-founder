@@ -153,8 +153,7 @@ export default defineConfig({
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
-                        // React ecosystem: MUST include anything that imports react-reconciler
-                        // or scheduler (e.g. @react-three/fiber, remotion) to avoid runtime crashes.
+                        // React ecosystem: core React runtime strictly isolated to prevent circular ESM imports
                         if (
                             pkg === 'react' ||
                             pkg === 'react-dom' ||
@@ -162,12 +161,7 @@ export default defineConfig({
                             pkg === 'react-router-dom' ||
                             pkg === '@remix-run/router' ||
                             pkg === 'scheduler' ||
-                            pkg === 'react-is' ||
-                            pkg === 'remotion' ||
-                            pkg.startsWith('@remotion/') ||
-                            pkg.startsWith('@react-three/') ||
-                            pkg === 'react-spring' ||
-                            pkg.startsWith('@react-spring/')
+                            pkg === 'react-is'
                         ) {
                             return 'vendor-react';
                         }
