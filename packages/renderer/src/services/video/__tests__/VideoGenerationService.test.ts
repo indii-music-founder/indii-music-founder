@@ -4,6 +4,12 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn().mockResolvedValue('gs://mock-bucket/mock-uri')
+    }
+}));
+
 // Mock dependencies
 vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -36,6 +42,11 @@ vi.mock('@/services/firebase', () => ({
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
+}));
+
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallable
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
@@ -106,10 +117,10 @@ describe('VideoGenerationService', () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0]!.id).toBeDefined();
-            expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
-            // Verify it calls the direct SDK path, not Cloud Functions
-            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
+            expect(result[0]!.id).toBe('mock-job-id');
+            expect(result[0]!.url).toBe('');
+            // Verify it calls the Cloud Functions, not direct SDK path
+            expect(mockHttpsCallable).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -123,13 +134,14 @@ describe('VideoGenerationService', () => {
                 .rejects.toThrow(/Quota exceeded/);
         });
 
-        it('should analyze temporal context when firstFrame is provided', async () => {
+        it('should upload firstFrame as reference media', async () => {
             await VideoGeneration.generateVideo({
                 prompt: 'test video',
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(AutonomousIntelligence.analyzeImage).toHaveBeenCalled();
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {

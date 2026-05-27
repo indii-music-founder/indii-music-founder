@@ -119,10 +119,11 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
 
         // Assert
         expect(mocks.generateVideoV3).toHaveBeenCalled();
-        const callArgs = mocks.generateVideoV3.mock.calls[0][0];
+        const callArgs = mocks.generateVideoV3.mock.calls[0]![0];
 
-        expect(callArgs.prompt).toMatch(expectedRedactedPattern);
-        expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
+        expect(callArgs).toBeDefined();
+        expect(callArgs?.prompt).toMatch(expectedRedactedPattern);
+        expect(callArgs?.prompt).not.toContain("4111 1111 1111 1111");
 
         console.log("Captured Prompt Payload:", callArgs.prompt);
     });
@@ -141,9 +142,10 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
 
         // Assert
         expect(mocks.generateVideoV3).toHaveBeenCalled();
-        const callArgs = mocks.generateVideoV3.mock.calls[0][0];
+        const callArgs = mocks.generateVideoV3.mock.calls[0]![0];
 
-        expect(callArgs.prompt).toMatch(expectedRedactedPattern);
-        expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");
+        expect(callArgs).toBeDefined();
+        expect(callArgs?.prompt).toMatch(expectedRedactedPattern);
+        expect(callArgs?.prompt).not.toContain("SuperSecretPassword123!");
     });
 });
