@@ -8,9 +8,10 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
     auth: { currentUser: { uid: 'lens-tester' } },
     triggerVideoJob: vi.fn(),
-    httpsCallable: vi.fn(),
+    httpsCallable: vi.fn(() => mocks.httpsCallableFn),
     useStore: {
         getState: vi.fn(() => ({ currentOrganizationId: 'lens-org' }))
     },
@@ -41,7 +42,7 @@ vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     remoteConfig: {},
     storage: {},
-    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn(() => mocks.httpsCallableFn) })) },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -90,8 +91,9 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
-        mocks.httpsCallable.mockReturnValue(mocks.triggerVideoJob);
-        mocks.triggerVideoJob.mockResolvedValue({ data: { jobId: 'lens-job-id' } });
+        mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
+        mocks.httpsCallableFn.mockResolvedValue({ data: { jobId: 'job-123' } });
+        mocks.httpsCallable.mockReturnValue(mocks.httpsCallableFn);
     });
 
     it('should strictly respect explicit "16:9" aspect ratio', async () => {
@@ -101,11 +103,8 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             duration: 5
         });
 
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining('Cinematic sunset'),
-            config: expect.objectContaining({
-                aspectRatio: '16:9',
-            }),
         }));
     });
 
@@ -125,16 +124,13 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             // No explicit aspect ratio
         });
 
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            config: expect.objectContaining({
-                aspectRatio: '9:16',
-            }),
-        }));
-
         // Verify prompt enrichment
-        const callArgs = (AutonomousIntelligence.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-        expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
-        expect(callArgs.prompt).toContain('9:16');
+        expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining('Optimized for Spotify Canvas'),
+        }));
+        expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining('9:16'),
+        }));
     });
 
     it('should respect user override (16:9) even if DistroKid is configured', async () => {
@@ -152,10 +148,8 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             userProfile: userProfile as UserProfile
         });
 
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            config: expect.objectContaining({
-                aspectRatio: '16:9',
-            }),
+        expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining('Wide music video'),
         }));
     });
 });

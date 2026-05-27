@@ -285,7 +285,7 @@ export function useDirectGeneration() {
             } else if (errObj?.code === 'resource-exhausted') {
                 toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
             } else {
-                toast.error(`Generation failed: \${errMessage || 'Unknown error'}`);
+                toast.error(`Generation failed: ${errMessage || 'Unknown error'}`);
             }
         } finally {
             setIsGenerating(false);
