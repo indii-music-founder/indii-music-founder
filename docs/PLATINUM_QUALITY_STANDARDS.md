@@ -82,6 +82,7 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 ## Pitfall Library (Pragmatic Rules)
 
+- **Terminology & IP Protection (CRITICAL):** Never refer to the central orchestrator as "Agent Zero" or "AgentZero". It is 100% proprietary IP owned by New Detroit Music LLC, officially branded as the **indii Conductor** (or **Conductor**). Block any external/competitor framework terminology from prompt generation, comments, and documentation.
 - **Regex:** Prefer `(?:foo)?` (optional literal) over `foo?` (optional last char).
 - **Stale Chunks:** `window.location.reload()` is the ONLY valid recovery for dynamic import failures.
 - **Vitest:** `vi.stubGlobal('crypto', undefined)` leaves the property existing. `Reflect.deleteProperty(globalThis, 'crypto')` removes it entirely. Know the difference.
