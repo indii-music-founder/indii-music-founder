@@ -17,7 +17,7 @@ All notable changes to indii are documented in this file.
 ### Bug Fixes
 
 * **billing:** integrate cost control and fix runaway vulnerability ([accda2e](https://github.com/indii-music/indiiOS-Clean/commit/accda2e2ffa8da43a9e7b53a6b30a464f721b9cd))
-* **ci:** add firebase targets for indiios-v-1-1 to fix deployment failure ([aa690d4](https://github.com/indii-music/indiiOS-Clean/commit/aa690d48dfbfb58a149967fd33a30a26e42b6008))
+* **ci:** add firebase targets for indii-music-founder to fix deployment failure ([aa690d4](https://github.com/indii-music/indiiOS-Clean/commit/aa690d48dfbfb58a149967fd33a30a26e42b6008))
 * **ci:** harden firebase identifiers in deploy.yml to resolve E2E failures ([111f404](https://github.com/indii-music/indiiOS-Clean/commit/111f4040454402755ff40569c4f4183b89b5541b))
 * **ci:** resolve stripe resolution error and stabilize dependency hoisting ([c1c12fb](https://github.com/indii-music/indiiOS-Clean/commit/c1c12fbc1d67989b2115d998289a71e3b181da4d))
 * **creative:** stabilize test suite regressions ([bbbab00](https://github.com/indii-music/indiiOS-Clean/commit/bbbab0035587ef08f6cc86d7f0c21c1107250df9))
