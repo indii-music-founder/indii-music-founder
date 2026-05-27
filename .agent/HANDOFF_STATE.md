@@ -1,72 +1,37 @@
 # Handoff State
-**Updated:** 2026-05-27 03:27 EDT
+**Updated:** 2026-05-27 17:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7fea8a17c fix(build): resolve ESM circular imports by isolating core React runtime in manualChunks
+90507766c fix(test): Resolve cross-test mock pollution on ../firebase
+196a1d0b3 fix(ci): Resolve CI deployment issues and App Check CORS blocks
+d8e9e213b fix(video): resolve missing functions mock in LensVeoAspectRatio test and add get_resized_image_variants tool
+e5a01126c test: add uploadBytes to firebase/storage mocks to fix CI failure
+4a0bee707 test: mock firebase/storage in ImageGenerationService tests
+1042b50ef test: fix httpsCallable mock typecheck and syntax errors
+51a29269e docs: update secure isolation flowchart and error ledger for generateVideoV3 migration
+bb5708be0 chore: session checkpoint [03:27]
 dde6ba840 chore: session checkpoint [01:16]
-6cac998fd test(creative): fix test suites to reflect V3 thin client migration pattern
-6e5bb33e0 feat(creative): migrate to thin client architecture
-88ef83910 feat(api): implement Creative Suite API Gateway for 5-API Waterfall using ADC and Thin Client protocol
-815ea616e feat(arch): enforce 5-API Waterfall and Thin Client gs:// URIs across agent prompts, curriculum, and flowcharts
-56000e3d9 chore: purge all legacy indiios-v-1-1 project references and replace with indii-music-founder
-16947b2c2 fix(firebase): route image gen to Vertex AI in production to bypass AI Studio quota
-f962946dd feat(workflow): deploy pristine 5-phase core pipeline, /skill-skill routing, and image generation model name fixes
-5d5077402 chore: session checkpoint [12:18]
-4575a82c0 chore: session checkpoint [12:04]
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
- D .agents/skills/developing-genkit-dart/SKILL.md
- D .agents/skills/developing-genkit-dart/references/genkit.md
- D .agents/skills/developing-genkit-dart/references/genkit_anthropic.md
- D .agents/skills/developing-genkit-dart/references/genkit_chrome.md
- D .agents/skills/developing-genkit-dart/references/genkit_firebase_ai.md
- D .agents/skills/developing-genkit-dart/references/genkit_google_genai.md
- D .agents/skills/developing-genkit-dart/references/genkit_mcp.md
- D .agents/skills/developing-genkit-dart/references/genkit_middleware.md
- D .agents/skills/developing-genkit-dart/references/genkit_openai.md
- D .agents/skills/developing-genkit-dart/references/genkit_shelf.md
- D .agents/skills/developing-genkit-dart/references/schemantic.md
- D .agents/skills/developing-genkit-go/SKILL.md
- D .agents/skills/developing-genkit-go/references/flows-and-http.md
- D .agents/skills/developing-genkit-go/references/generation.md
- D .agents/skills/developing-genkit-go/references/getting-started.md
- D .agents/skills/developing-genkit-go/references/middleware.md
- D .agents/skills/developing-genkit-go/references/prompts.md
- D .agents/skills/developing-genkit-go/references/providers.md
- D .agents/skills/developing-genkit-go/references/tools.md
- D .agents/skills/xcode-project-setup/SKILL.md
- D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/.gitignore
- D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Package.resolved
- D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Package.swift
- D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Sources/main.swift
- M docs/agent-training/datasets/curriculum.jsonl
- M packages/firebase/firestore.rules
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
- M packages/renderer/src/modules/touring/RoadManager.tsx
- M packages/renderer/src/services/image/__tests__/ImageGenerationService.test.ts
- M packages/renderer/src/services/project/ProjectService.ts
- M packages/renderer/src/services/video/LensVeoAspectRatio.test.ts
- M packages/renderer/src/services/video/LensVeoResilience.test.ts
- M packages/renderer/src/services/video/VeoIntegration.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.integration.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.ledger.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.schema.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.security.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.ts
- M packages/renderer/src/services/video/__tests__/LensVideoVerification.test.ts
- M packages/renderer/src/services/video/__tests__/VideoDistributorIntegration.test.ts
- M packages/renderer/src/services/video/__tests__/VideoGenerationService.test.ts
- M vitest.rules.config.ts
-?? fix-tests.cjs
-?? fix-tests2.cjs
-?? fix-tests3.cjs
+ M README.md
+ D docs/architecture/agent-zero-handoff.md
+ M docs/architecture/file-search-rag-implementation.md
+ M docs/legal/EXECUTIVE_OVERVIEW_EVAN.md
+ M docs/qa-reports/2026-03-04-qa-report.md
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/firebase/src/index.ts
+ M packages/firebase/src/lib/image_generation.ts
+ M packages/renderer/src/services/intelligence/graph/AgentGraphService.ts
+?? docs/architecture/conductor-handoff-architecture.md
+?? docs/flowcharts/live-media-generation-v3.md
+?? docs/user_manual.pdf
+?? scripts/generate-manual-pdf.js
+?? scripts/verify-live-generation.ts
 ```
 
 ## Decisions
@@ -80,6 +45,3 @@ f962946dd feat(workflow): deploy pristine 5-phase core pipeline, /skill-skill ro
 
 ---
 *Auto-generated by Stop hook. Read this at session start to resume context.*
-
-## Tooling Capabilities
-- **GCP Cloud Shell Access**: Agents can use the `/browser` subagent to access an authenticated GCP Cloud Shell via `console.firebase.google.com/u/0/project/indii-music-founder/hosting/sites/indii-music-studio?cloudshell=true`. Use this for any operations requiring authenticated `gh`, `gcloud`, or `firebase` access that the local environment lacks.
