@@ -676,18 +676,21 @@ export const test = base.extend<AuthFixtures>({
     await page.route("**/firebaselogging.googleapis.com/**", async (route) => {
       await route.fulfill({ status: 200, headers: corsHeaders, body: "{}" });
     });
-    await page.route("**/firebase.googleapis.com/**", async (route) => {
-      if (route.request().method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
-        return;
+    await page.route(
+      url => url.hostname.includes('firebase.googleapis.com') || url.hostname.includes('content-firebaseappcheck.googleapis.com'),
+      async (route) => {
+        if (route.request().method() === "OPTIONS") {
+          await route.fulfill({ status: 204, headers: corsHeaders });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
+        });
       }
-      await route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: "application/json",
-        body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
-      });
-    });
+    );
 
     // Intercept Firebase Installations API
     await page.route("**/*installations.googleapis.com/**", async (route) => {
