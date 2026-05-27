@@ -11,7 +11,7 @@ import type { SubscriptionTier } from '@/services/subscription/types';
 import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
-
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { CostControlService } from '@/services/billing/CostControlService';
 // ============================================================================
 // TYPES
@@ -319,20 +319,23 @@ export class ImageGenerationService {
             const aspectRatio = this.getAspectRatio(options);
 
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
-            // The studioControls store uses video-style values ('720p', '1080p', '4k')
-            // but the Gemini image API expects '512' | '1K' | '2K' | '4K'.
             const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
-            // Build the full payload — pass ALL config through, no stripping.
-            // The backend Cloud Function + capability registry handles validation.
+            let referenceUri;
+            if (options.sourceImages && options.sourceImages.length > 0) {
+                const firstImg = options.sourceImages[0];
+                if (firstImg) {
+                    referenceUri = await CreativeStorageService.uploadReferenceMedia(uid, `data:${firstImg.mimeType};base64,${firstImg.data}`, 'image');
+                }
+            }
+
             const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
                 aspectRatio,
                 count,
                 model: options.model || 'fast',
                 imageSize,
-                // Reference images (for multi-image composition)
-                images: options.sourceImages,
+                referenceUri,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
                 includeThoughts: options.includeThoughts,
@@ -364,7 +367,7 @@ export class ImageGenerationService {
                 model: payload.model,
                 aspectRatio: payload.aspectRatio,
                 imageSize: payload.imageSize,
-                hasImages: !!(payload.images as unknown[])?.length,
+                hasReferenceUri: !!referenceUri,
                 hasThinking: !!payload.thinkingLevel,
                 hasGrounding: !!payload.useGoogleSearch,
                 hasHistory: !!(payload.conversationHistory as unknown[])?.length,

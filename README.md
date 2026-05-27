@@ -775,6 +775,7 @@ For deep-dives into specific subsystems:
 
 | Document | Description |
 |----------|-------------|
+| [indii.music Architecture Blueprint](docs/INDII_MUSIC_ARCHITECTURE.md) | 5-API Waterfall and thin client architecture |
 | [Architecture Standard](directives/architecture_standard.md) | 3-layer architecture guidelines |
 | [Agent Stability Protocol](directives/agent_stability.md) | Agent reliability standards |
 | [Proprietary Ingestion Implementation Plan](docs/PROPRIETARY_INGESTION_IMPLEMENTATION_PLAN.md) | Distribution engine specification |

@@ -59,7 +59,7 @@ export default function SocialDashboard() {
     };
 
     // Dynamic Calendar Data
-    const now = new Date();
+    const [now] = useState(() => new Date());
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const startDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
 

@@ -129,15 +129,11 @@ export default defineConfig({
                         if (!m) return undefined;
                         const pkg = m[1];
 
-                        // Three.js — 3D module only
-                        if (pkg === 'three' || pkg.startsWith('@react-three/')) {
+                        // Three.js — 3D module only (excluding React bindings)
+                        if (pkg === 'three') {
                             return 'vendor-three';
                         }
-                        // Remotion — video rendering, only loaded by video module
-                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
-                            return 'vendor-remotion';
-                        }
-                        // Fabric.js — canvas, only creative module
+                        // Remotion core (excluding React bindings) - Actually remotion is mostly React based, let's put it in vendor-react
                         if (pkg === 'fabric') {
                             return 'vendor-fabric';
                         }
@@ -157,10 +153,8 @@ export default defineConfig({
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
-                        // React ecosystem: ONLY the core React runtime + router.
-                        // Do NOT include anything that depends on d3, zustand, or
-                        // use-sync-external-store — those must live in the default
-                        // chunks to prevent cyclic chunk imports.
+                        // React ecosystem: MUST include anything that imports react-reconciler
+                        // or scheduler (e.g. @react-three/fiber, remotion) to avoid runtime crashes.
                         if (
                             pkg === 'react' ||
                             pkg === 'react-dom' ||
@@ -168,7 +162,12 @@ export default defineConfig({
                             pkg === 'react-router-dom' ||
                             pkg === '@remix-run/router' ||
                             pkg === 'scheduler' ||
-                            pkg === 'react-is'
+                            pkg === 'react-is' ||
+                            pkg === 'remotion' ||
+                            pkg.startsWith('@remotion/') ||
+                            pkg.startsWith('@react-three/') ||
+                            pkg === 'react-spring' ||
+                            pkg.startsWith('@react-spring/')
                         ) {
                             return 'vendor-react';
                         }
