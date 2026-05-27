@@ -60,7 +60,7 @@ export default function AutonomousLab() {
     const [targetImage, setTargetImage] = useState<HistoryItem | null>(null);
     const [predictedPrompt, setPredictedPrompt] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
-    const [sequenceItems, setSequenceItems] = useState<SequenceItem[]>([{ id: crypto.randomUUID(), type: 'seconds', value: 6 }]);
+    const [sequenceItems, setSequenceItems] = useState<SequenceItem[]>(() => [{ id: crypto.randomUUID(), type: 'seconds', value: 6 }]);
     const [bpm, setBpm] = useState<number>(120);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isTrajectoryOpen, setIsTrajectoryOpen] = useState(false);

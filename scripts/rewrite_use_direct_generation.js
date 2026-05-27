@@ -1,4 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const filePath = path.join(__dirname, '../packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts');
+
+const content = `import { useState, useCallback, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -7,6 +12,7 @@ import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
+import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { functions, db, auth, storage } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -88,7 +94,7 @@ export function useDirectGeneration() {
                         status: data.status,
                         progress: data.progress || 0,
                         error: data.error
-                    } as VideoGenerationJob;
+                    };
                     return newJobs;
                 });
 
@@ -123,7 +129,7 @@ export function useDirectGeneration() {
                            setViewMode('editor');
                         }
 
-                        toast.success(`\${data.type} generation finished!`);
+                        toast.success(\`\${data.type} generation finished!\`);
 
                         setTimeout(() => {
                             setActiveJobs(prev => prev.filter(j => j.id !== job.id));
@@ -188,13 +194,13 @@ export function useDirectGeneration() {
     }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error("Must be logged in to generate.");
 
         let referenceUri;
         const ingredientsList = videoInputs?.ingredients || [];
-        const firstIngredient = ingredientsList[0];
-        if (firstIngredient && firstIngredient.url) {
-            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, 'image');
+        if (ingredientsList.length > 0) {
+            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, ingredientsList[0].url, 'image');
         }
 
         const generateImageV3 = httpsCallable(functions, 'generateImageV3');
@@ -214,7 +220,8 @@ export function useDirectGeneration() {
     }, [studioControls.aspectRatio, localPrompt, videoInputs?.ingredients, toast]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error("Must be logged in to generate.");
 
         let effectiveResolution = studioControls.resolution;
         if (effectiveResolution === '4k') {
@@ -228,18 +235,16 @@ export function useDirectGeneration() {
         
         let sequencePrompt = finalPrompt;
         if (sequence.length > 0) {
-            const sequenceDetails = sequence.map(block => `\${block.beats} beats (\${(block.beats * secondsPerBeat).toFixed(2)}s) [\${block.section || 'Uncategorized'}, \${block.energy || 'Medium'} Energy]`).join(', ');
-            sequencePrompt = `[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}`;
+            const sequenceDetails = sequence.map(block => \`\${block.beats} beats (\${(block.beats * secondsPerBeat).toFixed(2)}s) [\${block.section || 'Uncategorized'}, \${block.energy || 'Medium'} Energy]\`).join(', ');
+            sequencePrompt = \`[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}\`;
         }
 
         let firstFrameUri;
         const ingredientsList = videoInputs?.ingredients || [];
-        const firstIngredient = ingredientsList[0];
-        const firstCharRef = characterReferences?.[0];
-        if (firstIngredient && firstIngredient.url) {
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, firstIngredient.type as 'image'|'video');
-        } else if (firstCharRef && firstCharRef.image?.url) {
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstCharRef.image.url, 'image');
+        if (ingredientsList.length > 0) {
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, ingredientsList[0].url, ingredientsList[0].type as 'image'|'video');
+        } else if (characterReferences && characterReferences.length > 0) {
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, characterReferences[0].image.url, 'image');
         }
 
         const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
@@ -285,7 +290,7 @@ export function useDirectGeneration() {
             } else if (errObj?.code === 'resource-exhausted') {
                 toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
             } else {
-                toast.error(`Generation failed: \${errMessage || 'Unknown error'}`);
+                toast.error(\`Generation failed: \${errMessage || 'Unknown error'}\`);
             }
         } finally {
             setIsGenerating(false);
@@ -322,3 +327,6 @@ export function useDirectGeneration() {
         cancelJob
     };
 }
+`
+
+fs.writeFileSync(filePath, content);
