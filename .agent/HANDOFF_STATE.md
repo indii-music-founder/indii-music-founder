@@ -1,33 +1,54 @@
 # Handoff State
-**Updated:** 2026-05-26 12:18 EDT
+**Updated:** 2026-05-27 01:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6cac998fd test(creative): fix test suites to reflect V3 thin client migration pattern
+6e5bb33e0 feat(creative): migrate to thin client architecture
+88ef83910 feat(api): implement Creative Suite API Gateway for 5-API Waterfall using ADC and Thin Client protocol
+815ea616e feat(arch): enforce 5-API Waterfall and Thin Client gs:// URIs across agent prompts, curriculum, and flowcharts
+56000e3d9 chore: purge all legacy indiios-v-1-1 project references and replace with indii-music-founder
+16947b2c2 fix(firebase): route image gen to Vertex AI in production to bypass AI Studio quota
+f962946dd feat(workflow): deploy pristine 5-phase core pipeline, /skill-skill routing, and image generation model name fixes
+5d5077402 chore: session checkpoint [12:18]
 4575a82c0 chore: session checkpoint [12:04]
 a9a26525a chore: session checkpoint [12:01]
-f827e566a chore: session checkpoint [11:56]
-59ddaaea5 chore: session checkpoint [11:52]
-17aa23abe docs: standardize transition breakdown headers in flowcharts to H2 to pass CI syntax checks
-1afe87ca3 chore: session checkpoint [11:46]
-a23f5fcb6 chore: session checkpoint [11:46]
-c2b349822 chore(workflow): update command manifests and founder configurations
-2c78d6625 chore(workflow): track proceed workflow file
-5a73399f0 feat(creative): secure direct generation pipelines and resolve test suite timers
 ```
 
 ## Working State
 ```
- M .agent/checkpoints/antigravity.md
- M .agent/skills/error_memory/ERROR_LEDGER.md
- M .agent/workflows/WIIL-skill.md
- M docs/flowcharts/core-pipeline-architecture.md
- M packages/firebase/src/config/models.ts
- M packages/firebase/src/lib/image_generation.test.ts
-?? .agent/workflows/db-sync.md
-?? .agent/workflows/skill-skill.md
-?? docs/flowcharts/database-security-sync.md
-?? packages/landing/src/App.test.tsx
+ D .agents/skills/developing-genkit-dart/SKILL.md
+ D .agents/skills/developing-genkit-dart/references/genkit.md
+ D .agents/skills/developing-genkit-dart/references/genkit_anthropic.md
+ D .agents/skills/developing-genkit-dart/references/genkit_chrome.md
+ D .agents/skills/developing-genkit-dart/references/genkit_firebase_ai.md
+ D .agents/skills/developing-genkit-dart/references/genkit_google_genai.md
+ D .agents/skills/developing-genkit-dart/references/genkit_mcp.md
+ D .agents/skills/developing-genkit-dart/references/genkit_middleware.md
+ D .agents/skills/developing-genkit-dart/references/genkit_openai.md
+ D .agents/skills/developing-genkit-dart/references/genkit_shelf.md
+ D .agents/skills/developing-genkit-dart/references/schemantic.md
+ D .agents/skills/developing-genkit-go/SKILL.md
+ D .agents/skills/developing-genkit-go/references/flows-and-http.md
+ D .agents/skills/developing-genkit-go/references/generation.md
+ D .agents/skills/developing-genkit-go/references/getting-started.md
+ D .agents/skills/developing-genkit-go/references/middleware.md
+ D .agents/skills/developing-genkit-go/references/prompts.md
+ D .agents/skills/developing-genkit-go/references/providers.md
+ D .agents/skills/developing-genkit-go/references/tools.md
+ D .agents/skills/xcode-project-setup/SKILL.md
+ D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/.gitignore
+ D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Package.resolved
+ D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Package.swift
+ D .agents/skills/xcode-project-setup/scripts/xcode_spm_setup/Sources/main.swift
+ M docs/agent-training/datasets/curriculum.jsonl
+ M packages/firebase/firestore.rules
+ M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
+ M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
+ M packages/renderer/src/services/video/VideoGenerationService.ts
+ M packages/renderer/src/services/video/__tests__/VideoDistributorIntegration.test.ts
+ M packages/renderer/src/services/video/__tests__/VideoGenerationService.test.ts
 ```
 
 ## Decisions
