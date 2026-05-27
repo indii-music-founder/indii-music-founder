@@ -45,9 +45,9 @@ graph TD
     %% Consolidation
     K --> O["Parse Multimodal responseModalities: ['IMAGE']"]
     N --> O
-    O --> P["Extract inline Base64 Image bytes"]
-    P --> Q["Return standard Data URI to Client"]
-    Q --> R["Render Canvas Layer in Fabric.js"]
+    O --> P["Extract raw image bytes & Upload to Cloud Storage"]
+    P --> Q["Return lightweight gs:// URI to Client"]
+    Q --> R["Render Canvas Layer in Fabric.js via Signed URL"]
     class O,P,Q backend;
     class R client;
 ```
@@ -68,4 +68,4 @@ Upon receiving the call, the Cloud Function runs two deterministic middleware ch
 - If running in production GCP environments, it dynamically activates the **Vertex AI** integration. By enabling `vertexai: true` and pointing to the active GCP Project, it inherits the Cloud Function's **Application Default Credentials (ADC)**, securely bypassing all external API key allocations, rotations, and free-tier quotas.
 
 ### 4. Multimodal Generation & Client Handoff
-Both pipelines resolve calls using the unified `@google/genai` interface. It specifies `responseModalities: ["IMAGE"]` using stable `gemini-3.1-flash-image` and `gemini-3-pro-image-preview` endpoints. The returned base64-encoded image payload is mapped to a secure `data:` URI and returned to the React frontend, where Fabric.js decodes it off-thread to render the visual assets seamlessly.
+Both pipelines resolve calls using the unified `@google/genai` interface. It specifies `responseModalities: ["IMAGE"]` using stable `gemini-3.1-flash-image` and `gemini-3-pro-image-preview` endpoints. In strict adherence to the Thin Client architecture, the raw image bytes are never passed to the client as Base64 strings. Instead, the backend immediately uploads the generated asset to Firebase Cloud Storage. A lightweight `gs://` URI is then returned to the React frontend, where it is converted into a temporary Signed URL for Fabric.js to render the visual assets seamlessly without freezing the main thread.
