@@ -30,7 +30,9 @@ vi.mock('../firebase', () => ({
     serverTimestamp: vi.fn(),
     db: {},
     storage: {},
-    auth: { currentUser: { uid: 'test-user-uid' } }
+    auth: { currentUser: { uid: 'test-user-uid' } },
+    functions: {},
+    functionsWest1: {}
 }));
 
 vi.mock('firebase/firestore', () => ({

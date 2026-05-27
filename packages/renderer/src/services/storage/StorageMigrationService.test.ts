@@ -13,6 +13,8 @@ vi.mock('../firebase', () => ({
   },
   db: {},
   storage: {},
+  functions: {},
+  functionsWest1: {},
 }));
 
 vi.mock('firebase/firestore', () => ({
