@@ -1,15 +1,22 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
+import { GoogleGenAI } from "@google/genai";
 
-// Initialize the GenAI client using Application Default Credentials (ADC) for Vertex AI.
-// This fully adheres to the secure proxy architecture (no client keys, strictly GCP context).
-const ai = new GoogleGenAI({
-  vertexai: true,
-  project: process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || '',
-  location: process.env.VITE_VERTEX_LOCATION || 'us-central1',
-});
+// Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
+// This fully adheres to the secure proxy architecture, preferring global preview models.
+function getAiClient(forceVertex = false): GoogleGenAI {
+  const apiKey = getGeminiApiKey();
+  if (apiKey && !apiKey.includes("PLACEHOLDER") && !forceVertex) {
+    return new GoogleGenAI({ apiKey });
+  }
+  return new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || '',
+    location: process.env.VITE_VERTEX_LOCATION || 'us-central1',
+  });
+}
 
 const db = admin.firestore();
 const storage = admin.storage();
@@ -49,10 +56,26 @@ async function uploadToStorage(userId: string, buffer: Buffer, extension: string
   return `gs://${bucket.name}/${filename}`;
 }
 
+async function safeDbSet(jobId: string, data: any) {
+  try {
+    await db.collection('creative_jobs').doc(jobId).set(data);
+  } catch (e) {
+    console.warn(`[creativeGateway] Firestore set failed (non-blocking):`, e);
+  }
+}
+
+async function safeDbUpdate(jobId: string, data: any) {
+  try {
+    await db.collection('creative_jobs').doc(jobId).update(data);
+  } catch (e) {
+    console.warn(`[creativeGateway] Firestore update failed (non-blocking):`, e);
+  }
+}
+
 /**
  * generateImageV3 - Routes to gemini-3-pro-image-preview
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120 }, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, secrets: [geminiApiKey] }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
@@ -60,11 +83,13 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120 }, async (request) =
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
+  const ai = getAiClient();
+
   const { prompt } = parsed.data;
   const userId = request.auth.uid;
   const jobId = db.collection('creative_jobs').doc().id;
   
-  await db.collection('creative_jobs').doc(jobId).set({
+  await safeDbSet(jobId, {
     id: jobId,
     userId,
     status: 'processing',
@@ -97,7 +122,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120 }, async (request) =
     // Strict Thin Client adherence: Save directly to Cloud Storage
     const outputUri = await uploadToStorage(userId, buffer, 'jpg');
     
-    await db.collection('creative_jobs').doc(jobId).update({
+    await safeDbUpdate(jobId, {
       status: 'completed',
       resultUri: outputUri,
       completedAt: new Date().toISOString()
@@ -106,7 +131,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120 }, async (request) =
     // Return only the lightweight URI to the client
     return { jobId, resultUri: outputUri };
   } catch (error: any) {
-    await db.collection('creative_jobs').doc(jobId).update({
+    await safeDbUpdate(jobId, {
       status: 'failed',
       error: error.message
     });
@@ -117,17 +142,19 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120 }, async (request) =
 /**
  * generateVideoV3 - Routes to Veo 3.1
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540 }, async (request) => {
+export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
   if (!parsed.success) throw new HttpsError('invalid-argument', 'Invalid payload. Base64 forbidden.');
 
+  const ai = getAiClient(true);
+
   const { prompt } = parsed.data;
   const userId = request.auth.uid;
   const jobId = db.collection('creative_jobs').doc().id;
   
-  await db.collection('creative_jobs').doc(jobId).set({
+  await safeDbSet(jobId, {
     id: jobId,
     userId,
     status: 'processing',
@@ -157,7 +184,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540 }, async (request) =
     const buffer = Buffer.from(base64Video, 'base64');
     const outputUri = await uploadToStorage(userId, buffer, 'mp4');
     
-    await db.collection('creative_jobs').doc(jobId).update({
+    await safeDbUpdate(jobId, {
       status: 'completed',
       resultUri: outputUri,
       completedAt: new Date().toISOString()
@@ -165,7 +192,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540 }, async (request) =
 
     return { jobId, resultUri: outputUri };
   } catch (error: any) {
-    await db.collection('creative_jobs').doc(jobId).update({ status: 'failed', error: error.message });
+    await safeDbUpdate(jobId, { status: 'failed', error: error.message });
     throw new HttpsError('internal', error.message);
   }
 });
@@ -173,17 +200,19 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540 }, async (request) =
 /**
  * generateAudioV3 - Routes to NB2
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300 }, async (request) => {
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateAudioSchema.safeParse(request.data);
   if (!parsed.success) throw new HttpsError('invalid-argument', 'Invalid payload.');
 
+  const ai = getAiClient();
+
   const { prompt } = parsed.data;
   const userId = request.auth.uid;
   const jobId = db.collection('creative_jobs').doc().id;
   
-  await db.collection('creative_jobs').doc(jobId).set({
+  await safeDbSet(jobId, {
     id: jobId,
     userId,
     status: 'processing',
@@ -212,7 +241,7 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300 }, async (request) =
     const buffer = Buffer.from(base64Audio, 'base64');
     const outputUri = await uploadToStorage(userId, buffer, 'wav');
     
-    await db.collection('creative_jobs').doc(jobId).update({
+    await safeDbUpdate(jobId, {
       status: 'completed',
       resultUri: outputUri,
       completedAt: new Date().toISOString()
@@ -220,7 +249,7 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300 }, async (request) =
 
     return { jobId, resultUri: outputUri };
   } catch (error: any) {
-    await db.collection('creative_jobs').doc(jobId).update({ status: 'failed', error: error.message });
+    await safeDbUpdate(jobId, { status: 'failed', error: error.message });
     throw new HttpsError('internal', error.message);
   }
 });

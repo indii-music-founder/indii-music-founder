@@ -2,6 +2,9 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
+// Initialize Firebase Admin immediately to prevent race conditions during import analysis
+admin.initializeApp();
+
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { Inngest } from "inngest";
@@ -16,7 +19,8 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
-import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
+import { editImageFn } from "./lib/image_generation";
+export { generateImageV3, generateVideoV3, generateAudioV3 } from "./functions/creative/gateway";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 
@@ -34,8 +38,6 @@ if (!process.env.GCLOUD_PROJECT) {
     process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-music-founder";
 }
 
-// Initialize Firebase Admin
-admin.initializeApp();
 
 // Admin Functions
 export { setGodMode } from './functions/admin/setGodMode';
@@ -753,7 +755,6 @@ export const inngestApi = functions
 // Deployed to us-west1 for Model Availability
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
 // Deployed to us-west1 for Model Availability
-export const generateImageV3 = generateImageV3Fn();
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
