@@ -524,3 +524,14 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: Aggressive chunk splitting in `manualChunks` separated React-reliant heavy libraries (e.g. `@remotion`, `@react-three`) from the core `react` / `react-dom` chunks. Due to how Vite/Rollup resolved the import graph, the separated libraries attempted to initialize and call `React.forwardRef` before the core `react` chunk had finished loading into the browser context.
 - FIX: Grouped `@remotion` and `@react-three` explicitly into a `vendor-react` chunk alongside `react`, `react-dom`, and `react-router`, forcing Vite to bundle the core reconciler and these dependent libraries together in the correct loading order.
 - PREVENTION: When creating `manualChunks` in Vite, never split UI libraries that heavily depend on React internals into separate chunks unless `react` itself is guaranteed to be in the shared vendor chunk and hoisted properly. Group highly entangled dependencies together.
+
+## 2026-05-27 Vitest httpsCallable Mock Mismatch (AssertionError)
+
+**SEVERITY:** High (causes test suites to fail assertions when migrating to Cloud Functions)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/video/__tests__/LensVeoResilience.test.ts` (and similar)
+- ERROR: `AssertionError: expected { jobId: 'job-123' } to deeply equal { data: { jobId: 'job-123' } }` or similar payload mismatches.
+- CAUSE: When migrating an internal service call to a Firebase `httpsCallable` Cloud Function, the return shape changes. Cloud Functions wrap their payload in a `data` object (`{ data: result }`). If the Vitest mock for `httpsCallable` returns the raw internal payload, or if the test assertions expect the old raw payload instead of the new `data`-wrapped payload, the assertions will fail. Additionally, `vi.mock('firebase/functions')` must explicitly export `httpsCallable` as a function that returns the mock callable.
+- FIX: Update `mockHttpsCallable.mockResolvedValue` to return `{ data: { ...expectedPayload } }`. Ensure `vi.mock('firebase/functions')` properly exports the callable factory: `httpsCallable: () => mockHttpsCallable`.
+- PREVENTION: Whenever replacing a direct SDK or internal service call with a Firebase Cloud Function via `httpsCallable`, systematically audit the test mocks and assertions in the corresponding test suite to account for the `{ data: ... }` wrapper in the response payload.
