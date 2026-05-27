@@ -4,6 +4,8 @@
 
 ## Recent Commits
 ```
+ce96a09b1 feat(creative): deploy 2nd gen v3 live media generation gateway with self-healing DB writes and Veo Vertex routing
+d3aeb2890 chore: session checkpoint [17:53]
 7fea8a17c fix(build): resolve ESM circular imports by isolating core React runtime in manualChunks
 90507766c fix(test): Resolve cross-test mock pollution on ../firebase
 196a1d0b3 fix(ci): Resolve CI deployment issues and App Check CORS blocks
@@ -12,8 +14,6 @@ e5a01126c test: add uploadBytes to firebase/storage mocks to fix CI failure
 4a0bee707 test: mock firebase/storage in ImageGenerationService tests
 1042b50ef test: fix httpsCallable mock typecheck and syntax errors
 51a29269e docs: update secure isolation flowchart and error ledger for generateVideoV3 migration
-bb5708be0 chore: session checkpoint [03:27]
-dde6ba840 chore: session checkpoint [01:16]
 ```
 
 ## Working State
@@ -23,15 +23,10 @@ dde6ba840 chore: session checkpoint [01:16]
  M docs/architecture/file-search-rag-implementation.md
  M docs/legal/EXECUTIVE_OVERVIEW_EVAN.md
  M docs/qa-reports/2026-03-04-qa-report.md
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/firebase/src/index.ts
- M packages/firebase/src/lib/image_generation.ts
  M packages/renderer/src/services/intelligence/graph/AgentGraphService.ts
 ?? docs/architecture/conductor-handoff-architecture.md
-?? docs/flowcharts/live-media-generation-v3.md
 ?? docs/user_manual.pdf
 ?? scripts/generate-manual-pdf.js
-?? scripts/verify-live-generation.ts
 ```
 
 ## Decisions
