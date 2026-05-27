@@ -3,14 +3,13 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { CreativeStorageService } from '../creative/CreativeStorageService';
 
 // Mocks
 const mocks = vi.hoisted(() => ({
-    analyzeImage: vi.fn(),
-    generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4'),
-    triggerVideoJob: vi.fn(),
+    generateVideoV3: vi.fn(),
     canPerformAction: vi.fn(),
+    uploadReferenceMedia: vi.fn(),
     currentUser: { uid: 'lens-user' },
     getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
 }));
@@ -21,42 +20,18 @@ vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     db: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
+    storage: { app: { options: { storageBucket: 'mock-bucket.appspot.com' } } },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../firebase', () => ({
-    auth: { currentUser: mocks.currentUser },
-    functions: {},
-    functionsWest1: {},
-    db: {},
-    remoteConfig: { defaultConfig: {} },
-    storage: {},
-    getFirebaseAI: vi.fn(() => ({})),
-    app: { options: {} },
-    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
-    messaging: { getToken: vi.fn() }
+vi.mock('../creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: mocks.uploadReferenceMedia
+    }
 }));
-
-vi.mock('../intelligence/FirebaseIntelligenceService', () => {
-    const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
-        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
-        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
-        generateVideo: mocks.generateVideo,
-        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
-        analyzeImage: mocks.analyzeImage
-    };
-    return {
-        FirebaseIntelligenceService: class {
-            static getInstance() { return mockFirebaseAI; }
-        },
-        firebaseAI: mockFirebaseAI
-    };
-});
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
@@ -71,7 +46,12 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-    httpsCallable: () => mocks.triggerVideoJob,
+    httpsCallable: (_functions: any, name: string) => {
+        if (name === 'generateVideoV3') {
+            return mocks.generateVideoV3;
+        }
+        return vi.fn();
+    },
     getFunctions: vi.fn()
 }));
 
@@ -79,23 +59,21 @@ vi.mock('uuid', () => ({
     v4: () => 'job-lens-multimodal'
 }));
 
-describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, () => {
+describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline (Thin Client)', { timeout: 30000 }, () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
         mocks.canPerformAction.mockResolvedValue({ allowed: true });
-        mocks.triggerVideoJob.mockResolvedValue({ data: { jobId: 'job-lens-multimodal' } });
+        mocks.generateVideoV3.mockResolvedValue({ data: { jobId: 'job-lens-multimodal' } });
+        mocks.uploadReferenceMedia.mockResolvedValue('gs://mock-bucket.appspot.com/creative/lens-user/123_mock-uuid.jpg');
     });
 
-    it('should inject Gemini 3 temporal analysis into Veo prompt when `firstFrame` is present', async () => {
+    it('should upload reference media and pass firstFrameUri to the backend via generateVideoV3', async () => {
         // Arrange
         const userPrompt = "A cybernetic cat jumping";
-        const geminiAnalysis = "The cat compresses its hydraulic legs preparing for a vertical leap.";
         const firstFrame = "data:image/png;base64,mock";
-
-        mocks.analyzeImage.mockResolvedValue(geminiAnalysis);
 
         // Act
         await service.generateVideo({
@@ -105,24 +83,21 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, 
         });
 
         // Assert
-        // 1. Verify Gemini was consulted
-        expect(mocks.analyzeImage).toHaveBeenCalledWith(
-            expect.stringContaining("Analyze this image frame"),
-            firstFrame
+        // 1. Verify storage upload was called
+        expect(mocks.uploadReferenceMedia).toHaveBeenCalledWith(
+            mocks.currentUser.uid,
+            firstFrame,
+            'image'
         );
 
-        // 2. Verify Veo received the enriched prompt
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining(geminiAnalysis),
-        }));
-
-        // 3. Verify original prompt is preserved
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining(userPrompt)
+        // 2. Verify backend was called with the uploaded URI
+        expect(mocks.generateVideoV3).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining(userPrompt),
+            firstFrameUri: 'gs://mock-bucket.appspot.com/creative/lens-user/123_mock-uuid.jpg'
         }));
     });
 
-    it('should bypass temporal analysis if no reference frame is provided', async () => {
+    it('should bypass reference media upload if no frame is provided', async () => {
         // Arrange
         const userPrompt = "Pure text generation";
 
@@ -132,9 +107,10 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', { timeout: 30000 }, 
         });
 
         // Assert
-        expect(mocks.analyzeImage).not.toHaveBeenCalled();
-        expect(AutonomousIntelligence.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.not.stringContaining("undefined") // basic sanity check
+        expect(mocks.uploadReferenceMedia).not.toHaveBeenCalled();
+        expect(mocks.generateVideoV3).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining(userPrompt),
+            firstFrameUri: undefined
         }));
     });
 });
