@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/creative/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
@@ -21,27 +21,32 @@ interface StudioControlsPanelProps {
 
 const SectionCard = ({ title, icon, children, isOpen, onToggle }: { title: React.ReactNode, icon: React.ReactNode, children: React.ReactNode, isOpen: boolean, onToggle: () => void }) => {
     return (
-        <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-3">
+        <div className="mb-4">
             <button 
                 onClick={onToggle}
-                className="w-full p-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+                className="w-full py-2 px-1 flex items-center justify-between group"
             >
-                <div className="flex items-center gap-2 text-[11px] font-bold text-white tracking-wide uppercase">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-300 tracking-wider uppercase transition-colors group-hover:text-white">
                     {icon}
                     {title}
                 </div>
                 <ChevronDown size={14} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
-            <motion.div
-                initial={false}
-                animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="overflow-hidden"
-            >
-                <div className="p-3 pt-0 mt-1">
-                    {children}
-                </div>
-            </motion.div>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                    >
+                        <div className="pt-2 pb-1 space-y-3">
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -89,26 +94,26 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     if (!whiskState) return null;
 
     return (
-        <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
+        <div className="flex flex-col h-full bg-[#060608]/95 border-l border-white/5 backdrop-blur-xl relative z-10">
+            <div className="p-4 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <div className="p-1.5 bg-purple-500/10 rounded-lg">
-                        <Sliders size={14} className="text-purple-400" />
+                    <div className="p-1.5 bg-white/5 rounded-lg border border-white/10">
+                        <Sliders size={14} className="text-gray-300" />
                     </div>
                     Studio Controls
                 </h3>
                 <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-black/40 p-1 rounded-lg border border-white/5">
+                    <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setActiveTab('create')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="Create"
                         >
                             <Wand2 size={14} />
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="History"
                         >
                             <History size={14} />
