@@ -18,13 +18,13 @@ graph TD
     
     subgraph UIInteraction ["Daisy Chain UI Controls & State Mapping"]
         DaisyUI --> ToggleAction["Toggle Daisy Chain Mode (daisy-chain-toggle)"]:::logic
-        DaisyUI --> AddFrameAction["Add Frame (Select image from gallery/upload)"]:::logic
+        DaisyUI --> AddFrameAction["Add Frame (Upload directly to Cloud Storage via Signed URL)"]:::logic
         DaisyUI --> ClearFrameAction["Clear Frame (sr-only 'x' Button)"]:::logic
     end
     
     subgraph StateSlice ["Zustand Store Context (creativeSlice)"]
         ToggleAction --> |"Updates videoInputs.isDaisyChain"| ZustandState["videoInputs State Store"]:::logic
-        AddFrameAction --> |"Saves firstFrame / lastFrame base64"| ZustandState
+        AddFrameAction --> |"Saves gs:// URI in state"| ZustandState
         ClearFrameAction --> |"Resets slot payload to null"| ZustandState
     end
     
@@ -33,18 +33,16 @@ graph TD
         ZustandState --> |"If isDaisyChain is false"| MutedLink["Flow Connector Line Mutes (bg-white/10)"]:::ui
     end
     
-    subgraph GenerationPipeline ["Execution & Normalisation Pipeline"]
+    subgraph GenerationPipeline ["Execution & Gateway Pipeline"]
         ZustandState --> |"User clicks 'Generate'"| GenService["VideoGenerationService.ts: generateVideo()"]:::logic
-        GenService --> FrameNormalizer["Frame Normalizer (base64 URI header strip)"]:::logic
+        GenService --> APIGateway["API Gateway (Thin Client Protocol)"]:::logic
         
-        FrameNormalizer --> |"Input matches: data:image/jpeg;base64,..."| StripHeaders["Strip data: prefix & comma delimiter"]:::logic
-        FrameNormalizer --> |"Raw base64 bytes buffer"| PassDirect["Pass base64 payload directly to pipeline"]:::logic
+        APIGateway --> |"Lightweight gs:// payload"| PassDirect["Pass gs:// URI to 5-API Waterfall"]:::logic
     end
     
     subgraph ExternalCloud ["AI Engine & Job Database Synced"]
-        StripHeaders --> VeoEngine["Veo 3.1 Generation Engine (Google Gen AI SDK)"]:::ai
-        PassDirect --> VeoEngine
-        VeoEngine --> |"Asynchronously updates job lifecycle status"| FirestoreJob["Firestore: video_jobs collection"]:::storage
+        PassDirect --> VeoEngine["Veo 3.1 Generation Engine (Creative Suite)"]:::ai
+        VeoEngine --> |"Asynchronously updates job lifecycle status & uploads final video to Cloud Storage"| FirestoreJob["Firestore: video_jobs collection"]:::storage
     end
     
     style UserInput fill:#0F172A,stroke:#00D4FF,stroke-width:2px,color:#00D4FF
@@ -63,17 +61,16 @@ graph TD
    - The user mounts the Video Producer's Daisy Chain controls UI.
    - The interface renders two spacious `64x32px` widescreen slot frames (`START` and `END`) that match the standard aspect ratio of landscape media assets, replacing legacy `32x32px` squares.
 2. **State Updates inside Zustand Slice:**
-   - **Adding Frame Assets:** Clicking a frame slot (`first-frame-slot` or `last-frame-slot`) invokes the image gallery picker or local system file explorer, uploading the frame as a base64 string to the state `videoInputs.firstFrame` or `videoInputs.lastFrame`.
+   - **Adding Frame Assets:** Clicking a frame slot (`first-frame-slot` or `last-frame-slot`) invokes the image gallery picker or local system file explorer. The UI immediately uploads the file to Firebase Cloud Storage via a Signed URL, storing only the lightweight `gs://` URI in `videoInputs.firstFrame` or `videoInputs.lastFrame`.
    - **Clearing Frame Assets:** Clicking the overlay clear button (`X` icon) on a populated slot triggers `clearFrame()`, resetting the respective state slot to `null`. To ensure absolute alignment with Vitest automated test selectors checking for a literal `'×'` text content, a hidden screen-reader container (`<span className="sr-only">×</span>`) is embedded within the button markup.
    - **Toggling Daisy Chain:** Clicking the connection link icon updates `videoInputs.isDaisyChain` to `true` or `false`.
 3. **Visual Link Presentation Logic:**
    - The connector path is structured as a dynamic thread of link lines surrounding a central direction indicator (`ArrowRight`).
    - If `isDaisyChain` is active, the linking line lights up as `bg-purple-500` (which satisfies the strict test assertions) and the arrow animates with a soft pulse.
    - If `isDaisyChain` is inactive, the line is rendered in a muted `bg-white/10` style, indicating decoupled frame blocks.
-4. **Execution & Normalisation (`VideoGenerationService.ts`):**
+4. **Execution & Gateway Pipeline (`VideoGenerationService.ts`):**
    - When the user executes the video creation loop, `generateVideo()` is called.
-   - The normalisation method processes the input frames. If they contain Data URI headers (e.g. `data:image/jpeg;base64,...`), the service dynamically locates the comma index and slices the string to extract raw, high-fidelity base64 string chunks.
-   - If the input is already a raw base64 string, normalisation passes it directly into the request payload.
+   - The client bypasses memory-heavy Base64 normalization completely (Thin Client model). It simply wraps the lightweight `gs://` URIs in the request payload and passes them to the API Gateway.
 5. **AI Delivery & Progress Sync:**
-   - The normalised base64 frames are safely embedded under the `first_frame` or `last_frame` request models and submitted to the Veo 3.1 generation engine via the Google Gen AI SDK.
-   - The engine returns a tracking job, which is stored and synced inside the Firestore `video_jobs` collection to show realtime progress bars in the Video Producer UI.
+   - The Gateway routes the `first_frame` or `last_frame` Cloud Storage URIs to the Veo 3.1 Generation Engine (part of the 5-API Waterfall).
+   - The engine asynchronously renders the video, saves the final output back to Cloud Storage, and updates the tracking job inside the Firestore `video_jobs` collection. The UI seamlessly binds to this collection to display real-time progress.
