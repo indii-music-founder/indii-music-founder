@@ -191,10 +191,115 @@ export const MediaTools = {
     }),
 
     /**
-     * Generates a thumbnail from a video reference.
+     * Generates a high-CTR thumbnail for YouTube or TikTok using AI orchestration.
      */
-    generate_thumbnail: wrapTool('generate_thumbnail', async (args: { videoUrl: string, timestamp?: string }) => {
-        return toolError("generate_thumbnail is pending FFmpeg server-side integration.", 'NOT_IMPLEMENTED');
+    generate_thumbnail: wrapTool('generate_thumbnail', async (args: { topic: string, platform?: 'youtube' | 'tiktok', referenceImageUrl?: string }) => {
+        const { useStore } = await import('@/core/store');
+        const store = useStore.getState();
+        const { addToHistory, currentProjectId } = store;
+        const jobId = `thumbnail_${Date.now()}`;
+        
+        store.addJob({ id: jobId, title: `Designing thumbnail for ${args.platform || 'youtube'}...`, progress: 0, status: 'running', type: 'ai_generation' });
+
+        try {
+            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            
+            store.updateJobProgress(jobId, 10);
+            
+            // Step 1: Ideation
+            const platform = args.platform || 'youtube';
+            const aspect = platform === 'youtube' ? '16:9' : '9:16';
+            
+            const promptStr = `You are an expert YouTube/TikTok thumbnail designer. 
+            The video topic is: "${args.topic}". 
+            Generate a JSON object with:
+            {
+                "imagePrompt": "A highly detailed, cinematic prompt for an AI image generator to create the background plate without any text. Include lighting, mood, and visual hook.",
+                "suggestedText": "1-3 words of high-impact overlay text",
+                "textPlacement": "left",
+                "colorPalette": ["#FF0000", "#FFFFFF"]
+            }`;
+            
+            const aiResponse = await AutonomousIntelligence.generateContent(
+                [{ role: 'user', parts: [{ text: promptStr }] }],
+                INTELLIGENCE_MODELS.TEXT.FAST,
+                { responseMimeType: 'application/json' }
+            );
+            
+            const concept = AutonomousIntelligence.parseJSON(aiResponse.response.text()) as {
+                imagePrompt: string;
+                suggestedText: string;
+                textPlacement: string;
+                colorPalette: string[];
+            };
+            
+            store.updateJobProgress(jobId, 40);
+            
+            // Step 2: Generation
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            
+            let sourceImages;
+            if (args.referenceImageUrl) {
+                try {
+                    const imgMatch = args.referenceImageUrl.match(/^data:(image\/.+);base64,(.+)$/);
+                    if (imgMatch) {
+                        sourceImages = [{ mimeType: imgMatch[1]!, data: imgMatch[2]! }];
+                    } else {
+                        // Fetch URL
+                        const res = await fetch(args.referenceImageUrl);
+                        if (res.ok) {
+                            const blob = await res.blob();
+                            const buffer = await blob.arrayBuffer();
+                            // In browser, Buffer might not be available, use FileReader or btoa
+                            const base64 = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+                            sourceImages = [{ mimeType: blob.type, data: base64 }];
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('[MediaTools] Failed to load reference image for thumbnail:', e);
+                }
+            }
+            
+            const results = await ImageGeneration.generateImages({
+                prompt: concept.imagePrompt,
+                aspectRatio: aspect,
+                model: 'pro',
+                sourceImages,
+                quality: 'hd'
+            });
+            
+            store.updateJobProgress(jobId, 90);
+            
+            if (results && results.length > 0) {
+                const imgResult = results[0]!;
+                store.updateJobStatus(jobId, 'success');
+                
+                const finalPayload = {
+                    id: imgResult.id,
+                    backgroundUrl: imgResult.url,
+                    concept
+                };
+                
+                addToHistory({ 
+                    id: imgResult.id, 
+                    url: imgResult.url, 
+                    prompt: `Thumbnail background for: ${args.topic}`, 
+                    type: 'image', 
+                    timestamp: Date.now(), 
+                    projectId: currentProjectId
+                });
+                
+                return toolSuccess(finalPayload, `Successfully generated thumbnail concept and background plate for ${platform}.`);
+            }
+            
+            store.updateJobStatus(jobId, 'error', 'Failed to generate background image.');
+            return toolError("Failed to generate background image.");
+        } catch (error: unknown) {
+            const err = error as Error;
+            store.updateJobStatus(jobId, 'error', err.message);
+            return toolError(`Failed to generate thumbnail: ${err.message}`);
+        }
     }),
 
     /**

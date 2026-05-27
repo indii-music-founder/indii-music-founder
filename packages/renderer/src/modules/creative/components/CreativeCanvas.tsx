@@ -97,9 +97,29 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     flattenCanvas={handleFlattenCanvas}
                 />
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Sidebar: Tools & Annotations */}
-                    <aside className="hidden md:flex border-r border-gray-800 bg-[#0a0a0a] flex-col items-center">
+                <div className="flex-1 relative overflow-hidden bg-[#060608]">
+                    {/* Stage: Main Viewport */}
+                    <div className="absolute inset-0 z-0">
+                        <CanvasViewport
+                            item={item}
+                            canvasRef={canvasEl}
+                            isMagicFillMode={isMagicFillMode}
+                            activeColor={activeColor}
+                            generatedCandidates={generatedCandidates}
+                            onCandidateSelect={handleCandidateSelect}
+                            onCloseCandidates={() => setGeneratedCandidates([])}
+                            isSelectingEndFrame={isSelectingEndFrame}
+                            setIsSelectingEndFrame={setIsSelectingEndFrame}
+                            generatedHistory={generatedHistory}
+                            onEndFrameSelect={(histItem) => {
+                                setEndFrameItem(histItem as { id: string; url: string; prompt: string; type: 'image' | 'video' });
+                                setIsSelectingEndFrame(false);
+                            }}
+                        />
+                    </div>
+
+                    {/* Floating Dynamic Island */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 hidden md:flex items-center gap-2 bg-[#060608]/80 backdrop-blur-2xl border border-white/10 rounded-full px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                         <CanvasToolbar
                             addRectangle={handleAddRectangle}
                             addCircle={handleAddCircle}
@@ -113,33 +133,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             handleDetectObjects={handleDetectObjects}
                             handleClearDetections={handleClearDetections}
                         />
-                        <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">
-                            <AnnotationPalette
-                                activeColor={activeColor}
-                                onColorSelect={setActiveColor}
-                                colorDefinitions={definitions}
-                                onOpenDefinitions={() => setIsDefinitionsOpen(true)}
-                            />
-                        </div>
-                    </aside>
-
-                    {/* Stage: Main Viewport */}
-                    <CanvasViewport
-                        item={item}
-                        canvasRef={canvasEl}
-                        isMagicFillMode={isMagicFillMode}
-                        activeColor={activeColor}
-                        generatedCandidates={generatedCandidates}
-                        onCandidateSelect={handleCandidateSelect}
-                        onCloseCandidates={() => setGeneratedCandidates([])}
-                        isSelectingEndFrame={isSelectingEndFrame}
-                        setIsSelectingEndFrame={setIsSelectingEndFrame}
-                        generatedHistory={generatedHistory}
-                        onEndFrameSelect={(histItem) => {
-                            setEndFrameItem(histItem as { id: string; url: string; prompt: string; type: 'image' | 'video' });
-                            setIsSelectingEndFrame(false);
-                        }}
-                    />
+                        <div className="w-px h-6 bg-white/10 mx-2" />
+                        <AnnotationPalette
+                            activeColor={activeColor}
+                            onColorSelect={setActiveColor}
+                            colorDefinitions={definitions}
+                            onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                        />
+                    </div>
 
                     {/* Right Panel: Contextual Options */}
                     <EditDefinitionsPanel

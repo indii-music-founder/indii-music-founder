@@ -34,110 +34,110 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="w-16 bg-[#0a0a0a] border-r border-gray-800 flex flex-col items-center py-4 gap-2">
+            <div className="flex items-center gap-1.5 px-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('select')} className={getActiveButtonClass('select')} aria-label="Select Tool">
-                            <MousePointer2 size={20} />
+                            <MousePointer2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Selection Tool</TooltipContent>
+                    <TooltipContent side="top">Selection Tool</TooltipContent>
                 </Tooltip>
 
-                <div className="w-8 h-px bg-gray-800 my-1" />
+                <div className="h-5 w-px bg-white/10 mx-1" />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('brush')} className={getActiveButtonClass('brush')} aria-label="Magic Fill">
-                            <Wand2 size={20} />
+                            <Wand2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Magic Fill (Drawing)</TooltipContent>
+                    <TooltipContent side="top">Magic Fill (Drawing)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('line')} className={getActiveButtonClass('line')} aria-label="Line Tool">
-                            <Minus size={20} />
+                            <Minus size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Line Tool (Shift for angles)</TooltipContent>
+                    <TooltipContent side="top">Line Tool (Shift for angles)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('polygon')} className={getActiveButtonClass('polygon')} aria-label="Polygon Tool">
-                            <Pentagon size={20} />
+                            <Pentagon size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Polygon Tool (Double click to finish)</TooltipContent>
+                    <TooltipContent side="top">Polygon Tool (Double click to finish)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={addRectangle} className={baseButtonClass} aria-label="Add Rectangle">
-                            <Square size={20} />
+                            <Square size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Add Rectangle</TooltipContent>
+                    <TooltipContent side="top">Add Rectangle</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={addCircle} className={baseButtonClass} aria-label="Add Circle">
-                            <CircleIcon size={20} />
+                            <CircleIcon size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Add Circle</TooltipContent>
+                    <TooltipContent side="top">Add Circle</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('text')} className={getActiveButtonClass('text')} aria-label="Add Text">
-                            <Type size={20} />
+                            <Type size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Add Text</TooltipContent>
+                    <TooltipContent side="top">Add Text</TooltipContent>
                 </Tooltip>
 
-                <div className="w-8 h-px bg-gray-800 my-1" />
+                <div className="h-5 w-px bg-white/10 mx-1" />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={handleDetectObjects} className={baseButtonClass} aria-label="Detect Objects">
-                            <Scan size={20} />
+                            <Scan size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Intelligence Object Detection</TooltipContent>
+                    <TooltipContent side="top">Intelligence Object Detection</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={handleClearDetections} className={baseButtonClass} aria-label="Clear All">
-                            <Trash2 size={20} />
+                            <Trash2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Clear All Detections</TooltipContent>
+                    <TooltipContent side="top">Clear All Detections</TooltipContent>
                 </Tooltip>
 
-                <div className="w-8 h-px bg-gray-800 my-1" />
+                <div className="h-5 w-px bg-white/10 mx-1" />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={undo} disabled={!canUndo} className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`} aria-label="Undo">
-                            <Undo2 size={20} />
+                            <Undo2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Undo</TooltipContent>
+                    <TooltipContent side="top">Undo</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={redo} disabled={!canRedo} className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`} aria-label="Redo">
-                            <Redo2 size={20} />
+                            <Redo2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Redo</TooltipContent>
+                    <TooltipContent side="top">Redo</TooltipContent>
                 </Tooltip>
             </div>
         </TooltipProvider>
