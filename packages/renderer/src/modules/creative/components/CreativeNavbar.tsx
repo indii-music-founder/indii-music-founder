@@ -112,54 +112,59 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 </div>
 
                 {/* Right: Context Controls */}
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-1.5">
                     {generationMode === 'image' ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
                             <button
                                 onClick={togglePromptBuilder}
                                 data-testid="builder-btn"
-                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showPromptBuilder
-                                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
-                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <MessageSquare size={10} /> Builder
+                                <MessageSquare size={11} className={showPromptBuilder ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">Builder</span>
                             </button>
                             <button
                                 onClick={() => setShowBrandAssets(!showBrandAssets)}
-                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showBrandAssets
-                                        ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Sparkles size={10} /> Brand
+                                <Sparkles size={11} className={showBrandAssets ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">Brand</span>
                             </button>
                             <button
                                 onClick={() => setShowPromptHistory(!showPromptHistory)}
-                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showPromptHistory
-                                        ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
-                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Clock size={10} /> History
+                                <Clock size={11} className={showPromptHistory ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">History</span>
                             </button>
                             <button
                                 onClick={() => setShowDesignHistory(!showDesignHistory)}
-                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showDesignHistory
-                                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Layers size={10} /> Versions
+                                <Layers size={11} className={showDesignHistory ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">Versions</span>
                             </button>
                             <button
                                 onClick={() => setShowSwarmRegistry(!showSwarmRegistry)}
-                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showSwarmRegistry
-                                        ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
-                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Cpu size={10} /> Swarm
+                                <Cpu size={11} className={showSwarmRegistry ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">Swarm</span>
                             </button>
                         </div>
                     ) : (
