@@ -80,7 +80,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 import { create } from 'zustand';
 
 const useMockStore = create<any>((set) => ({
-    studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+    studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
     creativePrompt: '',
     setCreativePrompt: (val: string) => set({ creativePrompt: val }),
     addToHistory: vi.fn(),
@@ -115,7 +115,7 @@ describe('DirectGenerationTab', () => {
         vi.useRealTimers();
         vi.clearAllMocks();
         useMockStore.setState({
-            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
             creativePrompt: '',
             currentProjectId: 'test-project',
             whiskState: {},
@@ -187,6 +187,15 @@ describe('DirectGenerationTab', () => {
         });
 
         expect(mockHttpsCallable).toHaveBeenCalled();
+        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: 'A cinematic drone shot',
+            aspectRatio: '16:9',
+            model: 'fast',
+            resolution: '1080p',
+            durationSeconds: 6,
+            personGeneration: 'allow_adult',
+            enhancePrompt: true,
+        }));
 
         // Fast-forward all pending timers including the 10ms subscription callback
         // and the 3000ms job cleanup timer.
@@ -213,6 +222,27 @@ describe('DirectGenerationTab', () => {
 
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith('Generation failed: API Error');
+        });
+    });
+
+    it('surfaces Firebase callable details when the public message is internal', async () => {
+        mockHttpsCallable.mockRejectedValueOnce({
+            code: 'functions/internal',
+            message: 'internal',
+            details: { cause: 'Gemini model is not available in this project or region' },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Gemini model is not available in this project or region');
         });
     });
 });

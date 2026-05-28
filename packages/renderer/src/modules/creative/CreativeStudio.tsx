@@ -100,7 +100,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         if (generationMode !== prevGenerationMode.current) {
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
-                if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct') {
+                if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct' && viewMode !== 'omni') {
                     setViewMode('video_production');
                 }
             } else if (viewMode === 'video_production') {

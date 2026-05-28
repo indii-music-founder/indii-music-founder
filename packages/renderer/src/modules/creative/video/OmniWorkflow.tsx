@@ -8,6 +8,10 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+import { httpsCallable } from 'firebase/functions';
+import { getDownloadURL, ref } from 'firebase/storage';
+import { auth, functions, storage } from '@/services/firebase';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 interface StoryboardFrame {
     id: string;
@@ -26,6 +30,30 @@ interface Joint {
 interface Bone {
     from: string;
     to: string;
+}
+
+type CallableError = {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+};
+
+function callableErrorMessage(error: unknown): string {
+    const err = error as CallableError;
+    const details = err?.details;
+    if (details && typeof details === 'object') {
+        const cause = (details as Record<string, unknown>).cause;
+        if (typeof cause === 'string') return cause;
+    }
+    if (error instanceof Error && error.message) return error.message;
+    if (typeof err?.message === 'string') return err.message;
+    return 'Omni remix failed.';
+}
+
+async function resolveStorageUrl(uri: string): Promise<string> {
+    if (!uri.startsWith('gs://')) return uri;
+    const bucketPath = uri.split('/').slice(3).join('/');
+    return getDownloadURL(ref(storage, bucketPath));
 }
 
 // Visual performance skeletal presets
@@ -209,7 +237,9 @@ export default function OmniWorkflow() {
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
     const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
+    const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [audioDubFile, setAudioDubFile] = useState<File | null>(null);
+    const [audioDubUri, setAudioDubUri] = useState<string | null>(null);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [outputVideoUrl, setOutputVideoUrl] = useState<string | null>(null);
 
@@ -225,26 +255,40 @@ export default function OmniWorkflow() {
         { id: '3', timestamp: 7.2, previewUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&q=80', prompt: 'Volumetric color shift syncs directly with the kick drum beat pulse rate' },
     ]);
 
-    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setRefVideoFile(file);
-            const previewUrl = URL.createObjectURL(file);
-            setStudioControls({ omniReferenceVideo: previewUrl });
-            toast.success(`Loaded reference performance: ${file.name}`);
+            try {
+                const userId = auth.currentUser?.uid || 'founder-demo-uid';
+                setRefVideoFile(file);
+                const previewUrl = URL.createObjectURL(file);
+                const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
+                setReferenceVideoUri(uploadedUri);
+                setStudioControls({ omniReferenceVideo: previewUrl });
+                toast.success(`Loaded reference performance: ${file.name}`);
+            } catch (error) {
+                toast.error(`Reference upload failed: ${callableErrorMessage(error)}`);
+            }
         }
     };
 
-    const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setAudioDubFile(file);
-            toast.success(`Loaded multilingual audio track: ${file.name}`);
+            try {
+                const userId = auth.currentUser?.uid || 'founder-demo-uid';
+                const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'audio');
+                setAudioDubFile(file);
+                setAudioDubUri(uploadedUri);
+                toast.success(`Loaded multilingual audio track: ${file.name}`);
+            } catch (error) {
+                toast.error(`Audio upload failed: ${callableErrorMessage(error)}`);
+            }
         }
     };
 
-    const handleStartRemix = () => {
-        if (!studioControls.omniReferenceVideo) {
+    const handleStartRemix = async () => {
+        if (!studioControls.omniReferenceVideo || !referenceVideoUri) {
             toast.error("Please upload an artist base performance video first!");
             return;
         }
@@ -253,17 +297,34 @@ export default function OmniWorkflow() {
         setOutputVideoUrl(null);
         toast.info(`Synthesizing Omni Remix (${studioControls.omniPipelineMode === 'hybrid-veo' ? 'Omni + Veo 3.1 hybrid' : 'pure Omni'})...`);
 
-        setTimeout(() => {
-            setIsRemixing(false);
-            const demoVideoUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-            setOutputVideoUrl(demoVideoUrl);
+        try {
+            const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
+            const response = await generateOmniRemixV3({
+                prompt: remixPrompt,
+                referenceVideoUri,
+                audioUri: audioDubUri || undefined,
+                pipelineMode: studioControls.omniPipelineMode,
+                aspectRatio: studioControls.aspectRatio === '9:16' ? '9:16' : '16:9',
+                durationSeconds: Math.min(12, Math.max(4, studioControls.duration || 8)),
+                posePreservation: studioControls.posePreservation,
+                beatPulse: studioControls.beatPulse,
+                characterXRay: studioControls.characterXRay,
+                synthIdEnabled: studioControls.synthIdEnabled,
+                selectedLanguage: studioControls.selectedLanguage,
+                activePosePreset: studioControls.activePosePreset,
+                lyricsText: studioControls.lyricsText || undefined,
+                typographyStyle: studioControls.typographyStyle,
+                visualizerColor: studioControls.visualizerColor,
+            });
+            const data = response.data as { jobId: string; resultUri: string };
+            const videoUrl = await resolveStorageUrl(data.resultUri);
+            setOutputVideoUrl(videoUrl);
 
-            // Add generated result to showroom history
             const remixId = `omni_remix_${Date.now()}`;
             addToHistory({
                 id: remixId,
                 type: 'video',
-                url: demoVideoUrl,
+                url: videoUrl,
                 prompt: `Omni Remix: ${remixPrompt}. [Pipeline: ${studioControls.omniPipelineMode}, Pose Preset: ${studioControls.activePosePreset}, Dub Lang: ${studioControls.selectedLanguage}, Lyrics: "${studioControls.lyricsText || 'None'}" (${studioControls.typographyStyle}), X-Ray Lock: ${studioControls.characterXRay ? 'ON' : 'OFF'}, Beat Pulse: ${studioControls.beatPulse * 100}%, Pose preservation: ${studioControls.posePreservation * 100}%]`,
                 timestamp: Date.now(),
                 projectId: currentProjectId || '',
@@ -271,7 +332,11 @@ export default function OmniWorkflow() {
             });
 
             toast.success("Omni performance remix completed! Video added to Showroom.");
-        }, 4000);
+        } catch (error) {
+            toast.error(`Omni remix failed: ${callableErrorMessage(error)}`);
+        } finally {
+            setIsRemixing(false);
+        }
     };
 
     const handleDownload = () => {
@@ -352,6 +417,7 @@ export default function OmniWorkflow() {
                         <button 
                             onClick={() => { 
                                 setRefVideoFile(null); 
+                                setReferenceVideoUri(null);
                                 setStudioControls({ omniReferenceVideo: null }); 
                                 setOutputVideoUrl(null);
                                 toast.info("Reference video cleared");
