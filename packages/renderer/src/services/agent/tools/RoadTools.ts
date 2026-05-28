@@ -290,6 +290,42 @@ export const RoadTools = {
         }, `Technical rider generated for ${args.artistName} (Ref: ${riderId}). Includes stage plot, ${validated.inputList.length}-channel input list, and power requirements.`);
     }),
 
+    generate_visa_checklist: wrapTool('generate_visa_checklist', async (args: {
+        artistCitizenship: string;
+        tourDestination: string;
+        crewSize?: number;
+        timelineDays: number;
+    }) => {
+        const crewSize = Math.max(1, args.crewSize || 1);
+        const urgency = args.timelineDays < 45 ? 'urgent' : args.timelineDays < 90 ? 'standard' : 'early';
+        const destination = args.tourDestination.toLowerCase();
+        const likelyVisa = destination.includes('united states') || destination === 'us' || destination === 'usa'
+            ? 'P-1/P-2 artist visa review'
+            : destination.includes('uk') || destination.includes('united kingdom')
+                ? 'Temporary Creative Worker route review'
+                : 'Local performance/work authorization review';
+
+        return toolSuccess({
+            checklistId: `visa-${Date.now().toString(36)}`,
+            artistCitizenship: args.artistCitizenship,
+            tourDestination: args.tourDestination,
+            crewSize,
+            timelineDays: args.timelineDays,
+            urgency,
+            likelyVisa,
+            documents: [
+                'Passport scans for all traveling personnel',
+                'Confirmed itinerary and venue contracts',
+                'Artist biography and press proof',
+                'Letters of invitation or engagement',
+                'Crew role list and payment responsibilities',
+            ],
+            nextStep: urgency === 'urgent'
+                ? 'Escalate to immigration counsel immediately before announcing dates.'
+                : 'Collect documents and confirm destination-specific filing route.',
+        }, `Visa checklist generated for ${crewSize} traveler(s) from ${args.artistCitizenship} to ${args.tourDestination}.`);
+    }),
+
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
         // Item 138: Persist setlist to Firestore for PRO royalty submission
         const setlistId = `SET-${Date.now().toString(36).toUpperCase()}`;
@@ -331,5 +367,6 @@ export const {
     generate_itinerary,
     optimize_tour_route,
     generate_technical_rider,
+    generate_visa_checklist,
     log_live_setlist_for_pro
 } = RoadTools;
