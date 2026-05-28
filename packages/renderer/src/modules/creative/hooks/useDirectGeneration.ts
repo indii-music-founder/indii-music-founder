@@ -13,6 +13,53 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
+type CallableGenerationError = {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+};
+
+function normalizeCallableCode(code: unknown): string | undefined {
+    if (typeof code !== 'string') return undefined;
+    return code.replace(/^functions\//, '');
+}
+
+function detailsMessage(details: unknown): string | undefined {
+    if (!details) return undefined;
+    if (typeof details === 'string') return details;
+    if (details instanceof Error) return details.message;
+    if (typeof details === 'object') {
+        const record = details as Record<string, unknown>;
+        const detailMessage = record.message || record.cause || record.reason;
+        if (typeof detailMessage === 'string') return detailMessage;
+    }
+    return undefined;
+}
+
+function generationErrorMessage(error: unknown): { code?: string; message: string } {
+    const errObj = error as CallableGenerationError | null;
+    const code = normalizeCallableCode(errObj?.code);
+    const rawMessage = error instanceof Error ? error.message : typeof errObj?.message === 'string' ? errObj.message : String(error);
+    const detailMessage = detailsMessage(errObj?.details);
+    const usableRawMessage = rawMessage && rawMessage !== code && rawMessage !== '[object Object]' ? rawMessage : undefined;
+    const message = usableRawMessage || detailMessage;
+
+    if (message && message !== 'internal') {
+        return { code, message };
+    }
+    if (detailMessage) {
+        return { code, message: detailMessage };
+    }
+
+    if (code === 'permission-denied') return { code, message: 'Google generation credentials or permissions are not configured.' };
+    if (code === 'not-found') return { code, message: 'The selected Google generation model is not available in this project or region.' };
+    if (code === 'resource-exhausted') return { code, message: 'Google generation quota is exhausted. Try again later or switch model tier.' };
+    if (code === 'deadline-exceeded') return { code, message: 'Generation timed out. The model may be busy - please try again.' };
+    if (code === 'invalid-argument') return { code, message: 'The generation request was rejected. Check prompt, aspect ratio, and model settings.' };
+
+    return { code, message: 'The Google generation service returned an internal error.' };
+}
+
 export function useDirectGeneration() {
     const {
         studioControls,
@@ -201,6 +248,10 @@ export function useDirectGeneration() {
         const res = await generateImageV3({
             prompt: finalPrompt,
             aspectRatio: studioControls.aspectRatio,
+            model: studioControls.model,
+            imageSize: studioControls.imageSize,
+            thinkingLevel: studioControls.thinkingLevel,
+            useGoogleSearch: studioControls.useGrounding,
             referenceUri
         });
         
@@ -211,7 +262,7 @@ export function useDirectGeneration() {
         ]);
         toast.info('Image job queued. Check gallery for progress.');
 
-    }, [studioControls.aspectRatio, localPrompt, videoInputs?.ingredients, toast]);
+    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
         const userId = auth.currentUser?.uid || 'founder-demo-uid';
@@ -238,14 +289,38 @@ export function useDirectGeneration() {
         const firstCharRef = characterReferences?.[0];
         if (firstIngredient && firstIngredient.url) {
             firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, firstIngredient.type as 'image'|'video');
+        } else if (videoInputs?.firstFrame?.url) {
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, videoInputs.firstFrame.url, 'image');
         } else if (firstCharRef && firstCharRef.image?.url) {
             firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstCharRef.image.url, 'image');
         }
 
+        let lastFrameUri;
+        if (videoInputs?.lastFrame?.url) {
+            lastFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, videoInputs.lastFrame.url, 'image');
+        }
+
+        const referenceUris = characterReferences?.slice(0, 3).length
+            ? await Promise.all(characterReferences.slice(0, 3).map(refItem =>
+                CreativeStorageService.uploadReferenceMedia(userId, refItem.image.url, 'image')
+            ))
+            : undefined;
+        const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
+
         const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
         const res = await generateVideoV3({
             prompt: sequencePrompt,
-            firstFrameUri
+            firstFrameUri,
+            lastFrameUri,
+            referenceUris,
+            aspectRatio: studioControls.aspectRatio,
+            model: studioControls.model,
+            resolution: effectiveResolution,
+            durationSeconds: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
+            personGeneration: studioControls.personGeneration,
+            negativePrompt: studioControls.negativePrompt || undefined,
+            seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
+            enhancePrompt: true,
         });
 
         const data = res.data as { jobId: string };
@@ -254,7 +329,7 @@ export function useDirectGeneration() {
             { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
         ]);
         toast.info('Video job queued. Check gallery for progress.');
-    }, [studioControls, localPrompt, sequence, bpm, videoInputs?.ingredients, characterReferences, toast]);
+    }, [studioControls, localPrompt, sequence, bpm, videoInputs, characterReferences, toast]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) {
@@ -277,12 +352,11 @@ export function useDirectGeneration() {
         } catch (error: unknown) {
             logger.error("Direct Generation Failed:", error);
 
-            const errObj = error as Record<string, unknown> | null;
-            const errMessage = error instanceof Error ? error.message : String(error);
+            const { code, message: errMessage } = generationErrorMessage(error);
 
-            if (errObj?.code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
+            if (code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
                 toast.error('Generation timed out. The API may be busy - please try again.');
-            } else if (errObj?.code === 'resource-exhausted') {
+            } else if (code === 'resource-exhausted') {
                 toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
             } else {
                 toast.error(`Generation failed: ${errMessage || 'Unknown error'}`);
