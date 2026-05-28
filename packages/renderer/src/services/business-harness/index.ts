@@ -6,3 +6,4 @@ export * from './BoardroomMetaHarnessService';
 export * from './BusinessActivityTracker';
 export * from './HarnessCatalog';
 export * from './MerchPodHarnessService';
+export * from './UploadIntakeHarnessService';
