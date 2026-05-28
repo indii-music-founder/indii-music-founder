@@ -8,30 +8,30 @@ This flowchart maps the end-to-end technical architecture of the **Live Media Ge
 graph TD
     %% Define Nodes
     subgraph UI ["1. UI & Client State Layer"]
-        CanvasUI["Direct Canvas UI Component<br>(Creative Studio Canvas)"]
-        ZustandStore["Zustand store/slices/creativeSlice.ts<br>(Client State Control)"]
+        CanvasUI["Direct Canvas UI Component - (Creative Studio Canvas)"]
+        ZustandStore["Zustand store/slices/creativeSlice.ts - (Client State Control)"]
     end
 
     subgraph Gateway ["2. Cloud Functions Gateway (us-west1)"]
-        FunctionsIndex["packages/firebase/src/index.ts<br>(Early admin.initializeApp)"]
-        GatewayModule["packages/firebase/src/functions/creative/gateway.ts<br>(V3 HTTPS onCall Gateway)"]
-        SecretManager["Google Secret Manager<br>(geminiApiKey Secret Mounted)"]
+        FunctionsIndex["packages/firebase/src/index.ts - (Early admin.initializeApp)"]
+        GatewayModule["packages/firebase/src/functions/creative/gateway.ts - (V3 HTTPS onCall Gateway)"]
+        SecretManager["Google Secret Manager - (geminiApiKey Secret Mounted)"]
     end
 
     subgraph Routing ["3. AI Client Resolution & Fallback Logic"]
-        GetAiClient["getAiClient() Helper<br>(Lazy-Loaded GenAI Client)"]
-        ApiKeyPath["Google AI Studio API Path<br>(VITE_API_KEY / geminiApiKey)"]
-        VertexPath["Vertex AI ADC Path<br>(Fallback - GCLOUD_PROJECT)"]
+        GetAiClient["getAiClient() Helper - (Lazy-Loaded GenAI Client)"]
+        ApiKeyPath["Google AI Studio API Path - (VITE_API_KEY / geminiApiKey)"]
+        VertexPath["Vertex AI ADC Path - (Fallback - GCLOUD_PROJECT)"]
     end
 
     subgraph API ["4. Core AI Service & Preview Models"]
-        GenAISDK["@google/genai SDK Client<br>(Unified Google Gen AI)"]
-        GeminiProImage["gemini-3-pro-image-preview<br>(Image Gen V3)"]
-        VeoGenerate["veo-3.1-generate-preview<br>(Video Gen V3)"]
+        GenAISDK["@google/genai SDK Client - (Unified Google Gen AI)"]
+        GeminiProImage["gemini-3-pro-image-preview - (Image Gen V3)"]
+        VeoGenerate["veo-3.1-generate-preview - (Video Gen V3)"]
     end
 
     subgraph Storage ["5. Cloud Assets & Storage"]
-        CloudStorage["Cloud Storage Bucket<br>(gs://creative/* Destination)"]
+        CloudStorage["Cloud Storage Bucket - (gs://creative/* Destination)"]
     end
 
     %% Flow Connections
