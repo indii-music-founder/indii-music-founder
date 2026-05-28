@@ -1,7 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarketingTools } from '../MarketingTools';
-import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { MarketingService } from '@/services/marketing/MarketingService';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';

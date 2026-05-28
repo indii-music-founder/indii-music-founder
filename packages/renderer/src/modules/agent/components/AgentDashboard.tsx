@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MapPin, Sparkles, Megaphone, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
@@ -49,6 +49,21 @@ const CampaignsTab: React.FC = () => {
     }, []);
 
     React.useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+
+    React.useEffect(() => {
+        if (!import.meta.env.DEV) return;
+
+        const handleTestSetCampaigns = (event: Event) => {
+            const customEvent = event as CustomEvent<{ campaigns?: CampaignAsset[] }>;
+            if (Array.isArray(customEvent.detail?.campaigns)) {
+                setCampaigns(customEvent.detail.campaigns);
+                setLoading(false);
+            }
+        };
+
+        window.addEventListener('TEST_INJECT_AGENT_CAMPAIGNS', handleTestSetCampaigns);
+        return () => window.removeEventListener('TEST_INJECT_AGENT_CAMPAIGNS', handleTestSetCampaigns);
+    }, []);
 
     return (
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
