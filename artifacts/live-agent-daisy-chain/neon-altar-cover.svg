@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3000" height="3000" viewBox="0 0 3000 3000">
+  <rect width="3000" height="3000" fill="#080A12"/>
+  <circle cx="1500" cy="1500" r="980" fill="none" stroke="#00F5D4" stroke-width="30" opacity="0.85"/>
+  <circle cx="1500" cy="1500" r="720" fill="none" stroke="#FF4D8D" stroke-width="18" opacity="0.65"/>
+  <path d="M520 1910 C980 1290 2020 1290 2480 1910" fill="none" stroke="#F8FAFC" stroke-width="26" opacity="0.72"/>
+  <text x="1500" y="1440" text-anchor="middle" font-family="Arial, sans-serif" font-size="236" font-weight="800" fill="#F8FAFC">NEON</text>
+  <text x="1500" y="1680" text-anchor="middle" font-family="Arial, sans-serif" font-size="236" font-weight="800" fill="#F8FAFC">ALTAR</text>
+  <text x="1500" y="2020" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" letter-spacing="18" fill="#00F5D4">MARA VALE</text>
+</svg>
