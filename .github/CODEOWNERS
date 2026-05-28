@@ -1,0 +1,10 @@
+# Repository-wide ownership for GitHub review routing.
+* @thewalkeragency
+
+# Critical platform surfaces.
+.github/ @thewalkeragency
+firebase.json @thewalkeragency
+packages/firebase/ @thewalkeragency
+packages/renderer/src/core/config/intelligence-models.ts @thewalkeragency
+packages/renderer/src/modules/creative/ @thewalkeragency
+packages/renderer/src/services/agent/ @thewalkeragency

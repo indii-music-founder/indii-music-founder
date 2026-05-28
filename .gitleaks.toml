@@ -36,9 +36,6 @@ paths = [
     '''config/model_capabilities\.json''',
     '''model_capabilities\.json''',
 
-    # SFTP key for distributor uploads (Electron-only, packaged in desktop build)
-    '''models/id_ed25519''',
-
     # Documentation files containing Firebase API key identifiers (not secrets)
     # Per API Credentials Policy: Firebase keys are identifiers, secured by rules
     '''docs/.*\.md$''',
