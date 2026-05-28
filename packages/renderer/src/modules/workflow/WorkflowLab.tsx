@@ -243,13 +243,14 @@ export default function WorkflowLab() {
         }
     };
 
-    const handleGenerateWorkflow = async () => {
-        if (!generatorPrompt.trim()) return;
+    const handleGenerateWorkflow = async (promptToUse?: string) => {
+        const targetPrompt = promptToUse ?? generatorPrompt;
+        if (!targetPrompt.trim()) return;
         setIsGenerating(true);
         try {
             // Dynamic import to avoid circular deps
             const { generateWorkflowFromPrompt } = await import('./services/workflowGenerator');
-            const workflow = await generateWorkflowFromPrompt(generatorPrompt);
+            const workflow = await generateWorkflowFromPrompt(targetPrompt);
 
             setNodes(workflow.nodes);
             setEdges(workflow.edges);
@@ -500,7 +501,7 @@ export default function WorkflowLab() {
                         onClose={() => setShowGenerator(false)}
                         onGenerate={(prompt) => {
                             setGeneratorPrompt(prompt);
-                            return handleGenerateWorkflow();
+                            return handleGenerateWorkflow(prompt);
                         }}
                     />
                 )}

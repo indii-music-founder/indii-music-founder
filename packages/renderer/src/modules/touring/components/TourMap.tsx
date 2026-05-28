@@ -356,7 +356,7 @@ export const TourMap: React.FC<TourMapProps> = (props) => {
     };
 
     return (
-        <Wrapper apiKey={apiKey} render={renderMapStatus}>
+        <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={["places"]}>
             <MapComponent {...props} onAuthFailure={handleAuthFailure} />
         </Wrapper>
     );
