@@ -229,6 +229,146 @@ export const MarketingTools = {
         }, `A/B testing campaign created for ${product} with 3 copy variants and tracking pixel initialized.`);
     }),
 
+    generate_ab_campaign: wrapTool('generate_ab_campaign', async (args: { productName: string; targetAudience: string; platform: 'Meta' | 'TikTok' | 'YouTube' }) => {
+        const variants = [
+            {
+                id: 'angle-story',
+                hook: `The story behind ${args.productName}`,
+                copy: `For ${args.targetAudience}: hear the record before everyone else.`,
+            },
+            {
+                id: 'angle-proof',
+                hook: `${args.productName} is already moving`,
+                copy: `Tap in now and help push the next independent wave.`,
+            },
+            {
+                id: 'angle-direct',
+                hook: `Play ${args.productName} today`,
+                copy: `Built for ${args.targetAudience}. Stream, save, and share it.`,
+            },
+        ];
+
+        return toolSuccess({
+            campaignId: `ab-${Date.now().toString(36)}`,
+            platform: args.platform,
+            targetAudience: args.targetAudience,
+            variants,
+            trackingPixel: {
+                event: 'ViewContent',
+                status: 'configured_for_review',
+            },
+        }, `Generated ${variants.length} ${args.platform} A/B campaign variants for ${args.productName}.`);
+    }),
+
+    deploy_micro_ad_campaign: wrapTool('deploy_micro_ad_campaign', async (args: {
+        platform: 'Meta' | 'TikTok';
+        dailyBudgetUsd: number;
+        durationDays: number;
+        targetAudienceProfile: string;
+        creativeVariants: string[];
+    }) => {
+        const totalBudget = Math.max(0, args.dailyBudgetUsd) * Math.max(1, args.durationDays);
+
+        return toolSuccess({
+            campaignId: `micro-${Date.now().toString(36)}`,
+            platform: args.platform,
+            dailyBudgetUsd: args.dailyBudgetUsd,
+            durationDays: args.durationDays,
+            totalBudgetUsd: totalBudget,
+            targetAudienceProfile: args.targetAudienceProfile,
+            creativeVariants: args.creativeVariants,
+            status: 'ready_for_approval',
+            note: 'Live ad platform credentials are not invoked from this tool. The campaign package is prepared for review/deployment.',
+        }, `${args.platform} micro-campaign package prepared for ${args.durationDays} day(s) at $${args.dailyBudgetUsd}/day.`);
+    }),
+
+    deploy_email_newsletter: wrapTool('deploy_email_newsletter', async (args: {
+        subjectLine: string;
+        segmentName: string;
+        htmlContent: string;
+        sendAt?: string;
+    }) => {
+        return toolSuccess({
+            campaignId: `email-${Date.now().toString(36)}`,
+            subjectLine: args.subjectLine,
+            segmentName: args.segmentName,
+            htmlPreview: args.htmlContent.slice(0, 500),
+            sendAt: args.sendAt || 'immediate',
+            status: 'queued_for_email_provider',
+            note: 'Provider handoff is prepared; external Mailchimp/Klaviyo send requires configured credentials.',
+        }, `Newsletter "${args.subjectLine}" queued for ${args.segmentName}.`);
+    }),
+
+    generate_presave_campaign: wrapTool('generate_presave_campaign', async (args: {
+        trackTitle: string;
+        releaseDate: string;
+        artworkUrl: string;
+        collectPhoneNumbers?: boolean;
+    }) => {
+        const slug = args.trackTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'release';
+
+        return toolSuccess({
+            campaignId: `presave-${Date.now().toString(36)}`,
+            landingPageSlug: slug,
+            headline: `Pre-save ${args.trackTitle}`,
+            releaseDate: args.releaseDate,
+            artworkUrl: args.artworkUrl,
+            fields: ['email', ...(args.collectPhoneNumbers ? ['phone'] : [])],
+            callsToAction: ['Spotify Pre-save', 'Apple Music Notify', 'YouTube Reminder'],
+            status: 'draft_ready',
+        }, `Pre-save campaign draft generated for ${args.trackTitle}.`);
+    }),
+
+    deploy_sms_blast: wrapTool('deploy_sms_blast', async (args: {
+        messageBody: string;
+        segmentName: string;
+        mediaUrl?: string;
+    }) => {
+        return toolSuccess({
+            blastId: `sms-${Date.now().toString(36)}`,
+            segmentName: args.segmentName,
+            characterCount: args.messageBody.length,
+            mediaUrl: args.mediaUrl || null,
+            status: 'queued_for_sms_provider',
+            note: 'SMS content is queued for provider handoff; Twilio credentials are required for live delivery.',
+        }, `SMS blast queued for ${args.segmentName}.`);
+    }),
+
+    enrich_fan_data: wrapTool('enrich_fan_data', async (args: { emailAddress: string }) => {
+        const domain = args.emailAddress.includes('@') ? args.emailAddress.split('@')[1] : 'unknown';
+        return toolSuccess({
+            emailAddress: args.emailAddress,
+            domain,
+            enrichmentStatus: 'local_profile_only',
+            inferredSegments: domain === 'unknown' ? ['needs_cleanup'] : ['email_contact', 'owned_audience'],
+            note: 'No third-party enrichment API is called without configured provider credentials.',
+        }, `Fan profile enriched locally for ${args.emailAddress}.`);
+    }),
+
+    generate_influencer_bounty: wrapTool('generate_influencer_bounty', async (args: {
+        trackTitle: string;
+        bountyRewardUsd: number;
+        soundUrl: string;
+        targetInfluencerNiche?: string;
+    }) => {
+        return toolSuccess({
+            bountyId: `bounty-${Date.now().toString(36)}`,
+            trackTitle: args.trackTitle,
+            rewardUsd: args.bountyRewardUsd,
+            soundUrl: args.soundUrl,
+            targetInfluencerNiche: args.targetInfluencerNiche || 'music discovery creators',
+            referralRules: [
+                'Use the official sound URL',
+                'Tag the artist account',
+                'Submit post URL for review',
+            ],
+            status: 'draft_ready',
+        }, `Influencer bounty draft generated for ${args.trackTitle}.`);
+    }),
+
     tier_superfans: wrapTool('tier_superfans', async (args: { minSpendForVIP: number; minSpendForSuperfan: number }) => {
         // Superfan CRM Tiering — reads real fan purchase records from Firestore
         const results = { Standard: 0, VIP: 0, Superfan: 0 };

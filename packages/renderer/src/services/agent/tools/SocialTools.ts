@@ -124,8 +124,85 @@ Be specific and data-driven based on the post content above.`;
             logger.error('[SocialTools] Failed to schedule post:', error);
             return toolError(`Failed to schedule post: ${error.message}`);
         }
+    }),
+
+    analyze_sentiment: wrapTool('analyze_sentiment', async (args: { platform: 'All' | 'X' | 'Instagram' | 'TikTok'; timeframe: '7d' | '14d' | '30d' }) => {
+        const platforms = args.platform === 'All'
+            ? ['X', 'Instagram', 'TikTok']
+            : [args.platform];
+
+        return toolSuccess({
+            platforms,
+            timeframe: args.timeframe,
+            sentiment: 'neutral',
+            trend_score: 50,
+            insights: [
+                'No live social account data was pulled in this execution.',
+                'Connect platform APIs to replace this baseline with account-level sentiment.',
+                'Use recent comments, saves, shares, and completion rate as the primary signal set.',
+            ],
+            reportPeriod: args.timeframe,
+        }, `Baseline sentiment report prepared for ${platforms.join(', ')} over ${args.timeframe}.`);
+    }),
+
+    multi_platform_autopost: wrapTool('multi_platform_autopost', async (args: {
+        videoUrl: string;
+        caption: string;
+        hashtags?: string[];
+        platforms: Array<'TikTok' | 'YouTube Shorts' | 'IG Reels'>;
+    }) => {
+        const posts = args.platforms.map(platform => ({
+            platform,
+            status: 'queued_for_provider',
+            caption: args.caption,
+            hashtags: args.hashtags || [],
+            videoUrl: args.videoUrl,
+        }));
+
+        return toolSuccess({
+            batchId: `autopost-${Date.now().toString(36)}`,
+            posts,
+            note: 'Posts are queued for provider handoff. Live native posting requires connected platform credentials.',
+        }, `Queued ${posts.length} short-form post package(s).`);
+    }),
+
+    dispatch_community_webhook: wrapTool('dispatch_community_webhook', async (args: {
+        platform: 'Discord' | 'Telegram';
+        webhookUrl: string;
+        messageContent: string;
+        embedTitle?: string;
+        embedImageUrl?: string;
+        embedLink?: string;
+    }) => {
+        return toolSuccess({
+            dispatchId: `community-${Date.now().toString(36)}`,
+            platform: args.platform,
+            webhookConfigured: Boolean(args.webhookUrl),
+            webhookHost: (() => {
+                try {
+                    return new URL(args.webhookUrl).host;
+                } catch {
+                    return 'invalid-url';
+                }
+            })(),
+            payload: {
+                messageContent: args.messageContent,
+                embedTitle: args.embedTitle || null,
+                embedImageUrl: args.embedImageUrl || null,
+                embedLink: args.embedLink || null,
+            },
+            status: 'prepared_for_webhook_dispatch',
+            note: 'Webhook payload is prepared without exposing or calling the raw webhook URL from the agent loop.',
+        }, `${args.platform} community announcement prepared.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
 // Aliases
-export const { generate_social_post, analyze_social_sentiment, schedule_social_post } = SocialTools;
+export const {
+    generate_social_post,
+    analyze_social_sentiment,
+    schedule_social_post,
+    analyze_sentiment,
+    multi_platform_autopost,
+    dispatch_community_webhook
+} = SocialTools;
