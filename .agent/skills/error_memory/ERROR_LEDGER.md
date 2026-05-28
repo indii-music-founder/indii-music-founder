@@ -535,3 +535,36 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: When migrating an internal service call to a Firebase `httpsCallable` Cloud Function, the return shape changes. Cloud Functions wrap their payload in a `data` object (`{ data: result }`). If the Vitest mock for `httpsCallable` returns the raw internal payload, or if the test assertions expect the old raw payload instead of the new `data`-wrapped payload, the assertions will fail. Additionally, `vi.mock('firebase/functions')` must explicitly export `httpsCallable` as a function that returns the mock callable.
 - FIX: Update `mockHttpsCallable.mockResolvedValue` to return `{ data: { ...expectedPayload } }`. Ensure `vi.mock('firebase/functions')` properly exports the callable factory: `httpsCallable: () => mockHttpsCallable`.
 - PREVENTION: Whenever replacing a direct SDK or internal service call with a Firebase Cloud Function via `httpsCallable`, systematically audit the test mocks and assertions in the corresponding test suite to account for the `{ data: ... }` wrapper in the response payload.
+
+## 2026-05-28 Parallel CI Test Timeouts (Agent Streaming/Delegation)
+
+**SEVERITY:** High (flaky parallel CI failures)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts` & `AgentDelegation.test.ts`
+- ERROR: `Error: Test timed out in 20000ms.` and `AssertionError: expected X to be less than 100` during `npm run ci`.
+- CAUSE: When running tests in parallel across forks (`npm test -- --pool=forks`), tests that run synchronously with tight timing assertions (<100ms) or short timeouts (20000ms) can easily flake due to CPU contention.
+- FIX: Increased the timeout threshold in `AgentStreaming.test.ts` to `60000ms`, and increased the performance bound in `AgentDelegation.test.ts` to `<500ms`.
+- PREVENTION: When writing tests intended to be run in a sharded/parallel CI environment, avoid overly tight assertions on wall-clock execution time. Use `Date.now()` bounds sparingly and with generous padding.
+
+## 2026-05-28 Mermaid Flowchart Validation Crash
+
+**SEVERITY:** High (blocks CI pipeline due to `validate-flowcharts.js` failure)
+
+**MISTAKE:**
+- FILE: `docs/flowcharts/live-media-generation-v3.md`
+- ERROR: `❌ Validation FAILED... Found crash-prone HTML tags in Mermaid label`
+- CAUSE: Agent used HTML `<br>` tags within Mermaid node labels (e.g. `Node["Label<br>Text"]`). The internal flowchart validator forbids HTML tags in mermaid labels because they can break certain Markdown viewer engines (like GitHub's built-in viewer).
+- FIX: Replaced all `<br>` tags with plain text spacing/dashes (` - `).
+- PREVENTION: Never use `<br>` or any other HTML tags inside Mermaid labels. Use literal newlines `\n` or plain spaces.
+
+## 2026-05-28 WIIL Slash Command Location Mismatch
+
+**SEVERITY:** Medium (causes agents to mis-handle `/middle`, `/end`, and other WIIL commands)
+
+**MISTAKE:**
+- FILES: `.agent/workflows/WIIL-skill.md`, `.agent/workflows/middle.md`, `.agent/workflows/end.md`, `packages/renderer/src/core/components/command-bar/PromptArea.tsx`
+- ERROR: Agent treated `/end` as a plain chat terminator and then searched only `.agent/skills/{command}/SKILL.md`.
+- CAUSE: The app command bar wraps arbitrary slash commands as `.agent/skills/{command}/SKILL.md`, but the approved WIIL command manifest stores global commands in `.agent/workflows/*.md`. The command manifest itself lives at `.agent/workflows/WIIL-skill.md`, not `.agent/skills`.
+- FIX: For slash commands named in WIIL, read `.agent/workflows/WIIL-skill.md` first, then load the matching workflow file from `.agent/workflows/{command}.md`. Only fall back to `.agent/skills/{command}/SKILL.md` for actual skill directories.
+- PREVENTION: Before executing `/middle`, `/end`, `/proceed`, `/skill-skill`, or any WIIL command, check `.agent/workflows/WIIL-skill.md`. Do not assume every slash command is a skill folder.
