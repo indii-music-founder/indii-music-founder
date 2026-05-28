@@ -86,8 +86,11 @@ const DOMAINS = [
   }
 ];
 
-function generateExample(scenario: string, primaryAgent: string, isSupporting: boolean = false) {
+function generateExample(scenario: string, primaryAgent: string, targetAgent: string, isSupporting: boolean = false) {
   return JSON.stringify({
+    agent_id: targetAgent,
+    scenario_id: `harness_${Math.random().toString(36).substr(2, 9)}`,
+    category: "harness_hub_and_spoke",
     input: {
       user_message: scenario
     },
@@ -139,7 +142,7 @@ async function main() {
     const primaryExamples = [];
     for (let i = 0; i < domain.primaryCount; i++) {
       const scenario = domain.scenarios[i % domain.scenarios.length];
-      primaryExamples.push(generateExample(scenario, domain.primary));
+      primaryExamples.push(generateExample(scenario, domain.primary, domain.primary, false));
     }
     appendToDataset(domain.primary, primaryExamples);
     console.log(`  -> Appended ${domain.primaryCount} primary examples to ${domain.primary}.jsonl`);
@@ -149,7 +152,7 @@ async function main() {
       const supportingExamples = [];
       for (let i = 0; i < domain.supportingCount; i++) {
         const scenario = domain.scenarios[i % domain.scenarios.length];
-        supportingExamples.push(generateExample(scenario, domain.primary, true));
+        supportingExamples.push(generateExample(scenario, domain.primary, supporting, true));
       }
       appendToDataset(supporting, supportingExamples);
       console.log(`  -> Appended ${domain.supportingCount} cross-domain examples to ${supporting}.jsonl`);

@@ -4,6 +4,7 @@ import { boardroomMetaHarnessService } from './BoardroomMetaHarnessService';
 import { hiddenCostHarnessService } from './HiddenCostHarnessService';
 import { BUSINESS_HARNESS_CATALOG } from './HarnessCatalog';
 import { merchPodHarnessService } from './MerchPodHarnessService';
+import { uploadIntakeHarnessService } from './UploadIntakeHarnessService';
 import { createHarnessRun } from './types';
 
 describe('Business Harness core', () => {
@@ -106,5 +107,36 @@ describe('Business Harness core', () => {
     expect(run.output.preferredProvider).toBe('printful');
     expect(run.approvalGates[0]?.label).toContain('POD');
     expect(run.findings[0]?.title).toContain('Legal review');
+  });
+
+  it('turns an upload intake into song DNA, DDEX, protection, and release outputs', async () => {
+    const result = await uploadIntakeHarnessService.compileUploadIntake({
+      userId: 'user-a',
+      metadata: {
+        trackTitle: 'Night Signal',
+        artistName: 'Artist',
+        genre: 'Electronic',
+        labelName: 'indii.music',
+        releaseDate: '2026-06-26',
+        territories: ['Worldwide'],
+        distributionChannels: ['streaming'],
+        dpid: 'PA-DPIDA-TEST',
+        isrc: 'USQY12600101',
+        upc: '100000000007',
+        iswc: 'T-123.456.789-0',
+        catalogNumber: 'IND-TEST-2026',
+        pro: 'ASCAP',
+        composerIPI: '123456789',
+        splits: [{ legalName: 'Artist', role: 'songwriter', percentage: 100, email: 'a@test.local' }],
+      },
+      selectedStores: ['spotify', 'apple_music'],
+    });
+
+    expect(result.songDnaRun.domain).toBe('song_dna');
+    expect(result.distributionRun.domain).toBe('distribution_ddex');
+    expect(result.creatorProtectionRun.domain).toBe('creator_protection');
+    expect(result.releaseResult.recommendedStrategy).toBeDefined();
+    expect(result.distributionRun.approvalGates[0]?.id).toBe('ddex_delivery_user_approval');
+    expect(result.creatorProtectionRun.output.profile.aiVoiceLikenessPermission).toBe('not_authorized');
   });
 });

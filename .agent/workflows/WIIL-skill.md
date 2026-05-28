@@ -93,6 +93,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Automatically identify and run relevant tests based on current modified files.
 - **When to use:** When writing code that needs quick unit/E2E verification before the final gauntlet.
 
+### `/training` — AI Agent Dataset Generation & Fine-Tuning
+- **Purpose:** Executes the dataset generation (using local scripts) and safely orchestrates cloud AI fine-tuning jobs for the multi-agent hub-and-spoke system.
+- **When to use:** When preparing harness datasets or when explicit user approval is granted to incur model training costs.
+
 ---
 
 ## Creative, Design & Architectural Skills
