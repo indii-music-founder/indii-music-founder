@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-27 17:53 EDT
+**Updated:** 2026-05-28 07:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bf0792aef feat(creative): wire Veo and Omni video generation
+73924768e chore: session checkpoint [17:53]
 ce96a09b1 feat(creative): deploy 2nd gen v3 live media generation gateway with self-healing DB writes and Veo Vertex routing
 d3aeb2890 chore: session checkpoint [17:53]
 7fea8a17c fix(build): resolve ESM circular imports by isolating core React runtime in manualChunks
@@ -12,21 +14,11 @@ d3aeb2890 chore: session checkpoint [17:53]
 d8e9e213b fix(video): resolve missing functions mock in LensVeoAspectRatio test and add get_resized_image_variants tool
 e5a01126c test: add uploadBytes to firebase/storage mocks to fix CI failure
 4a0bee707 test: mock firebase/storage in ImageGenerationService tests
-1042b50ef test: fix httpsCallable mock typecheck and syntax errors
-51a29269e docs: update secure isolation flowchart and error ledger for generateVideoV3 migration
 ```
 
 ## Working State
 ```
- M README.md
- D docs/architecture/agent-zero-handoff.md
- M docs/architecture/file-search-rag-implementation.md
- M docs/legal/EXECUTIVE_OVERVIEW_EVAN.md
- M docs/qa-reports/2026-03-04-qa-report.md
- M packages/renderer/src/services/intelligence/graph/AgentGraphService.ts
-?? docs/architecture/conductor-handoff-architecture.md
-?? docs/user_manual.pdf
-?? scripts/generate-manual-pdf.js
+clean working tree
 ```
 
 ## Decisions
