@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <rect width="1080" height="1920" fill="#090B14"/>
+  <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#00F5D4"/>
+    <stop offset="1" stop-color="#FF4D8D"/>
+  </linearGradient>
+  <rect x="96" y="140" width="888" height="1640" rx="42" fill="none" stroke="url(#beam)" stroke-width="14"/>
+  <path d="M210 1260 C360 980 720 980 870 1260" fill="none" stroke="#F8FAFC" stroke-width="16" opacity="0.78"/>
+  <text x="540" y="760" text-anchor="middle" font-family="Arial, sans-serif" font-size="118" font-weight="800" fill="#F8FAFC">NEON</text>
+  <text x="540" y="900" text-anchor="middle" font-family="Arial, sans-serif" font-size="118" font-weight="800" fill="#F8FAFC">ALTAR</text>
+  <text x="540" y="1110" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" letter-spacing="10" fill="#00F5D4">PRE-SAVE NOW</text>
+  <text x="540" y="1560" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#FF4D8D">JUNE 19, 2026</text>
+</svg>
