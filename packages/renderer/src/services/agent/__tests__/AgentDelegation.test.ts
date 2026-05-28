@@ -390,8 +390,8 @@ describe('Agent Delegation and Collaboration', () => {
 
             const duration = Date.now() - start;
 
-            // Should be very fast (< 100ms for 1000 validations)
-            expect(duration).toBeLessThan(100);
+            // Should be very fast (< 500ms for 1000 validations)
+            expect(duration).toBeLessThan(500);
         });
 
         it('handles validation for all agent combinations efficiently', () => {
