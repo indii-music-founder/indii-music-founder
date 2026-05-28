@@ -39,6 +39,7 @@ export type WizardStep =
   | 'distribution'
   | 'ai_disclosure'
   | 'assets'
+  | 'harness'
   | 'review'
   | 'submitting'
   | 'complete';
@@ -115,7 +116,7 @@ export interface UseDDEXReleaseReturn {
   resetWizard: () => void;
 }
 
-const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'review'];
+const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'harness', 'review'];
 
 /**
  * Extract real audio metadata (sample rate, bit depth) from a File using the Web Audio API.
@@ -324,6 +325,10 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       case 'assets':
         if (!assets.audioFile) errors.push('Audio file is required');
         if (!assets.coverArt) errors.push('Cover art is required');
+        break;
+
+      case 'harness':
+        // Harness compilation is recommended but non-blocking; review still gates release submission.
         break;
 
       case 'review':

@@ -64,7 +64,9 @@ export interface RetrievalOptions {
 // Configuration
 // ============================================================================
 
-const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
+import { env } from '@/config/env';
+
+const API_KEY = env.geminiApiKey;
 const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST; // Use centralized model config
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 

@@ -7,6 +7,7 @@ import ParticipantSelector from './components/ParticipantSelector';
 import { BoardroomTable } from './components/BoardroomTable';
 import { BoardroomConversationPanel } from './components/BoardroomConversationPanel';
 import { useMobile } from '@/hooks/useMobile';
+import { HarnessDecisionDigest } from './components/HarnessDecisionDigest';
 
 import { ArrowLeft, Users, Layers } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
@@ -146,6 +147,7 @@ export function BoardroomModule() {
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
                         className={`flex flex-col min-h-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1`}
                     >
+                        <HarnessDecisionDigest />
                         <BoardroomConversationPanel messages={boardroomMessages} />
                     </motion.div>
                 </div>

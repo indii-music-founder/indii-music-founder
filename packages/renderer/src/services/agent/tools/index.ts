@@ -47,6 +47,8 @@ import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
 import { ArtifactTools } from './ArtifactTools';
+import { ReleaseHarnessTools } from './ReleaseHarnessTools';
+import { CreatorProtectionTools } from './CreatorProtectionTools';
 import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
@@ -112,6 +114,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...MediaTools,
     ...ArtifactTools,
     ...FoundationalTools,
+    ...ReleaseHarnessTools,
+    ...CreatorProtectionTools,
 };
 
 
@@ -190,6 +194,13 @@ AVAILABLE TOOLS:
 66. advance_phase(timelineId) - Skip to the next phase.
 67. adjust_cadence(timelineId, phaseId, cadence) - Change posting frequency mid-campaign.
 68. list_timeline_templates() - List available progressive campaign templates.
+68A. compile_release_harness(projectId?, trackId?, title?, artistName?, genre?, releaseDate?, selectedStores?, primaryGoal?, save?) - Compile song DNA, artist memory, and DDEX readiness into a release strategy draft.
+68B. generate_release_identifiers(title?, artistName?, needsIsrc?, needsUpc?, needsIswcWorkDraft?, needsCatalogNumber?) - Generate ISRC, UPC, catalog number, and an ISWC work draft without fabricating an official ISWC or delivering to stores.
+68C. assess_digital_replica_risk(artistName?, legalName?, state?, workTitle?, isrc?, upc?, iswc?, save?) - Assess creator protection readiness and digital replica risk without giving legal advice.
+68D. classify_replica_incident(description, suspectedUrl?, platform?, nonconsensualIntimateImagery?, save?) - Classify suspected voice clone, likeness, impersonation, copyright, or TAKE IT DOWN incident.
+68E. generate_evidence_packet(workTitle?, isrc?, upc?, iswc?, evidenceRefs?, save?) - Draft a creator protection evidence packet for platform or attorney review.
+68F. prepare_digital_replica_takedown(description, suspectedUrl?, platform?, originalWorkTitle?, rightsholderName?, save?) - Draft a takedown packet; does not send notices.
+68G. review_ai_voice_likeness_clause(contractText) - Flag AI voice, likeness, digital replica, synthetic performance, and model-training contract clauses.
 --- LICENSING & LEGAL ---
 69. match_sync_licensing_brief(briefDescription: string, mood: string, targetBpm: number) - Match catalog tracks to a sync licensing brief using mood/BPM scoring.
 70. generate_beat_lease_contract(beatTitle, producerName, buyerName, leaseType, price) - Generate a beat lease agreement (Exclusive or Non-Exclusive).

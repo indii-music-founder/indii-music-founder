@@ -74,6 +74,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     list_timeline_templates: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     list_timelines: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     get_timeline_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
+    get_release_harness_run: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read saved release harness output' },
 
     // Music (read)
     verify_metadata_golden: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -139,6 +140,19 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     schedule_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     create_campaign_brief: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    compile_release_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Compile and optionally save a release strategy draft' },
+    generate_release_identifiers: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate ISRC, UPC, catalog identifiers, and ISWC work drafts without store delivery' },
+    create_timeline_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft timeline from harness output' },
+    create_campaign_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft campaign brief from harness output' },
+    create_identity_protection_profile: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create or draft a creator identity protection profile without granting AI rights' },
+    assess_digital_replica_risk: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Assess creator protection readiness without legal advice or filing' },
+    classify_replica_incident: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Classify and route suspected AI identity misuse' },
+    generate_evidence_packet: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft an evidence packet for platform or attorney review' },
+    prepare_digital_replica_takedown: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft a legal/platform notice only; sending requires user approval outside this tool' },
+    review_ai_voice_likeness_clause: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Review contract text for AI voice/likeness risk flags' },
+    create_ai_voice_license_terms: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft license terms only; does not authorize use' },
+    monitor_identity_misuse: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Stage manual identity monitoring; biometric monitoring requires separate approval' },
+    escalate_to_attorney: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Prepare attorney escalation packet without contacting counsel automatically' },
 
     // Brand
     generate_brand_guidelines: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
