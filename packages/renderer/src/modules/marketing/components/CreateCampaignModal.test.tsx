@@ -54,6 +54,9 @@ describe('CreateCampaignModal Interaction', () => {
         fireEvent.change(screen.getByTestId('campaign-start-date-input'), {
             target: { value: '2023-10-01' },
         });
+        fireEvent.change(screen.getByTestId('campaign-budget-input'), {
+            target: { value: '2400' },
+        });
 
         // 2. Click Submit
         const submitBtn = screen.getByTestId('create-campaign-submit-btn');
@@ -73,6 +76,7 @@ describe('CreateCampaignModal Interaction', () => {
         expect(MarketingService.createCampaign).toHaveBeenCalledWith(expect.objectContaining({
             title: 'Test Campaign',
             startDate: '2023-10-01',
+            budget: 2400,
         }));
         expect(mockToastSuccess).toHaveBeenCalledWith('Campaign created successfully!');
         expect(mockOnSave).toHaveBeenCalledWith('new-campaign-id');

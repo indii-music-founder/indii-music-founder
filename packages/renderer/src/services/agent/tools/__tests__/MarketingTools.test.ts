@@ -73,6 +73,22 @@ describe('MarketingTools', () => {
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(result.success).toBe(true);
         expect(result.data).toEqual(mockResponse);
-        expect(MarketingService.createCampaign).toHaveBeenCalled();
+        expect(MarketingService.createCampaign).toHaveBeenCalledWith(expect.objectContaining({
+            assetType: 'campaign',
+            title: 'Test',
+            description: 'Win Target audience: All. KPIs: TBD.',
+            budget: 100,
+            durationDays: 30,
+            startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+            posts: [expect.objectContaining({
+                id: 'brief-post-1',
+                platform: 'Instagram',
+                copy: 'Test: Win for All.',
+                day: 1,
+                status: 'PENDING',
+            })],
+            status: 'PENDING',
+            attachedAssets: [],
+        }));
     });
 });
