@@ -153,3 +153,5 @@ graphify-out/
 actionlint
 jobs.json
 run.json
+
+/scratch/
