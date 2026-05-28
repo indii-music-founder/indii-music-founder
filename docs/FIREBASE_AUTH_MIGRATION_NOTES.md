@@ -24,7 +24,7 @@
 
 - **Finding:** The previously hardcoded API key (`AIzaSyDQ...`) was identified as deleted in the GCP Console.
 - **Resolution:**
-  - Migrated to the active, unrestricted API key: `AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM`.
+  - Migrated to the active Firebase web API key. The literal key is intentionally redacted from repository docs.
   - Updated `appId` to `1:223837784072:web:3af738739465ea4095e9bd` and `measurementId` to `G-T6V8WPE7Z7` to match the active configuration in project settings.
   - This resolves the `auth/invalid-credential` error occurring despite physically correct email/passwords.
 
