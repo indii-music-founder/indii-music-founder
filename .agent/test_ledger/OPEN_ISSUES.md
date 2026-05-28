@@ -1089,3 +1089,62 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Screenshot:** `/tmp/map-render.png` (captured during test)
 - **Notes:** The Firestore Rules deployed during the re-auth patch are too restrictive for guests and new test users. Need to verify auth requirements for basic profile reads and writes.
 
+
+### ISSUE-075: "Explore as Guest" Results in Blank Page
+- **Status:** ✅ FIXED (v1.60.0 - Guest Auth Navigation Fix)
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Navigation Clarity
+- **Module:** Onboarding
+- **Found:** 2026-05-28 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Navigate to https://indii.music/onboarding
+  2. Click "Explore as Guest"
+  3. Observe that the page drops to a blank state with no accessible elements or error messages.
+  4. Should navigate to dashboard or next onboarding step.
+- **User Impact:** Guest users are completely blocked from seeing the app.
+- **Screenshot:** N/A
+- **Notes:** Could be related to the same Guest Firestore permissions issue as ISSUE-043.
+- **Fix Applied:** Modified `LoginForm.tsx` so that `loginAsGuest()` now explicitly calls `setModule('dashboard')` after successfully resolving. `useOnboardingRedirect` ignores anonymous users, so this manual redirect is necessary to navigate them away from the onboarding page and into the Dashboard where they can explore as intended.
+
+### ISSUE-076: Creative Director Image Generation Lacks Visual Feedback
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Action Discoverability
+- **Module:** Creative Director
+- **Found:** 2026-05-28 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Navigate to Creative Director.
+  2. Enter an image prompt and click Generate.
+  3. Wait for "Rendering" to complete.
+  4. Observe that no new image is displayed on the screen and no success toast appears.
+  5. The image should appear in a gallery or on the canvas.
+- **User Impact:** User doesn't know if their image actually generated or where it went.
+- **Screenshot:** N/A
+
+### ISSUE-077: Video Creator Reference Upload Dropzone Missing Accessible Input
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Click Efficiency
+- **Module:** Creative Director (Video)
+- **Found:** 2026-05-28 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Go to Video Creator tab.
+  2. Attempt to upload a reference image using standard input mechanisms.
+  3. The dropzone lacks an accessible `<input type="file">` for screen readers and automated testing.
+  4. Should provide an accessible file input overlay or fallback.
+- **User Impact:** Breaks accessibility and blocks headless automation testing for uploads.
+- **Screenshot:** N/A
+
+### ISSUE-078: Video Creator Keyframe START/END Buttons Unresponsive
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Action Discoverability
+- **Module:** Creative Director (Video)
+- **Found:** 2026-05-28 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Go to Video Creator tab.
+  2. Click START (@c1) and END (@c4) keyframe markers.
+  3. The UI does not visibly respond to the interaction or open a selection modal, causing test timeouts.
+  4. Should trigger frame selection for the first-frame/last-frame process.
+- **User Impact:** Users cannot configure keyframes for video generation.
+- **Screenshot:** N/A
