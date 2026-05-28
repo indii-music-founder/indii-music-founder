@@ -13,6 +13,7 @@ import { SplitSheetEscrow } from './components/SplitSheetEscrow';
 import { ReceiptOCR } from './components/ReceiptOCR';
 import { LabelDealRecoupment } from './components/LabelDealRecoupment';
 import { RevenueView } from './components/RevenueView';
+import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
 import { useFinance } from './hooks/useFinance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
@@ -108,6 +109,9 @@ export default function FinanceDashboard() {
                         <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <FileText size={14} /> {t('finance.tabs.expenses')}
                         </TabsTrigger>
+                        <TabsTrigger value="hidden-costs" data-testid="finance-tab-hidden-costs" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Sparkles size={14} /> Hidden Costs
+                        </TabsTrigger>
                         <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Scale size={14} /> {t('finance.tabs.merch')}
                         </TabsTrigger>
@@ -159,6 +163,11 @@ export default function FinanceDashboard() {
                         <TabsContent value="expenses" className="mt-0 outline-none">
                             <ModuleErrorBoundary moduleName="Finance / Expenses">
                                 <ExpenseTracker />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="hidden-costs" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Hidden Costs">
+                                <HiddenCostHarnessPanel expenses={expenses} />
                             </ModuleErrorBoundary>
                         </TabsContent>
                         <TabsContent value="merch" className="mt-0 outline-none">

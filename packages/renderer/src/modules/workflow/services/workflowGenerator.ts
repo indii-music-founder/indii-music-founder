@@ -91,52 +91,57 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
 
     // Define schema manually since SchemaType might be limited in current env
     const schema = {
-        type: 'OBJECT',
+        type: 'object',
         properties: {
-            name: { type: 'STRING' },
-            description: { type: 'STRING' },
+            id: { type: 'string', description: 'Unique ID for the workflow' },
+            name: { type: 'string', description: 'Name of the generated workflow' },
+            description: { type: 'string', description: 'What this workflow accomplishes' },
             nodes: {
-                type: 'ARRAY',
+                type: 'array',
+                description: 'List of nodes in the workflow',
                 items: {
-                    type: 'OBJECT',
+                    type: 'object',
                     properties: {
-                        id: { type: 'STRING' },
-                        type: { type: 'STRING', enum: ['inputNode', 'outputNode', 'departmentNode', 'logicNode'] },
+                        id: { type: 'string' },
+                        type: { type: 'string', enum: ['inputNode', 'outputNode', 'departmentNode', 'logicNode'] },
                         position: {
-                            type: 'OBJECT',
-                            properties: { x: { type: 'NUMBER' }, y: { type: 'NUMBER' } }
+                            type: 'object',
+                            properties: { x: { type: 'number' }, y: { type: 'number' } },
+                            required: ['x', 'y']
                         },
                         data: {
-                            type: 'OBJECT',
+                            type: 'object',
                             properties: {
-                                nodeType: { type: 'STRING' },
-                                departmentName: { type: 'STRING' },
-                                selectedJobId: { type: 'STRING' },
-                                prompt: { type: 'STRING' },
+                                nodeType: { type: 'string' },
+                                departmentName: { type: 'string' },
+                                selectedJobId: { type: 'string' },
+                                prompt: { type: 'string' },
                                 config: {
-                                    type: 'OBJECT',
+                                    type: 'object',
                                     properties: {
-                                        condition: { type: 'STRING' },
-                                        message: { type: 'STRING' },
-                                        variableKey: { type: 'STRING' }
+                                        condition: { type: 'string' },
+                                        message: { type: 'string' },
+                                        variableKey: { type: 'string' }
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    required: ['id', 'type', 'position', 'data']
                 }
             },
             edges: {
-                type: 'ARRAY',
+                type: 'array',
                 items: {
-                    type: 'OBJECT',
+                    type: 'object',
                     properties: {
-                        id: { type: 'STRING' },
-                        source: { type: 'STRING' },
-                        target: { type: 'STRING' },
-                        sourceHandle: { type: 'STRING' },
-                        targetHandle: { type: 'STRING' }
-                    }
+                        id: { type: 'string' },
+                        source: { type: 'string' },
+                        target: { type: 'string' },
+                        sourceHandle: { type: 'string', description: 'Optional source handle id' },
+                        targetHandle: { type: 'string', description: 'Optional target handle id' }
+                    },
+                    required: ['id', 'source', 'target']
                 }
             }
         }

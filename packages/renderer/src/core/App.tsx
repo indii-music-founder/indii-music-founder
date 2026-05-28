@@ -60,6 +60,7 @@ import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 import { logger } from '@/utils/logger';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
+import { BusinessActivityTracker } from '@/services/business-harness/BusinessActivityTracker';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
@@ -470,9 +471,11 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
             toggleAgentWindow: s.toggleAgentWindow,
         }))
     );
+    const userId = useStore(s => s.user?.uid);
 
     return (
         <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+            <BusinessActivityTracker userId={userId} currentModule={currentModule} />
             <GlobalDropZone>
                 <ShareTargetHandler />
                 <BiometricGate>
