@@ -82,9 +82,8 @@ jobs:
       - name: Upload Installer to Firebase Storage (macOS)
         if: runner.os == 'macOS'
         run: |
-          # Upload DMG files from packages/main/dist or dist folder. 
-          # Note: Adjust source path if electron-builder output directory is different.
-          DMG_FILE=$(find . -name "*.dmg" -type f | head -n 1)
+          # Upload DMG files from dist-electron folder
+          DMG_FILE=$(find dist-electron -maxdepth 1 -name "*.dmg" -type f | head -n 1)
           if [ -n "$DMG_FILE" ]; then
             firebase storage:upload "$DMG_FILE" founders/releases/indii-Installer.dmg --project indii-music-founder --non-interactive
           fi
@@ -94,8 +93,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          # Upload EXE files
-          EXE_FILE=$(find . -name "*.exe" -type f | head -n 1)
+          # Upload EXE files from dist-electron folder
+          EXE_FILE=$(find dist-electron -maxdepth 1 -name "*.exe" -type f | head -n 1)
           if [ -n "$EXE_FILE" ]; then
             firebase storage:upload "$EXE_FILE" founders/releases/indii-Setup.exe --project indii-music-founder --non-interactive
           fi
