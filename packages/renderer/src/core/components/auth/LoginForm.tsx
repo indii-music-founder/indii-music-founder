@@ -408,7 +408,10 @@ export default function LoginForm() {
 
                                 <button
                                     type="button"
-                                    onClick={loginAsGuest}
+                                    onClick={async () => {
+                                        await loginAsGuest();
+                                        useStore.getState().setModule('dashboard');
+                                    }}
                                     disabled={authLoading}
                                     data-testid="guest-login-btn"
                                     className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
