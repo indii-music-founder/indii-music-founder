@@ -455,6 +455,29 @@ export const VideoTools = {
         }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
     }),
 
+    orchestrate_timeline: wrapTool('orchestrate_timeline', async (args: { masterScript: string; totalDuration: number; artStyle: string }) => {
+        const sceneDuration = 5;
+        const sceneCount = Math.max(1, Math.ceil(args.totalDuration / sceneDuration));
+        const renderQueue = Array.from({ length: sceneCount }, (_, index) => {
+            const startSecond = index * sceneDuration;
+            const durationSeconds = Math.min(sceneDuration, Math.max(1, args.totalDuration - startSecond));
+            return {
+                sceneId: index + 1,
+                startSecond,
+                durationSeconds,
+                model: 'veo-3.1-generate-preview',
+                prompt: `${args.artStyle}. Scene ${index + 1}/${sceneCount}: ${args.masterScript}`,
+                status: 'queued',
+            };
+        });
+
+        return toolSuccess({
+            totalScenes: renderQueue.length,
+            estimatedTotalDuration: renderQueue.reduce((sum, scene) => sum + scene.durationSeconds, 0),
+            renderQueue,
+        }, `Timeline orchestrated into ${renderQueue.length} Veo-ready scene prompt(s).`);
+    }),
+
     generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
         // Enforce Meta Andromeda 15-variant generation
         // 6 to 15 unique 9:16 vertical video variations
@@ -488,5 +511,6 @@ export const {
     generate_video_chain,
     interpolate_sequence,
     orchestrate_video_render,
+    orchestrate_timeline,
     generate_andromeda_variations
 } = VideoTools;
