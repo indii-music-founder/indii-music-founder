@@ -1,5 +1,6 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { MarketingService } from '@/services/marketing/MarketingService';
+import { CampaignStatus, type ScheduledPost } from '@/modules/marketing/types';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 // useStore removed
 
@@ -52,6 +53,25 @@ const TrackPerformanceSchema = z.object({
     roi: z.string()
 });
 
+const parseCampaignBudget = (value: string): number => {
+    const parsed = Number(value.replace(/[^0-9.]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const parseDurationDays = (value?: string): number => {
+    if (!value) return 30;
+    const parsed = Number(value.match(/\d+/)?.[0]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
+};
+
+const toSupportedPlatform = (channel: string): ScheduledPost['platform'] => {
+    const normalized = channel.toLowerCase();
+    if (normalized.includes('instagram')) return 'Instagram';
+    if (normalized.includes('linkedin')) return 'LinkedIn';
+    if (normalized.includes('email') || normalized.includes('newsletter')) return 'Email';
+    return 'Twitter';
+};
+
 // --- Tools Implementation ---
 
 export const MarketingTools = {
@@ -70,18 +90,34 @@ export const MarketingTools = {
 
         // AUTO-PERSIST: Save the generated brief to the database
         try {
-            const { budget: _budgetStr, ...briefData } = parsed;
+            const durationDays = parseDurationDays(duration);
+            const startDate = new Date().toISOString().split('T')[0]!;
+            const channels = parsed.channels.length > 0 ? parsed.channels : ['Instagram'];
+            const posts: ScheduledPost[] = channels.slice(0, 4).map((channel, index) => ({
+                id: `brief-post-${index + 1}`,
+                platform: toSupportedPlatform(channel),
+                copy: `${parsed.campaignName}: ${goal} for ${parsed.targetAudience}.`,
+                imageAsset: {
+                    assetType: 'image',
+                    title: `${parsed.campaignName} ${channel} creative`,
+                    imageUrl: '',
+                    caption: `${parsed.campaignName} campaign asset`,
+                },
+                day: (index * Math.max(1, Math.floor(durationDays / Math.max(channels.length, 1)))) + 1,
+                status: CampaignStatus.PENDING,
+            }));
+
             await MarketingService.createCampaign({
-                name: parsed.campaignName,
-                platform: parsed.channels[0] || 'general',
-                startDate: Date.now(),
-                status: 'PENDING',
-                budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
-                spent: 0,
-                performance: { reach: 0, clicks: 0 },
+                assetType: 'campaign',
+                title: parsed.campaignName,
+                description: `${goal} Target audience: ${parsed.targetAudience}. KPIs: ${parsed.kpis.join(', ') || 'TBD'}.`,
+                durationDays,
+                startDate,
+                budget: parseCampaignBudget(parsed.budget),
+                posts,
+                status: CampaignStatus.PENDING,
                 attachedAssets: assetIds || [],
-                ...briefData
-            } as unknown as Parameters<typeof MarketingService.createCampaign>[0]);
+            });
             logger.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
         } catch (persistError: unknown) {
             logger.warn('[MarketingTools] Persistence failed:', persistError);

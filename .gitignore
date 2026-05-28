@@ -49,6 +49,7 @@ test_debug*.txt
 test_output*.txt
 test_failures.txt
 test_results*.txt
+eslint_output.json
 
 # Build artifacts
 out/
@@ -59,6 +60,15 @@ lint_errors.txt
 # Sensitive files
 **/access_token.txt
 *.token
+**/id_rsa
+**/id_dsa
+**/id_ecdsa
+**/id_ed25519
+**/*.pem
+**/*.p12
+**/*.pfx
+**/*.key
+!**/*.pub
 
 # Landing page build output
 landing-page/out/**/*.txt
@@ -129,6 +139,7 @@ build_output.txt
 /sentry_issues.json
 /sentry_issues_electron.json
 /sentry_projects.json
+/scratch/diff.txt
 
 # Graphify tool output (generated knowledge graph cache)
 graphify-out/
