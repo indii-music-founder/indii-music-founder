@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-28 07:07 EDT
+**Updated:** 2026-05-28 07:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+57dd08737 fix(agents): enforce swarm tool accessibility
+a1b0bd75d chore: session checkpoint [07:07]
 bf0792aef feat(creative): wire Veo and Omni video generation
 73924768e chore: session checkpoint [17:53]
 ce96a09b1 feat(creative): deploy 2nd gen v3 live media generation gateway with self-healing DB writes and Veo Vertex routing
@@ -12,8 +14,6 @@ d3aeb2890 chore: session checkpoint [17:53]
 90507766c fix(test): Resolve cross-test mock pollution on ../firebase
 196a1d0b3 fix(ci): Resolve CI deployment issues and App Check CORS blocks
 d8e9e213b fix(video): resolve missing functions mock in LensVeoAspectRatio test and add get_resized_image_variants tool
-e5a01126c test: add uploadBytes to firebase/storage mocks to fix CI failure
-4a0bee707 test: mock firebase/storage in ImageGenerationService tests
 ```
 
 ## Working State
