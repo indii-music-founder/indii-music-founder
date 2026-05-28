@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen, Fingerprint } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { MyContracts } from './components/MyContracts';
+import { CreatorProtectionCenter } from './components/CreatorProtectionCenter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { LegalService } from '@/services/legal/LegalService';
+import { creatorProtectionHarnessService } from '@/services/creator-protection';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
@@ -31,6 +33,7 @@ export default function LegalDashboard() {
         score: number;
         risks: string[];
         summary: string;
+        aiClauseFlags?: string[];
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
@@ -112,11 +115,13 @@ Only return valid JSON.
                 ? response.response.text()
                 : (typeof response.response.text === 'string' ? response.response.text : JSON.stringify(response.response));
             const data = JSON.parse(responseText);
+            const aiClauseReview = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(content);
 
             const result = {
                 score: data.score || 0,
                 summary: data.summary || "No summary provided.",
-                risks: data.risks || []
+                risks: [...(data.risks || []), ...aiClauseReview.flags],
+                aiClauseFlags: aiClauseReview.flags,
             };
 
             setAnalysisResult(result);
@@ -221,6 +226,9 @@ Only return valid JSON.
                         </TabsTrigger>
                         <TabsTrigger value="dmca" data-testid="legal-tab-dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Shield size={14} /> {t('legal.tabs.dmca')}
+                        </TabsTrigger>
+                        <TabsTrigger value="protection" data-testid="legal-tab-protection" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Fingerprint size={14} /> Creator Protection
                         </TabsTrigger>
                         <TabsTrigger value="counsel" data-testid="legal-tab-counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Scale size={14} /> {t('legal.tabs.counsel')}
@@ -328,6 +336,10 @@ Only return valid JSON.
 
                 <TabsContent value="dmca" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
                     <DMCANoticeGenerator />
+                </TabsContent>
+
+                <TabsContent value="protection" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
+                    <CreatorProtectionCenter />
                 </TabsContent>
 
                 <TabsContent value="counsel" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">

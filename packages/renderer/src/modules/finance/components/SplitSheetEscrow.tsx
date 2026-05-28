@@ -61,12 +61,16 @@ export function SplitSheetEscrow() {
         try {
             // Only attempt real transfers for collaborators with a connected account.
             // Others are acknowledged but not transferred (they need to complete onboarding first).
-            const transferPromises = collaborators
-                .filter(c => c.accountId)
-                .map(c => {
-                    const splitAmount = Math.round((escrowAmount * 100 * c.splitPct) / 100); // cents
-                    return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
-                });
+            const connectedCollaborators = collaborators.filter(c => c.accountId);
+            const totalCents = Math.round(escrowAmount * 100);
+            let remainingCents = totalCents;
+
+            const transferPromises = connectedCollaborators.map((c, index) => {
+                const isLast = index === connectedCollaborators.length - 1;
+                const splitAmount = isLast ? remainingCents : Math.round((totalCents * c.splitPct) / 100);
+                remainingCents -= splitAmount;
+                return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
+            });
 
             await Promise.all(transferPromises);
             setReleased(true);

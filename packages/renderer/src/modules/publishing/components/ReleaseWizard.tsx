@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
+import { ReleaseHarnessWorkspace } from './ReleaseHarnessWorkspace';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
@@ -27,6 +28,7 @@ const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
   { id: 'distribution', label: 'Distribution', icon: <Globe size={18} /> },
   { id: 'ai_disclosure', label: 'AI Disclosure', icon: <Sparkles size={18} /> },
   { id: 'assets', label: 'Assets', icon: <Upload size={18} /> },
+  { id: 'harness', label: 'Harness', icon: <Sparkles size={18} /> },
   { id: 'review', label: 'Review', icon: <CheckCircle size={18} /> }
 ];
 
@@ -669,6 +671,15 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     </div>
   );
 
+  const renderHarnessStep = () => (
+    <ReleaseHarnessWorkspace
+      metadata={metadata}
+      selectedStores={selectedDistributors}
+      projectId="default-project"
+      onApplyMetadata={updateMetadata}
+    />
+  );
+
   // Render review step
   const renderReviewStep = () => (
     <div className="space-y-6">
@@ -866,6 +877,8 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         return renderAIDisclosureStep();
       case 'assets':
         return renderAssetsStep();
+      case 'harness':
+        return renderHarnessStep();
       case 'review':
         return renderReviewStep();
       case 'submitting':
@@ -977,4 +990,3 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     </div>
   );
 }
-
