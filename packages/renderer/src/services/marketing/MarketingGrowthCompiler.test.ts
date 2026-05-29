@@ -40,8 +40,8 @@ describe('MarketingGrowthCompiler', () => {
     
     // Check recommendations (conversion > 5)
     expect(run.recommendations.length).toBe(1);
-    expect(run.recommendations[0].title).toBe('High-Conversion Channel Amplification');
-    expect(run.recommendations[0].detail).toContain('Summer Teaser');
+    expect(run.recommendations[0]!.title).toBe('High-Conversion Channel Amplification');
+    expect(run.recommendations[0]!.detail).toContain('Summer Teaser');
 
     // No budget overrun gate
     expect(run.approvalGates).toHaveLength(0);
@@ -51,7 +51,7 @@ describe('MarketingGrowthCompiler', () => {
     
     // Cost lines present
     expect(run.costLines.length).toBe(2);
-    expect(run.costLines[0].amount).toBe(2000);
+    expect(run.costLines[0]!.amount).toBe(2000);
   });
 
   it('should flag budget overrun', () => {
