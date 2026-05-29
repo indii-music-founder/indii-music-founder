@@ -48,6 +48,9 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
 
+// Security Functions
+export { persistFraudAlert } from './functions/security/persistFraudAlert';
+
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
 export { createStripeConnectAccount } from './stripe/createStripeConnectAccount';

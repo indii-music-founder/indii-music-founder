@@ -1,5 +1,6 @@
-import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { db, functions } from '@/services/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { logger } from '@/utils/logger';
 
@@ -232,9 +233,11 @@ export class FraudDetectionService {
 
     private static async persistAlert(alert: FraudAlert) {
         try {
-            await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
+            const persistFraudAlertFn = httpsCallable(functions, 'persistFraudAlert');
+            await persistFraudAlertFn(alert);
+            logger.info('[FraudDetection] Successfully persisted fraud alert via Cloud Function.');
         } catch (e: unknown) {
-            logger.error('[FraudDetection] Failed to persist alert', e);
+            logger.error('[FraudDetection] Failed to persist alert via Cloud Function', e);
         }
     }
 }
