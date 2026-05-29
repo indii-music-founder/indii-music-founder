@@ -65,15 +65,12 @@ describe('QCVisualizer', () => {
         expect(screen.getByText(/Distribution Gateway/i)).toBeInTheDocument();
     });
 
-    it('should run demo mode when not in Electron', async () => {
+    it('should require Electron desktop context for local audio QC', async () => {
         renderWithProps();
 
-        const runButton = await screen.findByRole('button', { name: /Run QC \(Demo Mode\)/i });
-        fireEvent.click(runButton);
-
-        // Wait for results
-        await screen.findByTestId('qc-passed-badge');
-        expect(screen.getByText(/\(demo\)/i)).toBeInTheDocument();
+        const runButton = await screen.findByRole('button', { name: /Audio QC requires desktop app/i });
+        expect(runButton).toBeDisabled();
+        expect(screen.getByText(/Desktop app required for local audio QC/i)).toBeInTheDocument();
 
         expect(distributionService.runLocalForensics).not.toHaveBeenCalled();
     });

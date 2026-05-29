@@ -10,12 +10,12 @@ interface City {
     state: string;
     lat: number;
     lng: number;
-    listeners: number; // mock Spotify monthly listeners in region
+    listeners: number; // modeled monthly streaming reach in region
     avgTicketPrice: number;
     venues: number;
 }
 
-// Top 45 US touring markets — real coordinates, population-calibrated listener
+// Top 45 US touring markets — real coordinates, population-calibrated reach
 // estimates, market-rate avg ticket prices, and rough venue counts.
 // Listener figures use metro-population × ~0.35 streaming penetration × genre index.
 const CITY_POOL: City[] = [
@@ -147,7 +147,7 @@ export function TourRouteOptimizer() {
                             </TooltipTrigger>
                             <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
                                 <p className="font-bold text-[#FFE135] mb-1">Regional Fan Database</p>
-                                <p className="text-neutral-400 text-[10px]">Select markets to build your tour legs. The database features 45 calibrated touring regions across the U.S., populated with geographical coordinates, average ticket prices, and regional Spotify monthly listener metrics.</p>
+                                <p className="text-neutral-400 text-[10px]">Select markets to build your tour legs. The database features 45 calibrated touring regions across the U.S., populated with geographical coordinates, average ticket prices, and modeled monthly streaming reach.</p>
                             </TooltipContent>
                         </Tooltip>
                     </div>
@@ -193,7 +193,7 @@ export function TourRouteOptimizer() {
                         </TooltipTrigger>
                         <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
                             <p className="font-bold text-[#FFE135] mb-0.5">Total Fan Reach</p>
-                            <p className="text-neutral-400 text-[10px]">The sum of all regional monthly Spotify streaming listeners in the metropolitan statistical areas of your chosen stops. High reach represents a strong potential base of local ticket buyers.</p>
+                            <p className="text-neutral-400 text-[10px]">The sum of modeled regional monthly streaming reach in the metropolitan statistical areas of your chosen stops. High reach represents a stronger potential base of local ticket buyers.</p>
                         </TooltipContent>
                     </Tooltip>
 
@@ -309,7 +309,7 @@ export function TourRouteOptimizer() {
                                                     </TooltipTrigger>
                                                     <TooltipContent side="top" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
                                                         <p className="font-bold text-[#FFE135] mb-0.5">{city.name} Audience Density</p>
-                                                        <p className="text-neutral-400 text-[10px]">{formatListeners(city.listeners)} active monthly Spotify listeners in the metro region. Representing {barPct}% of the top market density size in your current list.</p>
+                                                        <p className="text-neutral-400 text-[10px]">{formatListeners(city.listeners)} modeled monthly streaming reach in the metro region. Representing {barPct}% of the top market density size in your current list.</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>

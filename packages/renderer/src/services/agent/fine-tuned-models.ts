@@ -50,7 +50,7 @@ export const DIRECT_FINE_TUNED_MODEL_REGISTRY = {
  *
  * These aliases are deliberate: they keep every valid agent on a fine-tuned
  * Vertex endpoint while preserving the narrower runtime identity/prompt/tool
- * surface of the worker or placeholder agent.
+ * surface of the worker metadata entry.
  */
 export const FINE_TUNED_MODEL_ALIASES = {
     'finance.accounting': 'finance',

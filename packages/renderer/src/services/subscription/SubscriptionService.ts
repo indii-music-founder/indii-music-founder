@@ -98,7 +98,7 @@ export class SubscriptionService {
             continue;
           }
 
-          // If not a network error or we're out of retries, break to fallback
+          // If not a network error or we're out of retries, break to the fail-closed error below.
           break;
         }
       }
@@ -110,24 +110,9 @@ export class SubscriptionService {
         message: lastError instanceof Error ? lastError.message : String(lastError)
       });
 
-      // SAFE FALLBACK: Return a mock subscription to unblock UI if backend is down/failing
-      // This prevents the "Failed to fetch subscription" block during navigation.
-      const fallbackTier = import.meta.env.DEV ? SubscriptionTier.STUDIO : SubscriptionTier.FREE;
-      logger.warn(`[SubscriptionService] Returning fallback ${fallbackTier} subscription for ${userId}`);
-      const now = Date.now();
-      const fallback: Subscription & { isFallback: boolean } = {
-        id: `fallback-${userId}`,
-        userId,
-        tier: fallbackTier,
-        status: 'active',
-        currentPeriodStart: now,
-        currentPeriodEnd: now + (30 * 24 * 60 * 60 * 1000),
-        cancelAtPeriodEnd: false,
-        createdAt: now,
-        updatedAt: now,
-        isFallback: true
-      };
-      return fallback;
+      throw lastError instanceof Error
+        ? lastError
+        : new Error(`Failed to fetch subscription for ${userId}.`);
     })().finally(() => {
       this.inFlightSubscription.delete(userId);
     });
@@ -284,19 +269,8 @@ export class SubscriptionService {
     const targetUserId = userId || auth.currentUser?.uid;
 
     if (!targetUserId) {
-      if (action === 'generateVideo' || action === 'generateImage') {
-        // Allow unauthenticated in DEV so that e2e browser QA works without full mock auth flow
-        if (import.meta.env.DEV || import.meta.env.VITE_SKIP_ONBOARDING === 'true') {
-            logger.warn(`[SubscriptionService] DEV MODE - allowing unauthenticated Autonomous generation (${action})`);
-            return { allowed: true };
-        }
-        logger.warn(`[SubscriptionService] Blocked unauthenticated Autonomous generation (${action})`);
-        return { allowed: false, reason: 'Authentication required for Autonomous generation.' };
-      }
-      // DEMO MODE: Allow limited actions for unauthenticated users
-      // This enables the demo experience without blocking on auth
-      logger.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
-      return { allowed: true };
+      logger.warn(`[SubscriptionService] Blocked unauthenticated action (${action})`);
+      return { allowed: false, reason: 'Authentication required for subscription quota checks.' };
     }
 
     try {
@@ -321,13 +295,13 @@ export class SubscriptionService {
 
       if (timeoutId) clearTimeout(timeoutId);
 
-      // If either call failed (auth error, network, etc.), allow with graceful degradation
+      // If either call failed (auth error, network, etc.), block instead of granting unmetered access.
       if (subscriptionResult.status === 'rejected' || usageResult.status === 'rejected') {
         const reason = subscriptionResult.status === 'rejected'
           ? (subscriptionResult.reason instanceof Error ? subscriptionResult.reason.message : String(subscriptionResult.reason))
           : (usageResult.status === 'rejected' ? (usageResult.reason instanceof Error ? usageResult.reason.message : String(usageResult.reason)) : 'unknown');
-        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}), allowing with graceful degradation.`);
-        return { allowed: true };
+        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action.`);
+        return { allowed: false, reason: `Subscription quota check failed: ${reason}` };
       }
 
       const [subscription, usage] = [subscriptionResult.value, usageResult.value] as [Subscription, UsageStats];

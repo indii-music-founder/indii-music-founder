@@ -9,24 +9,11 @@ export interface ExchangeRate {
 }
 
 export class MultiCurrencyService {
-    /** 
-     * Mock rates for demonstration. 
-     * In production, this would be updated via an external API like fixer.io or similar. 
-     */
-    private currentRates: ExchangeRate = {
-        base: 'USD',
-        rates: {
-            'USD': 1.0,
-            'EUR': 0.92,
-            'GBP': 0.79,
-            'JPY': 150.12,
-            'AUD': 1.53,
-            'CAD': 1.35,
-            'BTC': 0.000015,
-            'ETH': 0.00032
-        },
-        updatedAt: new Date().toISOString()
-    };
+    private currentRates: ExchangeRate | null = null;
+
+    setRates(rates: ExchangeRate): void {
+        this.currentRates = rates;
+    }
 
     /**
      * Convert an amount between two currencies.
@@ -34,13 +21,16 @@ export class MultiCurrencyService {
     convert(amount: number, from: CurrencyCode, to: CurrencyCode): number {
         try {
             if (from === to) return amount;
+            if (!this.currentRates) {
+                throw new Error('Exchange rates are not configured.');
+            }
 
             const fromRate = this.currentRates.rates[from];
             const toRate = this.currentRates.rates[to];
 
             if (!fromRate || !toRate) {
                 logger.error(`[Currency] Invalid currency code: ${from} -> ${to}`);
-                return amount;
+                throw new Error(`Invalid or unavailable currency code: ${from} -> ${to}`);
             }
 
             // Convert to USD (base) then to target
@@ -51,7 +41,7 @@ export class MultiCurrencyService {
             return parseFloat(convertedAmount.toFixed(4));
         } catch (error: unknown) {
             logger.error('[Currency] Conversion failed:', error);
-            return amount;
+            throw error;
         }
     }
 

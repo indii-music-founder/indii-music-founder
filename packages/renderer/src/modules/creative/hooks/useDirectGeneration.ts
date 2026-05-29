@@ -235,7 +235,10 @@ export function useDirectGeneration() {
     }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to generate images.');
+        }
 
         let referenceUri;
         const ingredientsList = videoInputs?.ingredients || [];
@@ -265,7 +268,10 @@ export function useDirectGeneration() {
     }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to generate videos.');
+        }
 
         let effectiveResolution = studioControls.resolution;
         if (effectiveResolution === '4k') {

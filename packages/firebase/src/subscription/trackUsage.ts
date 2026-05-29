@@ -4,7 +4,7 @@
  * Records usage for quota tracking and billing.
  */
 
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { UsageRecord } from '../shared/subscription/types';
 import * as crypto from 'crypto';
@@ -12,17 +12,13 @@ import * as crypto from 'crypto';
 export const trackUsage = onCall({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true' }, async (request) => {
   const { userId, type, amount, project, metadata } = request.data;
 
-  // DEMO MODE HANDLING: Allow unauthenticated/demo users
-  // If no auth or no userId, skip tracking but return success
-  // This prevents 500 errors that abort agent execution loops
   if (!request.auth?.uid) {
-    console.log('[trackUsage] Skipping tracking for unauthenticated user (demo mode)');
-    return { success: true, skipped: true, reason: 'unauthenticated' };
+    throw new HttpsError('unauthenticated', 'Usage tracking requires an authenticated user.');
   }
 
   // Validate userId matches auth
   if (userId && userId !== request.auth.uid) {
-    throw new (await import('firebase-functions/v2/https')).HttpsError('permission-denied', 'Unauthorized: userId mismatch');
+    throw new HttpsError('permission-denied', 'Unauthorized: userId mismatch');
   }
 
   const effectiveUserId = userId || request.auth.uid;
@@ -56,7 +52,7 @@ export const trackUsage = onCall({ enforceAppCheck: process.env.SKIP_APP_CHECK !
 
     if (!subscription) {
       console.warn('[trackUsage] Subscription doc exists but no data');
-      return { success: true, skipped: true, reason: 'empty_subscription' };
+      throw new HttpsError('failed-precondition', 'Subscription record is empty. Usage was not tracked.');
     }
 
     // Create usage record
@@ -76,7 +72,10 @@ export const trackUsage = onCall({ enforceAppCheck: process.env.SKIP_APP_CHECK !
 
     return { success: true };
   } catch (error) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[trackUsage] Error:', error);
-    throw new (await import('firebase-functions/v2/https')).HttpsError('internal', 'Internal error during usage tracking', String(error));
+    throw new HttpsError('internal', 'Internal error during usage tracking', String(error));
   }
 });

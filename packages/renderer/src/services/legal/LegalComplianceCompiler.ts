@@ -103,17 +103,24 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
       }
 
       if (item.type === 'trademark_name') {
-        // Mock trademark check
-        if (item.content.toLowerCase().includes('disney') || item.content.toLowerCase().includes('sony')) {
+        const trademarkCleared = item.metadata?.trademarkSearchStatus === 'cleared';
+        if (!trademarkCleared) {
           findings.push({
             id: `f_tm_${item.id}`,
             domain: this.domain,
-            severity: 'high',
-            title: 'High Risk of Trademark Infringement',
-            detail: `Artist or project name "${item.content}" heavily overlaps with known protected entities.`,
-            confidence: 'medium'
+            severity: 'medium',
+            title: 'Trademark Search Required',
+            detail: `Artist or project name "${item.content}" has not been verified by a trademark clearance provider.`,
+            confidence: 'high'
           });
-          highestRiskLevel = Math.max(highestRiskLevel, 3);
+          approvalGates.push({
+            id: `gate_tm_${item.id}`,
+            label: 'Trademark Clearance Verification',
+            reason: 'Name clearance cannot be inferred from local keyword checks.',
+            requiredFor: 'brand_launch',
+            riskTier: 'attorney_review'
+          });
+          highestRiskLevel = Math.max(highestRiskLevel, 2);
         }
       }
 

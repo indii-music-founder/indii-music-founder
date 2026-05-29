@@ -105,6 +105,9 @@ export const createCheckoutSession = onCall({
 
     return response;
   } catch (error: any) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[createCheckoutSession] Error:', error);
     throw new HttpsError('internal', error.message || 'Failed to create checkout session');
   }

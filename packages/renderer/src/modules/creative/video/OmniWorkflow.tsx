@@ -16,7 +16,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 interface StoryboardFrame {
     id: string;
     timestamp: number;
-    previewUrl: string;
+    previewUrl?: string;
     prompt: string;
 }
 
@@ -246,20 +246,17 @@ export default function OmniWorkflow() {
     // Storyboard frame modal/creator state
     const [isAddingFrame, setIsAddingFrame] = useState(false);
     const [newFrameTimestamp, setNewFrameTimestamp] = useState<number>(10.0);
-    const [newFramePrompt, setNewFramePrompt] = useState<string>('Zooming out from DJ decks under swirling purple lasers');
+    const [newFramePrompt, setNewFramePrompt] = useState<string>('');
 
     // Flow Storyboard frames (dynamic state)
-    const [storyboard, setStoryboard] = useState<StoryboardFrame[]>([
-        { id: '1', timestamp: 0, previewUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&q=80', prompt: 'Artist stands center stage, holding base posture under volumetric backlights' },
-        { id: '2', timestamp: 3.5, previewUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=80', prompt: 'Dynamic zoom in, preserving skeletal alignment while swapping background to neon lights' },
-        { id: '3', timestamp: 7.2, previewUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&q=80', prompt: 'Volumetric color shift syncs directly with the kick drum beat pulse rate' },
-    ]);
+    const [storyboard, setStoryboard] = useState<StoryboardFrame[]>([]);
 
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             try {
-                const userId = auth.currentUser?.uid || 'founder-demo-uid';
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error('User must be authenticated to upload reference video.');
                 setRefVideoFile(file);
                 const previewUrl = URL.createObjectURL(file);
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
@@ -276,7 +273,8 @@ export default function OmniWorkflow() {
         const file = e.target.files?.[0];
         if (file) {
             try {
-                const userId = auth.currentUser?.uid || 'founder-demo-uid';
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error('User must be authenticated to upload reference audio.');
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'audio');
                 setAudioDubFile(file);
                 setAudioDubUri(uploadedUri);
@@ -357,7 +355,7 @@ export default function OmniWorkflow() {
             }
         }
 
-        // Browser fallback
+        // Browser download path
         const a = document.createElement('a');
         a.href = outputVideoUrl;
         a.download = `omni_remix_${Date.now()}.mp4`;
@@ -377,7 +375,6 @@ export default function OmniWorkflow() {
         const newFrame: StoryboardFrame = {
             id: `frame_${Date.now()}`,
             timestamp: newFrameTimestamp,
-            previewUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=300&q=80',
             prompt: newFramePrompt
         };
 
@@ -601,6 +598,11 @@ export default function OmniWorkflow() {
                         </div>
                     </div>
                     <div className="flex-1 flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                        {storyboard.length === 0 && (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500 uppercase tracking-widest border border-dashed border-white/10 rounded-xl">
+                                No storyboard frames yet
+                            </div>
+                        )}
                         {storyboard.map((frame, i) => (
                             <motion.div 
                                 key={frame.id} 
@@ -611,7 +613,13 @@ export default function OmniWorkflow() {
                                 }`}
                             >
                                 <div className="h-24 bg-black rounded-lg flex items-center justify-center overflow-hidden border border-white/5 relative">
-                                    <img src={frame.previewUrl} alt={frame.prompt} className="w-full h-full object-cover opacity-80" />
+                                    {frame.previewUrl ? (
+                                        <img src={frame.previewUrl} alt={frame.prompt} className="w-full h-full object-cover opacity-80" />
+                                    ) : (
+                                        <div className="px-3 text-center text-[9px] text-gray-500 uppercase tracking-wider">
+                                            Prompt only
+                                        </div>
+                                    )}
                                     <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/75 rounded text-[8px] font-mono text-purple-300 border border-white/10">
                                         Frame {i + 1} ({frame.timestamp}s)
                                     </div>

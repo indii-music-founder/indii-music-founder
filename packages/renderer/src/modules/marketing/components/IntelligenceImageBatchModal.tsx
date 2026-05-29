@@ -67,7 +67,11 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
                         if (state.post.id === progressUpdate.currentPostId) {
                             return {
                                 ...state,
-                                status: progressUpdate.status === 'complete' ? 'complete' : 'generating'
+                                status: progressUpdate.status === 'complete'
+                                    ? 'complete'
+                                    : progressUpdate.status === 'error'
+                                        ? 'error'
+                                        : 'generating'
                             };
                         }
                         return state;

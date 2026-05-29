@@ -204,16 +204,11 @@ export const FinanceTools = {
                 status: result.data.status
             }, `$${args.holdAmount} successfully held in Stripe Connect escrow account (${result.data.escrowAccount}) until mathematical split sign-off is complete from all parties.`);
         } catch (error: unknown) {
-            // Graceful fallback if Cloud Function not yet deployed
-            logger.warn('[FinanceTools] Escrow Cloud Function unavailable, using local tracking:', error);
-            const escrowAccount = `acct_${crypto.randomUUID().slice(0, 8)}`;
-            return toolSuccess({
-                trackId: args.trackId,
-                escrowAccount,
-                heldAmount: args.holdAmount,
-                pendingSignaturesFrom: args.parties,
-                status: 'FUNDS_TRACKED_LOCALLY'
-            }, `$${args.holdAmount} tracked for escrow in local ledger (${escrowAccount}). Deploy Cloud Function 'initiateSplitEscrow' for live Stripe integration.`);
+            logger.warn('[FinanceTools] Escrow Cloud Function unavailable:', error);
+            return toolError(
+                'Escrow initiation failed: initiateSplitEscrow is unavailable or misconfigured. No funds were held.',
+                'ESCROW_UNAVAILABLE'
+            );
         }
     }),
 
@@ -253,21 +248,8 @@ export const FinanceTools = {
         // Multi-Currency Ledger (Item 153)
         // Fetches live exchange rates from the European Central Bank (free, no key required).
         // ECB publishes daily EUR-based rates; we compute cross-rates for any pair.
-        const fallbackExchangeRates: Record<string, number> = {
-            'USD_EUR': 0.92,
-            'EUR_USD': 1.09,
-            'USD_GBP': 0.79,
-            'GBP_USD': 1.27,
-            'USD_JPY': 149.50,
-            'JPY_USD': 0.0067,
-            'USD_CAD': 1.36,
-            'CAD_USD': 0.74,
-            'USD_AUD': 1.53,
-            'AUD_USD': 0.65,
-        };
-
         let rate: number;
-        let source = 'fallback';
+        let source = 'ECB';
 
         // Validate ISO 4217 currency codes
         const src = args.sourceCurrency.toUpperCase();
@@ -326,12 +308,11 @@ export const FinanceTools = {
                 logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
             }
         } catch (error: unknown) {
-            logger.warn('[FinanceTools] ECB API unavailable, using fallback rates:', error);
-            const pair = `${src}_${tgt}`;
-            rate = fallbackExchangeRates[pair] || 1.0;
-            if (rate === 1.0 && src !== tgt) {
-                source = 'fallback (unknown pair)';
-            }
+            logger.warn('[FinanceTools] ECB API unavailable:', error);
+            return toolError(
+                `Currency conversion failed because live ECB rates are unavailable for ${src}->${tgt}.`,
+                'EXCHANGE_RATE_UNAVAILABLE'
+            );
         }
 
         const converted = args.amount * rate;

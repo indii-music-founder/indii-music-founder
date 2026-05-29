@@ -132,6 +132,24 @@ export class AgentService {
             await this.warmup();
         }
 
+        const isE2EMode = typeof window !== 'undefined' && Boolean((window as any).FIREBASE_E2E_MOCK);
+        const activeUserId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
+        if (!activeUserId) {
+            this.addSystemMessage('Agent requests require an authenticated user.');
+            this.isProcessing = false;
+            if (useStore) {
+                try {
+                    const state = useStore.getState();
+                    if (typeof state.setAgentProcessing === 'function') {
+                        state.setAgentProcessing(false);
+                    }
+                } catch (_) {
+                    // Ignore store reset failure.
+                }
+            }
+            return;
+        }
+
         // PII Redaction for Agent/LLM Input AND Storage
         // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
         const redactedText = this.redactPII(text);
@@ -1181,7 +1199,11 @@ The user will see this plan and can approve it to start execution.`;
 
                     if (planDraft && context.projectId) {
                         const { auth } = await import('@/services/firebase');
-                        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+                        const isE2EMode = typeof window !== 'undefined' && Boolean((window as any).FIREBASE_E2E_MOCK);
+                        const userId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
+                        if (!userId) {
+                            throw new Error('User must be authenticated to create living plans.');
+                        }
 
                         const plan = await livingPlanService.create(
                             userId,

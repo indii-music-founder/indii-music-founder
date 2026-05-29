@@ -78,7 +78,10 @@ export const AnalysisTools = {
     }),
 
     detect_streaming_anomalies: wrapTool('detect_streaming_anomalies', async (args: { trackId: string; currentStreams: number; averageStreams: number }) => {
-        // Mock Anomaly Detection (Item 157)
+        if (args.averageStreams <= 0) {
+            return toolError('Average stream count must be greater than zero for anomaly detection.', 'INVALID_BASELINE');
+        }
+
         const spikePercentage = ((args.currentStreams - args.averageStreams) / args.averageStreams) * 100;
 
         let anomalyType = 'None';

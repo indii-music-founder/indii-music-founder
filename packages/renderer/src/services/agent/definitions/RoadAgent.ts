@@ -43,14 +43,11 @@ Provide:
             }
         },
         search_places: async (args: { query: string }) => {
-            const prompt = `Simulate a Google Maps search for "${args.query}". Return a list of realistic venues / places with ratings and addresses.`;
-            const response = await AutonomousIntelligence.generateText(prompt);
-            return { success: true, data: { results: response } };
+            void args;
+            return { success: false, error: 'Place search requires a connected maps/venue provider. No venue results were generated.' };
         },
         get_distance_matrix: async () => {
-            const prompt = `Generate a realistic distance matrix for a tour route (e.g., LA to SF). Return distance and duration.`;
-            const response = await AutonomousIntelligence.generateText(prompt);
-            return { success: true, data: { matrix: response } };
+            return { success: false, error: 'Distance matrix requires a connected maps provider. No route matrix was generated.' };
         },
         generate_itinerary: async (args: { tour_name: string, start_date: string, end_date: string, cities: string[] }) => {
             const prompt = `Generate a detailed day-by-day tour itinerary for "${args.tour_name}".

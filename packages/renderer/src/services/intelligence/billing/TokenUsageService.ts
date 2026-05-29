@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, FieldValue 
 import { RATE_LIMITS, TIER_CONFIG } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface UsageStats {
     date: string; // YYYY-MM-DD
@@ -31,8 +32,7 @@ export class TokenUsageService {
     private static readonly GLOBAL_EMERGENCY_STOP = false;
 
     private static get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     /**
@@ -41,7 +41,9 @@ export class TokenUsageService {
      */
     static async trackUsage(userId: string, model: string, inputTokens: number, outputTokens: number): Promise<void> {
         if (this.isE2EMode) return;
-        if (!userId) return;
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required to track token usage.');
+        }
 
         const today = new Date().toISOString().split('T')[0];
         const docId = `${userId}_${today}`;
@@ -65,8 +67,13 @@ export class TokenUsageService {
                     requestCount: 1,
                     lastUpdated: serverTimestamp()
                 });
+                return;
             }
-            // Non-blocking error - usage tracking failure should not disrupt service
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Token usage tracking failed. Operation blocked to prevent untracked spend.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 
@@ -83,7 +90,9 @@ export class TokenUsageService {
                 'EMERGENCY STOP: Intelligence services are temporarily suspended for cost protection. Please contact support.'
             );
         }
-        if (!userId) return true; // Fail open if no user (e.g. system tasks)
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for quota checks.');
+        }
 
         const today = new Date().toISOString().split('T')[0];
         const docId = `${userId}_${today}`;
@@ -108,8 +117,11 @@ export class TokenUsageService {
             return true;
         } catch (error: unknown) {
             if (error instanceof AppException) throw error;
-            // Fail open on DB error to avoid blocking service
-            return true;
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Quota check failed. Operation blocked to prevent untracked spend.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 
@@ -125,7 +137,9 @@ export class TokenUsageService {
                 'EMERGENCY STOP: Intelligence services are temporarily suspended.'
             );
         }
-        if (!userId) return;
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for rate-limit checks.');
+        }
 
         // Current minute bucket ID: e.g. "user123_28475920"
         const currentMinute = Math.floor(Date.now() / 60000);
@@ -163,8 +177,12 @@ export class TokenUsageService {
             }
         } catch (error: unknown) {
             if (error instanceof AppException) throw error;
-            // Fail open on DB error to avoid blocking legitimate user service during outages
-            logger.error('Rate limit check failed (failing open):', error);
+            logger.error('Rate limit check failed. Blocking operation:', error);
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Rate limit check failed. Operation blocked to prevent untracked spend.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 }

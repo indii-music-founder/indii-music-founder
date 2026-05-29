@@ -39,7 +39,7 @@ describe('LegalComplianceCompiler', () => {
     expect(run.output.reviewStatus).toBe('blocked');
   });
 
-  it('should warn on high risk trademark names', () => {
+  it('should require provider-backed trademark clearance', () => {
     const run = compiler.compile({
       items: [
         {
@@ -50,8 +50,8 @@ describe('LegalComplianceCompiler', () => {
       ]
     }, ctx);
 
-    expect(run.findings.some(f => f.title === 'High Risk of Trademark Infringement')).toBe(true);
-    expect(run.output.totalRiskScore).toBeGreaterThanOrEqual(3);
+    expect(run.findings.some(f => f.title === 'Trademark Search Required')).toBe(true);
+    expect(run.output.totalRiskScore).toBeGreaterThanOrEqual(2);
   });
 
   it('should block on biometric data privacy risks', () => {

@@ -94,6 +94,8 @@ interface ImportMetaEnv {
     readonly VITE_APP_VERSION?: string
     readonly VITE_SKIP_ONBOARDING?: string
     readonly VITE_EXPOSE_INTERNALS?: string
+    readonly VITE_E2E?: string
+    readonly VITE_FIREBASE_E2E_MOCK?: string
 
     // Spotify OAuth (PKCE — client ID is safe to expose, secret stays in Cloud Functions)
     readonly VITE_SPOTIFY_CLIENT_ID?: string

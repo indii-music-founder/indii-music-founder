@@ -48,26 +48,15 @@ Provide:
             }
         },
         schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
-            // Future: Call SocialService.schedulePost
-            const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
-            const confirmation = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+            void args;
             return {
-                success: true,
-                data: {
-                    status: "Scheduled",
-                    scheduled_count: args.posts.length,
-                    platform_response: confirmation
-                }
+                success: false,
+                error: 'Content scheduling requires a connected social scheduling backend. No posts were scheduled.'
             };
         },
         track_performance: async (args: { campaignId: string }) => {
-            const prompt = `Generate a realistic performance report for campaign "${args.campaignId}".Metrics: Impressions, Clicks, CTR, ROI.Return as JSON.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' });
-                return { success: true, data: response };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
+            void args;
+            return { success: false, error: 'Campaign performance requires connected analytics data. No report was generated.' };
         },
         generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
             const { useStore } = await import('@/core/store');

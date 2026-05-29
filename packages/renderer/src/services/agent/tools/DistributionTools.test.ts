@@ -103,11 +103,12 @@ describe('DistributionTools', () => {
     });
 
     describe('certify_tax_profile', () => {
-        it('should certify valid US SSN format', async () => {
+        it('should require the Bank Layer for tax certification', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: true,
                 country: 'US',
                 tin: '123-45-6789',
@@ -115,13 +116,11 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.success).toBe(true);
-            expect(parsed.data.form_type).toBe('W-9');
-            expect(parsed.data.tin_valid).toBe(true);
-            expect(parsed.data.payout_status).toBe('ACTIVE');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should reject invalid TIN format', async () => {
+        it('should require legal name for certification', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
@@ -134,16 +133,15 @@ describe('DistributionTools', () => {
 
             const parsed = result;
             expect(parsed.success).toBe(false);
-            expect(parsed.data.tin_valid).toBe(false);
-            expect(parsed.data.payout_status).toBe('HELD');
-            expect(parsed.data.tin_message).toContain('TIN Match Fail');
+            expect(parsed.metadata?.errorCode).toBe('LEGAL_NAME_REQUIRED');
         });
 
-        it('should require perjury signature for certification', async () => {
+        it('should not locally certify missing perjury signature', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: true,
                 country: 'US',
                 tin: '123-45-6789',
@@ -152,15 +150,15 @@ describe('DistributionTools', () => {
 
             const parsed = result;
             expect(parsed.success).toBe(false);
-            expect(parsed.data.certified).toBe(false);
-            expect(parsed.data.payout_status).toBe('HELD');
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should select W-8BEN for foreign individuals', async () => {
+        it('should not locally select W-8BEN for foreign individuals', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: false,
                 isEntity: false,
                 country: 'UK',
@@ -169,14 +167,16 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.data.form_type).toBe('W-8BEN');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should select W-8BEN-E for foreign entities', async () => {
+        it('should not locally select W-8BEN-E for foreign entities', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: false,
                 isEntity: true,
                 country: 'DE',
@@ -185,7 +185,8 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.data.form_type).toBe('W-8BEN-E');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
     });
 

@@ -254,14 +254,12 @@ export function SetlistAnalytics() {
                 toast.success("Setlist saved & synced with cloud");
             } catch (err) {
                 logger.error('[SetlistAnalytics] Failed to save setlist:', err);
-                toast.error("Failed to sync setlist to cloud. Saved locally.");
-                // Local fallback
-                setPerformances(prev => [perf, ...prev]);
+                toast.error("Failed to sync setlist to cloud. Setlist was not saved.");
+                return;
             }
         } else {
-            // Guest mode local fallback
-            setPerformances(prev => [perf, ...prev]);
-            toast.success("Setlist logged locally (Sign in to persist)");
+            toast.error("Sign in to save setlists.");
+            return;
         }
 
         // Reset form

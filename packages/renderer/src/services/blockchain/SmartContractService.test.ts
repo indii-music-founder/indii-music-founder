@@ -63,19 +63,15 @@ describe('SmartContractService', () => {
         });
     });
 
-    it('should deploy a split contract and return an address', async () => {
-        const address = await smartContractService.deploySplitContract({
+    it('should require a wallet provider before deploying a split contract', async () => {
+        await expect(smartContractService.deploySplitContract({
             isrc: 'US-XYZ-26-00001',
             payees: [
                 { walletAddress: '0xA', percentage: 50, role: 'Artist' },
                 { walletAddress: '0xB', percentage: 50, role: 'Label' }
             ]
-        });
-        expect(address).toMatch(/^pending:/); // No wallet in test env — returns pending
-        expect(address.length).toBeGreaterThan(10);
-        // Verify persistence was called
-        expect(mockCollection).toHaveBeenCalledWith('smart_contracts');
-        expect(mockAddDoc).toHaveBeenCalled();
+        })).rejects.toThrow('No wallet provider available');
+        expect(mockAddDoc).not.toHaveBeenCalled();
     });
 
     it('should throw error for invalid split percentages', async () => {
@@ -88,14 +84,8 @@ describe('SmartContractService', () => {
         })).rejects.toThrow('Invalid Split Configuration');
     });
 
-    it('should record transactions to the immutable ledger', async () => {
+    it('should read transactions from the immutable ledger', async () => {
         const isrc = 'US-LEDGER-TEST';
-        await smartContractService.deploySplitContract({
-            isrc,
-            payees: [{ walletAddress: '0xA', percentage: 100, role: 'Solo' }]
-        });
-
-        // Test the read back
         const history = await smartContractService.getChainOfCustody(isrc);
 
         // Verify query structure
@@ -106,27 +96,8 @@ describe('SmartContractService', () => {
         expect(history[0]!.action).toBe('SPLIT_EXECUTION');
     });
 
-    it('should mint tokens (SongShares)', async () => {
-        // Setup mock for this specific call if needed, otherwise default works
-        mockGetDocs.mockResolvedValueOnce({
-            docs: [
-                {
-                    data: () => ({
-                        serverTimestamp: vi.fn(),
-                        hash: 'mock-hash',
-                        timestamp: new Date().toISOString(),
-                        action: 'TOKEN_MINT',
-                        entityId: 'US-TOKEN',
-                        details: 'Mock details'
-                    })
-                }
-            ]
-        });
-
-        const tokenAddr = await smartContractService.tokenizeAsset('US-TOKEN', 100);
-        expect(tokenAddr).toMatch(/^pending:token:/); // No wallet in test env — returns pending token
-
-        const history = await smartContractService.getChainOfCustody('US-TOKEN');
-        expect(history[0]!.action).toBe('TOKEN_MINT');
+    it('should require a wallet provider before minting SongShares', async () => {
+        await expect(smartContractService.tokenizeAsset('US-TOKEN', 100))
+            .rejects.toThrow('No wallet provider available');
     });
 });

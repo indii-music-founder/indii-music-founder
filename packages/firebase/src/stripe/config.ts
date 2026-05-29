@@ -28,37 +28,19 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-// Placeholder sentinel values used in development only.
-// Real test-mode price IDs are set below as defaults so local emulation works.
-const PLACEHOLDER_PRICE_IDS: Record<string, string> = {
-  STRIPE_PRICE_PRO_MONTHLY: 'price_1TC4ceECGAoF2ZTQOjOAzJMR',
-  STRIPE_PRICE_PRO_YEARLY: 'price_1TC4cfECGAoF2ZTQgaNAFI1Q',
-  STRIPE_PRICE_STUDIO_MONTHLY: 'price_1TC4cqECGAoF2ZTQdZiAsoXo',
-  STRIPE_PRICE_STUDIO_YEARLY: 'price_1TC4cqECGAoF2ZTQdZiAsoXo', // no yearly yet — same as monthly
-  STRIPE_PRICE_FOUNDER_PASS: 'price_1TC4crECGAoF2ZTQ0rlpPs9q',
-};
-
 /**
- * Resolve a Stripe price env var. In production, warns if the variable is
- * missing or still set to the development placeholder. Does NOT throw — because
- * all Cloud Functions share the same entry point and a throw here kills
- * unrelated functions (e.g. video generation).
+ * Resolve a Stripe price env var without hardcoded product fallbacks.
+ * Callers reject empty values before creating Checkout sessions.
  */
 function resolvePriceId(envVar: string): string {
   const value = process.env[envVar];
-  const placeholder = PLACEHOLDER_PRICE_IDS[envVar] ?? 'price_not_configured';
 
-  if (process.env.NODE_ENV === 'production') {
-    if (!value || value === placeholder) {
-      // Temporarily silenced to avoid potential container healthcheck failure
-      // console.warn(
-      //   `[Stripe] Missing or placeholder price ID for ${envVar}. ` +
-      //   `Checkout will fail until a real Stripe price ID is set.`
-      // );
-    }
+  if (!value) {
+    console.warn(`[Stripe] Missing price ID for ${envVar}. Checkout for the related tier is disabled until configured.`);
+    return '';
   }
 
-  return value || placeholder;
+  return value;
 }
 
 // Stripe price IDs for each tier and billing period
@@ -126,16 +108,9 @@ export function mapStripeStatus(status: Stripe.Subscription.Status): Subscriptio
   }
 }
 
-// Canonical product ID → tier mapping (test-mode IDs baked in; override via env for live)
-const PRODUCT_TIER_MAP: Record<string, SubscriptionTier> = {
-  'prod_UAPRroIFgVlgBH': SubscriptionTier.PRO_MONTHLY,  // indii Pro (test)
-  'prod_UAPRv11hqs79bP': SubscriptionTier.STUDIO,        // indii Studio (test)
-  'prod_UAPRfFZ19hlLEV': SubscriptionTier.FOUNDER,       // indii Founders Pass (test)
-};
-
 /**
  * Map a Stripe product ID (and optional billing interval) to our SubscriptionTier.
- * Checks env overrides first (for live-mode product IDs), then the baked-in map.
+ * Product IDs must be configured through environment variables.
  *
  * When a Pro product has both monthly and yearly prices under the same product ID,
  * the caller should pass the billing interval from `price.recurring.interval`.
@@ -156,11 +131,5 @@ export function mapStripeTierToSubscriptionTier(
     return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
   }
 
-  // Fallback to baked-in test-mode map
-  const bakedTier = PRODUCT_TIER_MAP[productId] ?? null;
-  if (bakedTier === SubscriptionTier.PRO_MONTHLY && billingInterval === 'year') {
-    return SubscriptionTier.PRO_YEARLY;
-  }
-  return bakedTier;
+  return null;
 }
-

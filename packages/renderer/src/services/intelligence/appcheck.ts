@@ -7,6 +7,7 @@
 
 import { env } from '@/config/env';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
  * Checks if an error indicates App Check is not properly configured.
@@ -44,7 +45,7 @@ export function isAppCheckConfigured(): boolean {
     });
 
     // Escape hatch for E2E testing to force fallback to direct Gemini SDK
-    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) {
+    if (isFirebaseE2EMockEnabled()) {
         logger.info('[FirebaseIntelligenceService] FIREBASE_E2E_MOCK is true. Disabling App Check for testing fallback.');
         return false;
     }

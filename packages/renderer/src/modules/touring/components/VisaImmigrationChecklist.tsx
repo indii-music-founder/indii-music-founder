@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { Plane, FileText, CheckCircle } from 'lucide-react';
 
 export const VisaImmigrationChecklist: React.FC = () => {
-    // Visa/Immigration Checklist Module mock (Item 140)
-    // Note: I will also complete item 140 now so it fits logically with the tour planning features
     const [tasks, setTasks] = useState([
-        { id: '1', title: 'File Petition for Nonimmigrant Worker (Form I-129)', completed: true },
+        { id: '1', title: 'File Petition for Nonimmigrant Worker (Form I-129)', completed: false },
         { id: '2', title: 'Collect union advisory opinions (AFM/AGMA)', completed: false },
         { id: '3', title: 'Schedule Consular Interview', completed: false },
-        { id: '4', title: 'Submit Tour Itinerary', completed: true },
+        { id: '4', title: 'Submit Tour Itinerary', completed: false },
     ]);
 
     const toggleTask = (id: string) => {
@@ -16,6 +14,19 @@ export const VisaImmigrationChecklist: React.FC = () => {
     };
 
     const progress = (tasks.filter(t => t.completed).length / tasks.length) * 100;
+
+    const exportChecklist = () => {
+        const body = tasks
+            .map(task => `${task.completed ? '[x]' : '[ ]'} ${task.title}`)
+            .join('\n');
+        const blob = new Blob([`International Touring: US P-2 Visa Checklist\n\n${body}\n`], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'us-p2-visa-checklist.txt';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="p-6 bg-gray-900 rounded-xl border border-gray-800 text-gray-200 w-full max-w-2xl mx-auto">
@@ -65,7 +76,7 @@ export const VisaImmigrationChecklist: React.FC = () => {
                 ))}
             </div>
 
-            <button className="w-full mt-6 py-3 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg transition-colors">
+            <button onClick={exportChecklist} className="w-full mt-6 py-3 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg transition-colors">
                 <FileText size={18} />
                 Export Checklist for Legal Counsel
             </button>

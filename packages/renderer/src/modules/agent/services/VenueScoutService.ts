@@ -1,76 +1,9 @@
 import { Venue } from '../schemas';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 import { db, auth } from '@/services/firebase';
-import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { delay } from '@/utils/async';
+import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { VenueSchema, SearchOptionsSchema } from '../schemas';
 import { logger } from '@/utils/logger';
-
-// Initial Seed Data (Used only if DB is empty or offline)
-const SEED_VENUES: Omit<Venue, 'id'>[] = [
-    {
-        name: 'The Basement East',
-        city: 'Nashville',
-        state: 'TN',
-        capacity: 500,
-        genres: ['Indie', 'Rock', 'Alternative', 'Folk'],
-        website: 'https://thebasementnashville.com',
-        status: 'active',
-        contactEmail: 'booking@thebasementnashville.com',
-        notes: 'Great spot for emerging indie bands. High fill probability for local acts.',
-        imageUrl: 'https://images.unsplash.com/photo-1514525253440-b393452e8d26?auto=format&fit=crop&q=80&w=1000',
-        fitScore: 0
-    },
-    {
-        name: 'Exit/In',
-        city: 'Nashville',
-        state: 'TN',
-        capacity: 400,
-        genres: ['Rock', 'Punk', 'Alternative', 'Metal'],
-        website: 'https://exitin.com',
-        status: 'active',
-        contactEmail: 'booking@exitin.com',
-        notes: 'Legendary venue. Requires verified tour history.',
-        imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000',
-        fitScore: 0
-    },
-    {
-        name: 'Mercy Lounge (Historical)',
-        city: 'Nashville',
-        state: 'TN',
-        capacity: 500,
-        genres: ['Indie', 'Rock', 'Pop'],
-        website: '#',
-        status: 'closed',
-        notes: 'Permanently closed. Do not contact.',
-        imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000',
-        fitScore: 0
-    },
-    {
-        name: 'Marathon Music Works',
-        city: 'Nashville',
-        state: 'TN',
-        capacity: 1500,
-        genres: ['Rock', 'Pop', 'Country', 'Electronic'],
-        website: 'https://marathonmusicworks.com',
-        status: 'active',
-        notes: 'Large capacity. Reach tier target.',
-        imageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000',
-        fitScore: 0
-    },
-    {
-        name: 'The 5 Spot',
-        city: 'Nashville',
-        state: 'TN',
-        capacity: 200,
-        genres: ['Rock', 'Indie', 'Americana'],
-        website: 'https://www.the5spot.club',
-        status: 'active',
-        notes: 'East Nashville staple. Good for residencies.',
-        imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=1000',
-        fitScore: 0
-    }
-];
 
 export type ScoutEvent = {
     step: 'SCANNING_MAP' | 'ANALYZING_CAPACITY' | 'CHECKING_AVAILABILITY' | 'CALCULATING_FIT' | 'COMPLETE';
@@ -124,14 +57,11 @@ export class VenueScoutService {
         }
 
         try {
-            // 1. Ensure DB is seeded
-            await this._ensureSeeded();
-
             if (isAutonomous) {
                 return this._runAutonomousSearch(city, genre, emit);
             }
 
-            // 2. Query Firestore
+            // Query Firestore
             // Note: For Alpha, we'll fetch all matching city/state and filter genres client-side
             // to avoid needing complex composite indexes for every genre permutation right away.
             const venuesRef = collection(db, this.COLLECTION_NAME);
@@ -156,12 +86,6 @@ export class VenueScoutService {
             // 3. Client-side Filter & Scoring
             const processed = this._processResults(results, genre);
 
-            if (processed.length === 0) {
-                // Fallback to local seed if DB is empty or has no matches
-                // Use a proper log level, not just logger.debug for info
-                return this._getFallbackData(city, genre);
-            }
-
             // Update Cache
             if (this.cache.size >= this.MAX_CACHE_SIZE) {
                 const oldestKey = this.cache.keys().next().value;
@@ -172,21 +96,11 @@ export class VenueScoutService {
             return processed;
 
         } catch (error: unknown) {
-            logger.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
-            // Graceful Fallback
-            return this._getFallbackData(city, genre);
+            logger.error('[VenueScoutService] Venue search failed:', error);
+            throw error instanceof Error
+                ? error
+                : new Error(`Venue search failed: ${String(error)}`);
         }
-    }
-
-    private static _getFallbackData(city: string, genre: string): Venue[] {
-        const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
-        const fallbackResults = SEED_VENUES
-            .filter(v => v.city === formattedCity)
-            .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
-
-        // Ensure fallback data is also valid according to schema (it should be, but good practice)
-        // fitScore is added in processResults
-        return this._processResults(fallbackResults, genre);
     }
 
     private static _processResults(venues: Venue[], genre: string): Venue[] {
@@ -205,54 +119,104 @@ export class VenueScoutService {
     private static async _runAutonomousSearch(city: string, genre: string, emit: (step: ScoutEvent['step'], message: string, progress: number) => void): Promise<Venue[]> {
         emit('SCANNING_MAP', `Launching headless browser agent...`, 20);
 
-        const goal = `Find 3 real music venues in ${city} that host ${genre} music. Return their name, capacity, and website.`;
+        const goal = [
+            `Find real music venues in ${city} that host ${genre} music.`,
+            'Return only verifiable structured data as JSON:',
+            '{"venues":[{"name":"...","city":"...","state":"...","capacity":0,"genres":["..."],"website":"https://...","contactEmail":"","status":"active","notes":"source URL or evidence"}]}',
+            'Do not infer missing capacity, contact, website, or status.'
+        ].join(' ');
 
         try {
             const result = await browserAgentDriver.drive('https://www.google.com', goal);
-            if (result.success && result.finalData) {
-                emit('COMPLETE', `Live agent scan complete.`, 100);
-
-                const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
-                const { db } = await import('@/services/firebase');
-
-                const formattedCity = city.split(' ')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    .join(' ');
-
-                const newVenue: Omit<Venue, 'id'> = {
-                    name: 'The Fillmore (Live Scan)',
-                    city: formattedCity,
-                    state: 'MI', // Placeholder
-                    capacity: 2000,
-                    genres: [genre, 'Rock', 'Pop'],
-                    website: 'https://www.thefillmore.com',
-                    status: 'active',
-                    contactEmail: 'booking@thefillmore.com',
-                    notes: 'Freshly discovered by Autonomous Agent.',
-                    fitScore: 85,
-                    imageUrl: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?auto=format&fit=crop&q=80&w=1000'
-                };
-
-                // Save to Firestore so it's there next time
-                try {
-                    // Check authentication before attempting Firestore write
-                    if (!auth.currentUser) {
-                        logger.warn('[VenueScout] Skipping Firestore write: Not authenticated');
-                        return [{ id: 'temp-autonomous', ...newVenue } as Venue];
-                    }
-                    const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
-                        ...newVenue,
-                        createdAt: serverTimestamp()
-                    });
-                    return [{ id: docRef.id, ...newVenue } as Venue];
-                } catch (_e: unknown) {
-                    return [{ id: 'temp-autonomous', ...newVenue } as Venue];
-                }
+            if (!result.success || !result.finalData) {
+                throw new Error(`Autonomous venue scan failed: ${result.logs.join('\n')}`);
             }
+
+            const discovered = this._parseAutonomousVenueData(result.finalData, genre);
+            if (discovered.length === 0) {
+                throw new Error('Autonomous venue scan returned no valid venue records.');
+            }
+
+            if (!auth.currentUser) {
+                throw new Error('Authenticated user is required to save autonomous venue scan results.');
+            }
+
+            const venues: Venue[] = [];
+            for (const venue of discovered) {
+                const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
+                    ...venue,
+                    createdAt: serverTimestamp()
+                });
+                venues.push({ id: docRef.id, ...venue });
+            }
+
+            emit('COMPLETE', `Live agent scan complete.`, 100);
+            return venues;
         } catch (_e: unknown) {
-            // logger.error("Autonomous search failed", e);
+            const message = _e instanceof Error ? _e.message : String(_e);
+            logger.error('[VenueScoutService] Autonomous search failed:', _e);
+            throw new Error(message);
         }
-        return [];
+    }
+
+    private static _parseAutonomousVenueData(finalData: unknown, genre: string): Omit<Venue, 'id'>[] {
+        let payload = finalData;
+        if (typeof payload === 'string') {
+            const trimmed = payload.trim();
+            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                throw new Error('Autonomous venue scan returned unstructured text. Refusing to fabricate venue records.');
+            }
+            try {
+                payload = JSON.parse(trimmed) as unknown;
+            } catch (error: unknown) {
+                throw new Error(`Autonomous venue scan returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
+        const rawVenues = Array.isArray(payload)
+            ? payload
+            : typeof payload === 'object' && payload !== null && Array.isArray((payload as { venues?: unknown }).venues)
+                ? (payload as { venues: unknown[] }).venues
+                : [];
+
+        if (rawVenues.length === 0) {
+            throw new Error('Autonomous venue scan did not include a venues array.');
+        }
+
+        const parsedVenues: Omit<Venue, 'id'>[] = [];
+        const errors: string[] = [];
+
+        rawVenues.forEach((raw, index) => {
+            if (typeof raw !== 'object' || raw === null) {
+                errors.push(`Venue ${index + 1}: expected object.`);
+                return;
+            }
+
+            const candidate = raw as Record<string, unknown>;
+            const parsed = VenueSchema.safeParse({
+                ...candidate,
+                id: `autonomous-${index}`,
+                status: candidate.status || 'unknown',
+                fitScore: 0,
+            });
+
+            if (!parsed.success) {
+                errors.push(`Venue ${index + 1}: ${parsed.error.message}`);
+                return;
+            }
+
+            const { id: _id, fitScore: _fitScore, ...venue } = parsed.data;
+            parsedVenues.push({
+                ...venue,
+                fitScore: this.calculateFitScore(parsed.data, genre, 300),
+            });
+        });
+
+        if (parsedVenues.length === 0) {
+            throw new Error(`Autonomous venue scan returned no valid records. ${errors.join(' ')}`);
+        }
+
+        return parsedVenues;
     }
 
     /**
@@ -261,16 +225,12 @@ export class VenueScoutService {
     static async enrichVenue(venueId: string): Promise<Partial<Venue>> {
         try {
             const venueRef = doc(db, this.COLLECTION_NAME, venueId);
-            await delay(1000);
-            const updates = {
-                lastScoutedAt: Date.now(),
-                contactName: 'Talent Buyer'
-            };
+            const updates = { lastScoutedAt: Date.now() };
             await updateDoc(venueRef, updates);
             return updates;
         } catch (e: unknown) {
-            logger.warn("Failed to enrich venue (offline?)", e);
-            return { lastScoutedAt: Date.now() };
+            logger.error("Failed to enrich venue", e);
+            throw e instanceof Error ? e : new Error(`Failed to enrich venue: ${String(e)}`);
         }
     }
 
@@ -305,32 +265,4 @@ export class VenueScoutService {
         return Math.min(100, score);
     }
 
-    /**
-     * Seed Database if empty
-     */
-    private static async _ensureSeeded() {
-        try {
-            // Check if db is initialized correctly (rudimentary check)
-            if (!db) throw new Error("Database not initialized");
-
-            const venuesRef = collection(db, this.COLLECTION_NAME);
-            const snapshot = await getDocs(query(venuesRef, where('city', '==', 'Nashville')));
-
-            if (!snapshot.empty) return;
-
-            const batch = writeBatch(db);
-            SEED_VENUES.forEach(v => {
-                const newDocRef = doc(venuesRef);
-                batch.set(newDocRef, {
-                    ...v,
-                    createdAt: serverTimestamp()
-                });
-            });
-            await batch.commit();
-
-        } catch (e: unknown) {
-            // Silent fail is acceptable here as searchVenues will fallback to local seed
-            // logger.error('[VenueScoutService] Error seeding venues:', e);
-        }
-    }
 }
