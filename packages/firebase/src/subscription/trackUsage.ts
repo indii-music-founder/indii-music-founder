@@ -9,7 +9,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { UsageRecord } from '../shared/subscription/types';
 import * as crypto from 'crypto';
 
-export const trackUsage = onCall({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true' }, async (request) => {
+export const trackUsage = onCall({ enforceAppCheck: true }, async (request) => {
   const { userId, type, amount, project, metadata } = request.data;
 
   if (!request.auth?.uid) {

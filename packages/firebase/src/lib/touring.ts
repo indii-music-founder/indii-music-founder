@@ -95,7 +95,7 @@ const FuelLogisticsSchema = z.object({
 // ----------------------------------------------------------------------------
 
 export const generateItinerary = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -141,7 +141,7 @@ export const generateItinerary = functions
     });
 
 export const checkLogistics = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -179,7 +179,7 @@ export const checkLogistics = functions
     });
 
 export const findPlaces = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [googleMapsApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [googleMapsApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 

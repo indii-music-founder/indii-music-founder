@@ -130,7 +130,7 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
+const ENFORCE_APP_CHECK = true;
 
 /**
  * Security Helper: Validate Organization Access
@@ -225,7 +225,7 @@ const getAllowedOrigins = (): string[] => {
         'https://app.indii.music',
         'https://studio.indii.music',
         'app://.',  // Electron app
-        'http://localhost:4242' // Electron Studio (Vite)
+        
     ];
 
     // Add localhost origins in emulator/development mode
@@ -1233,6 +1233,7 @@ import { getUsageStats } from "./subscription/getUsageStats";
 import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
+import { createMicroTransaction } from "./subscription/createMicroTransaction";
 
 export {
     getSubscription,
@@ -1245,7 +1246,8 @@ export {
     getUsageStats,
     trackUsage,
     stripeWebhook,
-    activateFounderPass
+    activateFounderPass,
+    createMicroTransaction
 };
 
 // ----------------------------------------------------------------------------
