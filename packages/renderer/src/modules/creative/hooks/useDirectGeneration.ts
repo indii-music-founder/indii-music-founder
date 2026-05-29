@@ -103,7 +103,7 @@ export function useDirectGeneration() {
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Derive results from global generated history to ensure sync with Agent-triggered generations
-    const results = generatedHistory.filter(h => h.projectId === currentProjectId);
+    const results = (generatedHistory || []).filter(h => h.projectId === currentProjectId);
     
     const [activeJobs, setActiveJobs] = useState<VideoGenerationJob[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
