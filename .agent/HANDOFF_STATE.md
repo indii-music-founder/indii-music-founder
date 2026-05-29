@@ -1,24 +1,55 @@
 # Handoff State
-**Updated:** 2026-05-29 13:59 EDT
+**Updated:** 2026-05-29 14:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9fdd99659 test: fix SettingsPanel test i18n mismatch
+69a9bad4e test: fix RiderChecklist and DirectGenerationTab test failures
+9d6931f12 fix(creative): handle undefined generatedHistory in useDirectGeneration tests
+993ca74f6 chore: session checkpoint [13:59]
 4720a77bd feat(phase-1-2): merge sprint A, B, and C implementations
 ea2f5710f chore: clean up temp scripts
 1ec493c0b feat(sprint-b): placeholder cleansing (WO-3), verify agent tools (WO-4) and deterministic generators (WO-5)
 883b43708 feat(security): Sprint C - WO-7, WO-8, WO-9
 353f67981 feat(ux): sprint a - complete WO-1 and WO-2
 021e70575 fix(issues): resolve remaining items in OPEN_ISSUES.md
-4f22abd78 fix(ci): fix Agent Zero nomenclature, enforce casing, resolve warnings
-4a0916217 feat(agent): finalize memory engine, trace services, and metadata
-9a67bb227 feat(distribution): stabilize UPC/ISRC services and remote listeners
-08edaec34 feat(studio): implement dashboards, Web3 splits, and touring
 ```
 
 ## Working State
 ```
-?? .agent/test_ledger/ERROR_LEDGER.md
+ M .claude/settings.json
+ M docs/PRODUCTION_WORK_ORDER.md
+ M docs/architecture/BUSINESS_HARNESS_FULL_SUCCESS_PLAN.md
+ M docs/bugs/onboarding-signup-broken.md
+ M packages/firebase/firestore.rules
+ M packages/firebase/storage.rules
+ M packages/renderer/src/config/env.ts
+ M packages/renderer/src/core/components/auth/LoginForm.tsx
+ M packages/renderer/src/core/store/slices/authSlice.test.ts
+ M packages/renderer/src/core/store/slices/authSlice.ts
+ M packages/renderer/src/core/store/slices/profileSlice.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.test.tsx
+ M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx
+ M packages/renderer/src/modules/publishing/PublishingDashboard.test.tsx
+ M packages/renderer/src/modules/publishing/components/ReleaseWizard.test.tsx
+ M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
+ M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M packages/renderer/src/services/agent/a2a/A2AClient.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/tools/SwarmTools.ts
+ M packages/renderer/src/services/project/ProjectService.ts
+ M packages/renderer/src/services/storage/repository.ts
+ M packages/renderer/src/services/storage/repository_profile.test.ts
+?? docs/flowcharts/guest-auth-retirement.md
+?? packages/renderer/src/services/agent/a2a/A2AConfig.ts
+?? packages/renderer/src/services/agent/a2a/A2ARouter.ts
+?? packages/renderer/src/services/agent/a2a/transport/
+?? packages/renderer/src/services/project/ProjectService.test.ts
+?? packages/renderer/src/utils/authGuards.test.ts
+?? packages/renderer/src/utils/authGuards.ts
 ```
 
 ## Decisions
