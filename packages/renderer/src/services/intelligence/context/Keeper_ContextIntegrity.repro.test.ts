@@ -120,7 +120,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
     afterEach(() => {
         // Clean up the electronAPI we added
-
+        // @ts-ignore
         delete window.electronAPI;
     });
 

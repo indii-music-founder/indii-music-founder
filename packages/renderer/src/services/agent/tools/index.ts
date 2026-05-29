@@ -49,6 +49,7 @@ import { MediaTools } from './MediaTools';
 import { ArtifactTools } from './ArtifactTools';
 import { ReleaseHarnessTools } from './ReleaseHarnessTools';
 import { CreatorProtectionTools } from './CreatorProtectionTools';
+import { HarnessTools } from './HarnessTools';
 import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
@@ -116,6 +117,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...FoundationalTools,
     ...ReleaseHarnessTools,
     ...CreatorProtectionTools,
+    ...HarnessTools,
 };
 
 
