@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-28 08:31 EDT
+**Updated:** 2026-05-28 20:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d5fbb0a1f feat(harness): integrate Upload Intake Harness service, schema validation tests, and training datasets
+6b199cafa refactor: simplify removeVideoJob state update using Object.fromEntries
+90bd1a50c chore: update agent training datasets and add scratch/ to gitignore
+c137daca7 docs: fix mermaid HTML tags for CI validation
+be8b74cdd test: fix test timeouts and thresholds for CI
+e484b7099 fix: fractional cent loss in escrow and TS2339 in GeminiRetrievalService
+4dc1646a1 feat: integrate Harness and Creator Protection features
+cde2d7903 fix(speedrun): resolve guest login blank screen (ISSUE-075)
+cf115edd7 chore: session checkpoint [08:31]
 a1dde5e32 feat(agent): add live coordinated agent daisy chain e2e test and inject mocks
-160e84cab chore: seal repository hygiene for v1.64.0
-d06674d91 chore: session checkpoint [07:50]
-57dd08737 fix(agents): enforce swarm tool accessibility
-a1b0bd75d chore: session checkpoint [07:07]
-bf0792aef feat(creative): wire Veo and Omni video generation
-73924768e chore: session checkpoint [17:53]
-ce96a09b1 feat(creative): deploy 2nd gen v3 live media generation gateway with self-healing DB writes and Veo Vertex routing
-d3aeb2890 chore: session checkpoint [17:53]
-7fea8a17c fix(build): resolve ESM circular imports by isolating core React runtime in manualChunks
 ```
 
 ## Working State
