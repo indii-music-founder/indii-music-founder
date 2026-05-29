@@ -1,41 +1,53 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import fetch from 'node-fetch';
+import { printfulApiKey, getPrintfulApiKey } from '../config/secrets';
 
-const PRINTFUL_API_KEY = process.env.PRINTFUL_API_KEY;
 const BASE_URL = 'https://api.printful.com';
 
 async function request<T>(endpoint: string, options: { method?: string; body?: string; headers?: Record<string, string> } = {}): Promise<T> {
-    if (!PRINTFUL_API_KEY) {
-        throw new HttpsError('internal', 'Printful API key not configured.');
-    }
+    const apiKey = getPrintfulApiKey();
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
-            'Content-Type': 'application/json',
-            ...options.headers
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    
+    let response;
+    try {
+        response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            signal: controller.signal as any,
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    } catch (e: any) {
+        if (e.name === 'AbortError') {
+            throw new HttpsError('deadline-exceeded', 'Printful API request timed out.');
         }
-    });
+        throw new HttpsError('internal', `Printful API request failed: ${e.message}`);
+    } finally {
+        clearTimeout(timeout);
+    }
 
     if (!response.ok) {
         const errorBody = await response.json().catch(() => ({ message: response.statusText }));
         throw new HttpsError('internal', `Printful API error: ${errorBody.error?.message || errorBody.message || response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.result as T;
+    const data = await response.json() as { result: T };
+    return data.result;
 }
 
-export const pod_printfulGetProducts = onCall(async () => {
+export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey] }, async () => {
     return await request<unknown[]>('/store/products');
 });
 
-export const pod_printfulGetProduct = onCall(async (req) => {
+export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown>(`/store/products/${req.data.productId}`);
 });
 
-export const pod_printfulCalculatePrice = onCall(async (req) => {
+export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown>('/orders/estimate-costs', {
         method: 'POST',
         body: JSON.stringify({
@@ -48,7 +60,7 @@ export const pod_printfulCalculatePrice = onCall(async (req) => {
     });
 });
 
-export const pod_printfulGetShippingRates = onCall(async (req) => {
+export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown[]>('/shipping/rates', {
         method: 'POST',
         body: JSON.stringify({
@@ -67,7 +79,7 @@ export const pod_printfulGetShippingRates = onCall(async (req) => {
     });
 });
 
-export const pod_printfulCreateOrder = onCall(async (req) => {
+export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown>('/orders', {
         method: 'POST',
         body: JSON.stringify({
@@ -96,15 +108,15 @@ export const pod_printfulCreateOrder = onCall(async (req) => {
     });
 });
 
-export const pod_printfulGetOrder = onCall(async (req) => {
+export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown>(`/orders/${req.data.orderId}`);
 });
 
-export const pod_printfulCancelOrder = onCall(async (req) => {
+export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
     return await request<unknown>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
 });
 
-export const pod_printfulGenerateMockup = onCall(async (req) => {
+export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey] }, async (req) => {
     const result = await request<unknown>('/mockup-generator/create-task', {
         method: 'POST',
         body: JSON.stringify({
