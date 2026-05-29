@@ -16,7 +16,12 @@ import { ActivityTimeValueCompiler } from './ActivityTimeValueCompiler';
 import { RoadTravelCompiler } from '../touring/RoadTravelCompiler';
 import { GearAssetCompiler } from '../finance/GearAssetCompiler';
 import { RoyaltyRevenueCompiler } from '../finance/RoyaltyRevenueCompiler';
-HarnessRegistry.register(songDnaCompiler);
+
+import { MarketingGrowthCompiler } from '../marketing/MarketingGrowthCompiler';
+import { FanCrmCompiler } from '../marketing/crm/FanCrmCompiler';
+import { LicensingSyncCompiler } from '../licensing/LicensingSyncCompiler';
+import { OpportunityCompiler } from './OpportunityCompiler';
+import { EducationCurriculumCompiler } from '../education/EducationCurriculumCompiler';HarnessRegistry.register(songDnaCompiler);
 HarnessRegistry.register(distributionDdexCompiler);
 HarnessRegistry.register(merchPodHarnessService);
 HarnessRegistry.register(creatorProtectionCompiler);
@@ -33,6 +38,12 @@ HarnessRegistry.register(new ActivityTimeValueCompiler());
 HarnessRegistry.register(new RoadTravelCompiler());
 HarnessRegistry.register(new GearAssetCompiler());
 HarnessRegistry.register(new RoyaltyRevenueCompiler());
+
+HarnessRegistry.register(new MarketingGrowthCompiler());
+HarnessRegistry.register(new FanCrmCompiler());
+HarnessRegistry.register(new LicensingSyncCompiler());
+HarnessRegistry.register(new OpportunityCompiler());
+HarnessRegistry.register(new EducationCurriculumCompiler());
 
 export * from './types';
 export * from './HarnessCompiler';

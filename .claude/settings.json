@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(firebase login:*)",
+      "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName)",
+      "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus)",
+      "Bash(/opt/homebrew/bin/gh pr list --state open --head release-please--branches--main--components--indii-os --json number,title,mergeable)",
+      "Bash(awk '/match \\\\/users\\\\/\\\\{/{f=1} f&&/match \\\\//{print NR\": \"$0} /^    }$/{if\\(f\\)f=0}' packages/firebase/firestore.rules)"
+    ]
+  },
   "hooks": {
     "Stop": [
       {
@@ -60,14 +69,6 @@
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(firebase login:*)",
-      "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName)",
-      "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus)",
-      "Bash(/opt/homebrew/bin/gh pr list --state open --head release-please--branches--main--components--indii-os --json number,title,mergeable)"
     ]
   }
 }
