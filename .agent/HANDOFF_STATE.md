@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-28 22:36 EDT
+**Updated:** 2026-05-28 23:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d1e247f5f fix(security): resolve firestore rules syntax and harden fraud alerts
+0eb92478d chore: session checkpoint [22:36]
 0f9a3505a chore: session checkpoint [22:35]
 c214a6358 chore: session checkpoint [22:34]
 05315ddbe chore: session checkpoint [22:29]
@@ -12,13 +14,47 @@ c214a6358 chore: session checkpoint [22:34]
 6a406ce1d chore: session checkpoint [22:20]
 860b4180e fix(security): owner-scope 16 latent-403 Firestore subcollections + audit doc
 c14a1b0f2 chore: session checkpoint [21:19]
-7e639d1d4 feat(harness): register all core compilers and update wave 1 flowchart
-dce7ece8a feat(harness): integrate Opportunity Harness compiler and tests
 ```
 
 ## Working State
 ```
-clean working tree
+ M .env.example
+ M packages/renderer/src/services/agent/AgentAPIClient.ts
+ M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/CostCircuitBreaker.test.ts
+ M packages/renderer/src/services/agent/IndiiNucleus.ts
+ M packages/renderer/src/services/agent/LedgerCircuitBreaker.test.ts
+ M packages/renderer/src/services/agent/__tests__/AgentService.security.test.ts
+ M packages/renderer/src/services/agent/__tests__/FineTunedModel.validation.test.ts
+ M packages/renderer/src/services/agent/__tests__/fine-tuned-models.test.ts
+ M packages/renderer/src/services/agent/components/AgentExecutor.ts
+ M packages/renderer/src/services/agent/components/__tests__/AgentExecutor.swarm.test.ts
+ M packages/renderer/src/services/agent/components/__tests__/SwarmStability.test.ts
+ M packages/renderer/src/services/agent/fine-tuned-models.ts
+ M packages/renderer/src/services/agent/governance/MultiTurnAutorater.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/types.ts
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+ M packages/renderer/src/services/intelligence/fallback/FallbackClient.ts
+ M packages/renderer/src/services/security/FraudDetectionService.test.ts
+?? docs/flowcharts/agent-swarm-execution.md
+?? docs/flowcharts/audio-intelligence-flow.md
+?? docs/flowcharts/big-brain-memory-engine.md
+?? docs/flowcharts/billing-and-auth-flow.md
+?? docs/flowcharts/boardroom-meta-harness.md
+?? docs/flowcharts/cost-control-system.md
+?? docs/flowcharts/creative-studio-pipeline.md
+?? docs/flowcharts/creator-protection-harness.md
+?? docs/flowcharts/distribution-and-legal-flow.md
+?? docs/flowcharts/entire-app-architecture.md
+?? docs/flowcharts/file-search-rag.md
+?? docs/flowcharts/harness-core-architecture.md
+?? docs/flowcharts/harness-mcp-interaction.md
+?? docs/flowcharts/marketing-and-touring-flow.md
+?? docs/flowcharts/neural-cortex.md
+?? docs/flowcharts/proprietary-ingestion-pipeline.md
+?? docs/flowcharts/video-studio-pipeline.md
+?? docs/flowcharts/workflow-lab-automation.md
 ```
 
 ## Decisions
