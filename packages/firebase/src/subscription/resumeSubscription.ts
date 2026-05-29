@@ -14,7 +14,7 @@ export const resumeSubscription = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
   memory: '256MiB',
-  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+  enforceAppCheck: true,
 }, async (request) => {
   const { userId } = request.data;
 
