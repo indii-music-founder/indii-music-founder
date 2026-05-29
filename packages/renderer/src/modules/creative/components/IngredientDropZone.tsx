@@ -137,12 +137,21 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
     return (
         <div className="w-full">
             <input
+                id={`file-upload-${mode}`}
                 type="file"
                 ref={fileInputRef}
-                className="hidden"
+                className="sr-only focus:outline-none focus:ring-2 focus:ring-dept-creative focus:ring-offset-2 focus:ring-offset-black rounded-md"
                 accept={acceptedTypes}
                 multiple={maxIngredients > 1}
-                onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                disabled={isFull}
+                onChange={(e) => {
+                    if (e.target.files) {
+                        handleFiles(e.target.files);
+                        // Reset input so the same file can be selected again if removed
+                        e.target.value = '';
+                    }
+                }}
+                aria-label={getModeHelperText()}
             />
             
             {showCamera && (
