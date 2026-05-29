@@ -74,7 +74,7 @@ function getAiClient(forceVertex = false): GoogleGenAI {
 
   const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || '';
   if (!project) {
-    throw new HttpsError('permission-denied', 'Google AI credentials are not configured for media generation.');
+    throw new HttpsError('failed-precondition', 'Google AI credentials are not configured for media generation.');
   }
 
   return new GoogleGenAI({
@@ -349,9 +349,13 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   let code: GatewayErrorCode = 'internal';
   if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked')) code = 'invalid-argument';
   else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) code = 'permission-denied';
-  else if (status === 404 || lower.includes('not found')) code = 'not-found';
+  else if (status === 404 || lower.includes('not found')) code = 'failed-precondition';
   else if (status === 429 || lower.includes('quota') || lower.includes('rate limit')) code = 'resource-exhausted';
   else if (status === 503 || status === 504 || lower.includes('timeout') || lower.includes('deadline') || lower.includes('overloaded')) code = 'deadline-exceeded';
+
+  if (lower.includes('is not configured') || lower.includes('api key unavailable') || lower.includes('model not found')) {
+      code = 'failed-precondition';
+  }
 
   return new HttpsError(code, `${context}: ${message}`, { status, cause: message });
 }
