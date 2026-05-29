@@ -2,6 +2,7 @@ import { getFirestore, collection, addDoc, getDocs, query, where, limit, runTran
 import { app, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import type { ISRCRecordDocument } from '@/types/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface ISRCRecord {
     id?: string;
@@ -21,7 +22,7 @@ export class ISRCService {
      * Uses a transaction to prevent double-assignment.
      */
     async assignNextISRC(trackId: string): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return 'US-E2E-25-00001';
         }
 

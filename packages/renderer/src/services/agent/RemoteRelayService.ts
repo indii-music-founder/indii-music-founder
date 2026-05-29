@@ -38,6 +38,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -317,7 +318,7 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
-        if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return;
+        if (isFirebaseE2EMockEnabled()) return;
         
         const ref = getRelayRef();
         if (!ref) return;

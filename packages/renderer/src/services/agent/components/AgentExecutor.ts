@@ -11,6 +11,7 @@ import { PipelineContext } from './ContextPipeline';
 import { logger } from '@/utils/logger';
 import { DelegationLoopDetector } from '../LoopDetector';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
@@ -68,7 +69,7 @@ export class AgentExecutor {
             throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}'. ${errorDetail}`);
         }
 
-        const isE2EMode = typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'));
+        const isE2EMode = isFirebaseE2EMockEnabled();
         const userId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
         if (!userId) {
             throw new Error('[AgentExecutor] User must be authenticated to execute agents.');
