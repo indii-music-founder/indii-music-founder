@@ -47,26 +47,10 @@ export class CanvasBatchService {
 
         try {
             const targets = PLATFORM_DIMENSIONS.filter(d => selectedIds.includes(d.id));
-            let completed = 0;
+            void canvas;
 
-            for (const target of targets) {
-                logger.debug(`[CanvasBatch] Processing ${target.label} (${target.width}x${target.height})`);
-
-                // In a real browser context:
-                // 1. Temporarily resize canvas
-                // 2. Adjust elements (relative positioning)
-                // 3. call canvas.toDataURL() or canvas.toCanvasElement()
-                // 4. Reset canvas size
-
-                // Mock result URL
-                const mockUrl = `https://firebasestorage.googleapis.com/v0/b/mock/o/creative/batch%2F${jobId}_${target.id}.png`;
-                exportedMap.set(target.id, mockUrl);
-
-                completed++;
-                store.updateJobProgress(jobId, (completed / targets.length) * 100);
-
-                // Simulate processing time
-                await new Promise(r => setTimeout(r, 800));
+            if (targets.length > 0) {
+                throw new Error('Canvas batch export renderer is not configured. No asset URL was generated.');
             }
 
             store.updateJobStatus(jobId, 'success');

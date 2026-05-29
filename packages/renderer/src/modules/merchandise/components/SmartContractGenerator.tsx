@@ -1,7 +1,7 @@
 /**
  * SmartContractGenerator — Item 127 (PRODUCTION_200)
  * UI form to generate ERC-721/ERC-1155 royalty split smart contracts.
- * Calls SmartContractService.deploySplitContract() (mock Firestore).
+ * Calls SmartContractService.deploySplitContract().
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';

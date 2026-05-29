@@ -7,6 +7,7 @@ import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 import { bigBrainEngine } from '../memory/BigBrainEngine';
 import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
+import { auth } from '@/services/firebase';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -41,7 +42,7 @@ export class ContextPipeline {
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
         const { useStore } = await import('@/core/store');
         const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
-        const userId = userProfile?.uid;
+        const userId = userProfile?.uid || auth.currentUser?.uid;
 
         let autoRecallBlock = '';
         let relevantMemories: string[] = [];
@@ -132,9 +133,13 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         const memoryContext = this.formatMemoryContext(relevantMemories);
 
         // 6. Generate A2A Swarm Directive
+        if (!userId) {
+            throw new Error('User must be authenticated to build agent context.');
+        }
+
         const directive: Directive = {
             id: crypto.randomUUID(),
-            userId: userId || 'founder-demo-uid',
+            userId,
             title: stateContext.activeModule ? `Task: ${stateContext.activeModule}` : 'General Consultation',
             status: 'IN_PROGRESS',
             assignedAgent: (stateContext.activeModule || 'generalist') as any,

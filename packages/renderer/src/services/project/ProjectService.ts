@@ -37,6 +37,10 @@ export class ProjectService {
     name: string,
     description: string = '',
   ): Promise<Project> {
+    if (!userId || userId === 'founder-demo-uid') {
+      throw new Error('A real authenticated user ID is required to create projects.');
+    }
+
     const now = serverTimestamp();
     const projectData: Omit<Project, 'id'> = {
       userId,
@@ -121,6 +125,10 @@ export class ProjectService {
 
   /** Create or get the default "Inbox" project for a user */
   static async ensureInbox(userId: string): Promise<Project> {
+    if (!userId || userId === 'founder-demo-uid') {
+      throw new Error('A real authenticated user ID is required to create or load an inbox project.');
+    }
+
     if (this.inboxCreationPromise) {
       return this.inboxCreationPromise;
     }
@@ -139,29 +147,13 @@ export class ProjectService {
         
         if (allInboxes.length > 1) {
             inbox = allInboxes[0];
-            // Skip deletion for mock guest user to avoid unauthorized writes
-            if (userId !== 'founder-demo-uid') {
-                for (let i = 1; i < allInboxes.length; i++) {
-                    const dupId = allInboxes[i]?.id;
-                    if (dupId) await ProjectService.delete(dupId);
-                }
+            for (let i = 1; i < allInboxes.length; i++) {
+                const dupId = allInboxes[i]?.id;
+                if (dupId) await ProjectService.delete(dupId);
             }
         }
         
         if (inbox) return inbox;
-
-        // Skip creation for mock guest user to avoid unauthorized writes
-        if (userId === 'founder-demo-uid') {
-          return {
-            id: 'mock-inbox',
-            userId: 'founder-demo-uid',
-            name: 'Inbox',
-            description: 'Default workspace',
-            status: 'active',
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now()
-          } as Project;
-        }
 
         return await ProjectService.create(userId, 'Inbox', 'Default workspace');
       } finally {

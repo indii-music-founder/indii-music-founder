@@ -437,67 +437,18 @@ export const VideoTools = {
     }),
 
     orchestrate_video_render: wrapTool('orchestrate_video_render', async (args: { scriptTimeline: Array<{ sceneId: number, durationSeconds: number, description: string }> }) => {
-        // Mock Video Agent breaking down the script into veo prompts
-        const prompts = args.scriptTimeline.map(scene => {
-            return {
-                sceneId: scene.sceneId,
-                model: 'veo-3.1',
-                prompt: `Cinematic high-quality shot: ${scene.description}`,
-                duration: scene.durationSeconds,
-                status: 'queued'
-            };
-        });
-
-        return toolSuccess({
-            totalScenes: prompts.length,
-            estimatedTotalDuration: prompts.reduce((acc, p) => acc + p.duration, 0),
-            renderQueue: prompts
-        }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
+        void args;
+        return toolError('Video render orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
     }),
 
     orchestrate_timeline: wrapTool('orchestrate_timeline', async (args: { masterScript: string; totalDuration: number; artStyle: string }) => {
-        const sceneDuration = 5;
-        const sceneCount = Math.max(1, Math.ceil(args.totalDuration / sceneDuration));
-        const renderQueue = Array.from({ length: sceneCount }, (_, index) => {
-            const startSecond = index * sceneDuration;
-            const durationSeconds = Math.min(sceneDuration, Math.max(1, args.totalDuration - startSecond));
-            return {
-                sceneId: index + 1,
-                startSecond,
-                durationSeconds,
-                model: 'veo-3.1-generate-preview',
-                prompt: `${args.artStyle}. Scene ${index + 1}/${sceneCount}: ${args.masterScript}`,
-                status: 'queued',
-            };
-        });
-
-        return toolSuccess({
-            totalScenes: renderQueue.length,
-            estimatedTotalDuration: renderQueue.reduce((sum, scene) => sum + scene.durationSeconds, 0),
-            renderQueue,
-        }, `Timeline orchestrated into ${renderQueue.length} Veo-ready scene prompt(s).`);
+        void args;
+        return toolError('Timeline orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
     }),
 
     generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
-        // Enforce Meta Andromeda 15-variant generation
-        // 6 to 15 unique 9:16 vertical video variations
-        // Enforce the 3-Second Hook rule
-        const variations = [];
-        const count = 15;
-        for (let i = 0; i < count; i++) {
-            variations.push({
-                variationId: crypto.randomUUID(),
-                model: 'veo-3.1-generate-preview',
-                prompt: `[MANDATORY 3-SECOND HOOK - SCROLL ARRESTING] Vertical 9:16 video variant ${i + 1}. ${args.basePrompt}`,
-                status: 'queued'
-            });
-        }
-
-        return toolSuccess({
-            totalVariations: count,
-            pipeline: 'Meta Andromeda',
-            variations
-        }, `Video Agent mass-generated ${count} unique 9:16 vertical video variations targeting veo-3.1-generate-preview for Meta Andromeda A/B testing.`);
+        void args;
+        return toolError('Bulk video variation orchestration is unavailable: no A/B render queue backend is configured.', 'VIDEO_VARIATION_QUEUE_UNAVAILABLE');
     })
 } satisfies Record<string, AnyToolFunction>;
 

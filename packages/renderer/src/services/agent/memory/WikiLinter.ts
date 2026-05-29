@@ -61,8 +61,8 @@ Analyze the changes. Output a JSON object exactly matching this schema:
 
             return result;
         } catch (e) {
-            logger.error(`[WikiLinter] Linting failed, defaulting to pass (fallback mode):`, e);
-            return { passed: true, confidence: 0.5, issues: ['Linting engine failed to parse response'], contradicts: false };
+            logger.error(`[WikiLinter] Linting failed; blocking merge until QA can run:`, e);
+            return { passed: false, confidence: 0, issues: ['Linting engine failed to parse response'], contradicts: true };
         }
     }
 }

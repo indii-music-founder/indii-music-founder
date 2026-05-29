@@ -35,7 +35,6 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                 progress: 0,
                 openRate: 0,
                 budget: Number(budget) || 0, // Ensure strictly number
-                coverUrl: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=2670&auto=format&fit=crop" // Default placeholder
             });
 
             // Reset and close

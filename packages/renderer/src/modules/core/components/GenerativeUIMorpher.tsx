@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic2, Briefcase } from 'lucide-react';
 
 export const GenerativeUIMorpher: React.FC = () => {
-    // Mock Generative UI Morphing (Item 193)
     const [role, setRole] = useState<'artist' | 'manager'>('artist');
 
     return (
@@ -50,10 +49,10 @@ export const GenerativeUIMorpher: React.FC = () => {
                         className="w-full max-w-2xl bg-linear-to-br from-blue-900/40 to-black border border-blue-500/20 p-8 rounded-3xl"
                     >
                         <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
-                        <p className="text-blue-200/60 mb-8">Global telemetry and financial forecasting active.</p>
+                        <p className="text-blue-200/60 mb-8">Connect telemetry and financial sources to activate this view.</p>
                         <div className="grid grid-cols-3 gap-4">
-                            <div className="col-span-2 h-40 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 font-mono text-sm">Revenue Waterfall Chart</div>
-                            <div className="col-span-1 h-40 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 font-mono text-sm">Pending Deals (3)</div>
+                            <div className="col-span-2 h-40 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 font-mono text-sm">Revenue Source Required</div>
+                            <div className="col-span-1 h-40 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 font-mono text-sm">No Deals Connected</div>
                         </div>
                     </motion.div>
                 )}

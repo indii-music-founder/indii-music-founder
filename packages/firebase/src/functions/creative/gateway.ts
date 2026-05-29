@@ -725,7 +725,6 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApi
 
   try {
     const ai = getAiClient();
-    // Simulate NB2 audio generation
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview', // or audio equivalent model
       contents: prompt,

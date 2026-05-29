@@ -363,9 +363,14 @@ export class BaseAgent implements SpecializedAgent {
                     
                     // Use the directive from context if available, otherwise fallback to a generic one
                     // This is critical for Digital Handshake continuity across the swarm
+                    const directiveUserId = context?.userId || auth.currentUser?.uid;
+                    if (!context?.directive && !directiveUserId) {
+                        return toolError('User must be authenticated to consult specialist agents.', 'AUTH_REQUIRED');
+                    }
+
                     const directive = context?.directive || {
                         id: crypto.randomUUID(),
-                        userId: context?.userId || auth.currentUser?.uid || 'founder-demo-uid',
+                        userId: directiveUserId!,
                         title: `Consult ${targetAgentId}`,
                         status: 'IN_PROGRESS',
                         assignedAgent: targetAgentId as any,

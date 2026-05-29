@@ -21,50 +21,35 @@ describe('CanvasBatchService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockStore = useStore.getState();
-        vi.useFakeTimers();
     });
 
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
-    it('should export selected dimensions and update store', async () => {
+    it('should fail closed when no production renderer is configured', async () => {
         const mockCanvas = {};
         const selectedIds = ['square', 'story'];
 
-        const promise = canvasBatchService.exportBatch(mockCanvas, selectedIds);
-
-        await vi.advanceTimersByTimeAsync(800);
-        await vi.advanceTimersByTimeAsync(800);
-
-        const result = await promise;
-
-        expect(result.size).toBe(2);
-        expect(result.get('square')).toContain('square');
-        expect(result.get('story')).toContain('story');
+        await expect(canvasBatchService.exportBatch(mockCanvas, selectedIds))
+            .rejects.toThrow('Canvas batch export renderer is not configured');
 
         expect(mockStore.addJob).toHaveBeenCalledWith(expect.objectContaining({
             status: 'running',
             type: 'ai_generation'
         }));
-        expect(mockStore.updateJobProgress).toHaveBeenCalled();
-        expect(mockStore.updateJobStatus).toHaveBeenCalledWith(expect.any(String), 'success');
+        expect(mockStore.updateJobProgress).not.toHaveBeenCalled();
+        expect(mockStore.updateJobStatus).toHaveBeenCalledWith(
+            expect.any(String),
+            'error',
+            'Canvas batch export renderer is not configured. No asset URL was generated.'
+        );
     });
 
-    it('should handle errors gracefully', async () => {
+    it('should return an empty result when no targets are selected', async () => {
         const mockCanvas = {};
-        const selectedIds = ['square'];
+        const selectedIds: string[] = [];
 
-        // We can force an error by making updateJobProgress throw, since that's inside the try block
-        mockStore.updateJobProgress.mockImplementationOnce(() => {
-            throw new Error('Store update failed');
-        });
+        const result = await canvasBatchService.exportBatch(mockCanvas, selectedIds);
 
-        const promise = canvasBatchService.exportBatch(mockCanvas, selectedIds);
-
-        await expect(promise).rejects.toThrow('Store update failed');
-
-        expect(mockStore.updateJobStatus).toHaveBeenCalledWith(expect.any(String), 'error', 'Store update failed');
+        expect(result.size).toBe(0);
+        expect(mockStore.updateJobStatus).toHaveBeenCalledWith(expect.any(String), 'success');
     });
 
     it('should log reframing', async () => {

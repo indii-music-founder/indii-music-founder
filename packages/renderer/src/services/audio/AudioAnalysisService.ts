@@ -365,7 +365,7 @@ export class AudioAnalysisService {
                 loudness: loudnessLUFS,
                 audit,
                 segments: segments.slice(0, 5), // Return top 5 interesting spots
-                // Simulated Deep Features for UI Metadata Matrix
+                // Deep feature slots remain empty until an ML classifier is configured.
                 genre: {},
                 moods: {
                     happy: 0,

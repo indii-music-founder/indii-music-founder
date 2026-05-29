@@ -44,12 +44,10 @@ export function buildDesignHistoryState(
                 return;
             }
 
-            let userId = 'founder-demo-uid';
-            try {
-                const { getAuth } = await import('firebase/auth');
-                userId = getAuth().currentUser?.uid || userId;
-            } catch (e) {
-                // ignore
+            const { getAuth } = await import('firebase/auth');
+            const userId = getAuth().currentUser?.uid;
+            if (!userId) {
+                throw new Error('DesignHistory: User must be authenticated to save a design version');
             }
 
             const newVersion: DesignVersion = {
@@ -118,12 +116,12 @@ export function buildDesignHistoryState(
                 const { where } = await import('firebase/firestore');
                 const service = new FirestoreService<DesignVersion>('design_versions');
                 
-                let userId = 'founder-demo-uid';
-                try {
-                    const { getAuth } = await import('firebase/auth');
-                    userId = getAuth().currentUser?.uid || userId;
-                } catch (e) {
-                    // ignore
+                const { getAuth } = await import('firebase/auth');
+                const userId = getAuth().currentUser?.uid;
+                if (!userId) {
+                    set({ designVersions: [] });
+                    logger.warn("DesignHistory: User must be authenticated to initialize design history");
+                    return;
                 }
 
                 const versions = await service.list([

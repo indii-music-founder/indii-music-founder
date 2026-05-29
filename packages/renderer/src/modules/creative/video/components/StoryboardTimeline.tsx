@@ -12,6 +12,22 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
+function readAudioDuration(audioUrl: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const audio = document.createElement('audio');
+        audio.preload = 'metadata';
+        audio.onloadedmetadata = () => {
+            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                resolve(audio.duration);
+            } else {
+                reject(new Error('Unable to read audio duration from uploaded file.'));
+            }
+        };
+        audio.onerror = () => reject(new Error('Unable to read audio metadata from uploaded file.'));
+        audio.src = audioUrl;
+    });
+}
+
 export function StoryboardTimeline() {
     const toast = useToast();
     const audioInputRef = useRef<HTMLInputElement>(null);
@@ -41,45 +57,43 @@ export function StoryboardTimeline() {
     const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
     const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
 
-    // Simulated Vocal Isolation state
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
 
     // Handle audio upload and trigger automatic beat mapping
-    const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setAudioFileName(file.name);
         setIsIsolatingStems(true);
-        toast.info("Importing audio: Analyzing transients and isolating vocal stems...");
+        toast.info("Importing audio metadata...");
 
-        // Simulate Essentia.js tempo extraction & vocal separation
-        setTimeout(() => {
-            setIsIsolatingStems(false);
-            const estimatedBPM = Math.floor(Math.random() * (135 - 110 + 1)) + 110;
-            const estimatedKey = ["G# Minor", "C Major", "A Minor", "E Minor", "F# Major"][Math.floor(Math.random() * 5)];
-            const estimatedDuration = 120; // 2 minutes
-
-            // Create storyboard project
+        try {
             const audioUrl = URL.createObjectURL(file);
+            const durationSeconds = await readAudioDuration(audioUrl);
+            const editableGridBpm = 120;
+
             setStoryboardProject({
                 id: 'sb-' + Date.now(),
                 name: file.name.replace(/\.[^/.]+$/, "") + " Storyboard",
                 audioUrl,
-                bpm: estimatedBPM,
-                key: estimatedKey,
-                durationSeconds: estimatedDuration,
+                bpm: editableGridBpm,
+                key: undefined,
+                durationSeconds,
                 slots: []
             });
 
-            // Generate slots matching whole bars
-            generateStoryboardSlots(estimatedBPM, estimatedDuration);
-            toast.success(`Beat mapping completed! isolated vocals: ${estimatedBPM} BPM, Key: ${estimatedKey}`);
-        }, 2200);
+            generateStoryboardSlots(editableGridBpm, durationSeconds);
+            toast.warning("Audio imported. Beat, key, and stem analysis are not configured; using an editable 120 BPM grid.");
+        } catch (err) {
+            logger.error('[StoryboardTimeline] Audio metadata import failed:', err);
+            toast.error(err instanceof Error ? err.message : 'Unable to import audio metadata.');
+        } finally {
+            setIsIsolatingStems(false);
+        }
     };
 
-    // Storyboard drift score algorithm: simulates cosine distance calculation
-    // comparing prompt styling descriptors with visual brand kit anchors
+    // Storyboard drift score heuristic comparing prompt styling descriptors with visual brand kit anchors.
     const calculateDriftScore = (promptText: string): number => {
         if (!promptText.trim()) return 0;
         
@@ -157,11 +171,15 @@ export function StoryboardTimeline() {
                 }
             }
 
-            // Simulate vocal stem conditioning
             let vocalAudio: string | undefined;
             if (slot.useVocalSync) {
-                vocalAudio = "MOCK_BASE64_ISOLATED_VOCAL_STEM_DO_NOT_USE";
-                logger.info(`[Storyboard] Isolated vocal stem conditioning enabled for slot ${index + 1}`);
+                if (!slot.vocalConditioningAudioUrl) {
+                    updateStoryboardSlot(slot.id, { isGenerating: false, progress: 0 });
+                    toast.error("Vocal sync requires a real isolated vocal stem URL.");
+                    return;
+                }
+                vocalAudio = slot.vocalConditioningAudioUrl;
+                logger.info(`[Storyboard] Vocal stem conditioning enabled for slot ${index + 1}`);
             }
 
             // Trigger Veo 3.1 generation
@@ -245,25 +263,7 @@ export function StoryboardTimeline() {
             return;
         }
 
-        toast.info(`Compiling ${renderedCount} storyboard slots into a unified master audio-synced video...`);
-        
-        // Simulate Remotion multi-clip stitching
-        setTimeout(() => {
-            toast.success("Showreel compiled successfully! Opening in active video player.");
-            
-            // Push first rendered clip to history
-            const firstRendered = storyboardProject.slots.find(s => !!s.videoUrl);
-            if (firstRendered && firstRendered.videoUrl) {
-                useStore.getState().addToHistory({
-                    id: 'comp-' + Date.now(),
-                    url: firstRendered.videoUrl,
-                    prompt: `Showreel compiled from audio storyboard slots`,
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: 'default'
-                });
-            }
-        }, 3000);
+        toast.error("Showreel compile requires a configured Remotion/render backend. No master video was generated.");
     };
 
     return (
@@ -280,8 +280,8 @@ export function StoryboardTimeline() {
                             <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Veo 3.1 Audio-Conditioned</span>
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
-                            {storyboardProject 
-                                ? `Active: ${storyboardProject.name} · BPM: ${storyboardProject.bpm} · Key: ${storyboardProject.key}` 
+                            {storyboardProject
+                                ? `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
                                 : "Upload audio to generate bar-aligned video segments"
                             }
                         </p>

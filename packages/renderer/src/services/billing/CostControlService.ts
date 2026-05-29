@@ -13,6 +13,7 @@
 import { db, auth } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export type OperationType = 'video' | 'image' | 'agent_stream';
 export type UserTier = 'free' | 'pro' | 'enterprise';
@@ -52,8 +53,7 @@ const TEST_MODE_DAILY_LIMIT = 5; // Testing should never cost more than $5/day t
 
 export class CostControlService {
   private static get isE2EMode(): boolean {
-    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return true;
-    try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    return isFirebaseE2EMockEnabled();
   }
 
   /**
@@ -73,34 +73,30 @@ export class CostControlService {
         remainingBudget: 1000,
         dailyUsed: 0,
         monthlyUsed: 0,
-        operationId: `e2e-mock-${Date.now()}`
+        operationId: `e2e-${Date.now()}`
       };
     }
 
-    // MOCK MODE BYPASS: If local development is restricted by billing blocks, 
-    // allow mock responses to proceed without checking/writing to Firestore ledgers.
     if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
       return {
-        allowed: true,
-        remainingBudget: 1000,
+        allowed: false,
+        reason: 'VITE_INTELLIGENCE_MOCK_MODE=true is no longer supported. Configure live billing/cost ledgers.',
+        remainingBudget: 0,
         dailyUsed: 0,
         monthlyUsed: 0,
-        operationId: `mock-${Date.now()}`
       };
     }
 
-    // GUEST & UNAUTHENTICATED BYPASS: Grant immediate demo allowance to prevent permission errors
-    // and avoid polluting the production costLedger with demo/guest session transactions.
     const user = auth.currentUser;
     const isGuestSession = !user || user.uid === 'founder-demo-uid' || user.isAnonymous || req.userId === 'founder-demo-uid';
     if (isGuestSession) {
-      logger.info('[CostControl] Guest / Unauthenticated session detected. Granting demo allowance.');
+      logger.warn('[CostControl] Guest / unauthenticated session blocked. Cost ledger requires a real authenticated user.');
       return {
-        allowed: true,
-        remainingBudget: 25,
+        allowed: false,
+        reason: 'Authenticated user is required for cost-controlled operations.',
+        remainingBudget: 0,
         dailyUsed: 0,
         monthlyUsed: 0,
-        operationId: `demo-${Date.now()}`
       };
     }
 
@@ -387,7 +383,7 @@ export class CostControlService {
     } catch (err) {
       logger.error('[CostControl] Check failed', err);
 
-      // Grace fallback for permission errors in production
+      // Permission/auth failures block the operation so spend is never untracked.
       const errMsg = err instanceof Error ? err.message : String(err);
       const lowerMsg = errMsg.toLowerCase();
       const isPermissionError = lowerMsg.includes('permission') || 
@@ -399,25 +395,26 @@ export class CostControlService {
                                 lowerMsg.includes('auth');
 
       if (isPermissionError) {
-        logger.warn('[CostControl] Permission/Auth error on costLedger read/write. Falling back to grace allowance.', err);
+        logger.warn('[CostControl] Permission/Auth error on costLedger read/write. Blocking operation.', err);
         return {
-          allowed: true,
-          remainingBudget: 10,
+          allowed: false,
+          reason: 'Cost ledger permission/auth check failed. Operation blocked to prevent untracked spend.',
+          remainingBudget: 0,
           dailyUsed: 0,
           monthlyUsed: 0,
-          operationId: `grace-${Date.now()}`
         };
       }
 
-      // In local development, fail-open to allow developers to work offline or without Firestore write permissions.
+      // Fail-closed in every runtime. Local development must use the E2E harness
+      // or a real cost ledger so spend is never silently untracked.
       if (import.meta.env.DEV) {
-        logger.warn('[CostControl] Local dev fallback: failing open.');
+        logger.warn('[CostControl] Local dev cost ledger unavailable. Blocking operation.');
         return {
-          allowed: true,
-          remainingBudget: 100,
+          allowed: false,
+          reason: 'Cost control ledger unavailable in local development. Enable FIREBASE_E2E_MOCK for tests or configure Firestore.',
+          remainingBudget: 0,
           dailyUsed: 0,
           monthlyUsed: 0,
-          operationId: `local-dev-${Date.now()}`
         };
       }
 

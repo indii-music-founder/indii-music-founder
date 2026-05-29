@@ -10,10 +10,10 @@ interface CachedResponse {
 }
 
 /**
- * Mock database interface for server-side/test environments
+ * No-op database interface for server-side/test environments
  * where IndexedDB is not available.
  */
-interface MockDatabase {
+interface NoopDatabase {
     get: (storeName: string, key: string) => Promise<CachedResponse | null>;
     put: (storeName: string, value: CachedResponse) => Promise<void>;
     delete: (storeName: string, key: string) => Promise<void>;
@@ -25,16 +25,16 @@ const STORE_NAME = 'responses';
 const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
 /**
- * Creates a no-op mock database for server-side/test environments.
+ * Creates a no-op database for server-side/test environments.
  * All methods resolve successfully with null/void to avoid breaking code paths.
  */
 interface IndexedDBRecord { [key: string]: unknown }
 
 /**
- * Creates a no-op mock database for server-side/test environments.
+ * Creates a no-op database for server-side/test environments.
  * All methods resolve successfully with null/void to avoid breaking code paths.
  */
-function createMockDatabase(): MockDatabase {
+function createNoopDatabase(): NoopDatabase {
     return {
         get: async () => null,
         put: async () => { },
@@ -44,7 +44,7 @@ function createMockDatabase(): MockDatabase {
 }
 
 export class IntelligenceResponseCache {
-    private dbPromise: Promise<IDBPDatabase | MockDatabase>;
+    private dbPromise: Promise<IDBPDatabase | NoopDatabase>;
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -57,7 +57,7 @@ export class IntelligenceResponseCache {
             });
         } else {
             // No-op for server-side/test envs
-            this.dbPromise = Promise.resolve(createMockDatabase());
+            this.dbPromise = Promise.resolve(createNoopDatabase());
         }
     }
 

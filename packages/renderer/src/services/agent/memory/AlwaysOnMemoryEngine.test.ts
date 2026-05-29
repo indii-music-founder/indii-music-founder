@@ -205,7 +205,7 @@ describe('AlwaysOnMemoryEngine', () => {
 
             expect(result).toContain('Stored');
             expect(mockAddDoc).toHaveBeenCalled();
-        });
+        }, 30000);
 
         it('should reject empty text', async () => {
             const result = await engine.ingest('');

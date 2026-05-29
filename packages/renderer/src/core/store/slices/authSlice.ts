@@ -80,6 +80,7 @@ const wrappedSignOut = (authObj: Auth | E2EMockAuth) => {
 };
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /** Type guard for Firebase Auth errors */
 interface FirebaseAuthError {
@@ -221,48 +222,16 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         try {
             set({ authLoading: true, authError: null });
 
-            // 1. Bypass Onboarding and Tours for the Founders Pitch Demo
+            await wrappedSignInAnonymously(auth);
             if (typeof window !== 'undefined') {
-                window.localStorage.setItem('TOUR_COMPLETED_dashboard', 'true');
-                window.localStorage.setItem('INDII_ONBOARDING_COMPLETE', 'true');
                 window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
-            }
-
-            // 2. Attempt Anonymous Auth. If Identity Toolkit signups are blocked (which
-            // throws the identitytoolkit error), fallback to an injected Mock User.
-            try {
-                await wrappedSignInAnonymously(auth);
-            } catch (err: unknown) {
-                const firebaseError = err as FirebaseAuthError;
-                if (firebaseError.code === 'auth/admin-restricted-operation' || firebaseError.code === 'auth/operation-not-allowed' || firebaseError.code?.includes('identitytoolkit')) {
-                    logger.warn('[Auth] Anonymous Auth blocked by Firebase. Injecting local mock user for Founders Demo.');
-                    if (typeof window !== 'undefined') {
-                        (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true; // Tell listener to ignore nulls
-                    }
-                    const mockUser = {
-                        uid: 'founder-demo-uid',
-                        email: 'founder@indii.local',
-                        displayName: 'Founder Demo',
-                        isAnonymous: true,
-                        getIdToken: async () => 'mock-token'
-                    } as unknown as User;
-                    if (typeof window !== 'undefined') {
-                        (window as any).guestUserMock = mockUser;
-                    }
-                    set({
-                        user: mockUser,
-                        authLoading: false,
-                        authError: null
-                    });
-                    return; // Successfully bypassed
-                }
-                throw err;
             }
             // State update handled by listener normally
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
-            const errorMessage = getAuthErrorMessage(firebaseError) ?? 'Founders Demo login failed';
+            const errorMessage = getAuthErrorMessage(firebaseError) ?? 'Guest login failed';
             set({ authError: errorMessage, authLoading: false });
+            throw error;
         }
     },
 
@@ -366,7 +335,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         // EXCLUSION: If we are using the E2E mock, allow any API key string.
         const apiKey = auth.app?.options?.apiKey;
         const apiKeyLower = apiKey?.toLowerCase() ?? '';
-        const isE2EMock = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+        const isE2EMock = isFirebaseE2EMockEnabled();
 
         if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass') || apiKeyLower.includes('mock') || apiKeyLower.includes('your_'))) {
             logger.warn('[Auth] No valid API Key found and not in E2E mode.');
