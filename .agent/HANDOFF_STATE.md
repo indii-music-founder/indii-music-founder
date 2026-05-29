@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-28 22:20 EDT
+**Updated:** 2026-05-28 22:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9dac70445 fix(security): scope 12 top-level Firestore collections (latent 403 fixes)
+4e338c2a5 feat: complete Business Harness Waves 4 and 5
+6a406ce1d chore: session checkpoint [22:20]
 860b4180e fix(security): owner-scope 16 latent-403 Firestore subcollections + audit doc
 c14a1b0f2 chore: session checkpoint [21:19]
 7e639d1d4 feat(harness): register all core compilers and update wave 1 flowchart
@@ -11,29 +14,11 @@ dce7ece8a feat(harness): integrate Opportunity Harness compiler and tests
 812f208ac chore: session checkpoint [21:11]
 61165e964 feat(harness): implement A+ Runtime Harness and Stdio MCP Server integration
 ed843b7b0 chore: session checkpoint [21:05]
-245d6f170 chore: session checkpoint [20:53]
-fe191eeb8 chore: session checkpoint [20:46]
-a8b095ae0 chore: session checkpoint [20:40]
 ```
 
 ## Working State
 ```
- M .claude/settings.json
- M docs/agent-training/datasets/curriculum.jsonl
- M docs/agent-training/datasets/distribution.jsonl
- M docs/agent-training/datasets/legal.jsonl
- M docs/agent-training/datasets/licensing.jsonl
- M docs/agent-training/datasets/marketing.jsonl
- M docs/agent-training/datasets/music.jsonl
- M docs/agent-training/datasets/publishing.jsonl
- M docs/agent-training/datasets/security.jsonl
- M docs/flowcharts/business-harness-wave-1.md
- M packages/renderer/src/services/business-harness/BusinessHarnessCore.test.ts
- M packages/renderer/src/services/business-harness/HarnessCatalog.ts
- M packages/renderer/src/test/harness-datasets.test.ts
-?? .agent/checkpoints/2b8ac0a6-12b9-4646-9f6a-bb3020d7c76b.md
-?? append_datasets.cjs
-?? docs/flowcharts/business-harness-full-architecture.md
+clean working tree
 ```
 
 ## Decisions
