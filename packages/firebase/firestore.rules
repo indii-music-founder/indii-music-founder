@@ -557,8 +557,8 @@ service cloud.firestore {
     // Audit Logs (read-only — written by Cloud Functions only)
     // System Audit logs: Only readable by Admins
     match /audit_logs/{id} {
-      allow read: if isAdmin();
-      allow create: if false;
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && request.resource.data.source == 'Agent_SecurityTools';
     }
 
     // =========================================================================
