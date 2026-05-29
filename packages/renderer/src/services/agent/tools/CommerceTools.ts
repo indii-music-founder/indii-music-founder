@@ -54,12 +54,9 @@ export const CommerceTools = {
         try {
             const { functions } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
-            const createPaymentLinksFn = httpsCallable<
-                { campaignName: string; items: string[] },
-                { storefrontUrl: string; paymentLinks: string[] }
-            >(functions, 'createStripePaymentLinks');
+            const createPaymentLinksFn = httpsCallable(functions, 'createStripePaymentLinks');
 
-            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items });
+            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items }) as { data: { storefrontUrl: string; paymentLinks: string[] } };
             return toolSuccess(result.data, `Storefront deployed for "${args.campaignName}" with ${args.items.length} real Stripe Payment Links.`);
         } catch (_err: unknown) {
             logger.warn('[CommerceTools] createStripePaymentLinks not available');

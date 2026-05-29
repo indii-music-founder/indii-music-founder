@@ -211,6 +211,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
 
                     if (!triggerResponse.ok) {
                         const errorText = await triggerResponse.text();
+                        if (triggerResponse.status === 404) {
+                            throw new Error(`failed-precondition: Veo model not found or not deployed. Status ${triggerResponse.status}. ${errorText}`);
+                        }
                         throw new Error(`Veo Trigger Segment ${i} failed: ${triggerResponse.status} ${errorText}`);
                     }
 
@@ -244,6 +247,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                         if (!statusResponse.ok) {
                             if (statusResponse.status >= 400 && statusResponse.status < 500) {
                                 const errorText = await statusResponse.text();
+                                if (statusResponse.status === 404) {
+                                    throw new Error(`failed-precondition: Vertex AI API Error: ${statusResponse.status} ${errorText}`);
+                                }
                                 throw new Error(`Vertex AI API Error: ${statusResponse.status} ${errorText}`);
                             }
                             return { done: false };
