@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Music, FileText, CheckCircle, Clock, AlertCircle, Search, DollarSign, XCircle, type LucideIcon } from 'lucide-react';
@@ -53,6 +54,7 @@ interface AddCoverFormProps {
 }
 
 function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) {
+    const { t } = useTranslation();
     const [trackTitle, setTrackTitle] = useState('');
     const [writer, setWriter] = useState('');
     const [isrc, setIsrc] = useState('');
@@ -114,7 +116,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                         type="text"
                         value={trackTitle}
                         onChange={e => setTrackTitle(e.target.value)}
-                        placeholder="e.g. Bohemian Rhapsody"
+                        placeholder={t('publishing.hints.track_title_example')}
                         required
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-white/20"
                     />
@@ -128,7 +130,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                         type="text"
                         value={writer}
                         onChange={e => setWriter(e.target.value)}
-                        placeholder="e.g. Freddie Mercury"
+                        placeholder={t('publishing.hints.writer_name_example')}
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-white/20"
                     />
                 </div>
@@ -144,7 +146,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                         type="text"
                         value={isrc}
                         onChange={e => setIsrc(e.target.value.toUpperCase())}
-                        placeholder="USRC17607839"
+                        placeholder={t('publishing.hints.isrc_example')}
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-white/20 font-mono"
                     />
                 </div>
@@ -267,6 +269,7 @@ interface Props {
 }
 
 export function MechanicalRoyaltyPanel({ releaseId = 'default' }: Props) {
+    const { t } = useTranslation();
     const [licenses, setLicenses] = useState<MechanicalLicense[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * SuperfanCRM — Item 129 (PRODUCTION_200)
  * Fan tiering dashboard: Standard / VIP / Superfan
@@ -54,6 +55,7 @@ interface SuperfanCRMProps {
 }
 
 export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
+    const { t } = useTranslation();
     const [activeTier, setActiveTier] = useState<FanTier | 'all'>('all');
     const [search, setSearch] = useState('');
     const [fans] = useState<FanRecord[]>([]);
@@ -127,7 +129,7 @@ export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search fans..."
+                        placeholder={t('publicist.hints.search_fans')}
                         className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-white/20 transition-colors"
                     />
                 </div>

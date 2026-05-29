@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { X, Search, ShoppingBag, Music, Check, Filter } from 'lucide-react';
 import { Product } from '@/services/marketplace/types';
@@ -18,6 +19,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   onSelect, 
   selectedId 
 }) => {
+    const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -80,7 +82,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search your products..."
+              placeholder={t('social.hints.search_products')}
               className="w-full bg-black/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-dept-creative transition-colors"
             />
           </div>

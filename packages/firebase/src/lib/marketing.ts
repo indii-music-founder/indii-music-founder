@@ -65,7 +65,7 @@ function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' |
  * Queues supported posts for the scheduled social delivery worker.
  */
 export const executeCampaign = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey], timeoutSeconds: 60  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey], timeoutSeconds: 60  })
     .https.onCall(async (data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Auth required");
@@ -138,7 +138,7 @@ export const executeCampaign = functions
  */
 export const dispatchSocialPost = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 120, memory: "512MB"  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 120, memory: "512MB"  })
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -174,7 +174,7 @@ export const dispatchSocialPost = functions
  */
 export const createInfluencerBounty = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 60, memory: "256MB"  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: "256MB"  })
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
