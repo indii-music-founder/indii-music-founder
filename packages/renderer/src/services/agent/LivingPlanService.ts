@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore';
 import { Directive } from '../directive/DirectiveTypes';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { RouterCallContext } from './a2a/transport/A2ATransport';
+
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
@@ -286,8 +288,16 @@ export class LivingPlanService {
 
   /**
    * Orchestrate execution of plan steps via Promise.all for parallelism using A2A Swarm.
+   *
+   * @param runAgent The bound in-process agent runner (from AgentService). REQUIRED for
+   *   the loopback A2A router to actually execute steps — without it the router has no
+   *   way to invoke the target agent and every step fails with "No runAgent available".
    */
-  async executePlanSteps(projectId: string, planId: string): Promise<void> {
+  async executePlanSteps(
+    projectId: string,
+    planId: string,
+    runAgent: RouterCallContext['runAgent']
+  ): Promise<void> {
     const plan = await this.getPlan(projectId, planId);
     if (!plan || !plan.draft.steps) return;
 
@@ -305,12 +315,10 @@ export class LivingPlanService {
       await this.updateStepStatus(projectId, planId, stepId, 'executing');
 
       try {
-        // Find the target agent for this step (assuming toolName indicates agent or we have a default mapping)
-        // Wait, the instruction says "Orchestrate dependent steps via Promise.all".
-        // Let's assume the toolName format is "agentId.toolName" or we just use consult_specialist
-        // If it's a living plan, usually the step specifies the task.
+        // toolName format is "agentId" or "agentId.something"; the leading segment
+        // is the target agent. The A2A router only understands the JSON-RPC method
+        // 'agent.execute' — the step's own task is what gets run on that agent.
         const agentId = step.toolName.split('.')[0] || 'generalist';
-        const method = step.toolName.split('.')[1] || 'execute';
 
         // Construct a fully type-safe Directive object to satisfy A2AClient
         const stepDirective: Directive = {
@@ -338,11 +346,14 @@ export class LivingPlanService {
           updatedAt: Timestamp.now(),
         };
 
+        // Compose the task for the target agent from the step.
+        const stepTask = [step.title, step.description].filter(Boolean).join(' — ');
         const result = await a2aClient.invoke(
-          agentId, 
-          method, 
-          step.input || {}, 
-          stepDirective
+          agentId,
+          'agent.execute',
+          { task: stepTask, sharedContext: JSON.stringify(step.input || {}) },
+          stepDirective,
+          { runAgent, traceId: `plan_${planId}_${step.id}` }
         );
 
         await this.updateStepStatus(projectId, planId, stepId, 'complete', undefined, result);

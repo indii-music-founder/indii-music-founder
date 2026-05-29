@@ -33,9 +33,10 @@ export async function getA2AConfig(): Promise<A2AConfig> {
     }
   }
 
-  // Default to loopback (always available, zero external deps)
+  // Default to loopback (always available, zero external deps).
+  // baseUrl is unused in loopback mode; kept empty to avoid implying a live endpoint.
   logger.info('[A2AConfig] Using default loopback transport');
-  return { mode: 'loopback', baseUrl: 'http://localhost:50080/a2a' }; // baseUrl unused in loopback
+  return { mode: 'loopback', baseUrl: '' };
 }
 
 /**
@@ -56,12 +57,26 @@ async function checkSidecarAvailable(baseUrl: string): Promise<boolean> {
   }
 }
 
-// Cache the config after first resolution
+// Cache the config with a short TTL so a sidecar coming online/offline is
+// eventually re-detected (the original "cache forever" never picked up changes).
 let cachedConfig: A2AConfig | null = null;
+let cachedAt = 0;
+const CONFIG_TTL_MS = 60_000;
 
 export async function resolveA2AConfig(): Promise<A2AConfig> {
-  if (!cachedConfig) {
+  const now = Date.now();
+  if (!cachedConfig || now - cachedAt > CONFIG_TTL_MS) {
     cachedConfig = await getA2AConfig();
+    cachedAt = now;
   }
   return cachedConfig;
+}
+
+/**
+ * Force the next resolveA2AConfig() to re-probe. Called by the circuit breaker
+ * when it trips/resets so transport selection can adapt to sidecar availability.
+ */
+export function invalidateA2AConfig(): void {
+  cachedConfig = null;
+  cachedAt = 0;
 }
