@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState, useCallback } from 'react';
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
@@ -37,6 +38,7 @@ const SHORTCUTS = [
 ];
 
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
+    const { t } = useTranslation();
     const {
         posts,
         isFeedLoading: loading,
@@ -113,7 +115,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     data-testid="social-post-input"
-                                    placeholder="What's happening in your studio?"
+                                    placeholder={t('social.hints.studio_update')}
                                     className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[100px] focus:outline-none text-lg"
                                 />
                                 

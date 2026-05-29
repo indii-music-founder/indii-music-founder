@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * ReleaseWizard Component
  * Step-by-step wizard for creating DDEX-compliant releases
@@ -69,6 +70,7 @@ interface ReleaseWizardProps {
 }
 
 export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProps) {
+  const { t } = useTranslation();
   const {
     currentStep,
     setCurrentStep,
@@ -152,7 +154,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.trackTitle || ''}
             onChange={e => updateMetadata({ trackTitle: e.target.value })}
-            placeholder="Enter track title"
+            placeholder={t('publishing.hints.track_title')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -167,7 +169,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.artistName || ''}
             onChange={e => updateMetadata({ artistName: e.target.value })}
-            placeholder="Enter artist name"
+            placeholder={t('publishing.hints.artist_name')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -216,7 +218,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.labelName || ''}
             onChange={e => updateMetadata({ labelName: e.target.value })}
-            placeholder="Your label or 'Self-Released'"
+            placeholder={t('publishing.hints.label_name')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -230,7 +232,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.dpid || ''}
             onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
-            placeholder="PA-DPIDA-XXXXXXXXXX-X"
+            placeholder={t('publishing.hints.pro_work_id')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -244,7 +246,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.isrc || ''}
             onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
-            placeholder="US-XXX-25-XXXXX (Optional - will generate if empty)"
+            placeholder={t('publishing.hints.isrc_optional')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -258,7 +260,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="number"
             value={metadata.bpm || ''}
             onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
-            placeholder="e.g. 120"
+            placeholder={t('publishing.hints.bpm_example')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -272,7 +274,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.key || ''}
             onChange={e => updateMetadata({ key: e.target.value })}
-            placeholder="e.g. C minor, 8A"
+            placeholder={t('publishing.hints.key_example')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -286,7 +288,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="number"
             value={metadata.energy || ''}
             onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
-            placeholder="0.0 to 1.0 (e.g. 0.85)"
+            placeholder={t('publishing.hints.confidence_score')}
             step="0.01"
             min="0"
             max="1"
@@ -532,7 +534,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   aiToolsUsed: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
-              placeholder="e.g., Suno, Udio, AIVA, Amper"
+              placeholder={t('publishing.hints.ai_tools_example')}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             />
             <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
@@ -550,7 +552,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   humanContribution: e.target.value
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
-              placeholder="Describe any human creative input (lyrics, melody ideas, arrangement, mixing, etc.)"
+              placeholder={t('publishing.hints.human_input_desc')}
               rows={3}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
             />

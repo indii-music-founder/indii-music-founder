@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, Mail, Globe, MessageCircle } from 'lucide-react';
@@ -13,6 +14,7 @@ interface ContactDetailsModalProps {
 }
 
 export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen, onClose, contact }) => {
+    const { t } = useTranslation();
     const [relationship, setRelationship] = useState<Contact['relationshipStrength'] | undefined>(contact?.relationshipStrength);
     const [note, setNote] = useState(contact?.notes || '');
     const [isSaving, setIsSaving] = useState(false);
@@ -138,7 +140,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                                 <textarea
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    placeholder="Add notes about your last conversation..."
+                                    placeholder={t('publicist.hints.conversation_notes')}
                                     className="w-full h-32 bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 resize-none"
                                 />
                                 <button
