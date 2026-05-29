@@ -70,7 +70,7 @@ export class AgentExecutor {
         }
 
         const isE2EMode = isFirebaseE2EMockEnabled();
-        const userId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
+        const userId = auth.currentUser?.uid || null;
         if (!userId) {
             throw new Error('[AgentExecutor] User must be authenticated to execute agents.');
         }

@@ -17,7 +17,7 @@ Phase A (Now): Distribute through existing distributors (DistroKid, TuneCore, et
     └── You are a customer of the distributor
     └── Revenue: subscription fees from users
 
-Phase B (6-12 months): Proprietary ingestion IP for direct DSP delivery
+Phase B (6-12 months): Proprietary ingestion IP targeting direct DSP delivery
     └── Requires: Proprietary System Identifier (DPID), peer conformance testing
     └── You become the distributor yourself
     └── Revenue: subscription + potential revenue share
@@ -256,4 +256,3 @@ Your Proprietary System Identifier looks like: `PADPIDA2024123456`
 | ⚪ P2 | MLC registration | Mechanical royalty claims |
 | ⚪ P3 | TuneCore/CD Baby/Ditto partnerships | Multi-distributor support |
 | ⚪ P3 | eCO workflow (engineering) | Copyright registration feature |
-

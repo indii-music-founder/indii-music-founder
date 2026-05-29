@@ -51,7 +51,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     id: 'pending',
     uid: '',
     email: '',
-    displayName: 'New Artist',
+    displayName: '',
     photoURL: null,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),

@@ -1,6 +1,5 @@
 import { AgentConfig } from "../types";
 import { logger } from '@/utils/logger';
-import { secureRandomInt } from '@/utils/crypto-random';
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
@@ -15,16 +14,30 @@ export const PublishingAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     functions: {
         register_work: async (args: { title: string, writers: string[], split: string }) => {
-            const prompt = `Validate this music work registration. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Generate a valid ISWC format (T-XXX.XXX.XXX-X) and a registration status.`;
+            const prompt = `Validate this music work registration draft. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Return missing fields, split warnings, and filing readiness. Do not generate or claim an official ISWC.`;
             try {
-                // Using "object" schema type
                 const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { status: "Submitted", ...response } };
+                return {
+                    success: true,
+                    data: {
+                        status: "DraftReady",
+                        officialSubmission: false,
+                        iswc: null,
+                        ...response
+                    }
+                };
             } catch (error) {
                 const appException = AutonomousIntelligence.handleError(error);
-                logger.warn('[PublishingAgent] Intelligence metadata generation failed, falling back to local fallback', appException);
-                const randomISWC = `T-${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}-${secureRandomInt(1, 10)}`;
-                return { success: true, data: { status: "Submitted", iswc: randomISWC } };
+                logger.warn('[PublishingAgent] Registration draft validation failed', appException);
+                return {
+                    success: false,
+                    error: 'Publishing registration could not be validated. No PRO submission or ISWC was generated.',
+                    data: {
+                        status: "ValidationFailed",
+                        officialSubmission: false,
+                        iswc: null
+                    }
+                };
             }
         },
         analyze_contract: async (_args: { file_data: string, mime_type: string }) => {
@@ -33,10 +46,9 @@ export const PublishingAgent: AgentConfig = {
             return { success: true, data: { summary } };
         },
         package_release_assets: async (args: { releaseId: string, assets: Record<string, unknown> }) => {
-            // This function handles the definitive packaging of assets for DDEX
-            const prompt = `Prepare DDEX packaging metadata for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}`;
+            const prompt = `Prepare release delivery metadata readiness for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}. Return missing delivery fields and review blockers. Do not claim external DSP delivery.`;
             const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-            return { success: true, data: { status: "Packaged", ...response } };
+            return { success: true, data: { status: "ReadyForReview", externalDelivery: false, ...response } };
         }
     },
     authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate'],
@@ -82,7 +94,7 @@ export const PublishingAgent: AgentConfig = {
             },
             {
                 name: "package_release_assets",
-                description: "Definitively package audio and artwork for DDEX distribution.",
+                description: "Prepare audio, artwork, and metadata for distribution delivery review.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -120,4 +132,3 @@ export const PublishingAgent: AgentConfig = {
         ]
     }]
 };
-

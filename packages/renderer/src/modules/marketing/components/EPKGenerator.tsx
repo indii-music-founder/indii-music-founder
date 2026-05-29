@@ -61,7 +61,7 @@ export default function EPKGenerator() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>EPK - ${artistName || 'Artist'}</title>
+  <title>${artistName ? `EPK - ${artistName}` : 'EPK'}</title>
   <style>
     body { font-family: 'Helvetica Neue', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; background: #fff; color: #111; }
     h1 { font-size: 36px; font-weight: 800; margin-bottom: 4px; }

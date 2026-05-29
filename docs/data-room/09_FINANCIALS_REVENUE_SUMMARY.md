@@ -308,17 +308,17 @@ Remaining burn: $700 - $435 = $265/month (nearly break-even)
 
 ---
 
-### Scenario B: Base Case (Direct DSP Relationships Acquirer)
+### Scenario B: Base Case (Distribution Readiness Acquirer)
 
 **Acquirer Profile:** Music distributor or DSP (e.g., TuneCore, Amuse, YouTube Music)
 
-**Valuation:** $4.5–6M (based on direct DSP access + artist base)
+**Valuation:** $4.5–6M only if direct DSP access is verified during diligence; otherwise value this scenario on distribution readiness tooling plus artist base.
 
 **Earnout Structure:**
 - $2–3M cash at closing
 - $1.5–3M earnout tied to:
   - 20K artists by month 12 ($625K release)
-  - Direct DSP integration with acquirer's network ($625K release)
+  - Verified distribution integration with acquirer's network ($625K release)
   - Zero-loss transition (0 artist churn) ($500K release)
   - Successor handoff milestone ($500K release)
 

@@ -329,13 +329,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             if (options?.releaseId && options?.trackTitle) {
                 const userId = auth.currentUser?.uid;
                 if (!userId) throw new Error('User must be authenticated to record ISRC assignment');
+                if (!options.artistName) throw new Error('Artist name is required to record ISRC assignment');
 
                 await isrcService.recordAssignment({
                     isrc: result.isrc,
                     releaseId: options.releaseId,
                     userId,
                     trackTitle: options.trackTitle,
-                    artistName: options.artistName || 'Unknown Artist',
+                    artistName: options.artistName,
                     assignedAt: Timestamp.now(),
                     metadataSnapshot: { ...options } as Record<string, unknown>
                 });
@@ -720,7 +721,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             if (window.electronAPI) {
                 const body = result.report?.sftp_skipped
-                    ? `${releaseData.title} DDEX package is ready (SFTP skipped).`
+                    ? `${releaseData.title} delivery metadata is ready (SFTP skipped).`
                     : `${releaseData.title} has been delivered to your distributor.`;
                 window.electronAPI.showNotification(
                     'Release Submitted',

@@ -559,7 +559,7 @@ ORGANIZATION CONTEXT:
         const brandContext = brandKit ? `
 BRAND CONTEXT:
 - Identity: ${context?.userProfile?.bio || 'N/A'}
-- Career Stage: ${context?.userProfile?.careerStage || 'Unknown'}
+- Career Stage: ${context?.userProfile?.careerStage || 'Not provided'}
 - Primary Goal: ${context?.userProfile?.goals?.[0] || 'Not set'}
 - Visual Style: ${brandKit.brandDescription || 'N/A'}
 - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
@@ -567,7 +567,7 @@ BRAND CONTEXT:
 - Negative Prompt: ${brandKit.negativePrompt || 'N/A'}
 
 CURRENT RELEASE:
-- Title: ${brandKit.releaseDetails?.title || 'Untitled'}
+- Title: ${brandKit.releaseDetails?.title || 'Not provided'}
 - Type: ${brandKit.releaseDetails?.type || 'N/A'}
 - Mood: ${brandKit.releaseDetails?.mood || 'N/A'}
 - Themes: ${brandKit.releaseDetails?.themes || 'N/A'}

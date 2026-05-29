@@ -12,6 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { Directive } from '../directive/DirectiveTypes';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
@@ -77,8 +78,7 @@ export interface LivingPlan {
 
 export class LivingPlanService {
   private get isE2EMode(): boolean {
-    if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-    try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    return isFirebaseE2EMockEnabled();
   }
 
   /**

@@ -318,7 +318,7 @@ export default function MerchDashboard() {
                 isOpen={storefrontOpen}
                 onClose={() => setStorefrontOpen(false)}
                 products={products}
-                artistName={userProfile?.displayName || 'Artist'}
+                artistName={userProfile?.displayName || ''}
             />
             <DropCampaignWizard
                 isOpen={dropWizardOpen}

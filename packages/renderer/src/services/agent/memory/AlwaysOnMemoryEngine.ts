@@ -30,6 +30,7 @@ import {
     DEFAULT_ENGINE_CONFIG,
     DEFAULT_CONSOLIDATION_CONFIG,
 } from '@/types/AlwaysOnMemory';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ============================================================================
 // ENGINE
@@ -102,8 +103,7 @@ export class AlwaysOnMemoryEngine {
     // ========================================================================
 
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     /**

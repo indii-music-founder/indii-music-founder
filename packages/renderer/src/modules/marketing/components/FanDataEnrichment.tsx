@@ -354,7 +354,7 @@ export default function FanDataEnrichment() {
                                                             <td className="px-5 py-4">
                                                                 <div className="flex flex-col">
                                                                     <span className="text-xs font-bold text-white truncate max-w-[150px]">
-                                                                        {fan.firstName ? `${fan.firstName} ${fan.lastName || ''}` : 'Anonymous'}
+                                                                        {fan.firstName ? `${fan.firstName} ${fan.lastName || ''}` : fan.email}
                                                                     </span>
                                                                     <span className="text-[10px] text-gray-500 font-mono truncate max-w-[150px]">
                                                                         {fan.email}

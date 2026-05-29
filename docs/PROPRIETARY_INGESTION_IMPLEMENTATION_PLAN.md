@@ -10,7 +10,7 @@
 
 This plan architects the metadata and supply chain infrastructure to transform indii into a fully autonomous music platform. By implementing our proprietary ingestion IP, we enable:
 
-- **Proprietary ingestion IP** for direct DSP delivery (Spotify, Apple Music, etc.) without intermediaries
+- **Proprietary ingestion IP** targeting future direct DSP delivery (Spotify, Apple Music, etc.) after peer conformance and commercial verification
 - **Automated royalty processing** with Earnings Report (Digital Sales Reporting)
 - **Rights management** at creation (studio) through distribution
 - **AI-generated content flagging** (IngestionNotification 4.3 support)

@@ -204,7 +204,7 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     genre: '',
     labelName: INGESTION_CONFIG.ENTITY_NAME,
     dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
-    splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
+    splits: [],
     pro: 'None',
     publisher: 'Self-Published',
     containsSamples: false,
