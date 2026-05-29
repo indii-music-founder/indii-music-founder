@@ -54,7 +54,7 @@ const ARCHIVE_THRESHOLD_DAYS = 90;
  */
 export const cleanupOrphanedVideos = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "1GB",
      })
@@ -195,7 +195,7 @@ export const cleanupOrphanedVideos = functions
  */
 export const trackStorageQuotas = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "1GB",
      })
@@ -295,7 +295,7 @@ export const trackStorageQuotas = functions
  */
 export const flagVideosForArchival = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "512MB",
      })
