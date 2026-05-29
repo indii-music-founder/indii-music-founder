@@ -47,7 +47,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
-            userProfile: { id: 'test-user-id' }
+            userProfile: { id: 'test-user-id', displayName: 'Test Artist' }
         })
     }
 }));
@@ -102,7 +102,7 @@ describe('SocialService Integration', () => {
                 content: 'Hello World',
                 authorId: 'test-user-id',
                 mediaUrls: ['https://example.com/image.jpg'],
-                authorName: 'Anonymous',
+                authorName: 'Test Artist',
                 likes: 0
             })
         );

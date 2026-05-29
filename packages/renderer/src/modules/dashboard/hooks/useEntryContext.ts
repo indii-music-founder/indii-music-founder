@@ -55,7 +55,7 @@ export function useEntryContext(): EntryContext {
         .filter((s) => !s.namespace)
         .sort((a, b) => b.updatedAt - a.updatedAt)[0];
 
-    const isNew = sessionList.length === 0 && userProfile.displayName === 'New Artist';
+    const isNew = sessionList.length === 0 && !userProfile.displayName?.trim();
     const lastUpdateAge = mostRecent ? Date.now() - mostRecent.updatedAt : null;
     const isStale = lastUpdateAge ? lastUpdateAge > 7 * 86_400_000 : true;
 
@@ -119,7 +119,7 @@ export function useEntryContext(): EntryContext {
 
     return {
         scenario,
-        userName: userProfile.displayName || 'Artist',
+        userName: userProfile.displayName || '',
         lastSessionTitle: mostRecent?.title || null,
         lastSessionId: mostRecent?.id || null,
         lastSessionAge: lastUpdateAge ? Math.floor(lastUpdateAge / 86_400_000) : null,

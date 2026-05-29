@@ -272,6 +272,8 @@ export class SocialService {
     const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
+    const authorName = userProfile.displayName?.trim();
+    if (!authorName) throw new Error("Display name is required to create a social post.");
 
     // Validate Input
     const validation = CreatePostRequestSchema.safeParse({ content, mediaUrls, productId });
@@ -281,7 +283,7 @@ export class SocialService {
 
     const postData = {
       authorId: userProfile.id,
-      authorName: userProfile.displayName || "Anonymous",
+      authorName,
       authorAvatar: userProfile.photoURL || null,
       content,
       mediaUrls,

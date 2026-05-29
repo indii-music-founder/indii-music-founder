@@ -72,6 +72,8 @@ describe('QCPanel', () => {
 
         render(<QCPanel />);
 
+        fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Bad' } });
+        fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
         fireEvent.click(screen.getByText('Run QC'));
 
         await waitFor(() => {
@@ -85,6 +87,9 @@ describe('QCPanel', () => {
 
         render(<QCPanel />);
 
+        fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
+        fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
+        fireEvent.change(screen.getByPlaceholderText(/US-XXX/i), { target: { value: 'USABC2600001' } });
         fireEvent.click(screen.getByText('Gen CID CSV'));
 
         await waitFor(() => {

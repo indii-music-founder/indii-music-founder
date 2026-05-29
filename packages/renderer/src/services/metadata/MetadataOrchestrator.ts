@@ -18,6 +18,10 @@ export class MetadataOrchestrator {
 
         // 1. Run Autonomous Intelligence (Technical + Semantic)
         const profile = await audioIntelligence.analyze(file);
+        const artistName = initialData.artistName?.trim();
+        if (!artistName) {
+            throw new Error('Artist name is required to create golden metadata.');
+        }
         
         // 2. Auto-generate Industry Identifiers if missing
         const isrc = initialData.isrc || await IdentifierService.nextISRC();
@@ -30,7 +34,7 @@ export class MetadataOrchestrator {
             id: profile.id,
             masterFingerprint: profile.id,
             trackTitle: initialData.trackTitle || file.name.replace(/\.[^/.]+$/, ""), // Strip extension
-            artistName: initialData.artistName || 'Unknown Artist',
+            artistName,
             isrc,
             upc,
             genre: profile.semantic.ddexGenre,
@@ -48,10 +52,10 @@ export class MetadataOrchestrator {
             releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
             isGolden: true, // Mark as Golden since it's Intelligence-verified and ID-assigned
-            aiGeneratedContent: {
-                isFullyAIGenerated: false, // Default to false unless specified
-                isPartiallyAIGenerated: true,
-                aiToolsUsed: [profile.modelVersion],
+            aiGeneratedContent: initialData.aiGeneratedContent || {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false,
+                aiToolsUsed: [],
                 humanContribution: 'Original recording provided by user.'
             }
         };

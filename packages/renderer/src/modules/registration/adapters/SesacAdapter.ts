@@ -1,6 +1,7 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
+import { getConfirmedAutomationResult } from './automationResult';
 
 export const SesacAdapter: OrgAdapter = {
   id: 'sesac',
@@ -55,7 +56,7 @@ export const SesacAdapter: OrgAdapter = {
           Return the work registration confirmation number.`,
         'https://www.sesac.com'
       );
-      const confirmationNumber = result.result ?? result.id;
+      const confirmationNumber = getConfirmedAutomationResult(result, 'SESAC');
       await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
 
       return { success: true, confirmationNumber, submittedAt: new Date() };

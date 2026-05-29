@@ -19,11 +19,14 @@ export class IngestionMapper {
         }
 
         const { semantic, technical } = profile;
+        if (!semantic.ddexGenre?.trim()) {
+            throw new Error('DDEX genre is required for ingestion metadata mapping.');
+        }
 
         // 1. Core Ingestion Classifications
         const metadata: Partial<ExtendedGoldenMetadata> = {
             // Genre Mapping
-            genre: semantic.ddexGenre || 'Pop', // Fallback required by XSD
+            genre: semantic.ddexGenre.trim(),
             subGenre: semantic.ddexSubGenre,
 
             // Language (ISO 639-2)

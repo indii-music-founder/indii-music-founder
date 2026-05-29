@@ -86,7 +86,10 @@ export function ReleaseHarnessWorkspace({
       const updates: Partial<ExtendedGoldenMetadata> = {};
       if (!metadata.isrc) updates.isrc = await IdentifierService.nextISRC();
       if (!metadata.upc) updates.upc = await IdentifierService.nextUPC();
-      if (!metadata.catalogNumber) updates.catalogNumber = buildCatalogNumber(metadata.artistName, metadata.trackTitle);
+      if (!metadata.catalogNumber) {
+        const catalogNumber = buildCatalogNumber(metadata.artistName, metadata.trackTitle);
+        if (catalogNumber) updates.catalogNumber = catalogNumber;
+      }
       const work = !metadata.iswc && metadata.trackTitle ? await createISWCWorkDraft(metadata, updates.isrc) : undefined;
       onApplyMetadata?.(updates);
       if (result) {
@@ -262,8 +265,9 @@ export function ReleaseHarnessWorkspace({
   );
 }
 
-function buildCatalogNumber(artistName?: string, title?: string): string {
-  const seed = `${artistName ?? 'INDII'} ${title ?? 'RELEASE'}`
+function buildCatalogNumber(artistName?: string, title?: string): string | undefined {
+  if (!artistName || !title) return undefined;
+  const seed = `${artistName} ${title}`
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, '')
     .split(/\s+/)
@@ -271,19 +275,22 @@ function buildCatalogNumber(artistName?: string, title?: string): string {
     .map(part => part.slice(0, 3))
     .join('')
     .slice(0, 10);
-  return `IND-${seed || 'REL'}-${new Date().getFullYear()}`;
+  if (!seed) return undefined;
+  return `IND-${seed}-${new Date().getFullYear()}`;
 }
 
 async function createISWCWorkDraft(metadata: Partial<ExtendedGoldenMetadata>, generatedIsrc?: string) {
   const title = metadata.trackTitle;
   if (!title) return undefined;
-  const splits = metadata.splits?.length ? metadata.splits : [{ legalName: metadata.artistName || 'Unknown Writer', percentage: 100 }];
+  const splits = metadata.splits?.length ? metadata.splits : (metadata.artistName ? [{ legalName: metadata.artistName, percentage: 100 }] : []);
+  if (!splits.length) return undefined;
   const total = splits.reduce((sum, split) => sum + split.percentage, 0);
   if (total !== 100) return undefined;
+  if (splits.some(split => !split.legalName?.trim() && !metadata.artistName?.trim())) return undefined;
   return ISWCService.registerWork({
     title,
     composers: splits.map(split => ({
-      name: split.legalName || metadata.artistName || 'Unknown Writer',
+      name: (split.legalName || metadata.artistName)!,
       share: split.percentage,
       role: ('role' in split && split.role === 'songwriter') ? 'CA' : 'C',
       pro: metadata.pro,

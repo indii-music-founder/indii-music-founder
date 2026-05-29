@@ -134,7 +134,7 @@ export const LEGACY_AGGREGATORS: Record<string, DistributorProfile> = {
         requiresUPC: false,
         requiresISRC: false,
         type: 'migration_only',
-        description: 'Import existing CD Baby releases. Reclaim your masters and move to direct DSP delivery.',
+        description: 'Import existing CD Baby releases and prepare catalog migration readiness.',
     },
     symphonic: {
         id: 'symphonic',

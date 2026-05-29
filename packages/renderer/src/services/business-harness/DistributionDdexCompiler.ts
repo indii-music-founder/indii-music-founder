@@ -75,7 +75,7 @@ export class DistributionDdexCompiler implements HarnessCompiler<DistributionDde
       agentBriefs: [{
         agentId: 'distribution',
         departmentId: 'distribution',
-        brief: 'Prepare DDEX package readiness, identifier checklist, territory/storefront blockers, and no-delivery approval gate.',
+        brief: 'Prepare release delivery readiness, identifier checklist, territory/storefront blockers, and no-delivery approval gate.',
         inputs: distributionReadiness.missingFields,
         blockedBy: distributionReadiness.ddexPackageReady ? ['User delivery approval required'] : distributionReadiness.missingFields,
       }, {

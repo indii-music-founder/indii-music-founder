@@ -132,8 +132,7 @@ export class AgentService {
             await this.warmup();
         }
 
-        const isE2EMode = typeof window !== 'undefined' && Boolean((window as any).FIREBASE_E2E_MOCK);
-        const activeUserId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
+        const activeUserId = auth.currentUser?.uid || null;
         if (!activeUserId) {
             this.addSystemMessage('Agent requests require an authenticated user.');
             this.isProcessing = false;
@@ -1195,15 +1194,14 @@ The user will see this plan and can approve it to start execution.`;
             if (jsonMatch && jsonMatch[1]) {
                 try {
                     const parsed = JSON.parse(jsonMatch[1]);
-                    const planDraft = parsed.livingPlan;
+                        const planDraft = parsed.livingPlan;
 
-                    if (planDraft && context.projectId) {
-                        const { auth } = await import('@/services/firebase');
-                        const isE2EMode = typeof window !== 'undefined' && Boolean((window as any).FIREBASE_E2E_MOCK);
-                        const userId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
-                        if (!userId) {
-                            throw new Error('User must be authenticated to create living plans.');
-                        }
+                        if (planDraft && context.projectId) {
+                            const { auth } = await import('@/services/firebase');
+                            const userId = auth.currentUser?.uid || null;
+                            if (!userId) {
+                                throw new Error('User must be authenticated to create living plans.');
+                            }
 
                         const plan = await livingPlanService.create(
                             userId,

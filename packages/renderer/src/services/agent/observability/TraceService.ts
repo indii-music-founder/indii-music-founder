@@ -7,6 +7,7 @@ import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
 import { RemoteIntelligenceConfigSchema } from '@/services/intelligence/config/RemoteIntelligenceConfig';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
@@ -15,8 +16,7 @@ export class TraceService {
     private static startTimeMap: Map<string, number> = new Map();
 
     private static get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     /**

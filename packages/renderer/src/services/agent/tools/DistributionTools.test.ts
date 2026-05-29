@@ -316,7 +316,11 @@ describe('DistributionTools', () => {
                 title: 'Test Track',
                 artist: 'Test Artist',
                 upc: '012345678905',
-                isrc: 'INVALID'
+                isrc: 'INVALID',
+                label: 'Test Label',
+                genre: 'Rock',
+                language: 'eng',
+                releaseDate: '2026-01-01'
             });
 
             const parsed = result;
@@ -333,7 +337,11 @@ describe('DistributionTools', () => {
                 title: 'Test Track',
                 artist: 'Test Artist',
                 upc: '123456789',
-                isrc: 'USIND2600001'
+                isrc: 'USIND2600001',
+                label: 'Test Label',
+                genre: 'Rock',
+                language: 'eng',
+                releaseDate: '2026-01-01'
             });
 
             const parsed = result;

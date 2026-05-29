@@ -63,9 +63,9 @@ export function StorefrontPreviewModal({ isOpen, onClose, products, artistName =
                                 {/* Store Header */}
                                 <div className="text-center mb-6">
                                     <div className="w-12 h-12 rounded-full bg-[#FFE135] flex items-center justify-center mx-auto mb-2 shadow-[0_0_20px_rgba(255,225,53,0.3)]">
-                                        <span className="text-black font-black text-xl">{artistName[0]?.toUpperCase() || 'M'}</span>
+                                        <span className="text-black font-black text-xl">{artistName[0]?.toUpperCase() || '-'}</span>
                                     </div>
-                                    <h2 className="text-lg font-black text-white">{artistName || 'Artist'} Shop</h2>
+                                    <h2 className="text-lg font-black text-white">{artistName ? `${artistName} Shop` : 'Merch Shop'}</h2>
                                     <p className="text-xs text-neutral-500 mt-1">Official merchandise</p>
                                 </div>
 
