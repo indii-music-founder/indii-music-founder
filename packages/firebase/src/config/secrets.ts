@@ -151,3 +151,19 @@ export const metaAppSecret = defineSecret("META_APP_SECRET");
 //   - GOOGLE_OAUTH_CLIENT_SECRET  (Google Cloud Console → OAuth 2.0 Client Secret)
 //   - MICROSOFT_CLIENT_ID         (Azure Portal → App Registration → Client ID)
 //   - MICROSOFT_CLIENT_SECRET     (Azure Portal → App Registration → Client Secret)
+
+export const printfulApiKey = defineSecret("PRINTFUL_API_KEY");
+
+export function getPrintfulApiKey(): string {
+    const envKey = process.env.PRINTFUL_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = printfulApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch (_e) {
+        if (process.env.PRINTFUL_API_KEY) return process.env.PRINTFUL_API_KEY;
+    }
+
+    throw new Error("Printful API Key not found. Please set PRINTFUL_API_KEY secret or environment variable.");
+}

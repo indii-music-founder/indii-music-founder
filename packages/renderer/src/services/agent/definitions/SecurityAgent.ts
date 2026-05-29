@@ -117,15 +117,6 @@ If a task is outside Security, say:
 "This is outside Security scope — routing back to indii Conductor for [department]. Standing by for any security implications."
 `,
     functions: {
-        audit_permissions: async (args: { userId: string }) => {
-            const prompt = `Audit permissions for user "${args.userId}". Identify risky roles and generate a compliance report. Return as JSON.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: response };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
-        },
         scan_content: async (args: { text: string }) => {
             const prompt = `Scan the following text for PII (Personally Identifiable Information), offensive content, or security secrets.
             Text: ${args.text}
@@ -137,15 +128,6 @@ If a task is outside Security, say:
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
-        },
-        check_api_status: async (args: { api_name: string }) => {
-            return { success: false, error: `No live API inventory record found for ${args.api_name}.` };
-        },
-        rotate_credentials: async (args: { service_name: string }) => {
-            return { success: false, error: `Credential rotation for ${args.service_name} requires the secure Electron security bridge.` };
-        },
-        scan_for_vulnerabilities: async (args: { target: string }) => {
-            return { success: false, error: `Vulnerability scan for ${args.target} requires the secure Electron security scanner.` };
         }
     },
     authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities'],
@@ -157,9 +139,8 @@ If a task is outside Security, say:
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        userId: { type: 'STRING', description: 'User ID to audit.' }
-                    },
-                    required: ['userId']
+                        project_id: { type: 'STRING', description: 'Project ID or Organization ID to audit.' }
+                    }
                 }
             },
             {
@@ -237,9 +218,9 @@ If a task is outside Security, say:
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        target: { type: "STRING", description: "The system or URL to scan." }
+                        scope: { type: "STRING", description: "The path or scope to scan." }
                     },
-                    required: ["target"]
+                    required: ["scope"]
                 }
             }
         ]
