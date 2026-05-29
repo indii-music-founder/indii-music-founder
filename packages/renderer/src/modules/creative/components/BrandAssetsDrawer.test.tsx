@@ -17,6 +17,8 @@ describe('BrandAssetsDrawer', () => {
 
     const defaultStore = {
         userProfile: {
+            id: 'test-user-id',
+            email: 'artist@indii.test',
             brandKit: {
                 brandAssets: [
                     { url: 'http://test.com/asset1.png', description: 'Asset 1' }

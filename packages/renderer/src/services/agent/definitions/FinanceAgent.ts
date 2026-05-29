@@ -2,6 +2,7 @@ import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { UniversalTools } from '../tools/UniversalTools';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -158,25 +159,9 @@ export const FinanceAgent: AgentConfig = {
                 }
             };
         },
-        credential_vault: async (args: { action: string; service: string }) => {
-            return {
-                success: true,
-                data: {
-                    status: "Access granted",
-                    message: `Credentials for ${args.service} retrieved via Secure Vault.`
-                }
-            };
-        },
-        payment_gate: async (args: { amount: number; vendor: string; reason: string }) => {
-            return {
-                success: true,
-                data: {
-                    status: "Authorized",
-                    transaction_id: `TX-${Math.random().toString(36).substring(7).toUpperCase()}`,
-                    message: `Payment of $${args.amount} to ${args.vendor} for ${args.reason} has been authorized.`
-                }
-            };
-        }
+        credential_vault: UniversalTools.credential_vault,
+        payment_gate: UniversalTools.payment_gate,
+        browser_tool: UniversalTools.browser_tool,
     },
     authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
     tools: [{

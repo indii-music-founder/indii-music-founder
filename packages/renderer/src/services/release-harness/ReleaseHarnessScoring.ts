@@ -33,7 +33,7 @@ export function scoreStrategies(params: {
   const ddexBoost = distribution.ddexPackageReady ? 16 : distribution.metadataComplete ? 8 : -10;
 
   const candidates: ReleaseStrategy[] = [
-    makeStrategy('distribution_first_release', 52 + ddexBoost + memoryBoost, 'DDEX package', [
+    makeStrategy('distribution_first_release', 52 + ddexBoost + memoryBoost, 'Delivery readiness', [
       'Prioritize metadata, assets, rights, and store package readiness.',
       distribution.ddexPackageReady ? 'The release is close to package-ready.' : 'Distribution blockers should be cleared before the campaign expands.',
     ]),

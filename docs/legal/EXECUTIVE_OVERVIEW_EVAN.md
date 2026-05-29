@@ -40,7 +40,7 @@ This is the "Billing Department." It tracks every stream and every cent. Because
 ### 🛡️ Why This Matters (The "Evan" Stake)
 Most tech platforms (like Spotify or Instagram) are "Landlords"—they let the artist live there, but they own the land. 
 
-**indii is "Independence."** By building this infrastructure, we are giving the artist the keys to their own building. Your participation in the **"Genesis Block"** funded the development of the **Merlin/BWARM integration**—the high-security "pipe" that allows independent artists to talk directly to big tech as equals.
+**indii is "Independence."** By building this infrastructure, we are giving the artist the keys to their own building. Your participation in the **"Genesis Block"** funded the development of the **Merlin/BWARM readiness layer**: security, metadata, and compliance infrastructure that must still be verified through live partner testing before it is described as direct platform access.
 
 **In short: We are building the "Electronic Health Record" and "Autonomous Surgical Suite" for the next generation of the music industry.**
 

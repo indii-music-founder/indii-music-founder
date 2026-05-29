@@ -21,6 +21,7 @@ import { coreVaultService, type VaultCategory } from './CoreVaultService';
 import { alwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
 import { memoryBankService } from './MemoryBankService';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ============================================================================
 // TYPES
@@ -103,8 +104,7 @@ class BigBrainEngine {
     }
 
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     /**

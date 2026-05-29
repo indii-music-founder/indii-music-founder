@@ -132,10 +132,16 @@ export const MusicTools = {
     }),
 
     scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
+        const title = args.metadata.trackTitle || args.metadata.title;
+        const artist = args.metadata.artistName || args.metadata.artist;
+        if (!title || !artist) {
+            return toolError('ID3 tag writing requires track title and artist name. No placeholder tags were written.', 'MISSING_ID3_METADATA');
+        }
+
         // Write ID3 tags using MetadataOrchestrator
         const tags = {
-            TIT2: args.metadata.trackTitle || args.metadata.title || 'Untitled',
-            TPE1: args.metadata.artistName || args.metadata.artist || 'Unknown Artist',
+            TIT2: title,
+            TPE1: artist,
             TALB: args.metadata.albumTitle || args.metadata.album || '',
             TCON: args.metadata.genre || '',
             TRCK: args.metadata.trackNumber?.toString() || '',

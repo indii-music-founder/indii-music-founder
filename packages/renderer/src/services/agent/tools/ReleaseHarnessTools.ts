@@ -101,11 +101,21 @@ export const ReleaseHarnessTools: Record<string, AnyToolFunction> = {
     const identifiers: { isrc?: string; upc?: string; catalogNumber?: string; iswcWorkId?: string; iswcStatus?: string } = {};
     if (args.needsIsrc !== false) identifiers.isrc = await IdentifierService.nextISRC();
     if (args.needsUpc !== false) identifiers.upc = await IdentifierService.nextUPC();
-    if (args.needsCatalogNumber !== false) identifiers.catalogNumber = buildCatalogNumber(args.artistName, args.title);
-    if (args.needsIswcWorkDraft !== false && args.title) {
+    const title = args.title?.trim();
+    const artistName = args.artistName?.trim();
+    if (args.needsCatalogNumber !== false) {
+      if (!artistName || !title) {
+        return toolError('Artist name and title are required to generate a catalog number.', 'RELEASE_METADATA_REQUIRED');
+      }
+      identifiers.catalogNumber = buildCatalogNumber(artistName, title);
+    }
+    if (args.needsIswcWorkDraft !== false && title) {
+      if (!artistName) {
+        return toolError('Artist or composer name is required to create an ISWC work draft.', 'COMPOSER_REQUIRED');
+      }
       const work = await ISWCService.registerWork({
-        title: args.title,
-        composers: [{ name: args.artistName ?? 'Unknown Writer', share: 100, role: 'CA' }],
+        title,
+        composers: [{ name: artistName, share: 100, role: 'CA' }],
         associatedISRCs: identifiers.isrc ? [identifiers.isrc] : [],
         isInstrumental: false,
       });
@@ -117,7 +127,7 @@ export const ReleaseHarnessTools: Record<string, AnyToolFunction> = {
 };
 
 function buildCatalogNumber(artistName?: string, title?: string): string {
-  const seed = `${artistName ?? 'INDII'} ${title ?? 'RELEASE'}`
+  const seed = `${artistName} ${title}`
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, '')
     .split(/\s+/)
@@ -125,5 +135,5 @@ function buildCatalogNumber(artistName?: string, title?: string): string {
     .map(part => part.slice(0, 3))
     .join('')
     .slice(0, 10);
-  return `IND-${seed || 'REL'}-${new Date().getFullYear()}`;
+  return `IND-${seed}-${new Date().getFullYear()}`;
 }

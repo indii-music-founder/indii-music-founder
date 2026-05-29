@@ -37,10 +37,12 @@ export class CreatorProtectionCompiler implements HarnessCompiler<CreatorProtect
       });
     }
 
+    const workTitle = metadata.trackTitle?.trim() || input.releaseIntent?.title?.trim();
+
     return creatorProtectionHarnessService.compileReadiness({
       profile: protectionProfile,
-      works: [{
-        workTitle: metadata.trackTitle ?? input.releaseIntent?.title ?? 'Untitled upload',
+      works: workTitle ? [{
+        workTitle,
         isrc: metadata.isrc,
         upc: metadata.upc,
         iswc: metadata.iswc,
@@ -48,7 +50,7 @@ export class CreatorProtectionCompiler implements HarnessCompiler<CreatorProtect
         copyrightRegistration: protectionProfile.copyrightStatus === 'registered' ? 'registered' : undefined,
         proWorkId: metadata.composerIPI,
         humanAuthorshipStatement: metadata.aiGeneratedContent?.humanContribution,
-      }],
+      }] : [],
       evidenceRefs: [
         ...(input.fingerprint ? [{
           id: `fingerprint_${input.fingerprint}`,

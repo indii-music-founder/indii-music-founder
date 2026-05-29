@@ -3,6 +3,7 @@ import { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { Timestamp } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
  * Interface representing the Firestore database schema for a boardroom message.
@@ -39,10 +40,7 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
      */
     async syncMessage(msg: AgentMessage): Promise<void> {
         try {
-            const isE2EMode = typeof window !== 'undefined' && (
-                Boolean((window as any).FIREBASE_E2E_MOCK) ||
-                localStorage.getItem('FIREBASE_E2E_MOCK') === 'true'
-            );
+            const isE2EMode = isFirebaseE2EMockEnabled();
             if (isE2EMode) {
                 logger.debug(`[AgentFirebaseConnector] Skipping Firestore sync for E2E message ${msg.id}.`);
                 return;

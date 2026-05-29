@@ -49,6 +49,11 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     const processFiles = async (files: File[]) => {
+        if (!userProfile?.id || userProfile.id === 'guest') {
+            toast.error('Sign in before uploading brand assets.');
+            return;
+        }
+
         // For uploads, we'll default to style_reference if under limit, else logo
         const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
         const currentCount = userProfile?.brandKit?.referenceImages?.length || 0;
@@ -62,7 +67,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
             for (const file of files) {
                 const assetId = crypto.randomUUID();
-                const userId = userProfile?.id || 'guest';
+                const userId = userProfile.id;
                 const path = `users/${userId}/brand_assets/${assetId}`;
                 
                 logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);

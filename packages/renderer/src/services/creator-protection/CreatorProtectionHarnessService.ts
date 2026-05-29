@@ -142,7 +142,7 @@ export class CreatorProtectionHarnessService {
       userId: input.profile.userId,
       domain: 'creator_protection',
       inputRefs: [
-        { type: 'user', id: input.profile.userId, label: input.profile.artistName ?? input.profile.legalName ?? 'Artist' },
+        { type: 'user', id: input.profile.userId, label: input.profile.artistName ?? input.profile.legalName ?? 'Not provided' },
         ...(input.works ?? []).map(work => ({ type: 'track' as const, id: work.isrc, label: work.workTitle })),
       ],
       scores: [{

@@ -22,12 +22,16 @@ export const AutonomousTools = {
         if (!userProfile?.id) {
             return toolError("Authentication required to create a drop.", "AUTH_REQUIRED");
         }
+        const ownerName = userProfile.displayName?.trim();
+        if (!ownerName) {
+            return toolError("Display name is required to create an artifact drop.", "OWNER_NAME_REQUIRED");
+        }
 
         try {
             // 1. Create the Artifact record in Firestore
             const dropData = {
                 ownerId: userProfile.id,
-                ownerName: userProfile.displayName || "Independent Artist",
+                ownerName,
                 title: args.title,
                 description: args.description,
                 priceUsd: args.priceUsd,
