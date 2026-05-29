@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Copy, Check } from 'lucide-react';
@@ -16,6 +17,7 @@ interface GeneratedAssets {
 }
 
 export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     const [step, setStep] = useState<'input' | 'generating' | 'results'>('input');
     const [formData, setFormData] = useState({
         trackTitle: '',
@@ -106,7 +108,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 value={formData.trackTitle}
                                                 onChange={e => setFormData({ ...formData, trackTitle: e.target.value })}
                                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
-                                                placeholder="e.g. Neon Nights"
+                                                placeholder={t('publicist.hints.release_title')}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -117,7 +119,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 value={formData.artistName}
                                                 onChange={e => setFormData({ ...formData, artistName: e.target.value })}
                                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
-                                                placeholder="e.g. Retro Wave"
+                                                placeholder={t('publicist.hints.release_genre')}
                                             />
                                         </div>
                                     </div>
@@ -139,7 +141,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             value={formData.musicalStyle}
                                             onChange={e => setFormData({ ...formData, musicalStyle: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
-                                            placeholder="e.g. Synth-pop, 80s nostalgia, energetic"
+                                            placeholder={t('publicist.hints.release_tags')}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -149,7 +151,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             value={formData.targetAudience}
                                             onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors min-h-[100px]"
-                                            placeholder="Who is this song for?"
+                                            placeholder={t('publicist.hints.target_audience')}
                                         />
                                     </div>
                                 </div>
