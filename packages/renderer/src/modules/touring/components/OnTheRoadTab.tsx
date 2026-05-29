@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect } from 'react';
 
 import { motion } from 'motion/react';
@@ -46,6 +47,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     fuelLogistics,
     itinerary
 }) => {
+    const { t } = useTranslation();
     // Find next stop logic
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
@@ -254,7 +256,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Current Location..."
+                                placeholder={t('touring.hints.current_location')}
                                 value={currentLocation}
                                 onChange={(e) => setCurrentLocation(e.target.value)}
                                 className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"

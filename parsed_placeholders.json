@@ -1,0 +1,270 @@
+{
+  "packages/renderer/src/modules/publicist/components/ContactDetailsModal.tsx": [
+    [
+      "141",
+      "Add notes about your last conversation..."
+    ]
+  ],
+  "packages/renderer/src/modules/publicist/components/CreateCampaignModal.tsx": [
+    [
+      "111",
+      "e.g. The Midnight Echo"
+    ],
+    [
+      "126",
+      "0.00"
+    ],
+    [
+      "98",
+      "e.g. Neon Nights Album Launch"
+    ]
+  ],
+  "packages/renderer/src/modules/publicist/components/CreateContactModal.tsx": [
+    [
+      "103",
+      "e.g. Test Journalist"
+    ],
+    [
+      "116",
+      "e.g. Pitchfork / Rolling Stone"
+    ]
+  ],
+  "packages/renderer/src/modules/publicist/components/ReleaseKitModal.tsx": [
+    [
+      "109",
+      "e.g. Neon Nights"
+    ],
+    [
+      "120",
+      "e.g. Retro Wave"
+    ],
+    [
+      "142",
+      "e.g. Synth-pop, 80s nostalgia, energetic"
+    ],
+    [
+      "152",
+      "Who is this song for?"
+    ]
+  ],
+  "packages/renderer/src/modules/publicist/components/SuperfanCRM.tsx": [
+    [
+      "130",
+      "Search fans..."
+    ]
+  ],
+  "packages/renderer/src/modules/publishing/components/MechanicalRoyaltyPanel.tsx": [
+    [
+      "117",
+      "e.g. Bohemian Rhapsody"
+    ],
+    [
+      "131",
+      "e.g. Freddie Mercury"
+    ],
+    [
+      "147",
+      "USRC17607839"
+    ]
+  ],
+  "packages/renderer/src/modules/publishing/components/ReleaseListView.tsx": [
+    [
+      "79",
+      "Search by title, artist, or ISRC..."
+    ]
+  ],
+  "packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx": [
+    [
+      "155",
+      "Enter track title"
+    ],
+    [
+      "170",
+      "Enter artist name"
+    ],
+    [
+      "219",
+      "Your label or 'Self-Released'"
+    ],
+    [
+      "233",
+      "PA-DPIDA-XXXXXXXXXX-X"
+    ],
+    [
+      "247",
+      "US-XXX-25-XXXXX (Optional - will generate if empty)"
+    ],
+    [
+      "261",
+      "e.g. 120"
+    ],
+    [
+      "275",
+      "e.g. C minor, 8A"
+    ],
+    [
+      "289",
+      "0.0 to 1.0 (e.g. 0.85)"
+    ],
+    [
+      "535",
+      "e.g., Suno, Udio, AIVA, Amper"
+    ],
+    [
+      "553",
+      "Describe any human creative input (lyrics, melody ideas, arrangement, mixing, etc.)"
+    ]
+  ],
+  "packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx": [
+    [
+      "115",
+      "Your display name"
+    ],
+    [
+      "126",
+      "Tell us about yourself..."
+    ]
+  ],
+  "packages/renderer/src/modules/social/components/AccountCreationWizard.tsx": [
+    [
+      "103",
+      "e.g. Technology"
+    ],
+    [
+      "92",
+      "e.g. Acme Corp"
+    ]
+  ],
+  "packages/renderer/src/modules/social/components/CreatePostModal.tsx": [
+    [
+      "155",
+      "What's on your mind?"
+    ]
+  ],
+  "packages/renderer/src/modules/social/components/ProductPickerModal.tsx": [
+    [
+      "83",
+      "Search your products..."
+    ]
+  ],
+  "packages/renderer/src/modules/social/components/SocialFeed.tsx": [
+    [
+      "116",
+      "What's happening in your studio?"
+    ]
+  ],
+  "packages/renderer/src/modules/touring/RoadManager.tsx": [
+    [
+      "105",
+      "Phone Number"
+    ],
+    [
+      "97",
+      "Contact Name"
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/DaySheetModal.tsx": [
+    [
+      "142",
+      "Event Phase..."
+    ],
+    [
+      "183",
+      "OPERATIVE"
+    ],
+    [
+      "189",
+      "IDENT_NAME"
+    ],
+    [
+      "200",
+      "+X XXX XXX XXXX"
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/OnTheRoadTab.tsx": [
+    [
+      "257",
+      "Current Location..."
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/PlanningTab.tsx": [
+    [
+      "100",
+      "Enter City, State (e.g. Austin, TX)"
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/RiderChecklist.tsx": [
+    [
+      "65",
+      "Add requirement..."
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/RoadMode.tsx": [
+    [
+      "507",
+      "Tell your agent what you need..."
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/SetlistAnalytics.tsx": [
+    [
+      "424",
+      "The Fillmore"
+    ],
+    [
+      "432",
+      "Detroit, MI"
+    ],
+    [
+      "438",
+      "500"
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/TechnicalRiderGenerator.tsx": [
+    [
+      "600",
+      "e.g. Mara Sol"
+    ],
+    [
+      "603",
+      "e.g. The Collapse Tour"
+    ],
+    [
+      "711",
+      "None"
+    ],
+    [
+      "714",
+      "None"
+    ],
+    [
+      "717",
+      "None"
+    ],
+    [
+      "727",
+      "Role"
+    ],
+    [
+      "728",
+      "Name"
+    ],
+    [
+      "729",
+      "+1 555 000 0000"
+    ],
+    [
+      "731",
+      "email@example.com"
+    ],
+    [
+      "751",
+      "Load-in time, parking, catering windows, special requests..."
+    ]
+  ],
+  "packages/renderer/src/modules/touring/components/VisaChecklist.tsx": [
+    [
+      "477",
+      "e.g. South Korea, Brazil, Germany..."
+    ]
+  ]
+}

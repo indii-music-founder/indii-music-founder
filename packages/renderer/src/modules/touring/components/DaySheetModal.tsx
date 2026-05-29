@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,6 +25,7 @@ interface DaySheetModalProps {
 
 
 export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onClose, onSave }) => {
+    const { t } = useTranslation();
     // Hooks must be unconditional
     const [schedule, setSchedule] = useState<ScheduleItem[]>(stop.schedule ?? [
         { time: '14:00', event: 'Load In' },
@@ -139,7 +141,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                             value={item.event}
                                             onChange={(e) => handleScheduleChange(i, 'event', e.target.value)}
                                             className="flex-1 bg-transparent text-sm text-gray-300 font-medium outline-none placeholder:text-gray-800"
-                                            placeholder="Event Phase..."
+                                            placeholder={t('touring.hints.event_phase')}
                                         />
                                         <button
                                             onClick={() => setSchedule(schedule.filter((_, idx) => idx !== i))}
@@ -180,13 +182,13 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                         <div className="flex gap-4">
                                             <input
                                                 className="w-28 bg-transparent text-[10px] uppercase font-mono font-black text-green-500 outline-none placeholder:text-gray-800"
-                                                placeholder="OPERATIVE"
+                                                placeholder={t('touring.hints.operative_name')}
                                                 value={contact.role}
                                                 onChange={(e) => handleContactChange(i, 'role', e.target.value)}
                                             />
                                             <input
                                                 className="flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:text-gray-800 border-b border-transparent focus:border-green-500/20"
-                                                placeholder="IDENT_NAME"
+                                                placeholder={t('touring.hints.ident_name')}
                                                 value={contact.name}
                                                 onChange={(e) => handleContactChange(i, 'name', e.target.value)}
                                             />
@@ -197,7 +199,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                             </div>
                                             <input
                                                 className="flex-1 bg-transparent text-sm font-mono text-gray-500 outline-none placeholder:text-gray-800"
-                                                placeholder="+X XXX XXX XXXX"
+                                                placeholder={t('touring.hints.phone_international')}
                                                 value={contact.phone}
                                                 onChange={(e) => handleContactChange(i, 'phone', e.target.value)}
                                             />
