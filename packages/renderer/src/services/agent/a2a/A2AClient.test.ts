@@ -5,6 +5,11 @@ import { DigitalHandshake } from '@/services/agent/governance/DigitalHandshake';
 
 vi.unmock('@/services/agent/a2a/A2AClient');
 
+vi.mock("./A2AConfig", () => ({
+  resolveA2AConfig: vi.fn().mockResolvedValue({ mode: "http", baseUrl: "http://localhost:50080/a2a" }),
+  MY_AGENT_ID: "indii-conductor"
+}));
+
 // Mock E2EEncryptionService
 vi.mock('@/services/security/E2EEncryptionService', () => ({
   e2eEncryptionService: {
@@ -43,6 +48,9 @@ global.EventSource = MockEventSource as any;
 describe('A2AClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset internal state between tests to prevent leaked circuit breaker trips
+    (a2aClient as any).breaker.isTripped = false;
+    (a2aClient as any).isInitialized = false;
   });
 
   describe('discover', () => {
@@ -71,7 +79,7 @@ describe('A2AClient', () => {
       expect(cards.length).toBeGreaterThan(0);
       expect(cards[0]?.agentId).toBe('test-agent');
       expect(cards[0]?.costModel.perTokenInUsd).toBe(0.01);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:50080/a2a/discovery');
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:50080/a2a/discovery', expect.any(Object));
     });
 
     it('throws if discovery fetch fails', async () => {
@@ -79,7 +87,7 @@ describe('A2AClient', () => {
         ok: false,
         statusText: 'Internal Server Error',
       });
-      await expect(a2aClient.discover()).rejects.toThrow('Failed to discover agents: Internal Server Error');
+      await expect(a2aClient.discover()).rejects.toThrow('A2A discovery failed: Internal Server Error');
     });
   });
 

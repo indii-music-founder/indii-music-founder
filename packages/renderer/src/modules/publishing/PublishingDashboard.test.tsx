@@ -221,7 +221,7 @@ describe('PublishingDashboard', () => {
         render(<PublishingDashboard />);
 
         // Search
-        const searchInput = screen.getByPlaceholderText('Search by title, artist, or ISRC...');
+        const searchInput = screen.getByPlaceholderText('publishing.hints.search_releases');
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getAllByText('Apple')[0]).toBeInTheDocument();
         expect(screen.queryByText('Berry')).not.toBeInTheDocument();

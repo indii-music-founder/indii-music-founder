@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { functionsWest1 } from '@/services/firebase';
+import { auth, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Image as ImageIcon, Plus, Camera, ArrowRightLeft, Trash2, Tag } from 'lucide-react';
@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 import type { BrandAsset } from '@/types/User';
 import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import type { StoreState } from '@/core/store';
+import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -49,7 +50,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     const processFiles = async (files: File[]) => {
-        if (!userProfile?.id || userProfile.id === 'guest') {
+        const userId = getRealAuthenticatedUserId(auth.currentUser);
+        if (!userId || !userProfile?.id || userProfile.id !== userId) {
             toast.error('Sign in before uploading brand assets.');
             return;
         }
@@ -67,7 +69,6 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
             for (const file of files) {
                 const assetId = crypto.randomUUID();
-                const userId = userProfile.id;
                 const path = `users/${userId}/brand_assets/${assetId}`;
                 
                 logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);
@@ -174,11 +175,11 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            const { auth } = await import('@/services/firebase');
             let downloadUrl = '';
             const assetId = crypto.randomUUID();
+            const userId = getRealAuthenticatedUserId(auth.currentUser);
 
-            if (!auth.currentUser || !userProfile?.id || userProfile.id === 'guest') {
+            if (!userId || !userProfile?.id || userProfile.id !== userId) {
                 throw new Error('User must be authenticated to generate brand assets.');
             }
 
@@ -199,7 +200,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 const res = await fetch(base64Url);
                 const blob = await res.blob();
-                const path = `users/${userProfile.id}/brand_assets/${assetId}`;
+                const path = `users/${userId}/brand_assets/${assetId}`;
                 downloadUrl = await StorageService.uploadFile(blob, path);
             } else {
                 throw new Error("No image data in Autonomous response");

@@ -3,6 +3,8 @@ import { UserProfile, BrandKit, UserPreferences } from '@/types/User';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { auth } from '@/services/firebase';
+import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 export interface Organization {
     id: string;
@@ -112,8 +114,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             return;
         }
 
-        if (uid === 'founder-demo-uid') {
-            logger.error('[Profile] Refusing to load local demo profile UID in runtime.');
+        const currentUser = auth.currentUser;
+        const isCurrentAnonymousUser = currentUser?.uid === uid && isAnonymousOrDemoUser(currentUser);
+        if (isDemoUserId(uid) || isCurrentAnonymousUser) {
+            logger.error('[Profile] Refusing to load anonymous/demo profile UID in runtime.');
             return;
         }
 

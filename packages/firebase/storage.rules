@@ -16,11 +16,10 @@ service firebase.storage {
         request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
     }
 
-    // Check if user is a guest explorer (either unauthenticated, signed in anonymously, or using founder-demo-uid)
+    // Guest explorer writes are retired. Keep this helper so legacy rule branches
+    // stay syntactically stable, but make every guest path fail closed.
     function isGuest() {
-      return request.auth == null || 
-             (request.auth.token.firebase.sign_in_provider == 'anonymous') || 
-             request.auth.uid == 'founder-demo-uid';
+      return false;
     }
 
     // File size limits (in bytes)

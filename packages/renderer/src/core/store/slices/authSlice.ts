@@ -10,7 +10,6 @@ import {
     signOut,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signInAnonymously,
     sendPasswordResetEmail,
     signInWithCredential
 } from 'firebase/auth';
@@ -41,7 +40,7 @@ const wrappedSignInAnonymously = (authObj: Auth | E2EMockAuth) => {
     if (typeof (authObj as E2EMockAuth).signInAnonymously === 'function') {
         return (authObj as E2EMockAuth).signInAnonymously();
     }
-    return signInAnonymously(authObj as Auth);
+    throw new Error('Guest login is disabled outside the Firebase E2E mock.');
 };
 
 const wrappedSignInWithEmailAndPassword = (authObj: Auth | E2EMockAuth, email: string, pass: string) => {
@@ -81,6 +80,7 @@ const wrappedSignOut = (authObj: Auth | E2EMockAuth) => {
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 
 /** Type guard for Firebase Auth errors */
 interface FirebaseAuthError {
@@ -221,6 +221,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     loginAsGuest: async () => {
         try {
             set({ authLoading: true, authError: null });
+
+            if (!isFirebaseE2EMockEnabled()) {
+                throw new Error('Guest login is disabled. Sign in or create an account to continue.');
+            }
 
             await wrappedSignInAnonymously(auth);
             if (typeof window !== 'undefined') {
@@ -406,6 +410,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         lastKnownUser = currentUser;
                         set({ user: currentUser, authLoading: false });
 
+                        if (isAnonymousOrDemoUser(currentUser)) {
+                            logger.warn('[Auth] Anonymous/demo user detected — skipping Firestore user sync.');
+                            return;
+                        }
+
                         // Optional: Ensure user document exists in Firestore
                         try {
                             const userRef = doc(db, 'users', currentUser.uid);
@@ -447,7 +456,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             lastKnownUser = user;
             set({ user, authLoading: false });
 
-            if (user) {
+            if (user && !isAnonymousOrDemoUser(user)) {
                 // Optional: Ensure user document exists in Firestore
                 try {
                     const userRef = doc(db, 'users', user.uid);
@@ -471,6 +480,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 } catch (e: unknown) {
                     logger.error("[Auth] Failed to sync user to Firestore", e);
                 }
+            } else if (user) {
+                logger.warn('[Auth] Anonymous/demo user detected — skipping Firestore user sync.');
             }
         });
 

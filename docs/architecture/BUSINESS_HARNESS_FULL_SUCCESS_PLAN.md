@@ -1,3 +1,4 @@
+
 # Business Harness Full Success Plan
 
 > **Status of this document:** Re-baselined against the actual codebase on
@@ -270,7 +271,7 @@ Owner: Distribution. Support: Legal, Publishing. Source: `business-harness/Uploa
 
 Build:
 
-- Compile release delivery readiness, storefront requirements, territories, delivery blockers, takedown/update flows, and status.
+- Compile DDEX package readiness, storefront requirements, territories, delivery blockers, takedown/update flows, and status.
 - Track ISRC, UPC, catalog number, ISWC where applicable, IPI/CAE, PRO/MLC references, DPID, and DSP-required identifiers.
 - Reuse proprietary ingestion, delivery, ISRC, UPC, DSP compliance, and adapter services.
 

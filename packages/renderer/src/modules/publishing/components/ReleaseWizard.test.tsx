@@ -48,7 +48,7 @@ describe('ReleaseWizard Integration', () => {
     it('updates metadata when user types', () => {
         render(<ReleaseWizard />);
 
-        const titleInput = screen.getByPlaceholderText(/Enter track title/i);
+        const titleInput = screen.getByLabelText(/Track Title/i);
         fireEvent.change(titleInput, { target: { value: 'Black Kitty' } });
 
         expect(mockUpdateMetadata).toHaveBeenCalledWith({ trackTitle: 'Black Kitty' });
