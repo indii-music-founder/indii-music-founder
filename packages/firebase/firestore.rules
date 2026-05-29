@@ -32,6 +32,11 @@ service cloud.firestore {
       return (isAuthenticated() && request.auth.uid == userId) || (userId == 'founder-demo-uid' && isGuest());
     }
 
+    // Check if a user profile is set to public
+    function isPublicProfile() {
+      return resource.data.isPublic == true;
+    }
+
     // Check if user is member of organization
     function isOrgMember(orgId) {
       return isAuthenticated() && 
@@ -920,9 +925,9 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
-    // Public-read / owner-write (ownerId): marketplace drops are publicly shareable.
+    // Public-read / owner-write (ownerId): marketplace drops are publicly shareable but require auth.
     match /marketplace_drops/{dropId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
@@ -937,12 +942,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // SECURITY (interim): clients should NOT write fraud alerts directly.
-    // TODO(security): move FraudDetectionService.persistAlert to a Cloud Function (Admin SDK),
-    // then tighten to `allow create: if false`. Until then: authed create-only, no client read.
+    // SECURITY: clients should NOT write fraud alerts directly.
+    // Fixed: FraudDetectionService.persistAlert moved to a Cloud Function (Admin SDK).
     match /fraud_alerts/{alertId} {
-      allow create: if isAuthenticated();
-      allow read, update, delete: if false;
+      allow create, read, update, delete: if false;
     }
 
     // =========================================================================
