@@ -29,6 +29,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
@@ -37,7 +38,7 @@ async function writeDiagnostic(stage: string, details?: Record<string, unknown>)
     
     // Skip diagnostics in E2E tests to prevent Firestore invalid segment errors
     // when project ID is mocked/missing
-    if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) {
+    if (isFirebaseE2EMockEnabled()) {
         return;
     }
 
