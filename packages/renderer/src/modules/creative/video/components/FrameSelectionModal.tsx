@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -79,7 +80,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
         }
     };
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="w-[800px] max-w-[90vw] h-[600px] max-h-[90vh] bg-[#1a1a1a] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
@@ -101,11 +102,11 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                         onClick={() => setActiveTab('gallery')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'gallery' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        <ImageIcon size={16} /> Gallery
+                        <ImageIcon size={16} /> From Gallery
                     </button>
                     <button
                         onClick={() => setActiveTab('generate')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'generate' ? 'bg-purple-900/20 text-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'generate' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <Sparkles size={16} /> Generate New
                     </button>
@@ -169,6 +170,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

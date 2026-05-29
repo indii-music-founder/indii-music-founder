@@ -670,7 +670,7 @@ export class BaseAgent implements SpecializedAgent {
             const { agentRegistry } = await import('./registry');
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
-            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
+            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.\n`;
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {
@@ -1088,7 +1088,9 @@ export class BaseAgent implements SpecializedAgent {
                         ? result
                         : (result.success === false
                             ? `Error: ${result.error || result.message}`
-                            : `Success: ${JSON.stringify(result.data || result)}`);
+                            : (result.message
+                                ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${JSON.stringify(result.data || result)}`
+                                : `Success: ${JSON.stringify(result.data || result)}`));
 
                     // Update prompt with tool result for next iteration
                     fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;

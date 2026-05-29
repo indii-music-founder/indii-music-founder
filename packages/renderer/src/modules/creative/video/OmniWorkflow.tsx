@@ -577,7 +577,8 @@ export default function OmniWorkflow() {
                                 ref={fileInputRef}
                                 accept="video/*" 
                                 onChange={handleVideoUpload} 
-                                className="hidden" 
+                                className="sr-only focus:outline-none focus:ring-2 focus:ring-dept-creative focus:ring-offset-2 focus:ring-offset-[#070709] rounded-md"
+                                aria-label="Upload Artist Base Performance Video"
                             />
                         </div>
                     )}
@@ -753,7 +754,8 @@ export default function OmniWorkflow() {
                                 ref={audioInputRef}
                                 accept="audio/*"
                                 onChange={handleAudioUpload}
-                                className="hidden"
+                                className="sr-only focus:outline-none focus:ring-2 focus:ring-dept-creative focus:ring-offset-2 focus:ring-offset-[#070709] rounded-md"
+                                aria-label="Upload translation audio"
                             />
                         </div>
                     </div>
