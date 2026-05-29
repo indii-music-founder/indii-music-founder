@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-28 23:20 EDT
+**Updated:** 2026-05-28 23:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cf0460225 chore: session checkpoint [23:20]
 af4d42c82 chore: session checkpoint [23:12]
 d1e247f5f fix(security): resolve firestore rules syntax and harden fraud alerts
 0eb92478d chore: session checkpoint [22:36]
@@ -13,13 +14,13 @@ c214a6358 chore: session checkpoint [22:34]
 9dac70445 fix(security): scope 12 top-level Firestore collections (latent 403 fixes)
 4e338c2a5 feat: complete Business Harness Waves 4 and 5
 6a406ce1d chore: session checkpoint [22:20]
-860b4180e fix(security): owner-scope 16 latent-403 Firestore subcollections + audit doc
 ```
 
 ## Working State
 ```
  M .env.example
  M packages/firebase/src/legal/digitalSignature.ts
+ M packages/firebase/src/lib/marketing.ts
  M packages/firebase/src/stripe/taxForms.ts
  M packages/main/src/services/APIService.ts
  M packages/main/src/services/ElectronRenderService.ts
