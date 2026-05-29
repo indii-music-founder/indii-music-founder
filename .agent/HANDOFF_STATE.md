@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-29 14:48 EDT
+**Updated:** 2026-05-29 14:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+84a6ce5e2 fix(ci): resolve remaining A2A config, types, and test failures
+3949c388d chore: session checkpoint [14:48]
 9fdd99659 test: fix SettingsPanel test i18n mismatch
 69a9bad4e test: fix RiderChecklist and DirectGenerationTab test failures
 9d6931f12 fix(creative): handle undefined generatedHistory in useDirectGeneration tests
@@ -12,44 +14,11 @@
 ea2f5710f chore: clean up temp scripts
 1ec493c0b feat(sprint-b): placeholder cleansing (WO-3), verify agent tools (WO-4) and deterministic generators (WO-5)
 883b43708 feat(security): Sprint C - WO-7, WO-8, WO-9
-353f67981 feat(ux): sprint a - complete WO-1 and WO-2
-021e70575 fix(issues): resolve remaining items in OPEN_ISSUES.md
 ```
 
 ## Working State
 ```
- M .claude/settings.json
- M docs/PRODUCTION_WORK_ORDER.md
- M docs/architecture/BUSINESS_HARNESS_FULL_SUCCESS_PLAN.md
- M docs/bugs/onboarding-signup-broken.md
- M packages/firebase/firestore.rules
- M packages/firebase/storage.rules
- M packages/renderer/src/config/env.ts
- M packages/renderer/src/core/components/auth/LoginForm.tsx
- M packages/renderer/src/core/store/slices/authSlice.test.ts
- M packages/renderer/src/core/store/slices/authSlice.ts
- M packages/renderer/src/core/store/slices/profileSlice.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.test.tsx
- M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx
- M packages/renderer/src/modules/publishing/PublishingDashboard.test.tsx
- M packages/renderer/src/modules/publishing/components/ReleaseWizard.test.tsx
- M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
- M packages/renderer/src/services/agent/BaseAgent.ts
- M packages/renderer/src/services/agent/RemoteRelayService.ts
- M packages/renderer/src/services/agent/a2a/A2AClient.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
- M packages/renderer/src/services/agent/tools/SwarmTools.ts
- M packages/renderer/src/services/project/ProjectService.ts
- M packages/renderer/src/services/storage/repository.ts
- M packages/renderer/src/services/storage/repository_profile.test.ts
-?? docs/flowcharts/guest-auth-retirement.md
-?? packages/renderer/src/services/agent/a2a/A2AConfig.ts
-?? packages/renderer/src/services/agent/a2a/A2ARouter.ts
-?? packages/renderer/src/services/agent/a2a/transport/
-?? packages/renderer/src/services/project/ProjectService.test.ts
-?? packages/renderer/src/utils/authGuards.test.ts
-?? packages/renderer/src/utils/authGuards.ts
+clean working tree
 ```
 
 ## Decisions
