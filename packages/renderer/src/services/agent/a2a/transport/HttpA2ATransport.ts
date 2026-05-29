@@ -1,4 +1,4 @@
-import { A2ATransport } from './A2ATransport';
+import { A2ATransport, RouterCallContext } from './A2ATransport';
 import { MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { logger } from '@/utils/logger';
 
@@ -11,7 +11,10 @@ export class HttpA2ATransport implements A2ATransport {
 
   constructor(private baseUrl: string) {}
 
-  async rpc(envelope: MessageEnvelope): Promise<MessageEnvelope> {
+  // localCtx is accepted for interface parity with LoopbackA2ATransport but is
+  // intentionally ignored: an out-of-process HTTP sidecar cannot use the
+  // in-process runAgent closure. Kept so the A2ATransport contract is uniform.
+  async rpc(envelope: MessageEnvelope, _localCtx?: RouterCallContext): Promise<MessageEnvelope> {
     const response = await fetch(`${this.baseUrl}/rpc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

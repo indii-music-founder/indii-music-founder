@@ -159,7 +159,9 @@ vi.mock('../stripe/config', () => ({
 
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
-    defineSecret: vi.fn(() => ({ value: mocks.secrets.value }))
+    defineSecret: vi.fn(() => ({ value: mocks.secrets.value })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock MCP module — initializes @modelcontextprotocol/sdk Server at load time which

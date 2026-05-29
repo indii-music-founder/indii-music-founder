@@ -147,7 +147,9 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
-    defineSecret: vi.fn(() => ({ value: mocks.secrets.value }))
+    defineSecret: vi.fn(() => ({ value: mocks.secrets.value })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock specific logic in index.ts if needed, but here we test the exported functions
