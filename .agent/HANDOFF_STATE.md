@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-28 21:19 EDT
+**Updated:** 2026-05-28 22:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+860b4180e fix(security): owner-scope 16 latent-403 Firestore subcollections + audit doc
+c14a1b0f2 chore: session checkpoint [21:19]
 7e639d1d4 feat(harness): register all core compilers and update wave 1 flowchart
 dce7ece8a feat(harness): integrate Opportunity Harness compiler and tests
 812f208ac chore: session checkpoint [21:11]
@@ -12,8 +14,6 @@ ed843b7b0 chore: session checkpoint [21:05]
 245d6f170 chore: session checkpoint [20:53]
 fe191eeb8 chore: session checkpoint [20:46]
 a8b095ae0 chore: session checkpoint [20:40]
-baf9e615b chore: session checkpoint [20:20]
-f94332438 chore: session checkpoint [20:14]
 ```
 
 ## Working State
@@ -24,16 +24,16 @@ f94332438 chore: session checkpoint [20:14]
  M docs/agent-training/datasets/legal.jsonl
  M docs/agent-training/datasets/licensing.jsonl
  M docs/agent-training/datasets/marketing.jsonl
+ M docs/agent-training/datasets/music.jsonl
+ M docs/agent-training/datasets/publishing.jsonl
  M docs/agent-training/datasets/security.jsonl
  M docs/flowcharts/business-harness-wave-1.md
- M packages/firebase/firestore.rules
  M packages/renderer/src/services/business-harness/BusinessHarnessCore.test.ts
  M packages/renderer/src/services/business-harness/HarnessCatalog.ts
  M packages/renderer/src/test/harness-datasets.test.ts
+?? .agent/checkpoints/2b8ac0a6-12b9-4646-9f6a-bb3020d7c76b.md
 ?? append_datasets.cjs
-?? docs/architecture/FIRESTORE_RULES_403_AUDIT.md
-?? expand_datasets.cjs
-?? fix.cjs
+?? docs/flowcharts/business-harness-full-architecture.md
 ```
 
 ## Decisions
