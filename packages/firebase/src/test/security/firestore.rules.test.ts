@@ -604,7 +604,310 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
-    // 10. DENY-ALL: arbitrary collection access denied
+    // 10. TOP-LEVEL OWNER-BY-FIELD COLLECTIONS (2026-05-28 audit fixes)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('owner-by-field collections (userId)', () => {
+        const ownerByFieldCollections = [
+            'career_memory_archive',
+            'knowledge_history',
+            'google_search_history',
+            'sample_requests',
+            'sftp_ingestions',
+            'video_releases',
+        ];
+
+        ownerByFieldCollections.forEach((collName) => {
+            describe(`${collName}/{docId}`, () => {
+                const docData = { userId: ALICE_UID, content: 'test', createdAt: Timestamp.now() };
+
+                beforeEach(async () => {
+                    if (requireEmulator()) return;
+                    await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                        await setDoc(doc(ctx.firestore(), collName, 'doc-1'), docData);
+                    });
+                });
+
+                it('owner: read allowed', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(ALICE_UID).firestore();
+                    await assertSucceeds(getDoc(doc(db, collName, 'doc-1')));
+                });
+
+                it('owner: create allowed (with userId field)', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(ALICE_UID).firestore();
+                    await assertSucceeds(
+                        setDoc(doc(db, collName, 'doc-new'), { userId: ALICE_UID, content: 'new' })
+                    );
+                });
+
+                it('other user: read denied', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(BOB_UID).firestore();
+                    await assertFails(getDoc(doc(db, collName, 'doc-1')));
+                });
+
+                it('other user: create with own userId allowed, different userId denied', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(BOB_UID).firestore();
+                    // Bob can create a record with his own userId
+                    await assertSucceeds(
+                        setDoc(doc(db, collName, 'bob-doc'), { userId: BOB_UID, content: 'bob only' })
+                    );
+                    // Bob cannot create a record claiming to be Alice
+                    await assertFails(
+                        setDoc(doc(db, collName, 'fake-alice'), { userId: ALICE_UID, content: 'hijack' })
+                    );
+                });
+
+                it('unauthenticated: read denied', async () => {
+                    if (requireEmulator()) return;
+                    const db = unauthCtx().firestore();
+                    await assertFails(getDoc(doc(db, collName, 'doc-1')));
+                });
+
+                it('unauthenticated: create denied', async () => {
+                    if (requireEmulator()) return;
+                    const db = unauthCtx().firestore();
+                    await assertFails(setDoc(doc(db, collName, 'doc-unauth'), { userId: ALICE_UID }));
+                });
+            });
+        });
+    });
+
+    describe('takedown_requests/{docId} (requestedBy field)', () => {
+        const takedownData = {
+            releaseId: 'release-1',
+            reason: 'copyright',
+            requestedBy: ALICE_UID,
+            status: 'INITIATED',
+            createdAt: Timestamp.now(),
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'takedown_requests', 'td-1'), takedownData);
+            });
+        });
+
+        it('requester: read allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'takedown_requests', 'td-1')));
+        });
+
+        it('requester: create allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(
+                setDoc(doc(db, 'takedown_requests', 'td-new'), {
+                    releaseId: 'release-2',
+                    reason: 'other',
+                    requestedBy: ALICE_UID,
+                    status: 'INITIATED',
+                })
+            );
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'takedown_requests', 'td-1')));
+        });
+
+        it('other user: cannot create on behalf of someone else', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'takedown_requests', 'fake'), { ...takedownData, requestedBy: ALICE_UID })
+            );
+        });
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'takedown_requests', 'td-1')));
+        });
+    });
+
+    describe('mechanical_licenses/{uid}/licenses/{licenseId} (owner-by-path)', () => {
+        const licenseData = { releaseId: 'release-1', licensedAt: Timestamp.now() };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'mechanical_licenses', ALICE_UID, 'licenses', 'lic-1'), licenseData);
+            });
+        });
+
+        it('owner (uid): read allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'mechanical_licenses', ALICE_UID, 'licenses', 'lic-1')));
+        });
+
+        it('owner (uid): create allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(
+                setDoc(doc(db, 'mechanical_licenses', ALICE_UID, 'licenses', 'lic-new'), {
+                    releaseId: 'release-2',
+                    licensedAt: Timestamp.now(),
+                })
+            );
+        });
+
+        it('other user: read their own licenses allowed, others denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            // Bob can read his own licenses
+            await assertSucceeds(setDoc(doc(db, 'mechanical_licenses', BOB_UID, 'licenses', 'bob-1'), licenseData));
+            // Bob cannot read Alice's licenses
+            await assertFails(getDoc(doc(db, 'mechanical_licenses', ALICE_UID, 'licenses', 'lic-1')));
+        });
+
+        it('unauthenticated: denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'mechanical_licenses', ALICE_UID, 'licenses', 'lic-1')));
+        });
+    });
+
+    describe('marketplace_drops/{dropId} (public-read / owner-write by ownerId)', () => {
+        const dropData = {
+            title: 'My Artifact',
+            ownerId: ALICE_UID,
+            createdAt: Timestamp.now(),
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'marketplace_drops', 'drop-1'), dropData);
+            });
+        });
+
+        it('authenticated: read allowed (public)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'marketplace_drops', 'drop-1')));
+        });
+
+        it('unauthenticated: read denied (must be authenticated)', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'marketplace_drops', 'drop-1')));
+        });
+
+        it('owner: create allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(
+                setDoc(doc(db, 'marketplace_drops', 'drop-new'), {
+                    title: 'New Drop',
+                    ownerId: ALICE_UID,
+                })
+            );
+        });
+
+        it('other user: cannot create drop for different owner', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'marketplace_drops', 'fake-drop'), {
+                    title: 'Fake',
+                    ownerId: ALICE_UID,
+                })
+            );
+        });
+
+        it('owner: update own drop allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(updateDoc(doc(db, 'marketplace_drops', 'drop-1'), { title: 'Updated' }));
+        });
+
+        it('other user: cannot update others drop', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'marketplace_drops', 'drop-1'), { title: 'Hijacked' }));
+        });
+    });
+
+    describe('global read-only collections (content_rules, sample_platforms)', () => {
+        const readOnlyCollections = ['content_rules', 'sample_platforms'];
+
+        readOnlyCollections.forEach((collName) => {
+            describe(`${collName}/{docId}`, () => {
+                const docData = { type: 'test', value: 'data' };
+
+                beforeEach(async () => {
+                    if (requireEmulator()) return;
+                    await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                        await setDoc(doc(ctx.firestore(), collName, 'doc-1'), docData);
+                    });
+                });
+
+                it('authenticated: read allowed', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(ALICE_UID).firestore();
+                    await assertSucceeds(getDoc(doc(db, collName, 'doc-1')));
+                });
+
+                it('unauthenticated: read denied', async () => {
+                    if (requireEmulator()) return;
+                    const db = unauthCtx().firestore();
+                    await assertFails(getDoc(doc(db, collName, 'doc-1')));
+                });
+
+                it('authenticated: write denied (server-only)', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(ALICE_UID).firestore();
+                    await assertFails(setDoc(doc(db, collName, 'doc-new'), docData));
+                });
+
+                it('authenticated: update denied (server-only)', async () => {
+                    if (requireEmulator()) return;
+                    const db = verifiedCtx(ALICE_UID).firestore();
+                    await assertFails(updateDoc(doc(db, collName, 'doc-1'), { value: 'changed' }));
+                });
+            });
+        });
+    });
+
+    describe('fraud_alerts/{alertId} (interim: create-only, no read)', () => {
+        const alertData = {
+            type: 'fingerprint_match',
+            severity: 'high',
+            createdAt: Timestamp.now(),
+        };
+
+        it('authenticated: create allowed (interim solution)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(doc(db, 'fraud_alerts', 'alert-1'), alertData));
+        });
+
+        it('authenticated: read denied (no client reads)', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'fraud_alerts', 'alert-1'), alertData);
+            });
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(db, 'fraud_alerts', 'alert-1')));
+        });
+
+        it('unauthenticated: create denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(setDoc(doc(db, 'fraud_alerts', 'alert-unauth'), alertData));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 
     describe('deny-all: unlisted collections', () => {
