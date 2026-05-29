@@ -1,4 +1,4 @@
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import {
   collection,
   doc,
@@ -12,6 +12,7 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore';
+import { isDemoUserId } from '@/utils/authGuards';
 
 export type ProjectStatus = 'active' | 'paused' | 'archived';
 
@@ -37,7 +38,8 @@ export class ProjectService {
     name: string,
     description: string = '',
   ): Promise<Project> {
-    if (!userId || userId === 'founder-demo-uid') {
+    const isCurrentAnonymousUser = auth.currentUser?.uid === userId && auth.currentUser?.isAnonymous;
+    if (isDemoUserId(userId) || isCurrentAnonymousUser) {
       throw new Error('A real authenticated user ID is required to create projects.');
     }
 
@@ -125,7 +127,8 @@ export class ProjectService {
 
   /** Create or get the default "Inbox" project for a user */
   static async ensureInbox(userId: string): Promise<Project> {
-    if (!userId || userId === 'founder-demo-uid') {
+    const isCurrentAnonymousUser = auth.currentUser?.uid === userId && auth.currentUser?.isAnonymous;
+    if (isDemoUserId(userId) || isCurrentAnonymousUser) {
       throw new Error('A real authenticated user ID is required to create or load an inbox project.');
     }
 

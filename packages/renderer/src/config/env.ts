@@ -48,7 +48,7 @@ const isTest =
         process.env.VITEST_WORKER_ID !== undefined
     );
 
-const getEnv = (metaValue: string | boolean | undefined, processValue: string | undefined): string | undefined => {
+export const getEnv = (metaValue: string | boolean | undefined, processValue: string | undefined): string | undefined => {
     // In test environment, prioritize process.env (processValue) for easier mocking
     if (isTest) return processValue || (typeof metaValue === 'string' ? metaValue : undefined) || undefined;
 
