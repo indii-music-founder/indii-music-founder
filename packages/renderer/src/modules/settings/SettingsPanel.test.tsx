@@ -96,7 +96,7 @@ describe('SettingsPanel', () => {
     it('defaults to the Profile section', () => {
         render(<SettingsPanel />);
         // Profile section should show the display name input
-        expect(screen.getByPlaceholderText('Your display name')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
     });
 
     it('switches to Connected Services when clicked', () => {
@@ -133,8 +133,8 @@ describe('SettingsPanel', () => {
 
     it('Profile section renders display name and bio fields', () => {
         render(<SettingsPanel />);
-        expect(screen.getByPlaceholderText('Your display name')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Tell us about yourself...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.bio_desc')).toBeInTheDocument();
     });
 
     it('Profile section shows the user email as disabled', () => {
@@ -145,7 +145,7 @@ describe('SettingsPanel', () => {
 
     it('Profile section shows save button after editing display name', () => {
         render(<SettingsPanel />);
-        const nameInput = screen.getByPlaceholderText('Your display name');
+        const nameInput = screen.getByPlaceholderText('settings.hints.display_name');
         fireEvent.change(nameInput, { target: { value: 'Detroit Legend' } });
         expect(screen.getByText('Save Changes')).toBeInTheDocument();
         expect(screen.getByText('Cancel')).toBeInTheDocument();
@@ -153,7 +153,7 @@ describe('SettingsPanel', () => {
 
     it('Profile section cancel button resets the name', () => {
         render(<SettingsPanel />);
-        const nameInput = screen.getByPlaceholderText('Your display name') as HTMLInputElement;
+        const nameInput = screen.getByPlaceholderText('settings.hints.display_name') as HTMLInputElement;
         fireEvent.change(nameInput, { target: { value: 'Detroit Legend' } });
         fireEvent.click(screen.getByText('Cancel'));
         expect(nameInput.value).toBe('D-Troit');
@@ -161,7 +161,7 @@ describe('SettingsPanel', () => {
 
     it('Profile section bio character count updates', () => {
         render(<SettingsPanel />);
-        const bioInput = screen.getByPlaceholderText('Tell us about yourself...');
+        const bioInput = screen.getByPlaceholderText('settings.hints.bio_desc');
         fireEvent.change(bioInput, { target: { value: 'Underground techno from the D' } });
         // bio.length and "/280 characters" render as separate text nodes in React
         // Find the parent element that contains both
