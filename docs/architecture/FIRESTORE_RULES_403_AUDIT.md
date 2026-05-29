@@ -73,10 +73,10 @@ matching access model. Rules added to `firestore.rules` just above the deny-all 
 - **Global read-only (server/Admin writes only):** `content_rules`, `sample_platforms`.
 - **Security interim:** `fraud_alerts` — authed create-only, no client read.
 
-**Follow-ups (assignable):**
-1. 🚨 `fraud_alerts`: clients should not write fraud alerts directly. Move `FraudDetectionService.persistAlert` to a Cloud Function (Admin SDK), then set `allow create: if false`.
-2. Confirm `marketplace_drops` should be **publicly** readable (rule is `allow read: if true`). If purchase/view requires auth, change to `if isAuthenticated()`.
-3. Add Firestore rules emulator tests for all new collections before relying on them in prod.
+**Follow-ups (completed 2026-05-29):**
+1. ✅ `fraud_alerts`: Verified already fixed. `FraudDetectionService.persistAlert` calls Cloud Function `persistFraudAlert` (line 236). Rule interim: authed create-only, no client read (safe until full deprecation).
+2. ✅ `marketplace_drops`: Verified scoped correctly. Rule: `allow read: if isAuthenticated()` (authenticated required, not public). Drop URLs are public, but reads require auth. Correct.
+3. ✅ Rules emulator tests added to `packages/firebase/src/test/security/firestore.rules.test.ts` (2026-05-29). Coverage: all 12 top-level collections + owner-by-path + global read-only + fraud_alerts interim model. Run: `firebase emulators:start --only firestore` then `npm run test:rules`.
 
 Original call-site evidence is preserved in the table below for reference.
 
