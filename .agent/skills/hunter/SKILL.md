@@ -18,6 +18,26 @@ Perform a structured, multi-phase sweep of the entire indii codebase to **find A
 
 ---
 
+## Repo Layout & Policy (2026 update)
+
+This skill predates the monorepo move. **Every `src/`, `functions/`, root-`vite.config.ts`,
+and root-`firestore.rules` reference below maps to the real layout:**
+
+| Old reference | Real path in this repo |
+|---|---|
+| `src/` | `packages/renderer/src` (whole-stack: `packages/*/src`) |
+| `src/services/` | `packages/renderer/src/services` |
+| `functions/src/` | `packages/firebase/src` |
+| `vite.config.ts` | `electron.vite.config.ts` (+ `packages/renderer/vite.config.ts`) |
+| `firestore.rules` | `packages/firebase/firestore.rules` |
+
+**Policy override (supersedes the AUTONOMY RULES auto-commit/push):** per `CLAUDE.md`,
+commit/push only when the user asks, never push straight to `main` — branch first, run
+`/plat` (pre-commit quality gate), and open a PR. The hunter still finds and fixes
+autonomously; it does **not** self-merge or force-push.
+
+---
+
 ## Severity Tiers
 
 | Tier | Criteria | Action |
@@ -127,7 +147,7 @@ crashes that kill the entire bundle at import time — before any error boundary
 
 ```bash
 # Check manualChunks for React-dependent libs isolated from vendor-react
-grep -A 30 'manualChunks' vite.config.ts
+grep -A 30 'manualChunks' electron.vite.config.ts packages/renderer/vite.config.ts
 
 # Cross-reference: which packages depend on react-reconciler or scheduler?
 # Any of these MUST be in vendor-react or left out of manualChunks entirely:
@@ -247,13 +267,21 @@ grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' src/ --include
 ### 2.7 Firestore Rules Audit
 
 ```bash
-# Step 1: Extract all collection paths from services
-grep -rn "collection(db, '" src/services/ --include="*.ts" | grep -v "test\|mock\|Mock" | sed "s/.*collection(db, '//;s/').*//g" | sort -u
+# Step 1: Extract EVERY collection-name token used by client services
+# (handles both top-level collection(db,'x') and subcollection collection(db,'a',id,'b'))
+grep -rhoE "collection\(db,[^)]*" packages/renderer/src/services --include="*.ts" \
+  | grep -v "test\|mock\|Mock" \
+  | grep -oE "'[a-zA-Z0-9_]+'" | tr -d "'" | sort -u > /tmp/used_cols.txt
 
-# Step 2: Extract all collection paths from firestore.rules
-grep -n "match /" firestore.rules | sed "s/.*match \///;s/ {.*//g" | sort -u
+# Step 2: Extract every collection segment from rules (normalize match /col/{param} -> col,
+# captures top-level AND nested subcollection matches)
+grep -oE "match /[a-zA-Z0-9_]+" packages/firebase/firestore.rules \
+  | sed 's#match /##' | sort -u > /tmp/rule_cols.txt
 
-# Step 3: Compare — anything in Step 1 not in Step 2 is a latent 403
+# Step 3: Compare — anything in used_cols NOT in rule_cols is a latent 403 CANDIDATE.
+# Verify each by hand: confirm it is actually client-invoked (not server-only/admin SDK,
+# not collectionGroup, not dead code) before treating it as a real bug.
+comm -23 /tmp/used_cols.txt /tmp/rule_cols.txt
 ```
 
 ---
@@ -274,7 +302,7 @@ npx vitest run 2>&1 | tail -30
 npm run build:studio 2>&1 | tail -20
 
 # Cloud Functions (if modified)
-cd functions && npx tsc --noEmit 2>&1 | tail -20
+cd packages/firebase && npx tsc --noEmit 2>&1 | tail -20
 
 # Firestore rules (if modified)
 firebase firestore:rules validate --project indii-v-1-1
@@ -283,7 +311,11 @@ firebase firestore:rules validate --project indii-v-1-1
 ### Commit
 
 ```bash
-git add -A && git commit -m "fix(hunter): [summary of all fixes]" && git push origin main
+# Repo policy: never push straight to main. Branch, gate, PR.
+git checkout -b fix/hunter-$(date +%Y%m%d) 2>/dev/null || git checkout fix/hunter-$(date +%Y%m%d)
+# Run the /plat pre-commit quality gate (see .claude/commands/plat.md) — must be GO before commit.
+git add -A && git commit -m "fix(hunter): [summary of all fixes]"
+git push -u origin HEAD   # open a PR; do NOT merge to main without user approval
 ```
 
 ---

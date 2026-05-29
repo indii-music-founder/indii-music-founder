@@ -6,16 +6,17 @@
   "type": "module",
   "private": true,
   "main": "dist/main/index.js",
-  "workspaces": [
-    "packages/main",
-    "packages/renderer",
-    "packages/firebase",
-    "packages/shared",
-    "packages/landing",
-    "packages/sdk",
-    "packages/mcp-server-local",
-    "packages/admin-dashboard"
-  ],
+    "workspaces": [
+      "packages/main",
+      "packages/renderer",
+      "packages/firebase",
+      "packages/shared",
+      "packages/landing",
+      "packages/sdk",
+      "packages/mcp-server-local",
+      "packages/mcp-server-harness",
+      "packages/admin-dashboard"
+    ],
   "scripts": {
     "dev": "electron-vite dev",
     "dev:web": "VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243",

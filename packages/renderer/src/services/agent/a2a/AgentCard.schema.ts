@@ -18,6 +18,15 @@ export const RosterSchema = z.object({
   workerIds: z.array(z.string()).optional(),
 });
 
+export const HarnessCardSchema = z.object({
+  ownedHarnessDomains: z.array(z.string()),
+  supportingHarnessDomains: z.array(z.string()),
+  skillRefs: z.array(z.string()),
+  mcpServers: z.array(z.string()),
+  approvalAuthority: z.enum(['none', 'draft', 'user_required', 'attorney_required']),
+  blockedActions: z.array(z.string()),
+});
+
 export const AgentCardSchema = z.object({
   schemaVersion: z.literal('1.0.0'),
   agentId: z.string(),
@@ -43,8 +52,12 @@ export const AgentCardSchema = z.object({
     }),
   }),
   roster: RosterSchema.optional(),
+  harness: HarnessCardSchema.optional(),
 });
+
 
 export type Capability = z.infer<typeof CapabilitySchema>;
 export type Roster = z.infer<typeof RosterSchema>;
 export type AgentCard = z.infer<typeof AgentCardSchema>;
+export type HarnessCard = z.infer<typeof HarnessCardSchema>;
+

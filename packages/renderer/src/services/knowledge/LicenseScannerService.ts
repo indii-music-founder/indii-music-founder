@@ -23,7 +23,7 @@ export class LicenseScannerService {
                 throw new Error('Agent API not available. Are you in the Electron app?');
             }
 
-            const result = await window.electronAPI.agent.navigateAndExtract(url);
+            const result = await window.electronAPI.agent.navigateAndExtract(url) as any;
 
             if (!result.success || !result.text) {
                 throw new Error(result.error || 'Failed to extract text from page');

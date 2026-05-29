@@ -1,0 +1,92 @@
+{
+  "domains": {
+    "artist_memory": {
+      "primaryOwner": "keeper",
+      "supporting": ["creative", "finance", "legal"]
+    },
+    "song_dna": {
+      "primaryOwner": "music",
+      "supporting": ["marketing", "legal", "distribution", "licensing"]
+    },
+    "creator_protection": {
+      "primaryOwner": "legal",
+      "supporting": ["security", "distribution", "publishing"]
+    },
+    "distribution_ddex": {
+      "primaryOwner": "distribution",
+      "supporting": ["legal", "publishing", "security"]
+    },
+    "release": {
+      "primaryOwner": "distribution",
+      "supporting": ["marketing", "creative", "finance", "legal"]
+    },
+    "finance": {
+      "primaryOwner": "finance",
+      "supporting": ["finance.accounting", "finance.tax", "finance.royalty"]
+    },
+    "activity_time_value": {
+      "primaryOwner": "finance",
+      "supporting": ["keeper"]
+    },
+    "road_travel": {
+      "primaryOwner": "road",
+      "supporting": ["finance", "legal", "security"]
+    },
+    "gear_asset": {
+      "primaryOwner": "finance",
+      "supporting": ["music", "road"]
+    },
+    "merch_pod": {
+      "primaryOwner": "merchandise",
+      "supporting": ["finance", "legal", "brand", "marketing"]
+    },
+    "marketing_growth": {
+      "primaryOwner": "marketing",
+      "supporting": ["social", "publicist", "brand", "finance"]
+    },
+    "fan_crm": {
+      "primaryOwner": "marketing",
+      "supporting": ["social", "merchandise", "road", "analytics"]
+    },
+    "publishing_rights": {
+      "primaryOwner": "publishing",
+      "supporting": ["legal", "finance.royalty", "distribution"]
+    },
+    "collaboration_splits": {
+      "primaryOwner": "legal",
+      "supporting": ["publishing", "finance", "music"]
+    },
+    "licensing_sync": {
+      "primaryOwner": "licensing",
+      "supporting": ["legal", "publishing", "music"]
+    },
+    "royalty_revenue": {
+      "primaryOwner": "finance.royalty",
+      "supporting": ["finance", "publishing", "distribution"]
+    },
+    "legal_compliance": {
+      "primaryOwner": "legal",
+      "supporting": ["legal.contracts", "legal.compliance", "security"]
+    },
+    "creative_production": {
+      "primaryOwner": "creative",
+      "supporting": ["producer", "director", "video", "music"]
+    },
+    "opportunity": {
+      "primaryOwner": "generalist",
+      "supporting": ["finance", "legal", "marketing", "road"]
+    },
+    "education_curriculum": {
+      "primaryOwner": "curriculum",
+      "supporting": ["keeper", "generalist"]
+    },
+    "security_trust": {
+      "primaryOwner": "security",
+      "supporting": ["legal", "devops", "distribution"]
+    },
+    "boardroom_meta": {
+      "primaryOwner": "generalist",
+      "supporting": ["conductor", "finance", "legal", "distribution", "marketing", "road", "merchandise"]
+    }
+  }
+}

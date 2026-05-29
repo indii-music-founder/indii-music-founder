@@ -1,5 +1,6 @@
 import type { HarnessCostLine, HarnessRun } from './types';
 import { createHarnessRun } from './types';
+import type { HarnessCompiler, HarnessContext } from './HarnessCompiler';
 
 export interface MerchPodSkuInput {
   productType: string;
@@ -36,21 +37,24 @@ export interface MerchPodHarnessOutput {
   preferredProvider?: string;
 }
 
-export class MerchPodHarnessService {
-  compile(input: MerchPodHarnessInput): HarnessRun<MerchPodHarnessOutput> {
+export class MerchPodHarnessService implements HarnessCompiler<MerchPodHarnessInput, MerchPodHarnessOutput> {
+  readonly domain = 'merch_pod';
+  compile(input: MerchPodHarnessInput, ctx?: HarnessContext): HarnessRun<MerchPodHarnessOutput> {
+    const userId = ctx?.userId ?? input.userId;
+    const projectId = ctx?.projectId ?? input.projectId;
     const recommendations = input.skus.map(scoreSku);
     const preferred = recommendations
       .filter(rec => rec.recommendation !== 'legal_review' && rec.recommendation !== 'reject_margin')
       .sort((a, b) => b.grossMargin - a.grossMargin)[0];
     const costLines: HarnessCostLine[] = input.skus.map((sku, index) => ({
       id: `merch_cost_${Date.now()}_${index}`,
-      userId: input.userId,
+      userId,
       amount: roundCurrency((sku.baseCost + sku.shippingEstimate) * sku.expectedUnits),
       currency: 'USD',
       category: 'Merchandise',
       costType: 'inventory_cost',
       sourceDomain: 'merch_pod',
-      projectId: input.projectId,
+      projectId,
       releaseId: input.releaseId,
       taxTreatment: 'inventory_or_cogs_review',
       reimbursable: false,
@@ -60,8 +64,8 @@ export class MerchPodHarnessService {
     }));
 
     return createHarnessRun<MerchPodHarnessOutput>({
-      userId: input.userId,
-      projectId: input.projectId,
+      userId,
+      projectId,
       domain: 'merch_pod',
       inputRefs: [{ type: 'manual', label: input.dropGoal }],
       scores: [{

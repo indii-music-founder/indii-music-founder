@@ -84,7 +84,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     const stagingResult = await window.electronAPI.distribution.stageRelease(
                         folderReleaseId,
                         [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
-                    );
+                    ) as any;
 
                     if (stagingResult.success && stagingResult.packagePath) {
                         // Item 213: Execute real SFTP delivery via base class uploadBundle
