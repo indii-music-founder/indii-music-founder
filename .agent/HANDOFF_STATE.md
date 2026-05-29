@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-28 20:20 EDT
+**Updated:** 2026-05-28 20:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+baf9e615b chore: session checkpoint [20:20]
 f94332438 chore: session checkpoint [20:14]
 d5fbb0a1f feat(harness): integrate Upload Intake Harness service, schema validation tests, and training datasets
 6b199cafa refactor: simplify removeVideoJob state update using Object.fromEntries
@@ -13,12 +14,27 @@ be8b74cdd test: fix test timeouts and thresholds for CI
 e484b7099 fix: fractional cent loss in escrow and TS2339 in GeminiRetrievalService
 4dc1646a1 feat: integrate Harness and Creator Protection features
 cde2d7903 fix(speedrun): resolve guest login blank screen (ISSUE-075)
-cf115edd7 chore: session checkpoint [08:31]
 ```
 
 ## Working State
 ```
  M docs/architecture/BUSINESS_HARNESS_FULL_SUCCESS_PLAN.md
+ D packages/renderer/src/services/business-harness/BusinessHarnessService.test.ts
+ M packages/renderer/src/services/business-harness/HarnessCatalog.ts
+ M packages/renderer/src/services/business-harness/MerchPodHarnessService.ts
+ M packages/renderer/src/services/business-harness/UploadIntakeHarnessService.ts
+ M packages/renderer/src/services/business-harness/index.ts
+ M packages/renderer/src/services/business-harness/types.ts
+?? docs/architecture/APP_RUNTIME_HARNESS_MCP_SKILL_PLAN.md
+?? docs/flowcharts/business-harness-wave-1.md
+?? packages/renderer/src/services/business-harness/ApprovalGateRegistry.ts
+?? packages/renderer/src/services/business-harness/BusinessHarnessCore.test.ts
+?? packages/renderer/src/services/business-harness/DistributionDdexCompiler.ts
+?? packages/renderer/src/services/business-harness/HarnessCompiler.ts
+?? packages/renderer/src/services/business-harness/SongDnaCompiler.ts
+?? packages/renderer/src/services/creator-protection/CreatorProtectionCompiler.ts
+?? packages/renderer/src/services/release-harness/ReleaseHarnessAdapter.ts
+?? packages/renderer/src/services/release-harness/ReleaseHarnessCompiler.ts
 ```
 
 ## Decisions
