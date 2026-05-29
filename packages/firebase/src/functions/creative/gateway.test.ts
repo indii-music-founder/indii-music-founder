@@ -146,7 +146,7 @@ describe('creative gateway generateImageV3', () => {
         model: 'pro',
       },
     })).rejects.toMatchObject({
-      code: 'not-found',
+      code: 'failed-precondition',
       message: expect.stringContaining('Image generation failed'),
     });
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
