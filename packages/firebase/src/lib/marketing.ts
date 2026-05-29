@@ -1,7 +1,10 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { defineString } from "firebase-functions/params";
 import { z } from "zod";
 import { geminiApiKey } from "../config/secrets";
+
+const influencerBountyBaseUrl = defineString("INFLUENCER_BOUNTY_BASE_URL");
 
 export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAILED']);
 
@@ -179,7 +182,14 @@ export const createInfluencerBounty = functions
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
         const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
-        const bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL;
+        let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
+        if (!bountyBaseUrl) {
+            try {
+                bountyBaseUrl = influencerBountyBaseUrl.value();
+            } catch (e) {
+                console.warn("influencerBountyBaseUrl parameter not set.");
+            }
+        }
         if (!bountyBaseUrl) {
             throw new functions.https.HttpsError(
                 "failed-precondition",
