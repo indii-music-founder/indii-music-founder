@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -17,6 +18,7 @@ interface ReleaseListViewProps {
 }
 
 export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, onReleaseClick }) => {
+    const { t } = useTranslation();
     const toast = useToast();
     const {
         releases,
@@ -76,7 +78,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                         <input
                             type="text"
-                            placeholder="Search by title, artist, or ISRC..."
+                            placeholder={t('publishing.hints.search_releases')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"

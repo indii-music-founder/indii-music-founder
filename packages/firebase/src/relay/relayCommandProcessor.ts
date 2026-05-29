@@ -37,7 +37,7 @@ const PROCESSING_INDICATOR = "⏳ Processing your request...";
 // Cloud Function: Firestore onCreate Trigger
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [geminiApiKey],
         timeoutSeconds: 540,
         memory: "2GB",

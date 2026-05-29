@@ -37,7 +37,7 @@ Return ONLY a JSON object that adheres to the following schema:
  */
 export const analyzeAudioFn = () => functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"

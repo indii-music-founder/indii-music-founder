@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Profile Settings Section
  *
@@ -18,6 +19,7 @@ import FounderBadge from '../components/FounderBadge';
 import { SectionHeader } from './SettingsShared';
 
 const ProfileSection: React.FC = () => {
+    const { t } = useTranslation();
     const { user, userProfile, setUserProfile } = useStore(useShallow((s: StoreState) => ({
         user: s.user,
         userProfile: s.userProfile,
@@ -112,7 +114,7 @@ const ProfileSection: React.FC = () => {
                         value={displayName}
                         onChange={(e) => { setDisplayName(e.target.value); setDirty(true); }}
                         className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all"
-                        placeholder="Your display name"
+                        placeholder={t('settings.hints.display_name')}
                     />
                 </div>
 
@@ -123,7 +125,7 @@ const ProfileSection: React.FC = () => {
                         onChange={(e) => { setBio(e.target.value); setDirty(true); }}
                         rows={3}
                         className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all resize-none"
-                        placeholder="Tell us about yourself..."
+                        placeholder={t('settings.hints.bio_desc')}
                     />
                     <p className="text-xs text-slate-600 mt-1">{bio.length}/280 characters</p>
                 </div>

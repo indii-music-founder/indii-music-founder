@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +29,7 @@ interface EmergencyContactsPanelProps {
 }
 
 function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContactsPanelProps) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
     const [name, setName] = useState('');
@@ -94,7 +96,7 @@ function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContact
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Contact Name"
+                            placeholder={t('touring.hints.contact_name_tour')}
                             className="w-full bg-[#0d1117] border border-gray-800 rounded px-2 py-1 text-xs text-white focus:border-red-500 outline-none placeholder:text-gray-700 font-mono"
                             required
                         />
@@ -102,7 +104,7 @@ function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContact
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            placeholder="Phone Number"
+                            placeholder={t('touring.hints.phone_number')}
                             className="w-full bg-[#0d1117] border border-gray-800 rounded px-2 py-1 text-xs text-white focus:border-red-500 outline-none placeholder:text-gray-700 font-mono"
                             required
                         />
