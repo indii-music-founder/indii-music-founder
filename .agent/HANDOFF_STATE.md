@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-29 01:41 EDT
+**Updated:** 2026-05-29 01:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3e7ccac68 chore: session checkpoint [01:41]
 7063e64d7 docs: correct Firebase rules validation command in audit doc
 a187638bd chore: session checkpoint [01:38]
 f0ed3005b chore: session checkpoint [01:34]
@@ -13,7 +14,6 @@ c96b92000 chore: session checkpoint [01:29]
 f28adf072 chore: session checkpoint [01:22]
 b16d823df feat(governance): integrate MultiTurnAutorater, cost circuit breakers, and 20 architectural system flowcharts
 f7136c5c4 chore: session checkpoint [23:28]
-e8136827d chore: session checkpoint [23:23]
 ```
 
 ## Working State
@@ -24,6 +24,11 @@ e8136827d chore: session checkpoint [23:23]
  M packages/firebase/src/subscription/trackUsage.ts
  M packages/renderer/src/modules/agent/services/VenueScoutService.ts
  M packages/renderer/src/modules/merchandise/components/BlockchainLedger.tsx
+ M packages/renderer/src/modules/merchandise/components/SmartContractGenerator.tsx
+ M packages/renderer/src/modules/merchandise/components/StorefrontPreviewModal.tsx
+ M packages/renderer/src/modules/merchandise/components/TokenGatedPreview.tsx
+ M packages/renderer/src/modules/merchandise/hooks/useMerchandise.test.ts
+ M packages/renderer/src/modules/merchandise/hooks/useMerchandise.ts
  M packages/renderer/src/services/analytics/PlatformDataService.ts
  M packages/renderer/src/services/billing/CostControlService.ts
  M packages/renderer/src/services/blockchain/SmartContractService.test.ts
