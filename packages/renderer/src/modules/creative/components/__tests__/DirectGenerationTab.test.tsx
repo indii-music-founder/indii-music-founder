@@ -83,7 +83,7 @@ const useMockStore = create<any>((set) => ({
     studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
     creativePrompt: '',
     setCreativePrompt: (val: string) => set({ creativePrompt: val }),
-    addToHistory: vi.fn(),
+    addToHistory: vi.fn((item) => set((state: any) => ({ generatedHistory: [...(state.generatedHistory || []), item] }))),
     currentProjectId: 'test-project',
     whiskState: {},
     setSelectedItem: vi.fn(),
