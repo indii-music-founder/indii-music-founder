@@ -9,13 +9,14 @@
 
 ## Summary
 
-34 raw candidates → **6 false positives**, **16 fixed in this commit**, **12 need a scoping decision (assignable).**
+34 raw candidates → **6 false positives**, **28 fixed** (16 owner-scoped subcollections + 12 top-level, all 2026-05-28), **1 security follow-up** (move `fraud_alerts` writes server-side).
 
 | Bucket | Count | Action |
 |---|---|---|
 | False positive (already covered) | 6 | None |
-| Fixed — trivial owner-scoped subcollection | 16 | Done (this change) |
-| Needs review — top-level / cross-parent scoping decision | 12 | Assign to an agent |
+| Fixed — owner-scoped subcollections under `users/{uid}` | 16 | Done |
+| Fixed — top-level collections (see §C) | 12 | Done |
+| Follow-up — security hardening | 1 | `fraud_alerts` → Cloud Function (Admin SDK) |
 
 ## A. False positives — no action
 
@@ -59,13 +60,25 @@ inside the `match /users/{userId}` block (after `match /assets/{assetId}`).
 > --only firestore:rules` against a staging project). The additions are syntactically
 > identical to existing rules, but rules changes must be validated, not assumed.
 
-## C. Needs a scoping decision — assignable to agents
+## C. Resolved 2026-05-28 (was: needs scoping decision)
 
-These are **top-level** (or non-`users` parent) collections written/read by client code with
-no rule. Each needs a deliberate access model — they are **not** safe to blanket owner-scope,
-because the right answer differs (global read-only config vs. owner-by-field vs. server-only).
-For each: confirm the document shape (does it carry a `userId`/`sellerId`/`artistId` field?),
-decide the model, add the rule, add a test.
+All 12 were resolved by reading each call site's actual document shape and applying the
+matching access model. Rules added to `firestore.rules` just above the deny-all catch-all.
+
+**Models applied:**
+- **Owner-by-field `userId`:** `career_memory_archive`, `knowledge_history`, `google_search_history`, `sample_requests`, `sftp_ingestions`, `video_releases`.
+- **Owner-by-field `requestedBy`:** `takedown_requests`.
+- **Owner-by-path segment:** `mechanical_licenses/{uid}/licenses` (uid is the path).
+- **Public-read / owner-write `ownerId`:** `marketplace_drops` (drop URLs are public).
+- **Global read-only (server/Admin writes only):** `content_rules`, `sample_platforms`.
+- **Security interim:** `fraud_alerts` — authed create-only, no client read.
+
+**Follow-ups (assignable):**
+1. 🚨 `fraud_alerts`: clients should not write fraud alerts directly. Move `FraudDetectionService.persistAlert` to a Cloud Function (Admin SDK), then set `allow create: if false`.
+2. Confirm `marketplace_drops` should be **publicly** readable (rule is `allow read: if true`). If purchase/view requires auth, change to `if isAuthenticated()`.
+3. Add Firestore rules emulator tests for all new collections before relying on them in prod.
+
+Original call-site evidence is preserved in the table below for reference.
 
 | Collection | Client call site | Likely model | Open question / recommendation |
 |---|---|---|---|
