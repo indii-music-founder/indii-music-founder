@@ -7,16 +7,35 @@ import { logger } from '@/utils/logger';
 import { MY_AGENT_ID } from './A2AConfig';
 
 /**
+ * Thrown when the router cannot produce an encrypted response (e.g. the sender's
+ * public key was never registered). The client maps this to a tool error rather
+ * than receiving a malformed envelope.
+ */
+export class A2ARouterEncryptError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'A2ARouterEncryptError';
+  }
+}
+
+/**
  * A2A Router — the in-process JSON-RPC dispatcher for agent-to-agent calls.
- * Receives encrypted JSON-RPC envelopes, decrypts, dispatches methods, and returns encrypted responses.
+ *
+ * Key model (single router identity):
+ *   - The router owns ONE identity: MY_AGENT_ID. It decrypts every request
+ *     addressed to it, and encrypts every response back to the *sender's*
+ *     registered public key (the caller exchanged it during discover()).
+ *   - The `targetAgentId` travels INSIDE the encrypted JSON-RPC params; it is
+ *     NOT used as the crypto recipient. This is what makes the loopback E2E
+ *     round-trip genuinely correct rather than relying on throwaway keypairs.
  */
 class A2ARouter {
-  private agentKeys = new Map<string, { initialized: boolean }>();
   private streamGenerators = new Map<string, AsyncIterable<MessageEnvelope>>();
+  private streamSenders = new Map<string, string>();
   private routerInitialized = false;
 
   /**
-   * Ensure router has initialized its keypair.
+   * Ensure the router has initialized its own keypair (MY_AGENT_ID).
    */
   async ensureRouterKey(): Promise<void> {
     if (this.routerInitialized) return;
@@ -25,50 +44,45 @@ class A2ARouter {
   }
 
   /**
-   * Ensure target agent has a keypair (encrypted responses will use it).
-   */
-  private async ensureAgentKey(agentId: string): Promise<void> {
-    if (this.agentKeys.has(agentId)) return;
-    try {
-      await e2eEncryptionService.initialize(agentId);
-      this.agentKeys.set(agentId, { initialized: true });
-    } catch (e) {
-      logger.warn(`[A2ARouter] Failed to initialize key for ${agentId}: ${e}`);
-    }
-  }
-
-  /**
    * Handle an encrypted JSON-RPC envelope.
-   * Decrypt → dispatch → encrypt response.
+   * Decrypt (as MY_AGENT_ID) → dispatch → encrypt response (to sender).
    */
   async handleEncrypted(envelope: MessageEnvelope, localCtx?: RouterCallContext): Promise<MessageEnvelope> {
+    await this.ensureRouterKey();
+
+    // Decrypt the envelope as the router identity
+    let decrypted: Record<string, unknown>;
     try {
-      await this.ensureRouterKey();
+      decrypted = await e2eEncryptionService.decryptMessage(envelope, MY_AGENT_ID);
+    } catch (e) {
+      logger.error('[A2ARouter] Decryption failed:', e);
+      // We cannot encrypt a reply if we couldn't even decrypt the request,
+      // so surface a typed error the client maps to a tool error.
+      throw new A2ARouterEncryptError('A2A request could not be decrypted');
+    }
 
-      // Decrypt the envelope
-      let decrypted: any;
+    const { jsonrpc, method, params, id } = decrypted as {
+      jsonrpc?: string;
+      method?: string;
+      params?: Record<string, unknown>;
+      id?: string | number;
+    };
+
+    // The sender is the party we encrypt the reply back to. It must be present
+    // and have an exchanged public key (registered during discover()).
+    const senderId = (params?.senderId as string) || (decrypted.senderId as string) || '';
+    if (!senderId) {
+      // Invalid params — but we have no key to encrypt an error back to.
+      throw new A2ARouterEncryptError('A2A request missing senderId (no reply channel)');
+    }
+
+    let responsePayload: Record<string, unknown>;
+
+    if (jsonrpc !== '2.0') {
+      responsePayload = { jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request: jsonrpc must be 2.0' }, id };
+    } else {
       try {
-        decrypted = await e2eEncryptionService.decryptMessage(envelope, MY_AGENT_ID);
-      } catch (e) {
-        logger.error('[A2ARouter] Decryption failed:', e);
-        return this.errorResponse(-32700, 'Parse error: decryption failed', envelope.id);
-      }
-
-      if ('error' in decrypted) {
-        return this.errorResponse(-32700, 'Parse error: decrypted message is an error', envelope.id);
-      }
-
-      const { jsonrpc, method, params, id } = decrypted;
-      if (jsonrpc !== '2.0') {
-        return this.errorResponse(-32600, 'Invalid Request: jsonrpc must be 2.0', id);
-      }
-
-      // Extract senderId from envelope metadata (or params)
-      const senderId = (params?.senderId || decrypted.senderId || 'unknown') as string;
-
-      // Dispatch the method
-      let result: any;
-      try {
+        let result: unknown;
         if (method === 'agent.execute') {
           result = await this.dispatchAgentExecute(params, localCtx, senderId);
         } else if (method === 'stream.init') {
@@ -76,59 +90,51 @@ class A2ARouter {
         } else if (method === 'stream.cancel') {
           result = await this.dispatchStreamCancel(params);
         } else {
-          return this.errorResponse(-32601, `Method not found: ${method}`, id);
+          responsePayload = { jsonrpc: '2.0', error: { code: -32601, message: `Method not found: ${method}` }, id };
+          return this.encryptReply(responsePayload, senderId);
         }
+        responsePayload = { jsonrpc: '2.0', result, id };
       } catch (e) {
         logger.error(`[A2ARouter] Dispatch error for ${method}:`, e);
         const msg = e instanceof Error ? e.message : String(e);
-        return this.errorResponse(-32603, `Internal error: ${msg}`, id);
+        // Map known validation failures to JSON-RPC invalid-params (-32602),
+        // everything else to internal error (-32603).
+        const code = /Invalid agent ID|Hub-and-spoke/.test(msg) ? -32602 : -32603;
+        responsePayload = { jsonrpc: '2.0', error: { code, message: msg }, id };
       }
+    }
 
-      // Encrypt the response back to the sender
-      const responsePayload = {
-        jsonrpc: '2.0',
-        result,
-        id,
-      };
+    return this.encryptReply(responsePayload, senderId);
+  }
 
-      try {
-        await this.ensureAgentKey(senderId);
-        const responseEnvelope = await e2eEncryptionService.encryptMessage(
-          responsePayload,
-          senderId, // encrypt to sender's public key
-          MY_AGENT_ID
-        );
-        return responseEnvelope;
-      } catch (e) {
-        logger.error('[A2ARouter] Failed to encrypt response:', e);
-        // Return unencrypted error as fallback
-        return {
-          id: envelope.id,
-          encrypted: false,
-          error: { code: -32603, message: 'Internal error: failed to encrypt response' },
-        } as any;
-      }
+  /**
+   * Encrypt a JSON-RPC response payload back to the sender. Throws a typed
+   * error (never returns a malformed envelope) if encryption is impossible.
+   */
+  private async encryptReply(payload: Record<string, unknown>, senderId: string): Promise<MessageEnvelope> {
+    try {
+      return await e2eEncryptionService.encryptMessage(payload, senderId, MY_AGENT_ID);
     } catch (e) {
-      logger.error('[A2ARouter] Unexpected error in handleEncrypted:', e);
-      return {
-        id: envelope.id,
-        encrypted: false,
-        error: { code: -32603, message: 'Internal server error' },
-      } as any;
+      logger.error('[A2ARouter] Failed to encrypt reply:', e);
+      throw new A2ARouterEncryptError(`Failed to encrypt reply to ${senderId}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   /**
    * Handle plaintext JSON-RPC (used for discovery, key.exchange).
    */
-  async handlePlain(payload: any): Promise<any> {
+  async handlePlain(payload: { method?: string; params?: Record<string, unknown>; id?: string | number }): Promise<unknown> {
     try {
       await this.ensureRouterKey();
 
       const { method, params, id } = payload;
 
       if (method === 'key.exchange') {
-        const { senderId, publicKeyJwk } = params;
+        const senderId = params?.senderId as string;
+        const publicKeyJwk = params?.publicKeyJwk as JsonWebKey;
+        if (!senderId || !publicKeyJwk) {
+          return { jsonrpc: '2.0', error: { code: -32602, message: 'key.exchange requires senderId and publicKeyJwk' }, id };
+        }
         await e2eEncryptionService.registerPeerPublicKey(senderId, publicKeyJwk);
         logger.info(`[A2ARouter] Key exchange registered for ${senderId}`);
         return { jsonrpc: '2.0', result: { success: true }, id };
@@ -142,17 +148,18 @@ class A2ARouter {
   }
 
   /**
-   * Build the discovery document with all agent cards + their public keys.
+   * Build the discovery document. Each AgentCard is published with the router's
+   * public key as the swarm endpoint key (single-router-identity model) — every
+   * agent.execute request is decrypted by the router, not by a per-agent key.
    */
-  async buildDiscovery(): Promise<any[]> {
+  async buildDiscovery(): Promise<unknown[]> {
     await this.ensureRouterKey();
-    const cards = [];
+    const routerPublicKey = await e2eEncryptionService.exportPublicKey(MY_AGENT_ID);
+    const cards: unknown[] = [];
 
     for (const [agentId, card] of Object.entries(CARD_REGISTRY)) {
       try {
-        await this.ensureAgentKey(agentId);
-        const publicKeyJwk = await e2eEncryptionService.exportPublicKey(agentId);
-        const enrichedCard = { ...card, publicKeyJwk };
+        const enrichedCard = { ...card, publicKeyJwk: routerPublicKey };
         AgentCardSchema.parse(enrichedCard); // Zod validation
         cards.push(enrichedCard);
       } catch (e) {
@@ -167,24 +174,22 @@ class A2ARouter {
    * Dispatch `agent.execute` — run the target agent via localCtx.runAgent.
    */
   private async dispatchAgentExecute(
-    params: any,
+    params: Record<string, unknown> | undefined,
     localCtx: RouterCallContext | undefined,
     senderId: string
-  ): Promise<any> {
-    const { targetAgentId, task, sharedContext } = params;
+  ): Promise<unknown> {
+    const targetAgentId = params?.targetAgentId as string;
+    const task = params?.task as string;
 
-    // Validate agent ID
-    if (!VALID_AGENT_IDS.includes(targetAgentId)) {
+    if (!VALID_AGENT_IDS.includes(targetAgentId as never)) {
       throw new Error(`Invalid agent ID: ${targetAgentId}`);
     }
 
-    // Validate hub-and-spoke
-    const hubSpokeError = validateHubAndSpoke(senderId, targetAgentId);
+    const hubSpokeError = validateHubAndSpoke(senderId as never, targetAgentId as never);
     if (hubSpokeError) {
       throw new Error(`Hub-and-spoke violation: ${hubSpokeError}`);
     }
 
-    // Run the agent
     if (!localCtx?.runAgent) {
       throw new Error('No runAgent available in router context');
     }
@@ -194,17 +199,21 @@ class A2ARouter {
   }
 
   /**
-   * Dispatch `stream.init` — allocate a requestId and register a streaming generator.
+   * Dispatch `stream.init` — allocate a requestId and register a batch generator.
    */
-  private async dispatchStreamInit(params: any, localCtx: RouterCallContext | undefined, senderId: string): Promise<any> {
-    const { targetAgentId, targetMethod, task, sharedContext } = params;
+  private async dispatchStreamInit(
+    params: Record<string, unknown> | undefined,
+    localCtx: RouterCallContext | undefined,
+    senderId: string
+  ): Promise<unknown> {
+    const targetAgentId = params?.targetAgentId as string;
+    const task = params?.task as string;
 
-    // Validate
-    if (!VALID_AGENT_IDS.includes(targetAgentId)) {
+    if (!VALID_AGENT_IDS.includes(targetAgentId as never)) {
       throw new Error(`Invalid agent ID: ${targetAgentId}`);
     }
 
-    const hubSpokeError = validateHubAndSpoke(senderId, targetAgentId);
+    const hubSpokeError = validateHubAndSpoke(senderId as never, targetAgentId as never);
     if (hubSpokeError) {
       throw new Error(`Hub-and-spoke violation: ${hubSpokeError}`);
     }
@@ -213,36 +222,38 @@ class A2ARouter {
       throw new Error('No runAgent available');
     }
 
-    // Allocate requestId and start the streaming generator
     const requestId = crypto.randomUUID();
-    const generator = this.createStreamingGenerator(targetAgentId, task, localCtx);
+    // Encrypt stream chunks back to the actual caller (not a hardcoded id).
+    const generator = this.createBatchGenerator(targetAgentId, task, localCtx, senderId);
     this.streamGenerators.set(requestId, generator);
+    this.streamSenders.set(requestId, senderId);
 
     logger.info(`[A2ARouter] Stream initialized for ${targetAgentId}: ${requestId}`);
     return { requestId };
   }
 
   /**
-   * Create an async generator that yields encrypted responses as they arrive.
-   * This will be consumed by LoopbackA2ATransport.openStream.
+   * Run the target agent to completion and yield its result once.
+   *
+   * NOTE: This is BATCH, not token-by-token streaming. It runs the agent fully,
+   * then yields a single encrypted envelope. True SSE token streaming is a
+   * separate future effort. Named "batch" so no one mistakes it for live tokens.
    */
-  private async *createStreamingGenerator(
+  private async *createBatchGenerator(
     targetAgentId: string,
     task: string,
-    localCtx: RouterCallContext
+    localCtx: RouterCallContext,
+    recipientId: string
   ): AsyncIterable<MessageEnvelope> {
     try {
-      // For now, just run the agent and yield the result once.
-      // In a future version, this could hook into streaming LLM responses.
       const result = await localCtx.runAgent(targetAgentId, task, localCtx.parentContext, localCtx.traceId);
       const message = { text: result?.text || String(result), agentId: targetAgentId };
 
-      // Encrypt and yield
       await this.ensureRouterKey();
-      const envelope = await e2eEncryptionService.encryptMessage(message, 'indii-conductor', MY_AGENT_ID);
+      const envelope = await e2eEncryptionService.encryptMessage(message, recipientId, MY_AGENT_ID);
       yield envelope;
     } catch (e) {
-      logger.error('[A2ARouter] Error in streaming generator:', e);
+      logger.error('[A2ARouter] Error in batch generator:', e);
     }
   }
 
@@ -256,21 +267,11 @@ class A2ARouter {
   /**
    * Cancel a stream.
    */
-  private async dispatchStreamCancel(params: any): Promise<any> {
-    const { requestId } = params;
+  private async dispatchStreamCancel(params: Record<string, unknown> | undefined): Promise<unknown> {
+    const requestId = params?.requestId as string;
     this.streamGenerators.delete(requestId);
+    this.streamSenders.delete(requestId);
     return { success: true };
-  }
-
-  /**
-   * Helper to create an error response.
-   */
-  private errorResponse(code: number, message: string, id?: string | number): MessageEnvelope {
-    return {
-      id: crypto.randomUUID(),
-      encrypted: false,
-      error: { code, message },
-    } as any;
   }
 }
 

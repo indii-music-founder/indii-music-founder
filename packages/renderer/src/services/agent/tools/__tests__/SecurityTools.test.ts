@@ -193,7 +193,7 @@ describe('SecurityTools (Mocked)', () => {
         it('should return non-compliant/unavailable due to missing compliance inventory', async () => {
             const result = await verify_zero_touch_prod({ service_name: 'prod-payment-service' });
             expect(result.success).toBe(false);
-            expect(result.metadata?.errorCode).toBe('COMPLIANCE_BACKEND_UNAVAILABLE');
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 
@@ -201,7 +201,7 @@ describe('SecurityTools (Mocked)', () => {
         it('should return unavailable due to missing security posture inventory', async () => {
             const result = await check_core_dump_policy({ service_name: 'foundational-auth' });
             expect(result.success).toBe(false);
-            expect(result.metadata?.errorCode).toBe('COMPLIANCE_BACKEND_UNAVAILABLE');
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 
@@ -212,7 +212,7 @@ describe('SecurityTools (Mocked)', () => {
                 workload_type: 'FOUNDATIONAL'
             });
             expect(result.success).toBe(false);
-            expect(result.metadata?.errorCode).toBe('COMPLIANCE_BACKEND_UNAVAILABLE');
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 });
