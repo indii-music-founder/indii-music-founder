@@ -60,7 +60,9 @@ export const consult_specialist = wrapTool(
             const result = await a2aClient.invoke(
                 targetAgentId,
                 'agent.execute',
-                { task, sharedContext },
+                // sourceAgentId is the REAL calling agent (e.g. 'generalist'), distinct
+                // from the crypto reply channel. The router uses it for hub-and-spoke.
+                { task, sharedContext, sourceAgentId: context.agentIdentity?.agentId },
                 context.directive,
                 context.runAgent ? {
                     runAgent: context.runAgent,
