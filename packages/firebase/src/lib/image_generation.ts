@@ -769,7 +769,7 @@ const service = new GeminiImageService();
 export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+        enforceAppCheck: true,
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
@@ -806,7 +806,7 @@ export const generateImageV3Fn = () => functions
 export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+        enforceAppCheck: true,
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB

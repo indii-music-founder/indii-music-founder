@@ -201,7 +201,7 @@ export const activateFounderPass = onCall({
     secrets: [githubTokenFounders],
     timeoutSeconds: 120,
     memory: '256MiB',
-    enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+    enforceAppCheck: true,
 }, async (request): Promise<ActivateFounderPassResult> => {
     const { targetUid, displayName } = request.data as ActivateFounderPassParams;
 
