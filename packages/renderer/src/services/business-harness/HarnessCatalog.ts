@@ -62,6 +62,6 @@ export const HARNESS_IMPLEMENTATION_STATUS: Record<HarnessDomain, HarnessImpleme
   opportunity: 'Done',
   education_curriculum: 'Done',
   security_trust: 'Done',
-  boardroom_meta: 'Partial',
+  boardroom_meta: 'Done',
 };
 

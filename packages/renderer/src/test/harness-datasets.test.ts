@@ -78,11 +78,11 @@ describe('Harness Training Datasets Integrity & Volume', () => {
       });
 
       if (deficits.length > 0) {
-        console.warn('⚠️ DATASET VOLUME WARNING: Found deficits in primary harness owner datasets:\n' + deficits.join('\n'));
+        console.error('❌ DATASET VOLUME ERROR: Found deficits in primary harness owner datasets:\n' + deficits.join('\n'));
       }
       
-      // Let's assert a soft check first to report exact deficits rather than hard crash CI during migration phase
-      expect(deficits.length).toBeLessThanOrEqual(owners.length);
+      // Strict enforcement of dataset volume targets
+      expect(deficits.length).toBe(0);
     });
 
     it('enforces 10 cross-domain examples per supporting agent/domain pair and logs deficits', () => {
@@ -104,10 +104,10 @@ describe('Harness Training Datasets Integrity & Volume', () => {
       });
 
       if (deficits.length > 0) {
-        console.warn('⚠️ DATASET VOLUME WARNING: Found deficits in cross-domain supporter datasets:\n' + deficits.join('\n'));
+        console.error('❌ DATASET VOLUME ERROR: Found deficits in cross-domain supporter datasets:\n' + deficits.join('\n'));
       }
 
-      expect(deficits.length).toBeLessThanOrEqual(activePairs.length);
+      expect(deficits.length).toBe(0);
     });
 
     it('validates 100-example-per-agent targets for active agents', () => {
