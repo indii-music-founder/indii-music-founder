@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
 import { Globe, Plus, Trash2, CheckSquare, Clock, AlertTriangle, FileText, Sparkles, Send, MessageSquare, Loader2, Check } from 'lucide-react';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
@@ -125,6 +126,7 @@ interface Message {
 }
 
 export function VisaChecklist() {
+    const { t } = useTranslation();
     const toast = useToast();
 
     // Load initial state from local storage or fallback to Canada
@@ -474,7 +476,7 @@ Provide a highly practical, precise, and expert answer. Be direct and realistic.
                                 <div className="flex gap-2 font-sans">
                                     <input
                                         type="text"
-                                        placeholder="e.g. South Korea, Brazil, Germany..."
+                                        placeholder={t('touring.hints.country_example')}
                                         value={customCountryName}
                                         onChange={e => setCustomCountryName(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleGenerateAICountry()}

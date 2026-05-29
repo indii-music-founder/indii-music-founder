@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * TechnicalRiderGenerator — Item 132 (PRODUCTION_200)
  * Form-based builder generating PDF stage plots and technical riders for promoters.
@@ -389,6 +390,7 @@ ${r.additionalNotes ? `<h2>Additional Notes</h2><div class="note">${r.additional
 }
 
 export function TechnicalRiderGenerator() {
+    const { t } = useTranslation();
     const toast = useToast();
     const { userProfile, consumeHandoff } = useStore(useShallow(state => ({ 
         userProfile: state.userProfile,
@@ -597,10 +599,10 @@ export function TechnicalRiderGenerator() {
 
             <div className="grid grid-cols-2 gap-4">
                 <Field label="Artist Name">
-                    <input className={inputCls} value={rider.artistName} onChange={e => set('artistName', e.target.value)} placeholder="e.g. Mara Sol" />
+                    <input className={inputCls} value={rider.artistName} onChange={e => set('artistName', e.target.value)} placeholder={t('touring.hints.artist_example')} />
                 </Field>
                 <Field label="Act / Show Name">
-                    <input className={inputCls} value={rider.actName} onChange={e => set('actName', e.target.value)} placeholder="e.g. The Collapse Tour" />
+                    <input className={inputCls} value={rider.actName} onChange={e => set('actName', e.target.value)} placeholder={t('touring.hints.tour_example')} />
                 </Field>
             </div>
 
@@ -708,13 +710,13 @@ export function TechnicalRiderGenerator() {
                 )}
                 <div className="grid grid-cols-3 gap-3">
                     <Field label={bassAmpLabel}>
-                        <input className={inputCls} value={rider.bassAmp} onChange={e => set('bassAmp', e.target.value)} placeholder="None" />
+                        <input className={inputCls} value={rider.bassAmp} onChange={e => set('bassAmp', e.target.value)} placeholder={t('touring.hints.none')} />
                     </Field>
                     <Field label={guitarAmpLabel}>
-                        <input className={inputCls} value={rider.guitarAmp} onChange={e => set('guitarAmp', e.target.value)} placeholder="None" />
+                        <input className={inputCls} value={rider.guitarAmp} onChange={e => set('guitarAmp', e.target.value)} placeholder={t('touring.hints.none')} />
                     </Field>
                     <Field label={keysLabel}>
-                        <input className={inputCls} value={rider.keys} onChange={e => set('keys', e.target.value)} placeholder="None" />
+                        <input className={inputCls} value={rider.keys} onChange={e => set('keys', e.target.value)} placeholder={t('touring.hints.none')} />
                     </Field>
                 </div>
             </Section>
@@ -724,11 +726,11 @@ export function TechnicalRiderGenerator() {
                 <div className="space-y-2">
                     {rider.contacts.map((c, i) => (
                         <div key={i} className="grid grid-cols-4 gap-2 items-center">
-                            <input className={inputCls} value={c.role} onChange={e => setContact(i, 'role', e.target.value)} placeholder="Role" />
-                            <input className={inputCls} value={c.name} onChange={e => setContact(i, 'name', e.target.value)} placeholder="Name" />
-                            <input className={inputCls} value={c.phone} onChange={e => setContact(i, 'phone', e.target.value)} placeholder="+1 555 000 0000" />
+                            <input className={inputCls} value={c.role} onChange={e => setContact(i, 'role', e.target.value)} placeholder={t('touring.hints.role')} />
+                            <input className={inputCls} value={c.name} onChange={e => setContact(i, 'name', e.target.value)} placeholder={t('touring.hints.name')} />
+                            <input className={inputCls} value={c.phone} onChange={e => setContact(i, 'phone', e.target.value)} placeholder={t('touring.hints.phone_us')} />
                             <div className="flex gap-1">
-                                <input className={`${inputCls} flex-1`} value={c.email} onChange={e => setContact(i, 'email', e.target.value)} placeholder="email@example.com" />
+                                <input className={`${inputCls} flex-1`} value={c.email} onChange={e => setContact(i, 'email', e.target.value)} placeholder={t('touring.hints.email_example')} />
                                 <button onClick={() => removeContact(i)} className="p-2 rounded-lg hover:bg-red-500/10 text-neutral-600 hover:text-red-400 transition-colors flex-shrink-0">
                                     <Trash2 size={12} />
                                 </button>
@@ -748,7 +750,7 @@ export function TechnicalRiderGenerator() {
                         className={`${inputCls} resize-none h-24`}
                         value={rider.additionalNotes}
                         onChange={e => set('additionalNotes', e.target.value)}
-                        placeholder="Load-in time, parking, catering windows, special requests..."
+                        placeholder={t('touring.hints.special_requests')}
                     />
                 </Field>
             </Section>

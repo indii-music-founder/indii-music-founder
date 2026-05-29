@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useId } from 'react';
 import { X, Calendar, Image as ImageIcon, Wand2, Loader2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -17,6 +18,7 @@ interface CreatePostModalProps {
 }
 
 export default function CreatePostModal({ onClose, onSave }: CreatePostModalProps) {
+    const { t } = useTranslation();
     const toast = useToast();
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
@@ -152,7 +154,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             id={copyInputId}
                             value={copy}
                             onChange={(e) => setCopy(e.target.value)}
-                            placeholder="What's on your mind?"
+                            placeholder={t('social.hints.social_post_desc')}
                             aria-describedby={characterCountId}
                             className={`w-full h-32 bg-bg-dark border rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none transition-colors resize-none ${isOverLimit
                                 ? 'border-red-500 focus:border-red-500'

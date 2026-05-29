@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
 import { Music, Plus, Trash2, Download, BarChart3, DollarSign, Users, Calendar, Disc, Sparkles, AlertCircle, FileText, Check } from 'lucide-react';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
@@ -97,6 +98,7 @@ function calcGrossSongwriterRoyalties(songs: Song[], category: SetlistCategory, 
 }
 
 export function SetlistAnalytics() {
+    const { t } = useTranslation();
     const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const toast = useToast();
     const [performances, setPerformances] = useState<Performance[]>([]);
@@ -421,7 +423,7 @@ export function SetlistAnalytics() {
                     <div className="grid grid-cols-2 gap-3">
                         <div className="col-span-2">
                             <label className={labelClass}>Venue Name</label>
-                            <input type="text" value={venue} onChange={e => setVenue(e.target.value)} placeholder="The Fillmore" className={inputClass} />
+                            <input type="text" value={venue} onChange={e => setVenue(e.target.value)} placeholder={t('touring.hints.venue_example')} className={inputClass} />
                         </div>
                         <div>
                             <label className={labelClass}>Date</label>
@@ -429,13 +431,13 @@ export function SetlistAnalytics() {
                         </div>
                         <div>
                             <label className={labelClass}>City</label>
-                            <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Detroit, MI" className={inputClass} />
+                            <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder={t('touring.hints.city_example')} className={inputClass} />
                         </div>
                         <div className="col-span-2">
                             <label className={labelClass}>
                                 <Users size={10} className="inline mr-1" />Attendance
                             </label>
-                            <input type="number" min="1" value={attendance} onChange={e => setAttendance(e.target.value)} placeholder="500" className={inputClass} />
+                            <input type="number" min="1" value={attendance} onChange={e => setAttendance(e.target.value)} placeholder={t('touring.hints.capacity_example')} className={inputClass} />
                         </div>
                     </div>
 
