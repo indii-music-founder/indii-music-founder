@@ -331,8 +331,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
-        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onUserUpdate) {
-            electronUnsub = window.electronAPI.auth.onUserUpdate(async (tokens) => {
+        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
+        if (electronAuth && electronAuth.onUserUpdate) {
+            electronUnsub = electronAuth.onUserUpdate(async (tokens: any) => {
                 if (tokens) {
                     logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');
                     try {
@@ -354,9 +355,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 7. Electron Auth Error Listener
         let errorUnsub: (() => void) | null = null;
-        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
-        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onError) {
-            errorUnsub = window.electronAPI.auth.onError((data: { message: string }) => {
+        if (electronAuth && electronAuth.onError) {
+            errorUnsub = electronAuth.onError((data: { message: string }) => {
                 logger.error('[Auth] Received auth error from Main Process:', data.message);
                 set({ authError: data.message, authLoading: false });
             });

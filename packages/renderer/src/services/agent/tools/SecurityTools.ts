@@ -100,7 +100,7 @@ export const SecurityTools = {
         }
 
         try {
-            const result = await window.electronAPI.security.rotateCredentials({ serviceName: service_name });
+            const result = await window.electronAPI.security.rotateCredentials({ serviceName: service_name }) as any;
             if (!result.success) {
                 return toolError(result.error || "Rotation failed", "ROTATION_FAILED");
             }
@@ -211,7 +211,7 @@ export const SecurityTools = {
         }
 
         try {
-            const result = await window.electronAPI.security.scanVulnerabilities({ scope });
+            const result = await window.electronAPI.security.scanVulnerabilities({ scope }) as any;
             if (!result.success) {
                 return toolError(result.error || "Scan failed", "SCAN_FAILED");
             }
@@ -286,7 +286,7 @@ export const SecurityTools = {
                 fileId: args.fileId,
                 text: args.watermarkText,
                 invisible: args.invisible
-            });
+            }) as any;
 
             if (!result.success) {
                 return toolError(result.error || "Watermarking failed", "WATERMARK_FAILED");

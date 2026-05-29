@@ -85,5 +85,14 @@ export const CreativeCard: AgentCard = {
         modeStream: {
             firstByteMs: 500
         }
+    },
+    harness: {
+        ownedHarnessDomains: ['creative_production'],
+        supportingHarnessDomains: ['artist_memory', 'song_dna', 'merch_pod', 'release'],
+        skillRefs: ['agents/creative/skills/business_harness/SKILL.md'],
+        mcpServers: ['indii-harness'],
+        approvalAuthority: 'draft',
+        blockedActions: ['distribute', 'spend_money']
     }
 };
+

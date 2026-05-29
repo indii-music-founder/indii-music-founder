@@ -119,7 +119,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
                 // 3. Stage Files
                 const releaseId = metadata.id || `CDB-${Date.now()}`;
-                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files);
+                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files) as any;
 
                 if (!stagingValues.success || !stagingValues.packagePath) {
                     throw new Error(stagingValues.error || 'Failed to stage CDBaby release locally');
@@ -179,9 +179,9 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         }
 
         try {
-            const result = await window.electronAPI.sftp.listDirectory(`/status/`);
+            const result = await (window.electronAPI.sftp as any).listDirectory(`/status/`) as any;
             if (result.success && result.files) {
-                const statusFile = result.files.find(f => f.name.includes(releaseId));
+                const statusFile = result.files.find((f: any) => f.name.includes(releaseId));
                 if (statusFile) {
                     if (statusFile.name.includes('DELIVERED')) return 'live';
                     if (statusFile.name.includes('ERROR')) return 'failed';
@@ -223,7 +223,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         try {
             // CDBaby DSR reports
             const remotePath = `/reports/sales_${period.startDate.substring(0, 7)}.tsv`;
-            const fileResult = await window.electronAPI.sftp.readFile(remotePath);
+            const fileResult = await (window.electronAPI.sftp as any).readFile(remotePath) as any;
 
             if (fileResult.success && fileResult.content) {
                 const { earningsReportService } = await import('@/services/distribution/proprietary-ingestion/EarningsReportService');
