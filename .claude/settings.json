@@ -18,6 +18,9 @@
       "Bash(firebase --help)",
       "Bash(firebase deploy *)",
       "Bash(git commit -m 'docs: correct Firebase rules validation command in audit doc *)"
+    ],
+    "additionalDirectories": [
+      "/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans"
     ]
   },
   "hooks": {

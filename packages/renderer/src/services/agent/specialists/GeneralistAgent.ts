@@ -236,7 +236,7 @@ export class GeneralistAgent extends BaseAgent {
             },
             {
                 name: 'consult_specialist',
-                description: 'Directly consult a specialized agent via the A2A Swarm Protocol. Use this for precise expert task delegation with session persistence. Requires an active Directive.',
+                description: 'Consult a specialized agent via the A2A protocol. Use this for precise, single-expert delegation with security gating and session context. Requests routed via secure encrypted channels with automatic fallback if needed.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
@@ -249,7 +249,7 @@ export class GeneralistAgent extends BaseAgent {
             },
             {
                 name: 'delegate_task',
-                description: '(Legacy) Delegate a task via the broadcast hub. Prefer consult_specialist for swarm interactions.',
+                description: 'Delegate a task to a specialized agent. Use this for broad or parallel handoff when you need a quick answer from a generalist. Works through hub-and-spoke coordination.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

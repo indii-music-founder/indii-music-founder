@@ -297,6 +297,27 @@ Replace `Math.random` with proper ID generation in non-test service files.
 
 ---
 
+## WO-12: Official Official Secret Rotation
+
+| Task | Detail |
+|------|--------|
+| **Rotate All Secrets** | Execute a complete rotation of all production secrets prior to the "Official Official" launch. Ensure no legacy or compromised keys exist. |
+| **Verify SECRET_INVENTORY.md** | Cross-check the master list in `docs/SECRET_INVENTORY.md` to ensure all rotating keys are successfully migrated to Secret Manager. |
+| **License & Account Payments** | Pay/renew licenses mapped in the Inventory (Apple Developer, Microsoft Partner, GCP Billing, Firebase Blaze, etc.) to lift infrastructure blockers. |
+
+---
+
+## WO-13: Guest Auth Retirement and Anonymous User Cleanup
+
+| Task | Detail |
+|------|--------|
+| **Anonymous auth audit** | Create an admin-only dry-run script that lists Firebase Auth users with anonymous provider state and no real email/provider identity |
+| **Firestore orphan audit** | Cross-reference audited Auth UIDs with `users/{uid}` docs, user subcollections, and Storage prefixes; output JSON/CSV for review |
+| **Confirmed purge** | Add a separate `--confirm` deletion mode that removes only reviewed anonymous/no-email users and matching orphan records |
+| **Production guard verification** | Confirm production UI cannot call `signInAnonymously()` and anonymous sessions cannot write cloud profile, storage, project, relay, brand, or commercial records |
+
+---
+
 ## Summary
 
 | WO | Description | Scope |
@@ -311,14 +332,6 @@ Replace `Math.random` with proper ID generation in non-test service files.
 | WO-8 | Payment validation | 3 sub-tasks |
 | WO-9 | App Check enforcement | 3 sub-tasks |
 | WO-10 | MusicAgent scope correction | 3 sub-tasks |
-| WO-11 | Official Official Secret Rotation | 3 sub-tasks |
-
----
-
-## WO-11: Official Official Secret Rotation
-
-| Task | Detail |
-|------|--------|
-| **Rotate All Secrets** | Execute a complete rotation of all production secrets prior to the "Official Official" launch. Ensure no legacy or compromised keys exist. |
-| **Verify SECRET_INVENTORY.md** | Cross-check the master list in `docs/SECRET_INVENTORY.md` to ensure all rotating keys are successfully migrated to Secret Manager. |
-| **License & Account Payments** | Pay/renew licenses mapped in the Inventory (Apple Developer, Microsoft Partner, GCP Billing, Firebase Blaze, etc.) to lift infrastructure blockers. |
+| WO-11 | Synthetic training corpus purge | 3 sub-tasks |
+| WO-12 | Official Official Secret Rotation | 3 sub-tasks |
+| WO-13 | Guest auth retirement and anonymous user cleanup | 4 sub-tasks |

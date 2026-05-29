@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createStore, type StoreApi } from 'zustand';
 import { createAuthSlice, AuthSlice } from './authSlice';
 import type { UserCredential } from 'firebase/auth';
-import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { setDoc } from 'firebase/firestore';
 
 // Mock Firebase Auth
 vi.mock('firebase/auth', () => ({
@@ -27,6 +28,7 @@ vi.mock('@/services/firebase', () => ({
         },
         // Mutable currentUser for debounce tests — starts null
         currentUser: null as unknown,
+        signInAnonymously: vi.fn(),
     },
     db: {},
     storage: {},
@@ -237,18 +239,35 @@ describe('AuthSlice', () => {
     // loginAsGuest
     // ============================================================================
     describe('loginAsGuest', () => {
-        it('should call Firebase signInAnonymously', async () => {
-            vi.mocked(signInAnonymously).mockResolvedValueOnce({} as unknown as UserCredential);
+        it('should fail closed outside Firebase E2E mock mode', async () => {
+            const { auth } = await import('@/services/firebase');
+            const { loginAsGuest } = useStore.getState();
+
+            await expect(loginAsGuest()).rejects.toThrow('Guest login is disabled');
+
+            expect((auth as unknown as { signInAnonymously: ReturnType<typeof vi.fn> }).signInAnonymously).not.toHaveBeenCalled();
+            expect(useStore.getState().authError).toBe('Guest login is disabled. Sign in or create an account to continue.');
+        });
+
+        it('should call mock anonymous auth only in Firebase E2E mock mode', async () => {
+            const { auth } = await import('@/services/firebase');
+            (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true;
+            vi.mocked((auth as unknown as { signInAnonymously: () => Promise<UserCredential> }).signInAnonymously)
+                .mockResolvedValueOnce({} as unknown as UserCredential);
+
             const { loginAsGuest } = useStore.getState();
 
             await loginAsGuest();
 
-            expect(signInAnonymously).toHaveBeenCalled();
+            expect((auth as unknown as { signInAnonymously: ReturnType<typeof vi.fn> }).signInAnonymously).toHaveBeenCalled();
         });
 
-        it('should fail closed when anonymous auth is disabled', async () => {
+        it('should map mock anonymous auth errors in Firebase E2E mock mode', async () => {
+            const { auth } = await import('@/services/firebase');
+            (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true;
             const error = Object.assign(new Error('restricted'), { code: 'auth/admin-restricted-operation' });
-            vi.mocked(signInAnonymously).mockRejectedValueOnce(error);
+            vi.mocked((auth as unknown as { signInAnonymously: () => Promise<UserCredential> }).signInAnonymously)
+                .mockRejectedValueOnce(error);
             const { loginAsGuest } = useStore.getState();
 
             await expect(loginAsGuest()).rejects.toThrow('restricted');
@@ -258,8 +277,11 @@ describe('AuthSlice', () => {
         });
 
         it('should use centralised error mapper for other errors', async () => {
+            const { auth } = await import('@/services/firebase');
+            (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true;
             const error = Object.assign(new Error('rate limited'), { code: 'auth/too-many-requests' });
-            vi.mocked(signInAnonymously).mockRejectedValueOnce(error);
+            vi.mocked((auth as unknown as { signInAnonymously: () => Promise<UserCredential> }).signInAnonymously)
+                .mockRejectedValueOnce(error);
             const { loginAsGuest } = useStore.getState();
 
             await expect(loginAsGuest()).rejects.toThrow('rate limited');
@@ -406,6 +428,28 @@ describe('AuthSlice', () => {
 
             // Now the logout should have taken effect
             expect(useStore.getState().user).toBeNull();
+        });
+
+        it('should not sync anonymous users to Firestore', async () => {
+            const { auth } = await import('@/services/firebase');
+            const { initializeAuthListener } = useStore.getState();
+
+            let authCallback: (user: unknown) => void = () => { };
+            vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+                authCallback = cb as (user: unknown) => void;
+                return () => { };
+            });
+
+            initializeAuthListener();
+
+            const anonymousUser = { uid: 'anon-user', email: null, isAnonymous: true };
+            (auth as unknown as Record<string, unknown>).currentUser = anonymousUser;
+            authCallback(anonymousUser);
+
+            vi.advanceTimersByTime(500);
+
+            expect(useStore.getState().user).toEqual(anonymousUser);
+            expect(setDoc).not.toHaveBeenCalled();
         });
 
         it('should return early with authLoading=false when API key is fake', async () => {
