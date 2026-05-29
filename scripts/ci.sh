@@ -7,6 +7,15 @@ echo "======================================"
 
 fail=0
 
+echo "--> Step 0: Preflight Config Check"
+if ! npm run preflight:dev; then
+  echo "❌ Preflight config check failed."
+  fail=1
+else
+  echo "✅ Preflight config check passed."
+fi
+
+
 echo "--> Step 1: Duplicate Identifier Check in appSlice.ts"
 if [ -f packages/renderer/src/core/store/slices/appSlice.ts ]; then
   duplicates=$(grep -rn "^  _last\|^  _cached\|^  current\|^  is" packages/renderer/src/core/store/slices/appSlice.ts | sort | uniq -d)
