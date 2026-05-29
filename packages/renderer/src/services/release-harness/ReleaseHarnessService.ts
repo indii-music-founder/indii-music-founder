@@ -101,8 +101,8 @@ function round(value: number): number {
 }
 
 function buildCatalogNumber(artistName?: string, title?: string): string | undefined {
-  if (!artistName && !title) return undefined;
-  const seed = `${artistName ?? 'INDII'} ${title ?? 'RELEASE'}`
+  if (!artistName || !title) return undefined;
+  const seed = `${artistName} ${title}`
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, '')
     .split(/\s+/)
@@ -110,5 +110,6 @@ function buildCatalogNumber(artistName?: string, title?: string): string | undef
     .map(part => part.slice(0, 3))
     .join('')
     .slice(0, 10);
-  return `IND-${seed || 'REL'}-${new Date().getFullYear()}`;
+  if (!seed) return undefined;
+  return `IND-${seed}-${new Date().getFullYear()}`;
 }

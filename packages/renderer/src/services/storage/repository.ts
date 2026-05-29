@@ -194,7 +194,7 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
     const dbLocal = await initDB();
     const user = auth.currentUser;
 
-    // Determine target ID: passed ID > auth ID > 'guest'
+    // Determine target ID: passed ID > auth ID. Unauthenticated sessions do not fabricate profiles.
     const targetId = profileId || user?.uid;
 
     if (!targetId) return undefined;

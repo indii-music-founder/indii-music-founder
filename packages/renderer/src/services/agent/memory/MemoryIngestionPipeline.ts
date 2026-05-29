@@ -20,6 +20,7 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ============================================================================
 // TYPES
@@ -91,8 +92,7 @@ export class MemoryIngestionPipeline {
     // ========================================================================
 
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     /**

@@ -1,7 +1,6 @@
 import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';
-import { secureRandomInt } from '@/utils/crypto-random';
 
 /**
  * MerchandiseAgent - Autonomous-First Merchandise Creation
@@ -566,17 +565,16 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     const retailPrice = unitCost * 2.2;
                     const profit = (retailPrice - unitCost) * quantity;
 
-                    const _result = await MerchandiseService.submitToProduction({
+                    const result = await MerchandiseService.submitToProduction({
                         productId: `${productType}-${Date.now()}`,
                         variantId: `${sizes?.join(',') || 'standard'}-${colors?.join(',') || 'default'}`,
                         quantity
                     });
 
-                    const orderId = `INDII-${Date.now().toString().slice(-6)}-${secureRandomInt(0, 1000)}`;
                     return {
                         success: true,
                         data: {
-                            orderId,
+                            orderId: result.orderId,
                             productType,
                             quantity,
                             sizes: sizes || ['S', 'M', 'L', 'XL'],
@@ -590,7 +588,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             },
                             timeline: '14-21 business days'
                         },
-                        message: `Production order submitted! Order ID: ${orderId}. Total: $${totalCost.toFixed(2)} for ${quantity} units. Estimated delivery: 14-21 days.`
+                        message: `Production request queued. Order ID: ${result.orderId}. Estimated production cost: $${totalCost.toFixed(2)} for ${quantity} units.`
                     };
                 },
                 ask_clarification: async (args) => {

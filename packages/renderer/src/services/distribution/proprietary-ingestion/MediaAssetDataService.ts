@@ -43,6 +43,14 @@ export class MediaAssetDataService {
 
     private buildRelease(metadata: ExtendedGoldenMetadata): MediaAssetDataRelease {
         const resources = this.buildResources(metadata);
+        const headline = this.requireText(
+            metadata.releaseTitle || metadata.trackTitle,
+            'Release or track title is required for MediaAssetData headline.'
+        );
+        const artistName = this.requireText(
+            metadata.artistName,
+            'Artist name is required for MediaAssetData.'
+        );
 
         return {
             releaseId: {
@@ -52,10 +60,10 @@ export class MediaAssetDataService {
             releaseReference: 'R1',
             detailsByTerritory: [{
                 territoryCode: 'Worldwide',
-                displayArtistName: metadata.artistName,
+                displayArtistName: artistName,
                 artistBiographies: this.extractBiographies(metadata),
                 promotionalDetails: {
-                    headline: metadata.releaseTitle || metadata.trackTitle || 'Untitled Release',
+                    headline,
                     marketingMessage: metadata.marketingComment // Assuming description is used for marketing
                 }
             }],
@@ -68,10 +76,14 @@ export class MediaAssetDataService {
         if (!metadata.tracks) return [];
 
         return metadata.tracks.map((track, index) => {
+            const isrc = this.requireText(
+                track.isrc,
+                `ISRC is required for MediaAssetData resource ${index + 1}.`
+            );
             const resource: MediaAssetDataResource = {
                 resourceReference: `A${index + 1}`,
                 resourceId: {
-                    isrc: track.isrc || ''
+                    isrc
                 },
                 resourceType: 'SoundRecording',
                 lyrics: track.lyrics ? [{
@@ -97,6 +109,12 @@ export class MediaAssetDataService {
             }];
         }
         return undefined;
+    }
+
+    private requireText(value: string | undefined, message: string): string {
+        const trimmed = value?.trim();
+        if (!trimmed) throw new Error(message);
+        return trimmed;
     }
 }
 

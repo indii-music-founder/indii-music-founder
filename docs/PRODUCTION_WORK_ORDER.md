@@ -287,6 +287,16 @@ Replace `Math.random` with proper ID generation in non-test service files.
 
 ---
 
+## WO-11: Synthetic Training Corpus Purge
+
+| Task | Detail |
+|------|--------|
+| **Corpus quarantine** | Treat `docs/agent-training/datasets/*.jsonl` as synthetic internal training data until each example is provenance-reviewed |
+| **Identity cleanup** | Remove generated personas, placeholder artist names, and any examples with no real account/email provenance |
+| **Harness update** | Update `packages/renderer/src/test/harness-datasets.test.ts` and dataset quality tests after the purge so CI tracks the smaller trusted corpus |
+
+---
+
 ## Summary
 
 | WO | Description | Scope |

@@ -51,7 +51,7 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
   isrc: '',
   explicit: false,
   genre: '',
-  splits: [{ legalName: '', role: 'performer', percentage: 100, email: '' }],
+  splits: [],
   pro: 'None',
   publisher: 'Self-Published',
   containsSamples: false,

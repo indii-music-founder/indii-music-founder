@@ -411,7 +411,7 @@ export class CostControlService {
         logger.warn('[CostControl] Local dev cost ledger unavailable. Blocking operation.');
         return {
           allowed: false,
-          reason: 'Cost control ledger unavailable in local development. Enable FIREBASE_E2E_MOCK for tests or configure Firestore.',
+          reason: 'Cost control ledger unavailable. Run an explicit VITE_E2E test harness or configure Firestore.',
           remainingBudget: 0,
           dailyUsed: 0,
           monthlyUsed: 0,

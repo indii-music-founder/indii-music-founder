@@ -22,13 +22,19 @@ import { logger } from '@/utils/logger';
  */
 const prepare_release = wrapTool('prepare_release', async (args: {
     title: string;
-    artist: string;
-    upc: string;
-    isrc: string;
-    label?: string;
-    releaseType?: string;
-}) => {
-    const { title, artist, upc, isrc, label = 'indii Records', releaseType = 'Single' } = args;
+	    artist: string;
+	    upc: string;
+	    isrc: string;
+	    label: string;
+	    genre: string;
+	    language: string;
+	    releaseDate: string;
+	    releaseType?: string;
+	}) => {
+	    const { title, artist, upc, isrc, label, genre, language, releaseDate, releaseType = 'Single' } = args;
+	    if (!label || !genre || !language || !releaseDate) {
+	        return toolError('Distribution preparation requires label, genre, language, and release date. No placeholder metadata was generated.', 'MISSING_RELEASE_METADATA');
+	    }
 
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
@@ -47,7 +53,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                     artistNames: [artist]
                 }],
                 label: label,
-                genre: 'Pop'
+	                genre
             });
 
             return toolSuccess({
@@ -74,15 +80,15 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             artistName: artist,
             isrc,
             upc,
-            labelName: label,
-            releaseType: releaseType as 'Single' | 'EP' | 'Album',
-            genre: 'Pop',
-            subGenre: '',
-            language: 'eng',
-            releaseDate: new Date().toISOString().split('T')[0]!,
+	            labelName: label,
+	            releaseType: releaseType as 'Single' | 'EP' | 'Album',
+	            genre,
+	            subGenre: '',
+	            language,
+	            releaseDate,
             explicit: false,
             tracks: [],
-            splits: [{ legalName: artist, role: 'performer', percentage: 100, email: '' }],
+            splits: [],
             pro: 'None',
             publisher: 'Self-Published',
             containsSamples: false,
@@ -518,22 +524,29 @@ export const DistributionTools = {
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
         // Wire to IngestionNotificationService for ERN export (Item 171)
+        const trackTitle = args.metadata?.title || args.metadata?.trackTitle;
+        const artistName = args.metadata?.artist || args.metadata?.artistName;
+        const labelName = args.metadata?.label || args.metadata?.labelName;
+        if (!trackTitle || !artistName || !args.metadata?.isrc || !args.metadata?.upc || !labelName || !args.metadata?.genre || !args.metadata?.releaseDate || !args.metadata?.language) {
+            return toolError('ERN export requires track title, artist name, ISRC, UPC, label name, genre, release date, and language. No placeholder metadata was generated.', 'MISSING_RELEASE_METADATA');
+        }
+
         // Build ExtendedGoldenMetadata from the provided metadata
         const meta: ExtendedGoldenMetadata = {
             id: args.releaseId,
-            trackTitle: args.metadata?.title || args.metadata?.trackTitle || 'Untitled',
-            artistName: args.metadata?.artist || args.metadata?.artistName || 'Unknown Artist',
-            isrc: args.metadata?.isrc || '',
-            upc: args.metadata?.upc || '',
-            labelName: args.metadata?.label || args.metadata?.labelName || 'indii Records',
+            trackTitle,
+            artistName,
+            isrc: args.metadata.isrc,
+            upc: args.metadata.upc,
+            labelName,
             releaseType: args.metadata?.releaseType || 'Single',
-            genre: args.metadata?.genre || 'Pop',
+            genre: args.metadata.genre,
             subGenre: args.metadata?.subGenre || '',
-            language: args.metadata?.language || 'eng',
-            releaseDate: args.metadata?.releaseDate || new Date().toISOString().split('T')[0],
+            language: args.metadata.language,
+            releaseDate: args.metadata.releaseDate,
             explicit: args.metadata?.explicit ?? false,
             tracks: args.metadata?.tracks || [],
-            splits: args.metadata?.splits || [{ legalName: args.metadata?.artistName || 'Artist', role: 'performer', percentage: 100, email: '' }],
+            splits: args.metadata?.splits || [],
             pro: args.metadata?.pro || 'None',
             publisher: args.metadata?.publisher || 'Self-Published',
             containsSamples: args.metadata?.containsSamples ?? false,

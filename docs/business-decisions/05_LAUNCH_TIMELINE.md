@@ -142,7 +142,7 @@ These are not launch blockers but should happen within 90 days:
 | Launch + 30 days | Attorney partnership deal structure agreed (if pursuing) |
 | Launch + 60 days | Proprietary System Identifier received — begin peer conformance testing |
 | Launch + 90 days | ASCAP/BMI IPI number received — enable performance royalty features |
-| Launch + 6 months | First direct DSP delivery via proprietary ingestion IP (Phase B) |
+| Launch + 6 months | Target first direct DSP delivery via proprietary ingestion IP after peer conformance testing (Phase B) |
 
 ---
 
@@ -153,4 +153,3 @@ These are not launch blockers but should happen within 90 days:
 **Go-live date:** `_________________________________`
 
 This date will be used as the "Effective Date" on all legal documents and becomes the target for the countdown above.
-

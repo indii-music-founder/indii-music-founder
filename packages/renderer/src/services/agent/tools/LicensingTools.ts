@@ -26,15 +26,24 @@ export const LicensingTools = {
         let catalogTracks: Array<{ title: string; artist: string; bpm?: number; genre?: string; mood?: string }> = [];
         try {
             const tracks = await trackLibrary.list();
-            catalogTracks = tracks.map((t: any) => ({
-                title: t.trackTitle || 'Untitled',
-                artist: t.artistName || 'Unknown',
-                bpm: t.bpm,
-                genre: t.genre,
-                mood: t.mood
-            }));
+            const loadedTracks: Array<{ title?: string; artist?: string; bpm?: number; genre?: string; mood?: string }> = tracks
+                .map((t: any) => ({
+                    title: t.trackTitle,
+                    artist: t.artistName,
+                    bpm: t.bpm,
+                    genre: t.genre,
+                    mood: t.mood
+                }));
+            catalogTracks = loadedTracks.filter(
+                (t): t is { title: string; artist: string; bpm?: number; genre?: string; mood?: string } =>
+                    Boolean(t.title?.trim() && t.artist?.trim())
+            );
         } catch (e: unknown) {
-            logger.warn('[LicensingTools] Could not load catalog, using AI-only matching:', e);
+            logger.warn('[LicensingTools] Could not load catalog:', e);
+        }
+
+        if (catalogTracks.length === 0) {
+            return toolError('No catalog tracks with real title and artist metadata are available for sync matching.', 'CATALOG_METADATA_REQUIRED');
         }
 
         // 2. Use Gemini to analyze the brief and match against catalog
@@ -47,10 +56,7 @@ export const LicensingTools = {
         Target BPM: ${args.targetBpm}
         
         Available Catalog (${catalogTracks.length} tracks):
-        ${catalogTracks.length > 0
-                ? catalogTracks.map(t => `- "${t.title}" by ${t.artist} | BPM: ${t.bpm || 'unknown'} | Mood: ${t.mood || 'unknown'} | Genre: ${t.genre || 'unknown'}`).join('\n')
-                : 'No catalog loaded — generate 3 example suggestions based on the brief criteria.'
-            }
+        ${catalogTracks.map(t => `- "${t.title}" by ${t.artist} | BPM: ${t.bpm || 'unknown'} | Mood: ${t.mood || 'unknown'} | Genre: ${t.genre || 'unknown'}`).join('\n')}
         
         Return the top matches (up to 5), scored by confidence (0.0–1.0).
         For each match, explain WHY it fits the brief.
