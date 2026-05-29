@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-28 21:11 EDT
+**Updated:** 2026-05-28 21:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7e639d1d4 feat(harness): register all core compilers and update wave 1 flowchart
+dce7ece8a feat(harness): integrate Opportunity Harness compiler and tests
+812f208ac chore: session checkpoint [21:11]
 61165e964 feat(harness): implement A+ Runtime Harness and Stdio MCP Server integration
 ed843b7b0 chore: session checkpoint [21:05]
 245d6f170 chore: session checkpoint [20:53]
@@ -11,17 +14,26 @@ fe191eeb8 chore: session checkpoint [20:46]
 a8b095ae0 chore: session checkpoint [20:40]
 baf9e615b chore: session checkpoint [20:20]
 f94332438 chore: session checkpoint [20:14]
-d5fbb0a1f feat(harness): integrate Upload Intake Harness service, schema validation tests, and training datasets
-6b199cafa refactor: simplify removeVideoJob state update using Object.fromEntries
-90bd1a50c chore: update agent training datasets and add scratch/ to gitignore
 ```
 
 ## Working State
 ```
+ M .claude/settings.json
+ M docs/agent-training/datasets/curriculum.jsonl
+ M docs/agent-training/datasets/distribution.jsonl
+ M docs/agent-training/datasets/legal.jsonl
+ M docs/agent-training/datasets/licensing.jsonl
+ M docs/agent-training/datasets/marketing.jsonl
+ M docs/agent-training/datasets/security.jsonl
  M docs/flowcharts/business-harness-wave-1.md
-A  packages/renderer/src/services/business-harness/OpportunityCompiler.test.ts
-A  packages/renderer/src/services/business-harness/OpportunityCompiler.ts
-M  packages/renderer/src/services/marketing/MarketingGrowthCompiler.test.ts
+ M packages/firebase/firestore.rules
+ M packages/renderer/src/services/business-harness/BusinessHarnessCore.test.ts
+ M packages/renderer/src/services/business-harness/HarnessCatalog.ts
+ M packages/renderer/src/test/harness-datasets.test.ts
+?? append_datasets.cjs
+?? docs/architecture/FIRESTORE_RULES_403_AUDIT.md
+?? expand_datasets.cjs
+?? fix.cjs
 ```
 
 ## Decisions
