@@ -1,41 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-29 01:43 EDT
+**Updated:** 2026-05-29 13:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-3e7ccac68 chore: session checkpoint [01:41]
-7063e64d7 docs: correct Firebase rules validation command in audit doc
-a187638bd chore: session checkpoint [01:38]
-f0ed3005b chore: session checkpoint [01:34]
-622756806 chore: session checkpoint [01:31]
-c96b92000 chore: session checkpoint [01:29]
-7cb68a946 test(firestore): add comprehensive rules coverage for 12 new top-level collections
-f28adf072 chore: session checkpoint [01:22]
-b16d823df feat(governance): integrate MultiTurnAutorater, cost circuit breakers, and 20 architectural system flowcharts
-f7136c5c4 chore: session checkpoint [23:28]
+4720a77bd feat(phase-1-2): merge sprint A, B, and C implementations
+ea2f5710f chore: clean up temp scripts
+1ec493c0b feat(sprint-b): placeholder cleansing (WO-3), verify agent tools (WO-4) and deterministic generators (WO-5)
+883b43708 feat(security): Sprint C - WO-7, WO-8, WO-9
+353f67981 feat(ux): sprint a - complete WO-1 and WO-2
+021e70575 fix(issues): resolve remaining items in OPEN_ISSUES.md
+4f22abd78 fix(ci): fix Agent Zero nomenclature, enforce casing, resolve warnings
+4a0916217 feat(agent): finalize memory engine, trace services, and metadata
+9a67bb227 feat(distribution): stabilize UPC/ISRC services and remote listeners
+08edaec34 feat(studio): implement dashboards, Web3 splits, and touring
 ```
 
 ## Working State
 ```
- M .claude/settings.json
- M packages/firebase/src/stripe/config.ts
- M packages/firebase/src/subscription/createCheckoutSession.ts
- M packages/firebase/src/subscription/trackUsage.ts
- M packages/renderer/src/modules/agent/services/VenueScoutService.ts
- M packages/renderer/src/modules/merchandise/components/BlockchainLedger.tsx
- M packages/renderer/src/modules/merchandise/components/SmartContractGenerator.tsx
- M packages/renderer/src/modules/merchandise/components/StorefrontPreviewModal.tsx
- M packages/renderer/src/modules/merchandise/components/TokenGatedPreview.tsx
- M packages/renderer/src/modules/merchandise/hooks/useMerchandise.test.ts
- M packages/renderer/src/modules/merchandise/hooks/useMerchandise.ts
- M packages/renderer/src/services/analytics/PlatformDataService.ts
- M packages/renderer/src/services/billing/CostControlService.ts
- M packages/renderer/src/services/blockchain/SmartContractService.test.ts
- M packages/renderer/src/services/blockchain/SmartContractService.ts
- M packages/renderer/src/services/legal/DigitalSignatureService.ts
- M packages/renderer/src/services/pod/PrintOnDemandService.test.ts
- M packages/renderer/src/services/pod/PrintOnDemandService.ts
+?? .agent/test_ledger/ERROR_LEDGER.md
 ```
 
 ## Decisions
