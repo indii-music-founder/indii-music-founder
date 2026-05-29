@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
@@ -44,6 +45,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     logisticsReport,
     onUpdateStop
 }) => {
+    const { t } = useTranslation();
     const [selectedStop, setSelectedStop] = useState<ItineraryStop | null>(null);
 
 
@@ -97,7 +99,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         type="text"
                                         value={newLocation}
                                         onChange={(e) => setNewLocation(e.target.value)}
-                                        placeholder="Enter City, State (e.g. Austin, TX)"
+                                        placeholder={t('touring.hints.city_state_example')}
                                         className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all font-mono"
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
                                     />
