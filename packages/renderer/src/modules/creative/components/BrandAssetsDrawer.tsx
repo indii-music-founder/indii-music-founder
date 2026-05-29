@@ -173,47 +173,31 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             let downloadUrl = '';
             const assetId = crypto.randomUUID();
 
-            // Check if we should use mock generation (either no auth or explicit guest)
-            const isGuest = !auth.currentUser || userProfile?.id === 'guest';
-            
-            if (import.meta.env.DEV && isGuest) {
-                logger.warn("[BrandAssets] Mocking generation for guest session:", prompt);
-                downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
-                await new Promise(resolve => setTimeout(resolve, 1500));
+            if (!auth.currentUser || !userProfile?.id || userProfile.id === 'guest') {
+                throw new Error('User must be authenticated to generate brand assets.');
+            }
+
+            const { httpsCallable } = await import('firebase/functions');
+            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+
+            const response = await generateImage({
+                prompt: prompt + " -- style: high quality, professional brand asset",
+                count: 1,
+                aspectRatio: '1:1'
+            });
+
+            const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
+            const candidate = data.candidates?.[0];
+            const part = candidate?.content?.parts?.find(p => p.inlineData);
+
+            if (part?.inlineData) {
+                const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                const res = await fetch(base64Url);
+                const blob = await res.blob();
+                const path = `users/${userProfile.id}/brand_assets/${assetId}`;
+                downloadUrl = await StorageService.uploadFile(blob, path);
             } else {
-                try {
-                    const { httpsCallable } = await import('firebase/functions');
-                    const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-                    const response = await generateImage({
-                        prompt: prompt + " -- style: high quality, professional brand asset",
-                        count: 1,
-                        aspectRatio: '1:1'
-                    });
-
-                    const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
-                    const candidate = data.candidates?.[0];
-                    const part = candidate?.content?.parts?.find(p => p.inlineData);
-
-                    if (part?.inlineData) {
-                        const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                        const res = await fetch(base64Url);
-                        const blob = await res.blob();
-                        const path = `users/${userProfile?.id}/brand_assets/${assetId}`;
-                        
-                        // StorageService now handles DEV-mode permission fallbacks internally
-                        downloadUrl = await StorageService.uploadFile(blob, path);
-                    } else {
-                        throw new Error("No image data in Autonomous response");
-                    }
-                } catch (apiError: unknown) {
-                    if (import.meta.env.DEV) {
-                        logger.error("[BrandAssets] Autonomous API failed in dev, falling back to mock", apiError);
-                        downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
-                    } else {
-                        throw apiError;
-                    }
-                }
+                throw new Error("No image data in Autonomous response");
             }
 
             if (downloadUrl) {

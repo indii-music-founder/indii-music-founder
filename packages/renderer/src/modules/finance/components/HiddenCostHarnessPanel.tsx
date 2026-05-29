@@ -6,14 +6,17 @@ import { hiddenCostHarnessService } from '@/services/business-harness';
 export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {
   const costLines = useMemo(() => {
     const expenseLines = expenses.slice(0, 20).map(expense => hiddenCostHarnessService.buildExpenseCostLine(expense));
-    const scenario = hiddenCostHarnessService.buildGuitarStoreScenario({
-      userId: expenses[0]?.userId ?? 'founder-demo-uid',
-      equipmentCost: 14.99,
-      milesRoundTrip: 18,
-      driveMinutes: 42,
-      hourlyRate: 50,
-      mileageRate: 0.7,
-    });
+    const userId = expenses[0]?.userId;
+    const scenario = userId
+      ? hiddenCostHarnessService.buildGuitarStoreScenario({
+        userId,
+        equipmentCost: 14.99,
+        milesRoundTrip: 18,
+        driveMinutes: 42,
+        hourlyRate: 50,
+        mileageRate: 0.7,
+      })
+      : [];
     return [...expenseLines, ...scenario];
   }, [expenses]);
   const summary = useMemo(() => hiddenCostHarnessService.summarizeCostLines(costLines), [costLines]);
@@ -80,4 +83,3 @@ function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; 
     </div>
   );
 }
-

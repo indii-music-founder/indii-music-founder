@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Unlock, ShieldAlert } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 export const SessionTimeoutOverlay: React.FC = () => {
     const [isIdle, setIsIdle] = useState(false);
-    const [isUnlocking, setIsUnlocking] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const resetTimer = useCallback(() => {
@@ -44,13 +43,8 @@ export const SessionTimeoutOverlay: React.FC = () => {
     }, [resetTimer]);
 
     const handleUnlock = () => {
-        setIsUnlocking(true);
-        // Simulate a brief verification delay
-        setTimeout(() => {
-            setIsIdle(false);
-            setIsUnlocking(false);
-            resetTimer();
-        }, 800);
+        setIsIdle(false);
+        resetTimer();
     };
 
     return (
@@ -75,33 +69,23 @@ export const SessionTimeoutOverlay: React.FC = () => {
 
                         <div className="relative z-10 flex flex-col items-center">
                             <motion.div
-                                animate={isUnlocking ? { rotateY: 180 } : {}}
-                                transition={{ duration: 0.6 }}
                                 className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                             >
-                                {isUnlocking ? <Unlock size={32} /> : <Lock size={32} />}
+                                <Lock size={32} />
                             </motion.div>
 
-                            <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Session Locked</h2>
+                            <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Workspace Paused</h2>
                             <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                                For your security, we've locked your session due to inactivity. All your unsaved work is preserved.
+                                Your workspace was paused due to inactivity. This overlay does not replace account re-authentication.
                             </p>
 
                             <button
                                 onClick={handleUnlock}
-                                disabled={isUnlocking}
-                                className="w-full relative group overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 text-white rounded-2xl py-4 font-bold tracking-wider uppercase text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full relative group overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 text-white rounded-2xl py-4 font-bold tracking-wider uppercase text-sm transition-all duration-300"
                             >
                                 <div className="absolute inset-0 bg-blue-500/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                 <span className="relative z-10 flex items-center justify-center gap-2">
-                                    {isUnlocking ? (
-                                        <>
-                                            <ShieldAlert size={16} className="animate-pulse" />
-                                            Verifying...
-                                        </>
-                                    ) : (
-                                        'Click to Resume'
-                                    )}
+                                    Click to Resume
                                 </span>
                             </button>
                         </div>

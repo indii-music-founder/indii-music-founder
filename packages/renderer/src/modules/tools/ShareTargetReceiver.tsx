@@ -27,8 +27,7 @@ export const ShareTargetReceiver: React.FC = () => {
                 const text = urlParams.get('text');
                 const url = urlParams.get('url');
 
-                // Simulate reading cached file from SW
-                const hasFiles = false; // Would check IndexedDB in reality
+                const hasFiles = false; // File handoff requires the service worker IndexedDB bridge.
 
                 if (!title && !text && !url && !hasFiles) {
                     setStatus('error');

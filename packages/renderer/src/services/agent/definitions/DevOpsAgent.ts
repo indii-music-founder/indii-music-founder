@@ -1,7 +1,5 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
 
 const systemPrompt = `
 ## MISSION
@@ -114,24 +112,22 @@ export const DevOpsAgent: AgentConfig = {
     systemPrompt,
     functions: {
         list_clusters: async () => {
-            const prompt = "Generate a status list of GKE clusters (PROD-US, STAGING-EU) with version, nodes, and status. Return as JSON.";
-            return { success: true, data: await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema) };
+            return { success: false, error: 'Cluster listing requires a connected cloud provider. No cluster data was generated.' };
         },
         get_cluster_status: async (args: { cluster_id: string }) => {
-            const prompt = `Generate a detailed health report for GKE cluster "${args.cluster_id}". Include cpu_usage, memory_usage, and active_alerts. Return as JSON.`;
-            return { success: true, data: await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema) };
+            void args;
+            return { success: false, error: 'Cluster status requires a connected cloud provider. No health report was generated.' };
         },
         scale_deployment: async (args: { deployment: string, replicas: number }) => {
-            const prompt = `Simulate scaling deployment "${args.deployment}" to ${args.replicas} replicas. Return a success message and new status.`;
-            return { success: true, data: { message: await AutonomousIntelligence.generateText(prompt) } };
+            void args;
+            return { success: false, error: 'Scaling deployments requires a connected cloud provider. No deployment was changed.' };
         },
         list_instances: async () => {
-            const prompt = "List active GCE instances (web-server-1, db-node-primary) with zones and IPs. Return as JSON.";
-            return { success: true, data: await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema) };
+            return { success: false, error: 'Instance listing requires a connected cloud provider. No instance data was generated.' };
         },
         restart_service: async (args: { service_name: string }) => {
-            const prompt = `Simulate restarting service "${args.service_name}". Generate a log of the shutdown and startup process.`;
-            return { success: true, data: { logs: await AutonomousIntelligence.generateText(prompt) } };
+            void args;
+            return { success: false, error: 'Restarting services requires a connected cloud provider. No service was restarted.' };
         }
     },
     authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'browser_tool', 'credential_vault'],

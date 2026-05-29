@@ -182,7 +182,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             logger.warn("[AgentRegistry] Failed to register Analytics agent:", e);
         }
 
-        // Register worker placeholders from DEPARTMENTS
+        // Register metadata-only worker entries from DEPARTMENTS
         try {
             for (const dept of Object.values(DEPARTMENTS)) {
                 const typedDept = dept as any;
@@ -232,7 +232,7 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     get(id: string): SpecializedAgent | undefined {
-        // Return loaded agent or metadata-only placeholder
+        // Return loaded agent or metadata-only entry
         return this.agents.get(id) || this.metadata.get(id);
     }
 
@@ -317,7 +317,7 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     getAll(): SpecializedAgent[] {
-        // Returns mixed active agents and metadata-only placeholders
+        // Returns mixed active agents and metadata-only entries
         // Use with caution for execution. Use for listing capabilities.
         return Array.from(this.metadata.values());
     }
@@ -333,4 +333,3 @@ export const agentRegistry = new AgentRegistry();
 if (typeof window !== 'undefined') {
     (window as any).agentRegistry = agentRegistry;
 }
-

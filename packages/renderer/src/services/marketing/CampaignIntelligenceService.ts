@@ -13,20 +13,6 @@ import {
     EnhancementType,
     Platform
 } from '@/modules/marketing/types';
-/**
- * Mock interface for test injection via window global.
- * Used by E2E and integration tests to stub image generation.
- */
-interface CampaignIntelligenceMockService {
-    generatePostImages: (posts: ScheduledPost[], onProgress?: (progress: BatchImageProgress) => void) => Promise<ScheduledPost[]>;
-    generateSingleImage: (post: ScheduledPost) => Promise<string | null>;
-}
-
-declare global {
-    interface Window {
-        __MOCK_CAMPAIGN_INTELLIGENCE_SERVICE__?: CampaignIntelligenceMockService;
-    }
-}
 
 /**
  * CampaignIntelligenceService - Intelligence-driven campaign features
@@ -298,11 +284,6 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
         posts: ScheduledPost[],
         onProgress?: (progress: BatchImageProgress) => void
     ): Promise<ScheduledPost[]> {
-        // Mock Support
-        if (typeof window !== 'undefined' && window.__MOCK_CAMPAIGN_INTELLIGENCE_SERVICE__) {
-            return window.__MOCK_CAMPAIGN_INTELLIGENCE_SERVICE__.generatePostImages(posts, onProgress);
-        }
-
         const postsNeedingImages = posts.filter(p => !p.imageAsset.imageUrl);
         const total = postsNeedingImages.length;
 
@@ -342,7 +323,14 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                 } as ScheduledPost);
 
             } catch (_error: unknown) {
-                // Continue with other posts, don't fail the whole batch
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total,
+                        currentPostId: post.id,
+                        status: 'error'
+                    });
+                }
             }
         }
 
@@ -363,22 +351,13 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
      * Generate a single image for a post
      */
     async generateSingleImage(post: ScheduledPost): Promise<string | null> {
-        // Mock Support
-        if (typeof window !== 'undefined' && window.__MOCK_CAMPAIGN_INTELLIGENCE_SERVICE__) {
-            return window.__MOCK_CAMPAIGN_INTELLIGENCE_SERVICE__.generateSingleImage(post);
-        }
+        const imagePrompt = post.imageAsset.caption
+            ? await this.enhanceImagePrompt(post.imageAsset.caption)
+            : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-        try {
-            const imagePrompt = post.imageAsset.caption
-                ? await this.enhanceImagePrompt(post.imageAsset.caption)
-                : await this.generateImagePromptFromCopy(post.copy, post.platform);
+        const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
 
-            const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
-
-            return `data:image/png;base64,${base64}`;
-        } catch (_error: unknown) {
-            return null;
-        }
+        return `data:image/png;base64,${base64}`;
     }
 
     /**

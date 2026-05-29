@@ -35,54 +35,21 @@ export class CopyrightFilterService {
         const fingerprint = await fingerprintService.generateFingerprint(file);
 
         if (!fingerprint) {
-            logger.warn(`[CopyrightFilter] Failed to fingerprint ${file.name}. Skipping screen.`);
-            return {
-                status: 'safe',
-                score: 0,
-                matches: [],
-                auditId: `audit_${Date.now()}`,
-                checkedAt: Date.now()
-            };
+            throw new Error(`Copyright screening failed: unable to fingerprint ${file.name}.`);
         }
 
-        // 2. Query Global Metadata Registry (Mocking response)
-        const report = await this.queryRegistryMock(fingerprint, file.name || 'untitled');
+        // 2. Query Global Metadata Registry
+        const report = await this.queryRegistry(fingerprint, file.name || 'untitled');
 
         logger.info(`[CopyrightFilter] Screen complete for ${file.name}. Status: ${report.status}`);
 
         return report;
     }
 
-    /**
-     * Simulates querying a global database of copyrighted fingerprint IDs.
-     */
-    private async queryRegistryMock(fingerprint: string, filename: string): Promise<CopyrightReport> {
-        // Mocked logic for demonstration
-        const isMockKnownTrack = filename.toLowerCase().includes('sample_test');
-
-        if (isMockKnownTrack) {
-            return {
-                status: 'high_risk',
-                score: 92.5,
-                matches: [{
-                    title: 'Famous Hit Track',
-                    artist: 'Classic Artist',
-                    label: 'Major Label Group',
-                    matchPercentage: 92.5,
-                    isAuthorized: false
-                }],
-                auditId: `audit_${Date.now()}`,
-                checkedAt: Date.now()
-            };
-        }
-
-        return {
-            status: 'safe',
-            score: 0,
-            matches: [],
-            auditId: `audit_${Date.now()}`,
-            checkedAt: Date.now()
-        };
+    private async queryRegistry(fingerprint: string, filename: string): Promise<CopyrightReport> {
+        void fingerprint;
+        void filename;
+        throw new Error('Copyright fingerprint registry is not configured. No clearance report was generated.');
     }
 
     /**

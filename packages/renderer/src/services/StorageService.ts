@@ -65,20 +65,8 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
      */
     async uploadFile(file: Blob | File, path: string): Promise<string> {
         const { auth } = await import('./firebase');
-        
-        // Helper to create a local URL for dev fallback
-        const createLocalFallback = async (): Promise<string> => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(file);
-            });
-        };
-
-        // DEV BYPASS: If explicitly unauthenticated in dev, short-circuit early
-        if (import.meta.env.DEV && !auth.currentUser) {
-            logger.warn(`StorageService: Mocking upload for ${path} (Unauthenticated Dev)`);
-            return createLocalFallback();
+        if (!auth.currentUser) {
+            throw new Error('User must be authenticated to upload files.');
         }
 
         try {
@@ -86,15 +74,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             await uploadBytes(storageRef, file);
             return await getDownloadURL(storageRef);
         } catch (error: unknown) {
-            // DEV FAILOVER: If upload fails due to permissions in dev, fall back to local URL
-            // This handles cases where auth.currentUser exists but lacks permissions for the path.
-            if (import.meta.env.DEV) {
-                const storageError = error as { code?: string; message?: string };
-                if (storageError.code === 'storage/unauthorized' || storageError.message?.includes('permission')) {
-                    logger.warn(`StorageService: Permission denied for ${path} in DEV. Falling back to local URL.`);
-                    return createLocalFallback();
-                }
-            }
+            logger.error(`StorageService: Upload failed for ${path}`, error);
             throw error;
         }
     }
@@ -108,14 +88,8 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         onProgress: (progress: number) => void
     ): Promise<string> {
         const { auth } = await import('./firebase');
-
-        // DEV BYPASS: Progress mock
-        if (import.meta.env.DEV && !auth.currentUser) {
-            logger.warn(`StorageService: Mocking progress upload for ${path}`);
-            onProgress(50);
-            const url = await this.uploadFile(file, path);
-            onProgress(100);
-            return url;
+        if (!auth.currentUser) {
+            throw new Error('User must be authenticated to upload files.');
         }
 
         const { uploadBytesResumable } = await import('firebase/storage');
@@ -190,11 +164,11 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         logger.info(`[StorageService] Video thumbnail: ${thumbnailUrl}`);
                     }
                 } catch (uploadError: unknown) {
-                    logger.warn('[StorageService] Video blob upload failed, saving blob URL as fallback:', uploadError);
-                    // Still save the blob: URL — at least the current session can play it
+                    logger.error('[StorageService] Video blob upload failed:', uploadError);
+                    throw uploadError;
                 }
             } else {
-                logger.warn('[StorageService] No auth — cannot upload video blob to Storage');
+                throw new Error('User must be authenticated to upload generated video assets.');
             }
         }
 
@@ -202,9 +176,6 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         if (item.url.startsWith('data:')) {
             const { auth } = await import('./firebase');
             const userId = auth.currentUser?.uid;
-
-            // Phase 1 Optimization: Always attempt upload if size > 500KB
-            const isLarge = item.url.length > 500000;
 
             if (userId) {
                 try {
@@ -218,29 +189,19 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     logger.debug(`[StorageService] Image saved (${result.strategy}):`, item.id);
                 } catch (error: unknown) {
                     logger.error('[StorageService] Cloud upload failed:', error);
-                    // Critical protection: If it's large and upload failed, we CANNOT save it as-is
-                    if (isLarge) {
-                        imageUrl = 'placeholder:upload-failed-large-asset';
-                        logger.error('[StorageService] Asset too large for Firestore, set to placeholder');
-                        events.emit('SYSTEM_ALERT', { level: 'warning', message: 'Large image upload failed. Saved as placeholder.' });
-                    }
+                    events.emit('SYSTEM_ALERT', { level: 'error', message: 'Image upload failed' });
+                    throw error;
                 }
-            } else if (import.meta.env.DEV) {
-                if (isLarge) {
-                    logger.warn('[StorageService] No auth in dev - large image blocked. Use proper auth.');
-                    imageUrl = 'placeholder:dev-unauthenticated-large-asset';
-                }
+            } else {
+                throw new Error('User must be authenticated to upload generated image assets.');
             }
         }
 
         // Get Current Org ID
         const orgId = OrganizationService.getCurrentOrgId();
         const { auth } = await import('./firebase');
-
-        // DEV BYPASS: If no user is logged in during dev, skip Firestore to prevent permission errors
-        if (import.meta.env.DEV && !auth.currentUser) {
-            logger.warn("StorageService: Skipping Firestore write (Unauthenticated Dev Session)");
-            return item.id;
+        if (!auth.currentUser) {
+            throw new Error('User must be authenticated to save generated history.');
         }
 
         // Use 'set' instead of 'add' to ensure Firestore ID matches local ID
@@ -251,7 +212,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             timestamp: Timestamp.fromMillis(item.timestamp),
             projectId: item.projectId || 'default-project',
             orgId: orgId || 'personal',
-            userId: auth.currentUser?.uid || null
+            userId: auth.currentUser.uid
         } as HistoryDocument);
 
         return item.id;

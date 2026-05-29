@@ -117,8 +117,8 @@ export class GraphDecompositionService {
 
         } catch (error: any) {
             logger.error('[GraphDecomposition] Decomposition failed:', error);
-            // Fallback to a single-node generalist graph
-            return this.createFallbackGraph(userQuery);
+            void userQuery;
+            throw new Error(`Graph decomposition failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -171,27 +171,6 @@ export class GraphDecompositionService {
         }
     }
 
-    private createFallbackGraph(userQuery: string): AgentGraph {
-        const nodeId = 'fallback_node';
-        return {
-            id: uuidv4(),
-            name: 'Fallback Workflow',
-            description: 'Simple single-agent routing',
-            nodes: [{
-                id: nodeId,
-                agentId: 'generalist',
-                taskTemplate: userQuery,
-                waitCondition: 'all'
-            }],
-            edges: [],
-            entryNodeId: nodeId,
-            metadata: {
-                version: '1.0.0',
-                author: 'indii-architect',
-                createdAt: Date.now()
-            }
-        };
-    }
 }
 
 export const graphDecompositionService = new GraphDecompositionService();

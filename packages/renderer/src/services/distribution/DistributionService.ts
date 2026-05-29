@@ -14,6 +14,7 @@ import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firesto
 import { ref, uploadString } from 'firebase/storage';
 import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
     MerlinCheckData, MerlinReport,
     BWarmData,
@@ -37,8 +38,7 @@ export type { DistributionTaskDocument as DistributionTask };
 /** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
 async function writeMetadataSnapshot(releaseId: string, metadata: IngestionMetadata): Promise<void> {
     try {
-        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
-        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+        if (isFirebaseE2EMockEnabled()) return;
 
         const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
         await addDoc(historyCol, {
@@ -57,8 +57,7 @@ async function writeDistributionAuditEvent(
     event: { type: string; status: string; detail?: string }
 ): Promise<void> {
     try {
-        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
-        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+        if (isFirebaseE2EMockEnabled()) return;
 
         const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
         await addDoc(eventsCol, {
@@ -82,7 +81,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Track a new distribution task in Firestore
      */
     async createTask(type: DistributionTaskDocument['type'], title: string, metadata: Record<string, unknown> = {}): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return `e2e-task-${Date.now()}`;
         }
         const userId = auth.currentUser?.uid;
@@ -102,7 +101,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Update task progress and status
      */
     async updateTask(taskId: string, updates: Partial<Pick<DistributionTaskDocument, 'status' | 'progress' | 'subtext' | 'error' | 'metadata'>>) {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return;
         }
         await this.update(taskId, updates);
@@ -544,7 +543,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         assets: Array<{ id: string; type: string; url: string; role: string }>;
         metadata?: Record<string, unknown>;
     }): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return `e2e-release-${Date.now()}`;
         }
 
@@ -632,7 +631,10 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 releaseData.upc = await upcService.assignNextUPC(releaseId);
                 logger.info(`[Distribution] Auto-assigned UPC ${releaseData.upc} to release "${releaseData.title}"`);
                 // Record in registry for audit trail
-                const userId = auth.currentUser?.uid ?? 'founder-demo-uid';
+                const userId = auth.currentUser?.uid;
+                if (!userId) {
+                    throw new Error('User must be authenticated to record UPC assignment.');
+                }
                 upcService.recordAssignment({
                     upc: releaseData.upc,
                     releaseId,

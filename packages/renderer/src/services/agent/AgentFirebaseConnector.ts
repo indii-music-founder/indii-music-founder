@@ -39,7 +39,19 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
      */
     async syncMessage(msg: AgentMessage): Promise<void> {
         try {
-            const userId = auth.currentUser?.uid || 'founder-demo-uid';
+            const isE2EMode = typeof window !== 'undefined' && (
+                Boolean((window as any).FIREBASE_E2E_MOCK) ||
+                localStorage.getItem('FIREBASE_E2E_MOCK') === 'true'
+            );
+            if (isE2EMode) {
+                logger.debug(`[AgentFirebaseConnector] Skipping Firestore sync for E2E message ${msg.id}.`);
+                return;
+            }
+
+            const userId = auth.currentUser?.uid;
+            if (!userId) {
+                throw new Error('User must be authenticated to sync agent messages.');
+            }
 
             // Clean thoughts, converting timestamps to Firestore Timestamps
             const cleanedThoughts = msg.thoughts?.map(thought => ({
@@ -72,6 +84,7 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
             logger.debug(`[AgentFirebaseConnector] Successfully synced message ${msg.id} to Firestore.`);
         } catch (error: unknown) {
             logger.error(`[AgentFirebaseConnector] Failed to sync message ${msg.id} to Firestore:`, error);
+            throw error;
         }
     }
 }

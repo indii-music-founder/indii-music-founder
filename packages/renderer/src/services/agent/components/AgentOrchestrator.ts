@@ -13,7 +13,10 @@ import { logger } from '@/utils/logger';
 
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to determine an agent.');
+        }
 
         // Start Trace
         const traceId = await TraceService.startTrace(userId, 'orchestrator', userQuery, {

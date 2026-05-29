@@ -414,7 +414,7 @@ describe('CampaignIntelligenceService', () => {
             expect(AI.generateImage).toHaveBeenCalledTimes(1);
         });
 
-        it('should return null on failure', async () => {
+        it('should throw on failure', async () => {
             (AI.generateImage as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Failed'));
 
             const post = {
@@ -426,9 +426,7 @@ describe('CampaignIntelligenceService', () => {
                 status: CampaignStatus.PENDING
             };
 
-            const result = await CampaignIntelligence.generateSingleImage(post);
-
-            expect(result).toBeNull();
+            await expect(CampaignIntelligence.generateSingleImage(post)).rejects.toThrow('Failed');
         });
     });
 

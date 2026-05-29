@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
-import { Logger } from '@/core/logger/Logger';
 import {
     CampaignBrief,
     CampaignAsset,
@@ -100,20 +99,7 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
         };
 
         try {
-            // E2E test hook — only active in dev/test builds, stripped in production
-            type WindowWithMockPlan = Window & typeof globalThis & { __MOCK_INTELLIGENCE_PLAN__?: GeneratedCampaignPlan };
-            const devWindow = window as WindowWithMockPlan;
-            const mockPlan = import.meta.env.DEV ? devWindow.__MOCK_INTELLIGENCE_PLAN__ : undefined;
-
-            let plan: GeneratedCampaignPlan;
-            if (mockPlan) {
-                Logger.info('CampaignModal', "Using Mock Intelligence Plan (DEV):", mockPlan);
-                plan = mockPlan;
-                devWindow.__MOCK_INTELLIGENCE_PLAN__ = undefined;
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
-                plan = await CampaignIntelligence.generateCampaign(brief);
-            }
+            const plan = await CampaignIntelligence.generateCampaign(brief);
 
             setGeneratedPlan(plan);
             toast.success('Campaign plan generated!');

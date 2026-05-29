@@ -1,7 +1,7 @@
 /**
  * PrintOnDemandService Tests
  *
- * Validates the InternalProvider fallback and PrintOnDemandServiceClass
+ * Validates the InternalProvider test fixture and PrintOnDemandServiceClass
  * orchestration layer (product catalog, pricing, orders, provider selection).
  */
 
@@ -52,6 +52,7 @@ describe('PrintOnDemandService', () => {
         postalCode: '37201',
         email: 'artist@test.com',
     };
+    const provider = 'internal' as const;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -62,7 +63,7 @@ describe('PrintOnDemandService', () => {
 
     describe('Internal Provider — Product Catalog', () => {
         it('should return 3 internal products', async () => {
-            const products = await PrintOnDemandService.getProducts();
+            const products = await PrintOnDemandService.getProducts(provider);
 
             expect(products.length).toBe(3);
             expect(products.map(p => p.type)).toContain('T-Shirt');
@@ -71,7 +72,7 @@ describe('PrintOnDemandService', () => {
         });
 
         it('should find a product by ID', async () => {
-            const product = await PrintOnDemandService.getProduct('internal-tshirt');
+            const product = await PrintOnDemandService.getProduct('internal-tshirt', provider);
 
             expect(product).not.toBeNull();
             expect(product!.name).toBe('Premium T-Shirt');
@@ -79,20 +80,20 @@ describe('PrintOnDemandService', () => {
         });
 
         it('should return null for unknown product ID', async () => {
-            const product = await PrintOnDemandService.getProduct('nonexistent-999');
+            const product = await PrintOnDemandService.getProduct('nonexistent-999', provider);
 
             expect(product).toBeNull();
         });
 
         it('should search products by name', async () => {
-            const results = await PrintOnDemandService.searchProducts('vinyl');
+            const results = await PrintOnDemandService.searchProducts('vinyl', undefined, provider);
 
             expect(results.length).toBe(1);
             expect(results[0]!.type).toBe('Vinyl Record');
         });
 
         it('should filter search by product type', async () => {
-            const results = await PrintOnDemandService.searchProducts('', 'Hoodie');
+            const results = await PrintOnDemandService.searchProducts('', 'Hoodie', provider);
 
             // All hoodies contain "" (empty query matches all)
             expect(results.length).toBe(1);
@@ -112,7 +113,7 @@ describe('PrintOnDemandService', () => {
                 },
             ];
 
-            const pricing = await PrintOnDemandService.calculatePrice(items);
+            const pricing = await PrintOnDemandService.calculatePrice(items, provider);
 
             // Medium Black T-Shirt is $12.50 × 2 = $25.00
             expect(pricing.subtotal).toBe(25.0);
@@ -138,7 +139,7 @@ describe('PrintOnDemandService', () => {
                 },
             ];
 
-            const pricing = await PrintOnDemandService.calculatePrice(items);
+            const pricing = await PrintOnDemandService.calculatePrice(items, provider);
 
             // T-Shirt $12.50 + Hoodie $24.00 = $36.50
             expect(pricing.subtotal).toBe(36.5);
@@ -148,7 +149,7 @@ describe('PrintOnDemandService', () => {
 
     describe('Internal Provider — Shipping Rates', () => {
         it('should return 3 shipping options', async () => {
-            const rates = await PrintOnDemandService.getShippingRates(testAddress, []);
+            const rates = await PrintOnDemandService.getShippingRates(testAddress, [], provider);
 
             expect(rates).toHaveLength(3);
             expect(rates.map(r => r.id)).toEqual(['standard', 'express', 'overnight']);
@@ -171,7 +172,7 @@ describe('PrintOnDemandService', () => {
                 },
             ];
 
-            const order = await PrintOnDemandService.createOrder(items, testAddress);
+            const order = await PrintOnDemandService.createOrder(items, testAddress, undefined, provider);
 
             expect(order).toBeDefined();
             expect(order.id).toMatch(/^INT-/);
@@ -196,7 +197,7 @@ describe('PrintOnDemandService', () => {
                 },
             ];
 
-            await PrintOnDemandService.createOrder(items, testAddress);
+            await PrintOnDemandService.createOrder(items, testAddress, undefined, provider);
 
             expect(mockSetDoc).toHaveBeenCalled();
         });
@@ -208,7 +209,7 @@ describe('PrintOnDemandService', () => {
             });
             mockUpdateDoc.mockResolvedValue(undefined);
 
-            const result = await PrintOnDemandService.cancelOrder('INT-TEST123');
+            const result = await PrintOnDemandService.cancelOrder('INT-TEST123', provider);
 
             expect(result).toBe(true);
             expect(mockUpdateDoc).toHaveBeenCalledWith(
@@ -223,7 +224,7 @@ describe('PrintOnDemandService', () => {
                 data: () => ({ status: 'shipped' } as Partial<PODOrder>),
             });
 
-            const result = await PrintOnDemandService.cancelOrder('INT-SHIPPED');
+            const result = await PrintOnDemandService.cancelOrder('INT-SHIPPED', provider);
 
             expect(result).toBe(false);
             expect(mockUpdateDoc).not.toHaveBeenCalled();
@@ -232,7 +233,7 @@ describe('PrintOnDemandService', () => {
         it('should return false for nonexistent order cancellation', async () => {
             mockGetDoc.mockResolvedValue({ exists: () => false });
 
-            const result = await PrintOnDemandService.cancelOrder('INT-GHOST');
+            const result = await PrintOnDemandService.cancelOrder('INT-GHOST', provider);
 
             expect(result).toBe(false);
         });
@@ -249,10 +250,8 @@ describe('PrintOnDemandService', () => {
             expect(PrintOnDemandService.isConfigured('internal')).toBe(false);
         });
 
-        it('should fallback to internal for unknown provider', () => {
-            const provider = PrintOnDemandService.getProvider('gooten' as any);
-            // Should not throw, should return internal
-            expect(provider).toBeDefined();
+        it('should reject unknown or unimplemented providers instead of falling back', () => {
+            expect(() => PrintOnDemandService.getProvider('gooten' as any)).toThrow('POD provider gooten is not registered or configured.');
         });
     });
 });

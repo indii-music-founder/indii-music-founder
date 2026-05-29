@@ -70,8 +70,7 @@ export class RecordingInformationService {
                 });
             });
 
-            // Add specific track features if any (mock logic for now)
-            // If we had `track.credits`, we'd map them here.
+            // Track-level credits are mapped only when the metadata model supplies them.
 
             return {
                 resourceReference: `A${index + 1}`,

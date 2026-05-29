@@ -33,14 +33,14 @@ export const BillingTools = {
       const userId = auth.currentUser?.uid;
       if (!userId) {
         return {
-          success: true,
+          success: false,
           dailyUsed: 0,
-          dailyRemaining: 5,
+          dailyRemaining: 0,
           monthlyUsed: 0,
-          monthlyRemaining: 50,
+          monthlyRemaining: 0,
           tier: 'free',
           isTestMode: false,
-          message: 'Not signed in. Using free tier limits ($5/day, $50/month).',
+          message: 'Not signed in. Budget status unavailable; expensive operations are blocked.',
         };
       }
 
@@ -91,7 +91,16 @@ export const BillingTools = {
     message: string;
   }> => {
     try {
-      const userId = auth.currentUser?.uid || 'founder-demo-uid';
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        return {
+          success: false,
+          estimatedCost: 0,
+          willFit: false,
+          warning: 'Cost estimation requires an authenticated user.',
+          message: 'Cannot estimate cost without authentication. Operation blocked.',
+        };
+      }
       const status = await CostControlService.getStatus(userId);
 
       let estimatedCost = 0;

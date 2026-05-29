@@ -141,19 +141,8 @@ const run_audio_qc = wrapTool('run_audio_qc', async (args: {
         }, `Audio QC completed for ${filePath}`);
     }
 
-    // Browser fallback - return basic validation
-    return toolSuccess({
-        file: filePath,
-        environment: 'browser',
-        checks: {
-            bit_depth: { value: 'unknown', status: 'SKIPPED' },
-            sample_rate: { value: 'unknown', status: 'SKIPPED' },
-            spectral_cutoff: { detected: false, status: 'SKIPPED' },
-            atmos_compliance: checkAtmos ? { status: 'SKIPPED', reason: 'Requires Electron' } : null
-        },
-        overall: 'PARTIAL',
-        warnings: ['Full audio QC requires Electron environment']
-    }, `Audio QC partial — full analysis requires Electron environment.`);
+    void checkAtmos;
+    return toolError('Audio QC requires the Electron desktop bridge. No browser-only QC report was generated.', 'QC_BRIDGE_REQUIRED');
 });
 
 /**
@@ -224,15 +213,18 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
  */
 const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     userId: string;
+    fullName?: string;
     isUsPerson: boolean;
     isEntity?: boolean;
     country: string;
     tin: string;
     signedUnderPerjury: boolean;
 }) => {
-    const { userId, isUsPerson, isEntity = false, country, tin, signedUnderPerjury } = args;
+    const { userId, fullName, isUsPerson, country, tin, signedUnderPerjury } = args;
+    if (!fullName?.trim()) {
+        return toolError('Legal name is required to certify a tax profile.', 'LEGAL_NAME_REQUIRED');
+    }
 
-    // 1. Try Bank Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             // Calculate status first
@@ -240,7 +232,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
 
             // Certify - remove userId from the data object as it's passed as first arg
             const certResult = await (window.electronAPI.distribution as any).certifyTax(userId, {
-                fullName: 'Unknown User', // Required by interface fallback
+                fullName: fullName.trim(),
                 country,
                 taxId: tin,
                 usPerson: isUsPerson,
@@ -256,65 +248,16 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
                 };
             }
         } catch (e: unknown) {
-            logger.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Bank Layer certification failed:', e);
+            return toolError('Tax certification failed in the Bank Layer. No certification was recorded.', 'TAX_CERTIFICATION_FAILED');
         }
     }
 
-    // 2. Fallback to JS Service
-    let tinValid = false;
-    let tinMessage = 'Unknown';
-    if (!tin) {
-        tinMessage = 'Missing TIN';
-    } else if (isUsPerson) {
-        tinValid = /^\d{3}-\d{2}-\d{4}$/.test(tin) || /^\d{2}-\d{7}$/.test(tin);
-        tinMessage = tinValid ? 'Valid US TIN' : 'TIN Match Fail (Invalid Format)';
-    } else {
-        tinValid = tin.length >= 8;
-        tinMessage = tinValid ? 'Valid Foreign TIN' : 'TIN Match Fail (Invalid Foreign Format)';
-    }
-
-    const certified = signedUnderPerjury && tinValid;
-
-    // Determine form type
-    let formType = 'Unknown';
-    if (isUsPerson) {
-        formType = 'W-9';
-    } else if (isEntity) {
-        formType = 'W-8BEN-E';
-    } else {
-        formType = 'W-8BEN';
-    }
-
-    // Determine payout status
-    let payoutStatus = 'HELD';
-    if (certified) {
-        payoutStatus = 'ACTIVE';
-    }
-
-    if (!certified) {
-        return {
-            success: false,
-            error: `Certification failed: ${tinMessage}`,
-            message: `Certification failed: ${tinMessage}`,
-            data: {
-                form_type: formType,
-                tin_valid: tinValid,
-                payout_status: payoutStatus,
-                tin_message: tinMessage,
-                certified: certified,
-                withholding_rate: isUsPerson ? 0 : 30
-            }
-        };
-    }
-
-    return toolSuccess({
-        form_type: formType,
-        tin_valid: tinValid,
-        payout_status: payoutStatus,
-        tin_message: tinMessage,
-        certified: certified,
-        withholding_rate: isUsPerson ? 0 : 30
-    }, `Tax profile certified. Form: ${formType}, Status: ${payoutStatus}.`);
+    void isUsPerson;
+    void country;
+    void tin;
+    void signedUnderPerjury;
+    return toolError('Tax certification requires the Electron Bank Layer. No browser-only certification was recorded.', 'TAX_BANK_LAYER_REQUIRED');
 });
 
 /**

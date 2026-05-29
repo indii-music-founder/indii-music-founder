@@ -246,15 +246,15 @@ describe('AuthSlice', () => {
             expect(signInAnonymously).toHaveBeenCalled();
         });
 
-        it('should bypass disabled anonymous auth and mock user for founders demo', async () => {
+        it('should fail closed when anonymous auth is disabled', async () => {
             const error = Object.assign(new Error('restricted'), { code: 'auth/admin-restricted-operation' });
             vi.mocked(signInAnonymously).mockRejectedValueOnce(error);
             const { loginAsGuest } = useStore.getState();
 
-            await loginAsGuest();
+            await expect(loginAsGuest()).rejects.toThrow('restricted');
 
-            expect(useStore.getState().user?.uid).toBe('founder-demo-uid');
-            expect(useStore.getState().authError).toBeNull();
+            expect(useStore.getState().user).toBeNull();
+            expect(useStore.getState().authError).toBe('This sign-in method is not enabled. Contact administrator.');
         });
 
         it('should use centralised error mapper for other errors', async () => {
@@ -262,7 +262,7 @@ describe('AuthSlice', () => {
             vi.mocked(signInAnonymously).mockRejectedValueOnce(error);
             const { loginAsGuest } = useStore.getState();
 
-            await loginAsGuest();
+            await expect(loginAsGuest()).rejects.toThrow('rate limited');
 
             expect(useStore.getState().authError).toBe('Too many sign-in attempts. Please wait a few minutes and try again.');
         });
@@ -482,4 +482,3 @@ describe('AuthSlice', () => {
         });
     });
 });
-

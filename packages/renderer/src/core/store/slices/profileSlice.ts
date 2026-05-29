@@ -112,33 +112,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             return;
         }
 
-        // Guest Explorer Bypass: Avoid any Firestore queries/logs for the local mock session
         if (uid === 'founder-demo-uid') {
-            logger.info('[Profile] Initializing mock guest profile for:', uid);
-            try {
-                const storedProfile = await getProfileFromStorage(uid);
-                if (storedProfile) {
-                    logger.info('[Profile] Loaded stored mock guest profile for:', uid);
-                    set({ userProfile: storedProfile });
-                    return;
-                }
-            } catch (storageErr) {
-                logger.error('[Profile] Failed to load stored mock guest profile:', storageErr);
-            }
-
-            const mockProfile = {
-                id: 'founder-demo-uid',
-                uid: 'founder-demo-uid',
-                email: 'founder@indii.local',
-                displayName: 'Founder Demo',
-                bio: 'Exploring indii as guest.',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                preferences: { theme: 'system', notifications: true },
-                brandKit: DEFAULT_BRAND_KIT
-            } as any;
-            set({ userProfile: mockProfile });
-            await saveProfileToStorage(mockProfile);
+            logger.error('[Profile] Refusing to load local demo profile UID in runtime.');
             return;
         }
 
