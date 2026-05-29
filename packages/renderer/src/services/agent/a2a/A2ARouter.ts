@@ -176,16 +176,19 @@ class A2ARouter {
   private async dispatchAgentExecute(
     params: Record<string, unknown> | undefined,
     localCtx: RouterCallContext | undefined,
-    senderId: string
+    _senderId: string
   ): Promise<unknown> {
     const targetAgentId = params?.targetAgentId as string;
     const task = params?.task as string;
+    // The REAL calling agent (e.g. 'generalist'), NOT the crypto reply channel.
+    // Falls back to the hub so a missing source doesn't over-restrict.
+    const sourceAgentId = (params?.sourceAgentId as string) || 'generalist';
 
     if (!VALID_AGENT_IDS.includes(targetAgentId as never)) {
       throw new Error(`Invalid agent ID: ${targetAgentId}`);
     }
 
-    const hubSpokeError = validateHubAndSpoke(senderId as never, targetAgentId as never);
+    const hubSpokeError = validateHubAndSpoke(sourceAgentId as never, targetAgentId as never);
     if (hubSpokeError) {
       throw new Error(`Hub-and-spoke violation: ${hubSpokeError}`);
     }
@@ -208,12 +211,13 @@ class A2ARouter {
   ): Promise<unknown> {
     const targetAgentId = params?.targetAgentId as string;
     const task = params?.task as string;
+    const sourceAgentId = (params?.sourceAgentId as string) || 'generalist';
 
     if (!VALID_AGENT_IDS.includes(targetAgentId as never)) {
       throw new Error(`Invalid agent ID: ${targetAgentId}`);
     }
 
-    const hubSpokeError = validateHubAndSpoke(senderId as never, targetAgentId as never);
+    const hubSpokeError = validateHubAndSpoke(sourceAgentId as never, targetAgentId as never);
     if (hubSpokeError) {
       throw new Error(`Hub-and-spoke violation: ${hubSpokeError}`);
     }
