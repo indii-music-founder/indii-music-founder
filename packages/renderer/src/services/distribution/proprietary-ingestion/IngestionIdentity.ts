@@ -8,8 +8,13 @@ import { INGESTION_CONFIG } from '@/core/config/ingestion';
  * Each DSP has a unique SystemIdentity that must be used as the MessageRecipient.
  *
  * Production SystemIdentitys are obtained during the onboarding process with each DSP.
- * The placeholder SystemIdentitys below should be replaced with real values once onboarded.
+ * Values must come from deployment environment; placeholders are not accepted.
  */
+
+const recipientEnv = (key: string): string =>
+    import.meta.env[`VITE_INGESTION_SYSTEM_IDENTITY_${key}`]?.trim() ||
+    import.meta.env[`VITE_Ingestion_SystemIdentity_${key}`]?.trim() ||
+    '';
 
 /** Known DSP recipient registry.
  *
@@ -18,36 +23,36 @@ import { INGESTION_CONFIG } from '@/core/config/ingestion';
  * process with each DSP. Update these values when onboarding completes.
  *
  * Set via environment variables for deployment flexibility:
- *   VITE_Ingestion_SystemIdentity_SPOTIFY, VITE_Ingestion_SystemIdentity_APPLE, etc.
+ *   VITE_INGESTION_SYSTEM_IDENTITY_SPOTIFY, VITE_INGESTION_SYSTEM_IDENTITY_APPLE, etc.
  */
 const INGESTION_REGISTRY: Record<string, { systemIdentifier: string; entityName: string; protocol: 'sftp' | 'aspera' | 'transporter' }> = {
     spotify: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_SPOTIFY || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('SPOTIFY'),
         entityName: 'Spotify AB',
         protocol: 'sftp',
     },
     apple: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_APPLE || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('APPLE'),
         entityName: 'Apple Inc.',
         protocol: 'transporter',
     },
     amazon: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_AMAZON || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('AMAZON'),
         entityName: 'Amazon Digital Services',
         protocol: 'sftp',
     },
     tidal: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_TIDAL || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('TIDAL'),
         entityName: 'TIDAL Music AS',
         protocol: 'sftp',
     },
     deezer: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_DEEZER || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('DEEZER'),
         entityName: 'Deezer SA',
         protocol: 'sftp',
     },
     youtube_music: {
-        systemIdentifier: import.meta.env.VITE_Ingestion_SystemIdentity_YOUTUBE || 'PENDING_ONBOARDING',
+        systemIdentifier: recipientEnv('YOUTUBE'),
         entityName: 'Google LLC (YouTube Music)',
         protocol: 'sftp',
     },
@@ -101,11 +106,11 @@ export class IngestionIdentity {
             );
         }
 
-        if (dsp.systemIdentifier === 'PENDING_ONBOARDING') {
+        if (!dsp.systemIdentifier) {
             throw new Error(
-                `SystemIdentity for ${dsp.entityName} is pending onboarding. ` +
-                `Complete the content provider application with ${dsp.entityName} to obtain their SystemIdentity, ` +
-                `then set VITE_Ingestion_SystemIdentity_${key.toUpperCase()} environment variable.`
+                `SystemIdentity for ${dsp.entityName} is not configured. ` +
+                `Complete onboarding with ${dsp.entityName}, then set ` +
+                `VITE_INGESTION_SYSTEM_IDENTITY_${key.toUpperCase()} in the deployment environment.`
             );
         }
 
@@ -128,9 +133,8 @@ export class IngestionIdentity {
             key,
             entityName: dsp.entityName,
             systemIdentifier: dsp.systemIdentifier,
-            ready: dsp.systemIdentifier !== 'PENDING_ONBOARDING',
+            ready: Boolean(dsp.systemIdentifier),
             protocol: dsp.protocol,
         }));
     }
 }
-

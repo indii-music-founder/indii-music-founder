@@ -13,7 +13,6 @@ import type { Content, Tool } from 'firebase/ai';
 import { env } from '@/config/env';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { STANDARD_SAFETY_SETTINGS } from '../config/safety-settings';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 /**
@@ -41,19 +40,18 @@ const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
  * Resolves a model name to one that works on the Gemini Developer API.
  *
  * Handles three cases:
- *   1. Vertex Autonomous endpoint URLs (projects/.../endpoints/...) → base agent model
+ *   1. Vertex Autonomous endpoint URLs (projects/.../endpoints/...) → blocked
  *   2. Preview model names not available on Developer API → mapped equivalent
  *   3. Already-valid Developer API model names → passed through unchanged
  */
 function resolveModelForFallback(modelName: string): string {
     // Case 1: Vertex Autonomous fine-tuned endpoint URLs
     if (modelName.startsWith('projects/') && modelName.includes('/endpoints/')) {
-        logger.warn(
-            '[FallbackClient] Fine-tuned Vertex endpoint cannot be used via Gemini API fallback. ' +
-            `Falling back to base model. Endpoint: ${modelName}`
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            '[FallbackClient] Refusing to downgrade fine-tuned Vertex endpoint to a base Gemini model. ' +
+            `Endpoint: ${modelName}`
         );
-        // Resolve recursively in case the base model itself needs mapping
-        return resolveModelForFallback(INTELLIGENCE_MODELS.TEXT.AGENT);
     }
 
     // Case 2: Preview model names that don't exist on the Developer API
@@ -242,7 +240,7 @@ export async function generateWithFallback(
         const rawStatus = (error as { status?: number })?.status;
         const rawCode = (error as { code?: string | number })?.code;
         logger.error('[FallbackClient] generateContent FAILED:', {
-            model: resolveModelForFallback(modelName),
+            model: modelName,
             rawMessage: rawMsg,
             status: rawStatus,
             code: rawCode,

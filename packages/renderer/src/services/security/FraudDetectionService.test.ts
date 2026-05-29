@@ -8,6 +8,8 @@ const mockGetDocs = vi.fn();
 const mockCollection = vi.fn();
 const mockQuery = vi.fn();
 const mockWhere = vi.fn();
+const mockHttpsCallable = vi.fn();
+const mockPersistFraudAlert = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(),
@@ -22,6 +24,10 @@ vi.mock('firebase/firestore', () => ({
             serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString()
         })
     }
+}));
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: (...args: any[]) => mockHttpsCallable(...args),
 }));
 
 // Mock the db export from firebase service
@@ -45,6 +51,8 @@ describe('FraudDetectionService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockAddDoc.mockResolvedValue({ id: 'mock-alert-id' });
+        mockPersistFraudAlert.mockResolvedValue({ data: { success: true } });
+        mockHttpsCallable.mockReturnValue(mockPersistFraudAlert);
         // Default empty for getDocs
         mockGetDocs.mockResolvedValue({ docs: [] });
     });
@@ -66,9 +74,11 @@ describe('FraudDetectionService', () => {
             expect(alerts).toHaveLength(1);
             expect(alerts[0]!.reason).toContain('looped track > 20 times');
 
-            // Verify persistence
-            expect(mockCollection).toHaveBeenCalledWith('fraud_alerts');
-            expect(mockAddDoc).toHaveBeenCalled();
+            // Verify persistence goes through the callable so clients cannot
+            // write directly to the protected fraud_alerts collection.
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'persistFraudAlert');
+            expect(mockPersistFraudAlert).toHaveBeenCalledWith(alerts[0]);
+            expect(mockAddDoc).not.toHaveBeenCalled();
         });
 
         it('should detect IP spikes', async () => {
@@ -88,9 +98,11 @@ describe('FraudDetectionService', () => {
             expect(alerts[0]!.severity).toBe('CRITICAL');
             expect(alerts[0]!.reason).toContain('High volume');
 
-            // Verify persistence
-            expect(mockCollection).toHaveBeenCalledWith('fraud_alerts');
-            expect(mockAddDoc).toHaveBeenCalled();
+            // Verify persistence goes through the callable so clients cannot
+            // write directly to the protected fraud_alerts collection.
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'persistFraudAlert');
+            expect(mockPersistFraudAlert).toHaveBeenCalledWith(alerts[0]);
+            expect(mockAddDoc).not.toHaveBeenCalled();
         });
     });
 

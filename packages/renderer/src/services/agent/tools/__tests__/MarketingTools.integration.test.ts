@@ -49,6 +49,13 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn(),
     getDocs: vi.fn(),
     doc: vi.fn(),
+    getDoc: vi.fn().mockResolvedValue({
+        exists: () => true,
+        data: () => ({
+            metrics: { impressions: 1000, clicks: 100, conversions: 10 },
+            roi: '150%'
+        })
+    })
 }));
 
 vi.mock('@/services/firebase', () => ({

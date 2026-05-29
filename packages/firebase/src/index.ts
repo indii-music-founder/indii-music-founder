@@ -1440,8 +1440,7 @@ export const healthCheckWest1 = functions
 
 /**
  * Fan Data Enrichment Service
- * Process batches of fans to append demographic, psychographic, and interest markers.
- * Integration points: Clearbit, Apollo via AI fallback.
+ * Process batches of fans through configured third-party enrichment providers.
  */
 export const enrichFanData = functions
     .region("us-central1")
@@ -1469,35 +1468,15 @@ export const enrichFanData = functions
         // 2. Validate Org Access
         await validateOrgAccess(context.auth.uid, orgId);
 
-        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${provider || 'AI_FALLBACK'}`);
+        const normalizedProvider = String(provider || '').toLowerCase();
+        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
-        // 3. Enrichment Logic
-        // In production, this calls Clearbit/Apollo API. 
-        // For Alpha, we use high-fidelity mock enrichment based on industry benchmarks.
-        const results = fans.map((fan: Record<string, unknown>) => {
-            const emailDomain = (fan.email as string).split('@')[1] || '';
-            const isCorporate = !['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'].includes(emailDomain);
-
-            // Heuristic-based enrichment
-            return {
-                ...fan,
-                location: fan.city || (isCorporate ? 'San Francisco, CA' : 'Los Angeles, CA'),
-                ageRange: isCorporate ? '35-44' : '18-24',
-                incomeBracket: isCorporate ? '$120k-$200k' : '$40k-$65k',
-                topGenre: fan.topGenre || (isCorporate ? 'Jazz' : 'Electronic'),
-                interests: isCorporate ? ['Investing', 'Tech'] : ['Live Events', 'Gaming'],
-                lastEnriched: new Date().toISOString()
-            };
-        });
-
-        return {
-            results,
-            metadata: {
-                provider: provider || 'AI_FALLBACK',
-                count: results.length,
-                timestamp: new Date().toISOString()
-            }
-        };
+        throw new functions.https.HttpsError(
+            "failed-precondition",
+            normalizedProvider
+                ? `Fan enrichment provider '${provider}' is not configured with live API credentials.`
+                : "Fan enrichment requires a configured provider."
+        );
     });
 
 // MCP SSE Server

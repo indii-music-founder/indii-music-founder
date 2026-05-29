@@ -36,6 +36,7 @@ class MockAgent extends BaseAgent {
             color: '#000000',
             category: 'generalist' as unknown as string,
             systemPrompt: 'You are a mock agent.',
+            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
             tools: []
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]); // Constructor arguments are untyped here
     }

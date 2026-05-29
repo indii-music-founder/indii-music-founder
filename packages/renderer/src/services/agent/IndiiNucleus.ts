@@ -3,7 +3,7 @@ import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { getFineTunedModel } from './fine-tuned-models';
 
 export interface NucleusContext {
   soul: string;
@@ -148,7 +148,7 @@ export class IndiiNucleus {
 
     const genResult = await AutonomousIntelligence.generateContent(
       [{ role: 'user', parts }],
-      INTELLIGENCE_MODELS.TEXT.AGENT,
+      getFineTunedModel('generalist'),
       { systemInstruction: systemPrompt }
     );
     const responseText = getResponseText(genResult);

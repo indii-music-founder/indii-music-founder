@@ -4,10 +4,11 @@ import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 import systemPrompt from '@agents/conductor/prompt.md?raw';
 
@@ -673,7 +674,7 @@ CURRENT REQUEST: ${task}
                             }))
                         ]
                     }],
-                    INTELLIGENCE_MODELS.TEXT.AGENT,
+                    getFineTunedModel('generalist'),
                     {
                         ...INTELLIGENCE_CONFIG.THINKING.HIGH
                     },

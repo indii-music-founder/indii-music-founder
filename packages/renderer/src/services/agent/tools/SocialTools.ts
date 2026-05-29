@@ -1,9 +1,9 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // SocialTools Implementation
@@ -15,7 +15,7 @@ export const SocialTools = {
 
         const result = await AutonomousIntelligence.generateContent(
             prompt,
-            INTELLIGENCE_MODELS.TEXT.AGENT
+            getFineTunedModel('social')
         );
         const text = getResponseText(result);
 
@@ -87,7 +87,7 @@ Be specific and data-driven based on the post content above.`;
             } as Record<string, unknown>,
             undefined,
             undefined,
-            INTELLIGENCE_MODELS.TEXT.AGENT
+            getFineTunedModel('social')
         );
 
         const normalizedTrendScore = Math.min(100, Math.max(0, Math.round(result.trend_score)));
@@ -127,22 +127,10 @@ Be specific and data-driven based on the post content above.`;
     }),
 
     analyze_sentiment: wrapTool('analyze_sentiment', async (args: { platform: 'All' | 'X' | 'Instagram' | 'TikTok'; timeframe: '7d' | '14d' | '30d' }) => {
-        const platforms = args.platform === 'All'
-            ? ['X', 'Instagram', 'TikTok']
-            : [args.platform];
-
-        return toolSuccess({
-            platforms,
-            timeframe: args.timeframe,
-            sentiment: 'neutral',
-            trend_score: 50,
-            insights: [
-                'No live social account data was pulled in this execution.',
-                'Connect platform APIs to replace this baseline with account-level sentiment.',
-                'Use recent comments, saves, shares, and completion rate as the primary signal set.',
-            ],
-            reportPeriod: args.timeframe,
-        }, `Baseline sentiment report prepared for ${platforms.join(', ')} over ${args.timeframe}.`);
+        return toolError(
+            `Live sentiment analysis for ${args.platform} over ${args.timeframe} requires connected platform analytics/comment APIs.`,
+            'SOCIAL_ANALYTICS_UNAVAILABLE'
+        );
     }),
 
     multi_platform_autopost: wrapTool('multi_platform_autopost', async (args: {
@@ -151,19 +139,33 @@ Be specific and data-driven based on the post content above.`;
         hashtags?: string[];
         platforms: Array<'TikTok' | 'YouTube Shorts' | 'IG Reels'>;
     }) => {
-        const posts = args.platforms.map(platform => ({
-            platform,
-            status: 'queued_for_provider',
-            caption: args.caption,
-            hashtags: args.hashtags || [],
-            videoUrl: args.videoUrl,
-        }));
+        try {
+            const { socialAutoPosterService } = await import('@/services/marketing/SocialAutoPosterService');
+            const platformMap = {
+                'TikTok': 'tiktok',
+                'YouTube Shorts': 'youtube_shorts',
+                'IG Reels': 'meta_reels',
+            } as const;
 
-        return toolSuccess({
-            batchId: `autopost-${Date.now().toString(36)}`,
-            posts,
-            note: 'Posts are queued for provider handoff. Live native posting requires connected platform credentials.',
-        }, `Queued ${posts.length} short-form post package(s).`);
+            const posts = await Promise.all(args.platforms.map(async platform => {
+                const jobId = await socialAutoPosterService.queuePost({
+                    id: `autopost-${crypto.randomUUID()}`,
+                    mediaUrl: args.videoUrl,
+                    caption: args.caption,
+                    hashtags: args.hashtags || [],
+                    platform: platformMap[platform],
+                });
+                return { platform, status: 'queued', jobId };
+            }));
+
+            return toolSuccess({
+                batchId: `autopost-${Date.now().toString(36)}`,
+                posts,
+            }, `Queued ${posts.length} short-form post package(s) for scheduled delivery.`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Failed to queue short-form autopost package: ${msg}`, 'AUTOPOST_QUEUE_FAILED');
+        }
     }),
 
     dispatch_community_webhook: wrapTool('dispatch_community_webhook', async (args: {
@@ -174,26 +176,44 @@ Be specific and data-driven based on the post content above.`;
         embedImageUrl?: string;
         embedLink?: string;
     }) => {
-        return toolSuccess({
-            dispatchId: `community-${Date.now().toString(36)}`,
-            platform: args.platform,
-            webhookConfigured: Boolean(args.webhookUrl),
-            webhookHost: (() => {
-                try {
-                    return new URL(args.webhookUrl).host;
-                } catch {
-                    return 'invalid-url';
+        try {
+            const webhook = new URL(args.webhookUrl);
+            const payload = args.platform === 'Discord'
+                ? {
+                    content: args.messageContent,
+                    embeds: args.embedTitle || args.embedImageUrl || args.embedLink ? [{
+                        title: args.embedTitle,
+                        image: args.embedImageUrl ? { url: args.embedImageUrl } : undefined,
+                        url: args.embedLink,
+                    }] : undefined,
                 }
-            })(),
-            payload: {
-                messageContent: args.messageContent,
-                embedTitle: args.embedTitle || null,
-                embedImageUrl: args.embedImageUrl || null,
-                embedLink: args.embedLink || null,
-            },
-            status: 'prepared_for_webhook_dispatch',
-            note: 'Webhook payload is prepared without exposing or calling the raw webhook URL from the agent loop.',
-        }, `${args.platform} community announcement prepared.`);
+                : {
+                    text: args.messageContent,
+                    title: args.embedTitle,
+                    imageUrl: args.embedImageUrl,
+                    link: args.embedLink,
+                };
+
+            const response = await fetch(webhook.toString(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                return toolError(`Webhook dispatch failed with HTTP ${response.status}.`, 'WEBHOOK_DISPATCH_FAILED');
+            }
+
+            return toolSuccess({
+                dispatchId: `community-${Date.now().toString(36)}`,
+                platform: args.platform,
+                webhookHost: webhook.host,
+                status: 'dispatched',
+            }, `${args.platform} community announcement dispatched.`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Webhook dispatch failed: ${msg}`, 'WEBHOOK_DISPATCH_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 

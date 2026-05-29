@@ -92,7 +92,7 @@ export class LivingPlanService {
   ): Promise<LivingPlan> {
     if (this.isE2EMode) {
       return {
-        id: `mock_plan_${Date.now()}`,
+        id: `e2e_plan_${Date.now()}`,
         projectId,
         userId,
         goal,
