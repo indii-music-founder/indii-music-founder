@@ -14,6 +14,7 @@ import { db, auth } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 export type OperationType = 'video' | 'image' | 'agent_stream';
 export type UserTier = 'free' | 'pro' | 'enterprise';
@@ -88,7 +89,7 @@ export class CostControlService {
     }
 
     const user = auth.currentUser;
-    const isGuestSession = !user || user.uid === 'founder-demo-uid' || user.isAnonymous || req.userId === 'founder-demo-uid';
+    const isGuestSession = isAnonymousOrDemoUser(user) || isDemoUserId(req.userId);
     if (isGuestSession) {
       logger.warn('[CostControl] Guest / unauthenticated session blocked. Cost ledger requires a real authenticated user.');
       return {
