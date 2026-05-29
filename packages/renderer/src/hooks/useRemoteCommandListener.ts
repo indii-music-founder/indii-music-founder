@@ -30,11 +30,12 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
-    const uid = auth.currentUser?.uid;
-    if (!uid || uid === 'undefined' || uid === 'null' || uid === 'founder-demo-uid') return;
+    const uid = getRealAuthenticatedUserId(auth.currentUser);
+    if (!uid) return;
     
     // Skip diagnostics in E2E tests to prevent Firestore invalid segment errors
     // when project ID is mocked/missing
@@ -603,14 +604,14 @@ export function useRemoteCommandListener() {
         logger.info('[RemoteRelay] 🔐 Setting up auth listener...');
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             logger.info(`[RemoteRelay] 🔐 Auth state changed: ${user ? 'SIGNED IN (' + user.uid.substring(0, 8) + ')' : 'SIGNED OUT'}`);
-            setIsAuthenticated(!!user);
+            setIsAuthenticated(!isAnonymousOrDemoUser(user));
         });
         return unsubscribe;
     }, []);
 
     // Disable remote command listener completely for guest sessions or mock user to prevent
     // console permission errors and unneeded firestore polling.
-    const isGuest = user?.uid === 'founder-demo-uid';
+    const isGuest = isAnonymousOrDemoUser(user);
     const shouldEnableRelay = isAuthenticated && !isGuest;
 
     // Use Firestore relay when authenticated.

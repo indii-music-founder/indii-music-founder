@@ -1,42 +1,101 @@
-import { a2aClient } from '../a2a/A2AClient';
-import { AgentContext, ToolFunctionResult } from '../types';
+import { a2aClient, A2ATransportUnavailableError } from '../a2a/A2AClient';
+import { AgentContext, ToolFunctionResult, VALID_AGENT_IDS } from '../types';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import { logger } from '@/utils/logger';
+import { validateHubAndSpoke } from '../types';
+import { agentIdentityService } from '../governance/AgentIdentity';
 
 /**
- * consult_specialist - A2A Swarm communication tool.
+ * consult_specialist - A2A Swarm communication tool (canonical, single source of truth).
  * Enables an agent to securely consult another specialist agent using the A2A protocol.
- * This tool bridges the gap between the Hub-and-Spoke and Swarm architectures.
+ * Includes circuit-breaker fallback to in-process runAgent if A2A transport fails.
  */
 export const consult_specialist = wrapTool(
     'consult_specialist',
-    async (args: { agentId: string; task: string; sharedContext?: string }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { agentId, task, sharedContext } = args;
+    async (args: { targetAgentId?: string; agentId?: string; task: string; sharedContext?: string }, context?: AgentContext): Promise<ToolFunctionResult> => {
+        // Normalize arg name: support both targetAgentId and agentId (deprecated)
+        const targetAgentId = (args.targetAgentId || args.agentId) as string;
+        const { task, sharedContext } = args;
+
+        if (!targetAgentId) {
+            return toolError('consult_specialist requires targetAgentId or agentId');
+        }
 
         if (!context?.directive) {
-            logger.warn(`[A2A:Consult] Digital Handshake failed for ${agentId}: No active Directive in context.`);
-            return toolError(`Consultation with '${agentId}' failed: No active Directive found in AgentContext. Digital Handshake requires a directive for security gating.`);
+            logger.warn(`[A2A:Consult] No active Directive in context for ${targetAgentId}`);
+            return toolError(`Consultation with '${targetAgentId}' failed: No active Directive found. Digital Handshake requires a directive for security gating.`);
+        }
+
+        // Validate agent ID
+        if (!(VALID_AGENT_IDS as readonly string[]).includes(targetAgentId)) {
+            return toolError(`Invalid agent ID: ${targetAgentId}`);
+        }
+
+        // Validate hub-and-spoke (cast to valid AgentId type)
+        const sourceAgentId = (context.agentIdentity?.agentId || 'unknown') as any;
+        const hubSpokeError = validateHubAndSpoke(sourceAgentId, targetAgentId as any);
+        if (hubSpokeError) {
+            logger.warn(`[A2A:Consult] Hub-and-spoke violation: ${hubSpokeError}`);
+            return toolError(hubSpokeError);
+        }
+
+        // GEAP: Record delegation provenance
+        if (context.agentIdentity && agentIdentityService) {
+            try {
+                agentIdentityService.recordDelegation(
+                    context.agentIdentity,
+                    'consult_specialist',
+                    targetAgentId,
+                    context.traceId
+                );
+            } catch (e) {
+                logger.debug(`[A2A:Consult] Failed to record GEAP provenance: ${e}`);
+            }
         }
 
         try {
-            logger.info(`[A2A:Consult] ${context.agentIdentity?.agentId || 'agent'} -> ${agentId}: ${task}`);
-            
-            // In A2A, we treat the specialist as a JSON-RPC service.
-            // The 'task' is mapped to the 'agent.execute' method of the peer agent.
+            logger.info(`[A2A:Consult] ${sourceAgentId} -> ${targetAgentId}: ${task}`);
+
+            // A2A invocation with circuit breaker
             const result = await a2aClient.invoke(
-                agentId,
+                targetAgentId,
                 'agent.execute',
                 { task, sharedContext },
-                context.directive
+                context.directive,
+                context.runAgent ? {
+                    runAgent: context.runAgent,
+                    parentContext: context,
+                    traceId: context.traceId,
+                } : undefined
             );
 
-            return toolSuccess(result, `Consultation with ${agentId} complete.`);
+            return toolSuccess(result, `Consultation with ${targetAgentId} complete.`);
         } catch (error: any) {
-            logger.error(`[A2A:Consult] Error consulting ${agentId}:`, error);
-            
-            // If it's a Digital Handshake pause, we pass it through so the UI can handle the approval flow
+            logger.error(`[A2A:Consult] Error consulting ${targetAgentId}:`, error);
+
+            // If it's a Digital Handshake pause, pass it through (no fallback)
             if (error.message?.includes('Digital Handshake approval')) {
                 return toolError(error.message, 'A2A_HANDSHAKE_PENDING');
+            }
+
+            // If A2A transport is unavailable, fall back to in-process runAgent
+            if (error instanceof A2ATransportUnavailableError && context.runAgent) {
+                logger.warn(`[A2A:Consult] A2A transport unavailable, falling back to in-process delegation to ${targetAgentId}`);
+                try {
+                    const result = await context.runAgent(
+                        targetAgentId,
+                        task,
+                        context,
+                        context.traceId,
+                        context.attachments
+                    );
+                    return toolSuccess(result, `Consultation with ${targetAgentId} complete (in-process fallback).`, {
+                        transport: 'in-process-fallback',
+                    });
+                } catch (fallbackError: any) {
+                    logger.error(`[A2A:Consult] In-process fallback failed:`, fallbackError);
+                    return toolError(`Specialist consultation failed: ${fallbackError.message}`);
+                }
             }
 
             return toolError(`Specialist consultation failed: ${error.message}`);

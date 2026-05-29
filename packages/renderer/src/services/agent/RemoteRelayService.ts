@@ -39,6 +39,7 @@ import {
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,11 +79,7 @@ export interface DesktopState {
 // ---------------------------------------------------------------------------
 
 function getUserId(): string | null {
-    const uid = auth.currentUser?.uid;
-    if (!uid || typeof uid !== 'string' || uid === 'undefined' || uid === 'null' || uid === 'founder-demo-uid') {
-        return null;
-    }
-    return uid;
+    return getRealAuthenticatedUserId(auth.currentUser);
 }
 
 function getRelayRef() {

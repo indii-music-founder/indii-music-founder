@@ -335,74 +335,10 @@ export class BaseAgent implements SpecializedAgent {
                 }
             },
             consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
-                const { targetAgentId, task, sharedContext } = args as { targetAgentId: string; task: string; sharedContext?: string };
-
-                // GEAP: Record consultation provenance for audit trail
-                if (this.identityCard) {
-                    agentIdentityService.recordDelegation(
-                        this.identityCard,
-                        'consult_specialist',
-                        targetAgentId,
-                        context?.traceId
-                    );
-                }
-
-                try {
-                    if (!VALID_AGENT_IDS.includes(targetAgentId as any)) {
-                        return toolError(`Invalid agent ID: ${targetAgentId}`, 'INVALID_ARGS');
-                    }
-
-                    const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
-                    if (hubSpokeError) {
-                        logger.warn(`[BaseAgent] Hub-and-spoke violation in consult_specialist: ${this.id} -> ${targetAgentId}`);
-                        return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
-                    }
-
-                    // A2A Swarm Request
-                    const { a2aClient } = await import('./a2a/A2AClient');
-                    
-                    // Use the directive from context if available, otherwise fallback to a generic one
-                    // This is critical for Digital Handshake continuity across the swarm
-                    const directiveUserId = context?.userId || auth.currentUser?.uid;
-                    if (!context?.directive && !directiveUserId) {
-                        return toolError('User must be authenticated to consult specialist agents.', 'AUTH_REQUIRED');
-                    }
-
-                    const directive = context?.directive || {
-                        id: crypto.randomUUID(),
-                        userId: directiveUserId!,
-                        title: `Consult ${targetAgentId}`,
-                        status: 'IN_PROGRESS',
-                        assignedAgent: targetAgentId as any,
-                        goalAncestry: [],
-                        computeAllocation: {
-                            maxTokens: 4000,
-                            tokensUsed: 0,
-                            isMaximizerModeActive: false
-                        },
-                        contextFiles: [],
-                        conversationThread: [],
-                        requiresDigitalHandshake: false,
-                        createdAt: Timestamp.now(),
-                        updatedAt: Timestamp.now()
-                    } as Directive;
-                    
-                    const response = await a2aClient.invoke(targetAgentId, 'agent.execute', { task, sharedContext }, directive);
-                    return {
-                        success: true,
-                        data: response,
-                        message: `Consulted specialist ${targetAgentId}`
-                    };
-                } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : String(err);
-                    logger.error(`[BaseAgent] Specialist consultation failed for ${targetAgentId}:`, err);
-                    
-                    if (message.includes('Digital Handshake approval')) {
-                        return toolError(message, 'A2A_HANDSHAKE_PENDING');
-                    }
-
-                    return toolError(`Specialist consultation failed: ${message}`, 'EXECUTION_ERROR');
-                }
+                // Delegate to the shared SwarmTools implementation
+                const { consult_specialist: swarmToolImpl } = await import('./tools/SwarmTools');
+                const task = typeof args.task === 'string' ? args.task : '';
+                return swarmToolImpl({ ...args, task }, { ...context, agentIdentity: this.identityCard || undefined });
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {

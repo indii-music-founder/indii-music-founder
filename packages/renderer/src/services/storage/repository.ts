@@ -4,6 +4,7 @@ import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { UserProfile } from '@/modules/workflow/types';
 import { logger } from '@/utils/logger';
+import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
@@ -41,7 +42,8 @@ function queueAssetForSync(id: string, blob: Blob): void {
  */
 export async function processSyncQueue(): Promise<void> {
     const user = auth.currentUser;
-    if (!user || syncQueue.size === 0) return;
+    const userId = getRealAuthenticatedUserId(user);
+    if (!userId || syncQueue.size === 0) return;
 
     logger.info(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
 
@@ -49,7 +51,7 @@ export async function processSyncQueue(): Promise<void> {
 
     for (const [id, item] of syncQueue) {
         try {
-            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+            const storageRef = ref(storage, `users/${userId}/assets/${id}`);
             await uploadBytes(storageRef, item.data);
             itemsToRemove.push(id);
             logger.info(`[Repository] Successfully synced queued asset ${id}`);
@@ -104,9 +106,10 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
 
     // 2. Sync to Cloud if logged in
     const user = auth.currentUser;
-    if (user) {
+    const userId = getRealAuthenticatedUserId(user);
+    if (userId) {
         try {
-            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+            const storageRef = ref(storage, `users/${userId}/assets/${id}`);
             await uploadBytes(storageRef, blob);
         } catch (_error: unknown) {
             // Failed to sync asset ${id} to cloud
@@ -130,9 +133,10 @@ export async function getAssetFromStorage(id: string): Promise<string> {
     // 2. Try Cloud if missing locally
     try {
         const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated for cloud fetch");
+        const userId = getRealAuthenticatedUserId(user);
+        if (!userId) throw new Error("Real authenticated user required for cloud fetch");
 
-        const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+        const storageRef = ref(storage, `users/${userId}/assets/${id}`);
         const cloudBlob = await getBlob(storageRef);
 
         // Save to local cache
@@ -174,15 +178,16 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
 
     // 2. Sync to Cloud
     const user = auth.currentUser;
-    if (user) {
+    const userId = getRealAuthenticatedUserId(user);
+    if (userId) {
         // Validation: Ensure we are only saving the profile for the current user
-        if (profile.id !== user.uid) {
+        if (profile.id !== userId) {
             // Profile ID mismatch ignoring cloud sync. Profile: ${profile.id}, Auth: ${user.uid}
             return;
         }
 
         try {
-            const docRef = doc(db, 'users', user.uid);
+            const docRef = doc(db, 'users', userId);
             await setDoc(docRef, profile, { merge: true });
         } catch (_error: unknown) {
             // Failed to sync profile to cloud
@@ -193,9 +198,10 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
 export async function getProfileFromStorage(profileId?: string): Promise<UserProfile | undefined> {
     const dbLocal = await initDB();
     const user = auth.currentUser;
+    const userId = getRealAuthenticatedUserId(user);
 
     // Determine target ID: passed ID > auth ID. Unauthenticated sessions do not fabricate profiles.
-    const targetId = profileId || user?.uid;
+    const targetId = profileId || userId;
 
     if (!targetId) return undefined;
 
@@ -208,9 +214,9 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
     }
 
     // 2. Try Cloud if authorized and local is missing
-    if (user && user.uid === targetId) {
+    if (userId && userId === targetId) {
         try {
-            const docRef = doc(db, 'users', user.uid);
+            const docRef = doc(db, 'users', userId);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
                 const cloudProfile: UserProfile = { ...(snap.data() as UserProfile), id: snap.id };
@@ -240,9 +246,10 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
 
     // 2. Sync to Cloud
     const user = auth.currentUser;
-    if (user) {
+    const userId = getRealAuthenticatedUserId(user);
+    if (userId) {
         try {
-            const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
+            const docRef = doc(db, 'users', userId, 'workflows', workflowId);
             await setDoc(docRef, { ...workflowWithId, synced: true }, { merge: true });
         } catch (_error: unknown) {
             // Failed to sync workflow ${workflowId} to cloud
@@ -258,9 +265,10 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
     if (workflow) return workflow;
 
     const user = auth.currentUser;
-    if (user) {
+    const userId = getRealAuthenticatedUserId(user);
+    if (userId) {
         try {
-            const docRef = doc(db, 'users', user.uid, 'workflows', id);
+            const docRef = doc(db, 'users', userId, 'workflows', id);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
                 workflow = snap.data();
@@ -291,10 +299,11 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
 
     // 2. Sync to Cloud
     const user = auth.currentUser;
-    if (!user) return;
+    const userId = getRealAuthenticatedUserId(user);
+    if (!userId) return;
 
     try {
-        const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
+        const docRef = doc(db, 'users', userId, 'canvas_states', id);
         await setDoc(docRef, stateObj, { merge: true });
         // Saved canvas state for ${id}
     } catch (_error: unknown) {
@@ -313,10 +322,11 @@ export async function getCanvasStateFromStorage(id: string): Promise<string | un
 
     // 2. Try Cloud
     const user = auth.currentUser;
-    if (!user) return undefined;
+    const userId = getRealAuthenticatedUserId(user);
+    if (!userId) return undefined;
 
     try {
-        const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
+        const docRef = doc(db, 'users', userId, 'canvas_states', id);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
             const data = snap.data() as CanvasState;
@@ -338,9 +348,10 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
 
     // 2. Merge with Cloud if logged in
     const user = auth.currentUser;
-    if (user) {
+    const userId = getRealAuthenticatedUserId(user);
+    if (userId) {
         try {
-            const collectionRef = collection(db, 'users', user.uid, 'workflows');
+            const collectionRef = collection(db, 'users', userId, 'workflows');
             const snap = await getDocs(collectionRef);
 
             const cloudWorkflows = snap.docs.map(d => d.data());
@@ -361,7 +372,8 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
 
 export async function syncWorkflows(): Promise<void> {
     const user = auth.currentUser;
-    if (!user) return;
+    const userId = getRealAuthenticatedUserId(user);
+    if (!userId) return;
 
     const dbLocal = await initDB();
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
@@ -370,7 +382,7 @@ export async function syncWorkflows(): Promise<void> {
 
     const batchPromises = localWorkflows.map(async (wf) => {
         try {
-            const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
+            const docRef = doc(db, 'users', userId, 'workflows', wf.id);
             await setDoc(docRef, { ...wf, synced: true }, { merge: true });
         } catch (__e: unknown) {
             // Failed to sync workflow ${wf.id}
