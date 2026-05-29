@@ -949,6 +949,34 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Missing Root Collections (For Services extending FirestoreService)
+    // =========================================================================
+    match /file_nodes/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /audio_assets/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /deployments/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /tax_profiles/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /dsr_processed_reports/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+    match /tracks/{docId} {
+      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

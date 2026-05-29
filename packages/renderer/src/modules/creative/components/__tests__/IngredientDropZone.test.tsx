@@ -134,7 +134,7 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
         const { container } = renderDropZone();
         const fileInput = container.querySelector('input[type="file"]');
         expect(fileInput).toBeInTheDocument();
-        expect(fileInput).toHaveClass('hidden');
+        expect(fileInput).toHaveClass('sr-only');
     });
 
     it('file input accepts image/* and video/* in reference mode', () => {
