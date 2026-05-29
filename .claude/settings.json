@@ -5,7 +5,16 @@
       "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName)",
       "Bash(/opt/homebrew/bin/gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus)",
       "Bash(/opt/homebrew/bin/gh pr list --state open --head release-please--branches--main--components--indii-os --json number,title,mergeable)",
-      "Bash(awk '/match \\\\/users\\\\/\\\\{/{f=1} f&&/match \\\\//{print NR\": \"$0} /^    }$/{if\\(f\\)f=0}' packages/firebase/firestore.rules)"
+      "Bash(awk '/match \\\\/users\\\\/\\\\{/{f=1} f&&/match \\\\//{print NR\": \"$0} /^    }$/{if\\(f\\)f=0}' packages/firebase/firestore.rules)",
+      "Bash(grep -nE \"match /projects/\\\\{|isProjectOwner|projects.*isOwner|allow read, write: if\" packages/firebase/firestore.rules)",
+      "Bash(awk '/match \\\\/projects\\\\/\\\\{projectId\\\\}/{f=1} f{print NR\": \"$0} /^      }$/{if\\(f\\){exit}}' packages/firebase/firestore.rules)",
+      "Bash(git check-ignore *)",
+      "Bash(grep -c \"Re-baselined against the actual codebase\" docs/architecture/BUSINESS_HARNESS_FULL_SUCCESS_PLAN.md)",
+      "Bash(grep -c \"Verified Implementation Context\" docs/architecture/APP_RUNTIME_HARNESS_MCP_SKILL_PLAN.md)",
+      "Bash(grep -c \"Repo Layout & Policy \\(2026 update\\)\" .agent/skills/hunter/SKILL.md)",
+      "Bash(grep -c \"match /agent_audit/{auditId}\\\\|match /web3Contracts/{contractId}\" packages/firebase/firestore.rules)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   },
   "hooks": {

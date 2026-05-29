@@ -186,4 +186,178 @@ describe('Business Harness core', () => {
     expect(decision.sourceRunIds).toContain(releaseRun.runId);
     expect(decision.mode).toBeDefined();
   });
+
+  it('Legal blocks release despite Distribution readiness', () => {
+    const distributionRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'distribution_ddex',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: { readiness: 'ready' },
+      approvalGates: [],
+    });
+
+    const legalRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'legal_compliance',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      approvalGates: [{
+        id: 'gate-legal',
+        label: 'Sample clearance required',
+        requiredFor: 'deliver to DSP',
+        riskTier: 'attorney_review',
+        reason: 'Uncleared sample detected',
+      }],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'deliver to DSP',
+      runs: [distributionRun, legalRun] as any,
+    });
+
+    expect(decision.mode).toBe('blocked');
+    expect(decision.decision).toBe('block');
+    expect(decision.blockers[0]).toContain('Sample clearance');
+  });
+
+  it('Finance blocks paid campaign despite Marketing urgency', () => {
+    const marketingRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'marketing_growth',
+      inputRefs: [], scores: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], approvalGates: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      findings: [{
+        id: 'f1',
+        domain: 'marketing_growth',
+        severity: 'info',
+        title: 'High urgency for campaign',
+        detail: 'Trending topic match',
+        confidence: 'high'
+      }],
+    });
+
+    const financeRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'finance',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      approvalGates: [{
+        id: 'gate-finance',
+        label: 'Budget Approval',
+        requiredFor: 'run paid ads',
+        riskTier: 'blocked',
+        reason: 'Exceeds monthly ad budget',
+      }],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'run paid ads',
+      runs: [marketingRun, financeRun] as any,
+    });
+
+    expect(decision.mode).toBe('blocked');
+    expect(decision.blockers[0]).toContain('Budget Approval');
+  });
+
+  it('Creator Protection escalates voice risk before delivery', () => {
+    const protectionRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'creator_protection',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      approvalGates: [{
+        id: 'gate-voice',
+        label: 'Voice Clone Authorization',
+        requiredFor: 'deliver to DSP',
+        riskTier: 'attorney_review',
+        reason: 'Unlicensed AI voice clone detected in stems',
+      }],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'deliver to DSP',
+      runs: [protectionRun] as any,
+    });
+
+    expect(decision.mode).toBe('blocked');
+    expect(decision.decision).toBe('block');
+    expect(decision.blockers[0]).toContain('Voice Clone');
+  });
+
+  it('Merch sample approval blocks POD order', () => {
+    const merchRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'merch_pod',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      approvalGates: [{
+        id: 'gate-merch',
+        label: 'Sample Review Required',
+        requiredFor: 'place POD order',
+        riskTier: 'blocked',
+        reason: 'Physical sample not yet reviewed by artist',
+      }],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'place POD order',
+      runs: [merchRun] as any,
+    });
+
+    expect(decision.mode).toBe('blocked');
+    expect(decision.blockers[0]).toContain('Sample Review');
+  });
+
+  it('Road cost changes Opportunity decision', () => {
+    const opportunityRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'opportunity',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: { recommended: true },
+      approvalGates: [],
+    });
+
+    const roadRun = createHarnessRun({
+      userId: 'user-a',
+      domain: 'road_travel',
+      inputRefs: [], scores: [], findings: [], recommendations: [], costLines: [],
+      legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 1.0,
+      output: {},
+      approvalGates: [{
+        id: 'gate-road',
+        label: 'Travel Budget Overrun',
+        requiredFor: 'spend money',
+        riskTier: 'blocked',
+        reason: 'Travel cost exceeds guaranteed gig payout',
+      }],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'spend money',
+      runs: [opportunityRun, roadRun] as any,
+    });
+
+    expect(decision.mode).toBe('blocked');
+    expect(decision.blockers[0]).toContain('Travel Budget');
+  });
 });
