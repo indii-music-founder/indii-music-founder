@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-28 20:40 EDT
+**Updated:** 2026-05-28 20:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a8b095ae0 chore: session checkpoint [20:40]
 baf9e615b chore: session checkpoint [20:20]
 f94332438 chore: session checkpoint [20:14]
 d5fbb0a1f feat(harness): integrate Upload Intake Harness service, schema validation tests, and training datasets
@@ -13,7 +14,6 @@ c137daca7 docs: fix mermaid HTML tags for CI validation
 be8b74cdd test: fix test timeouts and thresholds for CI
 e484b7099 fix: fractional cent loss in escrow and TS2339 in GeminiRetrievalService
 4dc1646a1 feat: integrate Harness and Creator Protection features
-cde2d7903 fix(speedrun): resolve guest login blank screen (ISSUE-075)
 ```
 
 ## Working State
@@ -32,9 +32,19 @@ cde2d7903 fix(speedrun): resolve guest login blank screen (ISSUE-075)
 ?? packages/renderer/src/services/business-harness/DistributionDdexCompiler.ts
 ?? packages/renderer/src/services/business-harness/HarnessCompiler.ts
 ?? packages/renderer/src/services/business-harness/SongDnaCompiler.ts
+?? packages/renderer/src/services/collaboration/CollaborationSplitsCompiler.test.ts
+?? packages/renderer/src/services/collaboration/CollaborationSplitsCompiler.ts
+?? packages/renderer/src/services/creative/CreativeProductionCompiler.test.ts
+?? packages/renderer/src/services/creative/CreativeProductionCompiler.ts
 ?? packages/renderer/src/services/creator-protection/CreatorProtectionCompiler.ts
+?? packages/renderer/src/services/legal/LegalComplianceCompiler.test.ts
+?? packages/renderer/src/services/legal/LegalComplianceCompiler.ts
+?? packages/renderer/src/services/publishing/PublishingRightsCompiler.test.ts
+?? packages/renderer/src/services/publishing/PublishingRightsCompiler.ts
 ?? packages/renderer/src/services/release-harness/ReleaseHarnessAdapter.ts
 ?? packages/renderer/src/services/release-harness/ReleaseHarnessCompiler.ts
+?? packages/renderer/src/services/security/SecurityTrustCompiler.test.ts
+?? packages/renderer/src/services/security/SecurityTrustCompiler.ts
 ```
 
 ## Decisions
