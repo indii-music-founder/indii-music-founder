@@ -1487,3 +1487,18 @@ export * from './mcp';
 // Agent Orchestration State Machine
 export * from './orchestration';
 export * from './pod/printful';
+
+// Payment Links
+export { createStripePaymentLinks } from './stripe/paymentLinks';
+
+// Printful POD
+export {
+    pod_printfulGetProducts,
+    pod_printfulGetProduct,
+    pod_printfulCalculatePrice,
+    pod_printfulGetShippingRates,
+    pod_printfulCreateOrder,
+    pod_printfulGetOrder,
+    pod_printfulCancelOrder,
+    pod_printfulGenerateMockup
+} from './pod/printful';
