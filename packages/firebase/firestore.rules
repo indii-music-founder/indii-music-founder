@@ -191,6 +191,24 @@ service cloud.firestore {
       // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
 
+      // ── Owner-scoped subcollections (2026-05-28: latent 403 fixes — see docs/architecture/FIRESTORE_RULES_403_AUDIT.md) ──
+      match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
+      match /browserHistory/{entryId} { allow read, write: if isOwner(userId); }
+      match /contacts/{contactId} { allow read, write: if isOwner(userId); }
+      match /crisis_responses/{responseId} { allow read, write: if isOwner(userId); }
+      match /email_pitches/{pitchId} { allow read, write: if isOwner(userId); }
+      match /fanPurchases/{purchaseId} { allow read, write: if isOwner(userId); }
+      match /fieldContacts/{contactId} { allow read, write: if isOwner(userId); }
+      match /fineTuningDataset/{exampleId} { allow read, write: if isOwner(userId); }
+      match /licensingDeals/{dealId} { allow read, write: if isOwner(userId); }
+      match /likeness/{likenessId} { allow read, write: if isOwner(userId); }
+      match /notifications/{notificationId} { allow read, write: if isOwner(userId); }
+      match /pod_orders/{orderId} { allow read, write: if isOwner(userId); }
+      match /press_releases/{prId} { allow read, write: if isOwner(userId); }
+      match /publishingCatalog/{compositionId} { allow read, write: if isOwner(userId); }
+      match /tasks/{taskId} { allow read, write: if isOwner(userId); }
+      match /web3Contracts/{contractId} { allow read, write: if isOwner(userId); }
+
       // ── Usage Tracking (MembershipService daily quota / budget) ──────
       match /usage/{dateKey} {
         allow read: if isOwner(userId);
