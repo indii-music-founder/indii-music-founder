@@ -1,127 +1,118 @@
 /**
  * Fine-Tuned Model Registry
  *
- * Maps each agent ID to its domain-specific fine-tuned Vertex Autonomous endpoint.
- * When `VITE_USE_FINE_TUNED_AGENTS=true`, BaseAgent will prefer these
- * endpoints over the default `INTELLIGENCE_MODELS.TEXT.AGENT` base model.
- *
- * HOW TO UPDATE:
- * 1. Run `python3 scripts/wire-r5-endpoints.py --write` after R5 jobs complete
- * 2. Set VITE_USE_FINE_TUNED_AGENTS=true in .env
- */
-
-import type { ValidAgentId } from './types';
-
-// Feature flag: only use fine-tuned endpoints when explicitly enabled
-export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS === 'true';
-
-/**
- * Registry mapping agent IDs to their fine-tuned Vertex Autonomous model endpoints.
- * Entries set to `undefined` will fall back to the base model.
+ * This file is intentionally strict. Valid agent IDs must resolve to a
+ * fine-tuned Vertex endpoint, either directly or through an explicit tuned
+ * domain alias. Missing entries are migration defects and should fail loudly.
  *
  * Format: "projects/{project}/locations/{location}/endpoints/{endpointId}"
  */
-export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
-    // === MANAGER'S OFFICE ===
-/*
-    // R5 — gemini-2.5-pro base (100 examples) — 2026-04-27
-    'generalist':      'projects/223837784072/locations/us-central1/endpoints/6477549004426051584',
-*/
 
-    // === DEPARTMENTS ===
-/*
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
-    'finance':         'projects/223837784072/locations/us-central1/endpoints/969646660151934976',
-    'finance.accounting': undefined,
-    'finance.tax':       undefined,
-    'finance.royalty':   undefined,
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
-    'legal':           'projects/223837784072/locations/us-central1/endpoints/5559518367884247040',
-    'legal.contracts':  undefined,
-    'legal.compliance': undefined,
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
-    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4660346554782056448',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'marketing':       'projects/223837784072/locations/us-central1/endpoints/4428411173972475904',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'social':          'projects/223837784072/locations/us-central1/endpoints/2635978522279018496',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'publishing':      'projects/223837784072/locations/us-central1/endpoints/649891086608629760',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'licensing':       'projects/223837784072/locations/us-central1/endpoints/3386953760143048704',
-*/
+import { VALID_AGENT_IDS, type ValidAgentId } from './types';
 
-    // === SPECIALISTS ===
-/*
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'brand':           'projects/223837784072/locations/us-central1/endpoints/8196798162174738432',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'road':            'projects/223837784072/locations/us-central1/endpoints/5522222933470085120',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'publicist':       'projects/223837784072/locations/us-central1/endpoints/3759626629307957248',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'music':           'projects/223837784072/locations/us-central1/endpoints/1381726026056335360',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'video':           'projects/223837784072/locations/us-central1/endpoints/7846080341193261056',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'security':        'projects/223837784072/locations/us-central1/endpoints/7299455936421167104',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'director':        'projects/223837784072/locations/us-central1/endpoints/7103549352630550528',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/1505012065855602688',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/2194625758796709888',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-04-27
-    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
-*/
+const VERTEX_ENDPOINT_PATTERN = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
-    // Not yet fine-tuned
-    'creative':      undefined,
-    'keeper':        undefined,
-
-    // === ROUND 8 (SWARM-NATIVE BURST) ===
-    // Base: gemini-3.1-flash-lite (400 examples) — 2026-05-09
-    // Status: Training COMPLETE — 2026-05-10
-    'generalist':      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
-    'finance':         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
-    'finance.accounting': undefined,
-    'finance.tax':       undefined,
-    'finance.royalty':   undefined,
-    'legal':           'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
-    'legal.contracts':  undefined,
-    'legal.compliance': undefined,
-    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
-    'marketing':       'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
-    'social':          'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
-    'publishing':      'projects/223837784072/locations/us-central1/endpoints/8962594816781189120',
-    'licensing':       'projects/223837784072/locations/us-central1/endpoints/1071443844697948160',
-    'brand':           'projects/223837784072/locations/us-central1/endpoints/1396547442798755840',
-    'road':            'projects/223837784072/locations/us-central1/endpoints/6548665416510603264',
-    'publicist':       'projects/223837784072/locations/us-central1/endpoints/6584694213529567232',
-    'music':           'projects/223837784072/locations/us-central1/endpoints/6646900183382622208',
-    'video':           'projects/223837784072/locations/us-central1/endpoints/4778750762953998336',
-    'devops':          'projects/223837784072/locations/us-central1/endpoints/4200038210836889600',
-    'security':        'projects/223837784072/locations/us-central1/endpoints/3481714070271295488',
-    'producer':        'projects/223837784072/locations/us-central1/endpoints/8255529675284021248',
-    'director':        'projects/223837784072/locations/us-central1/endpoints/8584292448082067456',
-    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
-    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
-    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
-    'analytics':       undefined,  // Intelligence Analytics Specialist — not yet fine-tuned
-};
+// Fine-tuned agents are enabled by default. Explicitly setting the env var to
+// "false" is treated as a configuration error by getFineTunedModel().
+export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS !== 'false';
 
 /**
- * Get the fine-tuned model endpoint for an agent, or undefined to use base model.
- * Returns `undefined` when:
- * - Feature flag is disabled
- * - Agent has no fine-tuned endpoint registered
- * - Endpoint is set to undefined (not yet available)
+ * Direct R8 endpoint map.
+ *
+ * Base: gemini-3.1-flash-lite (400 examples) - 2026-05-09
+ * Status: Training COMPLETE - 2026-05-10
  */
-export function getFineTunedModel(agentId: ValidAgentId): string | undefined {
-    if (!USE_FINE_TUNED_AGENTS) return undefined;
-    return FINE_TUNED_MODEL_REGISTRY[agentId];
+export const DIRECT_FINE_TUNED_MODEL_REGISTRY = {
+    generalist:      'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+    finance:         'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
+    legal:           'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
+    distribution:    'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
+    marketing:       'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
+    social:          'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
+    publishing:      'projects/223837784072/locations/us-central1/endpoints/8962594816781189120',
+    licensing:       'projects/223837784072/locations/us-central1/endpoints/1071443844697948160',
+    brand:           'projects/223837784072/locations/us-central1/endpoints/1396547442798755840',
+    road:            'projects/223837784072/locations/us-central1/endpoints/6548665416510603264',
+    publicist:       'projects/223837784072/locations/us-central1/endpoints/6584694213529567232',
+    music:           'projects/223837784072/locations/us-central1/endpoints/6646900183382622208',
+    video:           'projects/223837784072/locations/us-central1/endpoints/4778750762953998336',
+    devops:          'projects/223837784072/locations/us-central1/endpoints/4200038210836889600',
+    security:        'projects/223837784072/locations/us-central1/endpoints/3481714070271295488',
+    producer:        'projects/223837784072/locations/us-central1/endpoints/8255529675284021248',
+    director:        'projects/223837784072/locations/us-central1/endpoints/8584292448082067456',
+    screenwriter:    'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
+    merchandise:     'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
+    curriculum:      'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
+} as const satisfies Partial<Record<ValidAgentId, string>>;
+
+/**
+ * Tuned domain aliases for agents that do not have their own R8 endpoint.
+ *
+ * These aliases are deliberate: they keep every valid agent on a fine-tuned
+ * Vertex endpoint while preserving the narrower runtime identity/prompt/tool
+ * surface of the worker or placeholder agent.
+ */
+export const FINE_TUNED_MODEL_ALIASES = {
+    'finance.accounting': 'finance',
+    'finance.tax': 'finance',
+    'finance.royalty': 'finance',
+    'legal.contracts': 'legal',
+    'legal.compliance': 'legal',
+    creative: 'director',
+    analytics: 'marketing',
+    keeper: 'generalist',
+} as const satisfies Partial<Record<ValidAgentId, ValidAgentId>>;
+
+function resolveRegistryEndpoint(agentId: ValidAgentId, seen: ValidAgentId[] = []): string {
+    if (seen.includes(agentId)) {
+        throw new Error(`[FineTunedModels] Alias cycle detected: ${[...seen, agentId].join(' -> ')}`);
+    }
+
+    const directEndpoint = DIRECT_FINE_TUNED_MODEL_REGISTRY[agentId as keyof typeof DIRECT_FINE_TUNED_MODEL_REGISTRY];
+    if (directEndpoint) {
+        return directEndpoint;
+    }
+
+    const aliasTarget = FINE_TUNED_MODEL_ALIASES[agentId as keyof typeof FINE_TUNED_MODEL_ALIASES];
+    if (aliasTarget) {
+        return resolveRegistryEndpoint(aliasTarget, [...seen, agentId]);
+    }
+
+    throw new Error(`[FineTunedModels] Missing fine-tuned endpoint for valid agent "${agentId}"`);
+}
+
+function buildResolvedRegistry(): Record<ValidAgentId, string> {
+    return VALID_AGENT_IDS.reduce((acc, agentId) => {
+        const endpoint = resolveRegistryEndpoint(agentId);
+        if (!VERTEX_ENDPOINT_PATTERN.test(endpoint)) {
+            throw new Error(`[FineTunedModels] Invalid Vertex endpoint for agent "${agentId}": ${endpoint}`);
+        }
+        acc[agentId] = endpoint;
+        return acc;
+    }, {} as Record<ValidAgentId, string>);
+}
+
+export const FINE_TUNED_MODEL_REGISTRY: Record<ValidAgentId, string> = buildResolvedRegistry();
+
+/**
+ * Returns the fine-tuned Vertex endpoint for a valid agent.
+ *
+ * This function never falls back to a base Gemini model. If tuned routing is
+ * disabled or an agent is missing from the registry, it throws so migration
+ * drift is visible immediately.
+ */
+export function getFineTunedModel(agentId: ValidAgentId): string {
+    if (!USE_FINE_TUNED_AGENTS) {
+        throw new Error(
+            `[FineTunedModels] VITE_USE_FINE_TUNED_AGENTS=false disables tuned agent routing. ` +
+            `Agent "${agentId}" cannot run against a base model.`
+        );
+    }
+
+    const endpoint = FINE_TUNED_MODEL_REGISTRY[agentId];
+    if (!endpoint) {
+        throw new Error(`[FineTunedModels] Missing fine-tuned endpoint for agent "${agentId}"`);
+    }
+
+    return endpoint;
 }

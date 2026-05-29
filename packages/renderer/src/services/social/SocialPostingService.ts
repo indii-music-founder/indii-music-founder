@@ -1,13 +1,11 @@
 import { logger } from '@/utils/logger';
-import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 /**
  * Requirement 141: Multi-Platform Auto-Poster
  *
- * @mock This service is ENTIRELY MOCKED. It simulates API delays and random failures.
- *       Real implementations require TikTok Content Posting API, YouTube Data API v3,
- *       and IG Graph API credentials. Gated behind `enable_social_posting` feature flag.
+ * Real implementations require TikTok Content Posting API, YouTube Data API v3,
+ * and IG Graph API credentials. Gated behind `enable_social_posting` feature flag.
  */
 
 export type ShortFormPlatform = 'TikTok' | 'YouTube Shorts' | 'IG Reels';
@@ -55,27 +53,33 @@ export class SocialPostingService {
         try {
             logger.info(`[SocialPostingService] Preparing payload for ${platform}...`);
 
-            // Format caption with hashtags
             const formattedTags = request.hashtags?.map(tag => tag.startsWith('#') ? tag : `#${tag}`).join(' ') || '';
-            const _finalCaption = `${request.caption}\n\n${formattedTags}`.trim();
+            const finalCaption = `${request.caption}\n\n${formattedTags}`.trim();
+            const dispatchPlatform = this.toDispatchPlatform(platform);
 
-            // Mock API network delay (simulates upload/processing time)
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const dispatchFunction = httpsCallable<
+                { mediaUrl: string; platform: string; caption: string },
+                { success: boolean; externalId: string }
+            >(functionsWest1, 'dispatchSocialPost');
 
-            // In a production environment, this is where we would use the respective Graph APIs
-            // e.g., TikTok Content Posting API, YouTube Data API v3 (videos.insert), IG Graph API
+            const result = await dispatchFunction({
+                mediaUrl: request.videoUrl,
+                platform: dispatchPlatform,
+                caption: finalCaption
+            });
 
-            // NOTE: Simulated random failure removed (was Math.random() < 0.1).
-            // When real APIs are wired, genuine errors will surface naturally.
+            if (!result.data.success || !result.data.externalId) {
+                throw new Error(`dispatchSocialPost did not queue ${platform}`);
+            }
 
-            const mockedPostId = `${platform.toLowerCase().replace(' ', '_')}_${secureRandomAlphanumeric(7)}`;
-
-            logger.info(`[SocialPostingService] Successfully posted to ${platform} (ID: ${mockedPostId})`);
+            logger.info(`[SocialPostingService] Queued ${platform} delivery (ID: ${result.data.externalId})`);
 
             return {
                 platform,
                 success: true,
-                postId: mockedPostId
+                postId: result.data.externalId
             };
 
         } catch (error: unknown) {
@@ -86,6 +90,12 @@ export class SocialPostingService {
                 error: error instanceof Error ? error.message : String(error)
             };
         }
+    }
+
+    private toDispatchPlatform(platform: ShortFormPlatform): 'tiktok' | 'meta_reels' {
+        if (platform === 'TikTok') return 'tiktok';
+        if (platform === 'IG Reels') return 'meta_reels';
+        throw new Error('YouTube Shorts delivery is not wired. Deploy a YouTube Data API delivery worker before enabling this platform.');
     }
 }
 

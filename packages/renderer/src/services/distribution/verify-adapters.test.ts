@@ -152,7 +152,7 @@ describe('Distribution System Verification', () => {
 
     describe('CD Baby Adapter', () => {
         it('should connect successfully', async () => {
-            await expect(cdbaby.connect({ apiKey: 'mock-key' })).resolves.not.toThrow();
+            await expect(cdbaby.connect({ apiKey: 'mock-key', sftpHost: 'mock-sftp-host.cdbaby.com' })).resolves.not.toThrow();
         });
 
         it('should create release', async () => {

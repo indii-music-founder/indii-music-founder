@@ -139,23 +139,13 @@ If a task is outside Security, say:
             }
         },
         check_api_status: async (args: { api_name: string }) => {
-            const prompt = `Check status for API "${args.api_name}". Generate latency metrics, error rates, and overall health.`;
-            const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-            return { success: true, data: response };
+            return { success: false, error: `No live API inventory record found for ${args.api_name}.` };
         },
         rotate_credentials: async (args: { service_name: string }) => {
-            const prompt = `Simulate rotating credentials for ${args.service_name}. Generate a detailed audit log of the key exchange and revocation.`;
-            const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-            return { success: true, data: { message: response } };
+            return { success: false, error: `Credential rotation for ${args.service_name} requires the secure Electron security bridge.` };
         },
         scan_for_vulnerabilities: async (args: { target: string }) => {
-            const prompt = `Perform a simulated vulnerability scan against target: "${args.target}". Return a security assessment report as JSON, listing potential vulnerabilities, severity, and remediation steps.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: response };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
+            return { success: false, error: `Vulnerability scan for ${args.target} requires the secure Electron security scanner.` };
         }
     },
     authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities'],

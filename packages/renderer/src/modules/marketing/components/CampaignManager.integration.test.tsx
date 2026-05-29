@@ -99,7 +99,7 @@ describe('CampaignManager Integration', () => {
         // Verify State Update + toast (inside waitFor to prevent async race — CodeRabbit PR #1707)
         await waitFor(() => {
             expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
-                status: CampaignStatus.DONE
+                status: CampaignStatus.EXECUTING
             }));
             expect(mockToast.success).toHaveBeenCalled();
         }, { timeout: 10000 });

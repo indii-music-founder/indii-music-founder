@@ -40,8 +40,8 @@ export class TraceService {
 
         try {
             if (!db) {
-                logger.warn('[TraceService] DB not initialized, returning mock ID');
-                return crypto.randomUUID();
+                logger.warn('[TraceService] DB not initialized, trace skipped.');
+                return '';
             }
 
             const docRef = doc(collection(db, this.COLLECTION));
@@ -70,7 +70,7 @@ export class TraceService {
             return traceId;
         } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
-            return crypto.randomUUID();
+            return '';
         }
     }
 

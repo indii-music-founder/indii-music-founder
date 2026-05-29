@@ -12,7 +12,7 @@
  * - Press release one-liner
  */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -82,7 +82,7 @@ export class AutoCopywriter {
                 COPY_SCHEMA,
                 2048,
                 'You are a Grammy-winning A&R copywriter and music marketing expert.',
-                INTELLIGENCE_MODELS.TEXT.AGENT
+                getFineTunedModel('marketing')
             );
 
             Logger.info('AutoCopywriter', `Copy generated for "${input.trackTitle}"`);

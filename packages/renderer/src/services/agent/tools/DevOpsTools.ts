@@ -281,13 +281,10 @@ export const DevOpsTools = {
                 ...result.data
             }, `Lock contention test ${result.data.status} for ${args.database}. ${args.parallelWrites} writes, ${result.data.lockFailures} failures.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                database: args.database,
-                parallelWrites: args.parallelWrites,
-                lockFailures: 0,
-                deadlocksDetected: false,
-                status: 'Simulated (deploy Cloud Function for real test)'
-            }, `Contention test simulated for ${args.database}. Deploy Cloud Function 'runContentionTest' for real parallel write testing.`);
+            return toolError(
+                `Contention test for ${args.database} requires deployed Cloud Function 'runContentionTest'.`,
+                'CONTENTION_TEST_UNAVAILABLE'
+            );
         }
     }),
 

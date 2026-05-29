@@ -83,7 +83,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      */
     async createTask(type: DistributionTaskDocument['type'], title: string, metadata: Record<string, unknown> = {}): Promise<string> {
         if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
-            return `mock-task-${Date.now()}`;
+            return `e2e-task-${Date.now()}`;
         }
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
@@ -545,7 +545,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         metadata?: Record<string, unknown>;
     }): Promise<string> {
         if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
-            return `mock-release-${Date.now()}`;
+            return `e2e-release-${Date.now()}`;
         }
 
         const userId = auth.currentUser?.uid;

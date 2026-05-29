@@ -1,7 +1,6 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getFineTunedModel } from '../fine-tuned-models';
@@ -72,7 +71,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                INTELLIGENCE_MODELS.TEXT.AGENT
+                getFineTunedModel('generalist')
             );
 
             if (!result) {
@@ -123,7 +122,7 @@ Return the evaluation in structured JSON matching the requested schema.
     ): Promise<void> {
         try {
             const datasetRef = collection(db, 'users', userId, 'fineTuningDataset');
-            const targetModel = getFineTunedModel(agentId) || 'base_model';
+            const targetModel = getFineTunedModel(agentId);
             
             // Calculate quality average for easy sorting/filtering in the ADK Export phase
             const qualityAverage = (score.goalCompletion + score.adherence + score.coherence + score.toolEfficiency) / 4;
@@ -143,7 +142,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 messages,
                 metadata: {
                     evaluatedAt: new Date().toISOString(),
-                    autoraterModel: INTELLIGENCE_MODELS.TEXT.AGENT,
+                    autoraterModel: getFineTunedModel('generalist'),
                     version: '1.1.0-platinum'
                 },
                 createdAt: serverTimestamp(),
@@ -155,4 +154,3 @@ Return the evaluation in structured JSON matching the requested schema.
         }
     }
 }
-

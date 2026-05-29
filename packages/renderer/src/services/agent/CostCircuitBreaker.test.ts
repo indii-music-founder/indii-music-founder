@@ -62,6 +62,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
         color: 'green',
         category: 'manager',
         systemPrompt: 'You are a test agent.',
+        modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
         tools: []
     } as unknown as AgentConfig;
 

@@ -166,10 +166,11 @@ describe('CampaignManager', () => {
             status: CampaignStatus.EXECUTING
         }));
 
-        // Wait for final update to DONE
+        // Wait for final update to EXECUTING
         await vi.waitFor(() => {
-            expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
-                status: CampaignStatus.DONE
+            expect(mockOnUpdateCampaign).toHaveBeenCalledTimes(2);
+            expect(mockOnUpdateCampaign).toHaveBeenLastCalledWith(expect.objectContaining({
+                status: CampaignStatus.EXECUTING
             }));
         });
     });

@@ -27,9 +27,8 @@ export const electronRenderService = {
             console.log('[ElectronRenderService] Local render successful:', config.outputLocation);
             return config.outputLocation;
         } catch (error) {
-            console.warn('[ElectronRenderService] Local @remotion/renderer failed or not found, falling back to stub mode.', error);
-            // This is a stub fallback. For the purpose of passing the security test or dev mode, we just simulate success.
-            return config.outputLocation;
+            console.error('[ElectronRenderService] Local render failed; no stub render will be reported as success.', error);
+            throw error;
         }
     }
 };

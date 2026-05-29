@@ -175,7 +175,8 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
     async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
         if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
-            return 'live'; // Fallback
+            logger.warn('[DistroKid] Status unavailable: SFTP credentials or Electron bridge missing.');
+            return 'processing';
         }
 
         try {
@@ -196,13 +197,14 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             logger.warn('[DistroKid] Status check failed:', e);
         }
 
-        return 'live';
+        return 'processing';
     }
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'NOT_IMPLEMENTED', message: 'DistroKid takedown delivery is not implemented; no request was sent.' }]
         };
     }
 

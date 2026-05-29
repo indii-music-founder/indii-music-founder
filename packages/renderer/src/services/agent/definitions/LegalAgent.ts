@@ -90,7 +90,7 @@ export const LegalAgent: AgentConfig = {
             },
             {
                 name: "draft_split_sheet",
-                description: "Generates a standard split sheet for collaborators and initiates digital signatures via Docusign API mock.",
+                description: "Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

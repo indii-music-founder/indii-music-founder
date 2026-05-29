@@ -1,8 +1,8 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { WikiStorageAdapter, WikiDocument } from './WikiStorageAdapter';
 import { WikiLinter } from './WikiLinter';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 export interface CompilationRequest {
     rawInput: string;
@@ -61,7 +61,7 @@ Return ONLY the complete, updated Markdown document content. Do not include intr
 
             const compiledContent = await FirebaseIntelligenceService.getInstance().generateText(
                 prompt,
-                INTELLIGENCE_MODELS.TEXT.AGENT // Use PRO for high-quality Markdown synthesis
+                getFineTunedModel('generalist')
             );
 
             const cleanContent = compiledContent.replace(/^```markdown\s*/im, '').replace(/```$/im, '').trim();
@@ -110,7 +110,7 @@ Example output: brand_guidelines OR release_strategy`;
 
         const response = await FirebaseIntelligenceService.getInstance().generateText(
             prompt,
-            INTELLIGENCE_MODELS.TEXT.FAST
+            getFineTunedModel('generalist')
         );
 
         const docId = response.replace(/[^a-zA-Z0-9_]/g, '').trim().toLowerCase();
