@@ -85,9 +85,12 @@ export const EditImageWithAnnotationsTool: any = {
             };
         } catch (error) {
             logger.error('Failed to execute edit_image_with_annotations tool', error);
+            const msg = error instanceof Error ? error.message : String(error);
+            const isConfigError = msg.includes('failed-precondition') || msg.includes('not configured') || msg.includes('not found') || msg.includes('404');
+            
             return {
-                toolError: 'Failed to edit image.',
-                details: error instanceof Error ? error.message : 'Unknown error',
+                toolError: isConfigError ? 'Live image editing is currently unavailable due to missing provider configuration or missing model.' : 'Failed to edit image.',
+                details: msg,
                 urls: []
             };
         }
