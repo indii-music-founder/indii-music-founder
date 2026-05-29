@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-29 01:38 EDT
+**Updated:** 2026-05-29 01:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7063e64d7 docs: correct Firebase rules validation command in audit doc
+a187638bd chore: session checkpoint [01:38]
 f0ed3005b chore: session checkpoint [01:34]
 622756806 chore: session checkpoint [01:31]
 c96b92000 chore: session checkpoint [01:29]
@@ -12,16 +14,22 @@ f28adf072 chore: session checkpoint [01:22]
 b16d823df feat(governance): integrate MultiTurnAutorater, cost circuit breakers, and 20 architectural system flowcharts
 f7136c5c4 chore: session checkpoint [23:28]
 e8136827d chore: session checkpoint [23:23]
-cf0460225 chore: session checkpoint [23:20]
-af4d42c82 chore: session checkpoint [23:12]
 ```
 
 ## Working State
 ```
+ M .claude/settings.json
+ M packages/firebase/src/stripe/config.ts
+ M packages/firebase/src/subscription/createCheckoutSession.ts
+ M packages/firebase/src/subscription/trackUsage.ts
  M packages/renderer/src/modules/agent/services/VenueScoutService.ts
+ M packages/renderer/src/modules/merchandise/components/BlockchainLedger.tsx
  M packages/renderer/src/services/analytics/PlatformDataService.ts
  M packages/renderer/src/services/billing/CostControlService.ts
+ M packages/renderer/src/services/blockchain/SmartContractService.test.ts
+ M packages/renderer/src/services/blockchain/SmartContractService.ts
  M packages/renderer/src/services/legal/DigitalSignatureService.ts
+ M packages/renderer/src/services/pod/PrintOnDemandService.test.ts
  M packages/renderer/src/services/pod/PrintOnDemandService.ts
 ```
 
