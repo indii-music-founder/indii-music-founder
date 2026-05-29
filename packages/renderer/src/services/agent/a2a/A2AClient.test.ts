@@ -7,6 +7,7 @@ vi.unmock('@/services/agent/a2a/A2AClient');
 
 vi.mock("./A2AConfig", () => ({
   resolveA2AConfig: vi.fn().mockResolvedValue({ mode: "http", baseUrl: "http://localhost:50080/a2a" }),
+  invalidateA2AConfig: vi.fn(),
   MY_AGENT_ID: "indii-conductor"
 }));
 
@@ -51,30 +52,42 @@ describe('A2AClient', () => {
     // Reset internal state between tests to prevent leaked circuit breaker trips
     (a2aClient as any).breaker.isTripped = false;
     (a2aClient as any).isInitialized = false;
+    (a2aClient as any).keyExchangeDone = false;
+
+    // Robust fetch mock
+    mockFetch.mockImplementation(async (url: string, init?: any) => {
+      if (url.includes('/discovery')) {
+        return {
+          ok: true,
+          json: async () => ({
+            agents: [
+              {
+                schemaVersion: '1.0.0',
+                agentId: 'test-agent',
+                displayName: 'Test Agent',
+                description: 'A test agent',
+                capabilities: [],
+                inputSchemas: {},
+                outputSchemas: {},
+                costModel: { perTokenInUsd: 0.01, perTokenOutUsd: 0.2 },
+                riskTier: 'read',
+                sla: { modeSync: { p50Ms: 100, p99Ms: 200 }, modeStream: { firstByteMs: 50 } },
+                publicKeyJwk: { kty: 'RSA', n: 'mock', e: 'AQAB' }
+              },
+            ],
+          }),
+        };
+      }
+      // RPC, key.exchange, and other requests
+      return {
+        ok: true,
+        json: async () => ({}),
+      };
+    });
   });
 
   describe('discover', () => {
     it('fetches discovery endpoint and parses AgentCards', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          agents: [
-            {
-              schemaVersion: '1.0.0',
-              agentId: 'test-agent',
-              displayName: 'Test Agent',
-              description: 'A test agent',
-              capabilities: [],
-              inputSchemas: {},
-              outputSchemas: {},
-              costModel: { perTokenInUsd: 0.01, perTokenOutUsd: 0.2 },
-              riskTier: 'read',
-              sla: { modeSync: { p50Ms: 100, p99Ms: 200 }, modeStream: { firstByteMs: 50 } },
-            },
-          ],
-        }),
-      });
-
       const cards = await a2aClient.discover();
       expect(cards.length).toBeGreaterThan(0);
       expect(cards[0]?.agentId).toBe('test-agent');
@@ -97,7 +110,6 @@ describe('A2AClient', () => {
       vi.mocked(DigitalHandshake.require).mockResolvedValueOnce(true);
       vi.mocked(e2eEncryptionService.encryptMessage).mockResolvedValueOnce({ id: 'msg1', encrypted: {} as any, signature: 'sig' });
       vi.mocked(e2eEncryptionService.decryptMessage).mockResolvedValueOnce({ result: 'success' });
-      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
       const result = await a2aClient.invoke('target-agent', 'doWork', { foo: 'bar' }, mockDirective);
       
@@ -123,8 +135,6 @@ describe('A2AClient', () => {
         .mockResolvedValueOnce({ result: { requestId: 'req-123' } }) // Init response
         .mockResolvedValueOnce({ data: 'chunk1' }) // Stream event 1
         .mockResolvedValueOnce({ data: 'chunk2' }); // Stream event 2
-
-      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
       const iterator = a2aClient.stream('target', 'method', {}, mockDirective);
       

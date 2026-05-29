@@ -144,7 +144,9 @@ vi.mock('google-auth-library', () => ({
 vi.mock('firebase-functions/params', () => ({
     defineSecret: vi.fn(() => ({
         value: () => 'mock-secret'
-    }))
+    })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock Stripe to prevent initialization error
