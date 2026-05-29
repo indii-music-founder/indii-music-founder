@@ -895,7 +895,7 @@ export class AgentService {
 
         const enhancedText = sanitizedText + assetContext + 
             '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-            `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
+            `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.` +
             (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
                 try {

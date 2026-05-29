@@ -1,4 +1,4 @@
-import { wrapTool, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
@@ -141,20 +141,17 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             logger.warn('[BugReportTools] Failed to save bug to memory:', e);
         }
 
-        return {
+        const finalMessage = githubStatus === 'merged_as_comment'
+            ? `Bug report merged as comment on existing issue: ${issueUrl}`
+            : githubStatus === 'ok'
+            ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
+            : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`;
+
+        return toolSuccess({
             bugId: bugReport.id,
             title: bugReport.title,
-            severity: bugReport.severity,
-            markdownBody,
-            firestore: 'ok',
-            github: githubStatus,
-            issueUrl,
-            message: githubStatus === 'merged_as_comment'
-                ? `Bug report merged as comment on existing issue: ${issueUrl}`
-                : githubStatus === 'ok'
-                ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
-                : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`
-        };
+            issueUrl
+        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`);
     }),
 
     request_feature: wrapTool('request_feature', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
@@ -236,13 +233,9 @@ ${featureRequest.useCase}
             logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
         }
 
-        return {
+        return toolSuccess({
             featureId: featureRequest.id,
-            title: featureRequest.title,
-            priority: featureRequest.priority,
-            category: featureRequest.category,
-            markdownBody,
-            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
-        };
+            title: featureRequest.title
+        }, `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`);
     })
 } satisfies Record<string, AnyToolFunction>;

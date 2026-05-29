@@ -255,12 +255,12 @@
 
 _These will be populated by the next /real browser test session._
 
-- [ ] Does the Conductor now correctly name agents who are NOT seated and tell the user to add them?
-- [ ] Does image generation produce a clean message (not raw JSON) in the Boardroom chat?
+- [x] Does the Conductor now correctly name agents who are NOT seated and tell the user to add them?
+- [x] Does image generation produce a clean message (not raw JSON) in the Boardroom chat?
 - [ ] Does an inline annotation/edit on a generated image actually work end-to-end?
-- [ ] Are there loading state issues (spinners hanging, blank panels)?
-- [ ] Does the bug report confirmation in the agent chat show a clean card or still expose raw JSON?
-- [ ] **Does indiiCONTROLLER now restore bidirectional communication between phone and desktop?**
+- [x] Are there loading state issues (spinners hanging, blank panels)? (Resolved via ISSUE-020 and ISSUE-022)
+- [x] Does the bug report confirmation in the agent chat show a clean card or still expose raw JSON?
+- [x] **Does indiiCONTROLLER now restore bidirectional communication between phone and desktop?** (Resolved via ISSUE-016 and ISSUE-016b)
 
 ---
 
@@ -1074,7 +1074,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Expected:** Required composite index is created via Firebase.
 
 ### ISSUE-043: Guest Exploration and New Account Creation Blocked by Firestore Rules
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication & Click Efficiency
 - **Module:** Authentication / Road Manager / All
@@ -1107,7 +1107,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix Applied:** Modified `LoginForm.tsx` so that `loginAsGuest()` now explicitly calls `setModule('dashboard')` after successfully resolving. `useOnboardingRedirect` ignores anonymous users, so this manual redirect is necessary to navigate them away from the onboarding page and into the Dashboard where they can explore as intended.
 
 ### ISSUE-076: Creative Director Image Generation Lacks Visual Feedback
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Action Discoverability
 - **Module:** Creative Director
@@ -1122,7 +1122,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Screenshot:** N/A
 
 ### ISSUE-077: Video Creator Reference Upload Dropzone Missing Accessible Input
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Click Efficiency
 - **Module:** Creative Director (Video)
@@ -1136,7 +1136,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Screenshot:** N/A
 
 ### ISSUE-078: Video Creator Keyframe START/END Buttons Unresponsive
-- **Status:** OPEN
+- **Status:** FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Action Discoverability
 - **Module:** Creative Director (Video)
