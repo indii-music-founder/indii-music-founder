@@ -44,6 +44,7 @@ import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
 import { secureRandomInt } from '@/utils/crypto-random';
 import { CostControlService } from '@/services/billing/CostControlService';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
@@ -85,6 +86,14 @@ export type { ChatMessage } from './types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
+const isVertexFineTunedEndpoint = (modelName: string): boolean =>
+    modelName.startsWith('projects/') && modelName.includes('/endpoints/');
+
+const fineTunedFallbackError = (modelName: string, reason: string): AppException =>
+    new AppException(
+        AppErrorCode.INTERNAL_ERROR,
+        `Fine-tuned endpoint unavailable; refusing base-model fallback for ${modelName}. ${reason}`
+    );
 
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
@@ -357,24 +366,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                         await this.ensureInitialized();
 
-                        // 1. MOCK MODE CHECK (Fast-path for development survival)
+                        // 1. Explicit mock mode is not a supported runtime path.
                         if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
-                            logger.info(`[FirebaseIntelligenceService] MOCK MODE ACTIVE for ${modelName}`);
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            return {
-                                response: {
-                                    candidates: [{
-                                        content: {
-                                            role: 'model',
-                                            parts: [{ text: "This is a MOCK response from Indii Intelligence. Cloud services are currently paused for maintenance." }]
-                                        },
-                                        finishReason: 'STOP'
-                                    }],
-                                    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 },
-                                    text: () => "This is a MOCK response from Indii Intelligence. Cloud services are currently paused for maintenance.",
-                                    functionCalls: () => []
-                                }
-                            } as any;
+                            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'VITE_INTELLIGENCE_MOCK_MODE=true is no longer supported. Configure live intelligence services.');
                         }
 
                         // 2. Quota & Rate Limit
@@ -436,6 +430,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const result = await (async () => {
                             // FALLBACK MODE
                             if (this.useFallbackMode && this.fallbackClient) {
+                                if (isVertexFineTunedEndpoint(modelName)) {
+                                    throw fineTunedFallbackError(modelName, 'Direct Gemini fallback cannot serve Vertex tuned endpoints.');
+                                }
                                 const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
                                 return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                             }
@@ -496,6 +493,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             } catch (error: unknown) {
                                 const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
                                 if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
+                                    if (isVertexFineTunedEndpoint(modelName)) {
+                                        const reason = error instanceof Error ? error.message : String(error);
+                                        logger.error('[FirebaseIntelligenceService] Fine-tuned endpoint call failed; fallback blocked.', {
+                                            modelName,
+                                            reason,
+                                        });
+                                        throw fineTunedFallbackError(modelName, reason);
+                                    }
                                     await this.triggerGlobalFallback();
                                     return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
@@ -628,38 +633,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     }
                     await this.ensureInitialized();
 
-                    // 1. MOCK MODE CHECK
+                    // 1. Explicit mock mode is not a supported runtime path.
                     if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
-                        logger.info(`[FirebaseIntelligenceService] MOCK MODE ACTIVE (STREAM) for ${modelName}`);
-                        return {
-                            stream: new ReadableStream({
-                                async start(controller) {
-                                    const mockParts = ["This ", "is ", "a ", "MOCK ", "streaming ", "response ", "from ", "Indii."];
-                                    for (const part of mockParts) {
-                                        await new Promise(resolve => setTimeout(resolve, 100));
-                                        controller.enqueue({
-                                            candidates: [{
-                                                content: { parts: [{ text: part }] }
-                                            }],
-                                            usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
-                                            text: () => part,
-                                            functionCalls: () => []
-                                        });
-                                    }
-                                    controller.close();
-                                }
-                            }) as any,
-                            response: Promise.resolve({
-                                response: {
-                                    candidates: [{ content: { parts: [{ text: "This is a MOCK streaming response from Indii." }] } }],
-                                    text: () => "This is a MOCK streaming response from Indii.",
-                                    functionCalls: () => []
-                                } as any,
-                                text: () => "This is a MOCK streaming response from Indii.",
-                                functionCalls: () => [],
-                                usage: () => ({ promptTokenCount: 8, candidatesTokenCount: 8, totalTokenCount: 16 })
-                            })
-                        } as any;
+                        throw new AppException(AppErrorCode.INTERNAL_ERROR, 'VITE_INTELLIGENCE_MOCK_MODE=true is no longer supported. Configure live intelligence services.');
                     }
 
                     // 2. Quota & Rate Limit (Backend)
@@ -696,6 +672,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                     // 4. Case analysis for Normal vs Fallback
                     if (this.useFallbackMode && this.fallbackClient) {
+                        if (isVertexFineTunedEndpoint(modelName)) {
+                            throw fineTunedFallbackError(modelName, 'Direct Gemini streaming fallback cannot serve Vertex tuned endpoints.');
+                        }
                         if (timeoutId) {
                             clearTimeout(timeoutId);
                             timeoutId = undefined;
@@ -837,6 +816,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     } catch (error: unknown) {
                         const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
                         if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
+                            if (isVertexFineTunedEndpoint(modelName)) {
+                                const reason = error instanceof Error ? error.message : String(error);
+                                logger.error('[FirebaseIntelligenceService] Fine-tuned stream failed; fallback blocked.', {
+                                    modelName,
+                                    reason,
+                                });
+                                throw fineTunedFallbackError(modelName, reason);
+                            }
                             await this.triggerGlobalFallback();
                             if (timeoutId) {
                                 clearTimeout(timeoutId);
@@ -1043,7 +1030,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         }
 
         return getLiveGenerativeModel(firebaseAI, {
-            model: INTELLIGENCE_MODELS.TEXT.AGENT,
+            model: getFineTunedModel('generalist'),
             systemInstruction
         });
     }

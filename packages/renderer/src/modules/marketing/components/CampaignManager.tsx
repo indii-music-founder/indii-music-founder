@@ -70,9 +70,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 onUpdateCampaign({
                     ...selectedCampaign,
                     posts: responseData.posts,
-                    status: CampaignStatus.DONE
+                    status: CampaignStatus.EXECUTING
                 });
-                toast.success(responseData.message || "Campaign executed successfully!");
+                toast.success(responseData.message || "Campaign queued for scheduled delivery.");
             } else {
                 throw new Error(responseData.message || "Execution returned failure status.");
             }

@@ -24,6 +24,39 @@ import {
 } from "./types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
 
+type DeliveryPlatform = "twitter" | "instagram";
+
+function toDeliveryPlatform(platform: ScheduledPost["platform"]): DeliveryPlatform {
+  if (platform === "Twitter") return "twitter";
+  if (platform === "Instagram") return "instagram";
+  throw new Error(`Native scheduled delivery is not configured for ${platform}.`);
+}
+
+function fromDeliveryDoc(id: string, data: Record<string, unknown>): ScheduledPost {
+  const platform = data.platform === "instagram" ? "Instagram" : "Twitter";
+  const scheduledAt = data.scheduledAt as { toMillis?: () => number } | undefined;
+  const scheduledTime = typeof data.scheduledTime === "number"
+    ? data.scheduledTime
+    : scheduledAt?.toMillis?.();
+
+  return {
+    id,
+    platform,
+    copy: String(data.copy || data.text || ""),
+    imageAsset: data.mediaUrl ? {
+      assetType: "image",
+      title: "Scheduled media",
+      imageUrl: String(data.mediaUrl),
+      caption: String(data.copy || data.text || ""),
+    } : undefined,
+    day: typeof data.day === "number" ? data.day : 1,
+    scheduledTime,
+    status: CampaignStatus.PENDING,
+    errorMessage: typeof data.deliveryError === "string" ? data.deliveryError : undefined,
+    postId: typeof data.platformPostId === "string" ? data.platformPostId : undefined,
+    authorId: String(data.authorId || data.userId || ""),
+  };
+}
 
 export class SocialService {
   /**
@@ -137,9 +170,27 @@ export class SocialService {
     }
 
     const validPost = validation.data;
+    const deliveryPlatform = toDeliveryPlatform(validPost.platform);
+    const scheduledTime = validPost.scheduledTime || Date.now();
+    const mediaUrl = validPost.imageAsset?.imageUrl;
 
-    // Use clean data from Zod
-    const docRef = await addDoc(collection(db, "scheduled_posts"), validPost);
+    const docRef = await addDoc(collection(db, "scheduledPosts"), {
+      userId: userProfile.id,
+      authorId: userProfile.id,
+      platform: deliveryPlatform,
+      copy: validPost.copy,
+      text: validPost.copy,
+      mediaUrl: mediaUrl || null,
+      mediaType: mediaUrl ? "image" : null,
+      day: validPost.day || 1,
+      scheduledTime,
+      scheduledAt: Timestamp.fromMillis(scheduledTime),
+      status: "pending",
+      source: "social_dashboard",
+      retryCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
     return docRef.id;
   }
 
@@ -154,17 +205,14 @@ export class SocialService {
     if (!targetUserId) return [];
 
     const q = query(
-      collection(db, "scheduled_posts"),
-      where("authorId", "==", targetUserId),
-      where("status", "==", CampaignStatus.PENDING),
-      orderBy("scheduledTime", "asc"),
+      collection(db, "scheduledPosts"),
+      where("userId", "==", targetUserId),
+      where("status", "==", "pending"),
+      orderBy("scheduledAt", "asc"),
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as ScheduledPost[];
+    return snapshot.docs.map((doc) => fromDeliveryDoc(doc.id, doc.data()));
   }
 
   /**

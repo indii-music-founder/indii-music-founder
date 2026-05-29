@@ -1,7 +1,7 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // ScreenwriterTools Implementation
@@ -31,7 +31,7 @@ Attempt to infer scene headers if not explicit.
 
     const response = await AutonomousIntelligence.generateContent(
       prompt,
-      INTELLIGENCE_MODELS.TEXT.AGENT,
+      getFineTunedModel('video'),
       undefined,
       systemPrompt
     );
@@ -69,7 +69,7 @@ Return ONLY valid JSON with this structure:
 
     const response = await AutonomousIntelligence.generateContent(
       prompt,
-      INTELLIGENCE_MODELS.TEXT.AGENT,
+      getFineTunedModel('video'),
       undefined,
       systemPrompt
     );

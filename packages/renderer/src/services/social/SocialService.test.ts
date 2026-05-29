@@ -56,7 +56,8 @@ vi.mock('firebase/firestore', () => ({
     increment: mockIncrement,
     runTransaction: vi.fn(), // Mocking transaction just in case
     Timestamp: {
-        now: () => ({ toDate: () => new Date() })
+        now: () => ({ toDate: () => new Date() }),
+        fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
     }
 }));
 
@@ -158,7 +159,7 @@ describe('SocialService', () => {
         });
     });
     describe('schedulePost', () => {
-        it('should add a post to scheduled_posts collection', async () => {
+        it('should add a post to scheduledPosts collection for delivery worker processing', async () => {
             mockAddDoc.mockResolvedValueOnce({ id: 'scheduled-id' });
 
             const post = {
@@ -176,13 +177,16 @@ describe('SocialService', () => {
 
             const id = await SocialService.schedulePost(post);
 
-            expect(mockCollection).toHaveBeenCalledWith({}, 'scheduled_posts');
+            expect(mockCollection).toHaveBeenCalledWith({}, 'scheduledPosts');
             expect(mockAddDoc).toHaveBeenCalledWith(
                 'MOCK_COLLECTION_REF',
                 expect.objectContaining({
+                    userId: 'user-123',
                     authorId: 'user-123',
-                    platform: 'Twitter',
-                    status: 'PENDING'
+                    platform: 'twitter',
+                    status: 'pending',
+                    text: 'Test scheduled post',
+                    source: 'social_dashboard'
                 })
             );
             expect(id).toBe('scheduled-id');

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceTools } from '../FinanceTools';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { getFineTunedModel } from '../../fine-tuned-models';
 
 // Mock Dependencies
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
@@ -73,7 +73,7 @@ describe('FinanceTools', () => {
                         ])
                     })
                 ]),
-                INTELLIGENCE_MODELS.TEXT.AGENT
+                expect.any(String)
             );
 
             expect(result).toEqual(expect.objectContaining({

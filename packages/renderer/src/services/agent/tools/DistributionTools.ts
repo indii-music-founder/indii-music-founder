@@ -39,7 +39,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                 artists: [artist],
                 upc,
                 tracks: [{
-                    // Minimal track mock to satisfy type
+                    // Minimal track payload for metadata-only preflight.
                     title,
                     isrc,
                     duration: 0,
@@ -493,7 +493,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             const result = await (window.electronAPI.distribution as any).checkMerlinStatus({
-                tracks: [], // Add required 'tracks' array (empty for simple pre-check if supported by python, or mock)
+                tracks: [],
                 ...args
             });
 

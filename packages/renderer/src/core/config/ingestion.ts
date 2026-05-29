@@ -1,26 +1,51 @@
 /**
  * Proprietary Ingestion IP Configuration and System Constants
- * Source: Proprietary System Registry
+ * Source: runtime environment / deployment secrets.
  */
 
+const requiredEnv = (key: string): string => {
+    const value = (import.meta.env as Record<string, string | undefined>)[key]?.trim();
+    if (!value) {
+        if (import.meta.env.MODE === 'test' || import.meta.env.VITEST) {
+            return `TEST_${key}`;
+        }
+        throw new Error(`[IngestionConfig] Missing required environment variable ${key}`);
+    }
+    return value;
+};
+
 export const INGESTION_CONFIG = {
-    // Assigned Proprietary System Identifier for New Detroit Music LLC
-    SYSTEM_IDENTIFIER: 'PA-DPIDA-2025122604-E',
+    // Assigned Proprietary System Identifier for the active content provider.
+    get SYSTEM_IDENTIFIER() {
+        return requiredEnv('VITE_INGESTION_SYSTEM_IDENTIFIER');
+    },
 
-    // Official Legal Name registered with regulatory authorities
-    ENTITY_NAME: 'New Detroit Music LLC',
+    // Official legal name registered for the active content provider.
+    get ENTITY_NAME() {
+        return requiredEnv('VITE_INGESTION_ENTITY_NAME');
+    },
 
-    // Doing Business As (DBA)
-    TRADING_NAME: 'indii.music',
+    // Public trading name / DBA.
+    get TRADING_NAME() {
+        return requiredEnv('VITE_INGESTION_TRADING_NAME');
+    },
 
     // Default version for proprietary ingestion messages
     INGESTION_VERSION: '4.3',
 
-    // Contact Info (for reference/messaging)
+    // Contact info used in generated partner-facing metadata.
     CONTACT: {
-        NAME: 'William Roberts',
-        EMAIL: 'the.walking.agency.det@gmail.com',
-        ADDRESS: '3808 15th St, Detroit, MI 48208, USA',
-        PHONE: '+1-313-746-8136'
+        get NAME() {
+            return requiredEnv('VITE_INGESTION_CONTACT_NAME');
+        },
+        get EMAIL() {
+            return requiredEnv('VITE_INGESTION_CONTACT_EMAIL');
+        },
+        get ADDRESS() {
+            return requiredEnv('VITE_INGESTION_CONTACT_ADDRESS');
+        },
+        get PHONE() {
+            return requiredEnv('VITE_INGESTION_CONTACT_PHONE');
+        }
     }
 } as const;

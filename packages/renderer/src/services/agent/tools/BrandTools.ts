@@ -151,17 +151,35 @@ export const BrandTools = {
     }),
 
     audit_visual_assets: wrapTool('audit_visual_assets', async ({ assets }: { assets: string[] }) => {
-        const schema = zodToJsonSchema(AuditVisualAssetsSchema);
-        const prompt = `
-        Audit the following list of visual assets for brand compliance (simulated):
-        Assets: ${assets.join(', ')}
+        const electronWin = window as unknown as ElectronWindowAPI;
+        if (!electronWin.electronAPI?.brand) {
+            return toolError(
+                `Visual brand audit requires the Electron brand analysis bridge. No assets were audited: ${assets.join(', ')}`,
+                'BRAND_BRIDGE_UNAVAILABLE'
+            );
+        }
 
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
-        `;
+        const reports = await Promise.all(assets.map(async (assetPath) => {
+            const response = await electronWin.electronAPI!.brand!.analyzeConsistency(assetPath, {});
+            if (!response.success) {
+                throw new Error(response.error || `Brand audit failed for ${assetPath}`);
+            }
+            return { assetPath, report: response.report };
+        }));
 
-        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof AuditVisualAssetsSchema>>(prompt, schema as Record<string, unknown>);
-        const validated = AuditVisualAssetsSchema.parse(data);
+        const flagged_assets = reports
+            .filter(({ report }) => !report.consistent)
+            .map(({ assetPath }) => assetPath);
+        const validated = AuditVisualAssetsSchema.parse({
+            compliant: flagged_assets.length === 0,
+            flagged_assets,
+            report: JSON.stringify(reports.map(({ assetPath, report }) => ({
+                assetPath,
+                score: report.consistency_score,
+                summary: report.summary,
+            })))
+        });
+
         return {
             ...validated,
             message: validated.compliant

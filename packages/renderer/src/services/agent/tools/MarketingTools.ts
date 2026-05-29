@@ -177,13 +177,34 @@ export const MarketingTools = {
     }),
 
     track_performance: wrapTool('track_performance', async ({ campaignId }: { campaignId: string }) => {
-        const schema = zodToJsonSchema(TrackPerformanceSchema);
-        const prompt = `
-        You are a Marketing Analyst. Generate a simulated performance report for Campaign ID: ${campaignId}.
-        `;
-        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof TrackPerformanceSchema>>(prompt, schema as Record<string, unknown>);
-        const validated = TrackPerformanceSchema.parse(data);
-        return toolSuccess(validated, `Performance tracking report generated for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+        try {
+            const { auth, db } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
+            const uid = auth.currentUser?.uid;
+
+            const refs = [
+                ...(uid ? [doc(db, 'users', uid, 'campaign_metrics', campaignId)] : []),
+                doc(db, 'campaign_metrics', campaignId)
+            ];
+
+            for (const ref of refs) {
+                const snap = await getDoc(ref);
+                if (!snap.exists()) continue;
+
+                const data = snap.data();
+                const validated = TrackPerformanceSchema.parse({
+                    campaignId,
+                    metrics: data.metrics,
+                    roi: data.roi
+                });
+                return toolSuccess(validated, `Performance metrics loaded for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+            }
+
+            return toolError(`No live performance metrics found for Campaign ID: ${campaignId}.`, 'METRICS_NOT_FOUND');
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to load performance metrics: ${msg}`, 'METRICS_READ_FAILED');
+        }
     }),
 
     generate_campaign_from_audio: wrapTool('generate_campaign_from_audio', async ({ uploadedAudioIndex }: { uploadedAudioIndex: number }) => {
@@ -245,7 +266,6 @@ export const MarketingTools = {
     }),
 
     create_ab_test_campaign: wrapTool('create_ab_test_campaign', async ({ product, goal, channels }: { product: string; goal: string; channels: string[] }) => {
-        // Mock generating 3 variants and setting up tracking pixel framework
         const variants = [
             { id: 'varA', text: `Catchy headline for ${product} - Don't miss out!`, target_audience: 'Broad' },
             { id: 'varB', text: `The story behind ${product}. Hear it now.`, target_audience: 'Niche/Fans' },
@@ -330,9 +350,9 @@ export const MarketingTools = {
             segmentName: args.segmentName,
             htmlPreview: args.htmlContent.slice(0, 500),
             sendAt: args.sendAt || 'immediate',
-            status: 'queued_for_email_provider',
+            status: 'requires_email_provider_credentials',
             note: 'Provider handoff is prepared; external Mailchimp/Klaviyo send requires configured credentials.',
-        }, `Newsletter "${args.subjectLine}" queued for ${args.segmentName}.`);
+        }, `Newsletter "${args.subjectLine}" prepared for ${args.segmentName}; provider credentials are required before sending.`);
     }),
 
     generate_presave_campaign: wrapTool('generate_presave_campaign', async (args: {
@@ -368,9 +388,9 @@ export const MarketingTools = {
             segmentName: args.segmentName,
             characterCount: args.messageBody.length,
             mediaUrl: args.mediaUrl || null,
-            status: 'queued_for_sms_provider',
+            status: 'requires_sms_provider_credentials',
             note: 'SMS content is queued for provider handoff; Twilio credentials are required for live delivery.',
-        }, `SMS blast queued for ${args.segmentName}.`);
+        }, `SMS blast prepared for ${args.segmentName}; Twilio credentials are required before sending.`);
     }),
 
     enrich_fan_data: wrapTool('enrich_fan_data', async (args: { emailAddress: string }) => {
@@ -451,7 +471,6 @@ export const MarketingTools = {
     }),
 
     track_post_release_momentum: wrapTool('track_post_release_momentum', async (args: { trackId: string; adSpend: number; organicStreams: number; dsp: string }) => {
-        // Mock Post-Release Momentum Tracking (Item 150)
         const roi = (args.organicStreams * 0.004) / (args.adSpend || 1);
         const momentumScore = Math.min(100, (args.organicStreams / 1000) * 5 + (roi * 10));
 

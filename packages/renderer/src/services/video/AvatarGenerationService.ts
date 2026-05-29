@@ -4,14 +4,13 @@
  * Orchestrates Autonomous lip-sync and avatar video generation.
  * Connects to SadTalker, HeyGen, or D-ID APIs.
  * Fulfills PRODUCTION_200 item #106.
- *
- * @mock This service is ENTIRELY MOCKED. `handleProcessingMock()` simulates progress
- *       without calling any real API. Gated behind `enable_avatar_generation` feature flag.
  */
 
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
+import { auth, functionsWest1 } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export interface AvatarJob {
     id: string;
@@ -40,19 +39,33 @@ export class AvatarGenerationService {
         // 1. Log job for UI feedback
         store.addJob({
             id: jobId,
-            title: `Avatar Lip-Sync: Processing...`,
+            title: `Avatar Lip-Sync: Queuing...`,
             progress: 0,
             status: 'running',
             type: 'video_render'
         });
 
         try {
-            // 2. Mock external API call (e.g. POST /v1/heygen/create)
-            // In production: const response = await httpsCallable(functions, 'dispatchAvatarJob')({ imageUrl, audioUrl });
+            if (!auth.currentUser) {
+                throw new Error('You must be signed in to generate avatar video.');
+            }
 
-            this.handleProcessingMock(jobId);
+            const dispatchAvatarJob = httpsCallable<
+                { imageUrl: string; audioUrl: string },
+                { jobId?: string }
+            >(functionsWest1, 'dispatchAvatarJob');
 
-            return jobId;
+            store.updateJobProgress(jobId, 25);
+            const response = await dispatchAvatarJob({ imageUrl, audioUrl });
+            const backendJobId = response.data.jobId;
+            if (!backendJobId) {
+                throw new Error('Avatar backend did not return a job ID.');
+            }
+
+            store.updateJobProgress(jobId, 100);
+            store.updateJobStatus(jobId, 'success');
+            logger.info(`[AvatarGen] Avatar job queued: ${backendJobId}`);
+            return backendJobId;
 
         } catch (error: unknown) {
             logger.error(`[AvatarGen] Lip-sync generation failed:`, error);
@@ -61,33 +74,23 @@ export class AvatarGenerationService {
         }
     }
 
-    private handleProcessingMock(jobId: string) {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            const store = useStore.getState();
-            store.updateJobProgress(jobId, progress);
-
-            if (progress >= 100) {
-                clearInterval(interval);
-                store.updateJobStatus(jobId, 'success');
-                logger.info(`[AvatarGen] Successfully generated avatar video.`);
-            }
-        }, 3000); // 30-second mock processing window (realistic for avatar gen)
-    }
-
     /**
      * Checks the status of a long-running avatar job (for pollers).
      */
     async checkJobStatus(jobId: string): Promise<AvatarJob> {
         logger.debug(`[AvatarGen] Checking status for ${jobId}`);
 
-        return {
-            id: jobId,
-            sourceImageUrl: '',
-            audioUrl: '',
-            status: 'processing'
-        };
+        if (!auth.currentUser) {
+            throw new Error('You must be signed in to check avatar job status.');
+        }
+
+        const getAvatarJobStatus = httpsCallable<
+            { jobId: string },
+            AvatarJob
+        >(functionsWest1, 'getAvatarJobStatus');
+
+        const response = await getAvatarJobStatus({ jobId });
+        return response.data;
     }
 }
 

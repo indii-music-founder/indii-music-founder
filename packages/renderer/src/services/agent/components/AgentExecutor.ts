@@ -4,12 +4,13 @@ import { TraceService } from '../observability/TraceService';
 import {
     AgentRegistryProvider,
     AgentResponse,
-    AgentProgressCallback
+    AgentProgressCallback,
+    type ValidAgentId
 } from '../types';
 import { PipelineContext } from './ContextPipeline';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { DelegationLoopDetector } from '../LoopDetector';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
@@ -102,7 +103,7 @@ export class AgentExecutor {
             const interceptedOnProgress: AgentProgressCallback = async (event) => {
                 if (onProgress) onProgress(event);
 
-                const currentModel = agent?.id ? (INTELLIGENCE_MODELS.TEXT.AGENT) : '';
+                const currentModel = agent?.id ? getFineTunedModel(agent.id as ValidAgentId) : '';
 
                 if (event.type === 'thought') {
                     await TraceService.addStep(traceId, 'thought', event.content);
@@ -160,4 +161,3 @@ export class AgentExecutor {
         }
     }
 }
-

@@ -8,8 +8,7 @@ import { ScheduledPostSchema } from '../schemas';
 
 const PLATFORM_LIMITS = {
     Twitter: 280,
-    Instagram: 2200,
-    LinkedIn: 3000
+    Instagram: 2200
 };
 
 interface CreatePostModalProps {
@@ -19,7 +18,7 @@ interface CreatePostModalProps {
 
 export default function CreatePostModal({ onClose, onSave }: CreatePostModalProps) {
     const toast = useToast();
-    const [platform, setPlatform] = useState<'Twitter' | 'Instagram' | 'LinkedIn'>('Twitter');
+    const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
     const [scheduledDate, setScheduledDate] = useState<string>(new Date().toISOString().split('T')[0]!);
@@ -120,7 +119,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                     <div role="group" aria-label="Select Platform">
                         <span className="block text-sm font-medium text-gray-400 mb-2" id={platformLabelId}>Platform</span>
                         <div className="flex gap-3" aria-labelledby={platformLabelId}>
-                            {(['Twitter', 'Instagram', 'LinkedIn'] as const).map((p) => (
+                            {(['Twitter', 'Instagram'] as const).map((p) => (
                                 <button
                                     key={p}
                                     onClick={() => setPlatform(p)}
