@@ -120,7 +120,7 @@ export class GeminiImageService {
                 });
             } else {
                 console.error("[GeminiImageService] Invalid or missing GEMINI_API_KEY. Operations will fail.");
-                throw new functions.https.HttpsError("permission-denied", "Gemini API Key is missing or invalid.");
+                throw new functions.https.HttpsError("failed-precondition", "Gemini API Key is missing or invalid.");
             }
         }
         return this.client;
@@ -438,7 +438,7 @@ export class GeminiImageService {
             throw new functions.https.HttpsError("permission-denied", `Gemini API Authentication Error: ${message}`);
         }
         if (status === 404 || message.includes("404")) {
-            throw new functions.https.HttpsError("not-found", `Gemini API Resource Not Found: ${message}`);
+            throw new functions.https.HttpsError("failed-precondition", `Gemini API Resource Not Found: ${message}`);
         }
         if (status === 429 || message.includes("429")) {
             throw new functions.https.HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
