@@ -1,7 +1,7 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // Types for ProducerTools
@@ -22,7 +22,7 @@ Return ONLY valid JSON with this structure:
   "date": "YYYY-MM-DD",
   "location": "Location Address",
   "callTime": "00:00 AM",
-  "weather": "Sunny, 72F",
+  "weather": null,
   "nearestHospital": "General Hospital, 123 Main St",
   "cast": [
     { "name": "Actor Name", "role": "Character", "callTime": "00:00 AM" }
@@ -31,7 +31,7 @@ Return ONLY valid JSON with this structure:
     { "time": "00:00", "scene": "1A", "description": "Scene Description" }
   ]
 }
-Simulate logical schedule and weather.
+Create a proposed schedule from the provided production facts. Use null for live-only fields such as weather.
 `;
         const prompt = `Create a call sheet JSON for:
 Date: ${args.date}
@@ -41,7 +41,7 @@ Cast: ${args.cast.join(', ')}
 
         const response = await AutonomousIntelligence.generateContent(
             prompt,
-            INTELLIGENCE_MODELS.TEXT.AGENT,
+            getFineTunedModel('video'),
             undefined,
             systemPrompt
         );
@@ -69,7 +69,7 @@ Output a JSON list of:
 
         const response = await AutonomousIntelligence.generateContent(
             prompt,
-            INTELLIGENCE_MODELS.TEXT.AGENT,
+            getFineTunedModel('video'),
             undefined,
             systemPrompt
         );

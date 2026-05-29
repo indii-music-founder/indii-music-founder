@@ -1,10 +1,10 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // Types for LegalTools
@@ -38,7 +38,7 @@ Key Terms: ${args.terms}`;
 
         const response = await AutonomousIntelligence.generateContent(
             prompt,
-            INTELLIGENCE_MODELS.TEXT.AGENT,
+            getFineTunedModel('legal'),
             undefined,
             systemPrompt
         );
@@ -138,35 +138,11 @@ Key Terms: ${args.terms}`;
                 sentTo: result.data.sentTo
             }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
         } catch (error: unknown) {
-            logger.warn(`[LegalTools] ${provider} Cloud Function unavailable, using local tracking:`, error);
-            const envelopeId = `env-${crypto.randomUUID()}`;
-
-            // Persist signature request to Firestore for manual follow-up
-            try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, doc, setDoc } = await import('firebase/firestore');
-                const userId = auth.currentUser?.uid;
-                if (userId) {
-                    await setDoc(doc(collection(db, `users/${userId}/signature_requests`)), {
-                        contractId: args.contractId,
-                        provider,
-                        envelopeId,
-                        signers: args.signers,
-                        status: 'pending_manual',
-                        createdAt: new Date().toISOString()
-                    });
-                }
-            } catch (e: unknown) {
-                logger.warn('[LegalTools] Failed to persist signature request:', e);
-            }
-
-            return toolSuccess({
-                contractId: args.contractId,
-                provider,
-                envelopeId,
-                status: 'queued',
-                sentTo: args.signers.map(s => s.email)
-            }, `Digital signature requests queued via ${provider} for ${args.signers.length} signers. Deploy Cloud Function 'sendForDigitalSignature' for live ${provider} integration.`);
+            logger.warn(`[LegalTools] ${provider} digital signature request failed:`, error);
+            return toolError(
+                `Digital signature request failed: ${error instanceof Error ? error.message : String(error)}. No envelope was created or queued.`,
+                'DIGITAL_SIGNATURE_UNAVAILABLE'
+            );
         }
     }),
 

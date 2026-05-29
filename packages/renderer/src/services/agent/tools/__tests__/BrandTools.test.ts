@@ -24,6 +24,20 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 describe('BrandTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Mock the electron API for vision tasks
+        (window as any).electronAPI = {
+            brand: {
+                analyzeConsistency: vi.fn().mockResolvedValue({
+                    success: true,
+                    report: {
+                        consistent: false,
+                        consistency_score: 50,
+                        summary: "Image 1 has wrong colors"
+                    }
+                })
+            }
+        };
     });
 
     it('verify_output returns valid schema', async () => {
@@ -69,16 +83,15 @@ describe('BrandTools', () => {
     });
 
     it('audit_visual_assets returns valid schema', async () => {
-        const mockResponse = {
+        const expectedResponse = {
             compliant: false,
             flagged_assets: ["image1.jpg"],
-            report: "Image 1 has wrong colors"
+            report: expect.any(String) // the report is a JSON stringified array
         };
-        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
 
         const result = await BrandTools.audit_visual_assets({ assets: ['image1.jpg'] });
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(expect.objectContaining(mockResponse));
-        expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
+        expect(result.data).toEqual(expect.objectContaining(expectedResponse));
+        expect((window as any).electronAPI.brand.analyzeConsistency).toHaveBeenCalledWith('image1.jpg', {});
     });
 });

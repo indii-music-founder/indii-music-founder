@@ -365,9 +365,10 @@ export interface AgentConfig {
      *  An empty array [] means the agent has NO tool access at runtime.
      */
     authorizedTools?: string[];
-    /** Optional fine-tuned model endpoint. When set and the feature flag
-     *  VITE_USE_FINE_TUNED_AGENTS is enabled, BaseAgent will use this model
-     *  instead of the default INTELLIGENCE_MODELS.TEXT.AGENT. Format:
+    /** Optional explicit fine-tuned model endpoint. When omitted, BaseAgent
+     *  resolves a required Vertex endpoint from fine-tuned-models.ts.
+     *  Agent execution must not silently downgrade to a base Gemini model.
+     *  Format:
      *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
      */
     modelId?: string;

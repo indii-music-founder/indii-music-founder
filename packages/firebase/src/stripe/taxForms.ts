@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * STATUS: STUB — NOT PRODUCTION READY
- *
- * This function returns mock tax form request status. Full DocuSign + Stripe 1099
- * integration is deferred pending GMV threshold or explicit business request.
- * See docs/KNOWN_GAPS.md for details and remediation trigger.
+ * Tax form dispatch is intentionally fail-closed until a real provider is wired.
  */
 
 import * as functions from "firebase-functions/v1";
@@ -32,17 +28,9 @@ export const requestTaxForms = functions
             );
         }
 
-        console.log(`[requestTaxForms] Initiating tax form request via Stripe/DocuSign for ${payees.length} payees`);
-
-        // Process payees
-        const requests = payees.map((p: any) => ({
-            name: p.name,
-            email: p.email,
-            formTypeRequested: p.isUsPerson ? "W-9" : "W-8BEN",
-            status: "Requested" // Mock dispatch
-        }));
-
-        return {
-            requests
-        };
+        console.error(`[requestTaxForms] Tax form provider not configured. Refusing to report ${payees.length} mock requests as sent.`);
+        throw new functions.https.HttpsError(
+            "failed-precondition",
+            "Tax form provider is not configured. No tax form requests were sent."
+        );
     });

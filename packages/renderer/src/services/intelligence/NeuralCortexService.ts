@@ -123,7 +123,7 @@ export class NeuralCortexService {
     private get userId(): string {
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            if (this.isE2EMode) return 'mock-uid-e2e';
+            if (this.isE2EMode) return 'e2e-user';
             throw new Error('[NeuralCortex] User not authenticated. Fail-closed.');
         }
         return uid;

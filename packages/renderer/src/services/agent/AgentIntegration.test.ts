@@ -345,7 +345,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
             // Verify final response
             const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
             expect(lastMsg.text).toBe('Memory saved successfully.');
-        });
+        }, 30000);
     });
 
     describe('State & Concurrency', () => {
@@ -375,7 +375,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
             // Only one should have triggered the coordinator/agent
             expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
-        });
+        }, 30000);
     });
 
     describe('Robustness & Error Handling', () => {

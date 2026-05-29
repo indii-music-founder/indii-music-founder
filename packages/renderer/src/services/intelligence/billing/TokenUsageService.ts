@@ -26,7 +26,7 @@ export class TokenUsageService {
      * This bypasses all logic and throws an error to prevent API costs.
      *
      * HOLD: ON pending Firebase billing resolution (2026-05-15). Set to false
-     * once billing is restored. Local dev can bypass with VITE_INTELLIGENCE_MOCK_MODE=true.
+     * once billing is restored.
      */
     private static readonly GLOBAL_EMERGENCY_STOP = false;
 
@@ -78,12 +78,6 @@ export class TokenUsageService {
     static async checkQuota(userId: string): Promise<boolean> {
         if (this.isE2EMode) return true;
         if (this.GLOBAL_EMERGENCY_STOP) {
-            // Bypass emergency stop only if MOCK_MODE is active for local development
-            if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
-                logger.warn('[TokenUsageService] EMERGENCY_STOP is ACTIVE but bypassed by MOCK_MODE');
-                return true;
-            }
-
             throw new AppException(
                 AppErrorCode.QUOTA_EXCEEDED,
                 'EMERGENCY STOP: Intelligence services are temporarily suspended for cost protection. Please contact support.'
@@ -126,11 +120,6 @@ export class TokenUsageService {
     static async checkRateLimit(userId: string): Promise<void> {
         if (this.isE2EMode) return;
         if (this.GLOBAL_EMERGENCY_STOP) {
-            // Bypass emergency stop only if MOCK_MODE is active for local development
-            if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
-                return;
-            }
-
             throw new AppException(
                 AppErrorCode.RATE_LIMITED,
                 'EMERGENCY STOP: Intelligence services are temporarily suspended.'

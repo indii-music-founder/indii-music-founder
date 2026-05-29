@@ -60,11 +60,16 @@ export class BatchDeliveryService {
   static async createBatchDirectory(
     batchId: string,
     releasePackages: string[], // Paths to individual release folders
-    outputDir: string
+    outputDir: string,
+    messageRecipient: string
   ): Promise<string> {
     // Dynamic import fs and path (Node-only, Electron context)
     const fs = await import('fs');
     const path = await import('path');
+
+    if (!messageRecipient || messageRecipient.includes('MOCK')) {
+      throw new Error('Batch delivery requires a configured recipient SystemIdentity. Mock recipients are not allowed.');
+    }
 
     const batchDir = path.join(outputDir, `Batch_${batchId}`);
     if (!fs.existsSync(batchDir)) {
@@ -82,7 +87,7 @@ export class BatchDeliveryService {
     const manifestXml = this.generateBatchManifest({
       batchId,
       messageSender: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
-      messageRecipient: 'PADPIDA_RECIPIENT_MOCK', // Recipient should be dynamic in real use
+      messageRecipient,
       releaseCount: releasePackages.length,
       createdDateTime: new Date().toISOString()
     });

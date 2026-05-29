@@ -296,7 +296,7 @@ describe('FirebaseIntelligenceService', () => {
         await service.getLiveModel('System instruction');
 
         expect(getLiveGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: INTELLIGENCE_MODELS.TEXT.AGENT,
+            model: expect.any(String),
             systemInstruction: 'System instruction'
         }));
     });

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { z } from 'zod';
 
 import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
@@ -74,7 +74,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
+            const res = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('publicist'));
             const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -102,7 +102,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
+            const res = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('publicist'));
             const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -115,16 +115,39 @@ export const PUBLICIST_TOOLS = {
     }),
 
     manage_media_list: wrapTool('manage_media_list', async (args: { action: 'add' | 'remove' | 'list', contact?: any }) => {
-        if (args.action === 'list') {
-            const list = [
-                { name: "Rolling Stone", contact: "editor@rollingstone.com", tags: ["Music", "Review"] },
-                { name: "Pitchfork", contact: "news@pitchfork.com", tags: ["Indie", "News"] },
-                { name: "Billboard", contact: "info@billboard.com", tags: ["Industry", "Charts"] }
-            ];
-            MediaListSchema.parse(list);
-            return toolSuccess(list, "Media list retrieved.");
+        const { auth, db } = await import('@/services/firebase');
+        const { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp } = await import('firebase/firestore');
+
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            return toolError('Media list requires an authenticated user.', 'AUTH_REQUIRED');
         }
-        return toolSuccess({ action: args.action }, `Successfully performed '${args.action}' on media list (Mock).`);
+
+        const contactsRef = collection(db, 'users', userId, 'publicist_media_contacts');
+
+        if (args.action === 'add') {
+            const contact = MediaListSchema.element.parse(args.contact);
+            const ref = await addDoc(contactsRef, {
+                ...contact,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+            return toolSuccess({ id: ref.id, ...contact }, `Media contact added: ${contact.name}.`);
+        }
+
+        if (args.action === 'remove') {
+            const contactId = args.contact?.id;
+            if (!contactId || typeof contactId !== 'string') {
+                return toolError('Removing a media contact requires contact.id.', 'INVALID_ARGS');
+            }
+            await deleteDoc(doc(db, 'users', userId, 'publicist_media_contacts', contactId));
+            return toolSuccess({ id: contactId }, 'Media contact removed.');
+        }
+
+        const snapshot = await getDocs(contactsRef);
+        const list = snapshot.docs.map(contactDoc => contactDoc.data());
+        MediaListSchema.parse(list);
+        return toolSuccess(list, "Media list retrieved.");
     }),
 
     pitch_story: wrapTool('pitch_story', async (args: { outlet: string, angle: string }) => {
@@ -163,7 +186,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
+            const res = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('publicist'));
             const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);

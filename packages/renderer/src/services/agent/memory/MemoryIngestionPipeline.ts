@@ -113,8 +113,8 @@ export class MemoryIngestionPipeline {
             logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for text`);
             return {
                 success: true,
-                memoryId: `mock-memory-${Date.now()}`,
-                summary: `Mock E2E Summary for: ${text.slice(0, 30)}`,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for: ${text.slice(0, 30)}`,
             };
         }
 
@@ -200,8 +200,8 @@ export class MemoryIngestionPipeline {
             logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for file: ${fileName}`);
             return {
                 success: true,
-                memoryId: `mock-memory-${Date.now()}`,
-                summary: `Mock E2E Summary for file: ${fileName}`,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for file: ${fileName}`,
             };
         }
 
@@ -306,8 +306,8 @@ export class MemoryIngestionPipeline {
             logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing session ingestion`);
             return [{
                 success: true,
-                memoryId: `mock-memory-${Date.now()}`,
-                summary: `Mock E2E Summary for session: ${sessionId}`,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for session: ${sessionId}`,
             }];
         }
 

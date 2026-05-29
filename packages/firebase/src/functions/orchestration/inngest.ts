@@ -256,14 +256,19 @@ async function submitToDistributor(
   distributor: string,
   tracks: Array<{ trackId: string; title: string }>
 ): Promise<Record<string, unknown>> {
-  // This would integrate with actual distributor APIs
-  // For now, return mock success
-  return {
-    distributionId,
-    distributor,
-    trackCount: tracks.length,
-    status: 'submitted',
-  };
+  await db
+    .collection('users').doc(userId)
+    .collection('distributions').doc(distributionId)
+    .collection('submissions').doc(distributor)
+    .set({
+      distributor,
+      trackCount: tracks.length,
+      status: 'failed',
+      error: 'Distributor submission connector is not configured.',
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+
+  throw new Error(`Distributor '${distributor}' is not configured for live submission.`);
 }
 
 /**

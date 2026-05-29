@@ -53,9 +53,9 @@ export class BaseAgent implements SpecializedAgent {
     /** Explicit allowlist of tool names. Populated from AgentConfig.authorizedTools.
      *  If undefined, all declared functionDeclarations are allowed. */
     protected authorizedTools?: string[];
-    /** Fine-tuned model endpoint for this agent. When set and feature flag is enabled,
-     *  this model is used instead of the default INTELLIGENCE_MODELS.TEXT.AGENT. */
-    private modelId?: string;
+    /** Fine-tuned Vertex endpoint for this agent. Agent execution must never
+     *  silently downgrade to a base Gemini model. */
+    private modelId: string;
     private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
 
@@ -100,8 +100,13 @@ export class BaseAgent implements SpecializedAgent {
         // Store explicit tool allowlist from config (undefined = infer from declarations)
         this.authorizedTools = config.authorizedTools;
 
-        // Store fine-tuned model ID if specified, otherwise check registry
-        this.modelId = config.modelId || getFineTunedModel(config.id as ValidAgentId);
+        // Store fine-tuned model ID if specified, otherwise resolve from the
+        // strict registry. Missing entries are migration defects.
+        const modelId = config.modelId || getFineTunedModel(config.id as ValidAgentId);
+        if (!modelId) {
+            throw new Error(`[BaseAgent] Missing fine-tuned model endpoint for agent "${config.id}"`);
+        }
+        this.modelId = modelId;
 
         // Accept pre-minted identity card if provided
         if (config.identityCard) {
@@ -871,10 +876,9 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 }
 
-                // Resolve model: fine-tuned endpoint > default base model
-                const resolvedModel = this.modelId || INTELLIGENCE_MODELS.TEXT.AGENT;
-                if (iterations === 1 && this.modelId) {
-                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${this.modelId}`);
+                const resolvedModel = this.modelId;
+                if (iterations === 1) {
+                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${resolvedModel}`);
                 }
 
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
@@ -883,7 +887,7 @@ export class BaseAgent implements SpecializedAgent {
                 logger.debug(`BaseAgent calling AutonomousIntelligence.generateContent for ${this.id}, iteration ${iterations}`);
                 const result = await AutonomousIntelligence.generateContent(
                     requestContents,
-                    resolvedModel, // modelOverride — fine-tuned or base
+                    resolvedModel, // modelOverride — strict fine-tuned endpoint
                     { ...INTELLIGENCE_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
                     iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
@@ -1163,4 +1167,3 @@ export class BaseAgent implements SpecializedAgent {
         }
     }
 }
-

@@ -127,10 +127,16 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
                 logger.info(`[CDBaby] Files staged at ${stagingValues.packagePath}.`);
 
-                // 4. Transmission (Simulation for now, or real if SFTP credentials exist)
-                if (this.credentials?.sftpHost) {
-                    await this.uploadBundle(stagingValues.packagePath, `/upload/${releaseId}`);
+                // 4. Transmission
+                if (!this.credentials?.sftpHost) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        errors: [{ code: 'CONNECTION_ERROR', message: 'CDBaby SFTP credentials missing; staged package was not delivered.' }]
+                    };
                 }
+
+                await this.uploadBundle(stagingValues.packagePath, `/upload/${releaseId}`);
 
                 return {
                     success: true,
@@ -145,16 +151,11 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
                 };
             }
 
-            // Fallback for non-Electron environment
             return {
-                success: true,
+                success: false,
                 releaseId: metadata.id,
-                distributorReleaseId: `CDB-${Date.now()}`,
-                status: 'validating',
-                metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                    reviewRequired: true,
-                }
+                status: 'failed',
+                errors: [{ code: 'ELECTRON_BRIDGE_UNAVAILABLE', message: 'CDBaby delivery requires the Electron distribution bridge.' }]
             };
         } catch (e: unknown) {
             return {
@@ -197,8 +198,9 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'NOT_IMPLEMENTED', message: 'CDBaby takedown delivery is not implemented; no request was sent.' }]
         };
     }
 

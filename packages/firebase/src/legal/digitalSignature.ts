@@ -1,11 +1,14 @@
 import * as functions from "firebase-functions/v1";
-import * as crypto from "crypto";
+import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
+
+const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
 export const sendForDigitalSignature = functions
     .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: Record<string, unknown>, context) => {
         if (!context.auth) {
@@ -25,14 +28,39 @@ export const sendForDigitalSignature = functions
         }
 
         const providerName = provider || "PandaDoc";
+        if (providerName.toLowerCase() !== "pandadoc") {
+            throw new functions.https.HttpsError(
+                "failed-precondition",
+                `Digital signature provider "${providerName}" is not configured.`
+            );
+        }
+
         console.log(`[sendForDigitalSignature] Initiating signature request via ${providerName} for contract ${contractId}`);
 
-        // Note: In a true production environment, this would call PandaDoc/DocuSign API
-        // Here we mock the integration to satisfy the UI tool expectations that the function exists.
-        const envelopeId = `env-${crypto.randomUUID()}`;
+        const apiKey = getPandaDocApiKey();
+        const response = await fetch(`${PANDADOC_API}/documents/${contractId}/send`, {
+            method: "POST",
+            headers: {
+                "Authorization": `API-Key ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                subject: "Document ready for signature",
+                message: "Please review and sign this document.",
+                silent: false,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new functions.https.HttpsError(
+                "internal",
+                `PandaDoc signature request failed: ${response.status} ${error}`
+            );
+        }
 
         return {
-            envelopeId,
+            envelopeId: contractId,
             status: "sent",
             sentTo: signers.map((s: { email: string }) => s.email)
         };

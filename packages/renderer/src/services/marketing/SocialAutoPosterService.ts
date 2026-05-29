@@ -64,8 +64,7 @@ export class SocialAutoPosterService {
                 'dispatchSocialPost'
             );
 
-            // Start simulation of progress for UI feedback while function runs
-            this.simulateProgress(jobId);
+            store.updateJobProgress(jobId, 25);
 
             const result = await dispatchFunction({
                 mediaUrl: content.mediaUrl,
@@ -74,8 +73,9 @@ export class SocialAutoPosterService {
             });
 
             if (result.data.success) {
+                store.updateJobProgress(jobId, 100);
                 store.updateJobStatus(jobId, 'success');
-                logger.info(`[SocialPost] Successfully published to ${content.platform}. External ID: ${result.data.externalId}`);
+                logger.info(`[SocialPost] Queued ${content.platform} post. Queue ID: ${result.data.externalId}`);
             } else {
                 throw new Error("Cloud Function returned failure status");
             }
@@ -87,25 +87,6 @@ export class SocialAutoPosterService {
             store.updateJobStatus(jobId, 'error', error instanceof Error ? error.message : 'Post failed to queue');
             throw error;
         }
-    }
-
-    /**
-     * Internal helper to drive the UI progress bar during dispatch.
-     */
-    private simulateProgress(jobId: string) {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            const store = useStore.getState();
-            const job = store.backgroundJobs.find(j => j.id === jobId);
-
-            if (!job || job.status !== 'running' || progress >= 90) {
-                clearInterval(interval);
-                return;
-            }
-
-            store.updateJobProgress(jobId, progress);
-        }, 300);
     }
 
     /**

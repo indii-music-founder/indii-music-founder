@@ -1,9 +1,9 @@
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
 const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -59,7 +59,7 @@ export const FinanceTools = {
                     ]
                 }
             ],
-            INTELLIGENCE_MODELS.TEXT.AGENT
+            getFineTunedModel('finance')
         );
 
         // Access the text from the response object
@@ -371,14 +371,10 @@ export const FinanceTools = {
             }, `Stripe Connect custom account onboarding initiated for ${args.email}. Account ID: ${result.data.accountId}.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Stripe Connect Cloud Function unavailable:', error);
-            const accountId = `acct_${crypto.randomUUID().slice(0, 16).replace(/-/g, '')}`;
-            return toolSuccess({
-                email: args.email,
-                role: args.role,
-                assignedSplit: args.splitPercentage,
-                stripeConnectAccountId: accountId,
-                status: 'Onboarding link generated (local mode)'
-            }, `Stripe Connect onboarding initiated for ${args.email}. Deploy Cloud Function 'createStripeConnectAccount' for live integration.`);
+            return toolError(
+                'Stripe Connect onboarding failed: createStripeConnectAccount is unavailable or misconfigured. No account was created.',
+                'STRIPE_CONNECT_UNAVAILABLE'
+            );
         }
     }),
 
@@ -398,16 +394,10 @@ export const FinanceTools = {
             }, `Automated tax form collection initiated for ${args.payees.length} payees. Payouts locked until validated.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Tax forms Cloud Function unavailable:', error);
-            const requests = args.payees.map(p => ({
-                name: p.name,
-                email: p.email,
-                formTypeRequested: p.isUsPerson ? 'W-9' : 'W-8BEN',
-                status: 'Requested (local mode)'
-            }));
-            return toolSuccess({
-                payeesProcessed: args.payees.length,
-                requests
-            }, `Tax form collection initiated for ${args.payees.length} payees. Deploy Cloud Function 'requestTaxForms' for real email dispatch.`);
+            return toolError(
+                'Tax form collection failed: requestTaxForms is unavailable or provider configuration is missing. No tax form requests were sent.',
+                'TAX_FORMS_UNAVAILABLE'
+            );
         }
     }),
 
@@ -428,7 +418,7 @@ export const FinanceTools = {
         `;
 
         try {
-            const response = await AutonomousIntelligence.generateContent(prompt, INTELLIGENCE_MODELS.TEXT.AGENT);
+            const response = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('finance'));
             const analysisText = getResponseText(response);
 
             return toolSuccess({
@@ -438,10 +428,10 @@ export const FinanceTools = {
             }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
-            return toolSuccess({
-                filesProcessed: args.csvFiles.length,
-                status: 'Normalized into standard indii ledger format (basic mode)'
-            }, `Successfully ingested ${args.csvFiles.length} CSV statements. Intelligence-enhanced normalization unavailable.`);
+            return toolError(
+                'Distributor statement normalization failed; no basic-mode ingest was performed.',
+                'STATEMENT_NORMALIZATION_FAILED'
+            );
         }
     })
 } satisfies Record<string, AnyToolFunction>;

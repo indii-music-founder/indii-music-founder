@@ -34,21 +34,27 @@ export class AgentAPIClient {
         retries = 3,
         delay = 1000
     ): Promise<AgentTriggerResponse> {
+        if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
+            logger.error(`[AgentAPIClient] VITE_INTELLIGENCE_MOCK_MODE=true is no longer supported for agent ${agentId}`);
+            return {
+                success: false,
+                error: 'Mock agent responses are disabled. Configure VITE_FUNCTIONS_URL and tuned agent endpoints.'
+            };
+        }
+
+        if (!this.baseUrl) {
+            logger.error(`[AgentAPIClient] Missing VITE_FUNCTIONS_URL; refusing mock response for agent ${agentId}`);
+            return {
+                success: false,
+                error: 'VITE_FUNCTIONS_URL is required to trigger specialist agents. Mock responses are disabled.'
+            };
+        }
+
         const endpoint = `${this.baseUrl}/api/agent/${agentId}/trigger`;
         logger.debug(`[AgentAPIClient] Triggering agent ${agentId} at ${endpoint}`);
 
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
-                // Return mock response if baseUrl is empty or if we are in local development testing mode with mock mode enabled
-                if (!this.baseUrl || import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
-                    logger.debug(`[AgentAPIClient] Mock mode active: returning mock response for agent ${agentId}`);
-                    return {
-                        success: true,
-                        text: `[MOCK_RESPONSE] Agent '${agentId}' successfully processed courtroom request.`,
-                        thoughtSignature: `mock-sig-${Date.now()}`
-                    };
-                }
-
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {

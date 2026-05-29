@@ -20,6 +20,10 @@ vi.mock('../../registry', () => ({
     }
 }));
 
+vi.mock('../../fine-tuned-models', () => ({
+    getFineTunedModel: vi.fn(() => 'mock-model')
+}));
+
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: { uid: 'test-uid' }
