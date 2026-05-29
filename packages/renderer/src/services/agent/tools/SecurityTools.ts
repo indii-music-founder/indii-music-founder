@@ -166,7 +166,7 @@ export const SecurityTools = {
             const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
             const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
             const snap = await getDocs(q);
-            const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
 
             if (logs.length === 0) {
                 return toolSuccess({ status: "No audit logs found" }, "Report generated with no data.");
