@@ -5,6 +5,12 @@ export interface A2AConfig {
   baseUrl: string;
 }
 
+/**
+ * The shared A2A identity. In the single-router-identity model the client
+ * encrypts requests TO this id and the router decrypts AS this id; the router
+ * then encrypts replies back to the caller's exchanged key. Using one id for
+ * both sides of the loopback is what makes the E2E round-trip self-consistent.
+ */
 export const MY_AGENT_ID = 'indii-conductor';
 
 /**
