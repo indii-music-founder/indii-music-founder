@@ -216,6 +216,8 @@ export class PlatformDataService {
                         streams: Math.round(ytPlatform.streams * shareRatio),
                         saves: Math.round(ytPlatform.saves * shareRatio),
                         completionRate: ytPlatform.completionRate,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from channel metrics',
                     });
                 }
 
@@ -226,6 +228,8 @@ export class PlatformDataService {
                         saves: Math.round(ttPlatform.saves * shareRatio),
                         completionRate: ttPlatform.completionRate,
                         creatorCount: Math.round((ttPlatform.creatorCount ?? 0) * shareRatio),
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
@@ -236,6 +240,8 @@ export class PlatformDataService {
                         saves: Math.round(igPlatform.saves * shareRatio),
                         completionRate: igPlatform.completionRate,
                         creatorCount: 0,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
@@ -245,6 +251,8 @@ export class PlatformDataService {
                         streams: Math.round(amPlatform.streams * shareRatio),
                         saves: Math.round(amPlatform.saves * shareRatio),
                         completionRate: amPlatform.completionRate,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
