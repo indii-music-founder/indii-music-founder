@@ -56,9 +56,9 @@ inside the `match /users/{userId}` block (after `match /assets/{assetId}`).
 | `tasks` | `users/{uid}/tasks` | proactive tasks |
 | `web3Contracts` | `users/{uid}/web3Contracts` | web3 contracts |
 
-> ⚠️ **Verify before merge:** run `firebase firestore:rules validate` (or `firebase deploy
-> --only firestore:rules` against a staging project). The additions are syntactically
-> identical to existing rules, but rules changes must be validated, not assumed.
+> ⚠️ **Verify before merge:** run `firebase deploy --only firestore:rules --dry-run`
+> (or without `--dry-run` to deploy). The additions are syntactically identical to existing
+> rules, but rules changes must be validated against the Firebase emulator or staging project.
 
 ## C. Resolved 2026-05-28 (was: needs scoping decision)
 
