@@ -266,7 +266,23 @@ class PrintfulProvider implements PODProviderAdapter {
 
     async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod = 'STANDARD'): Promise<PODOrder> {
         const result = await this.callFunction<any>('printfulCreateOrder', { items, address, shippingMethod });
-        return this.mapOrder(result);
+        const mappedOrder = this.mapOrder(result);
+
+        // Persist to Firestore
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error('Authenticated user is required to persist POD orders.');
+            }
+            const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), mappedOrder.id);
+            await setDoc(orderRef, mappedOrder);
+            logger.info(`[PrintfulProvider] Order ${mappedOrder.id} persisted to Firestore`);
+        } catch (e: unknown) {
+            logger.error('[PrintfulProvider] Failed to persist order to Firestore:', e);
+            throw e instanceof Error ? e : new Error(`Failed to persist POD order: ${String(e)}`);
+        }
+
+        return mappedOrder;
     }
 
     async getOrder(orderId: string): Promise<PODOrder | null> {
