@@ -277,14 +277,12 @@ describe('MarketingTools — integration', () => {
         it('returns trend data for a given category', async () => {
             const result = await MarketingTools.analyze_market_trends({ category: 'music' });
             expect(result.success).toBe(true);
-            // @ts-expect-error - electronAPI is mocked as any
             expect(window.electronAPI.marketing.analyzeTrends).toHaveBeenCalledWith({ category: 'music' });
         });
 
         it('works without a category argument', async () => {
             const result = await MarketingTools.analyze_market_trends({});
             expect(result.success).toBe(true);
-            // @ts-expect-error - electronAPI is mocked as any
             expect(window.electronAPI.marketing.analyzeTrends).toHaveBeenCalledWith({ category: undefined });
         });
     });

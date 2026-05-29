@@ -80,7 +80,7 @@ export class MemoryInboxWatcher {
      */
     private getElectronFs(): ElectronFsAPI | null {
         if (typeof window === 'undefined') return null;
-        const api = window.electronAPI;
+        const api = window.electronAPI as any;
         return api?.fs ?? null;
     }
 

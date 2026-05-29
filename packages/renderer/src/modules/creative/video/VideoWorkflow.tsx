@@ -86,7 +86,7 @@ export const processJobUpdate = (
             // We don't await this to avoid blocking the UI update, but we log it
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
-                    .then((path: string) => {
+                    .then((path: any) => {
                         logger.debug('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
@@ -426,7 +426,7 @@ export default function VideoWorkflow() {
                         const filename = `veo_${res.id}.mp4`;
 
                         if (window.electronAPI?.video?.saveAsset) {
-                            window.electronAPI.video.saveAsset(res.url, filename)
+                            (window.electronAPI.video.saveAsset(res.url, filename) as Promise<string>)
                                 .then((path: string) => {
                                     logger.debug('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });

@@ -48,7 +48,7 @@ export function RegistrationChecklistPanel() {
 
         setItemStatus('audio', 'checking');
         try {
-            const result = await window.electronAPI.audio.analyze(filePath);
+            const result = await window.electronAPI.audio.analyze(filePath as string) as any;
             if (result.status !== 'success') {
                 toastError('Audio analysis failed — check file format.');
                 setItemStatus('audio', 'missing');
@@ -105,7 +105,7 @@ export function RegistrationChecklistPanel() {
         }
         setItemStatus('upc', 'checking');
         try {
-            const result = await window.electronAPI.distribution.generateUPC();
+            const result = await window.electronAPI.distribution.generateUPC() as any;
             if (!result.success || !result.upc) throw new Error(result.error || 'No UPC returned');
             success(`UPC assigned: ${result.upc}`);
             setItems(prev => prev.map(item =>

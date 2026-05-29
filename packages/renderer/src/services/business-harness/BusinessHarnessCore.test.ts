@@ -1,11 +1,15 @@
+import './index';
 import { describe, expect, it } from 'vitest';
 import { activityValueService } from './ActivityValueService';
 import { boardroomMetaHarnessService } from './BoardroomMetaHarnessService';
 import { hiddenCostHarnessService } from './HiddenCostHarnessService';
-import { BUSINESS_HARNESS_CATALOG } from './HarnessCatalog';
+import { BUSINESS_HARNESS_CATALOG, HARNESS_IMPLEMENTATION_STATUS } from './HarnessCatalog';
 import { merchPodHarnessService } from './MerchPodHarnessService';
 import { uploadIntakeHarnessService } from './UploadIntakeHarnessService';
 import { createHarnessRun } from './types';
+import { APPROVAL_GATE_REGISTRY } from './ApprovalGateRegistry';
+import { HarnessRegistry, compileHarness } from './HarnessCompiler';
+import { releaseHarnessCompiler } from '../release-harness/ReleaseHarnessCompiler';
 
 describe('Business Harness core', () => {
   it('converts active app time into value tracking without calling it revenue', () => {
@@ -138,5 +142,48 @@ describe('Business Harness core', () => {
     expect(result.releaseResult.recommendedStrategy).toBeDefined();
     expect(result.distributionRun.approvalGates[0]?.id).toBe('ddex_delivery_user_approval');
     expect(result.creatorProtectionRun.output.profile.aiVoiceLikenessPermission).toBe('not_authorized');
+  });
+
+  it('defines a status for every domain in BUSINESS_HARNESS_CATALOG', () => {
+    BUSINESS_HARNESS_CATALOG.forEach(entry => {
+      expect(HARNESS_IMPLEMENTATION_STATUS[entry.domain]).toBeDefined();
+    });
+  });
+
+  it('maps every irreversible action to an approval gate definition', () => {
+    const actions: (keyof typeof APPROVAL_GATE_REGISTRY)[] = [
+      'deliver to DSP',
+      'send legal notice',
+      'file registration',
+      'spend money',
+      'publish publicly',
+      'place POD order',
+      'run paid ads',
+      'enable biometric monitoring',
+      'destructive data changes',
+    ];
+    actions.forEach(action => {
+      const gate = APPROVAL_GATE_REGISTRY[action];
+      expect(gate).toBeDefined();
+      expect(gate.action).toBe(action);
+      expect(gate.riskTier).toBeDefined();
+    });
+  });
+
+  it('proves Boardroom Meta Harness can ingest and reason about an adapted Release HarnessRun', async () => {
+    HarnessRegistry.register(releaseHarnessCompiler);
+    const releaseRun = await compileHarness<any, any>('release', {
+      userId: 'user-a',
+      metadata: { trackTitle: 'Adapter Test' }
+    }, { userId: 'user-a' });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'release to dsp',
+      runs: [releaseRun]
+    });
+
+    expect(decision.sourceRunIds).toContain(releaseRun.runId);
+    expect(decision.mode).toBeDefined();
   });
 });
