@@ -3,6 +3,7 @@ import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DashboardRelease, ReleaseStatus } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class DistributionSyncService {
     /**
@@ -58,7 +59,7 @@ export class DistributionSyncService {
         );
 
         // E2E Mock Bypass: skip real Firestore listeners
-        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+        if (isFirebaseE2EMockEnabled()) {
             setTimeout(() => onUpdate([]), 0);
             return () => { };
         }
@@ -79,7 +80,7 @@ export class DistributionSyncService {
      */
     static async fetchReleases(orgId: string): Promise<DashboardRelease[]> {
         // E2E Mock Bypass: skip real Firestore fetches
-        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+        if (isFirebaseE2EMockEnabled()) {
             return [];
         }
 

@@ -14,7 +14,7 @@ import { getFineTunedModel } from '../fine-tuned-models';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
- * It manages tracing, context propagation, and agent fallback logic.
+ * It manages tracing and context propagation for a specific agent.
  */
 export class AgentExecutor {
     private registry: AgentRegistryProvider;
@@ -42,41 +42,37 @@ export class AgentExecutor {
         parentTraceId?: string,
         attachments?: { mimeType: string; base64: string }[]
     ): Promise<AgentResponse> {
-        // Try to get specific agent, or default to generalist
         let agent = await this.registry.getAsync(agentId);
 
         if (!agent) {
-            logger.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
-
             // Try lowercase version first (handle LLM casing hallucinations)
             if (agentId !== agentId.toLowerCase()) {
                 const lowerId = agentId.toLowerCase();
                 agent = await this.registry.getAsync(lowerId);
             }
-
-            // If still not found, fallback to Generalist
-            if (!agent) {
-                agent = await this.registry.getAsync('generalist');
-            }
         }
 
         if (!agent) {
             // Get diagnostic info about why the load failed
-            const loadError = this.registry.getLoadError('generalist');
+            const loadError = this.registry.getLoadError(agentId);
             const errorDetail = loadError
                 ? `Last error: ${loadError.error.message} (${loadError.attempts} attempts)`
                 : 'No error details available';
 
             logger.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
                 requestedAgentId: agentId,
-                generalistLoadError: loadError,
+                loadError,
                 registeredAgents: this.registry.getAll().map(a => a.id)
             });
 
-            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load. ${errorDetail}`);
+            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}'. ${errorDetail}`);
         }
 
-        const userId = auth.currentUser?.uid || 'founder-demo-uid';
+        const isE2EMode = typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'));
+        const userId = auth.currentUser?.uid || (isE2EMode ? 'e2e-agent-user' : null);
+        if (!userId) {
+            throw new Error('[AgentExecutor] User must be authenticated to execute agents.');
+        }
 
         // Propagate swarmId (highest level traceId)
         const swarmId = parentTraceId ? context.swarmId || parentTraceId : null;
@@ -113,7 +109,6 @@ export class AgentExecutor {
                         args: event.content
                     });
                     // Item 401: Stream tool progress to Firestore so UI can subscribe in real-time
-                    const isE2EMode = typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'));
                     if (!isE2EMode) {
                         setDoc(doc(db, 'agent_tasks', traceId, 'progress', String(Date.now())), {
                             type: 'tool_call',

@@ -91,7 +91,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
         "Polishing the master render..."
     ], []);
 
-    // Simulated progress logic to prevent "0% panic"
+    // Display-only estimated progress while the backend reports queued/processing.
     React.useEffect(() => {
         let interval: NodeJS.Timeout;
 

@@ -235,7 +235,7 @@ function RevenueMTDWidget() {
     const monthName = now.toLocaleString('default', { month: 'long' });
 
     const displayValue = revenueData?.mtdRevenue.formatted || '--';
-    const growth = "+12.5%"; // Mock growth for visual elevation
+    const growth = '--';
 
     return (
         <div className="flex flex-col h-full justify-between group/widget">
@@ -263,7 +263,7 @@ function RevenueMTDWidget() {
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
                 <div className="flex flex-col">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Next Payout</span>
-                    <span className="text-xs font-bold text-white/60">May 21, 2026</span>
+                    <span className="text-xs font-bold text-white/60">Not scheduled</span>
                 </div>
                 <div className="w-12 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                     <div className="w-full h-full bg-linear-to-r from-green-500/20 to-emerald-500/40 animate-pulse" />
@@ -982,4 +982,3 @@ function RevenueAggregatedWidget() {
         </div>
     );
 }
-

@@ -50,8 +50,6 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
 
-    // Simulate telemetry updates
-
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
 
@@ -81,7 +79,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Live Feed</span>
+                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Route View</span>
                         </div>
                     </div>
 

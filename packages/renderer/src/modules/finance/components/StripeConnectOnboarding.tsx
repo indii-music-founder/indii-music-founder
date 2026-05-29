@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Users, ExternalLink, Lock, CheckCircle, Clock, AlertCircle, Copy, type LucideIcon } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Users, ExternalLink, Lock, CheckCircle, Clock, AlertCircle, type LucideIcon } from 'lucide-react';
 
 /* ================================================================== */
 /*  Item 154 — Stripe Connect Custom Accounts                          */
@@ -25,35 +25,18 @@ const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon:
     not_started: { label: 'Not Started', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20', icon: AlertCircle },
 };
 
-function generateOnboardingLink(collaboratorId: number) {
-    return `https://connect.stripe.com/setup/e/acct_onboard_${collaboratorId}_${Date.now().toString(36).toUpperCase()}`;
-}
-
 export function StripeConnectOnboarding() {
     const [collaborators, setCollaborators] = useState<Collaborator[]>(INITIAL_COLLABORATORS);
-    const [invitedLinks, setInvitedLinks] = useState<Record<number, string>>({});
-    const [copiedId, setCopiedId] = useState<number | null>(null);
+    const [connectError, setConnectError] = useState<string | null>(null);
 
     const activeCount = collaborators.filter((c) => c.status === 'active').length;
     const totalCount = collaborators.length;
-    const allActive = activeCount === totalCount;
-    const progressPct = (activeCount / totalCount) * 100;
+    const allActive = totalCount > 0 && activeCount === totalCount;
+    const progressPct = totalCount > 0 ? (activeCount / totalCount) * 100 : 0;
 
     function handleInvite(collaborator: Collaborator) {
-        const link = generateOnboardingLink(collaborator.id);
-        setInvitedLinks((prev) => ({ ...prev, [collaborator.id]: link }));
-        // Simulate the collaborator being set to pending
-        if (collaborator.status === 'not_started') {
-            setCollaborators((prev) =>
-                prev.map((c) => (c.id === collaborator.id ? { ...c, status: 'pending' as const } : c))
-            );
-        }
-    }
-
-    function handleCopyLink(id: number, link: string) {
-        navigator.clipboard.writeText(link).catch(() => { });
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
+        void collaborator;
+        setConnectError('Stripe Connect onboarding requires the createStripeConnectAccount backend. No onboarding link was created.');
     }
 
     return (
@@ -83,7 +66,13 @@ export function StripeConnectOnboarding() {
                         transition={{ duration: 0.8 }}
                     />
                 </div>
-                {!allActive && (
+                {connectError && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                        <AlertCircle size={11} className="text-red-400" />
+                        <p className="text-[10px] text-red-300">{connectError}</p>
+                    </div>
+                )}
+                {!allActive && !connectError && (
                     <div className="flex items-center gap-1.5 mt-2">
                         <Lock size={11} className="text-amber-400" />
                         <p className="text-[10px] text-amber-400">Funds locked until all collaborators are active</p>
@@ -111,7 +100,6 @@ export function StripeConnectOnboarding() {
                     collaborators.map((collab) => {
                         const cfg = STATUS_CONFIG[collab.status];
                         const StatusIcon = cfg.icon;
-                        const link = invitedLinks[collab.id];
 
                         return (
                             <motion.div
@@ -156,7 +144,7 @@ export function StripeConnectOnboarding() {
                                             View Dashboard
                                         </a>
                                     )}
-                                    {collab.status !== 'active' && !link && (
+                                    {collab.status !== 'active' && (
                                         <button
                                             onClick={() => handleInvite(collab)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-colors"
@@ -164,27 +152,6 @@ export function StripeConnectOnboarding() {
                                             Invite to Connect
                                         </button>
                                     )}
-                                    <AnimatePresence>
-                                        {link && collab.status !== 'active' && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -4 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0 }}
-                                                className="flex items-center gap-2 flex-1 min-w-0"
-                                            >
-                                                <div className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 rounded-lg px-2 py-1">
-                                                    <p className="text-[10px] text-gray-400 truncate font-mono">{link}</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleCopyLink(collab.id, link)}
-                                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] transition-colors flex-shrink-0"
-                                                >
-                                                    <Copy size={10} />
-                                                    {copiedId === collab.id ? 'Copied!' : 'Copy'}
-                                                </button>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
                                 </div>
                             </motion.div>
                         );

@@ -25,14 +25,6 @@ interface QCCheck {
 
 type RunState = 'idle' | 'running' | 'done' | 'error';
 
-const DEMO_CHECKS: QCCheck[] = [
-    { id: 'peak', type: 'Audio True Peak', value: '-1.3 dBTP', passed: true, icon: Waves, detail: 'Within DSP ceiling' },
-    { id: 'lufs', type: 'Integrated Loudness', value: '-13.2 LUFS', passed: true, icon: BarChart2, detail: 'Target: -14 LUFS' },
-    { id: 'mix', type: 'Mix Balance', value: '8 / 10', passed: true, icon: Music, detail: 'Balanced spectrum' },
-    { id: 'format', type: 'File Format', value: 'WAV 44.1kHz', passed: true, icon: FileAudio, detail: 'Lossless' },
-    { id: 'meta', type: 'Metadata Completeness', value: 'All fields present', passed: true, icon: Tag, detail: 'Validated' },
-];
-
 function parseLufs(raw: string | undefined): number | null {
     if (!raw) return null;
     const match = raw.match(/-?\d+(\.\d+)?/);
@@ -118,7 +110,6 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
     const [runState, setRunState] = useState<RunState>('idle');
     const [checks, setChecks] = useState<QCCheck[] | null>(null);
     const [_report, setReport] = useState<ForensicsReport | null>(null);
-    const [isDemoMode, setIsDemoMode] = useState(false);
     const taskIdRef = useRef<string>('qc-initial');
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -130,7 +121,12 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
     const handleRunQC = useCallback(async () => {
         const currentlyElectron = !!(typeof window !== 'undefined' && window.electronAPI);
 
-        if (!filePath && currentlyElectron) {
+        if (!currentlyElectron) {
+            toast.error('Audio QC requires the desktop app with local file access.');
+            return;
+        }
+
+        if (!filePath) {
             toast.error('Select an audio file first');
             return;
         }
@@ -140,15 +136,6 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
         setReport(null);
         taskIdRef.current = `qc-${Date.now()}`;
 
-        if (!currentlyElectron || !filePath) {
-            setIsDemoMode(true);
-            await new Promise(r => setTimeout(r, 600)); // faster tests
-            setChecks(DEMO_CHECKS);
-            setRunState('done');
-            return;
-        }
-
-        setIsDemoMode(false);
         try {
             const result = await distributionService.runLocalForensics(taskIdRef.current, filePath);
             setReport(result);
@@ -178,7 +165,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
         if (runState === 'idle') return null;
         if (runState === 'running') return <div className="text-purple-300">Analyzing...</div>;
         if (runState === 'error') return <div className="text-red-400">Error</div>;
-        if (allPassed) return <div className="text-green-400 font-bold" data-testid="qc-passed-badge">Cleared for Delivery {isDemoMode && '(demo)'}</div>;
+        if (allPassed) return <div className="text-green-400 font-bold" data-testid="qc-passed-badge">Cleared for Delivery</div>;
         return <div className="text-red-400 font-bold">Delivery Blocked</div>;
     })();
 
@@ -216,12 +203,13 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
             <div className="flex gap-3">
                 {(runState === 'idle' || runState === 'error') ? (
                     <button
-                        onClick={handleRunQC}
-                        data-testid="qc-run-audio-analysis"
-                        className="flex-1 py-3 bg-purple-600 text-white rounded-xl"
-                    >
-                        {isElectron && filePath ? 'Run Audio QC Analysis' : 'Run QC (Demo Mode)'}
-                    </button>
+                                onClick={handleRunQC}
+                                disabled={!isElectron}
+                                data-testid="qc-run-audio-analysis"
+                                className="flex-1 py-3 bg-purple-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isElectron ? 'Run Audio QC Analysis' : 'Audio QC requires desktop app'}
+                            </button>
                 ) : runState === 'running' ? (
                     <button disabled className="flex-1 py-3 bg-purple-800/40 text-purple-300 rounded-xl">Analyzing...</button>
                 ) : (
@@ -247,7 +235,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                 )}
             </div>
 
-            {!isElectron && <p className="text-[10px] text-center text-gray-700">✦ Running in demo mode</p>}
+            {!isElectron && <p className="text-[10px] text-center text-gray-700">Desktop app required for local audio QC.</p>}
         </div>
     );
 };

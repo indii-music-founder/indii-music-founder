@@ -67,15 +67,13 @@ export class AgentGraphService extends EventEmitter {
      * Executes a node's logic
      */
     public async executeNode(graphId: string, nodeId: string) {
-        // To be implemented: dispatching to specialist agents
         this.emit('nodeStart', { graphId, nodeId });
         
         try {
-            // Mock execution delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            this.emit('nodeComplete', { graphId, nodeId });
+            throw new Error('Legacy intelligence graph node execution is not wired to a specialist agent executor.');
         } catch (error) {
             this.emit('nodeError', { graphId, nodeId, error });
+            throw error;
         }
     }
 

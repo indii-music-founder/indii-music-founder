@@ -24,6 +24,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import type { AudioIntelligenceProfile, AudioSemanticData } from '@/services/audio/types';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ─────────────────────────────────────────────
 // Data Contracts
@@ -116,8 +117,7 @@ async function embedText(text: string): Promise<number[]> {
 export class NeuralCortexService {
 
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     private get userId(): string {

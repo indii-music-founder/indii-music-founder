@@ -160,7 +160,12 @@ export class CloudStorageService {
      * Delete image and thumbnail from Firebase Storage
      */
     async deleteImage(id: string, userId: string): Promise<void> {
-        // ... (as before)
+        const imageRef = ref(storage, `users/${userId}/assets/${id}.jpg`);
+        const thumbRef = ref(storage, `users/${userId}/thumbnails/${id}.jpg`);
+        await Promise.all([
+            deleteObject(imageRef),
+            deleteObject(thumbRef)
+        ]);
     }
 
     /**

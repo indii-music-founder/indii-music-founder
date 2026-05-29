@@ -2,6 +2,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { agentRegistry } from '@/services/agent/registry';
 export type TypeaheadContext = {
     type: '@' | '#' | '/';
     query: string;
@@ -13,21 +16,7 @@ interface TypeaheadMenuProps {
     onSelect: (value: string, display: string) => void;
 }
 
-// Hardcoded mock data for V1
-const MOCK_AGENTS = [
-    { id: 'director', name: 'Creative Director', role: 'Visuals & Design' },
-    { id: 'finance', name: 'Finance Agent', role: 'Budget & Analytics' },
-    { id: 'marketing', name: 'Marketing Agent', role: 'Campaigns & Copy' },
-    { id: 'legal', name: 'Legal Agent', role: 'Contracts & Rights' }
-];
-
-const MOCK_ASSETS = [
-    { id: 'brand-kit', name: 'Brand Kit 2026', type: 'document' },
-    { id: 'q3-financials', name: 'Q3 Financials', type: 'spreadsheet' },
-    { id: 'campaign-brief', name: 'Campaign Brief', type: 'document' }
-];
-
-const MOCK_SKILLS = [
+const SLASH_COMMANDS = [
     { id: 'issue', name: 'Fix Agent', role: 'Resolve open issues' },
     { id: 'mega', name: 'Mega Stress Test', role: 'Run all test suites' },
     { id: 'real', name: 'Real Life Test', role: 'Adaptive scenario testing' },
@@ -36,16 +25,32 @@ const MOCK_SKILLS = [
 ];
 
 export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
+    const { generatedHistory, uploadedImages, uploadedAudio } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages,
+        uploadedAudio: state.uploadedAudio
+    })));
+
     if (!context) return null;
 
     const query = context.query.toLowerCase();
+    const agentItems = agentRegistry.getAll().map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        role: agent.description
+    }));
+    const assetItems = [...generatedHistory, ...uploadedImages, ...uploadedAudio].map(asset => ({
+        id: asset.id,
+        name: asset.prompt || asset.id,
+        role: asset.type
+    }));
 
     // Filter based on context
     const items = context.type === '@'
-        ? MOCK_AGENTS.filter(a => a.name.toLowerCase().includes(query) || a.role.toLowerCase().includes(query))
+        ? agentItems.filter(a => a.name.toLowerCase().includes(query) || a.role.toLowerCase().includes(query))
         : context.type === '/'
-        ? MOCK_SKILLS.filter(s => s.id.toLowerCase().includes(query) || s.name.toLowerCase().includes(query))
-        : MOCK_ASSETS.filter(a => a.name.toLowerCase().includes(query));
+        ? SLASH_COMMANDS.filter(s => s.id.toLowerCase().includes(query) || s.name.toLowerCase().includes(query))
+        : assetItems.filter(a => a.name.toLowerCase().includes(query));
 
     if (items.length === 0) return null;
 

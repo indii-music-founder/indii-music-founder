@@ -1,10 +1,10 @@
 /**
  * StorefrontPreviewModal — Item 122 (PRODUCTION_200)
  * One-click e-commerce storefront preview with Stripe Payment Links CTA.
- * Generates a mock shareable slug and shows a product grid preview.
+ * Shows a product grid preview. Deployment requires a backend storefront publisher.
  */
-import React, { useState } from 'react';
-import { X, ExternalLink, Copy, CheckCircle2, ShoppingBag, Globe, Zap, Store } from 'lucide-react';
+import React from 'react';
+import { X, Copy, ShoppingBag, Globe, Store } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { MerchProduct } from '../types';
 
@@ -20,23 +20,7 @@ function generateSlug(name: string): string {
 }
 
 export function StorefrontPreviewModal({ isOpen, onClose, products, artistName = 'your-store' }: StorefrontPreviewModalProps) {
-    const [copied, setCopied] = useState(false);
-    const [deploying, setDeploying] = useState(false);
-    const [deployed, setDeployed] = useState(false);
     const slug = generateSlug(artistName);
-
-    const handleCopyLink = async () => {
-        await navigator.clipboard.writeText(`https://${slug}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const handleDeploy = async () => {
-        setDeploying(true);
-        await new Promise(r => setTimeout(r, 2000));
-        setDeploying(false);
-        setDeployed(true);
-    };
 
     const previewProducts = products.slice(0, 6);
     const placeholders = Math.max(0, 3 - previewProducts.length);
@@ -114,27 +98,16 @@ export function StorefrontPreviewModal({ isOpen, onClose, products, artistName =
                             <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
                                 <Globe size={12} className="text-neutral-500 flex-shrink-0" />
                                 <span className="text-xs text-neutral-400 font-mono truncate flex-1">{slug}</span>
-                                <button onClick={handleCopyLink} className="text-neutral-500 hover:text-white transition-colors flex-shrink-0">
-                                    {copied ? <CheckCircle2 size={13} className="text-green-400" /> : <Copy size={13} />}
+                                <button disabled className="text-neutral-700 flex-shrink-0 cursor-not-allowed" aria-label="Storefront link unavailable until deployment backend is configured">
+                                    <Copy size={13} />
                                 </button>
                             </div>
 
                             <button
-                                onClick={handleDeploy}
-                                disabled={deploying || deployed}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${deployed
-                                    ? 'bg-green-500/20 border border-green-500/30 text-green-400'
-                                    : 'bg-[#FFE135] text-black hover:bg-[#FFD700]'
-                                    } disabled:opacity-70`}
+                                disabled
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all flex-shrink-0 bg-white/5 border border-white/10 text-neutral-500 disabled:opacity-70"
                             >
-                                {deploying ? (
-                                    <Zap size={13} className="animate-pulse" />
-                                ) : deployed ? (
-                                    <CheckCircle2 size={13} />
-                                ) : (
-                                    <ExternalLink size={13} />
-                                )}
-                                {deploying ? 'Deploying...' : deployed ? 'Live via Stripe!' : 'Deploy via Stripe'}
+                                Storefront publisher required
                             </button>
                         </div>
         </Modal>

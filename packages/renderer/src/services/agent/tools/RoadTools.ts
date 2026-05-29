@@ -109,7 +109,7 @@ export const RoadTools = {
         const vehicles = Math.ceil(c / 5);
         const transportCost = rate.transport * vehicles * d;
 
-        // Crew Wages (Simulated Base Rate of $250/day/person)
+        // Estimated crew wages. Replace with crew quotes before booking.
         const crewWages = 250 * c * d;
 
         const subtotal = lodgingCost + foodCost + transportCost + crewWages;

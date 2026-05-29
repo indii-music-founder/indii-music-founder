@@ -39,7 +39,7 @@ export default defineConfig({
     ],
     ...(isLocalhost ? {
         webServer: {
-            command: 'npm run dev',
+            command: 'VITE_E2E=true npm run dev',
             url: 'http://127.0.0.1:4242',
             reuseExistingServer: !process.env.CI,
             timeout: 60_000,

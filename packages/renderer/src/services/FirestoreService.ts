@@ -22,6 +22,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class FirestoreService<T extends DocumentData = DocumentData> {
     constructor(protected collectionPath: string) { }
@@ -42,8 +43,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
 
     /** E2E test mode: skip real Firestore writes to avoid offline-mode hangs. */
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isFirebaseE2EMockEnabled();
     }
 
     async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {

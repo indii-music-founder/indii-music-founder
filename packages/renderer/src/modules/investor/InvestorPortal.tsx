@@ -15,11 +15,10 @@ export default function InvestorPortal() {
         user: state.user
     })));
 
-    // Mock "Founding Architect" data
     const architectData = {
-        name: user?.displayName || 'Architect',
-        role: 'Founding Partner',
-        clearance: 'Level 5 (Omni)',
+        name: user?.displayName || 'Authenticated user',
+        role: 'Investor access not configured',
+        clearance: 'Not configured',
     };
 
     return (

@@ -12,6 +12,7 @@ import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { isAppCheckConfigured } from '@/services/intelligence/appcheck';
+import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
 // The app will show the login screen with an auth error rather than crashing.
@@ -117,9 +118,9 @@ export { db, storage, functions, functionsWest1 };
 
 import { Auth, User } from 'firebase/auth';
 let rawAuth: Auth;
-if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).FIREBASE_E2E_MOCK) {
+if (isFirebaseE2EMockEnabled()) {
     logger.debug('[Firebase] Using E2E Auth Mock');
-    const mockUser = (window as unknown as Record<string, unknown>).FIREBASE_USER_MOCK as User || null;
+    const mockUser = getE2EMockUser<User>();
     rawAuth = {
         app,
         currentUser: mockUser,
@@ -158,21 +159,15 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
     }
 }
 
-// Wrap Auth in a Proxy to dynamically support guest/founder-demo mock user
+// Wrap Auth in a Proxy to support explicit E2E auth injection.
 const auth = new Proxy(rawAuth, {
     get(target, prop, receiver) {
         if (prop === 'currentUser') {
             const realUser = target.currentUser;
             if (realUser) return realUser;
 
-            if (typeof window !== 'undefined') {
-                if ((window as any).FIREBASE_E2E_MOCK && (window as any).FIREBASE_USER_MOCK) {
-                    return (window as any).FIREBASE_USER_MOCK;
-                }
-                if ((window as any).guestUserMock) {
-                    return (window as any).guestUserMock;
-                }
-            }
+            const mockUser = getE2EMockUser<User>();
+            if (mockUser) return mockUser;
             return null;
         }
         const value = Reflect.get(target, prop, receiver);

@@ -8,7 +8,6 @@ interface RateLimitProps {
 }
 
 export const RateLimitBackpressure: React.FC<RateLimitProps> = ({ retryAfterSeconds, featureName }) => {
-    // Mock Rate Limit "Backpressure" UX (Item 190)
     return (
         <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -21,7 +20,7 @@ export const RateLimitBackpressure: React.FC<RateLimitProps> = ({ retryAfterSeco
             <div className="flex-1">
                 <h3 className="font-semibold text-orange-300 mb-1">Cooling Down</h3>
                 <p className="text-sm text-orange-200/70 leading-relaxed mb-3">
-                    The Autonomous models powering <strong>{featureName}</strong> are currently running hot to maintain elite creative quality.
+                    <strong>{featureName}</strong> is temporarily rate limited.
                 </p>
                 <div className="flex items-center gap-2 text-xs font-mono bg-black/40 px-3 py-1.5 rounded-lg w-fit">
                     <Timer size={14} className="text-orange-400" />

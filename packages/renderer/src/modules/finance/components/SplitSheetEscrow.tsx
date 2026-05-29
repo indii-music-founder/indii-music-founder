@@ -36,12 +36,6 @@ export function SplitSheetEscrow() {
     const allSigned = signedCount === totalCount;
     const progressPct = Math.round((signedCount / totalCount) * 100);
 
-    const handleSimulateSign = (id: string) => {
-        setCollaborators(prev =>
-            prev.map(c => c.id === id ? { ...c, signed: true } : c)
-        );
-    };
-
     /**
      * Item 202: Wire release to the real createTransfer Cloud Function.
      * Each collaborator with a connected Stripe account receives a transfer
@@ -235,11 +229,11 @@ export function SplitSheetEscrow() {
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={() => handleSimulateSign(c.id)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-400 hover:text-white text-[10px] font-bold flex-shrink-0 transition-colors"
+                                            disabled
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-gray-500 text-[10px] font-bold flex-shrink-0 cursor-not-allowed"
                                         >
                                             <Clock size={10} />
-                                            Simulate Sign
+                                            Signature Required
                                         </button>
                                     )}
                                 </div>

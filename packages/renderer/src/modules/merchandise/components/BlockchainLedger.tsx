@@ -37,6 +37,7 @@ export function BlockchainLedger() {
     const [loading, setLoading] = useState(false);
     const [ipfsSyncing, setIpfsSyncing] = useState(false);
     const [ipfsSynced, setIpfsSynced] = useState(false);
+    const [ipfsError, setIpfsError] = useState<string | null>(null);
     const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
     const handleSearch = useCallback(async () => {
@@ -58,21 +59,21 @@ export function BlockchainLedger() {
     const handleIpfsSync = async () => {
         if (!isrcQuery.trim() || entries.length === 0) return;
         setIpfsSyncing(true);
+        setIpfsError(null);
         try {
             // Item 238: Pin ledger entries to IPFS via Pinata
-            if (ipfsPinataService.isConfigured()) {
-                await ipfsPinataService.pinJSON(
-                    { entityId: isrcQuery.trim(), entries, exportedAt: new Date().toISOString() },
-                    `Ledger-${isrcQuery.trim()}`
-                );
-            } else {
-                // Pinata not configured — simulate for non-production environments
-                await new Promise(r => setTimeout(r, 1200));
+            if (!ipfsPinataService.isConfigured()) {
+                throw new Error('Pinata IPFS credentials are not configured.');
             }
+            await ipfsPinataService.pinJSON(
+                { entityId: isrcQuery.trim(), entries, exportedAt: new Date().toISOString() },
+                `Ledger-${isrcQuery.trim()}`
+            );
             setIpfsSynced(true);
             setTimeout(() => setIpfsSynced(false), 4000);
-        } catch {
-            // IPFS sync failed — show as not synced
+        } catch (error: unknown) {
+            setIpfsSynced(false);
+            setIpfsError(error instanceof Error ? error.message : 'IPFS sync failed.');
         } finally {
             setIpfsSyncing(false);
         }
@@ -113,6 +114,11 @@ export function BlockchainLedger() {
                     {ipfsSyncing ? 'Syncing...' : ipfsSynced ? 'Pinned to IPFS' : 'Sync to IPFS'}
                 </button>
             </div>
+            {ipfsError && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {ipfsError}
+                </div>
+            )}
 
             {/* Search */}
             <div className="flex gap-2">

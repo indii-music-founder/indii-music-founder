@@ -162,15 +162,7 @@ export const CanvasTools = {
             const canvas = canvasOps.getCanvas();
 
             if (!canvas) {
-                // If CreativeDirector canvas is not initialized, fallback to pushing to store
-                const { useStore } = await import('@/core/store');
-                const shapeData = {
-                    id: secureRandomHex(8), shapeType, x, y, width, height, radius, color, fill, stroke, zIndex, label, imageUrl, createdAt: Date.now()
-                };
-                useStore.getState().pushCanvas({
-                    id: shapeData.id, type: 'shape', title: label || `${shapeType} shape`, data: shapeData, agentId: 'conductor', createdAt: shapeData.createdAt
-                });
-                return toolSuccess({ shapeId: shapeData.id, shapeType, zIndex }, `Fabric canvas not active. Fallback: Shape pushed to data store.`);
+                return toolError('Creative canvas is not active. Shape was not rendered.', 'CANVAS_NOT_ACTIVE');
             }
 
             // Fabric.js canvas is active, draw directly

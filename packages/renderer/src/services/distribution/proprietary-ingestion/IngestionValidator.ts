@@ -1,15 +1,13 @@
 /**
  * Ingestion Validator
- * Validates XML messages against Ingestion XSD schemas
+ * Performs browser-safe structural checks for ingestion XML messages.
  */
 
 import { XMLParser } from 'fast-xml-parser';
 
 export class IngestionValidator {
     /**
-     * Validate an XML string against a specific schema version
-     * Note: In a browser/electron environment, full XSD validation is difficult.
-     * This is a simulated validator that checks for key structural elements.
+     * Check an XML string for key structural elements. This is not an XSD validator.
      */
     validateXML(xml: string, schemaVersion: string = '4.3'): { valid: boolean; errors: string[] } {
         const errors: string[] = [];

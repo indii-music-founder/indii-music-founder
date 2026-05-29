@@ -1,5 +1,6 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 
 export interface SamplePlatform {
     id: string;
@@ -13,55 +14,6 @@ export interface SamplePlatform {
         reportingRequired: boolean;
     };
 }
-
-// Fallback data when Firestore is unavailable
-const FALLBACK_PLATFORMS: SamplePlatform[] = [
-    {
-        id: 'splice',
-        name: 'Splice',
-        keywords: ['splice', 'splice sounds'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free for commercial use. No per-use payment required.",
-        color: 'text-blue-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'loopcloud',
-        name: 'Loopcloud',
-        keywords: ['loopcloud', 'loopmasters'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free for commercial use (Points spent purchased license).",
-        color: 'text-indigo-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'tracklib',
-        name: 'Tracklib',
-        keywords: ['tracklib'],
-        defaultLicenseType: 'Clearance-Required',
-        termsSummary: "Requires License Purchase + Revenue Share. NOT Royalty-Free by default.",
-        color: 'text-orange-500',
-        requirements: { creditRequired: true, reportingRequired: true }
-    },
-    {
-        id: 'logic-stock',
-        name: 'Logic Pro / GarageBand Stock',
-        keywords: ['logic', 'garageband', 'apple loops', 'logic pro'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free commercial use (standalone loops). Cannot resell as loops.",
-        color: 'text-gray-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'ableton-stock',
-        name: 'Ableton Stock',
-        keywords: ['ableton', 'ableton live', 'ableton pack'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free commercial use. Cannot resell as loops.",
-        color: 'text-gray-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    }
-];
 
 // Cache for loaded platforms
 let platformsCache: SamplePlatform[] | null = null;
@@ -77,7 +29,7 @@ const isValidSamplePlatform = (data: unknown): data is Omit<SamplePlatform, 'id'
 };
 
 /**
- * Load sample platforms from Firestore with fallback to static data
+ * Load sample platform terms from Firestore.
  */
 export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
     if (platformsCache) return platformsCache;
@@ -96,20 +48,21 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
                 return platformsCache;
             }
         }
-    } catch (_error: unknown) {
-        // Firestore load failed - will use fallback
+    } catch (error: unknown) {
+        logger.error('[SamplePlatforms] Failed to load platform terms from Firestore:', error);
+        throw error;
     }
 
-    // Use fallback if Firestore unavailable or empty
-    platformsCache = FALLBACK_PLATFORMS;
+    logger.warn('[SamplePlatforms] No sample platform terms configured in Firestore.');
+    platformsCache = [];
     return platformsCache;
 };
 
 /**
- * Get cached platforms (sync) - returns fallback if not yet loaded
+ * Get cached platforms (sync).
  */
 export const getSamplePlatforms = (): SamplePlatform[] => {
-    return platformsCache || FALLBACK_PLATFORMS;
+    return platformsCache || [];
 };
 
 const findPlatformByKeyword = (platforms: SamplePlatform[], input: string): SamplePlatform | null => {
@@ -132,5 +85,5 @@ export const identifyPlatformAsync = async (input: string): Promise<SamplePlatfo
     return findPlatformByKeyword(platforms, input);
 };
 
-// Legacy export for backwards compatibility
-export const SAMPLE_PLATFORMS = FALLBACK_PLATFORMS;
+// Legacy export for backwards compatibility. Runtime data must come from Firestore.
+export const SAMPLE_PLATFORMS: SamplePlatform[] = [];

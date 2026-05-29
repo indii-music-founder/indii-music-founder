@@ -10,7 +10,7 @@ import {
 } from '@/services/creator-protection';
 
 export function CreatorProtectionCenter() {
-  const userId = auth.currentUser?.uid ?? 'founder-demo-uid';
+  const userId = auth.currentUser?.uid ?? null;
   const [artistName, setArtistName] = useState('');
   const [legalName, setLegalName] = useState('');
   const [state, setState] = useState('');
@@ -35,6 +35,7 @@ export function CreatorProtectionCenter() {
   }, [profile]);
 
   const handleCompile = () => {
+    if (!userId) return;
     setIsCompiling(true);
     const nextProfile = creatorProtectionHarnessService.createIdentityProtectionProfile({
       userId,
@@ -52,6 +53,7 @@ export function CreatorProtectionCenter() {
   };
 
   const handleClassifyIncident = () => {
+    if (!userId) return;
     const nextIncident = creatorProtectionHarnessService.classifyIncident({
       userId,
       profileId: profile?.id,
@@ -106,7 +108,7 @@ export function CreatorProtectionCenter() {
           </div>
           <button
             onClick={handleCompile}
-            disabled={isCompiling}
+            disabled={isCompiling || !userId}
             className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2"
           >
             {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
@@ -270,4 +272,3 @@ function Badge({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
