@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-28 23:12 EDT
+**Updated:** 2026-05-28 23:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+af4d42c82 chore: session checkpoint [23:12]
 d1e247f5f fix(security): resolve firestore rules syntax and harden fraud alerts
 0eb92478d chore: session checkpoint [22:36]
 0f9a3505a chore: session checkpoint [22:35]
@@ -13,12 +14,17 @@ c214a6358 chore: session checkpoint [22:34]
 4e338c2a5 feat: complete Business Harness Waves 4 and 5
 6a406ce1d chore: session checkpoint [22:20]
 860b4180e fix(security): owner-scope 16 latent-403 Firestore subcollections + audit doc
-c14a1b0f2 chore: session checkpoint [21:19]
 ```
 
 ## Working State
 ```
  M .env.example
+ M packages/firebase/src/legal/digitalSignature.ts
+ M packages/firebase/src/stripe/taxForms.ts
+ M packages/main/src/services/APIService.ts
+ M packages/main/src/services/ElectronRenderService.ts
+ M packages/renderer/src/core/config/ingestion.ts
+ M packages/renderer/src/modules/publicist/tools.ts
  M packages/renderer/src/services/agent/AgentAPIClient.ts
  M packages/renderer/src/services/agent/BaseAgent.ts
  M packages/renderer/src/services/agent/CostCircuitBreaker.test.ts
@@ -29,14 +35,24 @@ c14a1b0f2 chore: session checkpoint [21:19]
  M packages/renderer/src/services/agent/__tests__/fine-tuned-models.test.ts
  M packages/renderer/src/services/agent/components/AgentExecutor.ts
  M packages/renderer/src/services/agent/components/__tests__/AgentExecutor.swarm.test.ts
+ M packages/renderer/src/services/agent/components/__tests__/AgentExecutor.test.ts
  M packages/renderer/src/services/agent/components/__tests__/SwarmStability.test.ts
  M packages/renderer/src/services/agent/fine-tuned-models.ts
  M packages/renderer/src/services/agent/governance/MultiTurnAutorater.ts
  M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/tools/FinanceTools.ts
+ M packages/renderer/src/services/agent/tools/LegalTools.ts
+ M packages/renderer/src/services/agent/tools/UniversalTools.ts
  M packages/renderer/src/services/agent/types.ts
+ M packages/renderer/src/services/distribution/BatchDeliveryService.ts
+ M packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts
+ M packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts
+ M packages/renderer/src/services/distribution/proprietary-ingestion/IngestionIdentity.ts
  M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
  M packages/renderer/src/services/intelligence/fallback/FallbackClient.ts
  M packages/renderer/src/services/security/FraudDetectionService.test.ts
+?? docs/flowcharts/21-agent-swarm-hierarchy.md
+?? docs/flowcharts/a2a-swarm-communication-protocol.md
 ?? docs/flowcharts/agent-swarm-execution.md
 ?? docs/flowcharts/audio-intelligence-flow.md
 ?? docs/flowcharts/big-brain-memory-engine.md
