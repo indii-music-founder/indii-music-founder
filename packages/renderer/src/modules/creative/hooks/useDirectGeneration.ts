@@ -66,6 +66,7 @@ export function useDirectGeneration() {
         creativePrompt,
         setCreativePrompt,
         addToHistory,
+        generatedHistory,
         currentProjectId,
         whiskState,
         setSelectedItem,
@@ -80,6 +81,7 @@ export function useDirectGeneration() {
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
         addToHistory: state.addToHistory,
+        generatedHistory: state.generatedHistory,
         currentProjectId: state.currentProjectId,
         whiskState: state.whiskState,
         setSelectedItem: state.setSelectedItem,
@@ -99,7 +101,10 @@ export function useDirectGeneration() {
         setCreativePrompt(value);
     }, [setCreativePrompt]);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState<HistoryItem[]>([]);
+    
+    // Derive results from global generated history to ensure sync with Agent-triggered generations
+    const results = generatedHistory.filter(h => h.projectId === currentProjectId);
+    
     const [activeJobs, setActiveJobs] = useState<VideoGenerationJob[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
     const [bpm, setBpm] = useState<number>(120);
@@ -159,10 +164,7 @@ export function useDirectGeneration() {
                             origin: 'generated' as const
                         };
 
-                        setResults(prev => {
-                            if (prev.some(p => p.id === finalItem.id)) return prev;
-                            return [finalItem, ...prev];
-                        });
+                        // The item is now added to the global store, which will automatically update `results`
                         addToHistory({ ...finalItem });
                         
                         if (data.type === 'image') {
