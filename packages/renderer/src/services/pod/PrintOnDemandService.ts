@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
+import { isTestHarnessRuntime } from '@/utils/e2eMode';
 /**
  * Print-on-Demand Service Abstraction Layer
  *
@@ -648,9 +649,7 @@ class PrintOnDemandServiceClass {
     private defaultProvider: PODProvider = 'printful';
 
     private get isTestHarnessMode(): boolean {
-        if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test') return true;
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
-        try { return typeof localStorage !== 'undefined' && !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+        return isTestHarnessRuntime();
     }
 
     constructor() {
