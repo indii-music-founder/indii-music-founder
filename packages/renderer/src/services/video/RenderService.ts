@@ -1,4 +1,4 @@
-import { renderMedia, RenderMediaOptions } from '@remotion/renderer';
+import type { RenderMediaOptions } from '@remotion/renderer';
 import { logger } from '@/utils/logger';
 import { renderMediaOnCloudrun } from '@remotion/cloudrun/client';
 import type { GcpRegion } from '@remotion/cloudrun';
@@ -103,6 +103,7 @@ export class RenderService {
             // The bundle location is configured via environment variable.
             const bundleLocation = import.meta.env.VITE_REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
 
+            const { renderMedia } = await import('@remotion/renderer');
             await renderMedia({
                 composition: {
                     id: config.compositionId,
@@ -115,7 +116,7 @@ export class RenderService {
                 serveUrl: bundleLocation,
                 codec: config.codec || 'h264',
                 outputLocation: config.outputLocation,
-            } as RenderMediaOptions);
+            } as any);
 
             logger.info(`[RenderService] Render complete: ${config.outputLocation}`);
             return config.outputLocation;
