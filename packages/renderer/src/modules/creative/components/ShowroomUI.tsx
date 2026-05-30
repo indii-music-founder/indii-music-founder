@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { cn } from '@/lib/utils';
 import { HistoryItem } from '@/core/types/history';
@@ -91,7 +92,7 @@ export default function ShowroomUI() {
         } catch (error: any) {
             setShowroomState({ isGeneratingMockup: false });
             toast.error(error.message || "Failed to generate mockup.");
-            console.error("[Showroom] Mockup generation failed:", error);
+            Logger.error('ShowroomUI', '[Showroom] Mockup generation failed', error);
         }
     };
 
@@ -118,7 +119,7 @@ export default function ShowroomUI() {
         } catch (error: any) {
             setShowroomState({ isGeneratingVideo: false });
             toast.error(error.message || "Failed to animate scene.");
-            console.error("[Showroom] Animation failed:", error);
+            Logger.error('ShowroomUI', '[Showroom] Animation failed', error);
         }
     };
 

@@ -3,6 +3,7 @@ import { FileText, ChevronRight, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 
 interface ArtifactsPanelProps {
     toggleRightPanel: () => void;
@@ -32,7 +33,7 @@ export default function ArtifactsPanel({ toggleRightPanel }: ArtifactsPanelProps
                 }
             }
         } catch (error) {
-            console.error('Failed to load artifacts:', error);
+            Logger.error('ArtifactsPanel', 'Failed to load artifacts', error);
         }
     };
 
@@ -49,7 +50,7 @@ export default function ArtifactsPanel({ toggleRightPanel }: ArtifactsPanelProps
                 }
             }
         } catch (error) {
-            console.error('Failed to read artifact:', error);
+            Logger.error('ArtifactsPanel', 'Failed to read artifact', error);
             toast.error(`Failed to load ${filename}`);
         } finally {
             setIsLoading(false);
