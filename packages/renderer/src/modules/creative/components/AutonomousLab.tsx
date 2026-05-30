@@ -575,6 +575,7 @@ export default function AutonomousLab() {
                                             const isFirst = idx === 0;
                                             const isLast = idx === sequenceItems.length - 1;
                                             return (
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 <React.Fragment {...({ key: item.id } as any)}>
                                                     {/* Segment start frame */}
                                                     <div className="flex flex-col items-center gap-1.5 shrink-0">

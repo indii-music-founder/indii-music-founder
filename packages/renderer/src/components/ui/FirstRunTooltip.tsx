@@ -48,6 +48,7 @@ function saveTipState(state: TipState): void {
 /**
  * Hook to manage a single first-run tooltip
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFirstRunTip(tipId: string) {
     const [shouldShow, setShouldShow] = useState(false);
 
@@ -73,6 +74,7 @@ export function useFirstRunTip(tipId: string) {
 /**
  * Reset all tips (useful for testing or "replay tour" feature)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function resetAllTips(): void {
     localStorage.removeItem(STORAGE_KEY);
 }

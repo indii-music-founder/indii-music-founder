@@ -668,6 +668,7 @@ class DistributorServiceImpl {
           title: d.title,
           artist: d.artist,
           coverArtUrl: d.coverArtUrl,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           releaseDate: (d.submittedAt && typeof (d.submittedAt as { toDate?: () => Date }).toDate === 'function') ? (d.submittedAt as { toDate: () => Date }).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
           deployments: {},
         };

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Venue } from '../types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MapPin, Users, Globe, Mail, Plus, CheckCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
 

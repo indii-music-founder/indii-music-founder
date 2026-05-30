@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeCanvas from './CreativeCanvas';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 import { createMockStore } from '@/test/utils';
 

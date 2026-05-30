@@ -46,6 +46,7 @@ export default function WorkflowNodeInspector() {
             const newPrompt = (part && 'text' in part && typeof part.text === 'string') ? part.text : prompt;
             setPrompt(newPrompt);
             setAiInstruction('');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
             // logger.error("AI Refinement Error", e);
         } finally {

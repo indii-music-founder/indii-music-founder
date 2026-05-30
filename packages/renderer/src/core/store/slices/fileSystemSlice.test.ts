@@ -1,5 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createFileSystemSlice, FileSystemSlice } from './fileSystemSlice';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
 
@@ -19,6 +20,7 @@ describe('FileSystemSlice', () => {
     let mockGet: any;
 
     beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         mockSet = vi.fn((updateFn) => {
             // Basic mock implementation if needed, but we mostly check calls to service
             // For state updates we can just verify the logic inside the slice function

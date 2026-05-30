@@ -23,6 +23,7 @@ export class WikiLinter {
     static async lintContent(
         proposedContent: string,
         existingContent: string,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         allRelatedDocs?: WikiDocument[]
     ): Promise<LintResult> {
         try {

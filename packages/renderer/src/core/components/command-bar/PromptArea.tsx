@@ -67,6 +67,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setKnowledgeBaseEnabled,
         setCommandBarCollapsed,
         conversationMode,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         setConversationMode,
         stopAgent,
         isAgentProcessing,

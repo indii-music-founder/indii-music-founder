@@ -14,6 +14,7 @@ async function request<T>(endpoint: string, options: { method?: string; body?: s
     try {
         response = await fetch(`${BASE_URL}${endpoint}`, {
             ...options,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             signal: controller.signal as any,
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -21,6 +22,7 @@ async function request<T>(endpoint: string, options: { method?: string; body?: s
                 ...options.headers
             }
         });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         if (e.name === 'AbortError') {
             throw new HttpsError('deadline-exceeded', 'Printful API request timed out.');

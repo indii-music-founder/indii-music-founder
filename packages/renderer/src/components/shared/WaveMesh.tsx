@@ -35,6 +35,7 @@ const uniformsConfig = {
 } as unknown as WaveUniforms;
 
 const WaveShaderMaterial = shaderMaterial(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     uniformsConfig as any,
     // Vertex Shader
     `
@@ -156,6 +157,7 @@ extend({ WaveShaderMaterial });
 
 
 export default function WaveMesh() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const materialRef = useRef<any>(null);
 
     // Helper to calculate average of a sub-array

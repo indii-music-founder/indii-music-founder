@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';

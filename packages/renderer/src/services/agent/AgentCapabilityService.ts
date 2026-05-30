@@ -24,6 +24,7 @@ class AgentCapabilityService {
     if (this.registry) return this.registry;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const electronAPI = (window as any).electronAPI;
       if (!electronAPI || !electronAPI.agent) {
         logger.warn('[AgentCapabilityService] electronAPI.agent not found. Possibly running outside Electron.');

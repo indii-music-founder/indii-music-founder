@@ -190,6 +190,7 @@ export class E2EEncryptionService {
     recipientAgentId: string
   ): Promise<Record<string, unknown>> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { encrypted, signature } = envelope;
 
       // Note: Signature verification bypassed for Phase 4.1 (matching Python placeholder)

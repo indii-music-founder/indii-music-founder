@@ -109,6 +109,7 @@ export class GeminiRetrievalService {
     async uploadFile(
         file: File | Blob,
         displayName: string,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         metadata?: Record<string, unknown>
     ): Promise<UploadedFile> {
         // Validate MIME type
@@ -395,6 +396,7 @@ Only return the JSON array, no other text.`;
     ): Promise<KnowledgeDocument> {
         // This would integrate with your Firestore setup
         // Using dynamic import to avoid bundling Firebase in non-web contexts
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { getFirestore, doc, setDoc } = await import('firebase/firestore');
         const { db } = await import('./firebase');
 
@@ -423,6 +425,7 @@ Only return the JSON array, no other text.`;
      * Refresh files that are about to expire (re-upload before 48hr limit)
      */
     async refreshExpiringFiles(userId: string): Promise<number> {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { getFirestore, collection, query, where, getDocs } = await import('firebase/firestore');
         const { db } = await import('./firebase');
 

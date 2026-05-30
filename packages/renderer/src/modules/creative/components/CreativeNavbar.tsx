@@ -269,6 +269,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             <FrameSelectionModal
                 isOpen={showFrameModal}
                 onClose={() => setShowFrameModal(false)}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onSelect={(image: any) => setVideoInput(frameModalTarget, image)}
                 target={frameModalTarget}
             />

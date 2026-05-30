@@ -112,6 +112,7 @@ export class AgentPromptBuilder {
                 } else {
                     joinDate = new Date(profile.createdAt as unknown as string | number);
                 }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (err) {
                 joinDate = new Date();
             }
@@ -135,6 +136,7 @@ export class AgentPromptBuilder {
                     } else {
                         lastLogin = new Date(profile.lastLoginAt as unknown as string | number);
                     }
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (err) {
                     lastLogin = new Date();
                 }

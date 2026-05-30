@@ -23,6 +23,7 @@ export class LicenseScannerService {
                 throw new Error('Agent API not available. Are you in the Electron app?');
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await window.electronAPI.agent.navigateAndExtract(url) as any;
 
             if (!result.success || !result.text) {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { useStore } from '@/core/store';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // --- MOCKS ---

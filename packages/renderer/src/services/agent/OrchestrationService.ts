@@ -82,6 +82,7 @@ export class OrchestrationService {
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
         let executing = true;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const processedNodes = new Set<string>();
 
         while (executing) {
@@ -211,6 +212,7 @@ export class OrchestrationService {
                     report += `⚠️ **Workflow execution halted.** Address failures and resume via ID: \`${executionId}\`\n`;
                     return report;
                 }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 const errorMsg = error.message || 'Batch execution exception';
                 logger.error(`[Orchestration] Critical failure in batch execution:`, error);

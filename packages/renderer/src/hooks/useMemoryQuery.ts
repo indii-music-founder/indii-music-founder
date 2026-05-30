@@ -3,6 +3,7 @@ import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngi
 import { logger } from '@/utils/logger';
 
 export function useMemoryQuery() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [memories, setMemories] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -14,6 +15,7 @@ export function useMemoryQuery() {
             const results = await alwaysOnMemoryEngine.retrieve({ query: text, limit });
             setMemories(results);
             return results;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             const msg = err.message || 'Failed to query memories';
             setError(msg);

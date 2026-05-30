@@ -20,6 +20,7 @@ export type { FirebaseIntelligenceService as AutonomousIntelligenceClass } from 
  * Safely extracts text from an intelligence response object.
  * Handles different SDK formats (method vs property) and catches candidate/safety errors.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getResponseText(response: any): string {
     if (!response) return '';
     

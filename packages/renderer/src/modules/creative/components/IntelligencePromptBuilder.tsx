@@ -7,6 +7,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { useToast } from '@/core/context/ToastContext';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
@@ -191,6 +192,7 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
         key: 'Escape',
         ignoreInput: true,
         priority: 'modal',
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         handler: (e) => {
             if (openCategory) {
                 setOpenCategory(null);

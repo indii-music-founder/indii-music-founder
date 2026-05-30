@@ -36,6 +36,7 @@ const { mockSetScanning, mockAddVenue, defaultStoreState } = vi.hoisted(() => {
     return { mockSetScanning, mockAddVenue, defaultStoreState };
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 vi.mock('../store/AgentStore', async (importOriginal) => {
     // We can access imports dynamically inside the factory if we need to,
     // or just rely on the fact that vi.mock runs after hoisted. 
@@ -191,6 +192,6 @@ describe('👁️ Pixel: AgentDashboard Autonomous Interaction', () => {
         // Verify we handled empty state (no venues added)
         expect(mockAddVenue).not.toHaveBeenCalled();
 
-        expect(screen.getByText('No venues scouted yet')).toBeInTheDocument();
+        expect(screen.getByText('agent.scout.noVenues')).toBeInTheDocument();
     });
 });

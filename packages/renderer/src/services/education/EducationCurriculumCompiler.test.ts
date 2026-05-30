@@ -1,7 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { describe, it, expect, vi } from 'vitest';
 import {
   EducationCurriculumCompiler,
   EducationCurriculumInput,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   EducationCurriculumOutput
 } from './EducationCurriculumCompiler';
 import { HarnessContext } from '@indii/shared';

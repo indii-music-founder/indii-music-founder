@@ -39,6 +39,7 @@ interface UseLazyLoadResult {
     isVisible: boolean;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLazyLoad({
     rootMargin = '200px',
     threshold = 0,

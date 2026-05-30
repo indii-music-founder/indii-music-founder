@@ -11,7 +11,7 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 const mockSetVideoInput = vi.fn();
 const mockSetViewMode = vi.fn();
 const mockSetGenerationMode = vi.fn();
-const mockSetPrompt = vi.fn();
+const mockSetCreativePrompt = vi.fn();
 const mockAddToHistory = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockToastInfo = vi.fn();
@@ -208,7 +208,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setState((prev: any) => ({ ...prev, viewMode: mode }));
             }, []);
 
-            const setPrompt = React.useCallback((p: string) => {
+            const setCreativePrompt = React.useCallback((p: string) => {
                 setState((prev: any) => ({ ...prev, prompt: p }));
             }, []);
 
@@ -220,7 +220,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
             mockSetVideoInput.mockImplementation(setVideoInput);
             mockSetViewMode.mockImplementation(setViewMode);
             mockSetGenerationMode.mockImplementation(setGenerationMode);
-            mockSetPrompt.mockImplementation(setPrompt);
+            mockSetCreativePrompt.mockImplementation(setCreativePrompt);
             mockAddToHistory.mockImplementation(addToHistory);
 
             const storeState = React.useMemo(() => ({
@@ -228,7 +228,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setVideoInput,
                 setGenerationMode,
                 setViewMode,
-                setPrompt,
+                setCreativePrompt,
                 addToHistory,
                 setSelectedItem: vi.fn(),
                 subscribe: vi.fn(),
@@ -240,7 +240,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                     thinking: true,
                     model: 'fast'
                 },
-                // Mock properties accessed via getState
+                creativePrompt: state.prompt,
                 videoInputs: state.videoInputs,
                 setIsGenerating: vi.fn(),
                 setHasUnsavedChanges: vi.fn(),
@@ -248,7 +248,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 toggleRightPanel: vi.fn(),
                 whiskState: state.whiskState,
                 initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
-            }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
+            }), [state, setVideoInput, setGenerationMode, setViewMode, setCreativePrompt, addToHistory]);
 
             // Sync useStore mock to this local state
             (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {

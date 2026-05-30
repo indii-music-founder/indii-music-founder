@@ -44,9 +44,11 @@ export function useBoardroomContextHandshake() {
         if (state.distribution && state.distribution.releases && state.distribution.releases.length > 0) {
             // Take up to 2 most recent releases with pending status
             const recentReleases = state.distribution.releases
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter((r: any) => r.status === 'pending' || r.status === 'submitted')
                 .slice(0, 2);
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             recentReleases.forEach((release: any) => {
                 newAssets.push({
                     id: `dist-${release.id}`,
@@ -74,5 +76,6 @@ export function useBoardroomContextHandshake() {
                 Logger.info('BoardroomHandshake', `Boardroom context handshake: added ${assetsToAdd.length} assets`, { assetsToAdd });
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [useStore((state) => state.conversationMode)]);
 }

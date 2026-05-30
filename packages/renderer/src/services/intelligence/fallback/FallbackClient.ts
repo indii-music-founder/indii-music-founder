@@ -127,6 +127,7 @@ export async function initializeFallbackClient(): Promise<GoogleGenAI> {
  * Recursively converts all "type" properties inside a schema definition
  * to lowercase to satisfy the Gemini Developer API specifications.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lowercaseSchemaTypes(schema: any): any {
     if (!schema || typeof schema !== 'object') return schema;
 
@@ -136,6 +137,7 @@ function lowercaseSchemaTypes(schema: any): any {
     }
 
     if (newSchema.properties && typeof newSchema.properties === 'object') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const newProperties: Record<string, any> = {};
         for (const [key, value] of Object.entries(newSchema.properties)) {
             newProperties[key] = lowercaseSchemaTypes(value);
@@ -150,14 +152,18 @@ function lowercaseSchemaTypes(schema: any): any {
     return newSchema;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sanitizeToolsForDeveloperAPI(tools?: Tool[]): any[] | undefined {
     if (!tools) return undefined;
 
     return tools.map(tool => {
         const anyTool = tool as Record<string, unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const newTool: any = { ...anyTool };
         if (Array.isArray(anyTool.functionDeclarations)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             newTool.functionDeclarations = anyTool.functionDeclarations.map((decl: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const newDecl: any = { ...decl };
                 if (decl.parameters) {
                     newDecl.parameters = lowercaseSchemaTypes(decl.parameters);

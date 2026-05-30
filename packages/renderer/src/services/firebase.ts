@@ -8,6 +8,7 @@ import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';

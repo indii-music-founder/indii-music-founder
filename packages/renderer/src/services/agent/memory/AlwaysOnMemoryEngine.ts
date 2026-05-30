@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
 import { cleanPrompt } from '@/utils/prompt';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
@@ -337,6 +338,7 @@ export class AlwaysOnMemoryEngine {
 
             // Step 4: Build a context block for the LLM (even if memories are empty)
             const memoryBlock = memories.length > 0
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 ? memories.map((m, i) =>
                     `[Memory ${m.id}] (${m.category}, importance: ${m.importance.toFixed(2)}, ` +
                     `tier: ${m.tier}):\n  ${m.summary || m.content}`

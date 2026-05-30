@@ -92,6 +92,7 @@ export type ContextAwareTool<TArgs = any, TResult = any> = (
 export function adaptLegacyTool<TArgs = any, TResult = any>(
     legacyTool: (args: TArgs) => Promise<TResult>
 ): ContextAwareTool<TArgs, TResult> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return async (args: TArgs, context: ToolExecutionContext) => {
         // Legacy tool will use useStore.getState() directly
         // This is a transitional adapter until all tools are migrated

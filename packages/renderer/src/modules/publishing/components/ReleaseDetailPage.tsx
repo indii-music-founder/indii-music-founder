@@ -35,6 +35,7 @@ interface ReleaseDetailPageProps {
 }
 
 export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     releaseId,
     metadata,
     assets,

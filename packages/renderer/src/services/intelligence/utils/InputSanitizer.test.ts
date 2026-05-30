@@ -22,6 +22,7 @@ describe('InputSanitizer', () => {
         });
 
         it('should strip dangerous self-closing tags', () => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const input = 'hello <img src=x onerror=alert(1)> world';
             // The regex currently targets specific tags: script, style, iframe, object, embed, form.
             // Img is NOT in the list, so it might stay (heuristic choice), but let's test a targeted one like iframe

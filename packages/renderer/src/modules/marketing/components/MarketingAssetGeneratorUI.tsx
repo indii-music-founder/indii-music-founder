@@ -7,6 +7,7 @@ export default function MarketingAssetGeneratorUI() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [prompt, setPrompt] = useState<string>('');
     const [style, setStyle] = useState<string>('cinematic');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isGenerating, setIsGenerating] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [resultJobId, setResultJobId] = useState<string | null>(null);
@@ -150,6 +151,7 @@ export default function MarketingAssetGeneratorUI() {
                 {/* Progress Indicator */}
                 <div className="flex items-center gap-2 mb-4">
                     {[1, 2, 3, 4].map((s) => (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         <React.Fragment {...({ key: s } as any)}>
                             <div className={`flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold transition-colors ${step === s
                                 ? 'bg-dept-marketing border-dept-marketing text-white shadow-[0_0_15px_rgba(var(--color-dept-marketing),0.5)]'

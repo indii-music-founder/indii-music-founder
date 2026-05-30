@@ -102,6 +102,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
 export const EarningsDashboard: React.FC = () => {
     // Custom hook
     const { earningsSummary, earningsLoading: loading, earningsError: error } = useFinance();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [activeTab, setActiveTab] = useState('overview');
 
     // Derive primary distributor ID from first active release deployment

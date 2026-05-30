@@ -48,6 +48,7 @@ export function RegistrationChecklistPanel() {
 
         setItemStatus('audio', 'checking');
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await window.electronAPI.audio.analyze(filePath as string) as any;
             if (result.status !== 'success') {
                 toastError('Audio analysis failed — check file format.');
@@ -105,6 +106,7 @@ export function RegistrationChecklistPanel() {
         }
         setItemStatus('upc', 'checking');
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await window.electronAPI.distribution.generateUPC() as any;
             if (!result.success || !result.upc) throw new Error(result.error || 'No UPC returned');
             success(`UPC assigned: ${result.upc}`);

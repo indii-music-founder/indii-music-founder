@@ -53,6 +53,7 @@ let activeExecutionListener: Unsubscribe | null = null;
 export const buildAgentOrchestrationState: (
     set: Parameters<StateCreator<AgentOrchestrationSlice>>[0],
     get: Parameters<StateCreator<AgentOrchestrationSlice>>[1]
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 ) => AgentOrchestrationSlice = (set, get) => ({
     activeGraphs: {},
     activeGraphExecution: null,

@@ -40,6 +40,7 @@ describe('🧬 Helix: Lifecycle & State Integrity', () => {
     mockFitnessFn.mockResolvedValue(0.5); // Default fitness for new agents
 
     // Crossover returns a gene that *looks* like it has fitness (simulating a bug in crossover logic)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockCrossoverFn.mockImplementation(async (p1, p2) => ({
       ...p1,
       id: 'child-draft',

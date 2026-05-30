@@ -67,6 +67,7 @@ export class GeminiRetrievalService {
         try {
             const firebase = await import('@/services/firebase');
             const auth = firebase.auth;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const appCheck: any = firebase.appCheck;
             const currentUser = auth.currentUser;
             if (currentUser) {
@@ -426,6 +427,7 @@ export class GeminiRetrievalService {
         try {
             const firebase = await import('@/services/firebase');
             const auth = firebase.auth;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const appCheck: any = firebase.appCheck;
             const currentUser = auth.currentUser;
             if (currentUser) {
@@ -492,6 +494,7 @@ export class GeminiRetrievalService {
                         if (text) yield text;
                         buffer = buffer.substring(lastBracket + 1);
                         firstBracket = buffer.indexOf('{');
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     } catch (e: unknown) {
                         // Incomplete JSON or parse error, break and wait for more data
                         break;

@@ -65,6 +65,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (SpeechRecognitionCtor) {
                 const recognitionInstance = new SpeechRecognitionCtor() as unknown as VoiceSpeechRecognitionInstance;
@@ -125,6 +126,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useVoice = () => {
     const context = useContext(VoiceContext);
     if (!context) throw new Error('useVoice must be used within VoiceProvider');

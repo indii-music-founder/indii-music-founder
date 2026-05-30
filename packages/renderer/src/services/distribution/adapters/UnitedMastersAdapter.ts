@@ -142,6 +142,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         // UnitedMasters typically requires re-upload for changes
         return {

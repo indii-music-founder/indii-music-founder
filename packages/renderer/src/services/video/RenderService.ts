@@ -35,6 +35,7 @@ export class RenderService {
             const cloudrunPkg = '@remotion/cloudrun/client';
             const remotionCloudrun = await import(/* @vite-ignore */ cloudrunPkg);
             const result = await remotionCloudrun.renderMediaOnCloudrun({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 region: RemotionCloudRunConfig.region as any,
                 serviceName: RemotionCloudRunConfig.serviceName,
                 serveUrl: RemotionCloudRunConfig.siteName,
@@ -116,6 +117,7 @@ export class RenderService {
                 serveUrl: bundleLocation,
                 codec: config.codec || 'h264',
                 outputLocation: config.outputLocation,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any);
 
             logger.info(`[RenderService] Render complete: ${config.outputLocation}`);

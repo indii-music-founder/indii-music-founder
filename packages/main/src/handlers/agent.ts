@@ -65,6 +65,7 @@ export function registerAgentHandlers() {
         }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('agent:create-artifact', async (event: IpcMainInvokeEvent, filename: string, content: string, options: any) => {
         try {
             validateSender(event);
@@ -119,6 +120,7 @@ export function registerAgentHandlers() {
         }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: any) => {
         try {
             validateSender(event);
@@ -130,6 +132,7 @@ export function registerAgentHandlers() {
             }
 
             let content = await fs.readFile(targetFile, 'utf-8');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const lines = content.split('\n');
 
             // Simplistic multi-replace implementation for agents

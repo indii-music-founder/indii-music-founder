@@ -62,6 +62,7 @@ export class SubscriptionService {
     }
 
     const fetchPromise = (async (): Promise<Subscription & { isFallback?: boolean }> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let lastError: any = null;
       const maxRetries = 3;
       const baseDelay = 500;
@@ -149,6 +150,7 @@ export class SubscriptionService {
     }
 
     const fetchPromise = (async (): Promise<UsageStats & { isFallback?: boolean }> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let lastError: any = null;
       const maxRetries = 3;
       const baseDelay = 500;

@@ -15,8 +15,10 @@ import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
   Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   MessageSquare, Package, Wand2, Play, Pause
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';

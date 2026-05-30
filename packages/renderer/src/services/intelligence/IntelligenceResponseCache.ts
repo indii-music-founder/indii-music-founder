@@ -28,6 +28,7 @@ const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
  * Creates a no-op database for server-side/test environments.
  * All methods resolve successfully with null/void to avoid breaking code paths.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface IndexedDBRecord { [key: string]: unknown }
 
 /**

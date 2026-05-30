@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AudioAnalyzer from './AudioAnalyzer';
 import { useToast } from '@/core/context/ToastContext';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import React from 'react';
 

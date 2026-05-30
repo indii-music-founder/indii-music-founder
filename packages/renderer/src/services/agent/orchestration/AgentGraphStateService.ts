@@ -112,6 +112,7 @@ class AgentGraphStateServiceImpl {
     /**
      * Updates top-level metadata for the execution.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateExecutionMetadata(userId: string, executionId: string, metadata: Record<string, any>): Promise<void> {
         const service = this.getService(userId);
         

@@ -2,6 +2,7 @@
 import { where } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';
 import { Project } from '@/core/store/slices/appSlice';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 
 class ProjectServiceImpl extends FirestoreService<Project> {

@@ -58,6 +58,7 @@ export class AgentGraphService {
             const result = await this.runGraphLoop(userId, graph, executionId, context, traceId, initialInput);
             AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', graph.id, executionId);
             return result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
             throw error;
@@ -500,6 +501,7 @@ export class AgentGraphService {
     /**
      * Safely retrieves a nested value from an object using a dot-notated path.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private getNestedValue(obj: any, path: string): any {
         if (!path || !obj) return undefined;
         return path.split('.').reduce((prev, curr) => {

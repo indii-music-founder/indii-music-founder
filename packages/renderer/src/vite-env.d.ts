@@ -131,6 +131,7 @@ declare module '*?raw' {
 declare module 'react/jsx-runtime' {
     namespace JSX {
         interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [elemName: string]: any;
         }
     }
@@ -139,6 +140,7 @@ declare module 'react/jsx-runtime' {
 declare module 'react/jsx-dev-runtime' {
     namespace JSX {
         interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [elemName: string]: any;
         }
     }
@@ -147,6 +149,7 @@ declare module 'react/jsx-dev-runtime' {
 declare global {
     namespace JSX {
         interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [elemName: string]: any;
         }
     }

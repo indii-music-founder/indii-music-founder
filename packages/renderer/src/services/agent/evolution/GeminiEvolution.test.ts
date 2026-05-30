@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { v4 as uuidv4 } from 'uuid';
 
 /**

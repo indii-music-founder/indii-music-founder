@@ -132,6 +132,7 @@ export class VisualOutputAutorater {
     static async evaluateImage(input: VisualEvaluationInput): Promise<VisualEvaluationScore | null> {
         try {
             const promptText = this.buildEvaluationPrompt(input.originalBrief);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const parts: any[] = [{ text: promptText }];
 
             if (input.imageBytes) {

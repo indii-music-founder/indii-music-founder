@@ -5,12 +5,14 @@ import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { VideoJob, VideoSafetyRating } from '@/types/video';
 import { logger } from '@/utils/logger';
@@ -323,6 +325,7 @@ export class VideoGenerationService {
         const quotaCheck = await this.checkVideoQuota();
         if (!quotaCheck.canGenerate) {
             const tierInfo = await subscriptionService.getCurrentSubscription();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
         }
 

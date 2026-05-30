@@ -189,6 +189,7 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('updater:set-channel', (_event: any, channel: 'stable' | 'beta') => {
         if (autoUpdater) {
             store.set('updater-channel', channel);
@@ -198,6 +199,7 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('updater:set-source', (_event: any, source: 'github' | 'firebase') => {
         if (autoUpdater) {
             store.set('updater-source', source);

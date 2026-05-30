@@ -132,6 +132,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                             </div>
                             <CreativeGallery
                                 compact={true}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onSelect={(item: any) => { onSelect(item); onClose(); }}
                                 searchQuery={searchQuery}
                                 className="bg-[#0f0f0f]"

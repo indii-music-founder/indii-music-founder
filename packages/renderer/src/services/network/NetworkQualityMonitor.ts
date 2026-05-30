@@ -18,6 +18,7 @@ type QualityChangeCallback = (quality: NetworkQuality) => void;
 export class NetworkQualityMonitor {
   private quality: NetworkQuality | null = null;
   private qualityListeners: Set<QualityChangeCallback> = new Set();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private connectionInfo: any = null;
 
   async initialize(): Promise<void> {

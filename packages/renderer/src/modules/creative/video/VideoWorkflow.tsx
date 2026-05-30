@@ -8,6 +8,7 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
@@ -86,6 +87,7 @@ export const processJobUpdate = (
             // We don't await this to avoid blocking the UI update, but we log it
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .then((path: any) => {
                         logger.debug('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });

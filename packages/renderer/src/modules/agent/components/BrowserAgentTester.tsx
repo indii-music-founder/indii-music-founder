@@ -9,6 +9,7 @@ const BrowserAgentTester: React.FC = () => {
     const [goal, setGoal] = useState('Find the capacity of "Saint Andrew\'s Hall" in Detroit');
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { logAction } = useAgentStore();

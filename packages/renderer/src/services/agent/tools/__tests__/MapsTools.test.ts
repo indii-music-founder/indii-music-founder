@@ -44,6 +44,7 @@ describe('MapsTools', () => {
         (window as unknown as { google: Record<string, unknown> }).google = googleMock;
 
         // Mock document.createElement to avoid script injection during test
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         vi.spyOn(document, 'createElement').mockImplementation((tag) => {
             return {} as never;
         });

@@ -99,6 +99,7 @@ describe('🧬 Helix: Gene Loss Prevention', () => {
     ];
 
     // 1. Mock "Lazy" Crossover (Returns Parent Reference)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockCrossoverFn.mockImplementation(async (p1, p2) => {
       return p1; // DANGER: Returning reference!
     });

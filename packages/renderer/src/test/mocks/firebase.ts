@@ -101,6 +101,7 @@ export const createFirebaseMock = () => {
 
     const mockRemoteConfig = {
         fetchAndActivate: vi.fn().mockResolvedValue(true),
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         getValue: vi.fn((_rc, key) => ({
             asString: () => 'mock-value',
             asBoolean: () => false,

@@ -10,6 +10,7 @@ interface WebcamCaptureProps {
 export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);

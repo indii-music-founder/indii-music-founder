@@ -41,6 +41,7 @@ const DEFAULT_PREFERENCES: ConsentPreferences = {
  * Read consent preferences from localStorage.
  * Returns null if no consent has been given yet.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getConsentPreferences(): ConsentPreferences | null {
     try {
         const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
@@ -57,6 +58,7 @@ export function getConsentPreferences(): ConsentPreferences | null {
 /**
  * Check if a specific consent category has been granted.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function hasConsent(category: keyof Omit<ConsentPreferences, 'timestamp' | 'version'>): boolean {
     const prefs = getConsentPreferences();
     if (!prefs) return false;
