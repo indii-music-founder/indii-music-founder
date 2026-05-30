@@ -6,12 +6,19 @@ import { OnboardingModal } from './OnboardingModal';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string) => {
-            const keys: Record<string, string> = {
+        t: (key: string, options?: any) => {
+            const keys: Record<string, any> = {
                 'onboarding.closeLabel': 'Close onboarding',
                 'onboarding.attachLabel': 'Attach files',
                 'onboarding.sendLabel': 'Send message',
+                'onboarding.greetings': ["Hey — let's update your profile."],
+                'onboarding.errors': ["Hmm, something went sideways."],
+                'onboarding.processingOptions': ["One sec...", "Mmm...", "Okay..."],
+                'onboarding.voiceInput': "Voice Input"
             };
+            if (options && options.returnObjects) {
+                return keys[key] || [];
+            }
             return keys[key] || key;
         },
     }),
