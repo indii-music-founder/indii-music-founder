@@ -15,6 +15,8 @@
 import { ethereumService } from './EthereumService';
 import { logger } from '@/utils/logger';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
+// @ts-expect-error - no types available
+import namehash from 'eth-ens-namehash';
 
 /** ENS Registry contract address (Ethereum mainnet) */
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
@@ -142,16 +144,14 @@ export class NameResolutionService {
      * node = keccak256(node(parent) + keccak256(label))
      */
     private computeNamehash(name: string): string {
-        void name;
-        throw new Error('ENS resolution requires a real EIP-137 namehash implementation; placeholder hashing is disabled.');
+        return namehash.hash(name);
     }
 
     /**
      * Compute Unstoppable Domains namehash.
      */
     private computeUDNamehash(name: string): string {
-        void name;
-        throw new Error('Unstoppable Domains resolution requires a real UNS namehash implementation; placeholder hashing is disabled.');
+        return namehash.hash(name);
     }
 }
 
