@@ -11,6 +11,7 @@
  *   • Generation Monitor — real-time Autonomous generation progress
  *   • Transport Bar — audio playback controls
  *   • Approval Queue — swipeable approve/reject cards
+ *   • Automatic Reconnection — handles unexpected disconnections gracefully
  *
  * Access modes:
  *   • Cloud Relay mode: Subscribes to Firestore for true remote
@@ -22,7 +23,7 @@ import { remoteRelayService, type DesktopState } from '@/services/agent/RemoteRe
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, Grip, MessageSquare, Image, Music2,
-  CheckSquare, QrCode, Smartphone, LucideIcon, Wifi, WifiOff, AlertCircle
+  CheckSquare, QrCode, Smartphone, LucideIcon, Wifi, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -73,7 +74,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl p-6"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
     >
       <motion.div 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -103,7 +104,8 @@ function PairingModal({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={onClose}
-          className="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98]"
+          className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
+          style={{ minHeight: '44px' }}
         >
           Close
         </button>
@@ -139,6 +141,12 @@ export default function MobileRemote() {
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
+  // Reconnection state machine
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const maxReconnectAttempts = 5;
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Track auth readiness to re-subscribe when auth becomes available
   const isAuth = remoteRelayService.isAuthenticated();
 
@@ -147,25 +155,67 @@ export default function MobileRemote() {
     // Wait for auth to be fully realized
     if (!isAuth) return;
 
+    logger.info('[MobileRemote] Subscribing to desktop state updates…');
     const unsub = remoteRelayService.onDesktopState((state) => {
       setDesktopState(state);
       if (state && state.online) {
         setIsPaired(true);
         setConnectionStatus('connected');
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
       } else {
-        setIsPaired(false);
-        setConnectionStatus('idle'); // Desktop is offline
+        // If we were previously connected, trigger automatic reconnection sequence
+        if (isPaired || connectionStatus === 'connected') {
+          logger.warn('[MobileRemote] Desktop went offline unexpectedly. Initiating auto-reconnect sequence…');
+          setIsPaired(false);
+          setIsReconnecting(true);
+          setConnectionStatus('pairing');
+          setReconnectAttempts(1);
+        } else {
+          setIsPaired(false);
+          setConnectionStatus('idle');
+          setIsReconnecting(false);
+        }
       }
     });
 
     return () => unsub();
-  }, [isAuth]);
+  }, [isAuth, isPaired, connectionStatus]);
 
-  // Safety timeout: if stuck in 'pairing' for >10s, fall back to 'idle'
-  // This prevents the infinite spinner when the desktop state doc doesn't exist
+  // Handle active retry polling for reconnects
+  useEffect(() => {
+    if (!isReconnecting) {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (reconnectAttempts > maxReconnectAttempts) {
+      logger.error('[MobileRemote] Max reconnection attempts reached. Marking as disconnected.');
+      setIsReconnecting(false);
+      setConnectionStatus('idle');
+      return;
+    }
+
+    // Schedule next reconnection attempt after progressive backoff
+    const delay = Math.min(2000 + reconnectAttempts * 1000, 6000);
+    logger.info(`[MobileRemote] Auto-reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms…`);
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      setReconnectAttempts(prev => prev + 1);
+    }, delay);
+
+    return () => {
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    };
+  }, [isReconnecting, reconnectAttempts]);
+
+  // Safety timeout: if stuck in 'pairing' for >10s initially, fall back to 'idle'
   const pairingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (connectionStatus === 'pairing') {
+    if (connectionStatus === 'pairing' && !isReconnecting) {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
         logger.info('[MobileRemote] Pairing timeout — desktop not found, falling back to idle');
@@ -179,11 +229,14 @@ export default function MobileRemote() {
     return () => {
       if (pairingTimeoutRef.current) clearTimeout(pairingTimeoutRef.current);
     };
-  }, [connectionStatus]);
+  }, [connectionStatus, isReconnecting]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommand = useCallback((command: { type: string; payload: any }) => {
-    if (!isPaired) return;
+    if (!isPaired) {
+      logger.warn('[MobileRemote] Cannot send command: Remote not paired or reconnecting');
+      return;
+    }
 
     let commandStr = '';
 
@@ -199,6 +252,13 @@ export default function MobileRemote() {
       logger.error('[MobileRemote] Failed to send command to relay:', err);
     });
   }, [isPaired]);
+
+  const handleManualRetry = () => {
+    logger.info('[MobileRemote] Manual reconnect triggered by user');
+    setReconnectAttempts(1);
+    setIsReconnecting(true);
+    setConnectionStatus('pairing');
+  };
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -246,7 +306,7 @@ export default function MobileRemote() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative">
+    <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom">
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#0a0a0c]" />
@@ -293,6 +353,19 @@ export default function MobileRemote() {
                     Active
                   </span>
                 </motion.div>
+              ) : isReconnecting ? (
+                <motion.div 
+                  key="reconnecting"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.15em]">
+                    Retry {reconnectAttempts}/{maxReconnectAttempts}
+                  </span>
+                </motion.div>
               ) : connectionStatus === 'pairing' ? (
                 <motion.div 
                   key="pairing"
@@ -314,7 +387,8 @@ export default function MobileRemote() {
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={() => setShowPairingModal(true)}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20"
+                  className="flex items-center gap-2 px-5 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
+                  style={{ minWidth: '80px', minHeight: '44px' }}
                 >
                   <QrCode className="w-4 h-4" />
                   <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -330,7 +404,32 @@ export default function MobileRemote() {
       {/* ─── Body ───────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar">
         <div className="p-6 pb-32 max-w-md mx-auto w-full">
-          {!isPaired && connectionStatus === 'idle' ? (
+          {/* Glassmorphic Auto-Reconnecting Indicator */}
+          <AnimatePresence>
+            {isReconnecting && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-6 p-4 rounded-[24px] bg-gradient-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">Session Connection Interrupted</h4>
+                    <p className="text-[10px] text-[#8e8e93] font-medium mt-0.5">Attempting seamless handshake recovery…</p>
+                  </div>
+                </div>
+                <div className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1.5 rounded-lg border border-amber-500/20">
+                  {reconnectAttempts}/{maxReconnectAttempts}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {!isPaired && connectionStatus === 'idle' && !isReconnecting ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -348,20 +447,33 @@ export default function MobileRemote() {
               
               <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">Studio Disconnected</h2>
               <p className="text-base text-[#a1a1a6] mb-10 leading-relaxed px-6 font-medium">
-                Your indii studio is currently offline. Please launch the app on your desktop to resume control.
+                Your indii studio is currently offline. Launch the desktop application to restore control, or click below to manually retry.
               </p>
               
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowPairingModal(true)}
-                className="group flex items-center gap-3 px-8 py-4 rounded-[20px] bg-white text-black font-bold transition-all hover:bg-[#f2f2f7] shadow-xl shadow-white/5"
-              >
-                <QrCode className="w-5 h-5" />
-                Show Pairing Code
-              </motion.button>
+              <div className="flex flex-col gap-4 w-full px-6">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowPairingModal(true)}
+                  className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white text-black font-bold transition-all hover:bg-[#f2f2f7] shadow-xl shadow-white/5 cursor-pointer"
+                  style={{ minHeight: '44px' }}
+                >
+                  <QrCode className="w-5 h-5" />
+                  Show Pairing Code
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleManualRetry}
+                  className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white/5 border border-white/10 text-white font-bold transition-all hover:bg-white/10 shadow-lg cursor-pointer"
+                  style={{ minHeight: '44px' }}
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  Try Reconnecting Now
+                </motion.button>
+              </div>
               
               <p className="mt-12 text-[#48484a] text-xs font-bold uppercase tracking-[0.2em]">
-                Secure Cloud Relay v1.59
+                Secure Cloud Relay v1.60
               </p>
             </motion.div>
           ) : (
@@ -391,10 +503,11 @@ export default function MobileRemote() {
                 onClick={() => isPaired && setActiveTab(tab.id)}
                 disabled={!isPaired}
                 className={cn(
-                  "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300",
-                  !isPaired ? "opacity-20 grayscale" : "active:scale-90",
+                  "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
+                  !isPaired ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
                   isActive ? "text-white" : "text-[#636366] hover:text-[#8e8e93]"
                 )}
+                style={{ minHeight: '44px' }}
               >
                 <AnimatePresence>
                   {isActive && (
