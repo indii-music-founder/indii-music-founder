@@ -155,6 +155,12 @@ test.describe('Creative Studio', () => {
             await page.waitForTimeout(1_000);
         }
 
+        const videoModeBtn = page.locator('[data-testid="direct-video-mode-btn"]');
+        if (await videoModeBtn.isVisible().catch(() => false)) {
+            await videoModeBtn.click();
+            await page.waitForTimeout(1_000);
+        }
+
         const promptInput = page.locator('[data-testid="direct-prompt-input"]');
         if (await promptInput.isVisible().catch(() => false)) {
             // Toggle prompt builder
