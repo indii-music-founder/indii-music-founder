@@ -39,7 +39,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const rawDdex = await (window.electronAPI.distribution as any).generateIngestionNotification({
+            const rawDdex = await window.electronAPI.distribution.generateIngestionNotification({
                 releaseId: `rel-${isrc}`,
                 title,
                 artists: [artist],
@@ -165,7 +165,7 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             // Options must match ISRCGenerationOptions interface
-            const result = await (window.electronAPI.distribution as any).generateISRC({
+            const result = await window.electronAPI.distribution.generateISRC({
                 year: year.toString(),
                 trackTitle,
                 artistName: artist
@@ -173,7 +173,7 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             });
 
             // Register it immediately
-            await (window.electronAPI.distribution as any).registerRelease({
+            await window.electronAPI.distribution.registerRelease({
                 isrc: result.isrc,
                 title: trackTitle,
                 artist: artist,
@@ -234,10 +234,10 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             // Calculate status first
-            const taxResult = await (window.electronAPI.distribution as any).calculateTax({ userId, amount: 100 });
+            const taxResult = await window.electronAPI.distribution.calculateTax({ userId, amount: 100 });
 
             // Certify - remove userId from the data object as it's passed as first arg
-            const certResult = await (window.electronAPI.distribution as any).certifyTax(userId, {
+            const certResult = await window.electronAPI.distribution.certifyTax(userId, {
                 fullName: fullName.trim(),
                 country,
                 taxId: tin,
@@ -286,7 +286,7 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
                 splitsRecord[s.email || s.name] = s.percentage;
             });
 
-            const waterfallResult = await (window.electronAPI.distribution as any).executeWaterfall({
+            const waterfallResult = await window.electronAPI.distribution.executeWaterfall({
                 gross_revenue: grossRevenue,
                 splits: splitsRecord,
                 expenses: recoupableExpenses
@@ -329,7 +329,7 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
     // 1. Try Brain Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const result = await (window.electronAPI.distribution as any).validateMetadata({
+            const result = await window.electronAPI.distribution.validateMetadata({
                 releaseId: `qc-${Date.now()}`,
                 title,
                 artists: [artist],
@@ -411,7 +411,7 @@ const generate_bwarm = wrapTool('generate_bwarm', async (args: {
                 isrc: '', // Optional/Unknown
             }));
 
-            const result = await (window.electronAPI.distribution as any).generateBWARM({ works: mappedWorks });
+            const result = await window.electronAPI.distribution.generateBWARM({ works: mappedWorks });
 
             return {
                 csv: result.csv, // Raw CSV string
@@ -441,7 +441,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     // 1. Try Keys Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const result = await (window.electronAPI.distribution as any).checkMerlinStatus({
+            const result = await window.electronAPI.distribution.checkMerlinStatus({
                 tracks: [],
                 ...args
             });
@@ -629,7 +629,7 @@ export const DistributionTools = {
                 const result = await window.electronAPI.sftp.uploadDirectory(
                     args.releaseFolder,
                     `/${args.targetDSP.toLowerCase().replace(/\s+/g, '_')}/releases/`,
-                ) as any;
+                );
 
                 if (!result.success) {
                     throw new Error(result.error || 'SFTP upload failed');
