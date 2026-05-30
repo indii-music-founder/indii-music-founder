@@ -46,7 +46,10 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
     const currency = input.currency || 'USD';
     const now = new Date();
     const purchaseDate = new Date(input.purchaseDate);
-    const monthsSincePurchase = (now.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    const isValidPurchaseDate = !isNaN(purchaseDate.getTime());
+    const validPurchaseDate = isValidPurchaseDate ? purchaseDate : now;
+    const monthsSincePurchase = (now.getTime() - validPurchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    const safePurchasePrice = Math.max(0, input.purchasePrice || 0);
 
     const findings: HarnessFinding[] = [];
     const recommendations: HarnessRecommendation[] = [];
@@ -63,7 +66,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
       costLines.push({
         id: `cost_consume_${input.assetId}_${Date.now()}`,
         userId: ctx.userId,
-        amount: input.purchasePrice,
+        amount: safePurchasePrice,
         currency,
         category: 'gear_consumable',
         costType: 'cash_expense',
@@ -100,8 +103,8 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
       }
     } else {
       // Durable Asset
-      const lifespan = input.lifespanMonths || 60; // Default 5 years
-      monthlyDepreciation = input.purchasePrice / lifespan;
+      const lifespan = Math.max(1, input.lifespanMonths || 60); // Default 5 years, min 1 month
+      monthlyDepreciation = safePurchasePrice / lifespan;
 
       costLines.push({
         id: `cost_deprec_${input.assetId}_${Date.now()}`,
@@ -144,7 +147,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
         replacementStatus = 'good';
       }
       
-      if (input.purchasePrice >= 2000) {
+      if (safePurchasePrice >= 2000) {
         agentBriefs.push({
           agentId: 'finance_agent',
           departmentId: 'finance',
@@ -159,7 +162,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
       costLines.push({
         id: `cost_repair_${input.assetId}_${Date.now()}`,
         userId: ctx.userId,
-        amount: input.purchasePrice,
+        amount: safePurchasePrice,
         currency,
         category: 'gear_repair',
         costType: 'cash_expense',
@@ -185,28 +188,30 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
 
     if (input.warrantyExpirationDate) {
       const warrantyDate = new Date(input.warrantyExpirationDate);
-      const monthsUntilWarrantyExpires = (warrantyDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+      if (!isNaN(warrantyDate.getTime())) {
+        const monthsUntilWarrantyExpires = (warrantyDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
 
-      if (monthsUntilWarrantyExpires < 0) {
-        warrantyStatus = 'expired';
-      } else if (monthsUntilWarrantyExpires <= 2) {
-        warrantyStatus = 'expiring_soon';
-        findings.push({
-          id: `find_warranty_${input.assetId}`,
-          domain: this.domain,
-          severity: 'medium',
-          title: 'Warranty Expiring Soon',
-          detail: `The warranty for ${input.name} expires in less than 2 months. Check for any needed repairs now.`,
-          confidence: 'high'
-        });
-        agentBriefs.push({
-          agentId: 'music_agent',
-          departmentId: 'music',
-          brief: `Verify condition of ${input.name} before warranty expires on ${input.warrantyExpirationDate}.`,
-          inputs: [input.assetId]
-        });
-      } else {
-        warrantyStatus = 'active';
+        if (monthsUntilWarrantyExpires < 0) {
+          warrantyStatus = 'expired';
+        } else if (monthsUntilWarrantyExpires <= 2) {
+          warrantyStatus = 'expiring_soon';
+          findings.push({
+            id: `find_warranty_${input.assetId}`,
+            domain: this.domain,
+            severity: 'medium',
+            title: 'Warranty Expiring Soon',
+            detail: `The warranty for ${input.name} expires in less than 2 months. Check for any needed repairs now.`,
+            confidence: 'high'
+          });
+          agentBriefs.push({
+            agentId: 'music_agent',
+            departmentId: 'music',
+            brief: `Verify condition of ${input.name} before warranty expires on ${input.warrantyExpirationDate}.`,
+            inputs: [input.assetId]
+          });
+        } else {
+          warrantyStatus = 'active';
+        }
       }
     }
 

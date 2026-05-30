@@ -36,6 +36,8 @@ export interface CreativeProductionOutput {
   syncReadyScore: number;
   missingItems: string[];
   creditsComplete: boolean;
+  derivativesCount: number;
+  revisionsCount: number;
 }
 
 export class CreativeProductionCompiler implements HarnessCompiler<CreativeProductionInput, CreativeProductionOutput> {
@@ -159,22 +161,77 @@ export class CreativeProductionCompiler implements HarnessCompiler<CreativeProdu
         });
         agentBriefs.push({
           agentId: 'legal',
+          departmentId: 'legal',
           brief: 'Review artwork for legal and brand compliance due to flagged issues.',
           inputs: ['artwork']
         });
         agentBriefs.push({
           agentId: 'merch',
+          departmentId: 'merch',
           brief: 'Review artwork for brand safety.',
           inputs: ['artwork']
         });
       }
     }
 
+    if (deliveryReady) {
+      agentBriefs.push({
+        agentId: 'release',
+        departmentId: 'release',
+        brief: 'Creative assets are complete and ready for release scheduling.',
+        inputs: ['tracks', 'artwork']
+      });
+      agentBriefs.push({
+        agentId: 'distribution',
+        departmentId: 'distribution',
+        brief: 'Assets are ready for DDEX delivery.',
+        inputs: ['tracks', 'artwork']
+      });
+    }
+
+    if (syncReadyScore >= 50 && input.tracks && input.tracks.length > 0) {
+      agentBriefs.push({
+        agentId: 'licensing',
+        departmentId: 'licensing',
+        brief: `Creative assets are available for sync pitching. Sync readiness score: ${syncReadyScore}.`,
+        inputs: ['tracks', 'stems']
+      });
+    }
+
+    if (input.videos && input.videos.length > 0) {
+      agentBriefs.push({
+        agentId: 'marketing',
+        departmentId: 'marketing',
+        brief: 'Video assets and derivatives are available for marketing campaigns.',
+        inputs: ['videos', 'derivatives']
+      });
+    }
+
+    if (input.artwork?.hasArtwork && !input.artwork.hasLegalIssue && !input.artwork.hasBrandIssue) {
+      agentBriefs.push({
+        agentId: 'merch',
+        departmentId: 'merch',
+        brief: 'Approved artwork is available for merchandise design.',
+        inputs: ['artwork']
+      });
+    }
+
+    if (creditsComplete && input.tracks && input.tracks.length > 0) {
+      agentBriefs.push({
+        agentId: 'publishing',
+        departmentId: 'publishing',
+        brief: 'Track credits are complete. Please register publishing splits.',
+        inputs: ['credits']
+      });
+    }
+
     const output: CreativeProductionOutput = {
       deliveryReady,
       syncReadyScore: Math.max(0, syncReadyScore),
       missingItems,
-      creditsComplete
+      creditsComplete,
+      derivativesCount: input.derivatives ?? 0,
+      revisionsCount: input.revisions ?? 0
     };
 
     return createHarnessRun<CreativeProductionOutput>({

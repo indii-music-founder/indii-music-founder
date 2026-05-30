@@ -110,7 +110,7 @@ describe('FinanceCompiler', () => {
     }, { userId: 'user-a' });
 
     const totalCosts = 50 + 14 + 50; // 114
-    expect(run.output.costSummary.total).toBe(114);
-    expect(run.output.projectRoi).toBeCloseTo((200 - 114) / 114);
+    expect(run.output.costSummary.total).toBe(totalCosts);
+    expect(run.output.projectRoi).toBeCloseTo((200 - totalCosts) / totalCosts);
   });
 });
