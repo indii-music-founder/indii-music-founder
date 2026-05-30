@@ -415,7 +415,7 @@ if (!gotTheLock) {
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
             'video:render', 'video:open-folder', 'video:save-asset',
             'power:get-state', 'mobile-remote:stop',
-            'updater:check', 'updater:install',
+            'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
         ]);
