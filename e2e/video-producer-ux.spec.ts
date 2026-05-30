@@ -34,36 +34,30 @@ test.describe('Video Producer UX Hardening', () => {
             }
         });
 
-        // Navigate to video producer module
-        await page.goto('/video');
+        // Navigate to creative module
+        await page.goto('/creative');
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
         
-        // Wait for Video Producer to mount
-        const header = page.locator('[data-testid="module-header"]');
-        await expect(header).toHaveText('Video Producer', { timeout: 10_000 });
+        // Switch to Video Production Mode
+        const videoTab = page.locator('[data-testid="director-view-btn"]');
+        await expect(videoTab).toBeVisible({ timeout: 15_000 });
+        await videoTab.click();
+        await page.waitForTimeout(1_000);
     });
 
     // ─── TEST 1: Sidebar Highlight Sync ──────────────────────────────────
-    test('should highlight Video Producer in sidebar upon navigation', async ({ authedPage: page }) => {
-        // Check that the sidebar item for Video Producer is active/highlighted
-        const sidebarVideoItem = page.locator('[data-testid="nav-item-video"]');
-        
-        // The active item usually has specific styling or classes indicating selection
-        // In indii, it typically uses text-white or bg-white/10
-        await expect(sidebarVideoItem).toBeVisible();
-        const className = await sidebarVideoItem.getAttribute('class');
-        
-        // Ensure it contains active state markers (e.g. text-dept-creative)
+    test('should highlight Creative Studio in sidebar upon navigation', async ({ authedPage: page }) => {
+        const sidebarCreativeItem = page.locator('[data-testid="nav-item-creative"]');
+        await expect(sidebarCreativeItem).toBeVisible();
+        const className = await sidebarCreativeItem.getAttribute('class');
         expect(className).toContain('text-dept-creative');
     });
 
     // ─── TEST 2: Generate Button Guarding ────────────────────────────────
     test('should disable generate button during active job generation', async ({ authedPage: page }) => {
-        // Find the prompt input and type
         const promptInput = page.locator('[data-testid="direct-prompt-input"]');
         await promptInput.fill('A cinematic view of the ocean');
         
-        // The generate button
         const generateBtn = page.locator('[data-testid="video-generate-btn"]');
         await expect(generateBtn).toBeEnabled();
 
@@ -71,7 +65,7 @@ test.describe('Video Producer UX Hardening', () => {
         let releaseAi: () => void;
         const aiPromise = new Promise<void>(r => releaseAi = r);
         await page.route(
-            /.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/,
+            /.*(firebasevertexai|generativelanguage).googleapis.com.*/,
             async (route) => {
                 await aiPromise;
                 route.fallback();
@@ -99,19 +93,15 @@ test.describe('Video Producer UX Hardening', () => {
         const promptInput = page.locator('[data-testid="direct-prompt-input"]');
         await promptInput.fill('A cyberpunk rooftop at golden hour');
 
-        // Switch to editor mode
-        const editorBtn = page.locator('[data-testid="mode-editor-btn"]');
-        if (await editorBtn.isVisible().catch(() => false)) {
-            await editorBtn.click();
-            await page.waitForTimeout(500);
-        }
+        // Switch to direct image mode
+        const imageTab = page.locator('[data-testid="direct-view-btn"]');
+        await imageTab.click();
+        await page.waitForTimeout(500);
 
-        // Switch back to director mode
-        const directorBtn = page.locator('[data-testid="mode-director-btn"]');
-        if (await directorBtn.isVisible().catch(() => false)) {
-            await directorBtn.click();
-            await page.waitForTimeout(500);
-        }
+        // Switch back to video mode
+        const videoTab = page.locator('[data-testid="director-view-btn"]');
+        await videoTab.click();
+        await page.waitForTimeout(500);
 
         // Prompt should be preserved
         const value = await promptInput.inputValue();
