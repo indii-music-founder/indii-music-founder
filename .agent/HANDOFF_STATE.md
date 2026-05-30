@@ -1,28 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-29 22:15 EDT
+**Updated:** 2026-05-29 22:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4c36a0e88 test: add progressive streaming integration tests and training audit report
+ff9bab804 fix(audio): apply strict null check guards in DAWIntegrationService
+28c80e29f Merge branch 'subagent-indiiREMOTE-UX-Designer-self-8958cb9b'
+0aaceb6e5 chore: session checkpoint [22:15]
 7f28cbaca Merge branch 'subagent-DAW-Integration-Engineer-self-fd4044d2'
 86244f612 Merge branch 'subagent-Analytics-Data-Engineer-self-a112727e'
 8612d13bc Merge branch 'subagent-Training-Data-Auditor-self-e291d627'
 2223e0a8f Merge branch 'subagent-Desktop-Release-Engineer-self-6e68f0e4'
 3300cf219 Merge branch 'subagent-E2E-Test-Architect-self-a73a537b'
 27efbbda8 Merge branch 'subagent-Performance---Bundle-Auditor-self-e7e147ac'
-901df3e15 Merge branch 'subagent-i18n-Localization-Lead-self-1d9dfce7'
-795b2478a Merge branch 'subagent-Structured-Logging-Integrator-self-5a3021f5'
-cb5089e1a Merge branch 'subagent-Type-Safety-Specialist-self-5f979d01'
-18d26ee99 feat(agent): implement streaming path in consult_specialist tool
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/audio/DAWIntegrationService.ts
-?? docs/agent-training/provenance_scope_audit_report.md
-?? e2e/conductor-consult-streaming.spec.ts
-?? packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
-?? packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts
+ M packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
 ```
 
 ## Decisions
