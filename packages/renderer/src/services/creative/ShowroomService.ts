@@ -61,7 +61,7 @@ export class ShowroomService {
             model: 'pro', // Nano Banana Pro (gemini-3-pro-image-preview)
             sourceImages: [{
                 mimeType: 'image/png', // Most showroom assets are transparent PNGs
-                data: assetData as any
+                data: assetData as string
             }],
             imageSize: '2k',
             aspectRatio: '16:9'

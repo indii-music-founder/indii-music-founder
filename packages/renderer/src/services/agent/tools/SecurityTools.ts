@@ -65,7 +65,7 @@ export const SecurityTools = {
         }
 
         try {
-            const result = await window.electronAPI.security.rotateCredentials({ serviceName: service_name }) as any;
+            const result = await window.electronAPI!.security!.rotateCredentials({ serviceName: service_name });
             if (!result.success) {
                 return toolError(result.error || "Rotation failed", "ROTATION_FAILED");
             }
@@ -150,7 +150,7 @@ export const SecurityTools = {
         }
 
         try {
-            const result = await window.electronAPI.security.scanVulnerabilities({ scope }) as any;
+            const result = await window.electronAPI!.security!.scanVulnerabilities({ scope });
             if (!result.success) {
                 return toolError(result.error || "Scan failed", "SCAN_FAILED");
             }
@@ -166,7 +166,7 @@ export const SecurityTools = {
             const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
             const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
             const snap = await getDocs(q);
-            const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+            const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown> & { severity?: string }) }));
 
             if (logs.length === 0) {
                 return toolSuccess({ status: "No audit logs found" }, "Report generated with no data.");

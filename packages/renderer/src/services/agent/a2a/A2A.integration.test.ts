@@ -25,6 +25,8 @@ vi.mock('@/services/agent/governance/DigitalHandshake', () => ({
 }));
 
 describe('A2A loopback integration (real crypto + real router)', () => {
+  // Set long timeout for CPU-bound JSDOM crypto operations
+  vi.setConfig({ testTimeout: 25000 });
   beforeEach(() => {
     vi.clearAllMocks();
   });
