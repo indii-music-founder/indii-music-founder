@@ -1,4 +1,5 @@
 import { useStore } from '@/core/store';
+import { Logger } from '@/core/logger/Logger';
 import { HistoryItem } from '@/core/types/history';
 
 export const IndiiTestHarness = {
@@ -107,7 +108,7 @@ export const IndiiTestHarness = {
             }
             
         } catch (error) {
-            console.error('[TestHarness] Video Generation Failed:', error);
+            Logger.error('TestHarness', 'Video Generation Failed', error);
         }
     }
 };

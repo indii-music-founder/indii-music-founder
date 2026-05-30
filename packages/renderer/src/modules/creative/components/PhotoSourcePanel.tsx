@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, Check, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 
 interface PhotoSourcePanelProps {
     onCapture: (image: { mimeType: string; data: string }) => void;
@@ -32,7 +33,7 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
             setCapturedImage(null);
         } catch (err) {
             toast.error('Failed to access camera. Please check permissions.');
-            console.error('Camera error:', err);
+            Logger.error('PhotoSourcePanel', 'Camera error', err);
         }
     };
 
