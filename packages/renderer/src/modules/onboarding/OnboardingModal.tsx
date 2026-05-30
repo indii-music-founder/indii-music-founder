@@ -60,13 +60,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     }, []);
 
     // Dynamic opening greetings - more natural and varied
-    const OPENING_GREETINGS = [
-        "Hey — let's update your profile. What's changed since we last talked? New release brewing, or just tweaking the brand?",
-        "Back for round two. What are we working on — new music, new direction, or just tidying things up?",
-        "Good to see you again. What needs an update — the artist identity stuff or the current release details?",
-        "Alright, let's do this. What's on the agenda — adding new info, changing direction, or prepping for something new?",
-        "Quick check-in time. What's new in your world? I'll help you get it captured.",
-    ];
+    const OPENING_GREETINGS = t('onboarding.greetings', { returnObjects: true }) as string[];
 
     // Initial greeting
     useEffect(() => {
@@ -185,12 +179,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             const _errorMessage = error instanceof Error ? error.message : String(error);
             // Optionally logs to a tracking service if needed, but avoiding console log spam here.
 
-            const errorResponses = [
-                `Hmm, something went sideways on my end. Mind trying that again?`,
-                `Tech hiccup — my bad. Hit me with that one more time?`,
-                `Lost the thread there for a second. What were you saying?`,
-                `Connection blip. Run that by me again?`,
-            ];
+            const errorResponses = t('onboarding.errors', { returnObjects: true }) as string[];
             setHistory(prev => [...prev, { role: 'model', parts: [{ text: secureRandomPick(errorResponses) ?? '' }] }]);
         } finally {
             setIsProcessing(false);
@@ -245,7 +234,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {isProcessing && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-800 text-gray-400 p-3 rounded-xl rounded-tl-none animate-pulse">
-                                    {secureRandomPick([t('onboarding.processing'), 'One sec...', 'Mmm...', 'Okay...'])}
+                                    {secureRandomPick([t('onboarding.processing'), ...(t('onboarding.processingOptions', { returnObjects: true }) as string[])])}
                                 </div>
                             </div>
                         )}
@@ -306,8 +295,8 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                             ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
                                             : "text-gray-400 hover:text-white hover:bg-gray-800"
                                     )}
-                                    aria-label="Voice Input"
-                                    title="Voice Input"
+                                    aria-label={t('onboarding.voiceInput')}
+                                    title={t('onboarding.voiceInput')}
                                     type="button"
                                 >
                                     <Mic size={20} className={cn(isListening && "animate-pulse")} />
