@@ -75,10 +75,7 @@ describe('AgentDashboard', () => {
         expect(screen.getByText('agent.title')).toBeDefined(); // i18n mock returns the key string
 
         // Default View is Scout
-        // The text 'The Scout' appears in the Sidebar mock AND the Hero section.
-        // getAllByText returns an array.
-        const scoutTexts = screen.getAllByText('The Scout');
-        expect(scoutTexts.length).toBeGreaterThan(0);
+        expect(screen.getByText('agent.scout.title')).toBeDefined();
         expect(screen.getByTestId('scout-controls')).toBeDefined();
     });
 
