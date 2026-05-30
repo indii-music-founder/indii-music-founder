@@ -132,7 +132,8 @@ export default function VideoWorkflow() {
         generatedHistory,
         addToHistory,
         updateHistoryItem,
-        setPrompt,
+        creativePrompt,
+        setCreativePrompt,
         studioControls,
         currentProjectId,
         videoInputs,
@@ -152,7 +153,8 @@ export default function VideoWorkflow() {
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
         updateHistoryItem: state.updateHistoryItem,
-        setPrompt: state.setPrompt,
+        creativePrompt: state.creativePrompt,
+        setCreativePrompt: state.setCreativePrompt,
         studioControls: state.studioControls,
         currentProjectId: state.currentProjectId,
         videoInputs: state.videoInputs,
@@ -194,7 +196,7 @@ export default function VideoWorkflow() {
     const toast = useToast();
 
     // View State: 'director' (Generation) or 'editor' (Timeline)
-    const [localPrompt, setLocalPrompt] = useState('');
+    const [localPrompt, setLocalPrompt] = useState(creativePrompt ?? '');
     const localPromptRef = useRef(localPrompt);
 
     // Keep ref in sync
@@ -228,11 +230,11 @@ export default function VideoWorkflow() {
     useEffect(() => {
         if (pendingPrompt) {
             setLocalPrompt(pendingPrompt);
-            setPrompt(pendingPrompt);
+            setCreativePrompt(pendingPrompt);
 
             setPendingPrompt(null);
         }
-    }, [pendingPrompt, setPrompt, setPendingPrompt]);
+    }, [pendingPrompt, setCreativePrompt, setPendingPrompt]);
 
     // Keyboard Shortcut for Mode Toggle
     useGlobalShortcut({
@@ -337,7 +339,8 @@ export default function VideoWorkflow() {
 
         try {
             // Update global prompt before generating
-            setPrompt(promptToUse);
+            setLocalPrompt(promptToUse);
+            setCreativePrompt(promptToUse);
             if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
@@ -656,7 +659,7 @@ export default function VideoWorkflow() {
                                 prompt={localPrompt}
                                 onChange={(val) => {
                                     setLocalPrompt(val);
-                                    setPrompt(val);
+                                    setCreativePrompt(val);
                                 }}
                                 onGenerate={() => handleGenerate()}
                                 disabled={jobStatus === 'queued' || jobStatus === 'processing'}
