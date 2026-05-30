@@ -60,6 +60,7 @@ const validCard = {
 describe('A2AClient (HTTP transport contract)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockReset();
     resetClient();
   });
 
@@ -85,11 +86,8 @@ describe('A2AClient (HTTP transport contract)', () => {
       const mockDirective = { id: 'd1', userId: 'u1', computeAllocation: { tokensUsed: 0, maxTokens: 1000 } } as never;
       vi.mocked(DigitalHandshake.require).mockResolvedValue(true);
       vi.mocked(e2eEncryptionService.decryptMessage).mockResolvedValue({ result: 'success' });
-      // First fetch = discovery (key exchange), then /rpc calls.
-      mockFetch
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ agents: [validCard] }) }) // discovery
-        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // key.exchange
-        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // rpc
+      // Every fetch (discovery, key.exchange, /rpc) succeeds.
+      mockFetch.mockResolvedValue({ ok: true, json: async () => ({ agents: [validCard] }) });
 
       const result = await a2aClient.invoke('marketing', 'agent.execute', { foo: 'bar' }, mockDirective);
 
