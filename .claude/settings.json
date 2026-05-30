@@ -17,7 +17,13 @@
       "Bash(git commit -m ' *)",
       "Bash(firebase --help)",
       "Bash(firebase deploy *)",
-      "Bash(git commit -m 'docs: correct Firebase rules validation command in audit doc *)"
+      "Bash(git commit -m 'docs: correct Firebase rules validation command in audit doc *)",
+      "Bash(npx vitest *)",
+      "Bash(npx playwright *)",
+      "Bash(PLAYWRIGHT_BASE_URL= npx playwright test e2e/conductor-consult-streaming.spec.ts --project=chromium --reporter=line)",
+      "Bash(nohup npm run dev:web -- --port 4242)",
+      "Bash(echo \"started dev:web pid $!\")",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:4242 npx playwright test e2e/conductor-consult-streaming.spec.ts --project=chromium --reporter=line)"
     ],
     "additionalDirectories": [
       "/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans"
