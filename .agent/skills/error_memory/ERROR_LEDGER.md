@@ -568,3 +568,37 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: The app command bar wraps arbitrary slash commands as `.agent/skills/{command}/SKILL.md`, but the approved WIIL command manifest stores global commands in `.agent/workflows/*.md`. The command manifest itself lives at `.agent/workflows/WIIL-skill.md`, not `.agent/skills`.
 - FIX: For slash commands named in WIIL, read `.agent/workflows/WIIL-skill.md` first, then load the matching workflow file from `.agent/workflows/{command}.md`. Only fall back to `.agent/skills/{command}/SKILL.md` for actual skill directories.
 - PREVENTION: Before executing `/middle`, `/end`, `/proceed`, `/skill-skill`, or any WIIL command, check `.agent/workflows/WIIL-skill.md`. Do not assume every slash command is a skill folder.
+
+## 2026-05-29 A2A Streaming Bridge & Silent Type Masking (Session closure)
+
+**SEVERITY:** Medium-High (silent regressions caught by real integration tests, not type checking alone)
+
+**MISTAKES:**
+
+1. **Unified tool impl dropped conversation-mode guards (PR-1 oversight)**
+   - FILE: `packages/renderer/src/services/agent/tools/SwarmTools.ts`
+   - ERROR: `conversationMode.qa` test failed (10/10 tests failed) when I unified `consult_specialist` from two implementations into one, dropping the DIRECT_MODE_NO_DELEGATION and DEPARTMENT_SCOPE_VIOLATION guards that the original BaseAgent inline version had.
+   - CAUSE: When consolidating two implementations into a single tool in SwarmTools, I preserved the A2A call path but accidentally omitted the conversation-mode scope enforcement. The guards were implicit in the "one version per execution context" model of the original design.
+   - FIX: Restored DIRECT_MODE_NO_DELEGATION and DEPARTMENT_SCOPE_VIOLATION checks in SwarmTools `consult_specialist`, explicitly calling `validateConversationScope()` before A2A delegation. The guards gate whether delegation is allowed at all.
+   - PREVENTION: When unifying multiple implementations into one, audit all branches from BOTH original versions. Look for scope checks, security gates, and fallback paths that exist in ONE but not the other. Write behavior tests (not just unit tests) that exercise each guard independently.
+
+2. **Streaming test token sink mismatch (Promise type mismatch)**
+   - FILE: `packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts`
+   - ERROR: Test for progressive deltas returned 0 delta envelopes instead of ≥2, failing the core claim "streaming is token-by-token".
+   - CAUSE: The router's `createStreamingGenerator()` expects `streamAgent` to return `Promise<{text: string}>`, but the test's fake `streamAgent` was typed as `Promise<void>` (async function without explicit return). It DID return `{ text }` in the implementation, but TypeScript's inference + the async wrapper caused a shape mismatch at runtime — the generator didn't receive the final text, so `done: true` was never signaled, so the iterator hung.
+   - FIX: Explicit return type on the fake `streamAgent`: `async (...) => { ... return { text: chunkA + chunkB }; }`. Changed from `Promise<void>` to inferred `Promise<{text}>`.
+   - PREVENTION: For async generators that delegate to external runners, always explicitly test the full return contract of the delegated function, not just its side effects. Mock returns should match the precise shape the consumer expects. **Test against the consumer's type signature, not guesses about what's "probably fine".**
+
+3. **Type-only checks miss implementation regressions (Meta-lesson)**
+   - CONTEXT: Both regressions above passed `tsc --noEmit` locally but were caught only by real integration tests (conversation-mode test, streaming delta count assertion).
+   - ROOT CAUSE: The changes involved unifying implementations (SwarmTools) and threading async generators (A2ARouter/streaming) — both areas where TypeScript's structural typing + inference can mask shape mismatches if the caller is flexible enough (e.g., `for await (const ev of generator)` works with any iterable, even if individual envelope fields are subtly wrong).
+   - FIX: **Real integration tests are mandatory for:**
+     - Tool consolidations (especially with scope/security guards)
+     - Async delegation patterns (generators, streaming, callbacks)
+     - Message envelope wiring (ensure shape contracts are met end-to-end, not just at function signatures)
+   - PREVENTION: Never rely on `tsc --noEmit` + `npm test` (unit tests only) to validate complex delegation patterns. Always write an end-to-end test that exercises the FULL path (delegated runner → router → client → consumer). The `/plat` gate now explicitly includes integration tests for streaming.
+
+**LEARNING:**
+- **Integration tests > type checking** for delegation patterns and message envelope contracts. Structural typing makes it easy for a tiny shape mismatch to slip through static checks.
+- **Unifying implementations requires auditing both versions**, not just merging the happy path. Security guards are often implicit in the original design and must be **explicitly restored** when consolidating code.
+- **Streaming/generators are deceptively easy to get wrong** — if the generator's delegated function returns the wrong shape (or no explicit return), the iteration can hang or skip final events silently. Always test the full round-trip.

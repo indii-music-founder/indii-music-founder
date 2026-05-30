@@ -23,7 +23,7 @@ import { remoteRelayService, type DesktopState } from '@/services/agent/RemoteRe
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, Grip, MessageSquare, Image, Music2,
-  CheckSquare, QrCode, Smartphone, LucideIcon, Wifi, WifiOff, AlertCircle, RefreshCw
+  CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -139,7 +139,7 @@ export default function MobileRemote() {
   );
   const [activeTab, setActiveTab] = useState<TabId>('status');
   const [showPairingModal, setShowPairingModal] = useState(false);
-  const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const [_desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -194,8 +194,10 @@ export default function MobileRemote() {
 
     if (reconnectAttempts > maxReconnectAttempts) {
       logger.error('[MobileRemote] Max reconnection attempts reached. Marking as disconnected.');
-      setIsReconnecting(false);
-      setConnectionStatus('idle');
+      queueMicrotask(() => {
+        setIsReconnecting(false);
+        setConnectionStatus('idle');
+      });
       return;
     }
 

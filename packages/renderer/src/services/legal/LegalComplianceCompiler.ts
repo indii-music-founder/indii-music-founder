@@ -51,7 +51,9 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
     let highestRiskLevel = 0; // 0: info, 1: low, 2: medium, 3: high, 4: critical
 
     input.items.forEach(item => {
-      if (item.type === 'contract' && item.content.toLowerCase().includes('ai generated')) {
+      const contentStr = item.content ? String(item.content).toLowerCase() : '';
+
+      if (item.type === 'contract' && contentStr.includes('ai generated')) {
         findings.push({
           id: `f_contract_ai_${item.id}`,
           domain: this.domain,
@@ -125,7 +127,7 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
       }
 
       if (item.type === 'data_privacy') {
-        if (item.content.toLowerCase().includes('biometric') || item.content.toLowerCase().includes('face scan')) {
+        if (contentStr.includes('biometric') || contentStr.includes('face scan')) {
           findings.push({
             id: `f_privacy_${item.id}`,
             domain: this.domain,
@@ -177,6 +179,42 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
             });
             highestRiskLevel = Math.max(highestRiskLevel, 2);
          }
+      }
+
+      if (item.type === 'collaboration_agreement') {
+        const splitsDefined = item.metadata?.splitsDefined === true;
+        if (!splitsDefined) {
+          findings.push({
+            id: `f_collab_${item.id}`,
+            domain: this.domain,
+            severity: 'high',
+            title: 'Undefined Collaboration Splits',
+            detail: 'Collaboration agreement does not explicitly define royalty or ownership splits.',
+            confidence: 'high'
+          });
+          approvalGates.push({
+            id: `gate_collab_${item.id}`,
+            label: 'Split Agreement Verification',
+            reason: 'Undefined splits often lead to legal disputes and frozen royalties.',
+            requiredFor: 'distribution',
+            riskTier: 'blocked'
+          });
+          highestRiskLevel = Math.max(highestRiskLevel, 3);
+        }
+      }
+
+      if (item.type === 'licensing_restriction') {
+        if (contentStr.includes('exclusive') || contentStr.includes('perpetuity')) {
+          findings.push({
+            id: `f_license_restrict_${item.id}`,
+            domain: this.domain,
+            severity: 'high',
+            title: 'Restrictive Licensing Terms',
+            detail: 'Licensing terms include "exclusive" or "perpetuity" which heavily restrict future use.',
+            confidence: 'medium'
+          });
+          highestRiskLevel = Math.max(highestRiskLevel, 3);
+        }
       }
     });
 
