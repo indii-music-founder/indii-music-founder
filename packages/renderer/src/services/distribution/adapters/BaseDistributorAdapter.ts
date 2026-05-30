@@ -36,7 +36,7 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
     try {
       // 1. If SFTP credentials provided, try to establish a real connection
       if (credentials.sftpHost && window.electronAPI?.sftp) {
-        const result = await (window.electronAPI.sftp as any).connectDistributor(this.id) as any;
+        const result = await window.electronAPI.sftp.connectDistributor(this.id);
 
         if (!result.success) {
           throw new Error(`Failed to establish SFTP connection to ${credentials.sftpHost}`);
@@ -90,7 +90,7 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
       // In a real implementation we might need a specifically exposed mkdir command, 
       // but usually uploadDirectory handles it or we assume root.
 
-      const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath) as any;
+      const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
       if (!result.success) {
         throw new Error(`SFTP Upload Failed: ${result.error}`);
       }

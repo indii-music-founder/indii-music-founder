@@ -13,7 +13,7 @@ export const createStripePaymentLinks = onCall(async (req) => {
 
     try {
         const paymentLinks: string[] = [];
-        const baseIKey = idempotencyKey || `pl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const baseIKey = idempotencyKey || `pl_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
         
         const product = await stripe.products.create({
             name: `${campaignName} - Storefront Items`,

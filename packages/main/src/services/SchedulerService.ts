@@ -59,7 +59,7 @@ const timers = new Map<string, NodeJS.Timeout>();
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function generateId(): string {
-    return `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    return `task_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
 }
 
 function computeNextRunAt(schedule: ScheduleInterval, fromNow: Date = new Date()): Date {

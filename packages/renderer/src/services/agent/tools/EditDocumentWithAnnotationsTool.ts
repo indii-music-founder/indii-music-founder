@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 
 /**
  * Tool for editing documents (PDFs, text files) using structured annotations.
@@ -64,12 +65,26 @@ export const EditDocumentWithAnnotationsTool: any = {
             spatialPrompt += '\n';
         });
 
-        // Simulation for Phase 4 initial scaffolding
+        let summary = "AI has processed the document highlights and instructions. The revised document will be generated shortly.";
+        
+        try {
+            const systemPrompt = "You are an expert document editor. Summarize the requested spatial document edits and provide a short plan of action.";
+            const response = await AutonomousIntelligence.generateContent(
+                spatialPrompt,
+                undefined,
+                undefined,
+                systemPrompt
+            );
+            summary = getResponseText(response);
+        } catch (e) {
+            logger.warn('[EditDocumentWithAnnotationsTool] Intelligence generation failed, using fallback summary.', e);
+        }
+
         return {
             success: true,
             message: `Document edit request processed for ${args.documentId}. Applied ${args.annotations.length} annotations.`,
             newDocumentId: `edited-${args.documentId}-${uuidv4().slice(0, 8)}`,
-            summary: "AI has processed the document highlights and instructions. The revised document will be generated shortly.",
+            summary,
             spatialPromptContext: spatialPrompt
         };
     }

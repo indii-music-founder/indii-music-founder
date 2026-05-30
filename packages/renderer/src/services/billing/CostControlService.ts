@@ -309,7 +309,7 @@ export class CostControlService {
       }
 
       // 9. APPROVED: Update ledgers atomically
-      const operationId = `op-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const operationId = `op-${Date.now()}-${crypto.randomUUID().split('-')[0]}`;
 
       // Update daily ledger
       await updateDoc(dailyRef, {
