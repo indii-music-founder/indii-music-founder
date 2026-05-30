@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-30 01:35 EDT
+**Updated:** 2026-05-30 10:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+af72cec26 fix(auto): resolve Sentry/CodeRabbit issues
 a79328201 chore: session end checkpoint and error ledger update
 122520726 chore: session checkpoint [00:58]
 6e2a74a41 chore: session checkpoint [00:53]
@@ -13,75 +14,10 @@ a79328201 chore: session end checkpoint and error ledger update
 41a1aa2ed feat: complete Business Harness Wave 5 compilers and datasets
 82bcd13f6 chore: session checkpoint [00:39]
 22bc89bd1 chore: session checkpoint [00:37]
-fc094cdf3 Merge branch 'fix-issue-17'
 ```
 
 ## Working State
 ```
- M agents/music/prompt.md
- M docs/FUTURE_FEATURES_ROADMAP.md
- M docs/SECRET_INVENTORY.md
- M docs/agent-training/datasets/brand.jsonl
- M docs/agent-training/datasets/curriculum.jsonl
- M docs/agent-training/datasets/devops.jsonl
- M docs/agent-training/datasets/director.jsonl
- M docs/agent-training/datasets/distribution.jsonl
- M docs/agent-training/datasets/finance.jsonl
- M docs/agent-training/datasets/generalist.jsonl
- M docs/agent-training/datasets/legal.jsonl
- M docs/agent-training/datasets/licensing.jsonl
- M docs/agent-training/datasets/marketing.jsonl
- M docs/agent-training/datasets/merchandise.jsonl
- M docs/agent-training/datasets/music.jsonl
- M docs/agent-training/datasets/producer.jsonl
- M docs/agent-training/datasets/publicist.jsonl
- M docs/agent-training/datasets/publishing.jsonl
- M docs/agent-training/datasets/road.jsonl
- M docs/agent-training/datasets/screenwriter.jsonl
- M docs/agent-training/datasets/security.jsonl
- M docs/agent-training/datasets/social.jsonl
- M docs/agent-training/datasets/video.jsonl
- M electron.vite.config.ts
- M packages/firebase/src/functions/admin/setGodMode.ts
- M packages/firebase/src/functions/agent/reportBugFn.ts
- M packages/firebase/src/functions/analytics/bigquery-pipeline.ts
- M packages/firebase/src/functions/api/router.ts
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/firebase/src/functions/security/persistFraudAlert.ts
- M packages/firebase/src/lib/marketing.ts
- M packages/firebase/src/stripe/paymentLinks.ts
- M packages/landing/package.json
- M packages/main/src/main.ts
- M packages/main/src/services/SchedulerService.ts
- M packages/renderer/src/modules/devops/DevopsDashboard.tsx
- M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
- M packages/renderer/src/services/agent/ContextStackService.ts
- M packages/renderer/src/services/agent/definitions/MusicAgent.ts
- M packages/renderer/src/services/agent/tools/BugReportTools.ts
- M packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts
- M packages/renderer/src/services/agent/tools/MusicTools.ts
- M packages/renderer/src/services/analytics/EventBusService.ts
- M packages/renderer/src/services/billing/CostControlService.ts
- M packages/renderer/src/services/business-harness/ActivityValueService.ts
- M packages/renderer/src/services/distribution/DeliveryProfile.ts
- M packages/renderer/src/services/distribution/DistributionService.ts
- M packages/renderer/src/services/distribution/DistributorService.ts
- M packages/renderer/src/services/distribution/EarningsService.ts
- M packages/renderer/src/services/distribution/adapters/BaseDistributorAdapter.ts
- M packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts
- M packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts
- M packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts
- M packages/renderer/src/services/distribution/transport/SFTPTransporter.ts
- M packages/renderer/src/services/finance/FinanceCompiler.ts
- M packages/renderer/src/services/finance/FinanceService.ts
- M packages/renderer/src/services/firebase.ts
- M packages/renderer/src/services/observability/RealUserMonitoringService.ts
- M packages/renderer/src/services/observability/RequestTracingService.ts
- M packages/renderer/src/services/security/SecurityTrustCompiler.ts
- M packages/renderer/src/services/touring/RoadTravelCompiler.ts
- M packages/renderer/src/test/harness-datasets.test.ts
- M packages/renderer/src/test/setup.ts
- M packages/renderer/vite.config.ts
 ?? docs/flowcharts/swarm-execution-macro.md
 ?? fix-random.cjs
 ?? packages/renderer/src/services/MembershipService.integration.test.ts
