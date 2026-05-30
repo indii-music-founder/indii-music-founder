@@ -192,7 +192,7 @@ const AgentDashboard: React.FC = () => {
             results.forEach(v => {
                 const exists = venues.find(existing => existing.id === v.id);
                 if (!exists) {
-                    addVenue(v);
+                    addVenue(v as Venue);
                     newCount++;
                 }
             });

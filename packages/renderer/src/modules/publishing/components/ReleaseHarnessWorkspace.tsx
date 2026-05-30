@@ -284,7 +284,7 @@ async function createISWCWorkDraft(metadata: Partial<ExtendedGoldenMetadata>, ge
   if (!title) return undefined;
   const splits = metadata.splits?.length ? metadata.splits : (metadata.artistName ? [{ legalName: metadata.artistName, percentage: 100 }] : []);
   if (!splits.length) return undefined;
-  const total = splits.reduce((sum, split) => sum + split.percentage, 0);
+  const total = (splits as any[]).reduce((sum: number, split: any) => sum + (split.percentage || 0), 0);
   if (total !== 100) return undefined;
   if (splits.some(split => !split.legalName?.trim() && !metadata.artistName?.trim())) return undefined;
   return ISWCService.registerWork({
@@ -292,8 +292,8 @@ async function createISWCWorkDraft(metadata: Partial<ExtendedGoldenMetadata>, ge
     composers: splits.map(split => ({
       name: (split.legalName || metadata.artistName)!,
       share: split.percentage,
-      role: ('role' in split && split.role === 'songwriter') ? 'CA' : 'C',
-      pro: metadata.pro,
+      role: (('role' in split && split.role === 'songwriter') ? 'CA' : 'C') as 'C' | 'A' | 'CA',
+      pro: metadata.pro as any,
     })),
     associatedISRCs: [metadata.isrc ?? generatedIsrc].filter((value): value is string => Boolean(value)),
     language: metadata.language,

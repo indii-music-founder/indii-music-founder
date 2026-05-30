@@ -14,6 +14,7 @@ const HistoryItem = memo(({
     onDelete,
     onRename
 }: {
+    key?: React.Key,
     session: ConversationSession,
     isActive: boolean,
     index: number,

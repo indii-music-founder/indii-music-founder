@@ -288,6 +288,7 @@ const VersionItem: React.FC<{
     onPreview: () => void;
     onRestore: () => void;
     onDelete: () => void;
+    key?: React.Key;
 }> = ({ version, isSelected, isCurrent, onSelect, onPreview, onRestore, onDelete }) => {
     return (
         <div

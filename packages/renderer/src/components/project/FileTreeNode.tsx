@@ -37,6 +37,7 @@ function getFileIconColor(type?: FileNode['fileType']) {
 }
 
 interface FileTreeNodeProps {
+    key?: React.Key;
     node: FileNode;
     depth?: number;
     nodeChildrenMap: Map<string, FileNode[]>;
@@ -295,7 +296,7 @@ export const FileTreeNode = memo(({
                     {children.length > 0 ? (
                         children.map((child: FileNode) => (
                             <FileTreeNode
-                                key={child.id}
+                                {...({ key: child.id } as any)}
                                 node={child}
                                 depth={depth + 1}
                                 nodeChildrenMap={nodeChildrenMap}

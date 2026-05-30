@@ -97,7 +97,7 @@ export const MobileNav = () => {
         }
     };
 
-    const MenuItem = ({ item }: { item: NavItem }) => {
+    const MenuItem = ({ item }: { key?: React.Key; item: NavItem }) => {
         const isActive = currentModule === item.id;
         const colors = getColorForModule(item.id);
 

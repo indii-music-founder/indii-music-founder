@@ -108,7 +108,11 @@ export class MarketingService {
                 const data = snapshot.data();
                 const validation = MarketingStatsSchema.safeParse(data);
                 if (validation.success) {
-                    return validation.data;
+                    return {
+                        totalReach: validation.data.totalReach ?? 0,
+                        engagementRate: validation.data.engagementRate ?? 0,
+                        activeCampaigns: validation.data.activeCampaigns ?? 0,
+                    };
                 } else {
                     logger.warn("[MarketingService] Invalid marketing stats data:", validation.error);
                 }

@@ -42,7 +42,7 @@ const Button = React.memo(React.forwardRef<HTMLButtonElement, ButtonProps>(
             <Comp
                 className={cn(baseStyles, variants[variant], sizes[size], className)}
                 ref={ref}
-                disabled={disabled || isLoading}
+                {...(asChild ? {} : { disabled: disabled || isLoading })}
                 aria-disabled={disabled || isLoading}
                 data-loading={isLoading}
                 {...props}

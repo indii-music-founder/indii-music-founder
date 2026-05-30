@@ -25,8 +25,8 @@ interface ContactFormFieldsProps {
     contextString: string;
     isListening: boolean;
     voiceTarget: 'name' | 'notes' | null;
-    nameInputRef: React.RefObject<HTMLInputElement>;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    nameInputRef: React.RefObject<HTMLInputElement | null>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     onNameChange: (value: string) => void;
     onPhoneChange: (value: string) => void;
     onEmailChange: (value: string) => void;

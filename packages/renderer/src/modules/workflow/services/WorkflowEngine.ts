@@ -81,7 +81,7 @@ export class WorkflowEngine {
     ): Promise<void> {
         const { getWorkflowFromStorage, saveWorkflowToStorage } = await import('@/services/storage/repository');
 
-        const existingWorkflow = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
+        const existingWorkflow = await getWorkflowFromStorage(id) as unknown as SavedWorkflow | undefined;
 
         await saveWorkflowToStorage({
             id,
@@ -97,7 +97,7 @@ export class WorkflowEngine {
 
     public async loadWorkflow(id: string): Promise<SavedWorkflow | null> {
         const { getWorkflowFromStorage } = await import('@/services/storage/repository');
-        const data = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
+        const data = await getWorkflowFromStorage(id) as unknown as SavedWorkflow | undefined;
         if (data) {
             this.nodes = data.nodes;
             this.edges = data.edges;
@@ -235,7 +235,7 @@ export class WorkflowEngine {
             // ── Marketing Department ────────────────────────────────────────
             case 'Marketing Department': {
                 const isImage = typeof prompt === 'string' && prompt.startsWith('data:image');
-                const contents = isImage
+                const contents: any[] = isImage
                     ? [{
                         role: 'user' as const,
                         parts: [

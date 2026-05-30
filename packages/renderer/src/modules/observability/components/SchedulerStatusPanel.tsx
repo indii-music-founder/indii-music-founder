@@ -83,7 +83,7 @@ function NeuralSyncPulse({ lastPulse }: { lastPulse: string | null }) {
     );
 }
 
-function TaskRow({ task }: { task: ScheduledTask }) {
+function TaskRow({ task }: { task: ScheduledTask; key?: React.Key }) {
     const [countdown, setCountdown] = useState(() => formatCountdown(task.nextRunAt));
 
     useEffect(() => {
@@ -117,7 +117,7 @@ function TaskRow({ task }: { task: ScheduledTask }) {
     );
 }
 
-function TickHistoryRow({ entry }: { entry: TickHistoryEntry }) {
+function TickHistoryRow({ entry }: { entry: TickHistoryEntry; key?: React.Key }) {
     return (
         <motion.div
             initial={{ opacity: 0, x: -8 }}

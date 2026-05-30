@@ -19,7 +19,7 @@ export default function GlobalSettings() {
     );
     const { i18n } = useTranslation();
 
-    const preferences = userProfile?.preferences || {};
+    const preferences = (userProfile?.preferences || {}) as any;
     const darkMode = preferences.theme === 'dark';
     const highFidelity = preferences.highFidelityMode === true;
 
@@ -30,7 +30,7 @@ export default function GlobalSettings() {
             preferences: {
                 ...preferences,
                 theme: newTheme
-            }
+            } as any
         });
     };
 
@@ -40,7 +40,7 @@ export default function GlobalSettings() {
             preferences: {
                 ...preferences,
                 highFidelityMode: !highFidelity
-            }
+            } as any
         });
     };
 

@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 
 interface ExpenseItemProps {
     expense: Expense;
+    key?: React.Key;
 }
 
 export const ExpenseItem = React.memo(({ expense }: ExpenseItemProps) => {

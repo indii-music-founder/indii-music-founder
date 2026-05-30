@@ -298,11 +298,11 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             const result = await window.electronAPI.distribution.generateContentIdCSV(data);
-            if (!result.success || (!result.csvData && !result.report)) {
+            if (!result.success || (!result.csvData && !result.csv)) {
                 logger.error('[Distribution] Content ID generation failed:', result.error);
                 throw new Error(result.error || 'Content ID generation failed');
             }
-            return result.csvData || JSON.stringify(result.report);
+            return result.csvData || result.csv || '';
         } catch (error: unknown) {
             logger.error('[Distribution] Content ID engine error:', error);
             throw error;
@@ -419,7 +419,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             const result = await window.electronAPI.distribution.generateBWARM(data);
-            if (!result.success || (!result.csvData && !result.report)) {
+            if (!result.success || (!result.csv && !result.report)) {
                 throw new Error(result.error || 'BWARM generation failed');
             }
             return result.csv || JSON.stringify(result.report);

@@ -155,7 +155,7 @@ interface FrameRulerProps {
     fps: number;
     zoom: number;
     frameWidth: number;
-    containerRef: React.RefObject<HTMLDivElement>;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, frameWidth, containerRef }: FrameRulerProps) {

@@ -5,6 +5,7 @@ import { Fingerprint, Lock, CheckCircle2 } from 'lucide-react';
 interface ProtocolAuthProps {
     architectName: string;
     onAuthenticated: () => void;
+    key?: React.Key;
 }
 
 export const ProtocolAuth = ({ architectName, onAuthenticated }: ProtocolAuthProps) => {

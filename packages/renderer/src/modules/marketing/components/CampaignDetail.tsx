@@ -149,7 +149,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, subtext, icon }) => (
     </div>
 );
 
-const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: ScheduledPost) => void }) => (
+const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: ScheduledPost) => void, key?: React.Key }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -210,7 +210,7 @@ const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: S
     </motion.div>
 );
 
-const GridView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: ScheduledPost) => void }) => (
+const GridView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: ScheduledPost) => void, key?: React.Key }) => (
     <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}

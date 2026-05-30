@@ -98,7 +98,7 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
                                     <span className="text-sm text-neutral-300">{shortcut.description}</span>
                                     <div className="flex items-center gap-1">
                                         {shortcut.keys.map((key, j) => (
-                                            <React.Fragment key={j}>
+                                            <React.Fragment {...({ key: j } as any)}>
                                                 <kbd className="px-2 py-1 bg-neutral-800 border border-neutral-700 rounded text-xs font-mono text-neutral-300">
                                                     {key}
                                                 </kbd>

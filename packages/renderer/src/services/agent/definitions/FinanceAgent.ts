@@ -56,7 +56,7 @@ export const FinanceAgent: AgentConfig = {
             const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
                 // Formatting the image data for Gemini Vision via FirebaseIntelligenceService
-                const contents = [
+                const contents: any[] = [
                     {
                         role: 'user' as const,
                         parts: [

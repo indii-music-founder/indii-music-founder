@@ -51,7 +51,7 @@ function createDocSubscription<T>(
             if (parseResult.success) {
                 onUpdate(parseResult.data);
             } else {
-                logger.warn(`[AnalyticsService] ${logContext} — validation failed:`, parseResult.error);
+                logger.warn(`[AnalyticsService] ${logContext} — validation failed:`, (parseResult as any).error);
                 onUpdate(getZero());
             }
         } else {

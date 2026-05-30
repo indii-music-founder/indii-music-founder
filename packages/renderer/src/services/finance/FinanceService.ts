@@ -122,7 +122,7 @@ export class FinanceService {
       return {
         id: docRef.id,
         ...validExpense,
-        createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as string | number | Date).toISOString()
+        createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as any).toISOString()
       };
     } catch (error: unknown) {
       Sentry.captureException(error);

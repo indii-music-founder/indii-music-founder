@@ -14,6 +14,7 @@ export interface VideoGenerationJob {
 }
 
 interface VideoGenerationProgressProps {
+    key?: React.Key;
     job: VideoGenerationJob;
     onCancel?: (jobId: string) => void;
 }

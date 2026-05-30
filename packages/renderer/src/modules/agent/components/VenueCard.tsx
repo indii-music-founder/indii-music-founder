@@ -4,6 +4,7 @@ import { MapPin, Users, Globe, Mail, Plus, CheckCircle, Loader2 } from 'lucide-r
 import { logger } from '@/utils/logger';
 
 interface VenueCardProps {
+    key?: React.Key;
     venue: Venue;
     onAdd?: (venue: Venue) => Promise<void> | void;
 }
