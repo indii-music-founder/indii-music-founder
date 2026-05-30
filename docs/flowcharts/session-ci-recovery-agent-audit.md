@@ -62,7 +62,7 @@ pie title Agent Verification Results
     "Dead (Auth) 💀" : 4
 ```
 
-### Transition Breakdown
+## Transition Breakdown
 
 | Phase | Input State | Action | Output State |
 |-------|------------|--------|-------------|
