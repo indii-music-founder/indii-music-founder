@@ -21,7 +21,12 @@ describe('CreativeProductionCompiler', () => {
         hasArtwork: true,
         hasLegalIssue: false,
         hasBrandIssue: false
-      }
+      },
+      videos: [{
+        id: 'vid-1',
+        title: 'Music Video',
+        type: 'music_video' as const
+      }]
     };
 
     const run = compiler.compile(input, ctx);
@@ -33,6 +38,14 @@ describe('CreativeProductionCompiler', () => {
     expect(run.output.missingItems).toHaveLength(0);
     expect(run.findings).toHaveLength(0);
     expect(run.approvalGates).toHaveLength(0);
+    
+    // Check downstream agent briefs
+    expect(run.agentBriefs.some(b => b.agentId === 'release')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'distribution')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'licensing')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'marketing')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'merch')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'publishing')).toBe(true);
   });
 
   it('should block delivery if master is missing', () => {
@@ -57,6 +70,7 @@ describe('CreativeProductionCompiler', () => {
     expect(run.output.deliveryReady).toBe(false);
     expect(run.output.missingItems).toContain('Master missing for track: Hit Song');
     expect(run.findings.some(f => f.id === 'missing_master_track-1')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'release')).toBe(false); // Shouldn't release if blocked
   });
 
   it('should reduce sync score if stems are missing', () => {
@@ -131,5 +145,17 @@ describe('CreativeProductionCompiler', () => {
     expect(run.output.creditsComplete).toBe(false);
     expect(run.findings.some(f => f.id === 'missing_credits_track-1')).toBe(true);
     expect(run.recommendations.some(r => r.id === 'complete_credits')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'publishing')).toBe(false);
+  });
+
+  it('should handle empty tracks properly', () => {
+    const input = {
+      tracks: []
+    };
+
+    const run = compiler.compile(input, ctx);
+    expect(run.output.deliveryReady).toBe(false);
+    expect(run.output.syncReadyScore).toBe(0);
+    expect(run.findings.some(f => f.id === 'no_tracks')).toBe(true);
   });
 });

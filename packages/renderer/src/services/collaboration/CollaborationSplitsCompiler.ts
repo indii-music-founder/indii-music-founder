@@ -115,7 +115,7 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
       }
     }
 
-    if (totalSplit !== 100) {
+    if (Math.abs(totalSplit - 100) > 0.001) {
       findings.push({
         id: `invalid_total_split`,
         domain: this.domain,
@@ -135,7 +135,7 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
       });
     }
 
-    const readyForSplitSheet = allApproved && totalSplit === 100 && !isDisputed;
+    const readyForSplitSheet = allApproved && Math.abs(totalSplit - 100) <= 0.001 && !isDisputed;
 
     if (!readyForSplitSheet) {
       agentBriefs.push({
@@ -143,7 +143,7 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
         departmentId: 'legal',
         brief: `Track "${input.trackTitle}" is not ready for split sheets. Total split: ${totalSplit}%. Disputed: ${isDisputed}. Missing agreements: ${missingAgreements.length}.`,
         inputs: ['collaboration_splits'],
-        blockedBy: missingAgreements.length > 0 || isDisputed || totalSplit !== 100 ? ['collaborators'] : []
+        blockedBy: missingAgreements.length > 0 || isDisputed || Math.abs(totalSplit - 100) > 0.001 ? ['collaborators'] : []
       });
     }
 
@@ -164,7 +164,7 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
           label: 'Split Readiness',
           value: readyForSplitSheet ? 100 : 0,
           max: 100,
-          status: readyForSplitSheet ? 'good' : (isDisputed || totalSplit !== 100 ? 'blocked' : 'watch'),
+          status: readyForSplitSheet ? 'good' : (isDisputed || Math.abs(totalSplit - 100) > 0.001 ? 'blocked' : 'watch'),
           rationale: readyForSplitSheet ? 'All splits approved and total 100%.' : 'Missing approvals, disputes, or invalid total split.'
         }
       ],

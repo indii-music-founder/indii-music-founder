@@ -185,4 +185,24 @@ describe('PublishingRightsCompiler', () => {
     const writerShareFinding = run.findings.find(f => f.id === 'invalid_writer_share');
     expect(writerShareFinding).toBeDefined();
   });
+
+  it('handles empty writers array correctly', () => {
+    const input: PublishingRightsInput = {
+      songId: 'song_123',
+      songTitle: 'Hit Track',
+      proRegistrationStatus: 'registered',
+      mlcRegistrationStatus: 'registered',
+      writers: [],
+    };
+
+    const run = compiler.compile(input, ctx);
+
+    expect(run.output.registrationReady).toBe(false);
+    expect(run.output.blockers).toContain('No writers provided.');
+    expect(run.scores[0]!.status).toBe('blocked');
+    expect(run.scores[0]!.rationale).toBe('No writers provided.');
+
+    const noWritersFinding = run.findings.find(f => f.id === 'no_writers');
+    expect(noWritersFinding).toBeDefined();
+  });
 });

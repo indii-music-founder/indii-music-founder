@@ -84,13 +84,23 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     const totalWriters = input.writers.length;
     scores.push({
       label: 'Split Approvals',
-      value: totalWriters - unapprovedCount,
-      max: totalWriters,
-      status: unapprovedCount > 0 ? 'blocked' : 'good',
-      rationale: unapprovedCount > 0 ? `${unapprovedCount} writers have not approved splits.` : 'All splits approved.',
+      value: totalWriters === 0 ? 0 : totalWriters - unapprovedCount,
+      max: totalWriters === 0 ? 1 : totalWriters,
+      status: totalWriters === 0 ? 'blocked' : (unapprovedCount > 0 ? 'blocked' : 'good'),
+      rationale: totalWriters === 0 ? 'No writers provided.' : (unapprovedCount > 0 ? `${unapprovedCount} writers have not approved splits.` : 'All splits approved.'),
     });
 
-    if (unapprovedCount > 0) {
+    if (totalWriters === 0) {
+      blockers.push('No writers provided.');
+      findings.push({
+        id: 'no_writers',
+        domain: this.domain,
+        severity: 'critical',
+        title: 'No Writers Provided',
+        detail: 'A composition must have at least one writer.',
+        confidence: 'high',
+      });
+    } else if (unapprovedCount > 0) {
       findings.push({
         id: 'missing_split_approvals',
         domain: this.domain,
