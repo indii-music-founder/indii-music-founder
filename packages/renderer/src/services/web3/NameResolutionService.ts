@@ -15,7 +15,6 @@
 import { ethereumService } from './EthereumService';
 import { logger } from '@/utils/logger';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
-// @ts-expect-error - no types available
 import namehash from 'eth-ens-namehash';
 
 /** ENS Registry contract address (Ethereum mainnet) */
