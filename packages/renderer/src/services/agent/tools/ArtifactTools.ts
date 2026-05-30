@@ -15,7 +15,7 @@ export const ArtifactTools = {
         try {
             const { filename, content, artifactType, requestFeedback } = args;
             
-            const result = await (window as any).electronAPI.agent.createArtifact(filename, content, {
+            const result = await window.electronAPI!.agent.createArtifact(filename, content, {
                 artifactType: artifactType || 'other',
                 requestFeedback: !!requestFeedback
             });
@@ -50,7 +50,7 @@ export const ArtifactTools = {
         }>;
     }) => {
         try {
-            const result = await (window as any).electronAPI.agent.multiReplaceFileContent(args);
+            const result = await window.electronAPI!.agent.multiReplaceFileContent(args);
             
             if (result.success) {
                 return toolSuccess(result.data, `File ${args.targetFile} modified successfully.`);

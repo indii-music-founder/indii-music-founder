@@ -32,8 +32,8 @@ export const consult_specialist = wrapTool(
         }
 
         // Validate hub-and-spoke (cast to valid AgentId type)
-        const sourceAgentId = (context.agentIdentity?.agentId || 'unknown') as any;
-        const hubSpokeError = validateHubAndSpoke(sourceAgentId, targetAgentId as any);
+        const sourceAgentId = context.agentIdentity?.agentId || 'unknown';
+        const hubSpokeError = validateHubAndSpoke(sourceAgentId, targetAgentId);
         if (hubSpokeError) {
             logger.warn(`[A2A:Consult] Hub-and-spoke violation: ${hubSpokeError}`);
             return toolError(hubSpokeError);
@@ -162,7 +162,7 @@ export const seat_agent = wrapTool(
         }
 
         try {
-            useStore.getState().addActiveAgent(targetAgentId as any);
+            useStore.getState().addActiveAgent(targetAgentId);
             logger.info(`[A2A:Swarm] Seated agent "${targetAgentId}" at the Boardroom table.`);
             return toolSuccess({ seated: true }, `Successfully seated the ${targetAgentId} agent in the Boardroom.`);
         } catch (error: any) {
@@ -188,7 +188,7 @@ export const unseat_agent = wrapTool(
         }
 
         try {
-            useStore.getState().removeActiveAgent(targetAgentId as any);
+            useStore.getState().removeActiveAgent(targetAgentId);
             logger.info(`[A2A:Swarm] Unseated agent "${targetAgentId}" from the Boardroom table.`);
             return toolSuccess({ unseated: true }, `Successfully unseated the ${targetAgentId} agent from the Boardroom.`);
         } catch (error: any) {

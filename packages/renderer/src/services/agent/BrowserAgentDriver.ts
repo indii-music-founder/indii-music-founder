@@ -34,7 +34,7 @@ export class BrowserAgentDriver {
         try {
             // 1. Navigate to initial URL
             logs.push(`[Driver] Navigating to ${url}...`);
-            let currentState = await api.agent.navigateAndExtract(url) as any;
+            let currentState = await api.agent.navigateAndExtract(url);
 
             if (!currentState.success) {
                 throw new Error(`Navigation failed: ${currentState.error}`);
@@ -115,21 +115,21 @@ export class BrowserAgentDriver {
                 switch (plan.action) {
                     case 'click':
                         if (!selector) throw new Error('Missing selector for click');
-                        actionResult = await api.agent.performAction('click', selector) as any;
+                        actionResult = await api.agent.performAction('click', selector);
                         break;
                     case 'type':
                         if (!selector || !text) throw new Error('Missing params for type');
-                        actionResult = await api.agent.performAction('type', selector, text) as any;
+                        actionResult = await api.agent.performAction('type', selector, text);
                         break;
                     case 'scroll': {
                         const direction = selector || 'down';
                         const amount = text || '500';
-                        actionResult = await api.agent.performAction('scroll', direction, amount) as any;
+                        actionResult = await api.agent.performAction('scroll', direction, amount);
                         break;
                     }
                     case 'wait': {
                         const duration = text || '1000';
-                        actionResult = await api.agent.performAction('wait', '', duration) as any;
+                        actionResult = await api.agent.performAction('wait', '', duration);
                         break;
                     }
                     default:
@@ -141,7 +141,7 @@ export class BrowserAgentDriver {
                 }
 
                 // Get new state (snapshot)
-                currentState = await api.agent.captureState() as any;
+                currentState = await api.agent.captureState();
             }
 
             throw new Error('Max steps exceeded');
