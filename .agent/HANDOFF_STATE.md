@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-30 16:54 EDT
+**Updated:** 2026-05-30 17:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4300a1b56 fix(ci): commit package-lock.json (un-ignore) so npm ci works
+251ac0cc9 chore: session checkpoint [16:54]
 1ab4448e8 chore: session checkpoint [16:48]
 6baf60cb3 chore: session checkpoint [16:46]
 acba49745 fix: add TypeScript references and type guards for React Three and env access
@@ -12,14 +14,11 @@ a211bfa01 fix(test): resolve canvas batch service test renderer failure
 394f71aca chore(ux): merge sprint a UX branch fixes
 bde330e21 perf(bundle): merge lazy loading and vender chunk optimizations
 66e94ef42 refactor(integration): merge functional API integrations for licensing copyright and video
-d756867af test(e2e): merge video e2e test navigation updates
-db53ea36f fix(security): merge issue 14 security backend modifications
 ```
 
 ## Working State
 ```
- M .gitignore
-?? package-lock.json
+clean working tree
 ```
 
 ## Decisions
