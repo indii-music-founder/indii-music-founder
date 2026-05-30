@@ -260,6 +260,10 @@ export interface AgentContext {
     sessionId?: string;
     /** Current directive guiding agent behavior */
     directive?: Directive;
+    /** Streaming runner for progressive specialist delegation */
+    streamAgent?: (agentId: string, task: string, onChunk: (chunk: string) => void) => Promise<void>;
+    /** Emit a single token to the user-facing UI during streaming */
+    emitToken?: (token: string) => void;
 }
 
 export type AgentRunner = (
