@@ -102,6 +102,24 @@ export default defineConfig({
                     if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
                         return 'vendor-remotion';
                     }
+                    // Google Gen AI SDK
+                    if (pkg === '@google/genai') {
+                        return 'vendor-genai';
+                    }
+                    // Internationalization (i18n)
+                    if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
+                        return 'vendor-i18n';
+                    }
+                    // UI Utilities & Primitives
+                    if (
+                        pkg === 'react-virtuoso' ||
+                        pkg === 'tailwind-merge' ||
+                        pkg === 'driver.js' ||
+                        pkg === 'clsx' ||
+                        pkg === 'classnames'
+                    ) {
+                        return 'vendor-ui';
+                    }
                     if (
                         pkg === 'react' ||
                         pkg === 'react-dom' ||
