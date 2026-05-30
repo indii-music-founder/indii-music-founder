@@ -127,8 +127,12 @@ export function CookieConsentBanner() {
     const [preferences, setPreferences] = useState<ConsentPreferences>({ ...DEFAULT_PREFERENCES });
 
     useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+        let active = true;
+
         // Honor env var bypass (dev convenience/E2E tests)
         import('@/config/env').then(({ env }) => {
+            if (!active) return;
             if (env.skipOnboarding) {
                 setVisible(false);
                 return;
@@ -138,10 +142,16 @@ export function CookieConsentBanner() {
             const existing = getConsentPreferences();
             if (!existing) {
                 // Small delay so it doesn't flash on initial load
-                const timer = setTimeout(() => setVisible(true), 800);
-                return () => clearTimeout(timer);
+                timer = setTimeout(() => {
+                    if (active) setVisible(true);
+                }, 800);
             }
         });
+
+        return () => {
+            active = false;
+            if (timer) clearTimeout(timer);
+        };
     }, []);
 
     const handleAcceptAll = useCallback(() => {
