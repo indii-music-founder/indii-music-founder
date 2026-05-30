@@ -162,6 +162,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                     sendToModule('merch', {
                                                         assetId: item.id,
                                                         assetUrl: item.url,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
                                                         originModule: 'creative',
@@ -180,6 +181,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                     sendToModule('marketing', {
                                                         assetId: item.id,
                                                         assetUrl: item.url,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
                                                         originModule: 'creative',
@@ -198,6 +200,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                     sendToModule('boardroom', {
                                                         assetId: item.id,
                                                         assetUrl: item.url,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
                                                         originModule: 'creative',
@@ -216,6 +219,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                     sendToModule('touring', {
                                                         assetId: item.id,
                                                         assetUrl: item.url,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
                                                         originModule: 'creative',
@@ -356,7 +360,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     const {
         generatedHistory, removeItemFromProject, uploadedImages, addUploadedImage, removeUploadedImage,
         uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
         pinToClipboard, sendToModule
     } = useStore(useShallow(state => ({

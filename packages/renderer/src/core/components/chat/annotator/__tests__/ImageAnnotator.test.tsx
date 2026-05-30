@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageAnnotator } from '../ImageAnnotator';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AgentService } from '@/services/agent/AgentService';
 
 // Mock AgentService

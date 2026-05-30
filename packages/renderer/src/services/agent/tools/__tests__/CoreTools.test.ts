@@ -20,7 +20,9 @@ vi.mock('../../registry', () => ({
 
 import { CoreTools } from '../CoreTools';
 import { useStore } from '@/core/store';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { agentRegistry } from '../../registry';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 

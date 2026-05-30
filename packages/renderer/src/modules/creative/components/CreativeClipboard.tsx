@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Paperclip, X, Trash2, Send, ExternalLink, Minimize2, Maximize2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { SendToTarget } from '@/types/handoff';
@@ -25,6 +26,7 @@ export default function CreativeClipboard() {
         sendToModule: state.sendToModule
     })));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSendTo = React.useCallback((target: SendToTarget, item: any) => {
         sendToModule(target, {
             assetId: item.id,

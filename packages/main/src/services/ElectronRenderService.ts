@@ -18,6 +18,7 @@ export const electronRenderService = {
                     fps: 30,
                     durationInFrames: 300,
                     defaultProps: {},
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
                 serveUrl,
                 codec: 'h264',

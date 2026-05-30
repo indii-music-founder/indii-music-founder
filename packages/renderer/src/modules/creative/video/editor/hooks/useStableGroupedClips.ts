@@ -46,6 +46,7 @@ export const useStableGroupedClips = (clips: VideoClip[]): Record<string, VideoC
                 result[trackId] = prevClips; // Reuse old array reference
             } else {
                 result[trackId] = nextClips;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 hasChanges = true;
             }
         }

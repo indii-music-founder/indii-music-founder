@@ -25,7 +25,9 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
     // State
     const [postStates, setPostStates] = useState<PostImageState[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isPaused, setIsPaused] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState<BatchImageProgress | null>(null);
 

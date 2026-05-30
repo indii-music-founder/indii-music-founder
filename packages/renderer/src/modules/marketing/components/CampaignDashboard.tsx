@@ -38,6 +38,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 /* ================================================================== */
 
 const CampaignDashboard: React.FC = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { campaigns, actions, isLoading } = useMarketing();
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);

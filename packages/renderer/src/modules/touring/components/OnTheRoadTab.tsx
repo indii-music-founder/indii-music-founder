@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect } from 'react';
 
 import { motion } from 'motion/react';

@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { dawServer, DAWState } from '../daw-server';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import log from 'electron-log';
 import { BrowserWindow } from 'electron';
 

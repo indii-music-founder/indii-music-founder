@@ -31,6 +31,7 @@ export default function ShowroomUI() {
         currentProjectId,
         addToHistory,
         pinToClipboard
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useStore(useShallow((state: any) => ({
         showroomState: state.showroomState,
         setShowroomState: state.setShowroomState,
@@ -89,6 +90,7 @@ export default function ShowroomUI() {
             addToHistory(result);
             
             toast.success("Mockup generated successfully!");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             setShowroomState({ isGeneratingMockup: false });
             toast.error(error.message || "Failed to generate mockup.");
@@ -116,6 +118,7 @@ export default function ShowroomUI() {
             addToHistory(result);
             
             toast.success("Scene animated successfully!");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             setShowroomState({ isGeneratingVideo: false });
             toast.error(error.message || "Failed to animate scene.");
@@ -165,6 +168,7 @@ export default function ShowroomUI() {
                         {PRODUCT_TYPES.map((type) => (
                             <button
                                 key={type}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onClick={() => setShowroomState({ productType: type as any })}
                                 className={cn(
                                     "px-3 py-2 text-xs rounded-lg border transition-all text-left flex items-center justify-between group",

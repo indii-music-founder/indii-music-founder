@@ -88,6 +88,7 @@ export default function ParticipantSelector() {
                 const top = 50 + radiusY * Math.sin(angle);
 
                 return (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     <TooltipProvider {...({ key: agent.id } as any)} delayDuration={50}>
                         <Tooltip>
                             <TooltipTrigger asChild>

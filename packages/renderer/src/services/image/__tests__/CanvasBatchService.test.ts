@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { canvasBatchService, PLATFORM_DIMENSIONS } from '../CanvasBatchService';
 import { useStore } from '@/core/store';
 

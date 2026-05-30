@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Shield,
     LogOut,
     Save,

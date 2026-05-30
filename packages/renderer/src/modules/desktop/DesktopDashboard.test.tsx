@@ -54,6 +54,7 @@ describe('DesktopDashboard', () => {
 describe('SettingCard', () => {
     it('renders enabled state', () => {
         const onClick = vi.fn();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { container } = render(<SettingCard icon={Zap} title="Test" description="Desc" enabled={true} onClick={onClick} />);
         expect(screen.getByText('Test')).toBeInTheDocument();
         expect(screen.getByText('Desc')).toBeInTheDocument();

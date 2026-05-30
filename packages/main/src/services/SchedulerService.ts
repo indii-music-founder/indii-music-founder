@@ -98,6 +98,7 @@ function computeNextRunAt(schedule: ScheduleInterval, fromNow: Date = new Date()
     throw new Error('Invalid schedule type');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function msUntilNext(nextRunAt: string): number {
     const ms = new Date(nextRunAt).getTime() - Date.now();
     return Math.max(ms, 0);

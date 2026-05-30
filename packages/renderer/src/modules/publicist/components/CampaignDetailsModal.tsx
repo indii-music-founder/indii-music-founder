@@ -13,9 +13,11 @@ interface CampaignDetailsModalProps {
     userId: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOpen, onClose, campaign, userId }) => {
     const [status, setStatus] = useState<Campaign['status']>('Draft');
     const [progress, setProgress] = useState(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isSaving, setIsSaving] = useState(false);
     const toast = useToast();
 

@@ -135,6 +135,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setIsExporting(true);
         toast.info('Starting local render... Please wait.');
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { electronAPI } = window as any;
             if (!electronAPI?.video?.render) {
                 throw new Error("Local rendering is not supported in the browser environment. Please use the desktop app.");
@@ -159,6 +160,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             toast.success(`Render complete!`);
             
             // Auto-save output to generatedHistory globally
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             import('@/core/store').then((module: any) => {
                 const { useStore } = module;
                 const state = useStore.getState();

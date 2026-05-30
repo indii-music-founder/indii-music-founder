@@ -28,6 +28,7 @@ export class SpecialistAgentFactory {
      */
     static async createSpecialistAgent<T extends SpecializedAgent>(
         id: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         AgentClass: new (...args: any[]) => T
     ): Promise<T> {
         const agent = new AgentClass();

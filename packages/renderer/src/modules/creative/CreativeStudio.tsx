@@ -281,6 +281,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             };
             generateImage();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pendingPrompt, generationMode, whiskState, setPrompt, setPendingPrompt, studioControls, addToHistory, currentProjectId, userProfile, toast]);
 
     return (

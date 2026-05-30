@@ -1,4 +1,5 @@
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth, db, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 

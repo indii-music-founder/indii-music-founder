@@ -2,11 +2,13 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore, StoreApi } from 'zustand';
 import { buildAgentOrchestrationState, AgentOrchestrationSlice } from '../agent/agentOrchestrationSlice';
 import { onSnapshot, doc } from 'firebase/firestore';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth } from '@/services/firebase';
 
 // Mock Firebase services
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn((_db, ...paths) => ({ path: paths.join('/') })),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onSnapshot: vi.fn((ref, callback) => {
         // Return a cleanup function
         return vi.fn();

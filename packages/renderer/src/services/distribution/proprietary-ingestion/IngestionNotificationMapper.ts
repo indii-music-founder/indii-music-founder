@@ -23,6 +23,7 @@ import {
       UseType,
       AIDisclosureType,
 } from './types/common';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 
 /**
@@ -450,6 +451,7 @@ export class IngestionNotificationMapper {
         return contributors;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static classifyAIDisclosure(aiContent: any): AIDisclosureType {
         if (aiContent.isFullyAIGenerated) return 'AI_Generated';
         if (aiContent.isPartiallyAIGenerated) {

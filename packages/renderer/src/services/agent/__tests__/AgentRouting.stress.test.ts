@@ -345,6 +345,7 @@ const ALL_ROUTING_SCENARIOS = [
 // ============================================================================
 
 describe('🎯 Hub Routing Accuracy Stress Test (25 scenarios)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let service: AgentService;
 
     beforeEach(() => {

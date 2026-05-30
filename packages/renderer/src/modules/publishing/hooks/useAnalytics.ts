@@ -81,6 +81,7 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
                     const existing = dataMap.get(dateStr);
 
                     if (existing && (existing.streams > 0 || existing.revenue > 0)) {
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         hasAnyData = true;
                     }
 

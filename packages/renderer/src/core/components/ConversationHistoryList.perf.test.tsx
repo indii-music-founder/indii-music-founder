@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConversationHistoryList } from './ConversationHistoryList';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 import React from 'react';
 

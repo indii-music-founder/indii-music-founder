@@ -203,6 +203,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         const cloudProfile = docSnap.data() as UserProfile;
                         
                         const currentProfile = get().userProfile;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const getMs = (t: any) => {
                             if (!t) return 0;
                             if (typeof t.toMillis === 'function') return t.toMillis();

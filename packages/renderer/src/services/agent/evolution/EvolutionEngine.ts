@@ -136,6 +136,7 @@ export class EvolutionEngine {
         // Ensure the offspring is valid JSON (no cycles, no functions).
         try {
           JSON.stringify(offspring);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
           throw new Error("Helix Guardrail: Mutation produced non-serializable offspring (JSON Error)");
         }
@@ -150,6 +151,7 @@ export class EvolutionEngine {
         offspring.fitness = undefined; // Reset fitness for new gene
 
         nextGeneration.push(offspring);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error: unknown) {
         // Helix: Survival of the fittest, but death to the buggy.
         // If mutation/crossover fails (e.g., invalid JSON), we discard this offspring

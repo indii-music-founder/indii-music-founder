@@ -30,6 +30,7 @@ export function SplitSheetEscrow() {
     const [releaseError, setReleaseError] = useState<string | null>(null);
     // Item 412: Split Sheet PDF Export state
     const [exporting, setExporting] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [exportUrl, setExportUrl] = useState<string | null>(null);
 
     const signedCount = collaborators.filter(c => c.signed).length;

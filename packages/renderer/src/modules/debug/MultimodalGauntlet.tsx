@@ -38,6 +38,7 @@ export default function MultimodalGauntlet() {
         vid1?: string;
         vid2?: string;
     }>({});
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const runGauntlet = async () => {

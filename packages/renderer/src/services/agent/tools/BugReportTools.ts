@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
  * to GitHub Issues if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env.
  */
 export const BugReportTools: Record<string, AnyToolFunction> = {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     report_bug: wrapTool('report_bug', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;
@@ -154,6 +155,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`);
     }),
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     request_feature: wrapTool('request_feature', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;

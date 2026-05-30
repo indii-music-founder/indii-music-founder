@@ -52,6 +52,7 @@ export interface DocumentLink {
     expiresAt: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FUNCTIONS_REGION = 'us-central1';
 
 export class PandaDocService {

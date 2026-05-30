@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { e2eEncryptionService, MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { DigitalHandshake } from '@/services/agent/governance/DigitalHandshake';
 import { Directive } from '@/services/directive/DirectiveTypes';

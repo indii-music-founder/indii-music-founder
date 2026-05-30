@@ -82,6 +82,7 @@ export const MemoryTools = {
                 args.category
             );
             return toolSuccess({ summary }, `Successfully saved to persistent memory.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Failed to save user memory: ${error.message}`, 'STORAGE_ERROR');
         }
@@ -95,6 +96,7 @@ export const MemoryTools = {
         try {
             const answer = await alwaysOnMemoryEngine.query(args.query);
             return toolSuccess({ answer }, `Memory search complete.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Failed to search user memory: ${error.message}`, 'QUERY_ERROR');
         }
@@ -106,6 +108,7 @@ export const MemoryTools = {
             // We synthesize a context summary for the agent
             const answer = await alwaysOnMemoryEngine.query("Summarize the user's primary goals, preferences, and current creative focus based on all memories.");
             return toolSuccess({ context: answer, engineStatus: status }, `User context retrieved.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Failed to get user context: ${error.message}`, 'CONTEXT_ERROR');
         }
@@ -120,6 +123,7 @@ export const MemoryTools = {
                 category: args.categories?.[0] 
             });
             return toolSuccess({ memories }, `Found ${memories.length} memories.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Failed to list memories: ${error.message}`, 'LIST_ERROR');
         }
@@ -129,6 +133,7 @@ export const MemoryTools = {
         try {
             await alwaysOnMemoryEngine.deleteMemory(args.memoryId);
             return toolSuccess({ memoryId: args.memoryId }, `Memory deleted.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Failed to delete memory: ${error.message}`, 'DELETE_ERROR');
         }
@@ -138,6 +143,7 @@ export const MemoryTools = {
         try {
             const result = await alwaysOnMemoryEngine.consolidateNow();
             return toolSuccess({ result }, `Consolidation complete.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             return toolError(`Consolidation failed: ${error.message}`, 'CONSOLIDATE_ERROR');
         }

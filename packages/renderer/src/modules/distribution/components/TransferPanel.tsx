@@ -24,6 +24,7 @@ export const TransferPanel: React.FC = () => {
 
     useEffect(() => {
         // Handle progress updates from Electron
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const removeListener = window.electronAPI?.distribution?.onTransmitProgress?.((data: any) => {
             if (data.progress !== undefined) {
                 setProgress(data.progress);
@@ -75,6 +76,7 @@ export const TransferPanel: React.FC = () => {
                 protocol,
                 // Ensure only selected auth mode is passed if necessary, 
                 // but IPC handler already checks priority
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             }) as any;
 
             setReport(result.report || null);

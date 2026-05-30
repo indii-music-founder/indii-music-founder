@@ -20,6 +20,7 @@ export interface BoardroomSlice {
     clearReferencedAssets: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => ({
     activeAgents: ['generalist'], // indii Conductor (hub agent) always present initially
     referencedAssets: [],

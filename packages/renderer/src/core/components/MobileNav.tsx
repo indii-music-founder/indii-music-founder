@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film,
     Scale, Book, DollarSign, FileText, ShoppingBag, Radio,
     Menu, X, Layout, Clock, type LucideIcon

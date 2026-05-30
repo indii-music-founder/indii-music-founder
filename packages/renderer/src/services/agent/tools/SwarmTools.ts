@@ -91,6 +91,7 @@ export const consult_specialist = wrapTool(
                     `Consultation with ${targetAgentId} complete.`,
                     { transport: 'a2a-stream' }
                 );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (streamError: any) {
                 if (streamError.message?.includes('Digital Handshake approval')) {
                     return toolError(streamError.message, 'A2A_HANDSHAKE_PENDING');
@@ -113,6 +114,7 @@ export const consult_specialist = wrapTool(
             );
 
             return toolSuccess(result, `Consultation with ${targetAgentId} complete.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error(`[A2A:Consult] Error consulting ${targetAgentId}:`, error);
 
@@ -135,6 +137,7 @@ export const consult_specialist = wrapTool(
                     return toolSuccess(result, `Consultation with ${targetAgentId} complete (in-process fallback).`, {
                         transport: 'in-process-fallback',
                     });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (fallbackError: any) {
                     logger.error(`[A2A:Consult] In-process fallback failed:`, fallbackError);
                     return toolError(`Specialist consultation failed: ${fallbackError.message}`);
@@ -165,6 +168,7 @@ export const seat_agent = wrapTool(
             useStore.getState().addActiveAgent(targetAgentId);
             logger.info(`[A2A:Swarm] Seated agent "${targetAgentId}" at the Boardroom table.`);
             return toolSuccess({ seated: true }, `Successfully seated the ${targetAgentId} agent in the Boardroom.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error(`[A2A:Swarm] Failed to seat agent "${targetAgentId}":`, error);
             return toolError(`Failed to seat agent: ${error.message}`);
@@ -191,6 +195,7 @@ export const unseat_agent = wrapTool(
             useStore.getState().removeActiveAgent(targetAgentId);
             logger.info(`[A2A:Swarm] Unseated agent "${targetAgentId}" from the Boardroom table.`);
             return toolSuccess({ unseated: true }, `Successfully unseated the ${targetAgentId} agent from the Boardroom.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error(`[A2A:Swarm] Failed to unseat agent "${targetAgentId}":`, error);
             return toolError(`Failed to unseat agent: ${error.message}`);

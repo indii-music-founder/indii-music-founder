@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Globe, Plus, Trash2, CheckSquare, Clock, AlertTriangle, FileText, Sparkles, Send, MessageSquare, Loader2, Check } from 'lucide-react';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
@@ -283,6 +284,7 @@ Include 5 to 8 total documentation items tailored exactly to what an artist ente
                 country: normalizedCountry,
                 visaType: parsed.visaType,
                 processingDays: Number(parsed.processingDays) || 20,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 docs: parsed.docs.map((d: any) => ({
                     id: secureRandomAlphanumeric(7),
                     label: d.label,

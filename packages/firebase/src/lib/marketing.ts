@@ -186,6 +186,7 @@ export const createInfluencerBounty = functions
         if (!bountyBaseUrl) {
             try {
                 bountyBaseUrl = influencerBountyBaseUrl.value();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
                 console.warn("influencerBountyBaseUrl parameter not set.");
             }

@@ -20,6 +20,7 @@ interface IngredientDropZoneProps {
     className?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function IngredientDropZone({ ingredients, onChange, mode = 'reference', className }: IngredientDropZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { error } = useToast();

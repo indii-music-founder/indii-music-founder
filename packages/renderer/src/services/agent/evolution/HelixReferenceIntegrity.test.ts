@@ -54,6 +54,7 @@ describe('🧬 Helix: Reference Integrity (Anti-Corruption)', () => {
     // 3. Result: If not guarded, the Elite (parent) in the next generation gets mutated!
 
     // Setup: Lazy Crossover (Returns Parent 1 directly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockCrossoverFn.mockImplementation(async (p1, p2) => {
       return p1; // DANGER: Returning reference!
     });
@@ -110,6 +111,7 @@ describe('🧬 Helix: Reference Integrity (Anti-Corruption)', () => {
     // Helix `structuredClone` guardrail must prevent this.
 
     // Setup: Lazy Crossover (Returns Parent 1 directly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockCrossoverFn.mockImplementation(async (p1, p2) => {
       return p1; // DANGER: Reference return
     });

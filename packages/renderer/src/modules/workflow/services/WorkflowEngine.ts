@@ -235,6 +235,7 @@ export class WorkflowEngine {
             // ── Marketing Department ────────────────────────────────────────
             case 'Marketing Department': {
                 const isImage = typeof prompt === 'string' && prompt.startsWith('data:image');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const contents: any[] = isImage
                     ? [{
                         role: 'user' as const,

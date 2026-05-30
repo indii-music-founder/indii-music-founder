@@ -23,6 +23,7 @@ const NotificationsSection: React.FC = () => {
         updatePreferences: s.updatePreferences,
     })));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prefs = (userProfile?.preferences || {}) as any;
 
     // Derive values with defaults

@@ -82,6 +82,7 @@ export class CopyrightFilterService {
         return {
             status: data.status?.msg === 'Success' ? 'warning' : 'safe',
             score: data.metadata?.music?.[0]?.score || 0,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             matches: data.metadata?.music?.map((m: Record<string, any>) => ({
                 title: m.title,
                 artist: m.artists?.[0]?.name || 'Unknown',

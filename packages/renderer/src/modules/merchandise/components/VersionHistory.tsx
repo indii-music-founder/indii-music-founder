@@ -29,6 +29,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     onRestoreVersion,
     currentDesignId
 }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { userProfile, currentOrganizationId, currentProjectId } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         currentOrganizationId: state.currentOrganizationId,
@@ -64,9 +65,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         canvasJSON: data.canvasJSON || '{}',
                         thumbnail: data.thumbnail || '',
                         lastModified: data.lastModified instanceof Timestamp
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             ? (typeof data.lastModified.toDate === 'function' ? data.lastModified.toDate() : new Date(data.lastModified as any))
                             : new Date(data.lastModified),
                         createdAt: data.createdAt instanceof Timestamp
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : new Date(data.createdAt as any))
                             : new Date(data.createdAt || data.lastModified)
                     });

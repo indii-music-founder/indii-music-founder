@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { validateSafeAudioPath } from './file-security';
 import fs from 'fs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import path from 'path';
 
 // Mock fs to control realpathSync behavior without touching the disk

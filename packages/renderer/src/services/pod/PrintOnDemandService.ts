@@ -205,6 +205,7 @@ export interface PODProviderAdapter {
 class PrintfulProvider implements PODProviderAdapter {
     name: PODProvider = 'printful';
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private async callFunction<T>(name: string, data?: any): Promise<T> {
         try {
             const { httpsCallable } = await import('firebase/functions');
@@ -212,6 +213,7 @@ class PrintfulProvider implements PODProviderAdapter {
             const fn = httpsCallable(functions, `pod_${name}`);
             const result = await fn(data);
             return result.data as T;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error(`[PrintfulProvider] Cloud Function pod_${name} failed:`, error);
             throw new Error(`Printful operation failed: ${error.message}`);
@@ -219,12 +221,14 @@ class PrintfulProvider implements PODProviderAdapter {
     }
 
     async getProducts(): Promise<PODProduct[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const products = await this.callFunction<any[]>('printfulGetProducts');
         return products.map(p => this.mapProduct(p));
     }
 
     async getProduct(productId: string): Promise<PODProduct | null> {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const product = await this.callFunction<any>('printfulGetProduct', { productId });
             return this.mapProduct(product);
         } catch {
@@ -243,6 +247,7 @@ class PrintfulProvider implements PODProviderAdapter {
     }
 
     async calculatePrice(items: PODOrderItem[]): Promise<{ subtotal: number; breakdown: { itemId: string; price: number }[] }> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await this.callFunction<any>('printfulCalculatePrice', { items });
         return {
             subtotal: result.costs?.subtotal || 0,
@@ -254,7 +259,9 @@ class PrintfulProvider implements PODProviderAdapter {
     }
 
     async getShippingRates(address: PODShippingAddress, items: PODOrderItem[]): Promise<PODShippingRate[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await this.callFunction<any[]>('printfulGetShippingRates', { address, items });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return result.map((rate: any) => ({
             id: rate.id,
             name: rate.name,
@@ -265,6 +272,7 @@ class PrintfulProvider implements PODProviderAdapter {
     }
 
     async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod = 'STANDARD'): Promise<PODOrder> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await this.callFunction<any>('printfulCreateOrder', { items, address, shippingMethod });
         const mappedOrder = this.mapOrder(result);
 
@@ -287,6 +295,7 @@ class PrintfulProvider implements PODProviderAdapter {
 
     async getOrder(orderId: string): Promise<PODOrder | null> {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await this.callFunction<any>('printfulGetOrder', { orderId });
             return this.mapOrder(result);
         } catch {
@@ -296,6 +305,7 @@ class PrintfulProvider implements PODProviderAdapter {
 
     async cancelOrder(orderId: string): Promise<boolean> {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await this.callFunction<any>('printfulCancelOrder', { orderId });
             return true;
         } catch {
@@ -304,6 +314,7 @@ class PrintfulProvider implements PODProviderAdapter {
     }
 
     async generateMockup(productId: string, variantId: string, designUrl: string, printArea = 'front'): Promise<string> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await this.callFunction<any>('printfulGenerateMockup', { productId, variantId, designUrl, printArea });
         return result;
     }

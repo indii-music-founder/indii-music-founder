@@ -142,6 +142,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             userId,
             title: stateContext.activeModule ? `Task: ${stateContext.activeModule}` : 'General Consultation',
             status: 'IN_PROGRESS',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             assignedAgent: (stateContext.activeModule || 'generalist') as any,
             goalAncestry: [],
             computeAllocation: {
@@ -226,6 +227,7 @@ Use these memories to maintain continuity and apply learned preferences/rules.
     ): Promise<void> {
         for (const learning of learnings) {
             // Map legacy 'type' to AlwaysOnMemoryCategory
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const categoryMap: Record<string, any> = {
                 'fact': 'fact',
                 'summary': 'context',

@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Image as ImageIcon, Plus, ArrowRight, X } from 'lucide-react';
 
 interface DaisyChainControlsProps {

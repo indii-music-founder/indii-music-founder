@@ -371,6 +371,7 @@ describe('🛡️ Agent Guard Rails Stress Test (30 scenarios)', () => {
     describe('Domain Boundary Violations (5 tests)', () => {
         DOMAIN_VIOLATIONS.forEach(scenario => {
             it(`${scenario.name}`, () => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const sanitized = AgentPromptBuilder.sanitizeTask(scenario.attackPayload);
 
                 // Domain violations that include instruction overrides should be sanitized

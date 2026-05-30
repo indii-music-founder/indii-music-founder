@@ -25,6 +25,7 @@ const ConnectionsSection: React.FC = () => {
     const { t } = useTranslation();
     const { showToast } = useToast();
     const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loading, setLoading] = useState(true);
     const [connecting, setConnecting] = useState<string | null>(null);
 

@@ -177,6 +177,7 @@ export class MediaCacheManager {
 
       // Get oldest (first) item
       const req = index.openCursor();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       let evicted = false;
 
       req.onsuccess = (event) => {

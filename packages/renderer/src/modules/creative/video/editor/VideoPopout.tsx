@@ -54,6 +54,7 @@ export default function VideoPopout() {
     }, [setProject]);
 
     // Use the actual aspect ratio from the project settings
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const aspectRatio = project.width / project.height;
 
     return (

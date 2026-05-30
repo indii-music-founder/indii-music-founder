@@ -85,6 +85,7 @@ export function buildCreativeHistoryState(
                             null, // root
                             currentProjectId,
                             user.uid,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             enrichedItem.type as any,
                             { url: enrichedItem.url, origin: enrichedItem.origin }
                         ).catch(err => logger.error("CreativeSlice: File system sync error", err));

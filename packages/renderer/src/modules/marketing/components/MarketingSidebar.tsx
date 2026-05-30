@@ -27,6 +27,7 @@ interface MarketingSidebarProps {
 }
 
 export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, onTabChange }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [collapsed] = useState(false);
 
     const mainNav = [

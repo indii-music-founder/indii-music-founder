@@ -56,6 +56,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 // ============================================================================
 
 import { coreVaultService, ALL_VAULT_CATEGORIES } from '../CoreVaultService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 // ============================================================================

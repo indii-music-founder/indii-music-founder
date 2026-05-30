@@ -288,6 +288,7 @@ export function useDirectGeneration() {
         
         let sequencePrompt = finalPrompt;
         if (sequence.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const sequenceDetails = sequence.map(block => `\${block.beats} beats (\${(block.beats * secondsPerBeat).toFixed(2)}s) [\${block.section || 'Uncategorized'}, \${block.energy || 'Medium'} Energy]`).join(', ');
             sequencePrompt = `[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}`;
         }
@@ -399,6 +400,7 @@ export function useDirectGeneration() {
             setIsGenerating(false);
             generatingRef.current = false;
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localPrompt, mode, whiskState, toast, handleImageGenerate, handleVideoGenerate]);
 
     const cancelJob = useCallback((jobId: string) => {

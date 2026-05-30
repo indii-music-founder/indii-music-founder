@@ -231,6 +231,7 @@ export const SecurityTools = {
         }
     }),
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     apply_watermark: wrapTool('apply_watermark', async (args: { fileId: string; watermarkText: string; invisible?: boolean }) => {
         return toolError(
             'Watermarking requires a media processing backend which is currently unavailable. [NOT_SUPPORTED]',

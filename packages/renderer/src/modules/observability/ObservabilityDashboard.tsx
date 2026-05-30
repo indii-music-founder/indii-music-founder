@@ -230,6 +230,7 @@ export const ObservabilityDashboard: React.FC = () => {
                 <YAxis stroke="#94a3b8" />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} 
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(value: any) => [`${(Number(value) / 1024).toFixed(1)} KB`, 'Size']}
                 />
                 <Legend />

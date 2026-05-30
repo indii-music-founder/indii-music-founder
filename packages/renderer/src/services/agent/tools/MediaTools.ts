@@ -2,6 +2,7 @@
 import { Editing } from '@/services/image/EditingService';
 import { PLATFORM_DIMENSIONS } from '@/services/image/CanvasBatchService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 
@@ -47,6 +48,7 @@ export const MediaTools = {
             for (let i = 0; i < targets.length; i++) {
                 const target = targets[i]!;
                 const aspect = target.width / target.height;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const aspectLabel = aspect > 1 ? 'landscape' : aspect < 1 ? 'vertical' : 'square';
                 
                 const prompt = args.promptOverride || 
@@ -335,6 +337,7 @@ export const MediaTools = {
                 try {
                     const url = await getDownloadURL(ref(storage, variantPath));
                     results[dim] = url;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (e) {
                     results[dim] = `gs://${storage.app.options.storageBucket}/${variantPath}`;
                 }

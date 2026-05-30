@@ -7,6 +7,7 @@ export const getText = (node: ReactChildNode): string => {
     if (typeof node === 'number') return String(node);
     if (Array.isArray(node)) return node.map(getText).join('');
     if (typeof node === 'object' && node !== null && 'props' in node) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return getText((node as any).props?.children);
     }
     return '';

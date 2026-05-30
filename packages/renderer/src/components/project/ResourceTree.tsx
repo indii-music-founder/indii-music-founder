@@ -296,6 +296,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                     <div className="space-y-0.5 min-h-full pb-10">
                         {rootNodes.map((node: FileNode) => (
                             <FileTreeNode
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 {...({ key: node.id } as any)}
                                 node={node}
                                 nodeChildrenMap={nodeChildrenMap}

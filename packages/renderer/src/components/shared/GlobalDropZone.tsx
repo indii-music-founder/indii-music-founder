@@ -104,8 +104,11 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                 updateUploadStatus
             } = useStore.getState();
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let imagesVideoCount = 0;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let audioCount = 0;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let docCount = 0;
 
             for (const file of files) {

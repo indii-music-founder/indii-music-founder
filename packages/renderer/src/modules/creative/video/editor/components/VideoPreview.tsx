@@ -22,11 +22,13 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
             }
         };
 
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - The remotion typings might complain but this is the valid API
         current.addEventListener('frameupdate', callback);
 
         return () => {
             if (typeof current.removeEventListener === 'function') {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 current.removeEventListener('frameupdate', callback);
             }
@@ -72,6 +74,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
                     onClick={() => {
                         import('@/services/screen/ScreenControlService').then(({ ScreenControl }) => {
                             // Ensure Window Management API permission is granted
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             ScreenControl.requestPermission().then((granted) => {
                                 // Default to the second screen if they have 2, otherwise first
                                 ScreenControl.openProjectorWindow('/video-popout', 1);

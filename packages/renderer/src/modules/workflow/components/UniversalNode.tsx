@@ -41,7 +41,9 @@ const statusConfig: Record<Status, StatusStyle> = {
 // Combine types for props
 type UniversalNodeData = DepartmentNodeData | LogicNodeData;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { nodes } = useStore(useShallow(state => ({
         nodes: state.nodes
     })));
@@ -241,6 +243,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
                 {/* Output Handles Column */}
                 <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative">
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     {outputs.map((output, i) => (
                         <div key={output.id} className="relative group flex items-center justify-center h-4">
                             <Handle

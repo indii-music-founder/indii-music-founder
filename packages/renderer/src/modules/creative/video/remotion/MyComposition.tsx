@@ -215,6 +215,7 @@ export const MyComposition: React.FC<{ project: VideoProject }> = ({ project }) 
                 const trackClips = project.clips.filter((c) => c.trackId === track.id);
 
                 return (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     <React.Fragment {...({ key: track.id } as any)}>
                         {trackClips.map((clip) => (
                             <Sequence

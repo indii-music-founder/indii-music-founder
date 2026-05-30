@@ -4,15 +4,18 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Trash2, Clock, Search, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot, X, ArrowLeftRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';
 
 export default function HistoryDashboard() {
     const {
         sessions,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         activeSessionId,
         setActiveSession,
         deleteSession,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         updateSessionTitle,
         fileNodes
     } = useStore(

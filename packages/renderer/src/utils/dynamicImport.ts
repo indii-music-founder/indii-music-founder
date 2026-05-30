@@ -11,6 +11,7 @@ export const importWithRetry = async <T>(componentImport: () => Promise<T>): Pro
     while (retries > 0) {
         try {
             return await componentImport();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             const isChunkLoadError = error?.name === 'ChunkLoadError' || 
                 (error?.message && (
