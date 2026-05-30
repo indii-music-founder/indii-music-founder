@@ -177,6 +177,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
             const [state, setState] = useState({
                 viewMode: 'video_production' as const,
                 generationMode: 'video' as const,
+                prompt: '',
                 videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0, ingredients: [] },
                 generatedHistory: mockItems,
                 uploadedImages: [],
