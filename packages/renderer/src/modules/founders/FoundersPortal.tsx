@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key } from 'lucide-react';
@@ -34,7 +35,7 @@ export default function FoundersPortal() {
                 setError(data.message || 'Failed to generate download link.');
             }
         } catch (err) {
-            console.error('Download error:', err);
+            Logger.error('FoundersPortal', 'Download error', err);
             setError(err instanceof Error ? err.message : 'An error occurred while preparing the download.');
         } finally {
             if (platform === 'mac') setIsMacLoading(false);

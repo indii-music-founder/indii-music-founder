@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { useStore } from '@/core/store';
 import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
 
@@ -70,7 +71,7 @@ export function useBoardroomContextHandshake() {
             });
 
             if (import.meta.env.DEV && assetsToAdd.length > 0) {
-                console.log(`[ISSUE-033] Boardroom context handshake: added ${assetsToAdd.length} assets`, assetsToAdd);
+                Logger.info('BoardroomHandshake', `Boardroom context handshake: added ${assetsToAdd.length} assets`, { assetsToAdd });
             }
         }
     }, [useStore((state) => state.conversationMode)]);
