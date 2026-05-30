@@ -1,4 +1,4 @@
-import { visualizer } from 'rollup-plugin-visualizer';
+
 /**
  * electron.vite.config.ts — Build orchestrator for the indii monorepo.
  *
@@ -92,13 +92,6 @@ export default defineConfig({
         plugins: [
             react(),
             tailwindcss(),
-            visualizer({
-                filename: resolve(__dirname, 'dist/renderer/stats.html'),
-                title: 'Indii Music Production Bundle Audit',
-                template: 'treemap',
-                gzipSize: true,
-                brotliSize: true,
-            }),
         ],
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),

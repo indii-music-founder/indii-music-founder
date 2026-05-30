@@ -63,7 +63,7 @@ export class SFTPTransporter {
 
         try {
             if (window.electronAPI?.sftp) {
-                const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath) as any;
+                const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
                 if (result.success && result.files) {
                     logger.info(`[SFTP] Upload complete: ${remotePath}`);
                     return result.files;

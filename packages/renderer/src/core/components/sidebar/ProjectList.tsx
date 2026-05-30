@@ -48,7 +48,15 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
       try {
         setLoading(true);
         // Ensure inbox project exists and list all active projects
-        await ProjectService.ensureInbox(user.uid);
+        try {
+          await ProjectService.ensureInbox(user.uid);
+        } catch (e: any) {
+          if (e.message.includes('A real authenticated user ID is required')) {
+            Logger.warn('ProjectList', 'Skipping inbox creation for unauthenticated user');
+          } else {
+            throw e;
+          }
+        }
         const userProjects = await ProjectService.listByUser(user.uid);
         setProjects(userProjects);
       } catch (err) {
