@@ -646,6 +646,7 @@ export default function DirectGenerationTab() {
                             </p>
                         </div>
                         <button
+                            data-testid="bottom-action-btn"
                             onClick={() => {
                                 if (videoClipCount >= 2) {
                                     setGenerationMode('video');
