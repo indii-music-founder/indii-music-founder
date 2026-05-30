@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<PlanStepStatus, {
     skipped: { icon: SkipForward, color: 'text-zinc-600' },
 };
 
-const StepRow: React.FC<{ step: PlanStep }> = ({ step }) => {
+const StepRow: React.FC<{ key?: React.Key; step: PlanStep }> = ({ step }) => {
     const config = STATUS_CONFIG[step.status];
     const Icon = config.icon;
 

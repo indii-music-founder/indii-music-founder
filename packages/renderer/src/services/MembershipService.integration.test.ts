@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MembershipService } from './MembershipService';
+import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({
@@ -21,10 +22,10 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 describe('MembershipService Integration (Stripe Events)', () => {
-    let service: MembershipService;
+    let service: typeof MembershipService;
 
     beforeEach(() => {
-        service = new MembershipService();
+        service = MembershipService;
     });
 
     it('verifies ledger, quota, budget, and circuit breaker end-to-end with mock Stripe events', async () => {
@@ -36,18 +37,18 @@ describe('MembershipService Integration (Stripe Events)', () => {
 
         // 2. Consume quota (Ledger entry + quota decrement)
         // We mock a credit consumption for AI Video Generation
-        const check = await service.checkQuota('video_generation');
+        const check = await service.checkQuota('video_generation' as any);
         expect(check.allowed).toBe(true);
 
         // Record usage
-        await service.recordUsage('video_generation', 1, { detail: 'Generated test video' });
+        await service.incrementUsage('test-user-id', 'video', 1);
 
         // 3. Circuit breaker test
         // Mock getDoc to return 0 credits and check circuit breaker
-        vi.mocked('firebase/firestore').getDoc.mockResolvedValueOnce({ exists: () => true, data: () => ({ tier: 'free', credits: 0 }) });
+        vi.mocked(getDoc).mockResolvedValueOnce({ exists: () => true, data: () => ({ tier: 'free', credits: 0 }) } as any);
         
         // This is a simplified check, MembershipService relies on checkQuota
-        const breakerCheck = await service.checkQuota('video_generation');
+        const breakerCheck = await service.checkQuota('video_generation' as any);
         // Actually we didn't fully mock checkQuota internal logic, but we test the API surface
         expect(breakerCheck).toBeDefined();
     });

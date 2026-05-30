@@ -94,6 +94,7 @@ const ConnectCard: React.FC<{
 
 /** Single message row in the list */
 const MessageRow: React.FC<{
+    key?: React.Key;
     message: EmailMessage;
     isSelected: boolean;
     onSelect: () => void;
@@ -181,6 +182,7 @@ const MessageRow: React.FC<{
 
 /** Full email view */
 const EmailDetailView: React.FC<{
+    key?: React.Key;
     message: EmailMessage;
     onBack: () => void;
     onReply: () => void;
@@ -309,6 +311,7 @@ const EmailDetailView: React.FC<{
 
 /** Compose email modal */
 const ComposeModal: React.FC<{
+    key?: React.Key;
     onClose: () => void;
     onSend: (data: ComposeEmailData) => Promise<boolean>;
     replyTo?: EmailMessage;

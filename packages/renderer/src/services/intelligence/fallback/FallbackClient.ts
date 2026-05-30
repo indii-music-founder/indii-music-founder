@@ -224,15 +224,14 @@ export async function generateWithFallback(
             } as Record<string, unknown>,
         });
 
-        // Convert to Firebase Autonomous SDK format for compatibility
         return {
             response: {
                 candidates: result.candidates,
                 usageMetadata: result.usageMetadata,
                 text: () => result.text || '',
                 functionCalls: () => result.functionCalls
-            } as unknown as GenerateContentResponse
-        } as GenerateContentResult;
+            } as any
+        } as unknown as GenerateContentResult;
     } catch (error: unknown) {
         // DIAGNOSTIC: Log the raw SDK error before any wrapping
         const rawMsg = error instanceof Error ? error.message : String(error);

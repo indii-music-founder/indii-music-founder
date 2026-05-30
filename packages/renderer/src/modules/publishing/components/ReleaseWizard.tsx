@@ -113,7 +113,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         const isValid = isStepValid(step.id);
 
         return (
-          <React.Fragment key={step.id}>
+          <div key={step.id} className="flex items-center gap-2">
             <button
               onClick={() => isPast && setCurrentStep(step.id)}
               disabled={!isPast}
@@ -134,7 +134,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             {index < STEPS.length - 1 && (
               <ChevronRight size={16} className="text-gray-600" />
             )}
-          </React.Fragment>
+          </div>
         );
       })}
     </div>

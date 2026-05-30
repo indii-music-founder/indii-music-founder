@@ -16,7 +16,7 @@ import InfluencerBountyBoard from './InfluencerBountyBoard';
 import MomentumTracker from './MomentumTracker';
 import MultiPlatformPoster from './MultiPlatformPoster';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
-import { CampaignAsset } from '../types';
+import { CampaignAsset, CampaignStatus } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { BarChart3, Image, Sparkles, Radio } from 'lucide-react';
 import { logger } from '@/utils/logger';
@@ -68,7 +68,7 @@ const CampaignDashboard: React.FC = () => {
         try {
             const newId = await MarketingService.createCampaign({
                 ...campaign,
-                status: campaign.status || 'pending',
+                status: campaign.status || CampaignStatus.PENDING,
             });
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);

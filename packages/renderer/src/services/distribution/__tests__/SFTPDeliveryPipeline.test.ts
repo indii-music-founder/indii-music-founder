@@ -1,21 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
-import { DistributionService } from '../DistributionService';
-import { IngestionMetadata } from '../DistributionSchemas';
-
-// Mock the global window.electronAPI
-declare global {
-    interface Window {
-        electronAPI: any;
-    }
-}
+import { IngestionMetadata } from '@/types/distribution';
 
 describe('SFTP Delivery Pipeline', () => {
     let sftpTransporter: SFTPTransporter;
     
     beforeEach(() => {
         sftpTransporter = new SFTPTransporter();
-        window.electronAPI = {
+        (window as any).electronAPI = {
             sftp: {
                 connect: vi.fn().mockResolvedValue({ success: true }),
                 uploadDirectory: vi.fn().mockResolvedValue({ success: true, files: ['batch.xml', 'audio.wav', 'cover.jpg'] }),
@@ -31,7 +23,7 @@ describe('SFTP Delivery Pipeline', () => {
 
     it('validates full pipeline from XML generation to SFTP delivery confirmation', async () => {
         // 1. Proprietary Ingestion IP XML gen
-        const mockMetadata: IngestionMetadata = {
+        const mockMetadata: any = {
             releaseId: 'test-release-1',
             title: 'Test Delivery',
             artist: 'Indii Artist',
@@ -47,7 +39,7 @@ describe('SFTP Delivery Pipeline', () => {
         expect(xmlResult.xml).toBeTruthy();
 
         // 2. Audio file packaging
-        const packageResult = await window.electronAPI.distribution.packageSpotify(mockMetadata.releaseId, '/tmp/staging', '/tmp/output');
+        const packageResult = await window.electronAPI.distribution.packageSpotify(mockMetadata.releaseId, '/tmp/staging', '/tmp/output') as any;
         expect(packageResult.success).toBe(true);
         expect(packageResult.packagePath).toBe('/tmp/spotify_package');
 

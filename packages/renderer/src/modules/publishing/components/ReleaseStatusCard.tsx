@@ -8,6 +8,7 @@ interface ReleaseStatusCardProps {
     onToggleSelection: (id: string) => void;
     onDelete: (id: string) => void;
     onOpenDetail?: (id: string) => void;
+    key?: React.Key;
 }
 
 export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({

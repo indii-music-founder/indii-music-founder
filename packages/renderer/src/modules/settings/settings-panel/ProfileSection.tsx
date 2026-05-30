@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Camera, Save, X, RefreshCw } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
+import { UserProfile } from '@/types/User';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { updateProfile } from 'firebase/auth';
@@ -56,7 +57,7 @@ const ProfileSection: React.FC = () => {
                 bio,
             };
 
-            await setUserProfile(updatedProfile);
+            await setUserProfile(updatedProfile as unknown as UserProfile);
 
             setDirty(false);
             showToast('Profile updated', 'success');

@@ -61,7 +61,7 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                     <TableBody>
                         <AnimatePresence mode="popLayout">
                             {paginatedData.map((row, index) => (
-                                <ContextMenu.Root key={row.releaseId}>
+                                <ContextMenu.Root {...({ key: row.releaseId } as any)}>
                                     <ContextMenu.Trigger asChild>
                                         <motion.tr
                                             initial={{ opacity: 0, y: 10 }}

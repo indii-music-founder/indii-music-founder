@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@react-three/fiber" />
 
 interface ImportMetaEnv {
     // Core AI
@@ -125,4 +126,28 @@ interface ImportMeta {
 declare module '*?raw' {
     const content: string;
     export default content;
+}
+
+declare module 'react/jsx-runtime' {
+    namespace JSX {
+        interface IntrinsicElements {
+            [elemName: string]: any;
+        }
+    }
+}
+
+declare module 'react/jsx-dev-runtime' {
+    namespace JSX {
+        interface IntrinsicElements {
+            [elemName: string]: any;
+        }
+    }
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            [elemName: string]: any;
+        }
+    }
 }

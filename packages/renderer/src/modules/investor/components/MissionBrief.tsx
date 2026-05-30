@@ -5,6 +5,7 @@ import { secureRandomInt } from '@/utils/crypto-random';
 
 interface MissionBriefProps {
     onAccept: () => void;
+    key?: React.Key;
 }
 
 export const MissionBrief = ({ onAccept }: MissionBriefProps) => {

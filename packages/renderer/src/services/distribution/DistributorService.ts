@@ -13,6 +13,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import type {
   DistributorId,
+  DistributorEarnings,
   ReleaseAssets,
   ReleaseResult,
   MultiDistributorReleaseRequest,
@@ -535,7 +536,7 @@ class DistributorServiceImpl {
       totalFees,
       totalNetRevenue,
       currencyCode: targetCurrency,
-      byDistributor: validEarnings.filter((e) => e !== null) as typeof validEarnings[0] extends null ? never : typeof validEarnings[number][],
+      byDistributor: validEarnings.filter((e) => e !== null) as unknown as DistributorEarnings[],
       byPlatform: Array.from(platformMap.entries()).map(([platform, data]) => ({
         platform,
         ...data,
@@ -667,7 +668,7 @@ class DistributorServiceImpl {
           title: d.title,
           artist: d.artist,
           coverArtUrl: d.coverArtUrl,
-          releaseDate: (d.submittedAt && typeof (d.submittedAt as { toDate?: () => Date }).toDate === 'function') ? (d.submittedAt as { toDate: () => Date }).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as string | number | Date).toISOString() : undefined),
+          releaseDate: (d.submittedAt && typeof (d.submittedAt as { toDate?: () => Date }).toDate === 'function') ? (d.submittedAt as { toDate: () => Date }).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
           deployments: {},
         };
       }

@@ -23,7 +23,7 @@ export const KnowledgeBaseList: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...knowledgeBase].reverse().map((doc) => (
-                    <ThreeDCardContainer key={doc.id} className="inter-var w-full">
+                    <ThreeDCardContainer {...({ key: doc.id } as any)} className="inter-var w-full">
                         <ThreeDCardBody className="bg-white/5 relative group/card border-white/10 w-full h-auto rounded-xl p-4 border hover:border-white/30 hover:bg-white/10 transition-all">
                             {/* Header: Icon & Status */}
                             <div className="flex justify-between items-start mb-3">

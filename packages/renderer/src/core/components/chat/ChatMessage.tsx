@@ -38,6 +38,7 @@ interface MessageItemProps {
         color: string;
         initials: string;
     };
+    key?: React.Key;
 }
 
 const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {

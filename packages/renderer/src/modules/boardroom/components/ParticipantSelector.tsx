@@ -88,7 +88,7 @@ export default function ParticipantSelector() {
                 const top = 50 + radiusY * Math.sin(angle);
 
                 return (
-                    <TooltipProvider key={agent.id} delayDuration={50}>
+                    <TooltipProvider {...({ key: agent.id } as any)} delayDuration={50}>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <motion.button

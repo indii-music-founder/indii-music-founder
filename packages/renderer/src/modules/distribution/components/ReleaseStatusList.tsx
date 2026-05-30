@@ -90,7 +90,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
     );
 }
 
-function StatusBadge({ distributorId, status }: { distributorId: string; status: string }) {
+function StatusBadge({ distributorId, status }: { distributorId: string; status: string; key?: React.Key }) {
     const config = getStatusConfig(status);
 
     return (

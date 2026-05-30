@@ -155,15 +155,6 @@ const WaveShaderMaterial = shaderMaterial(
 
 extend({ WaveShaderMaterial });
 
-// Add type definition for the shader material
-/* eslint-disable @typescript-eslint/no-namespace */
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            waveShaderMaterial: any;
-        }
-    }
-}
 
 export default function WaveMesh() {
     const materialRef = useRef<any>(null);

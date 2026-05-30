@@ -1,4 +1,4 @@
-// import { visualizer } from 'rollup-plugin-visualizer';
+import { visualizer } from 'rollup-plugin-visualizer';
 /**
  * packages/renderer/vite.config.ts
  *
@@ -39,6 +39,8 @@ export default defineConfig({
             '@': resolve(__dirname, 'src'),
             '@agents': resolve(repoRoot, 'agents'),
             '@shared': resolve(repoRoot, 'packages/shared/src'),
+            'react': resolve(repoRoot, 'node_modules/react'),
+            'react-dom': resolve(repoRoot, 'node_modules/react-dom'),
         },
     },
     server: {

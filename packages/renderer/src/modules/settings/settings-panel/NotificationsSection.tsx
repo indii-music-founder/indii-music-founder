@@ -23,7 +23,7 @@ const NotificationsSection: React.FC = () => {
         updatePreferences: s.updatePreferences,
     })));
 
-    const prefs = userProfile?.preferences || {};
+    const prefs = (userProfile?.preferences || {}) as any;
 
     // Derive values with defaults
     const pushEnabled = prefs.notifications ?? true;

@@ -5,6 +5,7 @@ import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
 
 export interface TimelineTrackProps {
+    key?: React.Key;
     track: VideoTrack;
     clips: VideoClip[];
     selectedClipId: string | null;
@@ -66,7 +67,7 @@ export const TimelineTrack = memo(({
                         const x = e.clientX - rect.left;
                         const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
 
-                        const files = Array.from(e.dataTransfer.files);
+                        const files = Array.from(e.dataTransfer.files) as File[];
                         if (files.length > 0) {
                             const file = files[0]!;
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
