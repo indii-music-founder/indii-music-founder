@@ -245,7 +245,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
     );
 }
 
-function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[] }) {
+function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[]; key?: React.Key }) {
     const [open, setOpen] = useState(false);
     const [clearanceTrack, setClearanceTrack] = useState<CatalogTrack | null>(null);
     const [submittedTracks, setSubmittedTracks] = useState<Set<string>>(new Set());

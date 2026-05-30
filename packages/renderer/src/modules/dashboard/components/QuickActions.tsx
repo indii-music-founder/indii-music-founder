@@ -54,7 +54,7 @@ export default function QuickActions() {
                     const colors = getColorForModule(action.id);
 
                     return (
-                        <Tooltip key={action.id}>
+                        <Tooltip {...({ key: action.id } as any)}>
                             <TooltipTrigger asChild>
                                 <motion.button
                                     onClick={() => setModule(action.id)}

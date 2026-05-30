@@ -575,7 +575,7 @@ export default function AutonomousLab() {
                                             const isFirst = idx === 0;
                                             const isLast = idx === sequenceItems.length - 1;
                                             return (
-                                                <React.Fragment key={item.id}>
+                                                <React.Fragment {...({ key: item.id } as any)}>
                                                     {/* Segment start frame */}
                                                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                                                         <div className="w-16 h-20 rounded-lg border-2 border-blue-500/30 overflow-hidden bg-black/60 relative">
@@ -658,7 +658,7 @@ export default function AutonomousLab() {
     );
 }
 
-function StepCard({ step, isActive, isComplete, isError }: { step: { id: number; name: string; description: string }, isActive: boolean, isComplete: boolean, isError: boolean }) {
+function StepCard({ step, isActive, isComplete, isError }: { step: { id: number; name: string; description: string }, isActive: boolean, isComplete: boolean, isError: boolean, key?: React.Key }) {
     return (
         <div className={`p-5 rounded-xl border transition-all duration-500 relative overflow-hidden ${
             isActive ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.1)]' :

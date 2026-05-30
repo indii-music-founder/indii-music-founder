@@ -270,7 +270,7 @@ export function TourRouteOptimizer() {
                                 const maxListeners = Math.max(...route.map(c => c.listeners));
                                 const barPct = Math.round((city.listeners / maxListeners) * 100);
                                 return (
-                                    <React.Fragment key={city.id}>
+                                    <div key={city.id}>
                                         <motion.div
                                             layout
                                             initial={{ opacity: 0, x: -10 }}
@@ -343,7 +343,7 @@ export function TourRouteOptimizer() {
                                                 <div className="flex-1 h-px bg-white/5" />
                                             </div>
                                         )}
-                                    </React.Fragment>
+                                    </div>
                                 );
                             })}
                         </AnimatePresence>

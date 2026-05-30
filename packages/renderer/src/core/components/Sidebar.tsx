@@ -29,6 +29,7 @@ const NavItem = React.memo(function NavItem({
     isSidebarOpen,
     onNavigate,
 }: {
+    key?: React.Key;
     item: SidebarItem;
     isActive: boolean;
     isSidebarOpen: boolean;

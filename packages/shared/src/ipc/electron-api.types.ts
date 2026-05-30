@@ -56,6 +56,8 @@ export interface ElectronSFTPAPI {
     uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; error?: string; files?: string[] }>;
     disconnect: () => Promise<unknown>;
     isConnected: () => Promise<boolean>;
+    listDirectory: (remotePath: string) => Promise<{ success: boolean; files?: any[]; error?: string }>;
+    readFile: (remotePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
 }
 
 export interface ElectronBrandAPI {

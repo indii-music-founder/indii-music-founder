@@ -140,7 +140,7 @@ export function PlatformCard() {
                                     </div>
 
                                     {features.map(f => (
-                                        <React.Fragment key={f.label}>
+                                        <React.Fragment {...({ key: f.label } as any)}>
                                             <div className="col-span-5 flex items-center gap-2">
                                                 <f.icon size={12} className="text-gray-500 flex-shrink-0" />
                                                 <span className="text-[11px] text-gray-400 truncate">{t('dashboard.features.' + f.key)}</span>

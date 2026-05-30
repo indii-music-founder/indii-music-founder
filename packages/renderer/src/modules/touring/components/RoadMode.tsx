@@ -114,9 +114,10 @@ interface NearbyResultsViewProps {
     action: QuickAction;
     onClose: () => void;
     onNavigate: (place: NearbyPlace) => void;
+    key?: React.Key;
 }
 
-const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, onClose, onNavigate }) => {
+function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResultsViewProps) {
     const { t } = useTranslation();
     const ActionIcon = action.icon;
 
@@ -215,7 +216,7 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
             </div>
         </motion.div>
     );
-};
+}
 
 // ============================================================================
 // RoadMode Main Component

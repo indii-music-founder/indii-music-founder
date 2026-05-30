@@ -264,7 +264,7 @@ function StatusPanel({ icon, title, rows }: { icon: React.ReactNode; title: stri
   );
 }
 
-function Badge({ label, value }: { label: string; value: string }) {
+function Badge({ label, value }: { label: string; value: string; key?: React.Key }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.02] px-2.5 py-2">
       <span className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</span>

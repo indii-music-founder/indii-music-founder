@@ -4,8 +4,7 @@ import { smartChunk } from './textChunker';
 describe('smartChunk', () => {
   it('should return an empty array for empty input', () => {
     expect(smartChunk('')).toEqual([]);
-    // @ts-expect-error - testing null/undefined if possible in JS but TS will complain
-    expect(smartChunk(null)).toEqual([]);
+    expect(smartChunk(null as any)).toEqual([]);
   });
 
   it('should return the whole text if it is shorter than maxChunkSize', () => {

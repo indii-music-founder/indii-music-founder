@@ -13,6 +13,7 @@ const XIcon = ({ size = 16 }: { size?: number }) => (
 );
 
 interface TimelineClipProps {
+    key?: React.Key;
     clip: VideoClip;
     isSelected: boolean;
     isExpanded: boolean;

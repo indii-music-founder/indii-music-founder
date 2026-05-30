@@ -173,6 +173,7 @@ function FormField({
   value: FormValues[string];
   onChange: (id: string, val: string | boolean | string[]) => void;
   highlight?: boolean;
+  key?: React.Key;
 }) {
   const baseInput = cn(
     'w-full bg-white/[0.04] border rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors',

@@ -168,6 +168,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
 const TemplateCard: React.FC<{
     template: DesignTemplate;
     onSelect: () => void;
+    key?: React.Key;
 }> = ({ template, onSelect }) => {
     // Generate a preview based on template colors
     const previewStyle = {

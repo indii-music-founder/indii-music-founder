@@ -203,6 +203,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
 function LicenseRow({ license, onRequestLicense }: {
     license: MechanicalLicense;
     onRequestLicense: (id: string) => void;
+    key?: React.Key;
 }) {
     const [requesting, setRequesting] = useState(false);
 

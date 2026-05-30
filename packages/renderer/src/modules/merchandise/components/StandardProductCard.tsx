@@ -5,6 +5,7 @@ import { OptimizedImage } from '@/core/components/ui/OptimizedImage';
 
 interface StandardProductCardProps {
     product: MerchProduct;
+    key?: React.Key;
 }
 
 // ⚡ Bolt Optimization: Constant array prevents reallocation on every render
