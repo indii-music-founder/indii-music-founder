@@ -12,8 +12,6 @@ export const createStripePaymentLinks = onCall(async (req) => {
     }
 
     try {
-        const paymentLinks: string[] = [];
-        
         const product = await stripe.products.create({
             name: `${campaignName} - Storefront Items`,
             description: `Items: ${items.join(', ')}`
