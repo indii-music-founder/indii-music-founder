@@ -47,11 +47,44 @@ export class CanvasBatchService {
 
         try {
             const targets = PLATFORM_DIMENSIONS.filter(d => selectedIds.includes(d.id));
-            void canvas;
+            if (targets.length === 0) {
+                store.updateJobStatus(jobId, 'success');
+                return exportedMap;
+            }
 
-            if (targets.length > 0) {
+            if (!import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) {
                 throw new Error('Canvas batch export renderer is not configured. No asset URL was generated.');
             }
+
+            const { CloudStorageService } = await import('@/services/CloudStorageService');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fabricCanvas = canvas as any;
+            
+            const originalWidth = fabricCanvas.width;
+            const originalHeight = fabricCanvas.height;
+
+            for (let i = 0; i < targets.length; i++) {
+                const target = targets[i];
+                await this.autoReframe(fabricCanvas, target.width, target.height);
+                fabricCanvas.setWidth(target.width);
+                fabricCanvas.setHeight(target.height);
+                fabricCanvas.renderAll();
+
+                const dataUrl = fabricCanvas.toDataURL({
+                    format: 'png',
+                    quality: 1
+                });
+                
+                const userId = import.meta.env.VITE_E2E ? 'e2e_user' : 'batch_user';
+                const result = await CloudStorageService.smartSave(dataUrl, `batch_${target.id}_${Date.now()}`, userId);
+                exportedMap.set(target.id, result.url);
+                
+                store.updateJobProgress(jobId, Math.round(((i + 1) / targets.length) * 100));
+            }
+
+            fabricCanvas.setWidth(originalWidth);
+            fabricCanvas.setHeight(originalHeight);
+            fabricCanvas.renderAll();
 
             store.updateJobStatus(jobId, 'success');
             return exportedMap;

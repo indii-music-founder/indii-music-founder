@@ -7,6 +7,9 @@ const trueLike = (value: unknown): boolean =>
     value === true || value === 'true' || value === '1';
 
 export const isTestHarnessRuntime = (): boolean => {
+    // SECURITY: Ensure E2E mocks are stripped out of production builds
+    if (import.meta.env.PROD && import.meta.env.MODE !== 'test') return false;
+
     const env = import.meta.env;
     if (env.MODE === 'test' || trueLike(env.VITE_E2E) || trueLike(env.VITE_FIREBASE_E2E_MOCK)) {
         return true;
