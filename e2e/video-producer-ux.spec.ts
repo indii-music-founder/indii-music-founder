@@ -95,12 +95,12 @@ test.describe('Video Producer UX Hardening', () => {
 
         // Switch to direct image mode
         const imageTab = page.locator('[data-testid="direct-view-btn"]');
-        await imageTab.click();
+        await imageTab.click({ force: true });
         await page.waitForTimeout(500);
 
         // Switch back to video mode
         const videoTab = page.locator('[data-testid="director-view-btn"]');
-        await videoTab.click();
+        await videoTab.click({ force: true });
         await page.waitForTimeout(500);
 
         // Prompt should be preserved

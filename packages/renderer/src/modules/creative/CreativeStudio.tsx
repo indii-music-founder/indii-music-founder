@@ -285,7 +285,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
     return (
         <ModuleErrorBoundary moduleName="Studio">
-            <div className="flex flex-col h-full w-full bg-background selection:bg-dept-creative/30">
+            <div data-testid="creative-studio-container" className="flex flex-col h-full w-full bg-background selection:bg-dept-creative/30">
                 <CreativeNavbar data-testid="creative-navbar" />
 
                 {/* Mobile Tab Switcher */}

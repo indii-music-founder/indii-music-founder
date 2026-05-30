@@ -17,11 +17,12 @@ import {
   Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity,
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
-  MessageSquare, Package, Wand2
+  MessageSquare, Package, Wand2, Play, Pause
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { triggerHaptic } from '../MobileRemote';
 
 interface CommandPadProps {
   onSendCommand: (command: { type: string; payload: unknown }) => void;
@@ -56,12 +57,14 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   );
 
   const navigateTo = (moduleId: ModuleId) => {
+    triggerHaptic(40);
     setModule(moduleId);
     onSendCommand({ type: 'navigate', payload: { module: moduleId } });
   };
 
   // Dual action: navigate to module + fire targeted agent research query
   const triggerHubAction = (moduleId: ModuleId, prompt: string) => {
+    triggerHaptic([40, 60]);
     navigateTo(moduleId);
     if (isPaired) {
       remoteRelayService.sendCommand(prompt).catch(err => {
@@ -103,7 +106,19 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
       glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
       action: () => {
+        triggerHaptic(40);
         navigateTo('capture' as ModuleId);
+      },
+    },
+    {
+      id: 'daw-play',
+      icon: Play,
+      label: 'DAW Play/Pause',
+      color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20',
+      glow: 'shadow-indigo-500/15 hover:shadow-indigo-500/30',
+      action: () => {
+        triggerHaptic(60);
+        onSendCommand({ type: 'daw_control', payload: { action: 'toggle_playback' } });
       },
     },
     {

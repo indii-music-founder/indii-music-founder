@@ -1,9 +1,7 @@
-/// <reference types="@react-three/fiber" />
 import { useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, extend } from '@react-three/fiber';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
-import { extend } from '@react-three/fiber';
 import { useStore } from '@/core/store';
 
 // Uniforms object for Three.js shader material. The 'as any' casts are necessary here because

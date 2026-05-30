@@ -29,7 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 // Helper for haptic feedback
-const triggerHaptic = (pattern: number | number[] = 50) => {
+export const triggerHaptic = (pattern: number | number[] = 50) => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     navigator.vibrate(pattern);
   }
@@ -253,6 +253,10 @@ export default function MobileRemote() {
       commandStr = `[NAVIGATE] ${command.payload.module || ''}`;
     } else if (command.type === 'agent_action') {
       commandStr = `[AGENT_ACTION] ${command.payload.action || ''}`;
+    } else if (command.type === 'daw_control') {
+      commandStr = `[DAW_CONTROL] ${command.payload.action || ''}`;
+    } else if (command.type === 'media_playback') {
+      commandStr = `[MEDIA_PLAYBACK] ${command.payload.action || ''}`;
     } else {
       commandStr = `[RAW] ${JSON.stringify(command)}`;
     }
