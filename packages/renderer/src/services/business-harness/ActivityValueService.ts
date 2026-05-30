@@ -23,7 +23,7 @@ export class ActivityValueService {
   startSession(input: ActivitySessionDraft): BusinessActivityEvent {
     const startedAt = input.startedAt ?? new Date().toISOString();
     const event: BusinessActivityEvent = {
-      id: `activity_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: `activity_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
       userId: input.userId,
       sessionId: input.sessionId ?? `session_${Date.now()}`,
       eventType: input.eventType,

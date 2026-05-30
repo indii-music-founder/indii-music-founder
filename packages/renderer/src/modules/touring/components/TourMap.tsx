@@ -106,7 +106,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
     // Initialize Map
     useEffect(() => {
-        if (ref.current && !map) {
+        if (ref.current && ref.current.isConnected && !map) {
             try {
                 const initialMap = new google.maps.Map(ref.current, {
                     center: center || { lat: 39.8283, lng: -98.5795 },

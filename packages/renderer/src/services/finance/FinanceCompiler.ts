@@ -260,7 +260,7 @@ export class FinanceCompiler implements HarnessCompiler<FinanceCompilerInput, Fi
 
   buildMileageCostLine(input: MileageTripInput): HarnessCostLine {
     return {
-      id: `cost_mileage_${Date.now()}_${Math.random()}`,
+      id: `cost_mileage_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
       userId: input.userId,
       amount: this.roundCurrency(input.miles * input.mileageRate),
       currency: 'USD',

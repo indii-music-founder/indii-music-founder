@@ -40,13 +40,13 @@ export class EventBusService {
   }
 
   private _generateSessionId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${crypto.randomUUID().split('-')[0]}`;
   }
 
   private _generateEventId(): string {
     const timestamp = Date.now();
     const counter = ++this.eventCounter;
-    return `${timestamp}-${counter}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${timestamp}-${counter}-${crypto.randomUUID().split('-')[0]}`;
   }
 
   publish(eventType: string, data: Record<string, unknown>): Event {
