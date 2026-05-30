@@ -15,8 +15,10 @@ import {
 /* ================================================================== */
 
 import { WidgetType, Widget, WIDGET_DEFINITIONS, STORAGE_KEY, loadWidgets, WIDGET_RENDERERS } from "./CustomDashboardWidgets";
+import { useTranslation } from 'react-i18next';
 
 export function CustomDashboard() {
+    const { t } = useTranslation();
     const [widgets, setWidgets] = useState<Widget[]>(() => loadWidgets());
     const [isEditMode, setIsEditMode] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
@@ -120,10 +122,10 @@ export function CustomDashboard() {
                         </div>
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">My Dashboard</h2>
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">{t('dashboard.custom.title')}</h2>
                         <div className="flex items-center gap-2 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">{widgets.length} ACTIVE WIDGETS</p>
+                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">{t('dashboard.custom.activeWidgets', { count: widgets.length })}</p>
                         </div>
                     </div>
                 </div>
@@ -134,7 +136,7 @@ export function CustomDashboard() {
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all"
                         >
                             <Undo2 size={12} />
-                            Undo
+                            {t('dashboard.custom.undo')}
                         </button>
                     )}
                     <button
@@ -145,14 +147,14 @@ export function CustomDashboard() {
                             }`}
                     >
                         <Edit3 size={12} />
-                        {isEditMode ? 'Finish' : 'Edit'}
+                        {isEditMode ? t('dashboard.custom.finish') : t('dashboard.custom.edit')}
                     </button>
                     <button
                         onClick={() => setShowPicker((v) => !v)}
                         className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95"
                     >
                         <Plus size={14} className="group-hover:rotate-90 transition-transform" />
-                        Add Widget
+                        {t('dashboard.custom.addWidget')}
                     </button>
                 </div>
             </div>
@@ -170,7 +172,7 @@ export function CustomDashboard() {
                         <div className="flex items-center justify-between mb-6">
                             <p className="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Sparkles size={14} className="text-emerald-400" />
-                                Available Intelligence
+                                {t('dashboard.custom.availableIntelligence')}
                             </p>
                             <button onClick={() => setShowPicker(false)} className="text-gray-500 hover:text-white transition-colors">
                                 <X size={18} />
@@ -195,7 +197,7 @@ export function CustomDashboard() {
                                         </div>
                                         <div>
                                             <p className="text-xs font-black text-white uppercase tracking-wider">{def.label}</p>
-                                            <p className="text-[10px] text-gray-500 leading-tight mt-1 line-clamp-2">{alreadyAdded ? 'Integrated' : def.description}</p>
+                                            <p className="text-[10px] text-gray-500 leading-tight mt-1 line-clamp-2">{alreadyAdded ? t('dashboard.custom.integrated') : def.description}</p>
                                         </div>
                                     </button>
                                 );
@@ -239,7 +241,7 @@ export function CustomDashboard() {
                                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
                                         <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/60 border border-white/10 backdrop-blur-md">
                                             <GripVertical size={12} className="text-emerald-400" />
-                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">DRAG TO REORDER</span>
+                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">{t('dashboard.custom.dragToReorder')}</span>
                                         </div>
                                         <button
                                             onClick={() => removeWidget(widget.id)}
@@ -270,13 +272,13 @@ export function CustomDashboard() {
                         <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
                             <LayoutDashboard size={40} className="text-gray-700" />
                         </div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tight">Your OS is empty</h3>
-                        <p className="text-sm text-gray-500 mt-2 max-w-xs">Initialize your dashboard by adding intelligence widgets to track your performance.</p>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight">{t('dashboard.custom.emptyTitle')}</h3>
+                        <p className="text-sm text-gray-500 mt-2 max-w-xs">{t('dashboard.custom.emptySubtitle')}</p>
                         <button
                             onClick={() => setShowPicker(true)}
                             className="mt-8 px-8 py-3 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
                         >
-                            Build My Dashboard
+                            {t('dashboard.custom.buildButton')}
                         </button>
                     </motion.div>
                 )}

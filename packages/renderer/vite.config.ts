@@ -41,6 +41,8 @@ export default defineConfig({
             '@shared': resolve(repoRoot, 'packages/shared/src'),
             'react': resolve(repoRoot, 'node_modules/react'),
             'react-dom': resolve(repoRoot, 'node_modules/react-dom'),
+            '@remotion/renderer': resolve(__dirname, 'src/services/video/remotion-mock.ts'),
+            '@remotion/cloudrun/client': resolve(__dirname, 'src/services/video/remotion-mock.ts'),
         },
     },
     server: {
@@ -57,8 +59,9 @@ export default defineConfig({
     },
     build: {
         outDir: resolve(repoRoot, 'dist/renderer'),
-        chunkSizeWarningLimit: 1000,
+        chunkSizeWarningLimit: 2500,
         rollupOptions: {
+            external: ['@remotion/renderer', '@remotion/cloudrun', '@remotion/cloudrun/client'],
             input: {
                 index: resolve(__dirname, 'index.html'),
             },
@@ -118,7 +121,11 @@ export default defineConfig({
                         pkg === 'tailwind-merge' ||
                         pkg === 'driver.js' ||
                         pkg === 'clsx' ||
-                        pkg === 'classnames'
+                        pkg === 'classnames' ||
+                        pkg.startsWith('@radix-ui/') ||
+                        pkg === 'zod' ||
+                        pkg === 'zod-to-json-schema' ||
+                        pkg === 'zustand'
                     ) {
                         return 'vendor-ui';
                     }

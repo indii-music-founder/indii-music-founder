@@ -224,6 +224,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         },
     },
 
+    // DAW Integration
+    daw: {
+        start: () => ipcRenderer.invoke('daw:start'),
+        stop: () => ipcRenderer.invoke('daw:stop'),
+        getState: () => ipcRenderer.invoke('daw:get-state'),
+        onStateChanged: (callback: (state: unknown) => void) => {
+            const handler = (_event: unknown, state: unknown) => callback(state);
+            ipcRenderer.on('daw:state-changed', handler);
+            return () => ipcRenderer.removeListener('daw:state-changed', handler);
+        }
+    },
+
     // AI Sidecar
     sidecar: {
         // NOTE: restart handler removed from main process — do not expose orphaned IPC

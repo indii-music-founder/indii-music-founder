@@ -154,7 +154,7 @@ function sanitizeToolsForDeveloperAPI(tools?: Tool[]): any[] | undefined {
     if (!tools) return undefined;
 
     return tools.map(tool => {
-        const anyTool = tool as any;
+        const anyTool = tool as Record<string, unknown>;
         const newTool: any = { ...anyTool };
         if (Array.isArray(anyTool.functionDeclarations)) {
             newTool.functionDeclarations = anyTool.functionDeclarations.map((decl: any) => {
@@ -230,7 +230,7 @@ export async function generateWithFallback(
                 usageMetadata: result.usageMetadata,
                 text: () => result.text || '',
                 functionCalls: () => result.functionCalls
-            } as any
+            } as Record<string, unknown>
         } as unknown as GenerateContentResult;
     } catch (error: unknown) {
         // DIAGNOSTIC: Log the raw SDK error before any wrapping

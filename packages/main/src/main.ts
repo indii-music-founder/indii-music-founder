@@ -82,6 +82,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
+import { registerDawHandlers } from './handlers/daw';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { indiiRemoteService } from './services/IndiiRemoteService';
 import { registerSchedulerHandlers } from './handlers/scheduler';
@@ -391,6 +392,7 @@ if (!gotTheLock) {
         registerSecurityHandlers();
         registerVideoHandlers();
         registerSonicBridgeHandlers();
+        registerDawHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -413,6 +415,7 @@ if (!gotTheLock) {
             'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
+            'daw:start', 'daw:stop', 'daw:get-state',
             'video:render', 'video:open-folder', 'video:save-asset',
             'power:get-state', 'mobile-remote:stop',
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',

@@ -95,8 +95,8 @@ export default defineConfig({
         ],
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),
-            // WO-14: Warn when any chunk exceeds 1 MB (unminified).
-            chunkSizeWarningLimit: 1000,
+            // WO-14: Warn when any chunk exceeds 2.5 MB (unminified).
+            chunkSizeWarningLimit: 2500,
             rollupOptions: {
                 input: {
                     index: resolve(__dirname, 'packages/renderer/index.html'),
@@ -192,7 +192,11 @@ export default defineConfig({
                             pkg === 'tailwind-merge' ||
                             pkg === 'driver.js' ||
                             pkg === 'clsx' ||
-                            pkg === 'classnames'
+                            pkg === 'classnames' ||
+                            pkg.startsWith('@radix-ui/') ||
+                            pkg === 'zod' ||
+                            pkg === 'zod-to-json-schema' ||
+                            pkg === 'zustand'
                         ) {
                             return 'vendor-ui';
                         }

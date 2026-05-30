@@ -232,5 +232,61 @@
             "Mmm...",
             "Okay..."
         ]
+    },
+    "settings": {
+        "title": "Settings",
+        "sections": {
+            "profile": {
+                "label": "Profile",
+                "title": "Profile",
+                "description": "Manage your personal information and how others see you."
+            },
+            "connections": {
+                "label": "Connected Services",
+                "title": "Connected Services",
+                "description": "Allows your AI agents to read and draft emails on your behalf."
+            },
+            "notifications": {
+                "label": "Notifications",
+                "title": "Notifications",
+                "description": "Push, email, and sound preferences"
+            },
+            "appearance": {
+                "label": "Appearance",
+                "title": "Appearance",
+                "description": "Theme, layout, and animations"
+            },
+            "security": {
+                "label": "Account & Security",
+                "title": "Account & Security",
+                "description": "Sign out, data export, delete"
+            }
+        },
+        "hints": {
+            "display_name": "Enter your display name",
+            "bio_desc": "Tell us about yourself..."
+        },
+        "profile": {
+            "displayName": "Display Name",
+            "bio": "Bio",
+            "email": "Email",
+            "saveChanges": "Save Changes",
+            "saving": "Saving...",
+            "cancel": "Cancel",
+            "emailCannotChange": "Email cannot be changed directly. Contact support.",
+            "characters": "{{count}}/280 characters",
+            "noName": "No name set",
+            "noEmail": "No email"
+        },
+        "connections": {
+            "connected": "Connected",
+            "notConnected": "Not connected",
+            "disconnect": "Disconnect",
+            "connect": "Connect",
+            "pushNotifications": "Push Notifications",
+            "pushDesc": "Browser/native push via Firebase Cloud Messaging",
+            "enable": "Enable",
+            "securityNote": "Connected accounts are secured via OAuth 2.0. Refresh tokens are stored server-side and never exposed to the browser."
+        }
     }
 }

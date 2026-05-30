@@ -24,6 +24,7 @@ import {
     Shield,
     LucideIcon,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import ProfileSection from './settings-panel/ProfileSection';
 import ConnectionsSection from './settings-panel/ConnectionsSection';
@@ -50,6 +51,7 @@ const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; de
 // ---------------------------------------------------------------------------
 
 const SettingsPanel: React.FC = () => {
+    const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
 
     const renderSection = () => {
@@ -66,7 +68,7 @@ const SettingsPanel: React.FC = () => {
         <div className="h-full flex bg-[--bg]">
             {/* Sidebar Nav */}
             <div className="w-56 flex-shrink-0 border-r border-slate-800 p-4 space-y-1 hidden md:block">
-                <h1 className="text-sm font-bold text-white mb-4 px-3">Settings</h1>
+                <h1 className="text-sm font-bold text-white mb-4 px-3">{t('settings.title')}</h1>
                 {SECTIONS.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -81,7 +83,7 @@ const SettingsPanel: React.FC = () => {
                             }`}
                         >
                             <Icon size={16} />
-                            <span className="text-sm font-medium">{section.label}</span>
+                            <span className="text-sm font-medium">{t(`settings.sections.${section.id}.label`)}</span>
                         </button>
                     );
                 })}
@@ -102,7 +104,7 @@ const SettingsPanel: React.FC = () => {
                             }`}
                         >
                             <Icon size={14} />
-                            {section.label}
+                            {t(`settings.sections.${section.id}.label`)}
                         </button>
                     );
                 })}
