@@ -4,6 +4,7 @@ export interface RouterCallContext {
   runAgent: (agentId: string, task: string, context: any, traceId?: string, attachments?: any) => Promise<any>;
   parentContext?: any;
   traceId?: string;
+  streamAgent?: (agentId: string, task: string, onChunk: (chunk: string) => void) => Promise<void>;
 }
 
 export interface JsonRpcRequest {

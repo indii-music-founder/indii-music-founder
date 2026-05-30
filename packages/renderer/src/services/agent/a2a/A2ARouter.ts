@@ -262,6 +262,75 @@ class A2ARouter {
   }
 
   /**
+   * Run the target agent and yield INCREMENTAL encrypted deltas as it streams.
+   *
+   * Coalescing: flush the buffer on a ~50ms window OR ~120 chars (whichever first),
+   * plus a mandatory final flush carrying `done: true`. Per-raw-token encryption
+   * would mean one RSA+AES envelope per token; bursty model output would spike
+   * crypto/IPC. A time+size window yields ~3-8 envelopes/sec — visually live
+   * (<100ms feels instant) while bounding crypto.
+   *
+   * Payload shape: { type: 'delta' | 'error', text, agentId, done }. Distinguishable
+   * from the legacy batch payload { text, agentId } (no type/done) so the client
+   * handles both.
+   */
+  private async *createStreamingGenerator(
+    targetAgentId: string,
+    task: string,
+    localCtx: RouterCallContext,
+    recipientId: string
+  ): AsyncIterable<MessageEnvelope> {
+    await this.ensureRouterKey();
+
+    const FLUSH_MS = 50;
+    const FLUSH_CHARS = 120;
+    const queue: MessageEnvelope[] = [];
+    let wake: (() => void) | null = null;
+    let buffer = '';
+    let lastFlush = Date.now();
+    let finished = false;
+
+    const enqueue = async (text: string, type: 'delta' | 'error', done: boolean) => {
+      const payload = { type, text, agentId: targetAgentId, done };
+      queue.push(await e2eEncryptionService.encryptMessage(payload, recipientId, MY_AGENT_ID));
+      wake?.();
+      wake = null;
+    };
+
+    const flush = async (done: boolean) => {
+      if (!buffer && !done) return;
+      const delta = buffer;
+      buffer = '';
+      lastFlush = Date.now();
+      await enqueue(delta, 'delta', done);
+    };
+
+    // Drive the specialist; coalesce its tokens into the buffer.
+    const runPromise = localCtx.streamAgent!(targetAgentId, task, (chunk: string) => {
+      buffer += chunk;
+      if (buffer.length >= FLUSH_CHARS || Date.now() - lastFlush >= FLUSH_MS) {
+        void flush(false);
+      }
+    })
+      .then(async () => { await flush(true); finished = true; wake?.(); })
+      .catch(async (e: unknown) => {
+        await enqueue(e instanceof Error ? e.message : String(e), 'error', true);
+        finished = true;
+        wake?.();
+      });
+
+    while (!finished || queue.length) {
+      if (!queue.length) {
+        await new Promise<void>((resolve) => { wake = resolve; });
+      }
+      while (queue.length) {
+        yield queue.shift()!;
+      }
+    }
+    await runPromise;
+  }
+
+  /**
    * Get a registered stream generator (called by LoopbackA2ATransport.openStream).
    */
   getStreamGenerator(requestId: string): AsyncIterable<MessageEnvelope> | undefined {

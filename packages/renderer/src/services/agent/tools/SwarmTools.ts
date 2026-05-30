@@ -53,6 +53,53 @@ export const consult_specialist = wrapTool(
             }
         }
 
+        // sourceAgentId is the REAL calling agent (e.g. 'generalist'), distinct from
+        // the crypto reply channel. The router uses it for hub-and-spoke validation.
+        const callerAgentId = context.agentIdentity?.agentId;
+        const localCtx = context.runAgent ? {
+            runAgent: context.runAgent,
+            parentContext: context,
+            traceId: context.traceId,
+            streamAgent: context.streamAgent,
+        } : undefined;
+
+        // Streaming path (additive): when a live UI sink AND a streaming runner are
+        // present, stream the specialist's deltas progressively into the user-facing
+        // message. Any stream failure falls through to the invoke() path below.
+        const canStream = typeof context.emitToken === 'function' && typeof context.streamAgent === 'function';
+        if (canStream) {
+            try {
+                logger.info(`[A2A:Consult] ${sourceAgentId} -> ${targetAgentId} (streaming): ${task}`);
+                let full = '';
+                for await (const ev of a2aClient.stream(
+                    targetAgentId,
+                    'agent.execute',
+                    { task, sharedContext, sourceAgentId: callerAgentId },
+                    context.directive,
+                    localCtx
+                )) {
+                    const e = ev as { type?: string; text?: string; done?: boolean };
+                    if (e.type === 'error') throw new Error(e.text || 'A2A stream error');
+                    if (e.text) {
+                        full += e.text;
+                        context.emitToken!(e.text); // progressive UI write
+                    }
+                    if (e.done) break;
+                }
+                return toolSuccess(
+                    { text: full, agentId: targetAgentId },
+                    `Consultation with ${targetAgentId} complete.`,
+                    { transport: 'a2a-stream' }
+                );
+            } catch (streamError: any) {
+                if (streamError.message?.includes('Digital Handshake approval')) {
+                    return toolError(streamError.message, 'A2A_HANDSHAKE_PENDING');
+                }
+                logger.warn(`[A2A:Consult] Streaming failed, falling back to non-streaming invoke: ${streamError.message}`);
+                // fall through to invoke() path
+            }
+        }
+
         try {
             logger.info(`[A2A:Consult] ${sourceAgentId} -> ${targetAgentId}: ${task}`);
 
@@ -60,15 +107,9 @@ export const consult_specialist = wrapTool(
             const result = await a2aClient.invoke(
                 targetAgentId,
                 'agent.execute',
-                // sourceAgentId is the REAL calling agent (e.g. 'generalist'), distinct
-                // from the crypto reply channel. The router uses it for hub-and-spoke.
-                { task, sharedContext, sourceAgentId: context.agentIdentity?.agentId },
+                { task, sharedContext, sourceAgentId: callerAgentId },
                 context.directive,
-                context.runAgent ? {
-                    runAgent: context.runAgent,
-                    parentContext: context,
-                    traceId: context.traceId,
-                } : undefined
+                localCtx
             );
 
             return toolSuccess(result, `Consultation with ${targetAgentId} complete.`);
