@@ -1,5 +1,6 @@
 
 import { GeneralistAgent } from './GeneralistAgent';
+import { Logger } from '@/core/logger/Logger';
 import { agentRegistry } from '../registry';
 
 async function debug() {
@@ -16,7 +17,7 @@ async function debug() {
         const regAgent = await agentRegistry.getAsync('generalist');
         console.log('Registry getAsync result:', regAgent ? regAgent.name : 'undefined');
     } catch (e) {
-        console.error('DEBUG ERROR:', e);
+        Logger.error('DebugTools', 'DEBUG ERROR', e);
     }
 }
 
