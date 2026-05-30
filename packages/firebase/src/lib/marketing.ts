@@ -182,7 +182,14 @@ export const createInfluencerBounty = functions
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
         const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
-        const bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || influencerBountyBaseUrl.value();
+        let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
+        if (!bountyBaseUrl) {
+            try {
+                bountyBaseUrl = influencerBountyBaseUrl.value();
+            } catch (e) {
+                console.warn("influencerBountyBaseUrl parameter not set.");
+            }
+        }
         if (!bountyBaseUrl) {
             throw new functions.https.HttpsError(
                 "failed-precondition",
