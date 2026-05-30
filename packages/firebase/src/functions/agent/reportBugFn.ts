@@ -42,6 +42,14 @@ function generateIdempotencyKey(title: string, module: string, severity: string,
  */
 export const reportBugFn = functions.https.onCall(
     async (data: ReportBugRequest, context): Promise<ReportBugResponse> => {
+        // Require App Check
+        if (context.app == undefined) {
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                'The function must be called from an App Check verified app.'
+            );
+        }
+
         // Require authentication
         if (!context.auth) {
             throw new functions.https.HttpsError(

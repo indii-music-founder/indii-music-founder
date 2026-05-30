@@ -85,9 +85,7 @@ describe('Request Batching QA', () => {
     });
 
     describe('FirebaseIntelligenceService.batchEmbedContents (Polyfill)', () => {
-        it.skip('should fallback to concurrent embedContent requests', async () => {
-            // SKIPPED: GLOBAL_EMERGENCY_STOP prevents quota checks in EmbeddingGenerator
-            // TODO: Re-enable once TokenUsageService.GLOBAL_EMERGENCY_STOP is injectable
+        it('should fallback to concurrent embedContent requests', async () => {
             mockEmbedContent.mockResolvedValue({ embedding: { values: [1, 2, 3] } });
 
             const results = await service.batchEmbedContents([

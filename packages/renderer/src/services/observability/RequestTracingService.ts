@@ -26,7 +26,7 @@ export class RequestTracingService {
 
   generateCorrelationId(): string {
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
+    const random = crypto.randomUUID().split('-')[0];
     const counter = ++this.correlationIdCounter;
     return `${timestamp}-${counter}-${random}`;
   }

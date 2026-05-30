@@ -38,16 +38,16 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
     // Auth session health: periodically refreshes the ID token
     useAuthHealth();
 
-    // 2. Load User Profile when User is Authenticated
+    // 2. Load User Profile when User is Authenticated (skip for anonymous/demo)
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.uid && !user.isAnonymous && user.uid !== 'demo') {
             loadUserProfile(user.uid);
         }
     }, [user, loadUserProfile]);
 
-    // 3. Load Application Data (Projects, History) when Profile is ready
+    // 3. Load Application Data (Projects, History) when Profile is ready (skip for anonymous/demo)
     useEffect(() => {
-        if (user) {
+        if (user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
 
             initializeHistory();

@@ -182,7 +182,14 @@ export const createInfluencerBounty = functions
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
         const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
-        const bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || influencerBountyBaseUrl.value();
+        let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
+        if (!bountyBaseUrl) {
+            try {
+                bountyBaseUrl = influencerBountyBaseUrl.value();
+            } catch (e) {
+                console.warn("influencerBountyBaseUrl parameter not set.");
+            }
+        }
         if (!bountyBaseUrl) {
             throw new functions.https.HttpsError(
                 "failed-precondition",
@@ -190,7 +197,7 @@ export const createInfluencerBounty = functions
             );
         }
 
-        const refCode = `REF-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        const refCode = `REF-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
         const link = `${bountyBaseUrl.replace(/\/$/, '')}/ref/${refCode}`;
 
         await admin.firestore().collection('influencerBounties').doc(refCode).set({

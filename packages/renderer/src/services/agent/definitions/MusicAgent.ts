@@ -25,10 +25,9 @@ export const MusicAgent: AgentConfig = {
             verify_metadata_golden: MusicTools.verify_metadata_golden,
             scrub_id3_tags: MusicTools.scrub_id3_tags,
             inject_splits_to_metadata: MusicTools.inject_splits_to_metadata,
-            export_dolby_atmos_stems: MusicTools.export_dolby_atmos_stems,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_music_metadata', 'analyze_audio', 'verify_metadata_golden', 'update_track_metadata', 'scrub_id3_tags', 'inject_splits_to_metadata', 'export_dolby_atmos_stems'],
+    authorizedTools: ['create_music_metadata', 'analyze_audio', 'verify_metadata_golden', 'update_track_metadata', 'scrub_id3_tags', 'inject_splits_to_metadata'],
 
     tools: [{
         functionDeclarations: [
@@ -101,19 +100,6 @@ export const MusicAgent: AgentConfig = {
                         splits: { type: "ARRAY", items: { type: "OBJECT" }, description: "Array of collaborator split objects." }
                     },
                     required: ["trackId", "splits"]
-                }
-            },
-            {
-                name: "export_dolby_atmos_stems",
-                description: "Exports audio stems formatted for Dolby Atmos mixing.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        trackId: { type: "STRING", description: "ID of the track." },
-                        format: { type: "STRING", enum: ["wav", "aiff"], description: "Audio format for stems." },
-                        stemCount: { type: "NUMBER", description: "Number of stems to export." }
-                    },
-                    required: ["trackId", "format", "stemCount"]
                 }
             }
         ]
