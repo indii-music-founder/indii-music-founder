@@ -90,6 +90,10 @@ export interface ElectronAPI {
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
         listArtifacts: () => Promise<{ success: boolean; data?: { filename: string }[]; error?: string }>;
         readArtifact: (filename: string) => Promise<{ success: boolean; data?: string; error?: string }>;
+        createArtifact: (filename: string, content: string, options?: { artifactType?: string, requestFeedback?: boolean }) => Promise<{ success: boolean; error?: string }>;
+        multiReplaceFileContent: (args: unknown) => Promise<{ success: boolean; error?: string }>;
+        scanDirectory: () => Promise<{ success: boolean; data?: unknown; error?: string }>;
+        updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
     };
 
 
