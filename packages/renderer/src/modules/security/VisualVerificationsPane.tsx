@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { ShieldAlert, ShieldCheck, Camera } from 'lucide-react';
@@ -46,7 +47,7 @@ export function VisualVerificationsPane() {
             setRecords(data);
             setLoading(false);
         }, (error) => {
-            console.error("Failed to fetch visual verifications:", error);
+            Logger.error('Security', 'Failed to fetch visual verifications', error);
             setLoading(false);
         });
 

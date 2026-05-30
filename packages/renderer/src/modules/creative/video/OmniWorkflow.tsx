@@ -8,6 +8,7 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 import { httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { auth, functions, storage } from '@/services/firebase';
@@ -351,7 +352,7 @@ export default function OmniWorkflow() {
                 toast.success("Saved video to local timeline disk!");
                 return;
             } catch (err) {
-                console.error("Electron saving failed, falling back to browser download", err);
+                Logger.error('OmniWorkflow', 'Electron saving failed, falling back to browser download', err);
             }
         }
 
