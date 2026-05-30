@@ -159,7 +159,7 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
         }
 
         // Find the image part
-        const imagePart = (responseParts as any[]).find(
+        const imagePart = (responseParts as { inlineData?: { mimeType?: string; data?: string } }[]).find(
             p => p.inlineData && p.inlineData.mimeType?.startsWith('image/')
         );
 
@@ -188,7 +188,7 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
         }
 
         // Check for text-only response (likely safety block)
-        const textPart = (responseParts as any[]).find(p => 'text' in p);
+        const textPart = (responseParts as { text?: string }[]).find(p => 'text' in p);
         if (textPart && 'text' in textPart && typeof textPart.text === 'string') {
             logger.warn('[DirectImageEditor] Received text instead of image (likely safety block):', textPart.text);
         }

@@ -232,5 +232,61 @@
             "Mmm...",
             "Bien..."
         ]
+    },
+    "settings": {
+        "title": "Configuración",
+        "sections": {
+            "profile": {
+                "label": "Perfil",
+                "title": "Perfil",
+                "description": "Administre su información personal y cómo lo ven los demás."
+            },
+            "connections": {
+                "label": "Servicios conectados",
+                "title": "Servicios conectados",
+                "description": "Permite a sus agentes de IA leer y redactar correos electrónicos en su nombre."
+            },
+            "notifications": {
+                "label": "Notificaciones",
+                "title": "Notificaciones",
+                "description": "Preferencias de push, correo electrónico y sonido"
+            },
+            "appearance": {
+                "label": "Apariencia",
+                "title": "Apariencia",
+                "description": "Tema, diseño y animaciones"
+            },
+            "security": {
+                "label": "Cuenta y seguridad",
+                "title": "Cuenta y seguridad",
+                "description": "Cerrar sesión, exportar datos, eliminar"
+            }
+        },
+        "hints": {
+            "display_name": "Introduzca su nombre para mostrar",
+            "bio_desc": "Cuéntenos sobre usted..."
+        },
+        "profile": {
+            "displayName": "Nombre para mostrar",
+            "bio": "Biografía",
+            "email": "Correo electrónico",
+            "saveChanges": "Guardar cambios",
+            "saving": "Guardando...",
+            "cancel": "Cancelar",
+            "emailCannotChange": "El correo electrónico no se puede cambiar directamente. Contacte a soporte.",
+            "characters": "{{count}}/280 caracteres",
+            "noName": "Sin nombre",
+            "noEmail": "Sin correo"
+        },
+        "connections": {
+            "connected": "Conectado",
+            "notConnected": "No conectado",
+            "disconnect": "Desconectar",
+            "connect": "Conectar",
+            "pushNotifications": "Notificaciones Push",
+            "pushDesc": "Notificaciones push a través de Firebase Cloud Messaging",
+            "enable": "Habilitar",
+            "securityNote": "Las cuentas conectadas están aseguradas mediante OAuth 2.0. Los tokens de actualización se almacenan en el servidor y nunca se exponen al navegador."
+        }
     }
 }

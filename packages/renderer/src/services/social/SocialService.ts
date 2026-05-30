@@ -361,7 +361,7 @@ export class SocialService {
         );
         const batchSnap = await getDocs(batchQuery);
         batchSnap.docs.forEach((d) => {
-          const data = d.data() as any;
+          const data = d.data() as Record<string, unknown>;
           allPosts.push({
             id: d.id,
             ...data,
@@ -380,7 +380,7 @@ export class SocialService {
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => {
-      const data = doc.data() as any;
+      const data = doc.data() as Record<string, unknown>;
       return {
         id: doc.id,
         ...data,
