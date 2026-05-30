@@ -61,6 +61,8 @@ describe('A2AClient (HTTP transport contract)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetch.mockReset();
+    // Default: handshake denies. Tests that need approval opt in explicitly.
+    vi.mocked(DigitalHandshake.require).mockResolvedValue(false);
     resetClient();
   });
 
@@ -103,8 +105,7 @@ describe('A2AClient (HTTP transport contract)', () => {
     });
 
     it('throws if the handshake is not approved (no fallback)', async () => {
-      mockFetch.mockResolvedValue({ ok: true, json: async () => ({ agents: [validCard] }) });
-      vi.mocked(DigitalHandshake.require).mockResolvedValue(false);
+      // handshake denies by default (set in beforeEach)
       await expect(
         a2aClient.invoke('marketing', 'agent.execute', {}, { id: 'd1' } as never)
       ).rejects.toThrow('A2A invocation paused for Digital Handshake approval');
