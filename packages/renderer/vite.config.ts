@@ -1,3 +1,4 @@
+import { visualizer } from 'rollup-plugin-visualizer';
 /**
  * packages/renderer/vite.config.ts
  *
@@ -25,6 +26,13 @@ export default defineConfig({
     plugins: [
         react(),
         tailwindcss(),
+        visualizer({
+            filename: resolve(repoRoot, 'dist/renderer/stats.html'),
+            title: 'Indii Music Production Bundle Audit',
+            template: 'treemap',
+            gzipSize: true,
+            brotliSize: true,
+        }),
     ],
     resolve: {
         alias: {
@@ -47,10 +55,67 @@ export default defineConfig({
     },
     build: {
         outDir: resolve(repoRoot, 'dist/renderer'),
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
             input: {
                 index: resolve(__dirname, 'index.html'),
             },
+            output: {
+                manualChunks(id) {
+                    const m = id.match(/[\\/]node_modules[\\/](?:\.pnpm[\\/](?:@[^\\/]+\+)?[^\\/]+[\\/]node_modules[\\/])?(@[^\\/]+[\\/][^\\/]+|[^\\/]+)/);
+                    if (!m) return undefined;
+                    const pkg = m[1];
+
+                    if (pkg === 'three' || pkg.startsWith('@react-three/')) {
+                        return 'vendor-three';
+                    }
+                    if (pkg === 'fabric') {
+                        return 'vendor-fabric';
+                    }
+                    if (pkg === 'wavesurfer.js' || pkg === 'wavesurfer' || pkg === 'essentia.js' || pkg.startsWith('essentia')) {
+                        return 'vendor-audio';
+                    }
+                    if (pkg === 'recharts' || pkg.startsWith('d3-')) {
+                        return 'vendor-recharts';
+                    }
+                    if (pkg === 'framer-motion' || pkg === 'motion') {
+                        return 'vendor-motion';
+                    }
+                    if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
+                        return 'vendor-firebase';
+                    }
+                    if (pkg === 'lucide-react') {
+                        return 'vendor-lucide';
+                    }
+                    if (pkg === 'pdfjs-dist') {
+                        return 'vendor-pdfjs';
+                    }
+                    if (pkg === 'tesseract.js' || pkg.startsWith('tesseract.js-')) {
+                        return 'vendor-tesseract';
+                    }
+                    if (pkg === 'reactflow' || pkg.startsWith('@reactflow/')) {
+                        return 'vendor-reactflow';
+                    }
+                    if (pkg === 'yjs' || pkg === 'y-websocket' || pkg === 'y-protocols') {
+                        return 'vendor-yjs';
+                    }
+                    if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
+                        return 'vendor-remotion';
+                    }
+                    if (
+                        pkg === 'react' ||
+                        pkg === 'react-dom' ||
+                        pkg === 'react-router' ||
+                        pkg === 'react-router-dom' ||
+                        pkg === '@remix-run/router' ||
+                        pkg === 'scheduler' ||
+                        pkg === 'react-is'
+                    ) {
+                        return 'vendor-react';
+                    }
+                    return undefined;
+                }
+            }
         },
     },
     test: {

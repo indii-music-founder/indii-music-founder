@@ -1,3 +1,4 @@
+import { visualizer } from 'rollup-plugin-visualizer';
 /**
  * electron.vite.config.ts — Build orchestrator for the indii monorepo.
  *
@@ -91,6 +92,13 @@ export default defineConfig({
         plugins: [
             react(),
             tailwindcss(),
+            visualizer({
+                filename: resolve(__dirname, 'dist/renderer/stats.html'),
+                title: 'Indii Music Production Bundle Audit',
+                template: 'treemap',
+                gzipSize: true,
+                brotliSize: true,
+            }),
         ],
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),
@@ -129,29 +137,71 @@ export default defineConfig({
                         if (!m) return undefined;
                         const pkg = m[1];
 
-                        // Three.js — 3D module only (excluding React bindings)
-                        if (pkg === 'three') {
+                        // Three.js and react-three packages
+                        if (pkg === 'three' || pkg.startsWith('@react-three/')) {
                             return 'vendor-three';
                         }
-                        // Remotion core (excluding React bindings) - Actually remotion is mostly React based, let's put it in vendor-react
+                        // Fabric.js
                         if (pkg === 'fabric') {
                             return 'vendor-fabric';
                         }
-                        // Audio analysis — only audio/tools module
+                        // Audio analysis
                         if (pkg === 'wavesurfer.js' || pkg === 'wavesurfer' || pkg === 'essentia.js' || pkg.startsWith('essentia')) {
                             return 'vendor-audio';
                         }
-                        // Recharts — data visualisation, only finance/analytics
-                        if (pkg === 'recharts') {
+                        // Recharts & D3 dependencies
+                        if (pkg === 'recharts' || pkg.startsWith('d3-')) {
                             return 'vendor-recharts';
                         }
-                        // Framer Motion — animations, separate for cache stability
+                        // Framer Motion
                         if (pkg === 'framer-motion' || pkg === 'motion') {
                             return 'vendor-motion';
                         }
-                        // Firebase SDK — large auth/firestore/storage bundle
+                        // Firebase SDK
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
+                        }
+                        // Lucide icons
+                        if (pkg === 'lucide-react') {
+                            return 'vendor-lucide';
+                        }
+                        // PDFJS Dist
+                        if (pkg === 'pdfjs-dist') {
+                            return 'vendor-pdfjs';
+                        }
+                        // Tesseract OCR
+                        if (pkg === 'tesseract.js' || pkg.startsWith('tesseract.js-')) {
+                            return 'vendor-tesseract';
+                        }
+                        // React Flow
+                        if (pkg === 'reactflow' || pkg.startsWith('@reactflow/')) {
+                            return 'vendor-reactflow';
+                        }
+                        // Collaborative editing (Yjs)
+                        if (pkg === 'yjs' || pkg === 'y-websocket' || pkg === 'y-protocols') {
+                            return 'vendor-yjs';
+                        }
+                        // Remotion
+                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
+                            return 'vendor-remotion';
+                        }
+                        // Google Gen AI SDK
+                        if (pkg === '@google/genai') {
+                            return 'vendor-genai';
+                        }
+                        // Internationalization (i18n)
+                        if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
+                            return 'vendor-i18n';
+                        }
+                        // UI Utilities & Primitives
+                        if (
+                            pkg === 'react-virtuoso' ||
+                            pkg === 'tailwind-merge' ||
+                            pkg === 'driver.js' ||
+                            pkg === 'clsx' ||
+                            pkg === 'classnames'
+                        ) {
+                            return 'vendor-ui';
                         }
                         // React ecosystem: core React runtime strictly isolated to prevent circular ESM imports
                         if (
