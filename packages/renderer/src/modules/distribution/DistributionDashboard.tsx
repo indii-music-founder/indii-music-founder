@@ -58,7 +58,7 @@ export default function DistributionDashboard() {
                                     <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">{t('distribution.title')}</h1>
                                     <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full">
                                         <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
-                                        <span data-testid="live-system-badge" className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">Live System</span>
+                                        <span data-testid="live-system-badge" className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">{t('distribution.liveSystem')}</span>
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-1">{t('distribution.subtitle')}</p>
@@ -96,21 +96,21 @@ export default function DistributionDashboard() {
                                     data-testid="distro-tab-authority"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
-                                    <PlusCircle size={14} /> Authority
+                                    <PlusCircle size={14} /> {t('distribution.tabs.authority')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="keys"
                                     data-testid="distro-tab-keys"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
-                                    <Library size={14} /> Keys
+                                    <Library size={14} /> {t('distribution.tabs.keys')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="brain"
                                     data-testid="distro-tab-brain"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
-                                    <Activity size={14} /> Brain
+                                    <Activity size={14} /> {t('distribution.tabs.brain')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="transmission"

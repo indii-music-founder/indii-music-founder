@@ -40,6 +40,10 @@ vi.mock('react-i18next', () => ({
                 'distribution.tabs.catalogue': 'Catalogue',
                 'distribution.tabs.analytics': 'Analytics',
                 'distribution.tabs.transmissions': 'Transmissions',
+                'distribution.liveSystem': 'Live System',
+                'distribution.tabs.authority': 'Authority',
+                'distribution.tabs.keys': 'Keys',
+                'distribution.tabs.brain': 'Brain',
             };
             return translations[key] || key;
         },
