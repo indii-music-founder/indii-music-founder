@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAgent } from './AgentBuilder';
 import { AgentTestHarness } from './test/AgentTestHarness';
 import { PromptService } from './PromptService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock global dependencies

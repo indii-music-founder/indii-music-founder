@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { motion } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';

@@ -16,7 +16,9 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { 
     Image as ImageIcon, Loader2, Sparkles, Send, Palette, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Wand2, LayoutGrid, Check, AlertCircle, RefreshCw,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Layers, Cpu, Activity
 } from 'lucide-react';
 import { remoteRelayService, type RemoteResponse } from '@/services/agent/RemoteRelayService';

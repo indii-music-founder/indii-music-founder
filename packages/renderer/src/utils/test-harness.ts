@@ -115,5 +115,6 @@ export const IndiiTestHarness = {
 
 if (typeof window !== 'undefined') {
     // Expose for manual testing in DevTools
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).IndiiTestHarness = IndiiTestHarness;
 }

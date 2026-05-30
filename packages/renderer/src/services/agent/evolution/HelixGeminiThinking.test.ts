@@ -134,6 +134,7 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
     ];
 
     // Mock Crossover to return reference (Dangerous!)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockCrossoverFn.mockImplementation(async (p1, p2) => p1);
 
     // Mock Mutation to modify IN PLACE (Dangerous!)

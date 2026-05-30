@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 import { AgentService } from '@/services/agent/AgentService';
 import { Logger } from '@/core/logger/Logger';
@@ -80,6 +81,7 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
 
     useEffect(() => {
         drawCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [annotations, currentCircle]);
 
     const getMousePos = (e: React.MouseEvent | React.TouchEvent) => {

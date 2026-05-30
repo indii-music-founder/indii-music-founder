@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '@/modules/merchandise/themes';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 
 // Mock MerchandiseService

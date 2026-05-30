@@ -124,6 +124,7 @@ export class CanvasOperationsService {
             const img = await loadOffThread(url);
             logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
             return img;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
             throw new Error(`All image load strategies failed for: ${url}`);
         }
@@ -1354,6 +1355,7 @@ export class CanvasOperationsService {
     /**
      * Get all layers (objects) on the canvas
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getLayers(): any[] {
         if (!this.canvas) return [];
         return this.canvas.getObjects().map(obj => {

@@ -6,6 +6,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { QuotaExceededError } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 

@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CreativeStorageService } from '../creative/CreativeStorageService';
 
 // Mocks

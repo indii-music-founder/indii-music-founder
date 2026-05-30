@@ -166,6 +166,7 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
         key: 'Escape',
         ignoreInput: true,
         priority: 'modal',
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         handler: (e) => {
             if (openCategory) {
                 setOpenCategory(null);

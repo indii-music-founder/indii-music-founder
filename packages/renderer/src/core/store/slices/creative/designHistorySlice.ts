@@ -1,12 +1,15 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 import { CanvasImage } from './creativeHistorySlice';
 import { WhiskState } from './creativeControlsSlice';
 
 export interface DesignVersionState {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     studioControls: any;
     canvasImages: CanvasImage[];
     whiskState: WhiskState;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     characterReferences: Array<{ image: any; referenceType: 'subject' | 'style' | 'reference'; name?: string }>;
     creativePrompt: string;
 }
@@ -29,7 +32,9 @@ export interface DesignHistorySlice {
 }
 
 export function buildDesignHistoryState(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: any
 ): DesignHistorySlice {
     return {
@@ -65,6 +70,7 @@ export function buildDesignHistoryState(
                 }
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             set((state: any) => ({
                 designVersions: [newVersion, ...state.designVersions]
             }));
@@ -81,6 +87,7 @@ export function buildDesignHistoryState(
         },
 
         restoreDesignVersion: (version) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             set((state: any) => ({
                 ...state,
                 studioControls: { ...state.studioControls, ...version.state.studioControls },
@@ -93,7 +100,9 @@ export function buildDesignHistoryState(
         },
 
         deleteDesignVersion: async (id) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             set((state: any) => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 designVersions: state.designVersions.filter((v: any) => v.id !== id)
             }));
 

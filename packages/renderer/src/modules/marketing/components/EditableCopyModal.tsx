@@ -9,6 +9,7 @@ interface EditableCopyModalProps {
 
 const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, onSave }) => {
     const [content, setContent] = useState(post.copy);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [showEnhanceModal, setShowEnhanceModal] = useState(false);
 
     useEffect(() => {

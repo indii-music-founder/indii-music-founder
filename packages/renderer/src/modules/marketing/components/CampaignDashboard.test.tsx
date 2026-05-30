@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import CampaignDashboard from './CampaignDashboard';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MarketingService } from '@/services/marketing/MarketingService';
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({

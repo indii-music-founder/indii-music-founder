@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { UserProfile } from '@/modules/workflow/types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock dependencies

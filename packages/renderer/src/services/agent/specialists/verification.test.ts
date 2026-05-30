@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 import { AGENT_CONFIGS } from '../agentConfig';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/MembershipService', () => ({

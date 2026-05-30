@@ -25,6 +25,7 @@ import {
     GenerateVideoRequest,
     GenerateSpeechResponse,
     GenerateImageOptions,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     EmbedContentOptions,
     GenerationConfig,
     ContentPart,

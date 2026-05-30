@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { 
     Loader2, Image as ImageIcon, Video, Send, Settings2, Download, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ChevronDown, ChevronUp, Film, Sparkles, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass, Pin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { IntelligencePromptInput } from './veo/IntelligencePromptInput';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
@@ -297,6 +299,7 @@ export default function DirectGenerationTab() {
                                             return (
                                                 <button
                                                     key={res}
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     onClick={() => setStudioControls({ resolution: res as any })}
                                                     className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
                                                         ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
@@ -317,6 +320,7 @@ export default function DirectGenerationTab() {
                                             return (
                                                 <button
                                                     key={tier}
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     onClick={() => setStudioControls({ model: tier as any })}
                                                     className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
                                                         ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'

@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
  */
 export class LoopbackA2ATransport implements A2ATransport {
   readonly kind = 'loopback' as const;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private router: any = null; // Lazy-loaded to avoid circular dep
 
   /**
@@ -27,11 +28,13 @@ export class LoopbackA2ATransport implements A2ATransport {
     return router.handleEncrypted(envelope, localCtx);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async postPlain(payload: any): Promise<any> {
     const router = await this.getRouter();
     return router.handlePlain(payload);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async discovery(): Promise<{ agents: any[] }> {
     const router = await this.getRouter();
     const cards = await router.buildDiscovery();

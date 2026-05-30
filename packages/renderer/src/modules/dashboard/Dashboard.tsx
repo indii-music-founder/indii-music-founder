@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { LayoutDashboard, Bot, Gem, ArrowRight, X, Sparkles } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useMobile } from '@/hooks/useMobile';

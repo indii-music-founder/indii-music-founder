@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../../services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
@@ -16,7 +17,8 @@ const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorSt
         setPendingPrompt: vi.fn(),
         addToHistory: vi.fn(),
         updateHistoryItem: vi.fn(),
-        setPrompt: vi.fn(),
+        creativePrompt: '',
+        setCreativePrompt: vi.fn(),
         studioControls: { resolution: '1080p', duration: 10, aspectRatio: '16:9' },
         videoInputs: {},
         currentOrganizationId: 'org-123',

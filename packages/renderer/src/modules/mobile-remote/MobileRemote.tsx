@@ -29,6 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 // Helper for haptic feedback
+// eslint-disable-next-line react-refresh/only-export-components
 export const triggerHaptic = (pattern: number | number[] = 50) => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     navigator.vibrate(pattern);

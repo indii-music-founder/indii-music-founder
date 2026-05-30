@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProjectService } from './ProjectService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDocs, orderBy } from 'firebase/firestore';
 
 // Mock Firebase

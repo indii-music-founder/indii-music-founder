@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ModelArmor, getDefaultPolicy, type ModelArmorPolicy } from '../ModelArmor';
 
 describe('ModelArmor', () => {

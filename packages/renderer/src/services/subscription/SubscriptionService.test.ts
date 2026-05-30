@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SubscriptionService } from './SubscriptionService';
 import { SubscriptionTier, getTierConfig } from './SubscriptionTier';
 import { auth } from '@/services/firebase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cacheService } from '@/services/cache/CacheService';
 import { httpsCallable } from 'firebase/functions';
 

@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
@@ -126,6 +127,7 @@ const NavItem = React.memo(function NavItem({
 });
 
 export default function Sidebar() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
 

@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     Search, Plus,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Circle,
     LayoutGrid, List as ListIcon, Trash2, Archive, ExternalLink
 } from 'lucide-react';

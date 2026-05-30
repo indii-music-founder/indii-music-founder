@@ -3,6 +3,7 @@ import { onSnapshot } from 'firebase/firestore';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TraceService } from '@/services/agent/observability/TraceService';
 import { ReactFlowProvider } from 'reactflow';
 

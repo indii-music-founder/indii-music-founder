@@ -73,11 +73,14 @@ async function loadRegistrationStates(
       orgs[orgId] = {
         orgId,
         status: d.status,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         submittedAt: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate() : (d.submittedAt ? new Date(d.submittedAt as any) : undefined),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         confirmedAt: (d.confirmedAt && typeof (d.confirmedAt as any).toDate === 'function') ? (d.confirmedAt as any).toDate() : (d.confirmedAt ? new Date(d.confirmedAt as any) : undefined),
         confirmationNumber: d.confirmationNumber,
         formSnapshot: d.formSnapshot,
         errorMessage: d.errorMessage,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         lastUpdated: (d.lastUpdated && typeof (d.lastUpdated as any).toDate === 'function') ? (d.lastUpdated as any).toDate() : (d.lastUpdated ? new Date(d.lastUpdated as any) : new Date()),
       };
       if (d.status === 'confirmed') confirmed++;

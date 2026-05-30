@@ -87,6 +87,7 @@ interface YTAnalyticsReportResponse {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Parse ISO 8601 duration (e.g. PT3M45S) to seconds */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseDuration(iso: string): number {
     const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
     if (!match) return 0;

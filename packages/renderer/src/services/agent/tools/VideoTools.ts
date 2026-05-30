@@ -12,6 +12,7 @@ import type { AnyToolFunction } from '../types';
 const VALID_ASPECT_RATIOS = ['16:9', '9:16'] as const; // Veo 3.1 only supports these two
 type ValidAspectRatio = typeof VALID_ASPECT_RATIOS[number];
 const VALID_RESOLUTIONS = ['720p', '1080p', '4k'] as const;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ValidResolution = typeof VALID_RESOLUTIONS[number];
 const MAX_DURATION_SECONDS = 300;
 const MAX_CHAIN_DURATION_SECONDS = 300;

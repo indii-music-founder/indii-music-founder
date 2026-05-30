@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Send, Sparkles, MessageSquare, Bot, X } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useEntryContext, type QuickAction } from '../hooks/useEntryContext';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';

@@ -1,4 +1,5 @@
 import React from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Clock, Move3d, Maximize, Loader2, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';

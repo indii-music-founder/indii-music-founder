@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrandTools } from '../BrandTools';
 import { MarketingTools } from '../MarketingTools';
 import { RoadTools } from '../RoadTools';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock the Intelligence service (for Marketing/RoadTools)

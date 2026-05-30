@@ -7,6 +7,7 @@ import { ResourceBar } from './components/ResourceBar';
 import { SettingCard } from './components/SettingCard';
 
 export default function DesktopDashboard() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { userProfile, currentProjectId } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,

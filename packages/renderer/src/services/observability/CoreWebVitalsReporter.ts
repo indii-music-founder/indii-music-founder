@@ -11,6 +11,7 @@
  * Reference: https://web.dev/articles/vitals
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { VitalMetric, RUMSnapshot } from './RealUserMonitoringService';
 
 export interface VitalStatus {

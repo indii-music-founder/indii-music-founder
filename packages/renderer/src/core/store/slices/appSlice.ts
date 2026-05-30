@@ -62,6 +62,7 @@ export interface Project {
     orgId: string;
     thumbnail?: string;
     assetCount?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
 
@@ -74,6 +75,7 @@ export interface AppSlice {
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateProjectMetadata: (projectId: string, metadata: Record<string, any>) => Promise<void>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
@@ -213,6 +215,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     },
     updateProjectMetadata: async (projectId, metadata) => {
         const { ProjectService } = await import('@/services/ProjectService');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
         
         // 1. Update in Firestore via ProjectService

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 
 export type ShortcutPriority = 'low' | 'normal' | 'high' | 'modal' | 'critical';

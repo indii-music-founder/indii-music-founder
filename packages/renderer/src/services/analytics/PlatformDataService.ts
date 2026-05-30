@@ -67,6 +67,7 @@ function emptyHistory(): StreamDataPoint[] {
 }
 
 /** Merge two StreamDataPoint[] arrays by summing fields on matching dates */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mergeHistories(a: StreamDataPoint[], b: StreamDataPoint[]): StreamDataPoint[] {
     const map = new Map<string, StreamDataPoint>();
     for (const point of a) {

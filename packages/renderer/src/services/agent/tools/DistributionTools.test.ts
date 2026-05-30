@@ -51,6 +51,7 @@ if (typeof window !== 'undefined') {
     (window as unknown as { electronAPI?: unknown }).electronAPI = undefined; // Disable by default for tests that expect JS fallback
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function enableElectron() {
     (window as unknown as { electronAPI?: unknown }).electronAPI = {
         distribution: {

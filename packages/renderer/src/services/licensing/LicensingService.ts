@@ -245,6 +245,7 @@ export class LicensingService {
     private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
         try {
             const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const today = new Date();

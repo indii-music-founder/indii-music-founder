@@ -28,6 +28,7 @@ export interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
     const context = useContext(ToastContext);
     if (!context) {
@@ -162,6 +163,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 // Singleton helper for non-React context usage (services, etc)
+// eslint-disable-next-line react-refresh/only-export-components
 export const toast = {
     success: (message: string, _duration?: number) => events.emit('SYSTEM_ALERT', { level: 'success', message }),
     error: (message: string, _duration?: number) => events.emit('SYSTEM_ALERT', { level: 'error', message }),

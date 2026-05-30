@@ -269,6 +269,7 @@ describe('Multi-Agent Architecture Tests', () => {
         // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
         it('should pass superpower tools to Autonomous when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await agent_marketing?.execute('Research market trends');
 
             // BaseAgent currently uses generateContent

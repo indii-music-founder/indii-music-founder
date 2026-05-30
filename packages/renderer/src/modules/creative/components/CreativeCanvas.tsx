@@ -6,6 +6,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
 import { CanvasViewport } from './CanvasViewport';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { canvasOps } from '../services/CanvasOperationsService';
 import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
 
@@ -40,6 +41,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setIsHighFidelity,
         setGeneratedCandidates,
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         toggleMagicFill,
         handleDetectObjects,
         handleUpdateDefinition,

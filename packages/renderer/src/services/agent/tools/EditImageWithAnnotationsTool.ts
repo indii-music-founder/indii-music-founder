@@ -3,6 +3,7 @@ import { Editing } from '@/services/image/EditingService';
 
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const EditImageWithAnnotationsTool: any = {
     name: 'edit_image_with_annotations',
     description: 'Edit an existing image using spatial annotations to define regions for specific edits. Used for iterative visual refinement.',
@@ -35,6 +36,7 @@ export const EditImageWithAnnotationsTool: any = {
         },
         required: ['imageId', 'annotations', 'colorPrompts']
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: async (args: any, context?: any) => {
         logger.info(`Executing edit_image_with_annotations for image ${args.imageId}`);
         try {
@@ -57,6 +59,7 @@ export const EditImageWithAnnotationsTool: any = {
             }
 
             const annotationSummary = args.annotations
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((ann: any) => `${ann.color} circle at (${ann.cx}, ${ann.cy}) radius ${ann.r}: ${args.colorPrompts?.[ann.color] || 'apply requested edit'}`)
                 .join('\n');
             const prompt = `Apply these spatial annotation edits to the image. Preserve all unmarked regions.\n${annotationSummary}`;

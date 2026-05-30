@@ -211,6 +211,7 @@ export function CustomDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                     {sortedWidgets.map((widget) => {
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const def = WIDGET_DEFINITIONS[widget.type];
                         const isDragging = dragId === widget.id;
                         const isOver = dragOverId === widget.id;

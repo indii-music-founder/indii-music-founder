@@ -54,6 +54,7 @@ class AudioPersistenceService extends FirestoreService<PersistedAudioMetadata> {
      * Override collection to be user-specific.
      */
     protected get collection() {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const path = this.getUserCollectionPath();
         return super.collection; // This is a bit tricky with the base class
         // Better: just use direct firestore methods or update the base class.

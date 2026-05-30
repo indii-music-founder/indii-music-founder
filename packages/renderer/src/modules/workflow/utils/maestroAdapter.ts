@@ -1,5 +1,6 @@
 import { WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
 import { Node, Edge } from 'reactflow';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { v4 as uuidv4 } from 'uuid';
 import { Status } from '../types';
 
@@ -8,6 +9,7 @@ export function protocolToReactFlow(protocol: WorkflowDefinition): { nodes: Node
     const edges: Edge[] = [];
 
     // Calculate depths for layout
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const depths: Record<string, number> = {};
     const getDepth = (nodeId: string, visited = new Set<string>()): number => {
         if (visited.has(nodeId)) return 0;

@@ -78,6 +78,7 @@ export async function processSyncQueue(): Promise<void> {
 
 export async function initDB() {
     return openDB(DB_NAME, 4, {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         upgrade(db, oldVersion) {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME);

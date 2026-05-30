@@ -16,9 +16,11 @@ const originalConsoleError = console.error;
 const originalConsoleInfo = console.info;
 const originalConsoleWarn = console.warn;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const wrapConsole = (original: (...args: any[]) => void) => (...args: any[]) => {
     try {
         original(...args);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         if (e.code === 'EIO' || (e.message && e.message.includes('EIO'))) {
             // Silently ignore IO errors on console (dead terminal/pipe)
@@ -38,6 +40,7 @@ console.info = wrapConsole(originalConsoleInfo);
 console.warn = wrapConsole(originalConsoleWarn);
 
 // Item 374: Global Uncaught Exception Handler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('uncaughtException', (error: any) => {
     if (error.code === 'EIO' || (error.message && error.message.includes('EIO'))) return;
     try {
@@ -47,7 +50,9 @@ process.on('uncaughtException', (error: any) => {
     }
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (reason instanceof Error && ((reason as any).code === 'EIO' || reason.message.includes('EIO'))) return;
     try {
         log.error('Unhandled Rejection in Main Process:', reason);

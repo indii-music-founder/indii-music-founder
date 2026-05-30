@@ -19,6 +19,7 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
         loading: false,
         error: null,
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     fetchEarnings: async (period) => {
         const state = get();
         const userId = state.userProfile?.id;

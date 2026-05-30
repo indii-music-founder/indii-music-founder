@@ -17,6 +17,7 @@ describe('QA Stress Tests: Reliability & Stability', () => {
             // Configure: 60 requests per minute (1 per second), burst of 1
             const limiter = new RateLimiter(60, 1);
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const start = Date.now();
             const acquisitions: number[] = [];
 
@@ -86,6 +87,7 @@ describe('QA Stress Tests: Reliability & Stability', () => {
             }
 
             // 2. Next failure should be immediate (Circuit Open) and NOT call the action
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const start = Date.now();
             await expect(breaker.execute(failingAction)).rejects.toThrow(/Circuit.OPEN/);
 

@@ -71,6 +71,7 @@ describe('PublicistAgent', () => {
                 focus: 'Test'
             };
             type ResultType = { success: boolean; data: { status?: string } };
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await (PublicistAgent.functions!.create_campaign as (args: unknown) => Promise<ResultType>)(args);
 
         });

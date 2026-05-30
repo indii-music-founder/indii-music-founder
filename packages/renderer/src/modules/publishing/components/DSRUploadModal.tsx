@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
@@ -165,6 +166,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-800/50">
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 {parsedReport.transactions.slice(0, 5).map((row: any, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>

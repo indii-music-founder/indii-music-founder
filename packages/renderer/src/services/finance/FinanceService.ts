@@ -17,6 +17,7 @@ import {
 import {
   EarningsSummarySchema,
   type EarningsSummary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DashboardEarningsSummarySchema, // Keep for dashboard summary if needed
   type DashboardEarningsSummary
 } from '@/services/revenue/schema';
@@ -122,6 +123,7 @@ export class FinanceService {
       return {
         id: docRef.id,
         ...validExpense,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as any).toISOString()
       };
     } catch (error: unknown) {

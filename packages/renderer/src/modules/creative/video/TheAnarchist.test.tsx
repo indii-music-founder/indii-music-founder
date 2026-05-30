@@ -14,6 +14,7 @@ describe('The Anarchist Ⓐ', () => {
     });
 
     it('Scenario: The Riot (Input Chaos) - handles malformed numeric data', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const store = useVideoEditorStore.getState();
 
         // Attempt to add a clip with NaN/Infinity

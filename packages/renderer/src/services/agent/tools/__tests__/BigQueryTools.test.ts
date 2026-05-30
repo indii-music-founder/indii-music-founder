@@ -22,6 +22,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { httpsCallable } from 'firebase/functions';
 import { BigQueryTools } from '../BigQueryTools';
 

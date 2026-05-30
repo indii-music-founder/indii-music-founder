@@ -140,6 +140,7 @@ export function PlatformCard() {
                                     </div>
 
                                     {features.map(f => (
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         <React.Fragment {...({ key: f.label } as any)}>
                                             <div className="col-span-5 flex items-center gap-2">
                                                 <f.icon size={12} className="text-gray-500 flex-shrink-0" />

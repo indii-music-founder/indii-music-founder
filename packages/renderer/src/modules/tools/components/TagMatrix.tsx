@@ -12,6 +12,7 @@ interface TagMatrixProps {
 export const TagMatrix: React.FC<TagMatrixProps> = ({ tags, onAddTag, onRemoveTag, suggestions }) => {
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('All');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isCustomInput] = useState(false);
 
     const categories = ['All', ...Object.keys(suggestions)];

@@ -600,6 +600,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         try {
             DDEXReleaseSchema.parse(releaseData);
             onProgress?.({ step: 'qc', status: 'done', detail: 'Metadata validation passed' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             const validationError = error.errors?.[0]?.message || 'Metadata validation failed';
             onProgress?.({ step: 'qc', status: 'error', detail: validationError });

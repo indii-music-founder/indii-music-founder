@@ -6,6 +6,7 @@ import { AutonomousIntelligence, getResponseText } from '@/services/intelligence
  * Tool for editing documents (PDFs, text files) using structured annotations.
  * Enables Intelligence-driven refinement of specific document sections based on coordinates or highlights.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const EditDocumentWithAnnotationsTool: any = {
     name: 'edit_document_with_annotations',
     description: 'Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.',
@@ -42,6 +43,7 @@ export const EditDocumentWithAnnotationsTool: any = {
         required: ['documentId', 'annotations']
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: async (args: any) => {
         logger.debug('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
         
@@ -50,6 +52,7 @@ export const EditDocumentWithAnnotationsTool: any = {
             spatialPrompt += `Global Instruction: ${args.globalInstruction}\n\n`;
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args.annotations.forEach((ann: any, idx: number) => {
             const typeLabel = ann.type === 'highlight' ? 'HIGHLIGHT' : 'STICKY NOTE';
             let coordStr = `(x: ${ann.x}, y: ${ann.y}`;

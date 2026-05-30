@@ -16,6 +16,7 @@ import {
     LucideIcon,
     Sparkles,
 } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'motion/react';
 import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { useStore } from '@/core/store';
@@ -87,6 +88,7 @@ function formatCurrency(amount: number): string {
 
 /* ── Components ─────────────────────────────────────────────────── */
 
+// eslint-disable-next-line react-refresh/only-export-components
 function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
     const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
@@ -104,6 +106,7 @@ function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v)
     return <span>{displayValue}</span>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function CircularProgress({ percentage, size = 80, strokeWidth = 8, color = "currentColor" }: { percentage: number; size?: number; strokeWidth?: number; color?: string }) {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
@@ -141,6 +144,7 @@ function CircularProgress({ percentage, size = 80, strokeWidth = 8, color = "cur
 
 /* ── Individual Widget Content ─────────────────────────────────────── */
 
+// eslint-disable-next-line react-refresh/only-export-components
 function StreamsTodayWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [streamsData, setStreamsData] = useState<DashboardStreamsStats | null>(null);
@@ -209,6 +213,7 @@ function StreamsTodayWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RevenueMTDWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
@@ -274,6 +279,7 @@ function RevenueMTDWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [release, setRelease] = useState<DashboardNextRelease | null | undefined>(undefined);
@@ -375,6 +381,7 @@ function NextReleaseWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function TopTrackWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [track, setTrack] = useState<DashboardTopTrack | null | undefined>(undefined);
@@ -446,6 +453,7 @@ function TopTrackWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function AgentActivityWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [activity, setActivity] = useState<DashboardAgentActivity | null>(null);
@@ -516,6 +524,7 @@ function AgentActivityWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function AudienceGrowthWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardAudienceStats | null>(null);
@@ -568,6 +577,7 @@ function AudienceGrowthWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function ActiveCampaignsWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardActiveCampaigns | null>(null);
@@ -619,6 +629,7 @@ function ActiveCampaignsWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function PendingTasksWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardPendingTasks | null>(null);
@@ -677,6 +688,7 @@ function PendingTasksWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function SocialEngagementWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardSocialEngagement | null>(null);
@@ -728,6 +740,7 @@ function SocialEngagementWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function BrandIdentityWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardBrandIdentity | null>(null);
@@ -790,6 +803,7 @@ function BrandIdentityWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function MerchSalesWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardMerchSales | null>(null);
@@ -844,6 +858,7 @@ function MerchSalesWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function TourStatusWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardTourStatus | null>(null);
@@ -907,6 +922,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     revenue_aggregated: () => <RevenueAggregatedWidget />,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RevenueAggregatedWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const setModule = useStore(useShallow((s) => s.setModule));

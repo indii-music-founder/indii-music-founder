@@ -185,6 +185,7 @@ export class AgentRegistry implements AgentRegistryProvider {
         // Register metadata-only worker entries from DEPARTMENTS
         try {
             for (const dept of Object.values(DEPARTMENTS)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const typedDept = dept as any;
                 for (const workerId of typedDept.workerIds) {
                     // Skip if the worker was already registered explicitly via AGENT_CONFIGS
@@ -331,5 +332,6 @@ export class AgentRegistry implements AgentRegistryProvider {
 
 export const agentRegistry = new AgentRegistry();
 if (typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).agentRegistry = agentRegistry;
 }

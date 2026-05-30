@@ -39,12 +39,15 @@ export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
             const destinationModule = targetModuleMap[target];
             if (destinationModule) {
                 // Cast to any since TS might not know it is in the root store slice directly
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (store as any).setModule(destinationModule);
                 
                 // Special boardroom route setup
                 if (target === 'boardroom') {
                     // Open the boardroom overlay instantly
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (store as any).addActiveAgent('generalist');
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (store as any).setConversationMode('boardroom');
                 }
             }

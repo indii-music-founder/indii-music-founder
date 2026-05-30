@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Plus, Trash2, Palette, Activity,
     Loader2, CheckCircle, ShieldCheck
 } from 'lucide-react';

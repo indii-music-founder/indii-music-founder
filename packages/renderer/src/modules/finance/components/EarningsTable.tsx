@@ -61,6 +61,7 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                     <TableBody>
                         <AnimatePresence mode="popLayout">
                             {paginatedData.map((row, index) => (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 <ContextMenu.Root {...({ key: row.releaseId } as any)}>
                                     <ContextMenu.Trigger asChild>
                                         <motion.tr

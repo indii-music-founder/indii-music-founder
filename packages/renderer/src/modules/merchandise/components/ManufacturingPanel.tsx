@@ -65,6 +65,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
 
     // Fulfillment Mode - Internal (self-managed) or POD (Printful, etc.)
     const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('internal');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedPODProvider, setSelectedPODProvider] = useState<PODProvider>('printful');
     const [podConfigured, setPodConfigured] = useState(false);
 

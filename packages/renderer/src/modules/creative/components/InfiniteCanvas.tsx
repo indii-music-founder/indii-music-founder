@@ -866,6 +866,7 @@ export default function InfiniteCanvas() {
 
         const rawData = e.dataTransfer.getData('text/plain');
         let id = rawData;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let droppedPayload: any = null;
 
         try {

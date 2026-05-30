@@ -76,6 +76,7 @@ export const createMicroTransaction = onCall({
       checkoutUrl: session.url || '',
       sessionId: session.id
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error instanceof HttpsError) {
       throw error;

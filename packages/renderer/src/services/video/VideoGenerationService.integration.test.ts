@@ -1,9 +1,11 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Dependencies
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { httpsCallableFn, serverTimestamp } = vi.hoisted(() => ({
     httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
     serverTimestamp: vi.fn()
