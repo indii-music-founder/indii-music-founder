@@ -201,9 +201,9 @@ export class StorageQuotaService {
             imageCount: (data.imageCount as number) || 0,
             scanDate: (data.scanDate as string) || '',
             updatedAt: data.updatedAt 
-                ? (typeof (data.updatedAt as any).toDate === 'function' ? (data.updatedAt as any).toDate() 
-                   : (data.updatedAt as any).seconds !== undefined ? new Date((data.updatedAt as any).seconds * 1000) 
-                   : new Date(data.updatedAt as unknown as string | number))
+                ? (typeof (data.updatedAt as { toDate?: () => Date }).toDate === 'function' ? (data.updatedAt as { toDate: () => Date }).toDate() 
+                   : (data.updatedAt as { seconds?: number }).seconds !== undefined ? new Date((data.updatedAt as { seconds: number }).seconds * 1000) 
+                   : new Date(data.updatedAt as string | number))
                 : null,
             tier: resolvedTier,
             limitGB,
