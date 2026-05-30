@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-05-29 14:53 EDT
+**Updated:** 2026-05-29 21:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-84a6ce5e2 fix(ci): resolve remaining A2A config, types, and test failures
-3949c388d chore: session checkpoint [14:48]
-9fdd99659 test: fix SettingsPanel test i18n mismatch
-69a9bad4e test: fix RiderChecklist and DirectGenerationTab test failures
-9d6931f12 fix(creative): handle undefined generatedHistory in useDirectGeneration tests
-993ca74f6 chore: session checkpoint [13:59]
-4720a77bd feat(phase-1-2): merge sprint A, B, and C implementations
-ea2f5710f chore: clean up temp scripts
-1ec493c0b feat(sprint-b): placeholder cleansing (WO-3), verify agent tools (WO-4) and deterministic generators (WO-5)
-883b43708 feat(security): Sprint C - WO-7, WO-8, WO-9
+7d3aeeb6e fix(ux): prevent asynchronous memory leak and uncaught exception in CookieConsentBanner useEffect
+98043da1d fix(firebase): resolve Stripe functions type declarations and duplicate imports
+992f46694 test(a2a): enforce DigitalHandshake deny by default in test suite setup
+bdd7ee5f9 docs: add AGENTS.md operating notes for swarms
+375e4d0eb test(a2a): add mockFetch reset in A2AClient test to prevent leakage
+46f68fb80 fix(a2a): resolve loopback A2A router dispatch violations and restore CostControl filters
+41e2f66df fix(test): resolve missing params mocks, SecurityTools assertions, and A2AClient import/mock desyncs
+3c74d308f chore: session checkpoint [14:54]
+9ed72ba80 fix(type): resolve SecurityTools.ts type error on merge
+ab8c4b9fc Merge integration branches
 ```
 
 ## Working State
 ```
-clean working tree
+ M .claude/settings.json
+ M packages/renderer/src/services/agent/tools/SwarmTools.ts
 ```
 
 ## Decisions
