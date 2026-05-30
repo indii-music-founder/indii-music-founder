@@ -93,9 +93,9 @@ describe('DAWIntegrationService', () => {
             expect(result.format).toBe('als');
             expect(result.bpm).toBe(126.0);
             expect(result.markers).toHaveLength(2);
-            expect(result.markers?.[0].name).toBe('Intro');
-            expect(result.markers?.[1].name).toBe('Verse');
-            expect(result.markers?.[1].timeBeats).toBe(32);
+            expect(result.markers![0]!.name).toBe('Intro');
+            expect(result.markers![1]!.name).toBe('Verse');
+            expect(result.markers![1]!.timeBeats).toBe(32);
         });
     });
 

@@ -228,7 +228,9 @@ class A2ARouter {
 
     const requestId = crypto.randomUUID();
     // Encrypt stream chunks back to the actual caller (not a hardcoded id).
-    const generator = this.createBatchGenerator(targetAgentId, task, localCtx, senderId);
+    const generator = typeof localCtx?.streamAgent === 'function'
+      ? this.createStreamingGenerator(targetAgentId, task, localCtx, senderId)
+      : this.createBatchGenerator(targetAgentId, task, localCtx, senderId);
     this.streamGenerators.set(requestId, generator);
     this.streamSenders.set(requestId, senderId);
 
