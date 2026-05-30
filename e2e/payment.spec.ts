@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Payment Flow (Item 278)', () => {
-    test.use({ viewport: { width: 1440, height: 900 } 
+    test.use({ viewport: { width: 1440, height: 900 } });
     test('Strict Stripe Test Mode directive followed during E2E checkout', async ({ page }) => {
         let checkoutRequestUrl = '';
         let testModeDirectiveFound = false;
