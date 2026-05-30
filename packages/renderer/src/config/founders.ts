@@ -3,7 +3,7 @@
  * FOUNDERS COVENANT
  * New Detroit Music LLC — chartered 2024
  *
- * This file is a permanent, append-only record of indiiOS founding members.
+ * This file is a permanent, append-only record of indii.music founding members.
  * It is committed to the git repository as cryptographic proof of agreement.
  *
  * Governance rules (enforced by New Detroit Music LLC):
@@ -44,7 +44,7 @@ export const AGREEMENT_TERMS = {
   // Investment Rollover: The initial $2,500 acts as a credited basis for any future
   // investment rounds. (e.g. A subsequent $5,000 investment yields a $7,500 return basis).
   investment_rollover_basis: true,
-  indiiOS_entity: 'New Detroit Music LLC',
+  indii_music_entity: 'New Detroit Music LLC',
   covenant_established: '2026-03-17',
 } as const;
 

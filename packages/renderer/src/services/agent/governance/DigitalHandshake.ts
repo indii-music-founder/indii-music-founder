@@ -42,7 +42,8 @@ export class DigitalHandshake {
         actionDescription: string,
         isDestructive: boolean = false,
         toolName?: string,
-        agentIdentity?: AgentIdentityCard
+        agentIdentity?: AgentIdentityCard,
+        toolArgs?: Record<string, any>
     ): Promise<boolean> {
         const { computeAllocation } = directive;
 
@@ -60,7 +61,20 @@ export class DigitalHandshake {
 
         const meta = toolName ? getToolRiskMetadata(toolName) : null;
         const resolvedRiskTier = meta?.riskTier;
-        const requiresApproval = meta?.requiresApproval ?? false;
+        let requiresApproval = meta?.requiresApproval ?? false;
+
+        // Dynamic High-Cost Intercept (Test Agent Brakes)
+        if (toolArgs) {
+            // Examples of intercepting expensive operations based on args
+            if (toolName === 'generate_video' && toolArgs.duration && toolArgs.duration > 15) {
+                requiresApproval = true;
+                logger.warn(`[DigitalHandshake] Dynamically intercepting expensive video generation`);
+            }
+            if (toolName === 'generate_image' && toolArgs.batchSize && toolArgs.batchSize > 4) {
+                requiresApproval = true;
+                logger.warn(`[DigitalHandshake] Dynamically intercepting expensive image batch`);
+            }
+        }
 
         // Resolve destructiveness: riskTier metadata takes precedence over legacy boolean
         const effectivelyDestructive = requiresApproval || isDestructive || (resolvedRiskTier === 'destructive');
@@ -130,10 +144,10 @@ export class DigitalHandshake {
     }
 
     /**
-     * Routes approval requests to the user's memory inbox (~/indiiOS/memory-inbox/).
+     * Routes approval requests to the user's memory inbox (~/indii/memory-inbox/).
      */
     private static async pingMemoryInbox(userId: string, request: HandshakeRequest): Promise<void> {
-        logger.info(`[DigitalHandshake] Pinging ~/indiiOS/memory-inbox/ for User ${userId}`);
+        logger.info(`[DigitalHandshake] Pinging ~/indii/memory-inbox/ for User ${userId}`);
 
         const inboxRef = collection(db, `users/${userId}/memoryInbox`);
 

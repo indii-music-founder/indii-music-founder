@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as functions from "firebase-functions/v1";
 import { stripe } from "./config"; // Re-using the stripe config
 
 export const createStripeConnectAccount = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
         memory: "256MB"

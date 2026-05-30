@@ -8,7 +8,7 @@ export const FinanceCard: AgentCard = {
     capabilities: [
     {
         "name": "analyze_budget",
-        "description": "Analyze a project budget and calculate the 'indiiOS Dividend' savings.",
+        "description": "Analyze a project budget and calculate the 'indii Dividend' savings.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
@@ -71,7 +71,7 @@ export const FinanceCard: AgentCard = {
     },
     {
         "name": "forecast_revenue",
-        "description": "Forecast revenue and the indiiOS Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
+        "description": "Forecast revenue and the indii Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-indiiOS AutoAgent Evaluation Script
+indii AutoAgent Evaluation Script
 
 Reads eval tasks from tasks/, scores each agent prompt against them,
 and writes results to results.tsv. Designed to run inside Jules' Cloud VM
@@ -347,7 +347,7 @@ def run_evaluation():
     passed_count = 0
 
     print(f"\n{'='*70}")
-    print(f"  indiiOS AutoAgent Evaluation — {len(tasks)} tasks")
+    print(f"  indii AutoAgent Evaluation — {len(tasks)} tasks")
     print(f"{'='*70}\n")
 
     for task in tasks:

@@ -1,8 +1,8 @@
 /**
- * indii - The AI Agent Orchestration System for indiiOS
+ * indii - The Autonomous Agent Orchestration System for indii
  *
- * indii is the intelligent agent system that powers indiiOS, providing
- * AI-driven assistance through a hub-and-spoke architecture.
+ * indii is the intelligent agent system that powers indii, providing
+ * Intelligence-driven assistance through a hub-and-spoke architecture.
  */
 
 export const AGENT_SYSTEM_BRANDING = Object.freeze({
@@ -10,13 +10,13 @@ export const AGENT_SYSTEM_BRANDING = Object.freeze({
   name: 'indii',
 
   /** Full descriptive name */
-  fullName: 'indii AI Agent System',
+  fullName: 'indii Autonomous Agent System',
 
   /** The hub agent in the hub-and-spoke architecture */
   hubName: 'indii',
 
   /** Short description for user-facing components */
-  description: 'Your AI-powered assistant for independent artists',
+  description: 'Your Intelligence-powered assistant for independent artists',
 
   /** Version (should match package.json or be semantic versioned) */
   version: '1.0.0'
@@ -26,7 +26,7 @@ export const AGENT_SYSTEM_BRANDING = Object.freeze({
  * User-facing messages that reference the indii brand
  */
 export const INDII_MESSAGES = Object.freeze({
-  welcome: 'Welcome to indii, your AI assistant within indiiOS.',
+  welcome: 'Welcome to indii, your Autonomous assistant for musical independence.',
   orchestrating: 'indii is coordinating specialists to help you...',
   error: 'indii encountered an issue:',
   hubSpokeViolation: (source: string, target: string) =>

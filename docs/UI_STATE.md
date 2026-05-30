@@ -3,7 +3,7 @@
 **Last Updated:** 2025-12-01
 **Status:** Production Ready
 
-## 1. Landing Page (indiiOS)
+## 1. Landing Page (indii)
 
 **Location:** `landing-page/app/components/Overlays.tsx`
 
@@ -19,9 +19,9 @@ The landing page features a "Business Partner" copy style, emphasizing profitabi
   * "Smart Audio Analysis" (Blue)
   * "Career Strategy" (Pink)
   * "Rights Protection" (Green)
-* **CTA:** "Launch Studio" button pointing to `https://indiios-studio.web.app`.
+* **CTA:** "Launch Studio" button pointing to `https://indii.music`.
 
-## 2. Main Application (indiiOS)
+## 2. Main Application (indii)
 
 ### 2.1. Navigation & Branding
 

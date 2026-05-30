@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# indiiOS Developer Environment Setup
+# indii Developer Environment Setup
 # One-click bootstrap for all Google Cloud CLI tools + dependencies
 # ============================================================================
 # Usage: chmod +x scripts/setup-dev-environment.sh && ./scripts/setup-dev-environment.sh
@@ -31,7 +31,7 @@ step() {
 # ============================================================================
 # Prerequisites Check
 # ============================================================================
-echo -e "\n${BOLD}🚀 indiiOS Developer Environment Setup${NC}"
+echo -e "\n${BOLD}🚀 indii Developer Environment Setup${NC}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
 step "Checking prerequisites"
@@ -203,7 +203,7 @@ fi
 # Final Report
 # ============================================================================
 echo -e "\n${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BOLD}${GREEN}  ✅ indiiOS Developer Environment Setup Complete!${NC}"
+echo -e "${BOLD}${GREEN}  ✅ indii Developer Environment Setup Complete!${NC}"
 echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${BOLD}Installed Tools:${NC}"

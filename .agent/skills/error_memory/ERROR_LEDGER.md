@@ -1,4 +1,137 @@
+## 2026-05-26 Vitest / React Router v7 Location Mock Failure (No window.location.origin|href)
+
+**SEVERITY:** Medium (causes React Router v7 mount failures inside Vitest tests)
+
+**MISTAKE:**
+- FILE: `packages/landing/src/App.test.tsx`
+- ERROR: `Error: No window.location.(origin|href) available to create URL` when attempting to render a component containing React Router v7 `<BrowserRouter>` or `<Routes>`.
+- CAUSE: When mocking `window.location` in jsdom/Vitest using `Object.defineProperty(window, 'location', { value: { hostname: 'indii.music' } })`, properties expected by React Router (like `href` and `origin`) are lost. The React Router v7 runtime uses these properties internally to resolve path matches; if missing, it throws a fatal execution invariant error.
+- FIX: Ensure mock declarations include all expected location fields:
+  ```typescript
+  Object.defineProperty(window, 'location', {
+    value: { 
+      hostname: 'indii.music', 
+      href: 'http://indii.music/',
+      origin: 'http://indii.music',
+    },
+    writable: true,
+  });
+  ```
+- PREVENTION: Always provide complete Mock URIs containing `href`, `origin`, and `hostname` when stubbing `window.location` for React Router routing checks.
+
+## 2026-05-26 Vitest Fake Timers / waitFor Timeout Pattern (test pipeline hang)
+
+**SEVERITY:** High (causes entire unit test suites to time out at 5000ms and fail)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx`
+- ERROR: `Error: Test timed out in 5000ms.` when using `waitFor` inside tests.
+- CAUSE: When components or hooks schedule asynchronous state transitions via `setTimeout` (such as clearing completed jobs in `activeJobs` list after 3000ms), unit tests must simulate this elapsed time. However, enabling `vi.useFakeTimers()` in a test case without properly advancing the clock, or leaving it active for subsequent tests, causes `testing-library`'s `waitFor` internal polling timers to stall, leading to 5000ms timeouts.
+- FIX: 
+  1. Use `vi.useFakeTimers()` at the start of the specific test needing mock clock manipulation.
+  2. Use `await act(async () => { await vi.advanceTimersByTimeAsync(3010); });` to correctly flush microtasks and advance time.
+  3. Prepend `vi.useRealTimers()` in the global `beforeEach` to guarantee fake timers never leak to other tests.
+- PREVENTION: Never mix `vi.useFakeTimers()` with un-advanced `waitFor` polling loops. Always ensure `vi.useRealTimers()` is invoked in `beforeEach` or `afterEach` to isolate fake timers safely.
+
+## 2026-05-25 Firestore E2E Client Offline Deadlock (context pipeline hang)
+
+**SEVERITY:** High (blocks entire Conductor prompt routing pipeline and causes infinite E2E timeouts)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/LivingPlanService.ts` & `packages/renderer/src/services/agent/memory/BigBrainEngine.ts`
+- ERROR: Playwright test hangs indefinitely during AI prompt submission while the red "Run/Stop" command bar button stays active.
+- CAUSE: Firestore's client SDK operates in offline-mode when there is no network connection (or under sandbox testing). However, calling asynchronous queries (such as `getDocs()` or `getDoc()`) on uncached collections (such as `livingPlans` or `alwaysOnMemories`) under Playwright causes the queries to wait/retry indefinitely without throwing immediately. Since `ContextPipeline` and `BigBrainEngine` execute these inside a blocking `Promise.allSettled` block before every prompt submission, the entire context assembly pipeline was deadlocked.
+- FIX: Implemented a private `isE2EMode` getter that checks `window.FIREBASE_E2E_MOCK` and `localStorage.getItem('FIREBASE_E2E_MOCK')`. In E2E mode, we immediately intercept all query/mutation methods inside `LivingPlanService` and `BigBrainEngine` to return safe mocked structures or return early, preventing real Firestore network calls.
+- PREVENTION: Never execute real Firestore queries or writes inside blocking pre-prompt pipeline services during E2E testing without an `isE2EMode` mock intercept/bypass.
+
+## 2026-05-24 Environment HDR Preset Failed to Fetch (offline crash)
+
+**SEVERITY:** High (crashes whole 3D stage builder canvas with 'Studio encountered an error' message)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx`
+- ERROR: `Could not load dikhololo_night_1k.hdr: Failed to fetch`
+- CAUSE: The R3F Canvas renders Drei's `<Environment preset="night" />` component which attempts to download the HDR texture from its default remote CDN. If the user is offline, has a restricted network, or is in an environment where the CDN domain is blocked/failing, this fetch fails, throwing an unhandled promise rejection/error. Since the `<Environment>` tag was outside the `ModelErrorBoundary` and the SceneBuilder Canvas lacked custom error boundary wrapping around it, the error bubbled up to the module-level ErrorBoundary, rendering the "Studio encountered an error" overlay.
+- FIX: Wrapped `<Environment preset="night" />` in a dedicated custom `EnvironmentErrorBoundary` class component that catches any texture loading error, logs it as a warning, and returns `null` to degrade gracefully. The scene already includes excellent stage-like lighting (ambient, spot, and directional lights), meaning the canvas stays fully visible and interactive even without the environment reflections map.
+- PREVENTION: Never place remote-fetching Drei tags (like `<Environment preset="..." />` or similar third-party CDN asset loaders) inside the R3F Canvas without an ErrorBoundary wrapped around them. Always ensure fallback lighting is sufficient so that environment maps can degrade gracefully if the network is disconnected or blocked.
+
+## 2026-05-23 CI Failure: Fallback Mode Mock Structure
+
+**SEVERITY:** Medium (breaks CI test suite)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts`
+- ERROR: `AppException: Intelligence Service Failure: No candidates returned from TTS fallback model`
+- CAUSE: The CI environment was missing specific `.env` variables (e.g. `VITE_USE_FINE_TUNED_AGENTS`), causing `isAppCheckConfigured()` to return false. This forced `FirebaseIntelligenceService` to use the fallback `GoogleGenAI` SDK instead of the Firebase Autonomous SDK. The Vitest mock `mockGenerateContent` was only returning the Firebase SDK shape (`{ response: { candidates: [...] } }`), which caused `result.candidates` to be undefined when the fallback SDK shape was expected.
+- FIX: Modified `mockGenerateContent.mockResolvedValue` to include both the Firebase SDK structure (`response: { ... }`) and the direct Gemini SDK structure (`candidates: [...]`) so the mock works identically in both Normal and Fallback execution modes.
+- PREVENTION: When mocking Google Gen AI / Firebase Gen AI SDKs, always ensure the mock payload satisfies both the `firebase/ai` return shape (`{ response: ... }`) and the `@google/genai` fallback shape (direct properties on the object).
+
 # Error Ledger
+
+## 2026-05-15 Cost-Control Feature: TypeScript & Code Generation Anti-Patterns
+
+**SEVERITY:** High (breaks CI, prevents merge)
+
+**MISTAKES:**
+
+1. **Duplicate Block-Scoped Variable Declaration**
+   - FILE: `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+   - ERROR: `TS2451: Cannot redeclare block-scoped variable 'userId'`
+   - CAUSE: Added MOCK MODE check that should return early, but the early return was missing. Left two `const userId = auth.currentUser?.uid;` declarations at lines 348 and 370 in the same function scope.
+   - FIX: Ensure MOCK MODE check includes an early `return` statement BEFORE the second userId declaration. Structure: check condition → return result → then declare userId.
+   - PREVENTION: When adding conditional branches that bypass logic, **always include the return/break statement**. Don't add the check and then declare variables after it in the same scope.
+
+2. **Import Statement Inside JSDoc Comment**
+   - FILE: `packages/renderer/src/services/analytics/EventBusService.ts`
+   - ERROR: `TS2304: Cannot find name 'logger'`
+   - CAUSE: During console.* → logger.* swap, placed `import { logger } from '@/utils/logger'` inside the JSDoc block instead of at the file's top-level imports. The import was on line 12, but wrapped as a comment: `/** ... import ... */`.
+   - FIX: Move import statements ABOVE all JSDoc comments and code. Top of file order: (1) imports, (2) JSDoc file header, (3) code.
+   - PREVENTION: **Always add imports before any comments or JSDoc.** When swapping console.* → logger.*, verify the import is in the import section, not embedded in documentation.
+
+3. **Duplicate Entire Code Block (Copy-Paste Error)**
+   - FILE: `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+   - ERROR: `TS2451: Cannot redeclare block-scoped variable 'userId'` at lines 367 and 388
+   - ROOT CAUSE: The MOCK MODE check block (lines 348–364) was accidentally duplicated immediately after itself (lines 368–385), creating two separate `const userId = auth.currentUser?.uid;` declarations in the same function scope.
+   - FIX: Remove the duplicate block entirely. Keep only the first MOCK MODE check with its early return.
+   - PREVENTION: After pasting or copying large blocks, **visually scan the next 20 lines to ensure no accidental duplication**. Use your IDE's diff view or a quick `git diff` to spot copy-paste artifacts before committing.
+
+---
+## **BINDING PROTOCOL FOR ALL AGENTS** (Claude, Gemini Antigravity, Codex, Jules, Droid)
+
+When performing multi-file refactors (like console → logger swaps) or adding conditional blocks (like MOCK MODE):
+
+### Pre-Commit Checklist (ALL AGENTS MUST FOLLOW)
+
+1. **Pre-check:** Identify ALL files that will be modified. List them explicitly.
+
+
+2. **Per-file verification:**
+   - ✅ Import statements at file top (above JSDoc/comments)
+   - ✅ All refactored calls replaced consistently (no half-swaps)
+   - ✅ No duplicate variable declarations in same scope
+   - ✅ No duplicate blocks after copy-pasting code
+3. **Immediate typecheck validation:** Run `npm run typecheck` **right after edits**, not after batching multiple files.
+4. **Early returns on conditionals:** Any edge-case branch must have explicit `return`/`break` before continuing main logic.
+5. **Copy-paste vigilance:** After pasting code, visually verify the pasted block doesn't immediately repeat (diff view helps).
+
+### Why This Matters
+
+**REGISTRY:** Three TypeScript errors in PR #1 (fix/intelligence-emergency-killswitch):
+- userId redeclaration (lines 367, 388) — duplicate MOCK MODE block (FIXED 2026-05-15 19:15 by Claude Code)
+- userId redeclaration (earlier) — missing early return on MOCK MODE check (FIXED prior session)
+- logger import in JSDoc (EventBusService) — import nested in comment (FIXED prior session)
+
+**Common theme:** Incomplete refactors + new features were not validated with immediate typecheck. They passed local review but broke CI.
+
+### Enforcement
+
+- **When:** Before every `git push` on a branch with code changes
+- **How:** Run `npm run typecheck` locally. If it fails, fix before pushing.
+- **Escalation:** If typecheck passes locally but fails in CI, check this ledger — you may have hit a subtle scope issue or hidden duplicate.
+
+---
+
+---
 
 ## 2026-05-06 Hierarchical agent scope violations (Phase 1)
 
@@ -21,6 +154,33 @@ REGISTRY: `packages/renderer/src/services/agent/departments.ts` is the single so
 for who is a head vs worker, and which workers belong to which department.
 
 ENFORCEMENT: `packages/renderer/src/services/agent/BaseAgent.ts` (delegate_task ~L137, consult_experts ~L193).
+
+## 2026-05-15 Test Suite Failures: GLOBAL_EMERGENCY_STOP & Firebase Mock Issues
+
+**SEVERITY:** High (breaks CI test suite, 25+ test failures)
+
+**PROBLEMS:**
+
+1. **TokenUsageService.GLOBAL_EMERGENCY_STOP breaks all intelligence tests**
+   - FILE: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:31`
+   - ERROR: All tests that invoke quota checks throw "EMERGENCY STOP: Intelligence services are temporarily suspended..."
+   - TESTS AFFECTED: `TokenUsageService.test.ts`, `FirebaseIntelligenceService.test.ts`, `ChaosVerification.test.ts`, `QA_Batching.test.ts`
+   - ROOT CAUSE: `GLOBAL_EMERGENCY_STOP` is hardcoded to `true` (line 31) to prevent API costs. Tests inherit this and fail immediately on any quota check.
+   - NAIVE FIX (WRONG): Set `VITE_INTELLIGENCE_MOCK_MODE='true'` in test setup → this **breaks other tests** that expect real API responses, not mock responses. They get mock responses from the MOCK MODE early return, failing assertions that check for real behavior.
+   - PROPER FIX: Use `vi.spyOn()` to mock only `TokenUsageService.checkQuota()` method per-test, returning `true` when needed. Don't enable mock mode globally.
+
+2. **Firebase functions mock missing logger export**
+   - FILE: `packages/firebase/src/__tests__/triggerLongFormVideoJob.quota.test.ts`, `video.test.ts`
+   - ERROR: `[vitest] No "logger" export is defined on the "firebase-functions/v1" mock`
+   - ROOT CAUSE: The vi.mock for firebase-functions doesn't export logger. Code tries to use logger and fails.
+   - FIX: Update the mock to include logger using `importOriginal()` pattern to preserve real exports while adding mocks.
+
+**LEARNING:**
+
+- **Global env vars in test setup are risky** — if a flag enables/disables a whole code path, it affects multiple tests with different expectations. Instead, mock at the test level.
+- **Don't use MOCK_MODE as a test harness** — MOCK_MODE is for development survival (bypass costs). Tests should mock individual services/functions instead.
+- **Firebase function mocks must include all exports** — if code under test calls `logger.info()` from a mocked module, the mock must export logger.
+- **Verify mock side effects** — Setting `VITE_INTELLIGENCE_MOCK_MODE='true'` causes `FirebaseIntelligenceService` to return mock responses immediately (line 349-364), which breaks tests expecting real behavior. Audit before enabling globally.
 
 ## 2026-05-05 Web dev spinner — missing renderer Vite config
 
@@ -135,8 +295,8 @@ When a CI shard fails:
 - SEVERITY: Critical (entire Creative Studio editor non-functional)
 - FILE: `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - BUG: `fabric.Image.fromURL(url, { crossOrigin: 'anonymous' })` silently fails when Firebase Storage doesn't return `Access-Control-Allow-Origin` headers. The promise had NO `.catch()` handler, so the canvas stayed blank with zero user feedback. Clicking "Save" then persisted an empty canvas to the gallery, cluttering it with blank assets.
-- ROOT CAUSE: Firebase Storage bucket `gs://indiios-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
-- FIX (server): `gsutil cors set config/cors.json gs://indiios-v-1-1.firebasestorage.app`
+- ROOT CAUSE: Firebase Storage bucket `gs://indii-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
+- FIX (server): `gsutil cors set config/cors.json gs://indii-v-1-1.firebasestorage.app`
 - FIX (client): Added `loadImageSafe()` with 3-tier fallback:
   1. Direct `fabric.Image.fromURL` with `crossOrigin: 'anonymous'`
   2. Fetch via `safeStorageFetch` → `URL.createObjectURL(blob)` (blob URLs are same-origin, bypass CORS)
@@ -315,3 +475,96 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FIX: Catch rate limits, quota limits, and authentication errors within the specific tool wrapper and return them formatted as `toolError` with actionable hints for the agent (e.g., "Suggest the user try again in 1 minute").
 - RULE: **All agent tools calling external APIs (Gemini, Google GenAI, etc.) MUST have internal catch blocks that return known failure modes (429, 401, etc.) as `toolError` responses, NOT as thrown exceptions.**
 
+---
+
+## 2026-05-21 Missing Composite Index and Boardroom Swarm Sync
+
+**SEVERITY:** High (causes `FirebaseError` index crashes in UI and background poller)
+
+**PROBLEMS:**
+
+1. **Missing `distribution_tasks` Collection Group Index**
+   - FILE: `packages/firebase/firestore.indexes.json`
+   - ERROR: `FirebaseError: The query requires an index...` on `/distribution`
+   - ROOT CAUSE: Code executes a collection group query on `distribution_tasks`, but the index query scope was defined as `"COLLECTION"`.
+   - FIX: Changed `queryScope` of the `distribution_tasks` composite index from `"COLLECTION"` to `"COLLECTION_GROUP"`.
+
+2. **Missing `proactive_tasks` Collection Group Index**
+   - FILE: `packages/firebase/firestore.indexes.json`
+   - ERROR: `checkScheduledTasks query failed: FirebaseError: The query requires an index` in the background poller console.
+   - ROOT CAUSE: `ProactiveService` poller queries `proactive_tasks` via collectionGroup matching `status`, `triggerType`, `userId`, and `executeAt`, but query scope in indexes was defined as `"COLLECTION"`.
+   - FIX: Changed the second `proactive_tasks` composite index queryScope from `"COLLECTION"` to `"COLLECTION_GROUP"`.
+
+3. **Courtroom / Boardroom Sync In-Memory**
+    - FILE: `packages/renderer/src/services/agent/AgentService.ts`
+    - ROOT CAUSE: Messages exchanged by boardroom swarm agents were stored purely in-memory in Zustand, without database persistence, causing loss of context when reloading the view.
+    - FIX: Implemented `AgentFirebaseConnector` to map and sync `AgentMessage` in real-time directly to the `boardroom_messages` collection, and connected it to `AgentService.ts` boardroom dispatch hooks.
+
+---
+
+## 2026-05-21 Swarm Courtroom / Boardroom E2E Firebase Mocks and Write Bypasses
+
+**SEVERITY:** High (causes timeout crashes and unhandled Firestore writes during Playwright runs)
+
+**PROBLEMS:**
+
+1. **Firestore `setDoc` and Trace Writes Hanging in Playwright Tests**
+   - FILE: `packages/renderer/src/services/agent/components/AgentExecutor.ts`, `packages/renderer/src/services/agent/observability/TraceService.ts`
+   - ERROR: Room or swarm E2E execution tests fail or timeout because the test is offline/mocked, but code makes real Firestore writes to `agent_tasks` and `progress`.
+   - ROOT CAUSE: Unmocked firestore references in `AgentExecutor` and `TraceService` were attempting to connect to external servers or make unintercepted API calls during Playwright runs.
+   - FIX: Added `isE2EMode` utility checks checking `window.FIREBASE_E2E_MOCK` and `localStorage.getItem('FIREBASE_E2E_MOCK')` to immediately return mocked UUIDs or early returns, preventing any real firestore connection during testing.
+
+## 2026-05-27 Vite manualChunks Cyclic Dependency (React forwardRef crash)
+
+**SEVERITY:** Critical (causes complete white screen crash on app load in production builds)
+
+**MISTAKE:**
+- FILE: `electron.vite.config.ts`
+- ERROR: `TypeError: Cannot read properties of undefined (reading 'forwardRef')` inside chunked files (like `vendor-motion.js` or `vendor-three.js`) upon application boot.
+- CAUSE: Aggressive chunk splitting in `manualChunks` separated React-reliant heavy libraries (e.g. `@remotion`, `@react-three`) from the core `react` / `react-dom` chunks. Due to how Vite/Rollup resolved the import graph, the separated libraries attempted to initialize and call `React.forwardRef` before the core `react` chunk had finished loading into the browser context.
+- FIX: Grouped `@remotion` and `@react-three` explicitly into a `vendor-react` chunk alongside `react`, `react-dom`, and `react-router`, forcing Vite to bundle the core reconciler and these dependent libraries together in the correct loading order.
+- PREVENTION: When creating `manualChunks` in Vite, never split UI libraries that heavily depend on React internals into separate chunks unless `react` itself is guaranteed to be in the shared vendor chunk and hoisted properly. Group highly entangled dependencies together.
+
+## 2026-05-27 Vitest httpsCallable Mock Mismatch (AssertionError)
+
+**SEVERITY:** High (causes test suites to fail assertions when migrating to Cloud Functions)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/video/__tests__/LensVeoResilience.test.ts` (and similar)
+- ERROR: `AssertionError: expected { jobId: 'job-123' } to deeply equal { data: { jobId: 'job-123' } }` or similar payload mismatches.
+- CAUSE: When migrating an internal service call to a Firebase `httpsCallable` Cloud Function, the return shape changes. Cloud Functions wrap their payload in a `data` object (`{ data: result }`). If the Vitest mock for `httpsCallable` returns the raw internal payload, or if the test assertions expect the old raw payload instead of the new `data`-wrapped payload, the assertions will fail. Additionally, `vi.mock('firebase/functions')` must explicitly export `httpsCallable` as a function that returns the mock callable.
+- FIX: Update `mockHttpsCallable.mockResolvedValue` to return `{ data: { ...expectedPayload } }`. Ensure `vi.mock('firebase/functions')` properly exports the callable factory: `httpsCallable: () => mockHttpsCallable`.
+- PREVENTION: Whenever replacing a direct SDK or internal service call with a Firebase Cloud Function via `httpsCallable`, systematically audit the test mocks and assertions in the corresponding test suite to account for the `{ data: ... }` wrapper in the response payload.
+
+## 2026-05-28 Parallel CI Test Timeouts (Agent Streaming/Delegation)
+
+**SEVERITY:** High (flaky parallel CI failures)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts` & `AgentDelegation.test.ts`
+- ERROR: `Error: Test timed out in 20000ms.` and `AssertionError: expected X to be less than 100` during `npm run ci`.
+- CAUSE: When running tests in parallel across forks (`npm test -- --pool=forks`), tests that run synchronously with tight timing assertions (<100ms) or short timeouts (20000ms) can easily flake due to CPU contention.
+- FIX: Increased the timeout threshold in `AgentStreaming.test.ts` to `60000ms`, and increased the performance bound in `AgentDelegation.test.ts` to `<500ms`.
+- PREVENTION: When writing tests intended to be run in a sharded/parallel CI environment, avoid overly tight assertions on wall-clock execution time. Use `Date.now()` bounds sparingly and with generous padding.
+
+## 2026-05-28 Mermaid Flowchart Validation Crash
+
+**SEVERITY:** High (blocks CI pipeline due to `validate-flowcharts.js` failure)
+
+**MISTAKE:**
+- FILE: `docs/flowcharts/live-media-generation-v3.md`
+- ERROR: `❌ Validation FAILED... Found crash-prone HTML tags in Mermaid label`
+- CAUSE: Agent used HTML `<br>` tags within Mermaid node labels (e.g. `Node["Label<br>Text"]`). The internal flowchart validator forbids HTML tags in mermaid labels because they can break certain Markdown viewer engines (like GitHub's built-in viewer).
+- FIX: Replaced all `<br>` tags with plain text spacing/dashes (` - `).
+- PREVENTION: Never use `<br>` or any other HTML tags inside Mermaid labels. Use literal newlines `\n` or plain spaces.
+
+## 2026-05-28 WIIL Slash Command Location Mismatch
+
+**SEVERITY:** Medium (causes agents to mis-handle `/middle`, `/end`, and other WIIL commands)
+
+**MISTAKE:**
+- FILES: `.agent/workflows/WIIL-skill.md`, `.agent/workflows/middle.md`, `.agent/workflows/end.md`, `packages/renderer/src/core/components/command-bar/PromptArea.tsx`
+- ERROR: Agent treated `/end` as a plain chat terminator and then searched only `.agent/skills/{command}/SKILL.md`.
+- CAUSE: The app command bar wraps arbitrary slash commands as `.agent/skills/{command}/SKILL.md`, but the approved WIIL command manifest stores global commands in `.agent/workflows/*.md`. The command manifest itself lives at `.agent/workflows/WIIL-skill.md`, not `.agent/skills`.
+- FIX: For slash commands named in WIIL, read `.agent/workflows/WIIL-skill.md` first, then load the matching workflow file from `.agent/workflows/{command}.md`. Only fall back to `.agent/skills/{command}/SKILL.md` for actual skill directories.
+- PREVENTION: Before executing `/middle`, `/end`, `/proceed`, `/skill-skill`, or any WIIL command, check `.agent/workflows/WIIL-skill.md`. Do not assume every slash command is a skill folder.

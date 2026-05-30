@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger("sftp_uploader")
 
 class SFTPUploader:
-    """Manages the transmission of DDEX packages and ITMSP bundles via SFTP."""
+    """Manages the transmission of Proprietary Ingestion IP packages and ITMSP bundles via SFTP."""
 
     def __init__(self, storage_path: Optional[str] = None):
         self.storage_path = storage_path
@@ -124,7 +124,7 @@ class SFTPUploader:
             sftp.mkdir(remote_directory)
 
 def setup_args():
-    parser = argparse.ArgumentParser(description="IndiiOS SFTP Transmission Engine")
+    parser = argparse.ArgumentParser(description="indii SFTP Transmission Engine")
     parser.add_argument("--host", required=True, help="SFTP Host")
     parser.add_argument("--port", type=int, default=22, help="SFTP Port")
     parser.add_argument("--user", required=True, help="SFTP Username")

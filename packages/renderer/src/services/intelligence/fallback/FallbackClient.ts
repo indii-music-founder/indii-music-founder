@@ -1,0 +1,404 @@
+/**
+ * Fallback Client — Direct @google/genai SDK
+ *
+ * Used when App Check is not configured or fails.
+ * Provides generateWithFallback() and streamWithFallback() methods
+ * that bypass Firebase Autonomous SDK entirely.
+ *
+ * Extracted from FirebaseIntelligenceService.ts for cleaner separation.
+ */
+
+import { GoogleGenAI } from '@google/genai';
+import type { Content, Tool } from 'firebase/ai';
+import { env } from '@/config/env';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { STANDARD_SAFETY_SETTINGS } from '../config/safety-settings';
+import { logger } from '@/utils/logger';
+
+/**
+ * Model name mapping for the Gemini Developer API fallback path.
+ *
+ * Some model IDs (e.g. gemini-3.1-pro-preview) are only available via Vertex AI
+ * or Firebase Autonomous SDK endpoints. When we fall back to the direct @google/genai
+ * SDK (generativelanguage.googleapis.com), we must translate these to model
+ * IDs that the Developer API actually supports.
+ *
+ * This map is the ONLY place where fallback model resolution lives.
+ * Update it whenever new preview models are added or old ones stabilize.
+ */
+const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
+    // Gemini 3 preview → Developer API stable equivalents
+    'gemini-3.1-pro-preview': 'gemini-3-flash-preview', // Quota bypass: map Pro preview to Flash preview on Free Tier
+    'gemini-3-flash-preview': 'gemini-3-flash-preview',
+    'gemini-3-pro-image-preview': 'gemini-3-flash-preview',
+    'gemini-3.1-flash-image-preview': 'gemini-3-flash-preview',
+    // Gemini 3.1 Flash-Lite (GA) → closest Developer API equivalent
+    'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite',
+};
+
+/**
+ * Resolves a model name to one that works on the Gemini Developer API.
+ *
+ * Handles three cases:
+ *   1. Vertex Autonomous endpoint URLs (projects/.../endpoints/...) → blocked
+ *   2. Preview model names not available on Developer API → mapped equivalent
+ *   3. Already-valid Developer API model names → passed through unchanged
+ */
+function resolveModelForFallback(modelName: string): string {
+    // Case 1: Vertex Autonomous fine-tuned endpoint URLs
+    if (modelName.startsWith('projects/') && modelName.includes('/endpoints/')) {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            '[FallbackClient] Refusing to downgrade fine-tuned Vertex endpoint to a base Gemini model. ' +
+            `Endpoint: ${modelName}`
+        );
+    }
+
+    // Case 2: Preview model names that don't exist on the Developer API
+    const mapped = DEVELOPER_API_MODEL_MAP[modelName];
+    if (mapped) {
+        logger.info(
+            `[FallbackClient] Model "${modelName}" is not available on the Developer API. ` +
+            `Using fallback model "${mapped}" instead.`
+        );
+        return mapped;
+    }
+
+    // Case 3: Model name is already valid for the Developer API
+    return modelName;
+}
+import { auth } from '@/services/firebase';
+import { TokenUsageService } from '../billing/TokenUsageService';
+import type {
+    ImportMetaEnvWithKeys,
+    AutonomousIntelligenceStreamChunk,
+} from '../types';
+import type {
+    FunctionCallPart,
+    GenerateContentResponse,
+    StreamChunk,
+    WrappedResponse,
+    ContentPart,
+    SafetySetting,
+    ToolConfig,
+    GenerationConfig,
+} from '@/shared/types/ai.dto';
+import type { GenerateContentResult } from 'firebase/ai';
+
+/**
+ * Initialize the fallback @google/genai client.
+ * Tries multiple key locations to find an API key.
+ * Returns the initialized client.
+ */
+export async function initializeFallbackClient(): Promise<GoogleGenAI> {
+    // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
+    // Explicitly check sources to log which one is used
+    const keySources = {
+        'env.VITE_API_KEY': env.VITE_API_KEY,
+        'env.apiKey': env.apiKey,
+        'import.meta.env.VITE_GOOGLE_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.VITE_GOOGLE_API_KEY,
+        'import.meta.env.VITE_GEMINI_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.VITE_GEMINI_API_KEY,
+        'import.meta.env.GOOGLE_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GOOGLE_API_KEY,
+        'import.meta.env.GEMINI_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GEMINI_API_KEY
+    };
+
+    const foundSource = Object.entries(keySources).find(([_, val]) => !!val);
+    const apiKey = foundSource ? foundSource[1] : undefined;
+
+    logger.debug('[FirebaseIntelligenceService] Fallback Mode Initialization:', {
+        foundKey: !!apiKey,
+        source: foundSource ? foundSource[0] : 'NONE',
+        keyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'N/A'
+    });
+
+    if (!apiKey) {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'No API key found. Please set VITE_API_KEY or GOOGLE_API_KEY in your .env file.'
+        );
+    }
+
+    const client = new GoogleGenAI({ apiKey });
+    logger.info('[FirebaseIntelligenceService] Initialized with direct Gemini SDK (fallback mode)');
+    return client;
+}
+
+/**
+ * Recursively converts all "type" properties inside a schema definition
+ * to lowercase to satisfy the Gemini Developer API specifications.
+ */
+function lowercaseSchemaTypes(schema: any): any {
+    if (!schema || typeof schema !== 'object') return schema;
+
+    const newSchema = { ...schema };
+    if (typeof newSchema.type === 'string') {
+        newSchema.type = newSchema.type.toLowerCase();
+    }
+
+    if (newSchema.properties && typeof newSchema.properties === 'object') {
+        const newProperties: Record<string, any> = {};
+        for (const [key, value] of Object.entries(newSchema.properties)) {
+            newProperties[key] = lowercaseSchemaTypes(value);
+        }
+        newSchema.properties = newProperties;
+    }
+
+    if (newSchema.items) {
+        newSchema.items = lowercaseSchemaTypes(newSchema.items);
+    }
+
+    return newSchema;
+}
+
+function sanitizeToolsForDeveloperAPI(tools?: Tool[]): any[] | undefined {
+    if (!tools) return undefined;
+
+    return tools.map(tool => {
+        const anyTool = tool as any;
+        const newTool: any = { ...anyTool };
+        if (Array.isArray(anyTool.functionDeclarations)) {
+            newTool.functionDeclarations = anyTool.functionDeclarations.map((decl: any) => {
+                const newDecl: any = { ...decl };
+                if (decl.parameters) {
+                    newDecl.parameters = lowercaseSchemaTypes(decl.parameters);
+                }
+                return newDecl;
+            });
+        }
+        return newTool;
+    });
+}
+
+/**
+ * Generate content using direct Gemini SDK (fallback mode).
+ * This bypasses Firebase Autonomous SDK and App Check requirements.
+ * Uses the new @google/genai SDK (GA).
+ */
+export async function generateWithFallback(
+    fallbackClient: GoogleGenAI,
+    prompt: string | Content[],
+    modelName: string,
+    config?: GenerationConfig,
+    systemInstruction?: string,
+    tools?: Tool[],
+    safetySettings?: SafetySetting[],
+    toolConfig?: ToolConfig,
+    options?: { signal?: AbortSignal },
+    handleError?: (error: unknown) => AppException
+): Promise<GenerateContentResult> {
+    try {
+        const resolvedModel = resolveModelForFallback(modelName);
+        // Build contents array for the new SDK format
+        const contents = typeof prompt === 'string'
+            ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+            : prompt;
+
+        // Clean config: strip non-generation fields that callers may have mixed in
+        const cleanConfig = { ...config };
+        delete (cleanConfig as Record<string, unknown>).systemInstruction;
+        delete (cleanConfig as Record<string, unknown>).tools;
+        delete (cleanConfig as Record<string, unknown>).toolConfig;
+        delete (cleanConfig as Record<string, unknown>).safetySettings;
+
+        // Remove thinkingConfig for models that don't support it
+        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+        const supportsThinking = resolvedModel.includes('gemini-3');
+        if (!supportsThinking) {
+            delete (cleanConfig as Record<string, unknown>).thinkingConfig;
+        }
+
+        const sanitizedTools = sanitizeToolsForDeveloperAPI(tools);
+
+        // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
+        // NOT nested inside config (which maps to generation_config in the API payload).
+        const result = await fallbackClient.models.generateContent({
+            model: resolvedModel,
+            contents: contents as unknown as Record<string, unknown>[],
+            config: {
+                ...cleanConfig,
+                safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
+                tools: sanitizedTools as unknown as Record<string, unknown>[],
+                toolConfig,
+                systemInstruction,
+                abortSignal: options?.signal
+            } as Record<string, unknown>,
+        });
+
+        // Convert to Firebase Autonomous SDK format for compatibility
+        return {
+            response: {
+                candidates: result.candidates,
+                usageMetadata: result.usageMetadata,
+                text: () => result.text || '',
+                functionCalls: () => result.functionCalls
+            } as unknown as GenerateContentResponse
+        } as GenerateContentResult;
+    } catch (error: unknown) {
+        // DIAGNOSTIC: Log the raw SDK error before any wrapping
+        const rawMsg = error instanceof Error ? error.message : String(error);
+        const rawStack = error instanceof Error ? error.stack : undefined;
+        const rawStatus = (error as { status?: number })?.status;
+        const rawCode = (error as { code?: string | number })?.code;
+        logger.error('[FallbackClient] generateContent FAILED:', {
+            model: modelName,
+            rawMessage: rawMsg,
+            status: rawStatus,
+            code: rawCode,
+            stack: rawStack?.split('\n').slice(0, 3).join('\n'),
+        });
+        if (handleError) {
+            throw handleError(error);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Stream content using direct Gemini SDK (fallback mode).
+ * This bypasses Firebase Autonomous SDK and App Check requirements.
+ * Uses the new @google/genai SDK (GA).
+ */
+export async function streamWithFallback(
+    fallbackClient: GoogleGenAI,
+    prompt: string | Content[],
+    modelName: string,
+    config?: GenerationConfig,
+    systemInstruction?: string,
+    tools?: Tool[],
+    options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
+): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
+    const resolvedModel = resolveModelForFallback(modelName);
+    const userId = auth.currentUser?.uid;
+
+    // Build contents array for the new SDK format
+    const contents = typeof prompt === 'string'
+        ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+        : prompt;
+
+    // Clean config: strip non-generation fields that callers may have mixed in
+    const cleanConfig = { ...config };
+    delete (cleanConfig as Record<string, unknown>).systemInstruction;
+    delete (cleanConfig as Record<string, unknown>).tools;
+    delete (cleanConfig as Record<string, unknown>).toolConfig;
+    delete (cleanConfig as Record<string, unknown>).safetySettings;
+
+    // Remove thinkingConfig for models that don't support it
+    // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+    const supportsThinking = resolvedModel.includes('gemini-3');
+    if (!supportsThinking) {
+        delete (cleanConfig as Record<string, unknown>).thinkingConfig;
+    }
+
+    const sanitizedTools = sanitizeToolsForDeveloperAPI(tools);
+
+    // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
+    // NOT nested inside config (which maps to generation_config in the API payload).
+    const result = await fallbackClient.models.generateContentStream({
+        model: resolvedModel,
+        contents: contents as unknown as Record<string, unknown>[],
+        config: {
+            ...cleanConfig,
+            safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
+            tools: sanitizedTools as unknown as Record<string, unknown>[],
+            toolConfig: options?.toolConfig,
+            systemInstruction,
+            abortSignal: options?.signal
+        } as Record<string, unknown>,
+    });
+
+    // Collect chunks for final response
+    const chunks: GenerateContentResponse[] = [];
+    let finalText = '';
+
+    // Create a deferred promise to know when the stream finishes accumulating
+    let resolveStreamComplete: () => void;
+    let rejectStreamComplete: (err: unknown) => void;
+    const streamCompletePromise = new Promise<void>((resolve, reject) => {
+        resolveStreamComplete = resolve;
+        rejectStreamComplete = reject;
+    });
+
+    const stream = new ReadableStream<StreamChunk>({
+        async start(controller) {
+            try {
+                for await (const chunk of result) {
+                    chunks.push(chunk as unknown as GenerateContentResponse);
+                    let chunkText = '';
+                    try {
+                        const c = chunk as unknown as AutonomousIntelligenceStreamChunk;
+                        chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
+                    } catch (e: unknown) { logger.debug('CAUGHT CHUNK ERROR', e); }
+                    finalText += chunkText;
+                    const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                    const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
+
+                    controller.enqueue({
+                        text: () => chunkText,
+                        thoughtSignature,
+                        functionCalls: () => {
+                            const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                                typeof p === 'object' && p !== null && 'functionCall' in p
+                            );
+                            return part ? [part.functionCall] : [];
+                        }
+                    });
+                }
+                controller.close();
+                resolveStreamComplete();
+            } catch (streamError: unknown) {
+                controller.error(streamError);
+                rejectStreamComplete(streamError);
+            }
+        }
+    });
+
+    // Build wrapped response from accumulated chunks
+    const wrappedResponsePromise = (async () => {
+        await streamCompletePromise;
+
+        const lastChunk = chunks[chunks.length - 1];
+        // Find the first chunk that had a thoughtSignature
+        const firstWithSignature = chunks.find(c => {
+            const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+            return part && 'thoughtSignature' in part && (part as ContentPart).thoughtSignature;
+        });
+        const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
+
+        // Track usage for fallback mode
+        if (userId && lastChunk?.usageMetadata) {
+            try {
+                await TokenUsageService.trackUsage(
+                    userId,
+                    modelName,
+                    lastChunk.usageMetadata.promptTokenCount || 0,
+                    lastChunk.usageMetadata.candidatesTokenCount || 0
+                );
+            } catch {
+                // Failed to track stream usage (non-critical)
+            }
+        }
+
+        return {
+            response: {
+                candidates: lastChunk?.candidates || [],
+                usageMetadata: lastChunk?.usageMetadata,
+                text: () => finalText
+            } as unknown as GenerateContentResponse,
+            text: () => finalText,
+            thoughtSignature,
+            functionCalls: () => {
+                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                    typeof p === 'object' && p !== null && 'functionCall' in p
+                );
+                return part ? [part.functionCall] : [];
+            },
+            usage: () => lastChunk?.usageMetadata
+        };
+    })();
+
+    return {
+        stream,
+        response: wrappedResponsePromise
+    };
+}

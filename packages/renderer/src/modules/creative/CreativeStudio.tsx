@@ -2,8 +2,8 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
-import AILab from './components/AILab';
-import VideoWorkflow from '../video/VideoWorkflow';
+import AutonomousLab from './components/AutonomousLab';
+import VideoWorkflow from './video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,7 +16,10 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
-/** Map UI-friendly person generation values to Gemini API uppercase constants. */
+import CreativeClipboard from './components/CreativeClipboard';
+import OmniWorkflow from './video/OmniWorkflow';
+
+/** Map UI-friendly person generation values to Intelligence API uppercase constants. */
 const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_adult': 'ALLOW_ADULT',
     'dont_allow': 'ALLOW_NONE',
@@ -39,7 +42,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         userProfile, whiskState,
         characterReferences,
         chatImportContext,
-        clearChatImportContext
+        clearChatImportContext,
+        initializeDesignHistory
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -59,10 +63,15 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         whiskState: state.whiskState,
         characterReferences: state.characterReferences,
         chatImportContext: state.chatImportContext,
-        clearChatImportContext: state.clearChatImportContext
+        clearChatImportContext: state.clearChatImportContext,
+        initializeDesignHistory: state.initializeDesignHistory
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
+
+    useEffect(() => {
+        initializeDesignHistory();
+    }, [initializeDesignHistory]);
 
     const isDirty = React.useMemo(() => (prompt && prompt.length > 0) || isGenerating, [prompt, isGenerating]);
     useUnsavedChanges(isDirty);
@@ -91,7 +100,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         if (generationMode !== prevGenerationMode.current) {
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
-                if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct') {
+                if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct' && viewMode !== 'omni') {
                     setViewMode('video_production');
                 }
             } else if (viewMode === 'video_production') {
@@ -316,8 +325,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
+                        {viewMode === 'omni' && <OmniWorkflow />}
                         {viewMode === 'showroom' && <ShowroomUI />}
-                        {viewMode === 'lab' && <AILab />}
+                        {viewMode === "lab" && <AutonomousLab />}
                         {viewMode === 'editor' && selectedItem && (
                             <CreativeCanvas
                                 item={selectedItem}
@@ -339,6 +349,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 </div>
 
                 {/* Main Prompt Bar Removed - Using Global CommandBar */}
+
+                {/* Visual Clipboard Dock */}
+                <CreativeClipboard />
 
                 {/* Transitions handled via viewMode === 'editor' above */}
             </div>

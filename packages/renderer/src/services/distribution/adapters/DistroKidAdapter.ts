@@ -12,8 +12,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 export class DistroKidAdapter extends BaseDistributorAdapter {
@@ -67,7 +67,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
         try {
             // 1. Generate DDEX ERN
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'distrokid', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'distrokid', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -123,7 +123,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
                 // 3. Stage and Upload
                 const releaseId = metadata.id || `DK-${Date.now()}`;
-                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files);
+                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files) as any;
 
                 if (!stagingValues.success || !stagingValues.packagePath) {
                     throw new Error(stagingValues.error || 'Failed to stage release files locally');
@@ -175,17 +175,18 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
     async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
         if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
-            return 'live'; // Fallback
+            logger.warn('[DistroKid] Status unavailable: SFTP credentials or Electron bridge missing.');
+            return 'processing';
         }
 
         try {
             // DistroKid usually places status files or uses a specific folder structure
             // For this implementation, we check if a .live or .published file exists in the outbox
             const remotePath = `/outgoing/${releaseId}.status`;
-            const result = await window.electronAPI.sftp.listDirectory(`/outgoing/`);
+            const result = await (window.electronAPI.sftp as any).listDirectory(`/outgoing/`) as any;
             
             if (result.success && result.files) {
-                const statusFile = result.files.find(f => f.name.startsWith(releaseId));
+                const statusFile = result.files.find((f: any) => f.name.startsWith(releaseId));
                 if (statusFile) {
                     if (statusFile.name.endsWith('.live')) return 'live';
                     if (statusFile.name.endsWith('.failed')) return 'failed';
@@ -196,13 +197,14 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             logger.warn('[DistroKid] Status check failed:', e);
         }
 
-        return 'live';
+        return 'processing';
     }
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'NOT_IMPLEMENTED', message: 'DistroKid takedown delivery is not implemented; no request was sent.' }]
         };
     }
 
@@ -227,11 +229,11 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         try {
             // Attempt to fetch DSR from SFTP
             const remotePath = `/reports/sales_${period.startDate.substring(0, 7)}.tsv`;
-            const fileResult = await window.electronAPI.sftp.readFile(remotePath);
+            const fileResult = await (window.electronAPI.sftp as any).readFile(remotePath) as any;
 
             if (fileResult.success && fileResult.content) {
-                const { dsrService } = await import('@/services/ddex/DSRService');
-                const parsed = await dsrService.ingestFlatFile(fileResult.content);
+                const { earningsReportService } = await import('@/services/distribution/proprietary-ingestion/EarningsReportService');
+                const parsed = await earningsReportService.ingestFlatFile(fileResult.content);
                 
                 if (parsed.success && parsed.data) {
                     // Filter transactions for this releaseId (ISRC/UPC)

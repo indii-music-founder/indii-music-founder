@@ -7,10 +7,14 @@ describe('CanvasToolbar', () => {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
         addText: vi.fn(),
-        toggleMagicFill: vi.fn(),
+        setTool: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        canUndo: false,
+        canRedo: false,
+        activeTool: 'select' as const,
         handleDetectObjects: vi.fn(),
         handleClearDetections: vi.fn(),
-        isMagicFillMode: false,
     };
 
     it('renders all tool buttons with accessible names', () => {
@@ -33,28 +37,27 @@ describe('CanvasToolbar', () => {
         expect(mockProps.addCircle).toHaveBeenCalled();
     });
 
-    it('calls addText when text button is clicked', () => {
+    it('calls setTool when text button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
         fireEvent.click(screen.getByRole('button', { name: /Add Text/i }));
-        expect(mockProps.addText).toHaveBeenCalled();
+        expect(mockProps.setTool).toHaveBeenCalledWith('text');
     });
 
-    it('calls toggleMagicFill when magic fill button is clicked', () => {
+    it('calls setTool when magic fill button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
         fireEvent.click(screen.getByRole('button', { name: /Magic Fill/i }));
-        expect(mockProps.toggleMagicFill).toHaveBeenCalled();
+        expect(mockProps.setTool).toHaveBeenCalledWith('brush');
+    });
+
+    it('shows active state for Select Tool button', () => {
+        render(<CanvasToolbar {...mockProps} activeTool="select" />);
+        const selectBtn = screen.getByRole('button', { name: /Select Tool/i });
+        expect(selectBtn).toHaveClass('bg-dept-creative');
     });
 
     it('shows active state for Magic Fill button', () => {
-        render(<CanvasToolbar {...mockProps} isMagicFillMode={true} />);
+        render(<CanvasToolbar {...mockProps} activeTool="brush" />);
         const magicFillBtn = screen.getByRole('button', { name: /Magic Fill/i });
         expect(magicFillBtn).toHaveClass('bg-dept-creative');
-        expect(magicFillBtn).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('shows inactive state for Magic Fill button', () => {
-        render(<CanvasToolbar {...mockProps} isMagicFillMode={false} />);
-        const magicFillBtn = screen.getByRole('button', { name: /Magic Fill/i });
-        expect(magicFillBtn).toHaveAttribute('aria-pressed', 'false');
     });
 });

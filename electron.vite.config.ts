@@ -1,5 +1,5 @@
 /**
- * electron.vite.config.ts — Build orchestrator for the indiiOS monorepo.
+ * electron.vite.config.ts — Build orchestrator for the indii monorepo.
  *
  * Three build targets:
  *   - Main:     packages/main/src/main.ts     → Node.js, CJS output
@@ -129,15 +129,11 @@ export default defineConfig({
                         if (!m) return undefined;
                         const pkg = m[1];
 
-                        // Three.js — 3D module only
-                        if (pkg === 'three' || pkg.startsWith('@react-three/')) {
+                        // Three.js — 3D module only (excluding React bindings)
+                        if (pkg === 'three') {
                             return 'vendor-three';
                         }
-                        // Remotion — video rendering, only loaded by video module
-                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
-                            return 'vendor-remotion';
-                        }
-                        // Fabric.js — canvas, only creative module
+                        // Remotion core (excluding React bindings) - Actually remotion is mostly React based, let's put it in vendor-react
                         if (pkg === 'fabric') {
                             return 'vendor-fabric';
                         }
@@ -157,10 +153,7 @@ export default defineConfig({
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
-                        // React ecosystem: ONLY the core React runtime + router.
-                        // Do NOT include anything that depends on d3, zustand, or
-                        // use-sync-external-store — those must live in the default
-                        // chunks to prevent cyclic chunk imports.
+                        // React ecosystem: core React runtime strictly isolated to prevent circular ESM imports
                         if (
                             pkg === 'react' ||
                             pkg === 'react-dom' ||

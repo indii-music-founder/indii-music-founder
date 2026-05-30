@@ -1,8 +1,8 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 export const Web3Tools = {
     /**
@@ -46,8 +46,8 @@ Requirements:
 Return ONLY the complete Solidity source code, no markdown fences.`;
 
         try {
-            const result = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
-            const sourceCode = result.response.text().trim();
+            const result = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('licensing'));
+            const sourceCode = getResponseText(result).trim();
 
             // Verify it looks like Solidity (basic sanity check)
             if (!sourceCode.includes('pragma solidity') || !sourceCode.includes('contract ')) {
@@ -82,13 +82,13 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
             }, `Generated ${args.tokenType} smart contract "${args.contractName}" with EIP-2981 royalty splits. Review source before deploying.`);
         } catch (err: unknown) {
             logger.error('[Web3Tools] Contract generation failed:', err);
-            return toolError('Smart contract generation failed. Check AI service connectivity.', 'GENERATION_FAILED');
+            return toolError('Smart contract generation failed. Check Intelligence service connectivity.', 'GENERATION_FAILED');
         }
     }),
 
     /**
      * Looks up on-chain royalty attribution for an ISRC.
-     * Reads from Firestore `users/{uid}/ddexReleases` for any stored tx hashes.
+     * Reads from Firestore `users/{uid}/proprietaryIngestionReleases` for any stored tx hashes.
      * Falls back to a descriptive status when no chain record exists yet.
      */
     trace_blockchain_royalty: wrapTool('trace_blockchain_royalty', async (args: { isrc: string; totalRevenue: number }) => {
@@ -98,7 +98,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
 
             const uid = auth.currentUser?.uid;
             if (uid) {
-                const q = query(collection(db, 'users', uid, 'ddexReleases'), where('isrc', '==', args.isrc));
+                const q = query(collection(db, 'users', uid, 'proprietaryIngestionReleases'), where('isrc', '==', args.isrc));
                 const snap = await getDocs(q);
 
                 if (!snap.empty) {

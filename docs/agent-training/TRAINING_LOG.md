@@ -141,11 +141,11 @@ Update this file after every agent training session.
 
 - Baseline score: **unscored**
 - Changes made:
-  - Added MISSION as "Sonic Director" with LUFS/BPM/DDEX specifics
+  - Added MISSION as "Sonic Director" with LUFS/BPM/Proprietary Ingestion IP specifics
   - Added hub-and-spoke architecture rules
   - Added IN SCOPE (9 items) and OUT OF SCOPE (8 items)
   - Added 3 TOOLS with detailed documentation (analyze_audio, create_music_metadata, verify_metadata_golden)
-  - Added CRITICAL PROTOCOLS (precision over vibes, DDEX compliance, mix feedback protocol with frequency ranges)
+  - Added CRITICAL PROTOCOLS (precision over vibes, Proprietary Ingestion IP compliance, mix feedback protocol with frequency ranges)
   - Added SECURITY PROTOCOL and PERSONA
   - Added 5 worked examples
 - New score: **32/35** (Clarity:5, Specificity:5, ToolAlign:4, FewShot:5, EdgeCase:5, Routing:4, GuardRails:4)
@@ -627,7 +627,7 @@ Total gold examples across all agents: **943** (+70 this phase, +154 this sessio
 | director | `indii_image_gen`→`generate_image`, `generate_video`→`[]`, `set_entity_anchor`→`[]`, `generate_visual_script`→`[]`, `interpolate_sequence`→`[]` |
 | music | `audioIntelligence.analyze`→`analyze_audio` |
 | producer | `essentia_analyze`→`[]` |
-| distribution | `ddex_generate`→`[]` |
+| distribution | `ingestion_generate`→`[]` |
 | licensing | `check_license_availability`→`check_availability` |
 | road | `route.calculate`→`get_distance_matrix` |
 | video | `veo.generate`→`generate_video`, `video.render`→`generate_video` |
@@ -652,7 +652,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 
 ## Phase 6: R5 SFT Training Kick-off — 2026-03-24
 
-**Training data:** Clean 2,000-record dataset (Phase 5), uploaded to `gs://indiios-training-data/ft_export/r5/`
+**Training data:** Clean 2,000-record dataset (Phase 5), uploaded to `gs://indii-training-data/ft_export/r5/`
 **Base model strings confirmed:** `gemini-2.5-pro` | `gemini-2.5-flash` | `gemini-2.5-flash-lite` (no version suffix)
 
 ### R5 Tuning Jobs (all 20 submitted 2026-03-24)
@@ -715,7 +715,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 | merchandise | ~118 | ≥59 | ≥50% |
 | curriculum | ~120 | ≥60 | ≥50% |
 
-**GCS:** `gs://indiios-training-data/ft_export/r6/`
+**GCS:** `gs://indii-training-data/ft_export/r6/`
 
 ### R6 Tuning Jobs (all 20 submitted 2026-03-26/27)
 
@@ -777,7 +777,7 @@ Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
 | merchandise | 132 | ≥79 | ≥60% |
 | curriculum | 120 | ≥72 | ≥60% |
 
-**GCS:** `gs://indiios-training-data/ft_export/r7/`
+**GCS:** `gs://indii-training-data/ft_export/r7/`
 
 ### R7 Tuning Jobs (all 20 submitted 2026-03-27)
 

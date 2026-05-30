@@ -84,10 +84,10 @@ async function deliverWebhook(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-IndiiOS-Signature': signature,
-        'X-IndiiOS-Event-ID': event.eventId,
-        'X-IndiiOS-Event-Type': event.eventType,
-        'X-IndiiOS-Timestamp': event.timestamp,
+        'X-indii-Signature': signature,
+        'X-indii-Event-ID': event.eventId,
+        'X-indii-Event-Type': event.eventType,
+        'X-indii-Timestamp': event.timestamp,
       },
       body: payload,
       signal: controller.signal,
@@ -115,8 +115,8 @@ async function deliverWebhook(
       status: response.status,
       error: `HTTP ${response.status}`,
     };
-  } catch (err: any) {
-    const errorMsg = err?.message || 'Unknown error';
+  } catch (err: unknown) {
+    const errorMsg = (err as Error)?.message || 'Unknown error';
     return { success: false, error: errorMsg };
   }
 }

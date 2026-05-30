@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Wand2, Loader2, Copy, CheckCircle, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -18,6 +19,7 @@ const PLATFORMS = [
 ];
 
 export default function AccountCreationWizard({ onClose }: AccountCreationWizardProps) {
+    const { t } = useTranslation();
     const toast = useToast();
     const [step, setStep] = useState(1);
     const [platform, setPlatform] = useState(PLATFORMS[0]!);
@@ -89,7 +91,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         value={brandName}
                         onChange={(e) => setBrandName(e.target.value)}
                         className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                        placeholder="e.g. Acme Corp"
+                        placeholder={t('social.hints.company_example')}
                     />
                 </div>
                 <div>
@@ -100,7 +102,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}
                         className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                        placeholder="e.g. Technology"
+                        placeholder={t('social.hints.industry_example')}
                     />
                 </div>
             </div>
@@ -124,7 +126,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
             {!generatedIdentity ? (
                 <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
                     <Wand2 size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Click generate to get AI-powered handle and bio ideas.</p>
+                    <p>Click generate to get Autonomous handle and bio ideas.</p>
                 </div>
             ) : (
                 <div className="space-y-6">

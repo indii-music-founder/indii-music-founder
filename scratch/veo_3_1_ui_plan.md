@@ -37,7 +37,7 @@ Integrate the Veo 3.1 "Ingredients to Video" and Video Editing capabilities into
    - The drop zone needs warmth: "Drop an image to lock in characters, style, or composition." 
    - Before generation, the Video Player space should have a sleek, subtle placeholder (e.g., a glassmorphism skeleton loader) so the UI doesn't suddenly jump when the video completes.
 4. **Typography:**
-   - Adhere strictly to the `indiiOS` font system. Use bold, legible text for the generation progress, and muted text for helper copy below the settings.
+   - Adhere strictly to the `indii` font system. Use bold, legible text for the generation progress, and muted text for helper copy below the settings.
 5. **Responsiveness:**
    - The layout must gracefully reflow if the right panel is resized. The video preview should maintain aspect ratio without breaking flexbox constraints.
 6. **Accessibility:**

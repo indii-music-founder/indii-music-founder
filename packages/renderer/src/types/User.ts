@@ -162,6 +162,7 @@ export interface UserProfile {
     careerStage?: string;
     artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
+    location?: string; // User's city/region (e.g., "Detroit, MI") — powers spatial awareness in agent prompts
     currentOrganizationId?: string; // Cloud-synced active organization
 
     // Subscription & Access

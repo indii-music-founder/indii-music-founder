@@ -7,6 +7,7 @@ import type { AnyToolFunction } from '../types';
 
 export const AnalysisTools = {
     analyze_contract: wrapTool('analyze_contract', async (args: { file_data: string, mime_type: string }) => {
+        const { creatorProtectionHarnessService } = await import('@/services/creator-protection');
         const { functions } = await import('@/services/firebase');
         const { httpsCallable } = await import('firebase/functions');
         const analyzeContract = httpsCallable<
@@ -16,9 +17,10 @@ export const AnalysisTools = {
 
         const result = await analyzeContract({ fileData: args.file_data, mimeType: args.mime_type });
         const data = result.data;
+        const aiClauseReview = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(args.file_data);
 
-        const risks = data.risks ?? [];
-        return toolSuccess(data, `Contract Analysis:\nScore: ${data.score ?? 'N/A'}\nSummary: ${data.summary ?? 'N/A'}\nRisks:\n- ${risks.join('\n- ')}`);
+        const risks = [...(data.risks ?? []), ...aiClauseReview.flags];
+        return toolSuccess({ ...data, risks, aiClauseReview }, `Contract Analysis:\nScore: ${data.score ?? 'N/A'}\nSummary: ${data.summary ?? 'N/A'}\nRisks:\n- ${risks.join('\n- ')}`);
     }),
 
     sync_dsp_stats: wrapTool('sync_dsp_stats', async (args: { dsp: 'Spotify' | 'Apple'; artistId: string }) => {
@@ -76,7 +78,10 @@ export const AnalysisTools = {
     }),
 
     detect_streaming_anomalies: wrapTool('detect_streaming_anomalies', async (args: { trackId: string; currentStreams: number; averageStreams: number }) => {
-        // Mock Anomaly Detection (Item 157)
+        if (args.averageStreams <= 0) {
+            return toolError('Average stream count must be greater than zero for anomaly detection.', 'INVALID_BASELINE');
+        }
+
         const spikePercentage = ((args.currentStreams - args.averageStreams) / args.averageStreams) * 100;
 
         let anomalyType = 'None';

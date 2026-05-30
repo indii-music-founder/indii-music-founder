@@ -88,6 +88,7 @@ describe('VenueScoutService', () => {
         // Clear cache by accessing private property (TS workaround or simple re-instantiation if possible, but static makes it hard.
         // We can mock Date.now() to expire cache if needed, or rely on distinct keys.
         // For testing, we'll use distinct cities/genres to avoid cache hits between tests unless intentional.
+        (VenueScoutService as any).cache?.clear();
 
         // Default batch mock
         mockWriteBatch.mockReturnValue({
@@ -112,29 +113,16 @@ describe('VenueScoutService', () => {
             }
         });
 
-        it('should seed database if empty', async () => {
-            // Mock empty Nashville check (seeding check)
-            mockGetDocs.mockResolvedValueOnce({ empty: true, docs: [] });
+        it('should not seed database when search results are empty', async () => {
+            mockGetDocs.mockResolvedValueOnce({ docs: [] });
 
-            // Mock query results for actual search (after seed)
-            mockGetDocs.mockResolvedValueOnce({
-                docs: [
-                    { id: '1', data: () => MOCK_VENUE_A }
-                ]
-            });
+            const results = await VenueScoutService.searchVenues('Nashville', 'Rock');
 
-            await VenueScoutService.searchVenues('Nashville', 'Rock');
-
-            expect(mockWriteBatch).toHaveBeenCalled();
-            // Should have seeded 5 venues (based on SEED_VENUES length)
-            const batchMock = mockWriteBatch.mock.results[0]!.value;
-            expect(batchMock.set).toHaveBeenCalledTimes(5);
+            expect(results).toEqual([]);
+            expect(mockWriteBatch).not.toHaveBeenCalled();
         });
 
-        it('should not seed if already populated', async () => {
-            // Mock existing Nashville check
-            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
-            // Mock query results
+        it('should return empty results without local fallback data', async () => {
             mockGetDocs.mockResolvedValueOnce({
                 docs: []
             });
@@ -145,10 +133,6 @@ describe('VenueScoutService', () => {
         });
 
         it('should return filtered and scored results', async () => {
-            // 1. _ensureSeeded call: return "not empty" to skip seeding
-            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
-
-            // 2. searchVenues query call: return actual matches
             mockGetDocs.mockResolvedValueOnce({
                 docs: [
                     { id: '1', data: () => MOCK_VENUE_A },
@@ -164,10 +148,6 @@ describe('VenueScoutService', () => {
         });
 
         it('should handle invalid Firestore data gracefully', async () => {
-            // 1. _ensureSeeded call
-            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
-
-            // 2. searchVenues query call: return mixed valid/invalid data
             mockGetDocs.mockResolvedValueOnce({
                 docs: [
                     { id: '1', data: () => MOCK_VENUE_A },
@@ -182,21 +162,14 @@ describe('VenueScoutService', () => {
             expect(results[0]!.name).toBe('Venue A');
         });
 
-        it('should fallback to seed data on Firestore error', async () => {
-            // 1. _ensureSeeded throws error
+        it('should throw on Firestore error', async () => {
             mockGetDocs.mockRejectedValue(new Error('Firestore offline'));
 
-            const results = await VenueScoutService.searchVenues('Nashville', 'Indie');
-
-            // Should return results from local seed data
-            expect(results.length).toBeGreaterThan(0);
-            expect(results[0]!.city).toBe('Nashville');
+            await expect(VenueScoutService.searchVenues('Nashville', 'Indie'))
+                .rejects.toThrow('Firestore offline');
         });
 
         it('should cache results', async () => {
-            // 1. _ensureSeeded
-            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
-            // 2. First call DB fetch
             mockGetDocs.mockResolvedValueOnce({
                 docs: [{ id: '1', data: () => MOCK_VENUE_A }]
             });
@@ -206,12 +179,11 @@ describe('VenueScoutService', () => {
 
             // First call
             await VenueScoutService.searchVenues(city, genre);
-            expect(mockGetDocs).toHaveBeenCalledTimes(2); // 1 for seed check, 1 for fetch
+            expect(mockGetDocs).toHaveBeenCalledTimes(1);
 
             // Second call (Should hit cache)
             await VenueScoutService.searchVenues(city, genre);
-            // mockGetDocs call count should still be 2
-            expect(mockGetDocs).toHaveBeenCalledTimes(2);
+            expect(mockGetDocs).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -223,7 +195,7 @@ describe('VenueScoutService', () => {
             expect(mockUpdateDoc).toHaveBeenCalledWith(
                 'MOCK_DOC_REF',
                 expect.objectContaining({
-                    contactName: 'Talent Buyer'
+                    lastScoutedAt: expect.any(Number)
                 })
             );
         });

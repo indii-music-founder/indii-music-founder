@@ -6,7 +6,7 @@ import type {
 } from './types';
 
 /**
- * indiiOS Scheduler Client Service
+ * indii Scheduler Client Service
  *
  * Renderer-side facade over the IPC bridge to the Electron main process
  * SchedulerService. Manages tasks, subscribes to tick events, and provides

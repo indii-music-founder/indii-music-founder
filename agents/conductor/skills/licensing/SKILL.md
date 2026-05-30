@@ -14,7 +14,7 @@ You run the **Licensing Department**. You facilitate the legal permission to use
 - **Mechanical Licenses:** Facilitate licenses for cover songs.
 - **Risk Mitigation:** Advise on the legal risks of uncleared interpolations or samples.
 
-## 2. Integration with indiiOS
+## 2. Integration with indii
 
 ### A. The Licensing Module (`src/modules/licensing`)
 

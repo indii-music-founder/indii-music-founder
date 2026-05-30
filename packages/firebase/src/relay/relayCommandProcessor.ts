@@ -25,7 +25,7 @@ import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
 import { getGeminiApiKey } from "../config/secrets";
 import { geminiApiKey } from "../config/secrets";
 import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -37,7 +37,7 @@ const PROCESSING_INDICATOR = "⏳ Processing your request...";
 // Cloud Function: Firestore onCreate Trigger
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [geminiApiKey],
         timeoutSeconds: 540,
         memory: "2GB",
@@ -116,7 +116,7 @@ export const processRelayCommand = functions
             const { GoogleGenAI } = await import("@google/genai");
             const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
-            const modelId = FUNCTION_AI_MODELS.TEXT.PRO;
+            const modelId = FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 
             const result = await client.models.generateContent({
                 model: modelId,

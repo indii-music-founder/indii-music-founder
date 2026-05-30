@@ -27,7 +27,7 @@ Hey [Name] —
 
 Quick question, and I'll keep it short.
 
-I'm building indiiOS — an all-in-one platform for independent music
+I'm building indii — an all-in-one platform for independent music
 producers and creators. Distribution, AI-assisted creation, royalty
 tracking, contract review, the whole stack. We're in beta, launching
 this year.
@@ -40,7 +40,7 @@ recommended attorneys. Right now that list has a placeholder at the top.
 I think that slot should be you.
 
 Your audience is exactly who we're building for. The producers, artists,
-and creators who watch your content are the same people who use indiiOS.
+and creators who watch your content are the same people who use indii.
 They already trust you. The platform just needs to be the place where
 they find you when they're ready to actually hire someone.
 
@@ -58,7 +58,7 @@ Worth a conversation?
 
 ---
 
-**Subject:** Platform partnership — indiiOS + [Her Name / Firm Name]
+**Subject:** Platform partnership — indii + [Her Name / Firm Name]
 
 ---
 
@@ -68,12 +68,12 @@ I'll be direct: I'm building a platform that turns your YouTube audience
 into your paying clients, and I'd like to offer you the first-look deal
 before we launch publicly.
 
-**The platform:** indiiOS is an all-in-one creative platform for
+**The platform:** indii is an all-in-one creative platform for
 independent music producers and visual artists — AI-assisted creation,
 multi-distributor release management, royalty tracking, and a full legal
 module. We're currently in beta and targeting a 2026 public launch.
 
-**The opportunity:** Every time an indiiOS user hits a legal moment —
+**The opportunity:** Every time an indii user hits a legal moment —
 distribution agreement, sample clearance, copyright registration, label
 deal — they see a "Find Counsel" screen inside the app. I built this
 deliberately because I've seen what happens when creators handle legal
@@ -86,7 +86,7 @@ every attorney search on the platform.
 **Why this works for you:**
 
 Your audience is producers and artists who can't quite afford legal
-counsel yet. indiiOS is where that same audience shows up three months
+counsel yet. indii is where that same audience shows up three months
 later when they have a release, a deal offer, or a dispute. They already
 trust you from your content. The platform just closes the loop and puts
 you in front of them at exactly the right moment.

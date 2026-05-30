@@ -376,7 +376,7 @@ export class E2EEncryptionService {
   }
 
   private generateMessageId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    return `msg_${Date.now()}_${crypto.randomUUID().substring(0, 12)}`;
   }
 
   private log(message: string): void {

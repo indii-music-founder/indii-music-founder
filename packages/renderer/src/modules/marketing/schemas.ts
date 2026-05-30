@@ -30,6 +30,7 @@ export const CampaignAssetSchema = z.object({
     durationDays: z.number(),
     startDate: z.string(),
     endDate: z.string().optional(),
+    budget: z.number().optional(),
     posts: z.array(ScheduledPostSchema),
     status: CampaignStatusSchema,
     attachedAssets: z.array(z.string()).optional(),

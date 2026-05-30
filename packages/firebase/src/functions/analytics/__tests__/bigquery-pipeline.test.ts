@@ -4,8 +4,8 @@
  * Tests for event batching, sampling, deduplication
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { AnalyticsEvent } from '@indiios/shared';
+import { describe, it, expect } from 'vitest';
+import type { AnalyticsEvent } from '@indii/shared';
 
 describe('BigQueryEventsPipeline', () => {
   const SAMPLING_RATE = 0.1;

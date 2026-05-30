@@ -7,7 +7,7 @@
  * Tests focus on:
  *  - Input validation and schema conformance
  *  - Output shape (keys, types)
- *  - Graceful fallback on dependency failure
+ *  - Fail-closed behavior on dependency failure
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -23,24 +23,24 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-// ── Mock GenAI (used by negotiation) ────────────────────────────────────
-vi.mock('@/services/ai/FirebaseAIService', () => {
+// ── Mock AutonomousIntelligence (used by negotiation) ────────────────────────────────────
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: { TEXT: { FAST: 'gemini-flash' } },
+vi.mock('@/core/config/intelligence-models', () => ({
+    INTELLIGENCE_MODELS: { TEXT: { FAST: 'gemini-flash' } },
 }));
 
 // ── Import under test ─────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ import { FinanceTools } from '../FinanceTools';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function isToolSuccess(result: unknown): boolean {
-    return typeof result === 'object' && result !== null && 'success' in result;
+    return typeof result === 'object' && result !== null && (result as { success?: unknown }).success === true;
 }
 
 describe('FinanceTools', () => {
@@ -72,7 +72,7 @@ describe('FinanceTools', () => {
     });
 
     describe('initiate_split_escrow', () => {
-        it('gracefully falls back when Cloud Function is unavailable', async () => {
+        it('fails closed when Cloud Function is unavailable', async () => {
             const { httpsCallable } = await import('firebase/functions');
             vi.mocked(httpsCallable).mockReturnValue((() => {
                 throw new Error('Function not deployed');
@@ -85,11 +85,9 @@ describe('FinanceTools', () => {
             });
 
             expect(result).toBeDefined();
-            expect(isToolSuccess(result)).toBe(true);
-            // Fallback produces a locally-tracked escrow
-            const data = (result as any).data;
-            expect(typeof data.escrowAccount).toBe('string');
-            expect(data.status).toBe('FUNDS_TRACKED_LOCALLY');
+            expect(isToolSuccess(result)).toBe(false);
+            expect((result as any).error).toContain('No funds were held');
+            expect((result as any).metadata.errorCode).toBe('ESCROW_UNAVAILABLE');
         });
 
         it('returns escrow data when Cloud Function succeeds', async () => {

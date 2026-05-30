@@ -1,7 +1,7 @@
 
 import { AgentContext } from './types';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
 export type TaskComplexity = 'SIMPLE_GENERATION' | 'COMPLEX_ORCHESTRATION';
@@ -11,7 +11,7 @@ export class WorkflowCoordinator {
     /**
      * Main entry point for user requests.
      * Decisions:
-     * 1. Is this a simple generation task? (Direct AI)
+     * 1. Is this a simple generation task? (Direct Intelligence)
      * 2. Is this a complex orchestration task? (indii Conductor)
      */
     async handleUserRequest(
@@ -145,15 +145,15 @@ export class WorkflowCoordinator {
             Be direct, creative, and concise. Do not use tools.`;
 
             // We use generating content directly with the FAST model
-            const response = await GenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [
                     { role: 'model', parts: [{ text: systemPrompt }] },
                     { role: 'user', parts: [{ text: message }] }
                 ],
-                AI_MODELS.TEXT.FAST
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
 
-            const text = response.response.text() || "";
+            const text = getResponseText(response) || "";
             if (onStream) onStream(text);
             return text;
 

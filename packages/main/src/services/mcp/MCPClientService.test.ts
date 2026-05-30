@@ -55,8 +55,8 @@ describe('MCPClientService', () => {
     it('should connect successfully', async () => {
         await service.connectLocal();
 
-        // Assert that the client was instantiated
-        expect(Client).toHaveBeenCalledTimes(1);
+        // Assert that the client was instantiated for both local and harness servers
+        expect(Client).toHaveBeenCalledTimes(2);
     });
 
     it('should disconnect successfully', async () => {

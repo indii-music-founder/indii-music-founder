@@ -14,6 +14,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+    DIRECT_FINE_TUNED_MODEL_REGISTRY,
+    FINE_TUNED_MODEL_ALIASES,
     FINE_TUNED_MODEL_REGISTRY,
     getFineTunedModel,
 } from '../fine-tuned-models';
@@ -52,14 +54,11 @@ vi.mock('@/services/firebase', () => ({
 // Constants
 // ============================================================================
 
-/** Expected Vertex AI endpoint format */
+/** Expected Vertex Autonomous endpoint format */
 const ENDPOINT_FORMAT = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
 /** Expected GCP project number (from the existing registry) */
 const EXPECTED_PROJECT_NUMBER = '223837784072';
-
-/** Agents known to still be training (from TRAINING_LOG.md) */
-const STILL_TRAINING_AGENTS = ['devops', 'screenwriter', 'curriculum'];
 
 // ============================================================================
 // Test Suite
@@ -73,7 +72,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     // ─── Endpoint Format Validation ──────────────────────────────────────
 
     describe('Endpoint Format Validation (3 tests)', () => {
-        it('all non-undefined entries should match Vertex AI endpoint format', () => {
+        it('all non-undefined entries should match Vertex Autonomous endpoint format', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
             entries.forEach(([_agentId, endpoint]) => {
@@ -115,18 +114,18 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     // ─── Agent Coverage ──────────────────────────────────────────────────
 
     describe('Agent Coverage (1 test)', () => {
-        it('all agents in VALID_AGENT_IDS should have a registry entry (even if undefined)', () => {
+        it('all agents in VALID_AGENT_IDS should have a registry entry with an endpoint', () => {
             const registryKeys = new Set(Object.keys(FINE_TUNED_MODEL_REGISTRY));
 
-            // Every valid agent should at least have a key in the registry
-            // Skip known aliases that map to canonical agent IDs
-            const ALIAS_IDS = ['keeper', 'agent0', 'road-manager'];
             VALID_AGENT_IDS.forEach(agentId => {
-                if (ALIAS_IDS.includes(agentId)) return;
                 expect(
                     registryKeys.has(agentId),
                     `Agent "${agentId}" missing from FINE_TUNED_MODEL_REGISTRY`
                 ).toBe(true);
+                expect(
+                    FINE_TUNED_MODEL_REGISTRY[agentId],
+                    `Agent "${agentId}" must resolve to a fine-tuned endpoint`
+                ).toMatch(ENDPOINT_FORMAT);
             });
         });
     });
@@ -144,8 +143,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
                 if (firstAgent) {
                     const [agentId] = firstAgent;
                     const model = getFineTunedModel(agentId as ValidAgentId);
-                    // When the flag is on, it should return the endpoint or the model
-                    expect(model !== undefined || model === undefined).toBe(true);
+                    expect(model).toMatch(ENDPOINT_FORMAT);
                 }
             }
         });
@@ -158,8 +156,8 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
                 expect(() => getFineTunedModel(agentId)).not.toThrow();
             });
 
-            // Should not throw for invalid IDs either (returns undefined)
-            expect(() => getFineTunedModel('nonexistent-agent' as ValidAgentId)).not.toThrow();
+            // Invalid IDs should fail loudly instead of silently using a base model.
+            expect(() => getFineTunedModel('nonexistent-agent' as ValidAgentId)).toThrow();
         });
     });
 
@@ -192,34 +190,33 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     // ─── Training Job Tracking ───────────────────────────────────────────
 
     describe('Training Job Tracking (3 tests)', () => {
-        it('agents with undefined endpoints should be in the "still training" list', () => {
+        it('no valid agent should have an undefined endpoint', () => {
             const undefinedAgents = Object.entries(FINE_TUNED_MODEL_REGISTRY)
-                .filter(([_id, endpoint]) => endpoint === undefined)
+                .filter(([_id, endpoint]) => !endpoint)
                 .map(([id]) => id);
 
-            // Every undefined agent should either be known-training or have a comment
-            undefinedAgents.forEach(agentId => {
-                // We expect these to be the known still-training agents
-                expect(
-                    STILL_TRAINING_AGENTS.includes(agentId) || true
-                ).toBe(true);
-            });
+            expect(undefinedAgents).toEqual([]);
         });
 
-        it('count of live endpoints should be at least 15 (out of 20)', () => {
+        it('count of resolved endpoints should cover every valid agent', () => {
             const liveCount = Object.values(FINE_TUNED_MODEL_REGISTRY)
-                .filter(endpoint => endpoint !== undefined)
+                .filter(Boolean)
                 .length;
 
-            // Per TRAINING_LOG: 17/20 live, future may change
-            expect(liveCount).toBeGreaterThanOrEqual(15);
+            expect(liveCount).toBe(VALID_AGENT_IDS.length);
         });
 
-        it('endpoint IDs should be unique (no duplicate endpoints)', () => {
-            const endpoints = Object.values(FINE_TUNED_MODEL_REGISTRY)
-                .filter((endpoint): endpoint is string => endpoint !== undefined);
+        it('direct endpoint IDs should be unique; alias duplicates must be explicit', () => {
+            const endpoints = Object.values(DIRECT_FINE_TUNED_MODEL_REGISTRY);
 
             expect(new Set(endpoints).size).toBe(endpoints.length);
+
+            Object.entries(FINE_TUNED_MODEL_ALIASES).forEach(([agentId, targetId]) => {
+                expect(VALID_AGENT_IDS).toContain(agentId as ValidAgentId);
+                expect(VALID_AGENT_IDS).toContain(targetId);
+                expect(DIRECT_FINE_TUNED_MODEL_REGISTRY[targetId as keyof typeof DIRECT_FINE_TUNED_MODEL_REGISTRY])
+                    .toBeDefined();
+            });
         });
     });
 
@@ -230,16 +227,13 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
             const registryKeys = Object.keys(FINE_TUNED_MODEL_REGISTRY);
             // Should match the number of unique agents (heads + workers + legacy aliases like creative-director, road-manager)
             // Bound bumped 2026-05-06 when Legal workers (legal.contracts, legal.compliance) were added.
-            expect(registryKeys.length).toBeGreaterThanOrEqual(18);
-            expect(registryKeys.length).toBeLessThanOrEqual(40);
+            expect(registryKeys.length).toBe(VALID_AGENT_IDS.length);
         });
 
         it('no endpoint should be empty string', () => {
             Object.entries(FINE_TUNED_MODEL_REGISTRY).forEach(([_agentId, endpoint]) => {
-                if (endpoint !== undefined) {
-                    expect(endpoint.length).toBeGreaterThan(0);
-                    expect(endpoint.trim()).toBe(endpoint);
-                }
+                expect(endpoint.length).toBeGreaterThan(0);
+                expect(endpoint.trim()).toBe(endpoint);
             });
         });
 
@@ -257,7 +251,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
 
         it('registry keys should not contain any unknown agent IDs', () => {
             const registryKeys = Object.keys(FINE_TUNED_MODEL_REGISTRY);
-            const allKnownIds = [...VALID_AGENT_IDS, 'keeper', 'agent0'];
+            const allKnownIds = [...VALID_AGENT_IDS];
 
             registryKeys.forEach(key => {
                 expect(
@@ -269,8 +263,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
 
         it('all spoke agents in ALL_AGENT_IDS should be in registry or have alias', () => {
             SPOKE_AGENT_IDS.forEach(agentId => {
-                const hasEntry = agentId in FINE_TUNED_MODEL_REGISTRY ||
-                    (agentId as string) === 'keeper'; // keeper is alias for generalist
+                const hasEntry = agentId in FINE_TUNED_MODEL_REGISTRY;
                 expect(
                     hasEntry,
                     `Spoke agent "${agentId}" should have a registry entry`

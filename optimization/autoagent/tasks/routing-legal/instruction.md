@@ -1,6 +1,6 @@
 # Task Instruction: Legal Routing
 
-An indiiOS artist asks:
+An indii artist asks:
 > "Can you review this contract for me? I'm not sure if the royalty split is fair."
 
 You should identify that this is a legal and contract review question.

@@ -58,7 +58,7 @@ export function registerVideoHandlers() {
 
             // Define the shared asset folder
             const documentsPath = app.getPath('documents');
-            const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
+            const assetDir = path.join(documentsPath, 'indii', 'Assets', 'Video');
 
             // Ensure directory exists
             await fs.promises.mkdir(assetDir, { recursive: true });
@@ -93,7 +93,7 @@ export function registerVideoHandlers() {
         try {
             validateSender(event);
             const documentsPath = app.getPath('documents');
-            const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
+            const assetDir = path.join(documentsPath, 'indii', 'Assets', 'Video');
 
             // If filePath is provided, ensure it is within assetDir
             let target = assetDir;

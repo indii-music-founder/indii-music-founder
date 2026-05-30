@@ -32,7 +32,8 @@ export class CredentialService {
      */
     async deleteCredentials(distributorId: DistributorId): Promise<boolean> {
         if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
-        return await window.electronAPI.credentials.delete(distributorId);
+        const result = await window.electronAPI.credentials.delete(distributorId) as unknown;
+        return result === false ? false : true;
     }
 }
 

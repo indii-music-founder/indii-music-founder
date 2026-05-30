@@ -84,7 +84,7 @@ export default function MapsComponent() {
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render}>
+        <Wrapper apiKey={apiKey} render={render} libraries={["places"]}>
             <Map
                 center={{ lat: 40.7128, lng: -74.0060 }}
                 zoom={11}

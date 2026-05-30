@@ -16,7 +16,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
-const REGION = "us-west1";
+const REGION = "us-central1";
 
 /** Structure of a queued mapper job */
 interface ISWCMapperJob {

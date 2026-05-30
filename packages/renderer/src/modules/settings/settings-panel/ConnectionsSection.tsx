@@ -72,7 +72,7 @@ const ConnectionsSection: React.FC = () => {
         <div>
             <SectionHeader
                 title="Connected Services"
-                description="Manage email integrations and linked accounts."
+                description="Allows your AI agents to read and draft emails on your behalf."
             />
 
             <div className="space-y-1">

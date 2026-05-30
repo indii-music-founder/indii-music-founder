@@ -1,29 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialTools } from '../SocialTools';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
 
 // Mock Dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Mock response' } }),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
-    }
+    },
+    getResponseText: vi.fn().mockImplementation((r) => r?.response?.text ? r.response.text() : (typeof r === 'string' ? r : JSON.stringify(r)))
 }));
 
 vi.mock('@/services/social/SocialService', () => ({
@@ -32,9 +33,9 @@ vi.mock('@/services/social/SocialService', () => ({
   },
 }));
 
-vi.mock('@/core/config/ai-models', () => ({
+vi.mock('@/core/config/intelligence-models', () => ({
 
-  AI_MODELS: {
+  INTELLIGENCE_MODELS: {
     TEXT: {
       AGENT: 'mock-model',
     },
@@ -67,11 +68,11 @@ describe('SocialTools', () => {
       const mockGeneratedText = 'Exciting news! #LaunchDay';
       const mockPostId = 'post-123';
 
-      vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+      vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
       vi.mocked(SocialService.createPost).mockResolvedValueOnce(mockPostId);
 
@@ -95,11 +96,11 @@ describe('SocialTools', () => {
       // Setup Mocks
       const mockGeneratedText = 'Resilience check! #Testing';
 
-      vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+      vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
       // Simulate DB Failure
       vi.mocked(SocialService.createPost).mockRejectedValueOnce(new Error('Firestore unavailable'));

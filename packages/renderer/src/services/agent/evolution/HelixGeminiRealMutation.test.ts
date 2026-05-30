@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
-// Mock GenAI
-vi.mock('@/services/ai/GenAI', () => ({
-  GenAI: {
+// Mock AutonomousIntelligence
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+  AutonomousIntelligence: {
     generateText: vi.fn(),
     generateContent: vi.fn()
   }
@@ -111,7 +111,7 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
     // 7. Verify Offspring (Index 2)
     const offspring = nextGen[2];
 
-    // Assert that the mutation function actually called the AI Service
+    // Assert that the mutation function actually called the Intelligence Service
     expect(AI.generateText).toHaveBeenCalledTimes(1);
 
     // Assert the prompt passed to Gemini contained the original prompt

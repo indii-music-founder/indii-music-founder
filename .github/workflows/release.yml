@@ -8,6 +8,10 @@ on:
     tags:
       - 'v*.*.*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write  # required to create/modify GitHub Releases
 
@@ -36,7 +40,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 \
-            libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+            libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Install dependencies
         run: npm ci
@@ -71,17 +76,16 @@ jobs:
 
       - name: Authenticate with Firebase
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > $HOME/gcloud-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Upload Installer to Firebase Storage (macOS)
         if: runner.os == 'macOS'
         run: |
-          # Upload DMG files from packages/main/dist or dist folder. 
-          # Note: Adjust source path if electron-builder output directory is different.
-          DMG_FILE=$(find . -name "*.dmg" -type f | head -n 1)
+          # Upload DMG files from dist-electron folder
+          DMG_FILE=$(find dist-electron -maxdepth 1 -name "*.dmg" -type f | head -n 1)
           if [ -n "$DMG_FILE" ]; then
-            firebase storage:upload "$DMG_FILE" founders/releases/indiiOS-Installer.dmg --project indiios-v-1-1 --non-interactive
+            firebase storage:upload "$DMG_FILE" founders/releases/indii-Installer.dmg --project indii-music-founder --non-interactive
           fi
         continue-on-error: true
 
@@ -89,10 +93,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          # Upload EXE files
-          EXE_FILE=$(find . -name "*.exe" -type f | head -n 1)
+          # Upload EXE files from dist-electron folder
+          EXE_FILE=$(find dist-electron -maxdepth 1 -name "*.exe" -type f | head -n 1)
           if [ -n "$EXE_FILE" ]; then
-            firebase storage:upload "$EXE_FILE" founders/releases/indiiOS-Setup.exe --project indiios-v-1-1 --non-interactive
+            firebase storage:upload "$EXE_FILE" founders/releases/indii-Setup.exe --project indii-music-founder --non-interactive
           fi
         continue-on-error: true
 

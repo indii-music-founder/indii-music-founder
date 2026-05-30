@@ -1,6 +1,6 @@
 ---
 name: go
-description: Universal recursive execution loop for indiiOS. Reviews progress, re-evaluates strategy, and drives task completion to verified, shipping state. Invoke as /go or @go.md at any point during a session.
+description: Universal recursive execution loop for indii. Reviews progress, re-evaluates strategy, and drives task completion to verified, shipping state. Invoke as /go or @go.md at any point during a session.
 ---
 
 # @go — Recursive Execution Loop (v2)
@@ -76,7 +76,7 @@ Before attempting ANY fix, check the error ledger:
 
 ```bash
 view_file(".agent/skills/error_memory/ERROR_LEDGER.md")  # Search for matching pattern
-mcp_mem0_search-memories(query="<error message>", userId="indiiOS-errors")
+mcp_mem0_search-memories(query="<error message>", userId="indii-errors")
 ```
 
 If a match is found, apply the documented fix. If this is a new error, document it after solving.

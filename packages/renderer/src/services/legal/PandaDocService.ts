@@ -9,8 +9,8 @@
  * The PandaDoc API key never touches the client bundle.
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 
 export interface DocumentTemplate {
     id: string;
@@ -52,10 +52,10 @@ export interface DocumentLink {
     expiresAt: string;
 }
 
-const FUNCTIONS_REGION = 'us-west1';
+const FUNCTIONS_REGION = 'us-central1';
 
 export class PandaDocService {
-    private functions = getFunctions(app, FUNCTIONS_REGION);
+    private functions = functions;
 
     /**
      * Check if PandaDoc is configured.

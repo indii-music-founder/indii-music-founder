@@ -3,11 +3,12 @@ import { logger } from '@/utils/logger';
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 import systemPrompt from '@agents/conductor/prompt.md?raw';
 
@@ -36,13 +37,14 @@ export class GeneralistAgent extends BaseAgent {
 
     tools: ToolDefinition[] = [];
     protected authorizedTools: string[] = [
-        'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'delegate_task',
+        'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'consult_specialist', 'delegate_task',
         'create_project', 'list_projects', 'search_knowledge', 'request_approval', 'verify_output',
         'batch_edit_images', 'generate_social_post', 'list_files', 'search_files',
         'list_organizations', 'switch_organization',
         'propose_plan', 'get_plan', 'refine_plan', 'cancel_plan',
         'report_bug', 'request_feature',
-        'edit_image_with_annotations', 'edit_document_with_annotations'
+        'edit_image_with_annotations', 'edit_document_with_annotations',
+        'seat_agent', 'unseat_agent'
     ];
 
     constructor() {
@@ -211,14 +213,49 @@ export class GeneralistAgent extends BaseAgent {
                 }
             },
             {
-                name: 'delegate_task',
-                description: 'Delegate a task to a specialized agent. Use when expertise is needed.',
+                name: 'seat_agent',
+                description: 'Seat or bring a specialist agent (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security) into the Boardroom discussion. Use this automatically when the user asks to "bring in", "seat", "invite", "add", or "summon" a department or agent, or when a task is delegated to an absent department.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        targetAgentId: { type: 'STRING', description: 'ID of the target agent (marketing, legal, finance, director, video, social, brand, music, etc.).' },
+                        targetAgentId: { type: 'STRING', description: 'ID of the specialist agent to seat (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security).' }
+                    },
+                    required: ['targetAgentId']
+                }
+            },
+            {
+                name: 'unseat_agent',
+                description: 'Unseat or remove a specialist agent from the Boardroom discussion when their expertise is no longer needed or their task is fully complete. Use this to keep the boardroom focused and clean.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the agent to unseat (e.g. finance, legal, marketing).' }
+                    },
+                    required: ['targetAgentId']
+                }
+            },
+            {
+                name: 'consult_specialist',
+                description: 'Consult a specialized agent via the A2A protocol. Use this for precise, single-expert delegation with security gating and session context. Requests routed via secure encrypted channels with automatic fallback if needed.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the expert agent to consult (e.g., marketing, legal, finance).' },
+                        task: { type: 'STRING', description: 'Detailed instruction or question for the expert.' },
+                        sharedContext: { type: 'STRING', description: 'Optional context to preserve session continuity.' }
+                    },
+                    required: ['targetAgentId', 'task']
+                }
+            },
+            {
+                name: 'delegate_task',
+                description: 'Delegate a task to a specialized agent. Use this for broad or parallel handoff when you need a quick answer from a generalist. Works through hub-and-spoke coordination.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        targetAgentId: { type: 'STRING', description: 'ID of the target agent.' },
                         task: { type: 'STRING', description: 'The specific task to delegate.' },
-                        sharedContext: { type: 'STRING', description: '(Optional) Specific context or memory to share with the target agent so they do not start from scratch.' }
+                        sharedContext: { type: 'STRING', description: '(Optional) Specific context or memory to share.' }
                     },
                     required: ['targetAgentId', 'task']
                 }
@@ -522,7 +559,7 @@ ORGANIZATION CONTEXT:
         const brandContext = brandKit ? `
 BRAND CONTEXT:
 - Identity: ${context?.userProfile?.bio || 'N/A'}
-- Career Stage: ${context?.userProfile?.careerStage || 'Unknown'}
+- Career Stage: ${context?.userProfile?.careerStage || 'Not provided'}
 - Primary Goal: ${context?.userProfile?.goals?.[0] || 'Not set'}
 - Visual Style: ${brandKit.brandDescription || 'N/A'}
 - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
@@ -530,7 +567,7 @@ BRAND CONTEXT:
 - Negative Prompt: ${brandKit.negativePrompt || 'N/A'}
 
 CURRENT RELEASE:
-- Title: ${brandKit.releaseDetails?.title || 'Untitled'}
+- Title: ${brandKit.releaseDetails?.title || 'Not provided'}
 - Type: ${brandKit.releaseDetails?.type || 'N/A'}
 - Mood: ${brandKit.releaseDetails?.mood || 'N/A'}
 - Themes: ${brandKit.releaseDetails?.themes || 'N/A'}
@@ -637,9 +674,9 @@ CURRENT REQUEST: ${task}
                             }))
                         ]
                     }],
-                    AI_MODELS.TEXT.AGENT,
+                    getFineTunedModel('generalist'),
                     {
-                        ...AI_CONFIG.THINKING.HIGH
+                        ...INTELLIGENCE_CONFIG.THINKING.HIGH
                     },
                     undefined,
                     iterationTools as Parameters<typeof AI.generateContentStream>[4],
@@ -771,14 +808,14 @@ CURRENT REQUEST: ${task}
 
                     if (shouldBreakAfterBatch) {
                         // Replace accumulated tool blocks with a clean human-readable summary.
-                        // The raw [Tool: ...][End Tool ...] blocks are for AI context only, not users.
+                        // The raw [Tool: ...][End Tool ...] blocks are for Intelligence context only, not users.
                         const lastToolMsg = lastToolMessage;
                         if (lastToolMsg) {
                             accumulatedResponse = lastToolMsg;
                         }
                         break;
                     }
-                    continue; // Next turn to let AI respond to the batch of results
+                    continue; // Next turn to let Autonomous respond to the batch of results
                 } else {
                     // No function call - this is the final text response
                     const responseText = response.text?.() || '';
@@ -797,7 +834,8 @@ CURRENT REQUEST: ${task}
                 const isFatal = message.includes('Verification Failed') ||
                     message.includes('PERMISSION_DENIED') ||
                     message.includes('Unauthenticated') ||
-                    message.includes('App Check');
+                    message.includes('App Check') ||
+                    message.includes('Missing or insufficient permissions');
 
                 if (isFatal || iterations >= MAX_ITERATIONS) {
                     return {
@@ -809,13 +847,13 @@ CURRENT REQUEST: ${task}
         }
 
         // Strip any [Tool: name]...[End Tool name] blocks from the final response.
-        // These are internal AI reasoning artifacts — users should only see the narrative text.
-        const cleanedResponse = (accumulatedResponse || 'Task completed.')
+        // These are internal Autonomous reasoning artifacts — users should only see the narrative text.
+        const cleanedResponse = (accumulatedResponse || '')
             .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
             .trim();
 
         return {
-            text: cleanedResponse || 'Task completed.',
+            text: cleanedResponse || lastToolMessage || 'Task completed.',
         };
     }
 }

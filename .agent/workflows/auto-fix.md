@@ -11,14 +11,14 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
 1. **Check Sentry Issues**
    Use the local MCP tool or curl to fetch unresolved Sentry issues:
    ```bash
-   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $SENTRY_TOKEN" "https://sentry.io/api/0/projects/thewalkingagency/indiios/issues/?query=is:unresolved" | jq '.[0:5] | map({id, title, metadata})'
+   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $SENTRY_TOKEN" "https://sentry.io/api/0/projects/thewalkingagency/indii/issues/?query=is:unresolved" | jq '.[0:5] | map({id, title, metadata})'
    ```
    If issues are found, read the corresponding files, analyze the stack traces, and apply fixes using `replace_file_content`.
 
 2. **Check GitHub PRs for CodeRabbit Comments**
    Fetch open PRs and their review comments:
    ```bash
-   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/new-detroit-music-llc/indiiOS-Clean/pulls?state=open" | jq '.[0:3] | map({number, title})'
+   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/new-detroit-music-llc/indii-Clean/pulls?state=open" | jq '.[0:3] | map({number, title})'
    ```
    For each PR, fetch the comments. If CodeRabbit has left actionable feedback, read the files and apply the requested changes.
 

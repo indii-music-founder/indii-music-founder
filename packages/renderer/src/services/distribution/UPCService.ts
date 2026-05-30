@@ -1,6 +1,7 @@
 import { getFirestore, collection, addDoc, getDocs, query, where, limit, runTransaction } from 'firebase/firestore';
 import { app, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface UPCRecord {
     id?: string;
@@ -30,7 +31,7 @@ export class UPCService {
      * Uses a Firestore transaction to prevent double-assignment.
      */
     async assignNextUPC(releaseId: string): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return '123456789012';
         }
 

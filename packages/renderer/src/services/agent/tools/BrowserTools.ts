@@ -14,7 +14,7 @@ export const BrowserTools = {
     browser_navigate: wrapTool('browser_navigate', async (args: { url: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.agent) {
-                const result = await window.electronAPI.agent.navigateAndExtract(args.url);
+                const result = await window.electronAPI.agent.navigateAndExtract(args.url) as any;
                 if (result.success) {
                     // Record navigation in Firestore for observability
                     try {
@@ -39,7 +39,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app. Web sessions do not support native browser control.',
+                'Browser automation requires the indii desktop app. Web sessions do not support native browser control.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {
@@ -54,7 +54,7 @@ export const BrowserTools = {
     browser_action: wrapTool('browser_action', async (args: { action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.agent) {
-                const result = await window.electronAPI.agent.performAction(args.action, args.selector, args.text);
+                const result = await window.electronAPI.agent.performAction(args.action, args.selector, args.text) as any;
                 if (result.success) {
                     return toolSuccess(result, `Successfully performed ${args.action} on ${args.selector}`);
                 }
@@ -62,7 +62,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app.',
+                'Browser automation requires the indii desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {
@@ -77,7 +77,7 @@ export const BrowserTools = {
     browser_snapshot: wrapTool('browser_snapshot', async () => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.agent) {
-                const result = await window.electronAPI.agent.captureState();
+                const result = await window.electronAPI.agent.captureState() as any;
                 if (result.success) {
                     return toolSuccess(result, 'Snapshot captured successfully.');
                 }
@@ -85,7 +85,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app.',
+                'Browser automation requires the indii desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {

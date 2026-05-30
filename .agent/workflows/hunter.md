@@ -1,5 +1,5 @@
 ---
-description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indiiOS stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
+description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
 ---
 
 # /hunter — Full-Spectrum Bug Hunter
@@ -201,7 +201,7 @@ npm run build:studio 2>&1 | tail -20
 cd functions && npx tsc --noEmit 2>&1 | tail -20 && cd ..
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indiios-v-1-1
+firebase firestore:rules validate --project indii-v-1-1
 ```
 
 If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if a fix fails twice, stop, log extensively, and propose an alternative approach.
@@ -229,7 +229,7 @@ Add ALL findings to `.agent/skills/error_memory/ERROR_LEDGER.md`:
 ```
 mcp_mem0_add-memory(
   content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
-  userId="indiiOS-errors"
+  userId="indii-errors"
 )
 ```
 

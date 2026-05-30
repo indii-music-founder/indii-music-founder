@@ -11,9 +11,10 @@
  * The Files API is simpler, more reliable, and actively maintained.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousIntelligence } from '@google/genai';
 import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================
 // Types
@@ -63,8 +64,10 @@ export interface RetrievalOptions {
 // Configuration
 // ============================================================================
 
-const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
-const MODEL_NAME = 'gemini-2.5-flash'; // Use latest model with best retrieval
+import { env } from '@/config/env';
+
+const API_KEY = env.VITE_API_KEY;
+const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST; // Use centralized model config
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Supported MIME types for upload
@@ -84,7 +87,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 // ============================================================================
 
 export class GeminiRetrievalService {
-    private genAI: GoogleGenAI;
+    private genAI: GoogleAutonomousIntelligence;
     private uploadedFiles: Map<string, UploadedFile> = new Map();
 
     constructor(apiKey?: string) {
@@ -92,7 +95,7 @@ export class GeminiRetrievalService {
         if (!key) {
             throw new Error('Gemini API key is required. Set VITE_API_KEY environment variable.');
         }
-        this.genAI = new GoogleGenAI({ apiKey: key });
+        this.genAI = new GoogleAutonomousIntelligence({ apiKey: key });
     }
 
     // =========================================================================

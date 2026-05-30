@@ -12,7 +12,7 @@ import { GauntletStep } from './components/GauntletStep';
 import { GauntletPreview } from './components/GauntletPreview';
 
 /**
- * MultimodalGauntlet — Debug tool for proving consistent AI generation.
+ * MultimodalGauntlet — Debug tool for proving consistent Autonomous generation.
  *
  * Executes a 4-step pipeline:
  *   1. Primary Image Generation
@@ -107,7 +107,7 @@ export default function MultimodalGauntlet() {
     const steps = [
         { num: 1, title: "Primary Image Generation", detail: "Bypassing App Check locally for developer verification." },
         { num: 2, title: "Derivative Reference (Consistency)", detail: "Generating last frame from primary context." },
-        { num: 3, title: "Temporal Interpolation (Video)", detail: "AI Video: Startframe -> Endframe mapping." },
+        { num: 3, title: "Temporal Interpolation (Video)", detail: "Autonomous Video: Startframe -> Endframe mapping." },
         { num: 4, title: "Loop Synchronization", detail: "Inverse mapping for seamless loop." },
     ];
 
@@ -124,7 +124,7 @@ export default function MultimodalGauntlet() {
                     MULTIMODAL GAUNTLET
                 </h1>
                 <p className="text-muted-foreground font-mono text-sm">
-                    PROVING CONSISTENT AI GENERATION & LOOPING LOGIC
+                    PROVING CONSISTENT Autonomous GENERATION & LOOPING LOGIC
                 </p>
             </header>
 

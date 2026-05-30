@@ -3,14 +3,16 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
-import { getAI, VertexAIBackend, AI } from 'firebase/ai';
+import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { isAppCheckConfigured } from '@/services/intelligence/appcheck';
+import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
 // The app will show the login screen with an auth error rather than crashing.
@@ -21,48 +23,46 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 export const app = initializeApp(firebaseConfig);
 
 // ============================================================================
-// LAZY Firebase AI Initialization
+// LAZY Firebase Autonomous Initialization
 // Only initialize when App Check is configured to avoid Installations API errors
 // ============================================================================
-let _aiInstance: AI | null = null;
+const _aiInstances = new Map<string, Autonomous>();
 
 /**
- * Check if App Check is configured (must match FirebaseAIService logic)
+ * Get the Firebase Autonomous instance. Returns null if App Check is not configured,
+ * which signals FirebaseIntelligenceService to use direct Gemini SDK fallback.
+ * Allows passing an optional location (e.g. 'us-central1') for dynamic Vertex routing.
  */
-function isAppCheckConfigured(): boolean {
-    return !!(env.appCheckKey || env.appCheckDebugToken);
-}
+export function getFirebaseAI(location?: string): Autonomous | null {
+    const targetLocation = location || import.meta.env.VITE_VERTEX_LOCATION || 'global';
+    if (_aiInstances.has(targetLocation)) {
+        return _aiInstances.get(targetLocation)!;
+    }
 
-/**
- * Get the Firebase AI instance. Returns null if App Check is not configured,
- * which signals FirebaseAIService to use direct Gemini SDK fallback.
- */
-export function getFirebaseAI(): AI | null {
-    if (_aiInstance) return _aiInstance;
-
-    // Only initialize Firebase AI if App Check is configured
+    // Only initialize Firebase Autonomous if App Check is configured
     // This prevents the Installations API error when App Check isn't set up
     if (!isAppCheckConfigured()) {
-        logger.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
+        logger.warn('[Firebase] App Check not configured, Firebase Autonomous will not be initialized (using fallback)');
         return null;
     }
 
     try {
-        _aiInstance = getAI(app, {
-            backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'us-central1'),
+        const instance = getAI(app, {
+            backend: new VertexAIBackend(targetLocation),
             useLimitedUseAppCheckTokens: false
         });
-        logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend (us-central1)');
-        return _aiInstance;
+        _aiInstances.set(targetLocation, instance);
+        logger.info(`[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (${targetLocation})`);
+        return instance;
     } catch (error: unknown) {
-        logger.error('[Firebase] Failed to initialize Firebase AI:', error);
+        logger.error(`[Firebase] Failed to initialize Firebase AI for location ${targetLocation}:`, error);
         return null;
     }
 }
 
 // For backwards compatibility - lazy getter
 export const ai = {
-    get instance(): AI | null {
+    get instance(): Autonomous | null {
         return getFirebaseAI();
     }
 };
@@ -91,11 +91,12 @@ try {
     db = initializeFirestore(app, {
         localCache: persistentLocalCache({
             tabManager: persistentMultipleTabManager()
-        })
+        }),
+        experimentalForceLongPolling: true
     });
     storage = getStorage(app);
     functions = getFunctions(app); // Default (us-central1)
-    functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
+    functionsWest1 = getFunctions(app); // Migrated to us-central1
 
     const isDev = env.DEV;
     const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
@@ -116,11 +117,11 @@ try {
 export { db, storage, functions, functionsWest1 };
 
 import { Auth, User } from 'firebase/auth';
-let auth: Auth;
-if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).FIREBASE_E2E_MOCK) {
+let rawAuth: Auth;
+if (isFirebaseE2EMockEnabled()) {
     logger.debug('[Firebase] Using E2E Auth Mock');
-    const mockUser = (window as unknown as Record<string, unknown>).FIREBASE_USER_MOCK as User || null;
-    auth = {
+    const mockUser = getE2EMockUser<User>();
+    rawAuth = {
         app,
         currentUser: mockUser,
         onAuthStateChanged: (cb: (user: User | null) => void) => {
@@ -136,27 +137,44 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
     } as unknown as Auth;
 } else {
     try {
-        auth = initializeAuth(app, {
+        rawAuth = initializeAuth(app, {
             persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
         });
     } catch (e: unknown) {
         logger.error('[Firebase] Failed to initialize Auth (likely missing API key):', e);
-        auth = {
+        rawAuth = {
             app,
             currentUser: null,
             onAuthStateChanged: (cb: (user: User | null) => void) => {
                 setTimeout(() => cb(null), 100);
                 return () => { };
             },
-            signInAnonymously: () => Promise.reject(new Error("Missing API Key")),
-            signInWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
-            createUserWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
-            sendPasswordResetEmail: () => Promise.reject(new Error("Missing API Key")),
-            signInWithPopup: () => Promise.reject(new Error("Missing API Key")),
+            signInAnonymously: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            signInWithEmailAndPassword: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            createUserWithEmailAndPassword: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            sendPasswordResetEmail: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
+            signInWithPopup: () => Promise.reject(new Error("Missing VITE_FIREBASE_API_KEY in .env")),
             signOut: () => Promise.resolve(),
         } as unknown as Auth;
     }
 }
+
+// Wrap Auth in a Proxy to support explicit E2E auth injection.
+const auth = new Proxy(rawAuth, {
+    get(target, prop, receiver) {
+        if (prop === 'currentUser') {
+            const realUser = target.currentUser;
+            if (realUser) return realUser;
+
+            const mockUser = getE2EMockUser<User>();
+            if (mockUser) return mockUser;
+            return null;
+        }
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === 'function' ? value.bind(target) : value;
+    }
+});
+
 export { auth };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,7 +183,7 @@ try {
     // Initialize Remote Config
     remoteConfig = getRemoteConfig(app);
     remoteConfig.defaultConfig = {
-        model_name: AI_MODELS.TEXT.FAST,
+        model_name: INTELLIGENCE_MODELS.TEXT.FAST,
         vertex_location: 'global'
     };
 } catch (e) {
@@ -241,8 +259,12 @@ let appCheck = null;
 if (typeof window !== 'undefined') {
     // Debug token for local development
     // Set global debug token if provided in env
-    if (env.DEV && env.appCheckDebugToken) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+    if (env.DEV) {
+        if (env.appCheckDebugToken) {
+            window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+        } else {
+            window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
     }
 
     // SECURITY: Warn in production if App Check is not configured
@@ -269,7 +291,7 @@ if (typeof window !== 'undefined') {
     if (shouldInitAppCheck) {
         if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
             console.warn(
-                '[indiiOS][AppCheck] Running on localhost without a debug token.\n' +
+                '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
                 '2. Add this token to your .env as VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN\n' +
@@ -309,7 +331,7 @@ declare global {
         functions: typeof functions;
         auth: typeof auth;
         httpsCallable: typeof httpsCallable;
-        FIREBASE_APPCHECK_DEBUG_TOKEN?: string;
+        FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
     }
 }
 

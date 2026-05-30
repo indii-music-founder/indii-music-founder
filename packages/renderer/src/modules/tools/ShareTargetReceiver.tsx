@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 /**
  * Requirement 169: Native Share Sheet Integration
  * This component acts as the receiver for the PWA Web Share Target API.
- * When a user shares a file from their OS (iOS/Android) to the indiiOS app,
+ * When a user shares a file from their OS (iOS/Android) to the indii app,
  * the service worker routes the POST request here.
  */
 
@@ -27,8 +27,7 @@ export const ShareTargetReceiver: React.FC = () => {
                 const text = urlParams.get('text');
                 const url = urlParams.get('url');
 
-                // Simulate reading cached file from SW
-                const hasFiles = false; // Would check IndexedDB in reality
+                const hasFiles = false; // File handoff requires the service worker IndexedDB bridge.
 
                 if (!title && !text && !url && !hasFiles) {
                     setStatus('error');
@@ -90,7 +89,7 @@ export const ShareTargetReceiver: React.FC = () => {
                     </div>
                 )}
 
-                <h2 className="text-xl font-bold mb-2">indiiOS Share Hub</h2>
+                <h2 className="text-xl font-bold mb-2">indii Share Hub</h2>
                 <p className="text-gray-400">{message}</p>
 
                 {status === 'error' && (

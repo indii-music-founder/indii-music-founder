@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Requirement 162: React Native "On-the-go" Companion
- * This connects the React Native app to the indiiOS Firebase backend.
+ * This connects the React Native app to the indii Firebase backend.
  */
 
 const firebaseConfig = {

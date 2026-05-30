@@ -90,7 +90,7 @@ export const BankPanel: React.FC = () => {
                     <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
                     <p className="text-gray-500 font-medium max-w-xl">
                         Locally processed financial compliance and automated revenue splits.
-                        IndiiOS executes all logic via secure-context Python bridges.
+                        indii executes all logic via secure-context Python bridges.
                     </p>
                 </div>
 

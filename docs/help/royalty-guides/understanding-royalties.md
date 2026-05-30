@@ -1,6 +1,6 @@
 # Understanding Music Royalties: The Complete Guide
 
-**For:** indiiOS Artists  
+**For:** indii Artists  
 **Reading Time:** 8 minutes  
 **Last Updated:** March 2026
 
@@ -199,9 +199,9 @@ Most royalties pay quarterly, but with significant lag:
 
 ---
 
-## What indiiOS Does For You
+## What indii Does For You
 
-The indiiOS platform helps you:
+The indii platform helps you:
 
 1. **Track registrations** — See what's complete and what's missing
 2. **Guide you through setup** — Step-by-step instructions for each organization
@@ -231,7 +231,7 @@ Before releasing music, complete:
 
 ## Need Help?
 
-- **Publishing Agent** — Available in the indiiOS app for guidance
+- **Publishing Agent** — Available in the indii app for guidance
 - **PRO websites:** bmi.com, ascap.com, sesac.com
 - **SoundExchange:** soundexchange.com
 - **MLC:** themlc.com

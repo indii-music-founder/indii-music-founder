@@ -144,8 +144,8 @@ jobs:
         run: |
           set -e
           BRANCH="autoagent/nightly-${RUN_NUMBER}"
-          git config user.name "indiiOS AutoAgent"
-          git config user.email "autoagent@indiios.local"
+          git config user.name "indii AutoAgent"
+          git config user.email "autoagent@indii.local"
           git checkout -b "$BRANCH"
           git add agents/agent0/prompt.md
 

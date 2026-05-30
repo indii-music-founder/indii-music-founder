@@ -12,7 +12,8 @@ import {
     doc as firestoreDoc,
     getCountFromServer,
 } from 'firebase/firestore';
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { cleanPrompt } from '@/utils/prompt';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
@@ -29,6 +30,7 @@ import {
     DEFAULT_ENGINE_CONFIG,
     DEFAULT_CONSOLIDATION_CONFIG,
 } from '@/types/AlwaysOnMemory';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ============================================================================
 // ENGINE
@@ -48,7 +50,7 @@ import {
  * 3. Entity graph for cross-memory connections
  * 4. Domain-aware categories for creative workflows
  * 5. Firestore persistence with cloud sync
- * 6. Integrated with indiiOS agent architecture
+ * 6. Integrated with indii agent architecture
  *
  * @example
  * ```typescript
@@ -99,6 +101,10 @@ export class AlwaysOnMemoryEngine {
     // ========================================================================
     // LIFECYCLE
     // ========================================================================
+
+    private get isE2EMode(): boolean {
+        return isFirebaseE2EMockEnabled();
+    }
 
     /**
      * Start the Always-On Memory Engine for a specific user.
@@ -195,6 +201,21 @@ export class AlwaysOnMemoryEngine {
         } finally {
             this.isIngesting = false;
         }
+    }
+
+    /**
+     * Specifically persist user feedback as a high-priority 'feedback' memory.
+     *
+     * @param text - The feedback comment or descriptive action
+     * @param rating - User rating (positive/negative)
+     * @returns Success message
+     */
+    public async saveFeedback(text: string, rating: 'positive' | 'negative' | 'neutral'): Promise<string> {
+        return this.ingest(
+            text,
+            `user_feedback_${rating}`,
+            'feedback'
+        );
     }
 
     /**
@@ -338,17 +359,19 @@ Always cite your sources.`
                 : `You don't have stored memories for this topic yet, but you can answer based on your general knowledge.
 If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
 
-            const prompt = `You are a Memory Query Agent for a creative music/visual production platform called indiiOS.
-${memoryContext}
-Be thorough but concise.
+            const prompt = cleanPrompt(`
+                You are a Memory Query Agent for a creative music/visual production platform called indii.
+                ${memoryContext}
+                Be thorough but concise.
 
-MEMORIES:
-${memoryBlock}
-${insightBlock}
+                MEMORIES:
+                ${memoryBlock}
+                ${insightBlock}
 
-QUESTION: ${question}
+                QUESTION: ${question}
 
-ANSWER:`;
+                ANSWER:
+            `);
 
             const answer = await AIService.getInstance().generateText(
                 prompt,
@@ -378,7 +401,7 @@ ANSWER:`;
      * instruct the Marketing Agent to transition to Saver Lookalike Audiences.
      */
     public async evaluateMarketingLookalikeThreshold(totalPixelEvents: number): Promise<void> {
-        if (!this.userId) return;
+        if (!this.userId || this.isE2EMode) return;
 
         if (totalPixelEvents >= 2000) {
             logger.info(`[AlwaysOnMemoryEngine] 2,000+ conversion events detected (${totalPixelEvents}). Triggering Saver Lookalike transition.`);
@@ -413,7 +436,7 @@ ANSWER:`;
             lastIngestedAt: this.lastIngestedAt || undefined,
         };
 
-        if (!this.userId) return status;
+        if (!this.userId || this.isE2EMode) return status;
 
         try {
             // Get total count
@@ -454,44 +477,97 @@ ANSWER:`;
     }
 
     /**
-     * Get all memories for the current user.
+     * Get all memories for the current user, optionally filtered by project or session.
      */
-    public async getAllMemories(maxCount: number = 50): Promise<AlwaysOnMemory[]> {
-        if (!this.userId) return [];
+    public async getAllMemories(
+        maxCount: number = 50,
+        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
+    ): Promise<AlwaysOnMemory[]> {
+        if (!this.userId || this.isE2EMode) return [];
 
-        const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
-        const q = query(
-            memoryRef,
-            where('isActive', '==', true),
-            orderBy('createdAt', 'desc'),
-            limit(maxCount)
-        );
+        try {
+            const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
+            let q = query(
+                memoryRef,
+                where('isActive', '==', true),
+                orderBy('createdAt', 'desc')
+            );
 
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        })) as AlwaysOnMemory[];
+            if (filters?.projectId) {
+                q = query(q, where('sourceProjectId', '==', filters.projectId));
+            }
+            if (filters?.sessionId) {
+                q = query(q, where('sourceSessionId', '==', filters.sessionId));
+            }
+            if (filters?.category) {
+                q = query(q, where('category', '==', filters.category));
+            }
+
+            const snapshot = await getDocs(query(q, limit(maxCount)));
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as AlwaysOnMemory[];
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] getAllMemories failed:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve relevant memories based on semantic similarity or filters.
+     * Useful for agents that need raw memory fragments rather than a synthesized answer.
+     */
+    public async retrieve(
+        options: {
+            query?: string;
+            projectId?: string;
+            sessionId?: string;
+            categories?: AlwaysOnMemoryCategory[];
+            limit?: number;
+        }
+    ): Promise<AlwaysOnMemory[]> {
+        if (!this.userId || this.isE2EMode) return [];
+
+        // For now, we fetch the most recent ones filtered by project/session
+        // and let the agent filter them further if needed.
+        // True vector search happens in the query() method, but for raw retrieval,
+        // we provide this interface for compatibility with legacy systems.
+        try {
+            return await this.getAllMemories(options.limit || 10, {
+                projectId: options.projectId,
+                sessionId: options.sessionId,
+                category: options.categories?.[0] // Simplified for now
+            });
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] retrieve failed:', error);
+            return [];
+        }
     }
 
     /**
      * Get consolidation insights for the current user.
      */
     public async getInsights(maxCount: number = 10): Promise<ConsolidationInsight[]> {
-        if (!this.userId) return [];
+        if (!this.userId || this.isE2EMode) return [];
 
-        const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
-        const q = query(
-            insightRef,
-            orderBy('createdAt', 'desc'),
-            limit(maxCount)
-        );
+        try {
+            const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
+            const q = query(
+                insightRef,
+                orderBy('createdAt', 'desc'),
+                limit(maxCount)
+            );
 
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        })) as ConsolidationInsight[];
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as ConsolidationInsight[];
+        } catch (error) {
+            logger.warn('[AlwaysOnMemoryEngine] getInsights failed:', error);
+            return [];
+        }
     }
 
     /**
@@ -499,6 +575,7 @@ ANSWER:`;
      */
     public async deleteMemory(memoryId: string): Promise<void> {
         if (!this.userId) throw new Error('Engine not started');
+        if (this.isE2EMode) return;
 
         const ref = firestoreDoc(db, 'users', this.userId, 'alwaysOnMemories', memoryId);
         await deleteDoc(ref);
@@ -510,6 +587,7 @@ ANSWER:`;
      */
     public async clearAll(): Promise<{ memoriesDeleted: number; insightsDeleted: number }> {
         if (!this.userId) throw new Error('Engine not started');
+        if (this.isE2EMode) return { memoriesDeleted: 0, insightsDeleted: 0 };
 
         let memoriesDeleted = 0;
         let insightsDeleted = 0;

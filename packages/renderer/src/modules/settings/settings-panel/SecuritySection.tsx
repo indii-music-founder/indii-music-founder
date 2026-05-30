@@ -24,8 +24,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
-import { BrainCircuit, Database } from 'lucide-react'; // Icon for wisdom pool
-import { autoMemoryExtractor, AutoMemoryConfig } from '@/services/agent/memory/AutoMemoryExtractor';
+import { Database } from 'lucide-react';
 
 const AuditLogDashboard = React.lazy(() =>
     import('@/modules/settings/components/AuditLogDashboard').then(m => ({ default: m.AuditLogDashboard }))
@@ -42,13 +41,6 @@ const SecuritySection: React.FC = () => {
     const [showAuditLog, setShowAuditLog] = useState(false);
     const [exporting, setExporting] = useState(false);
     const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
-    const [autoMemoryConfig, setAutoMemoryConfig] = useState<AutoMemoryConfig>({ enabled: true, extractIntervalMs: 300000 });
-
-    React.useEffect(() => {
-        if (userProfile?.uid) {
-            autoMemoryExtractor.getConfig().then(cfg => setAutoMemoryConfig(cfg));
-        }
-    }, [userProfile?.uid]);
 
     const handleLogout = async () => {
         try {
@@ -87,7 +79,7 @@ const SecuritySection: React.FC = () => {
             const link = document.createElement('a');
             link.href = url;
             const isoDate = new Date().toISOString();
-            link.download = `indiios-data-export-${isoDate.substring(0, isoDate.indexOf('T'))}.json`;
+            link.download = `indii-data-export-${isoDate.substring(0, isoDate.indexOf('T'))}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -110,12 +102,65 @@ const SecuritySection: React.FC = () => {
                 description="Manage your account security and data."
             />
 
+            <div className="flex flex-col gap-3 mb-6">
+                {/* Sign Out Card */}
+                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-semibold text-white">Active Session</h3>
+                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                            <Check size={12} className="text-emerald-400" />
+                            {user?.email || 'Authenticated'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-2 rounded-lg transition-colors border border-red-500/20"
+                    >
+                        <LogOut size={14} />
+                        Sign Out
+                    </button>
+                </div>
+
+                {/* Data Export Premium Card */}
+                <div className="p-4 rounded-xl bg-linear-to-r from-indigo-500/10 to-purple-500/5 border border-indigo-500/20">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h3 className="text-sm font-semibold text-indigo-300 flex items-center gap-2">
+                                <Globe size={16} /> Data Ownership & Export
+                            </h3>
+                            <p className="text-xs text-slate-400 mt-1 max-w-[80%]">
+                                You own your data. Download a complete archive of your profile, brand kit, and preferences as JSON.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleDataExport}
+                            disabled={exporting}
+                            className="flex items-center gap-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-2 rounded-lg transition-colors disabled:opacity-50 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+                        >
+                            {exporting ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                            {exporting ? 'Archiving...' : 'Export Archive (.zip)'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div className="space-y-1">
-                <SettingRow icon={Shield} label="Authentication" description={user?.providerData?.[0]?.providerId || 'Unknown'}>
-                    <span className="text-xs text-emerald-400 flex items-center gap-1">
-                        <Check size={12} /> Verified
-                    </span>
+                <SettingRow icon={Rocket} label="Share Usage Data" description="Help us improve Indii by sharing anonymized usage metrics.">
+                    <Toggle
+                        enabled={userProfile?.preferences?.usageTelemetry !== false}
+                        onChange={(enabled) => updatePreferences({ usageTelemetry: enabled })}
+                    />
                 </SettingRow>
+
+                {/* Auto Memory Informational */}
+                <div className="px-4 py-3 flex items-center gap-3 bg-slate-800/20 rounded-xl border border-slate-700/30">
+                    <Database size={16} className="text-slate-500" />
+                    <div>
+                        <p className="text-xs font-medium text-slate-300">Auto Memory Extraction</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Auto Memory is always active. Agents continuously learn from your interactions.</p>
+                    </div>
+                    <Check size={14} className="ml-auto text-emerald-500/50" />
+                </div>
 
                 <SettingRow icon={ScrollText} label="Audit Log" description="View account activity and changes">
                     <button
@@ -123,47 +168,6 @@ const SecuritySection: React.FC = () => {
                         className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
                     >
                         {showAuditLog ? 'Hide' : 'View'} <ChevronRight size={12} className={`transition-transform ${showAuditLog ? 'rotate-90' : ''}`} />
-                    </button>
-                </SettingRow>
-
-                <SettingRow icon={BrainCircuit} label="Wisdom Pool (Agent Training)" description="Share anonymized decision rules to improve baseline agent instructions globally">
-                    <Toggle
-                        enabled={userProfile?.preferences?.wisdomPoolOptIn ?? false}
-                        onChange={(enabled) => updatePreferences({ wisdomPoolOptIn: enabled })}
-                    />
-                </SettingRow>
-
-                <SettingRow icon={Database} label="Auto Memory Extraction" description="Automatically extract knowledge from agent conversations to improve personalized responses.">
-                    <Toggle
-                        enabled={autoMemoryConfig.enabled}
-                        onChange={async (enabled) => {
-                            const newConfig = { ...autoMemoryConfig, enabled };
-                            setAutoMemoryConfig(newConfig);
-                            await autoMemoryExtractor.updateConfig(newConfig);
-                            showToast(enabled ? 'Auto memory enabled' : 'Auto memory disabled', 'success');
-                        }}
-                    />
-                </SettingRow>
-
-                <SettingRow icon={Rocket} label="Early Access (Beta Channel)" description="Receive early pre-release updates with experimental features before they reach stable.">
-                    <Toggle
-                        enabled={userProfile?.preferences?.updateChannel === 'beta'}
-                        onChange={(enabled) => {
-                            const newChannel = enabled ? 'beta' : 'stable';
-                            updatePreferences({ updateChannel: newChannel });
-                            window.electronAPI?.updater?.setChannel?.(newChannel);
-                        }}
-                    />
-                </SettingRow>
-
-                <SettingRow icon={Globe} label="Data Export" description="Download all your data as JSON">
-                    <button
-                        onClick={handleDataExport}
-                        disabled={exporting}
-                        className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                        {exporting ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
-                        {exporting ? 'Exporting...' : 'Export'}
                     </button>
                 </SettingRow>
             </div>
@@ -183,17 +187,6 @@ const SecuritySection: React.FC = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            {/* Sign Out */}
-            <div className="mt-8 pt-6 border-t border-slate-800">
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2.5 rounded-xl transition-colors w-full"
-                >
-                    <LogOut size={16} />
-                    Sign Out
-                </button>
-            </div>
 
             {/* Delete Account */}
             <div className="mt-4">

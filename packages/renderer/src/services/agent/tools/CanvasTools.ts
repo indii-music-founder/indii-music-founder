@@ -98,7 +98,7 @@ export const CanvasTools = {
      * that could obscure interactive UI elements.
      */
     draw_shape: wrapTool('draw_shape', async (args: {
-        shapeType: 'rect' | 'circle' | 'line' | 'text';
+        shapeType: 'rect' | 'circle' | 'line' | 'text' | 'image';
         x: number;
         y: number;
         width?: number;
@@ -109,9 +109,10 @@ export const CanvasTools = {
         stroke?: string;
         zIndex?: number;
         label?: string;
+        imageUrl?: string;
     }) => {
         try {
-            const { shapeType, x, y, width, height, radius, color = '#000', fill = true, stroke, label, zIndex = 0 } = args;
+            const { shapeType, x, y, width, height, radius, color = '#000', fill = true, stroke, label, imageUrl, zIndex = 0 } = args;
 
             // ISSUE-035: Validate and clamp z-index to prevent UI sabotage
             if (zIndex < 0) {
@@ -130,7 +131,7 @@ export const CanvasTools = {
                 );
             }
 
-            const validShapes = ['rect', 'circle', 'line', 'text'];
+            const validShapes = ['rect', 'circle', 'line', 'text', 'image'];
             if (!validShapes.includes(shapeType)) {
                 return toolError(
                     `Invalid shape type "${shapeType}". Must be one of: ${validShapes.join(', ')}`,
@@ -151,6 +152,9 @@ export const CanvasTools = {
             if (shapeType === 'line' && !width && !height) {
                 return toolError('Line shape requires width or height to define its extent', 'CANVAS_MISSING_DIMS');
             }
+            if (shapeType === 'image' && !imageUrl) {
+                return toolError('Image shape requires an imageUrl', 'CANVAS_MISSING_DIMS');
+            }
 
             // Fix ISSUE-053: Directly render to fabric.js canvas via canvasOps
             const { canvasOps } = await import('@/modules/creative/services/CanvasOperationsService');
@@ -158,21 +162,42 @@ export const CanvasTools = {
             const canvas = canvasOps.getCanvas();
 
             if (!canvas) {
-                // If CreativeDirector canvas is not initialized, fallback to pushing to store
-                const { useStore } = await import('@/core/store');
-                const shapeData = {
-                    id: secureRandomHex(8), shapeType, x, y, width, height, radius, color, fill, stroke, zIndex, label, createdAt: Date.now()
-                };
-                useStore.getState().pushCanvas({
-                    id: shapeData.id, type: 'shape', title: label || `${shapeType} shape`, data: shapeData, agentId: 'conductor', createdAt: shapeData.createdAt
-                });
-                return toolSuccess({ shapeId: shapeData.id, shapeType, zIndex }, `Fabric canvas not active. Fallback: Shape pushed to data store.`);
+                return toolError('Creative canvas is not active. Shape was not rendered.', 'CANVAS_NOT_ACTIVE');
             }
 
             // Fabric.js canvas is active, draw directly
+            const commonProps = { left: x, top: y, fill: fill ? color : 'transparent', stroke: stroke || (fill ? undefined : color), data: { zIndex } };
+
+            if (shapeType === 'image') {
+                try {
+                    const img = await fabric.Image.fromURL(imageUrl!, { crossOrigin: 'anonymous' });
+                    if (!img) {
+                        return toolError(`Failed to load image from URL: ${imageUrl}`);
+                    }
+                    img.set({ ...commonProps });
+                    if (width) img.scaleToWidth(width);
+                    else if (height) img.scaleToHeight(height);
+                    
+                    canvas.add(img);
+                    canvas.getObjects().sort((a: any, b: any) => {
+                        const zA = (a.data?.zIndex as number) || 0;
+                        const zB = (b.data?.zIndex as number) || 0;
+                        return zA - zB;
+                    });
+                    canvas.renderAll();
+                    
+                    logger.info(`[CanvasTools] Drew image shape at (${x}, ${y}) with z-index ${zIndex}`);
+                    return toolSuccess(
+                        { shapeType, zIndex },
+                        `Image drawn successfully at (${x}, ${y}) with z-index ${zIndex} directly onto the creative canvas.`
+                    );
+                } catch (err: any) {
+                    return toolError(`Failed to load image from URL: ${imageUrl}. Error: ${err.message}`);
+                }
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let fabricObj: any = null;
-            const commonProps = { left: x, top: y, fill: fill ? color : 'transparent', stroke: stroke || (fill ? undefined : color), data: { zIndex } };
 
             if (shapeType === 'rect') {
                 fabricObj = new fabric.Rect({ ...commonProps, width, height });

@@ -3,7 +3,7 @@
  * Core metadata schema for music tracks with DDEX extension support
  */
 
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 export interface RoyaltySplit {
     legalName: string;
@@ -92,7 +92,7 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     cLineYear?: number;
     cLineText?: string; // e.g., "2025 Publisher Name"
 
-    // AI Content Disclosure (ERN 4.3)
+    // Intelligence Content Disclosure (ERN 4.3)
     aiGeneratedContent: {
         isFullyAIGenerated: boolean;
         isPartiallyAIGenerated: boolean;
@@ -140,8 +140,8 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     youtubeContentIdOptIn?: boolean; // When true, content policy deal is included in DDEX ERN delivery
     youtubeContentIdPolicy?: 'monetize' | 'track' | 'block'; // Default: 'monetize'
 
-    // Cover Art AI Disclosure (2026 DSP Compliance)
-    coverArtAIGenerated?: boolean; // true when cover art was created by AI (e.g., Nano Banana)
+    // Cover Art Intelligence Disclosure (2026 DSP Compliance)
+    coverArtAIGenerated?: boolean; // true when cover art was created by Autonomous (e.g., Nano Banana)
 }
 
 // Type for release status in distribution
@@ -202,9 +202,9 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     isrc: '',
     explicit: false,
     genre: '',
-    labelName: DDEX_CONFIG.PARTY_NAME,
-    dpid: DDEX_CONFIG.PARTY_ID,
-    splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
+    labelName: INGESTION_CONFIG.ENTITY_NAME,
+    dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+    splits: [],
     pro: 'None',
     publisher: 'Self-Published',
     containsSamples: false,

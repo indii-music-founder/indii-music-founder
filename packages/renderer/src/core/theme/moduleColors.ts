@@ -8,7 +8,7 @@ import { type ModuleId } from '@/core/constants';
  * This file maps modules to their official brand colors defined in index.css.
  * The CSS variables (--color-dept-*) are the Single Source of Truth.
  *
- * Color Assignments (from indiiOS Brand Guide):
+ * Color Assignments (from indii.music Brand Guide):
  * - Royalties/Finance: Gold #FFC107 - Wealth, precision
  * - Distribution: Electric Blue #2196F3 - Data flow, logistics
  * - Marketing/PR: Magenta #E91E63 - Energy, attention
@@ -203,16 +203,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
     },
-    video: {
-        // Video shares Creative's purple aesthetic
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
-    },
     workflow: {
         // Workflow uses Social's connectivity cyan
         text: 'text-dept-social',
@@ -266,7 +256,7 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-creative',
     },
     agent: {
-        // Agent — Signature Green for AI intelligence
+        // Agent — Signature Green for Autonomous intelligence
         text: 'text-dept-creative',
         bg: 'bg-dept-creative/10',
         border: 'border-dept-creative',
@@ -458,16 +448,7 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-licensing/5',
         cssVar: '--color-dept-licensing',
     },
-    'maestro': {
-        // Maestro — Indigo for complex orchestration & harmony
-        text: 'text-indigo-400',
-        bg: 'bg-indigo-500/10',
-        border: 'border-indigo-500',
-        ring: 'focus-within:ring-indigo-500/50',
-        hoverText: 'hover:text-indigo-300',
-        hoverBg: 'hover:bg-indigo-500/5',
-        cssVar: '--color-dept-default',
-    },
+
     'security': {
         // Security — Red for alerts & compliance
         text: 'text-red-500',
@@ -478,6 +459,24 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-red-500/5',
         cssVar: '--color-dept-default',
     },
+    'devops': {
+        text: 'text-purple-500',
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500',
+        ring: 'focus-within:ring-purple-500/50',
+        hoverText: 'hover:text-purple-400',
+        hoverBg: 'hover:bg-purple-500/5',
+        cssVar: '--color-dept-default',
+    },
+    'screenwriter': {
+        text: 'text-purple-500',
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500',
+        ring: 'focus-within:ring-purple-500/50',
+        hoverText: 'hover:text-purple-400',
+        hoverBg: 'hover:bg-purple-500/5',
+        cssVar: '--color-dept-default',
+    }
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {

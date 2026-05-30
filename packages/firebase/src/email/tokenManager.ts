@@ -51,7 +51,7 @@ function getRedirectUri(provider: string): string {
 // ---------------------------------------------------------------------------
 
 export const emailExchangeToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 30,
      })
@@ -121,7 +121,7 @@ export const emailExchangeToken = functions
 // ---------------------------------------------------------------------------
 
 export const emailRefreshToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 15,
      })
@@ -204,7 +204,7 @@ export const emailRefreshToken = functions
 // ---------------------------------------------------------------------------
 
 export const emailRevokeToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [googleOAuthClientId, googleOAuthClientSecret],
         timeoutSeconds: 15,
      })

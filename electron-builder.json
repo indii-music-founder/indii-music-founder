@@ -1,5 +1,5 @@
 {
-  "appId": "com.indii.os",
+  "appId": "com.indii.music",
   "directories": {
     "output": "dist-electron"
   },
@@ -45,19 +45,19 @@
       "teamId": "${APPLE_TEAM_ID}"
     }
   },
-  "productName": "indiiOS",
+  "productName": "indii.music",
   "protocols": [
     {
-      "name": "indiiOS Auth Protocol",
+      "name": "indii.music Auth Protocol",
       "schemes": [
-        "indii-os"
+        "indii"
       ]
     }
   ],
   "publish": {
     "provider": "github",
     "owner": "the-walking-agency-det",
-    "repo": "indiiOS-Clean",
+    "repo": "indii-music",
     "releaseType": "release"
   },
   "win": {

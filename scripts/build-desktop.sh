@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Build script for indiiOS Studio Desktop Application
+# Build script for indii Studio Desktop Application
 # This script builds the web app and packages it with Electron
 
 set -e
 
-echo "🚀 Building indiiOS Studio for Desktop..."
+echo "🚀 Building indii Studio for Desktop..."
 
 # Parse command line arguments
 BUILD_MODE="${1:-release}"  # debug, release, staging
@@ -91,11 +91,11 @@ echo "✅ Build complete!"
 echo ""
 echo "Artifacts:"
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "mac" ]]; then
-  echo "  macOS: dist-electron-studio/indiiOS Studio.dmg"
+  echo "  macOS: dist-electron-studio/indii Studio.dmg"
 fi
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "win" ]]; then
-  echo "  Windows: dist-electron-studio/indiiOS-Studio Setup.exe"
+  echo "  Windows: dist-electron-studio/indii-Studio Setup.exe"
 fi
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "linux" ]]; then
-  echo "  Linux: dist-electron-studio/indiiOS-studio.AppImage"
+  echo "  Linux: dist-electron-studio/indii-studio.AppImage"
 fi

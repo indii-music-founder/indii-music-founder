@@ -34,8 +34,8 @@ try {
     logger.warn('[Startup] Sentry initialization failed (non-blocking):', error);
 }
 
-logger.debug("Indii OS Studio v1.2.6-manual-redeploy");
-document.title = "indiiOS - Studio (v1.2.6)";
+logger.debug("indii.music");
+document.title = "indii.music";
 
 try {
     ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -74,13 +74,8 @@ Promise.all([
     logger.error('[Phase 1] Failed to initialize offline services:', err);
 });
 
-// Phase 2: Initialize memory and orchestration services
+// Phase 2: Initialize orchestration services
 Promise.all([
-    import('@/services/memory/PersistentMemoryService').then(({ initializePersistentMemoryService: _initializePersistentMemoryService }) => {
-        // Initialized with user ID after auth
-        return Promise.resolve();
-    }),
-    import('@/services/memory/MemoryIndexService').then(({ initializeMemoryIndexService }) => initializeMemoryIndexService()),
     import('@/services/agent/ContextStackService').then(({ initializeContextStackService }) => initializeContextStackService()),
     import('@/services/agent/ReflectionLoop').then(({ initializeReflectionLoop }) => initializeReflectionLoop()),
 ]).then(() => {

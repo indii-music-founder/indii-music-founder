@@ -11,6 +11,10 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore';
+import { Directive } from '../directive/DirectiveTypes';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { RouterCallContext } from './a2a/transport/A2ATransport';
+
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
@@ -75,6 +79,10 @@ export interface LivingPlan {
 }
 
 export class LivingPlanService {
+  private get isE2EMode(): boolean {
+    return isFirebaseE2EMockEnabled();
+  }
+
   /**
    * Create a new living plan.
    */
@@ -84,6 +92,19 @@ export class LivingPlanService {
     goal: string,
     initialDraft: PlanDraft,
   ): Promise<LivingPlan> {
+    if (this.isE2EMode) {
+      return {
+        id: `e2e_plan_${Date.now()}`,
+        projectId,
+        userId,
+        goal,
+        draft: initialDraft,
+        history: [],
+        status: 'drafting',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+    }
     const now = serverTimestamp();
     const planData: Omit<LivingPlan, 'id'> = {
       projectId,
@@ -111,6 +132,9 @@ export class LivingPlanService {
    * Retrieve a specific plan by ID.
    */
   async getPlan(projectId: string, planId: string): Promise<LivingPlan | null> {
+    if (this.isE2EMode) {
+      return null;
+    }
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists()
@@ -129,6 +153,9 @@ export class LivingPlanService {
    * List all plans for a project, optionally filtered by status.
    */
   async getPlansForProject(projectId: string, status?: PlanStatus): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = status 
       ? query(
           collection(db, 'projects', projectId, 'livingPlans'),
@@ -153,6 +180,7 @@ export class LivingPlanService {
     planId: string,
     status: PlanStatus
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       status,
@@ -169,6 +197,7 @@ export class LivingPlanService {
     planId: string,
     draft: PlanDraft,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       draft,
@@ -184,6 +213,7 @@ export class LivingPlanService {
     planId: string,
     revision: Omit<Revision, 'timestamp'>,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
     if (!plan) throw new Error('Plan not found');
@@ -221,6 +251,7 @@ export class LivingPlanService {
     error?: string,
     result?: unknown,
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
     if (!plan || !plan.draft.steps) return;
@@ -246,6 +277,7 @@ export class LivingPlanService {
     planId: string,
     executionRef: LivingPlan['executionRef'],
   ): Promise<void> {
+    if (this.isE2EMode) return;
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     await updateDoc(docRef, {
       status: 'executing',
@@ -256,8 +288,16 @@ export class LivingPlanService {
 
   /**
    * Orchestrate execution of plan steps via Promise.all for parallelism using A2A Swarm.
+   *
+   * @param runAgent The bound in-process agent runner (from AgentService). REQUIRED for
+   *   the loopback A2A router to actually execute steps — without it the router has no
+   *   way to invoke the target agent and every step fails with "No runAgent available".
    */
-  async executePlanSteps(projectId: string, planId: string): Promise<void> {
+  async executePlanSteps(
+    projectId: string,
+    planId: string,
+    runAgent: RouterCallContext['runAgent']
+  ): Promise<void> {
     const plan = await this.getPlan(projectId, planId);
     if (!plan || !plan.draft.steps) return;
 
@@ -275,18 +315,45 @@ export class LivingPlanService {
       await this.updateStepStatus(projectId, planId, stepId, 'executing');
 
       try {
-        // Find the target agent for this step (assuming toolName indicates agent or we have a default mapping)
-        // Wait, the instruction says "Orchestrate dependent steps via Promise.all".
-        // Let's assume the toolName format is "agentId.toolName" or we just use consult_specialist
-        // If it's a living plan, usually the step specifies the task.
+        // toolName format is "agentId" or "agentId.something"; the leading segment
+        // is the target agent. The A2A router only understands the JSON-RPC method
+        // 'agent.execute' — the step's own task is what gets run on that agent.
         const agentId = step.toolName.split('.')[0] || 'generalist';
-        const method = step.toolName.split('.')[1] || 'execute';
 
+        // Construct a fully type-safe Directive object to satisfy A2AClient
+        const stepDirective: Directive = {
+          id: `dir_step_${step.id}`,
+          userId: plan.userId,
+          title: step.title,
+          status: 'IN_PROGRESS',
+          assignedAgent: agentId,
+          goalAncestry: [
+            {
+              type: 'task',
+              description: plan.goal,
+              id: plan.id,
+            }
+          ],
+          computeAllocation: {
+            maxTokens: 50000,
+            tokensUsed: 0,
+            isMaximizerModeActive: false,
+          },
+          contextFiles: [],
+          conversationThread: [],
+          requiresDigitalHandshake: false,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        };
+
+        // Compose the task for the target agent from the step.
+        const stepTask = [step.title, step.description].filter(Boolean).join(' — ');
         const result = await a2aClient.invoke(
-          agentId, 
-          method, 
-          step.input || {}, 
-          { id: crypto.randomUUID(), type: 'PLAN_STEP', status: 'in_progress', title: step.title, steps: [], createdAt: Date.now(), updatedAt: Date.now() } as any
+          agentId,
+          'agent.execute',
+          { task: stepTask, sharedContext: JSON.stringify(step.input || {}) },
+          stepDirective,
+          { runAgent, traceId: `plan_${planId}_${step.id}` }
         );
 
         await this.updateStepStatus(projectId, planId, stepId, 'complete', undefined, result);
@@ -341,6 +408,9 @@ export class LivingPlanService {
    * List plans for a project that are currently in a "live" state.
    */
   async listByProject(projectId: string): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', 'in', ['drafting', 'awaiting_approval', 'executing', 'proposed']),
@@ -356,6 +426,9 @@ export class LivingPlanService {
    * List plans awaiting approval.
    */
   async listAwaitingApproval(projectId: string): Promise<LivingPlan[]> {
+    if (this.isE2EMode) {
+      return [];
+    }
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', '==', 'awaiting_approval'),

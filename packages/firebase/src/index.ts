@@ -1,6 +1,9 @@
-// indiiOS Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
+// indii.music Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+
+// Initialize Firebase Admin immediately to prevent race conditions during import analysis
+admin.initializeApp();
 
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
@@ -16,9 +19,10 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
-import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
+import { editImageFn } from "./lib/image_generation";
+export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { analyzeAudioFn } from "./lib/audio";
-import { FUNCTION_AI_MODELS } from "./config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
@@ -31,11 +35,9 @@ import { generateThumbnail } from "./lib/image_resizing";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
-    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-music-founder";
 }
 
-// Initialize Firebase Admin
-admin.initializeApp();
 
 // Admin Functions
 export { setGodMode } from './functions/admin/setGodMode';
@@ -45,6 +47,9 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
+
+// Security Functions
+export { persistFraudAlert } from './functions/security/persistFraudAlert';
 
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
@@ -125,7 +130,7 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
+const ENFORCE_APP_CHECK = true;
 
 /**
  * Security Helper: Validate Organization Access
@@ -155,7 +160,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 
     // 3. Verify Membership
     if (!members.includes(userId)) {
-        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        functions.logger.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "You are not a member of this organization."
@@ -169,7 +174,7 @@ import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } fro
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
     return new Inngest({
-        id: "indii-os-functions",
+        id: "indii-music-functions",
         eventKey: inngestEventKey.value()
     });
 };
@@ -193,7 +198,7 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     // Note: If no admins exist yet, this securely defaults to deny-all.
     // Use the Firebase Admin SDK or a script to set `admin: true` on specific UIDs.
     if (!context.auth.token.admin) {
-        console.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
+        functions.logger.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "Access denied: Admin privileges required."
@@ -209,18 +214,18 @@ const requireAdmin = (context: functions.https.CallableContext) => {
  */
 const getAllowedOrigins = (): string[] => {
     const origins = [
-        'https://indiios-studio.web.app',
-        'https://indiios-studio.firebaseapp.com',
-        'https://indiios-v-1-1.web.app',
-        'https://indiios-v-1-1.firebaseapp.com',
-        'https://studio.indiios.com',
-        'https://indiios.com',
+        'https://indii.music',
+        'https://indii-studio.firebaseapp.com',
+        'https://indii-v-1-1.web.app',
+        'https://indii-v-1-1.firebaseapp.com',
+        'https://studio.indii.music',
+        'https://indii.music',
         'https://indii.music',
         'https://www.indii.music',
         'https://app.indii.music',
         'https://studio.indii.music',
         'app://.',  // Electron app
-        'http://localhost:4242' // Electron Studio (Vite)
+        
     ];
 
     // Add localhost origins in emulator/development mode
@@ -253,7 +258,7 @@ const corsHandler = corsLib({
         }
 
         // Reject unauthorized origins
-        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        functions.logger.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
         callback(new Error('CORS not allowed'));
     },
     credentials: true
@@ -299,7 +304,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
         memory: "2GB",
@@ -362,13 +367,13 @@ export const triggerVideoJob = functions
             // 2. That's it — the Firestore document creation above will trigger
             //    executeVideoJob via Firestore onCreate. No self-invocation needed.
 
-            console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            functions.logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
             return { success: true, message: "Video generation job started." };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[VideoJob] Error triggering video generation:", error);
+            functions.logger.error("[VideoJob] Error triggering video generation:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue video job: ${error.message}`
@@ -387,7 +392,7 @@ export const triggerVideoJob = functions
  * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
  */
 export const executeVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
@@ -400,7 +405,7 @@ export const executeVideoJob = functions
 
         // Only process documents with status "queued"
         if (data.status !== "queued") {
-            console.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
+            functions.logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
 
@@ -410,7 +415,7 @@ export const executeVideoJob = functions
         const options = data.options || {};
 
         if (!userId || !prompt) {
-            console.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
+            functions.logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 status: "failed",
                 error: "Missing required fields: userId or prompt",
@@ -419,7 +424,7 @@ export const executeVideoJob = functions
             return;
         }
 
-        console.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
+        functions.logger.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
 
         // Run the generation
         try {
@@ -433,7 +438,7 @@ export const executeVideoJob = functions
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
-            console.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
+            functions.logger.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
     });
 
@@ -443,7 +448,7 @@ export const executeVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -592,7 +597,7 @@ export const triggerLongFormVideoJob = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[LongFormVideoJob] Error:", error);
+            functions.logger.error("[LongFormVideoJob] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
@@ -610,7 +615,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -700,7 +705,7 @@ export const renderVideo = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[RenderVideo] Error:", error);
+            functions.logger.error("[RenderVideo] Error:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue render job: ${error.message}`
@@ -753,7 +758,6 @@ export const inngestApi = functions
 // Deployed to us-west1 for Model Availability
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
 // Deployed to us-west1 for Model Availability
-export const generateImageV3 = generateImageV3Fn();
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
@@ -775,8 +779,8 @@ export const generateSpeech = functions
         const { text, voice, model } = validation.data;
 
         try {
-            console.log(`[generateSpeech] Generating speech with model: ${model}`);
-            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
             const apiKey = getGeminiApiKey();
 
             // Use REST API for precise control over TTS config
@@ -810,7 +814,7 @@ export const generateSpeech = functions
             const audioContent = part?.inlineData?.data;
 
             if (!audioContent) {
-                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
@@ -818,7 +822,7 @@ export const generateSpeech = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[generateSpeech] Error:", error);
+            functions.logger.error("[generateSpeech] Error:", error);
             throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
@@ -874,7 +878,7 @@ export const generateContentStream = functions
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
-                    console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
@@ -906,7 +910,7 @@ export const generateContentStream = functions
 
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
-                console.error("[generateContentStream] Error:", error);
+                functions.logger.error("[generateContentStream] Error:", error);
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
                 } else {
@@ -918,7 +922,7 @@ export const generateContentStream = functions
 
 export const ragProxy = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
         secrets: [geminiApiKey],
         timeoutSeconds: 60
     })
@@ -940,6 +944,21 @@ export const ragProxy = functions
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
+            }
+
+            // Verify App Check manually after CORS preflight has passed
+            if (ENFORCE_APP_CHECK) {
+                const appCheckToken = req.header('x-firebase-appcheck');
+                if (!appCheckToken) {
+                    res.status(401).send('Unauthorized: Missing App Check token');
+                    return;
+                }
+                try {
+                    await admin.appCheck().verifyToken(appCheckToken);
+                } catch (err) {
+                    res.status(401).send('Unauthorized: Invalid App Check token');
+                    return;
+                }
             }
 
             try {
@@ -1214,6 +1233,7 @@ import { getUsageStats } from "./subscription/getUsageStats";
 import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
+import { createMicroTransaction } from "./subscription/createMicroTransaction";
 
 export {
     getSubscription,
@@ -1226,7 +1246,8 @@ export {
     getUsageStats,
     trackUsage,
     stripeWebhook,
-    activateFounderPass
+    activateFounderPass,
+    createMicroTransaction
 };
 
 // ----------------------------------------------------------------------------
@@ -1408,7 +1429,7 @@ export const healthCheck = functions
  * Part of PRODUCTION_100 Item 12 (Multi-region Deployment)
  */
 export const healthCheckWest1 = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
@@ -1421,11 +1442,10 @@ export const healthCheckWest1 = functions
 
 /**
  * Fan Data Enrichment Service
- * Process batches of fans to append demographic, psychographic, and interest markers.
- * Integration points: Clearbit, Apollo via AI fallback.
+ * Process batches of fans through configured third-party enrichment providers.
  */
 export const enrichFanData = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 300,
         memory: "1GB",
@@ -1450,35 +1470,15 @@ export const enrichFanData = functions
         // 2. Validate Org Access
         await validateOrgAccess(context.auth.uid, orgId);
 
-        console.info(`[FanEnrichment] Processing ${fans.length} records via ${provider || 'AI_FALLBACK'}`);
+        const normalizedProvider = String(provider || '').toLowerCase();
+        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
-        // 3. Enrichment Logic
-        // In production, this calls Clearbit/Apollo API. 
-        // For Alpha, we use high-fidelity mock enrichment based on industry benchmarks.
-        const results = fans.map((fan: Record<string, unknown>) => {
-            const emailDomain = (fan.email as string).split('@')[1] || '';
-            const isCorporate = !['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'].includes(emailDomain);
-
-            // Heuristic-based enrichment
-            return {
-                ...fan,
-                location: fan.city || (isCorporate ? 'San Francisco, CA' : 'Los Angeles, CA'),
-                ageRange: isCorporate ? '35-44' : '18-24',
-                incomeBracket: isCorporate ? '$120k-$200k' : '$40k-$65k',
-                topGenre: fan.topGenre || (isCorporate ? 'Jazz' : 'Electronic'),
-                interests: isCorporate ? ['Investing', 'Tech'] : ['Live Events', 'Gaming'],
-                lastEnriched: new Date().toISOString()
-            };
-        });
-
-        return {
-            results,
-            metadata: {
-                provider: provider || 'AI_FALLBACK',
-                count: results.length,
-                timestamp: new Date().toISOString()
-            }
-        };
+        throw new functions.https.HttpsError(
+            "failed-precondition",
+            normalizedProvider
+                ? `Fan enrichment provider '${provider}' is not configured with live API credentials.`
+                : "Fan enrichment requires a configured provider."
+        );
     });
 
 // MCP SSE Server
@@ -1487,3 +1487,18 @@ export * from './mcp';
 // Agent Orchestration State Machine
 export * from './orchestration';
 export * from './pod/printful';
+
+// Payment Links
+export { createStripePaymentLinks } from './stripe/paymentLinks';
+
+// Printful POD
+export {
+    pod_printfulGetProducts,
+    pod_printfulGetProduct,
+    pod_printfulCalculatePrice,
+    pod_printfulGetShippingRates,
+    pod_printfulCreateOrder,
+    pod_printfulGetOrder,
+    pod_printfulCancelOrder,
+    pod_printfulGenerateMockup
+} from './pod/printful';

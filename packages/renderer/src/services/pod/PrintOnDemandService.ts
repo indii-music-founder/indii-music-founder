@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
-import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
+import { isTestHarnessRuntime } from '@/utils/e2eMode';
 /**
  * Print-on-Demand Service Abstraction Layer
  *
@@ -15,9 +15,8 @@ import { db, auth } from '@/services/firebase';
  * - Orchestration layer decides which provider to use
  * - Directive layer defines the business rules
  *
- * @mock The `InternalProvider` fallback uses a hardcoded product catalog and
- *       placeholder shipping rates. Suitable for demo/preview; production requires
- *       real Printful/Printify API keys configured in environment.
+ * The internal provider is a test-harness fixture only. Runtime fulfillment must
+ * go through configured external providers so orders and rates are not fabricated.
  */
 
 import { z } from 'zod';
@@ -267,7 +266,23 @@ class PrintfulProvider implements PODProviderAdapter {
 
     async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod = 'STANDARD'): Promise<PODOrder> {
         const result = await this.callFunction<any>('printfulCreateOrder', { items, address, shippingMethod });
-        return this.mapOrder(result);
+        const mappedOrder = this.mapOrder(result);
+
+        // Persist to Firestore
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error('Authenticated user is required to persist POD orders.');
+            }
+            const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), mappedOrder.id);
+            await setDoc(orderRef, mappedOrder);
+            logger.info(`[PrintfulProvider] Order ${mappedOrder.id} persisted to Firestore`);
+        } catch (e: unknown) {
+            logger.error('[PrintfulProvider] Failed to persist order to Firestore:', e);
+            throw e instanceof Error ? e : new Error(`Failed to persist POD order: ${String(e)}`);
+        }
+
+        return mappedOrder;
     }
 
     async getOrder(orderId: string): Promise<PODOrder | null> {
@@ -377,14 +392,13 @@ class PrintfulProvider implements PODProviderAdapter {
 }
 
 // ============================================================================
-// Internal Provider (Fallback when no POD configured)
+// Internal Provider (test harness only)
 // ============================================================================
 
 class InternalProvider implements PODProviderAdapter {
     name: PODProvider = 'internal';
 
     async getProducts(): Promise<PODProduct[]> {
-        // Return placeholder products for demo/development
         return [
             {
                 id: 'internal-tshirt',
@@ -481,7 +495,7 @@ class InternalProvider implements PODProviderAdapter {
     }
 
     async getShippingRates(_address: PODShippingAddress, _items: PODOrderItem[]): Promise<PODShippingRate[]> {
-        // Return placeholder rates
+        // Deterministic rates for test harness coverage only.
         return [
             { id: 'standard', name: 'Standard Shipping', rate: 4.99, currency: 'USD', estimatedDays: '5-7 business days' },
             { id: 'express', name: 'Express Shipping', rate: 12.99, currency: 'USD', estimatedDays: '2-3 business days' },
@@ -492,7 +506,10 @@ class InternalProvider implements PODProviderAdapter {
     async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod = 'standard'): Promise<PODOrder> {
         const pricing = await this.calculatePrice(items);
         const shipping = await this.getShippingRates(address, items);
-        const selectedShipping = shipping.find(s => s.id === shippingMethod) || shipping[0];
+            const selectedShipping = shipping.find(s => s.id === shippingMethod) || shipping[0];
+            if (!selectedShipping) {
+                throw new Error('No internal shipping rate fixture available.');
+            }
 
         // Generate secure order ID
         const array = new Uint8Array(9);
@@ -518,14 +535,15 @@ class InternalProvider implements PODProviderAdapter {
         // Persist to Firestore
         try {
             const uid = auth.currentUser?.uid;
-            if (uid) {
-                const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), order.id);
-                await setDoc(orderRef, order);
-                logger.info(`[InternalPOD] Order ${order.id} persisted to Firestore`);
+            if (!uid) {
+                throw new Error('Authenticated user is required to persist POD orders.');
             }
+            const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), order.id);
+            await setDoc(orderRef, order);
+            logger.info(`[InternalPOD] Order ${order.id} persisted to Firestore`);
         } catch (e: unknown) {
-            // Persistence failure should not block order creation
-            logger.warn('[InternalPOD] Failed to persist order to Firestore:', e);
+            logger.error('[InternalPOD] Failed to persist order to Firestore:', e);
+            throw e instanceof Error ? e : new Error(`Failed to persist POD order: ${String(e)}`);
         }
 
         return order;
@@ -535,8 +553,7 @@ class InternalProvider implements PODProviderAdapter {
         try {
             const uid = auth.currentUser?.uid;
             if (!uid) {
-                logger.warn('[InternalPOD] No authenticated user, cannot fetch order');
-                return null;
+                throw new Error('Authenticated user is required to fetch POD orders.');
             }
 
             const orderRef = doc(db, 'users', uid, 'pod_orders', orderId);
@@ -549,7 +566,7 @@ class InternalProvider implements PODProviderAdapter {
             return snapshot.data() as PODOrder;
         } catch (e: unknown) {
             logger.error('[InternalPOD] Failed to fetch order from Firestore:', e);
-            return null;
+            throw e instanceof Error ? e : new Error(`Failed to fetch POD order: ${String(e)}`);
         }
     }
 
@@ -557,8 +574,7 @@ class InternalProvider implements PODProviderAdapter {
         try {
             const uid = auth.currentUser?.uid;
             if (!uid) {
-                logger.warn('[InternalPOD] No authenticated user, cannot cancel order');
-                return false;
+                throw new Error('Authenticated user is required to cancel POD orders.');
             }
 
             const orderRef = doc(db, 'users', uid, 'pod_orders', orderId);
@@ -584,7 +600,7 @@ class InternalProvider implements PODProviderAdapter {
             return true;
         } catch (e: unknown) {
             logger.error('[InternalPOD] Failed to cancel order:', e);
-            return false;
+            throw e instanceof Error ? e : new Error(`Failed to cancel POD order: ${String(e)}`);
         }
     }
 
@@ -595,7 +611,7 @@ class InternalProvider implements PODProviderAdapter {
             const color = variant?.color || 'black';
             const type = product?.type || 'T-Shirt';
 
-            logger.debug(`[InternalPOD] Generating AI Mockup for ${type} (${color}) at ${printArea}`);
+            logger.debug(`[InternalPOD] Generating Autonomous Mockup for ${type} (${color}) at ${printArea}`);
 
             // 1. Convert Design URL to Base64 (if possible/needed) or pass as URL
             // The agent tool IndiiImageEdit expects image_bytes. 
@@ -612,12 +628,12 @@ class InternalProvider implements PODProviderAdapter {
                     const buffer = await blob.arrayBuffer();
                     imageBytes = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
                 } catch (e: unknown) {
-                    logger.warn(`[InternalPOD] Failed to fetch design for base64 conversion, using fallback URL logic`, e);
-                    return designUrl; // Fallback
+                    logger.error(`[InternalPOD] Failed to fetch design for base64 conversion`, e);
+                    throw e instanceof Error ? e : new Error(`Failed to fetch design asset: ${String(e)}`);
                 }
             }
 
-            // AI mockup generation via Firebase Cloud Function
+            // Autonomous mockup generation via Firebase Cloud Function
             const { httpsCallable } = await import('firebase/functions');
             const { functionsWest1: functions } = await import('@/services/firebase');
             const editImageFn = httpsCallable(functions, 'editImage');
@@ -632,10 +648,10 @@ class InternalProvider implements PODProviderAdapter {
             const url = result.data?.url || result.data?.visual;
             if (url) return url;
 
-            return designUrl; // Fallback
+            throw new Error('Image editing function did not return a mockup URL.');
         } catch (error: unknown) {
-            logger.error('[InternalPOD] AI Mockup generation error:', error);
-            return designUrl; // Fallback
+            logger.error('[InternalPOD] Autonomous Mockup generation error:', error);
+            throw error instanceof Error ? error : new Error(`POD mockup generation failed: ${String(error)}`);
         }
     }
 }
@@ -646,7 +662,11 @@ class InternalProvider implements PODProviderAdapter {
 
 class PrintOnDemandServiceClass {
     private providers: Map<PODProvider, PODProviderAdapter> = new Map();
-    private defaultProvider: PODProvider = 'internal';
+    private defaultProvider: PODProvider = 'printful';
+
+    private get isTestHarnessMode(): boolean {
+        return isTestHarnessRuntime();
+    }
 
     constructor() {
         // Register providers
@@ -654,7 +674,6 @@ class PrintOnDemandServiceClass {
 
         // Printful provider uses Cloud Functions for secure API communication
         this.registerProvider(new PrintfulProvider());
-        this.defaultProvider = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'test' ? 'internal' : 'printful';
     }
 
     registerProvider(provider: PODProviderAdapter): void {
@@ -663,18 +682,21 @@ class PrintOnDemandServiceClass {
 
     getProvider(name?: PODProvider): PODProviderAdapter {
         const providerName = name || this.defaultProvider;
+        if (providerName === 'internal' && !this.isTestHarnessMode) {
+            throw new Error('Internal POD provider is only available in the E2E/test harness. Configure a live provider.');
+        }
+
         const provider = this.providers.get(providerName);
 
         if (!provider) {
-            logger.warn(`[POD] Provider ${providerName} not found, falling back to internal`);
-            return this.providers.get('internal')!;
+            throw new Error(`POD provider ${providerName} is not registered or configured.`);
         }
 
         return provider;
     }
 
     getAvailableProviders(): PODProvider[] {
-        return Array.from(this.providers.keys());
+        return Array.from(this.providers.keys()).filter(provider => provider !== 'internal' || this.isTestHarnessMode);
     }
 
     isConfigured(provider: PODProvider): boolean {
@@ -721,5 +743,3 @@ class PrintOnDemandServiceClass {
 
 // Export singleton instance
 export const PrintOnDemandService = new PrintOnDemandServiceClass();
-
-

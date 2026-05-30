@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -163,7 +164,7 @@ const agents: AgentDef[] = [
   {
     id: 'governance',
     name: 'Operations',
-    title: 'Sovereign Command',
+    title: 'Independent Command',
     tagline: 'CEO Status.',
     description:
       'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
@@ -277,7 +278,7 @@ const agents: AgentDef[] = [
     title: 'Tribe Architect',
     tagline: 'Connected, Not Consumed.',
     description: 'Sync your social presence and keep your tribe engaged without the noise. Real connection, automated and authenticated by you.',
-    keywords: ['Unified Presence', 'Tribe Sync', 'Authentic Reach', 'Engagement Hub'],
+    keywords: ['Unified Presence', 'Tribe Sync', 'Authentic Reach', 'Engagement Swarm'],
     icon: Share2,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -337,7 +338,7 @@ const agents: AgentDef[] = [
     title: 'Tour Logistics',
     tagline: 'Dominate the Stage.',
     description: 'Venues, routes, and logistics handled autonomously. Focus on the performance while your digital tour team secures the dates.',
-    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics AI', 'Live Execution'],
+    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics Intelligence', 'Live Execution'],
     icon: MapPin,
     colorClass: 'text-red-400',
     bgClass: 'bg-red-500/10',
@@ -592,7 +593,7 @@ export default function AgentGrid() {
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
           No labels. No gatekeepers. Your music, your rules. Take control 
           of your career with global distribution, smart audio 
-          analysis, and individually trained agents organized to perform specialized tasks for your team. indiiOS is your <strong>independent creative engine</strong>.
+          analysis, and individually trained agents organized to perform specialized tasks for your team. indii is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 

@@ -12,8 +12,8 @@ vi.mock('@/utils/logger', () => ({
     }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContentStream: vi.fn()
     }
 }));

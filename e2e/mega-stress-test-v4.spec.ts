@@ -111,7 +111,7 @@ test.describe('Mega Stress Test v4.0 (The Regression Gauntlet)', () => {
             }
 
             // Click on the backdrop (assuming there's a backdrop element overlaying the canvas)
-            const backdrop = page.locator('div[role="dialog"] ~ div, .fixed.inset-0.bg-black\\/50').first();
+            const backdrop = page.locator('div[data-state="open"].fixed.inset-0, .fixed.inset-0.bg-black\\/50').first();
             await expect(backdrop).toBeVisible({ timeout: 5000 });
             await backdrop.click({ position: { x: 10, y: 10 } }); // Click top-left of backdrop
 

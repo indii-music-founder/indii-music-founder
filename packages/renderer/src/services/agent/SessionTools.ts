@@ -2,7 +2,7 @@
  * Agent-to-Agent Session Tools
  *
  * Implements inter-agent coordination primitives natively
- * within indiiOS's 3-layer architecture. Specialist agents (legal, finance, music,
+ * within indii's 3-layer architecture. Specialist agents (legal, finance, music,
  * etc.) can discover, message, and spawn sibling sessions without going through
  * a third-party broker.
  *

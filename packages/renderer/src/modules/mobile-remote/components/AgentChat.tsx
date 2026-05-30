@@ -197,7 +197,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Secure Connection Required</h3>
                 <p className="text-sm text-[#a1a1a6] leading-relaxed max-w-[280px]">
-                    Please log in to your indiiOS account to access your studio agents remotely.
+                    Please log in to your indii account to access your studio agents remotely.
                 </p>
             </div>
         );

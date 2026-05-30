@@ -1,4 +1,4 @@
-# Repository Seal Audit Report: indiiOS v1.58.0
+# Repository Seal Audit Report: indii v1.58.0
 
 **Timestamp:** 2026-05-02
 **Target Release:** v1.58.0
@@ -6,7 +6,7 @@
 **Protocol:** `/1percent`
 
 ## 1. Executive Summary
-The indiiOS-Clean repository has successfully passed the final 1% repository sealing protocol for the `v1.58.0` production release. The Creative Director UX hardening is complete (achieving a 30/30 UX score), and all underlying CI/CD, security, and repository metadata constraints have been verified as fully operational.
+The indii-Clean repository has successfully passed the final 1% repository sealing protocol for the `v1.58.0` production release. The Creative Director UX hardening is complete (achieving a 30/30 UX score), and all underlying CI/CD, security, and repository metadata constraints have been verified as fully operational.
 
 ## 2. Audit Checklist & Verification
 

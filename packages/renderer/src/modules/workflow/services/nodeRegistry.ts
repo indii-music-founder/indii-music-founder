@@ -36,7 +36,7 @@ export interface NodeDefinition {
     jobs: NodeJob[];
 }
 
-// Mock department configs for now
+// Static starter department configs for the workflow builder.
 const departmentConfigs = [
     { name: 'Art Department', templates: [{ title: 'Concept Art', description: 'Generate concept art', prompt: 'Concept art of...' }] },
     { name: 'Marketing Department', templates: [{ title: 'Ad Copy', description: 'Write ad copy', prompt: 'Write ad copy for...' }] },

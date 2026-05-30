@@ -21,7 +21,7 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Initialize Firebase Admin using Application Default Credentials
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-studio';
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indii-studio';
 
 initializeApp({
     credential: applicationDefault(),
@@ -33,7 +33,7 @@ console.log(`🔥 Using Firebase project: ${projectId}`);
 const db = getFirestore();
 const auth = getAuth();
 
-const TEST_USER_EMAIL = 'marcus.deep@test.indiios.com';
+const TEST_USER_EMAIL = 'marcus.deep@test.indii.music';
 const TEST_USER_PASSWORD = 'Test1234!';
 
 async function seedTestUser() {

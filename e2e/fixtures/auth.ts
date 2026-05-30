@@ -50,6 +50,29 @@ export type AuthFixtures = {
 
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
+    // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
+    const originalRoute = page.route.bind(page);
+    (page as any).route = (url: any, handler: any, options: any) => {
+      return originalRoute(url, async (route: any) => {
+        const req = route.request();
+        const originalFulfill = route.fulfill.bind(route);
+        route.fulfill = async (fulfillOptions: any) => {
+          const reqHeaders = req.headers();
+          const reqOrigin = reqHeaders['origin'] || reqHeaders['Origin'] || 'https://indii-music-studio.web.app';
+          const patchedHeaders = {
+            ...fulfillOptions.headers,
+            "Access-Control-Allow-Origin": reqOrigin,
+            "Access-Control-Allow-Credentials": "true",
+          };
+          return originalFulfill({
+            ...fulfillOptions,
+            headers: patchedHeaders
+          });
+        };
+        return handler(route);
+      }, options);
+    };
+
     // Log browser console messages to terminal for CI debugging
     page.on("console", (msg) => {
       const type = msg.type();
@@ -137,6 +160,62 @@ export const test = base.extend<AuthFixtures>({
           contentType: "application/json",
           body: JSON.stringify({
             file: { name: "files/mock-file-123", state: "ACTIVE" },
+          }),
+        });
+        return;
+      }
+
+      if (url.includes("getSubscription")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              id: 'mock-sub-global',
+              userId: 'test-user-uid-e2e',
+              tier: 'pro_monthly',
+              status: 'active',
+              currentPeriodStart: Date.now(),
+              currentPeriodEnd: Date.now() + 30 * 86400000,
+              cancelAtPeriodEnd: false,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            },
+          }),
+        });
+        return;
+      }
+
+      if (url.includes("getUsageStats")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              tier: 'pro_monthly',
+              resetDate: Date.now() + 30 * 86400000,
+              imagesGenerated: 0,
+              imagesRemaining: 100,
+              imagesPerMonth: 100,
+              videoDurationSeconds: 0,
+              videoDurationMinutes: 0,
+              videoRemainingMinutes: 10,
+              videoTotalMinutes: 10,
+              aiChatTokensUsed: 0,
+              aiChatTokensRemaining: 100000,
+              aiChatTokensPerMonth: 100000,
+              storageUsedGB: 0,
+              storageRemainingGB: 10,
+              storageTotalGB: 10,
+              projectsCreated: 0,
+              projectsRemaining: 10,
+              maxProjects: 10,
+              teamMembersUsed: 1,
+              teamMembersRemaining: 4,
+              maxTeamMembers: 5
+            },
           }),
         });
         return;
@@ -376,7 +455,7 @@ export const test = base.extend<AuthFixtures>({
               fileSearchStores: [
                 {
                   name: "fileSearchStores/mock-e2e-store",
-                  displayName: "indiiOS Default Store",
+                  displayName: "indii Default Store",
                 },
               ],
             }),
@@ -485,7 +564,7 @@ export const test = base.extend<AuthFixtures>({
           fileSearchStores: [
             {
               name: "fileSearchStores/mock-e2e-store",
-              displayName: "indiiOS Default Store",
+              displayName: "indii Default Store",
             },
           ],
         }),
@@ -510,7 +589,7 @@ export const test = base.extend<AuthFixtures>({
           contentType: "application/json",
           body: JSON.stringify({
             localId: "test-user-uid-e2e",
-            email: "e2e@indiios.test",
+            email: "e2e@indii.test",
             displayName: "E2E Test User",
             idToken: "mock-id-token-e2e",
             refreshToken: "mock-refresh-token-e2e",
@@ -530,7 +609,7 @@ export const test = base.extend<AuthFixtures>({
             users: [
               {
                 localId: "test-user-uid-e2e",
-                email: "e2e@indiios.test",
+                email: "e2e@indii.test",
                 displayName: "E2E Test User",
                 emailVerified: true,
               },
@@ -597,18 +676,21 @@ export const test = base.extend<AuthFixtures>({
     await page.route("**/firebaselogging.googleapis.com/**", async (route) => {
       await route.fulfill({ status: 200, headers: corsHeaders, body: "{}" });
     });
-    await page.route("**/firebase.googleapis.com/**", async (route) => {
-      if (route.request().method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
-        return;
+    await page.route(
+      url => url.hostname.includes('firebase.googleapis.com') || url.hostname.includes('content-firebaseappcheck.googleapis.com'),
+      async (route) => {
+        if (route.request().method() === "OPTIONS") {
+          await route.fulfill({ status: 204, headers: corsHeaders });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
+        });
       }
-      await route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: "application/json",
-        body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
-      });
-    });
+    );
 
     // Intercept Firebase Installations API
     await page.route("**/*installations.googleapis.com/**", async (route) => {
@@ -696,7 +778,7 @@ export const test = base.extend<AuthFixtures>({
       w.FIREBASE_E2E_MOCK = true;
       w.FIREBASE_USER_MOCK = {
         uid: "test-user-uid-e2e",
-        email: "e2e@indiios.test",
+        email: "e2e@indii.test",
         displayName: "E2E Test User",
         isAnonymous: false,
         getIdToken: () => Promise.resolve("mock-id-token-e2e"),
@@ -708,10 +790,10 @@ export const test = base.extend<AuthFixtures>({
         // Prevent onboarding wizard from hijacking navigation
         localStorage.setItem("onboarding_dismissed", "true");
         // Dismiss the first-run guided tour overlay
-        localStorage.setItem("indiiOS_tour_completed_v1", "true");
+        localStorage.setItem("indii_tour_completed_v1", "true");
         // Dismiss cookie consent banner so it doesn't overlay test targets
         // IMPORTANT: Must match ConsentPreferences interface exactly (requires version >= 1)
-        localStorage.setItem("indiiOS_cookie_consent", JSON.stringify({
+        localStorage.setItem("indii_cookie_consent", JSON.stringify({
           essential: true,
           analytics: false,
           errorTracking: false,

@@ -10,7 +10,7 @@ dotenv.config();
 const firebaseConfig = {
     apiKey: process.env.VITE_API_KEY,
     authDomain: process.env.VITE_AUTH_DOMAIN,
-    projectId: process.env.VITE_PROJECT_ID || process.env.VITE_VERTEX_PROJECT_ID || "indiios-v-1-1",
+    projectId: process.env.VITE_PROJECT_ID || process.env.VITE_VERTEX_PROJECT_ID || "indii-v-1-1",
     storageBucket: process.env.VITE_STORAGE_BUCKET,
     messagingSenderId: process.env.VITE_MESSAGING_SENDER_ID,
     appId: process.env.VITE_APP_ID,

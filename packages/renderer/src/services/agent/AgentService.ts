@@ -2,23 +2,24 @@ import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 import { auth } from '@/services/firebase';
+import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
-import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 import { livingPlanService } from './LivingPlanService';
 
 // Workflow coordinator removed for indii Conductor standard routing
 import { maestroBatchingService } from './MaestroBatchingService';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
 
+import { CostControlService } from '@/services/billing/CostControlService';
 /**
  * AgentService is the primary entry point for agent-related operations.
  * It manages the lifecycle of user messages, context resolution, orchestration, and execution.
@@ -30,6 +31,39 @@ export class AgentService {
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
     private responseCache = new Map<string, { text: string; thoughts: AgentThought[]; agentId: string }>();
+    private syncDebounceTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+    private debounceSyncMessage(resId: string, getMsg: () => AgentMessage | undefined) {
+        if (this.syncDebounceTimeouts.has(resId)) {
+            clearTimeout(this.syncDebounceTimeouts.get(resId)!);
+        }
+
+        const timeout = setTimeout(() => {
+            this.syncDebounceTimeouts.delete(resId);
+            const msg = getMsg();
+            if (msg) {
+                agentFirebaseConnector.syncMessage(msg).catch(err =>
+                    logger.error(`[AgentService] Swarm debounced sync failed for ${resId}:`, err)
+                );
+            }
+        }, 300);
+
+        this.syncDebounceTimeouts.set(resId, timeout);
+    }
+
+    private flushSyncMessage(resId: string, getMsg: () => AgentMessage | undefined) {
+        if (this.syncDebounceTimeouts.has(resId)) {
+            clearTimeout(this.syncDebounceTimeouts.get(resId)!);
+            this.syncDebounceTimeouts.delete(resId);
+        }
+        const msg = getMsg();
+        if (msg) {
+            agentFirebaseConnector.syncMessage(msg).catch(err =>
+                logger.error(`[AgentService] Swarm final sync failed for ${resId}:`, err)
+            );
+        }
+    }
+
 
     constructor() {
         // Components initialized. Agents are auto-registered in AgentRegistry singleton.
@@ -98,6 +132,23 @@ export class AgentService {
             await this.warmup();
         }
 
+        const activeUserId = auth.currentUser?.uid || null;
+        if (!activeUserId) {
+            this.addSystemMessage('Agent requests require an authenticated user.');
+            this.isProcessing = false;
+            if (useStore) {
+                try {
+                    const state = useStore.getState();
+                    if (typeof state.setAgentProcessing === 'function') {
+                        state.setAgentProcessing(false);
+                    }
+                } catch (_) {
+                    // Ignore store reset failure.
+                }
+            }
+            return;
+        }
+
         // PII Redaction for Agent/LLM Input AND Storage
         // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
         const redactedText = this.redactPII(text);
@@ -129,13 +180,11 @@ export class AgentService {
 
         // Tier 2: Index user message for semantic recall (Episodic Indexing)
         if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-            memoryService.saveMemory(
-                state.currentProjectId,
+            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+            alwaysOnMemoryEngine.ingest(
                 redactedText,
-                'session_message',
-                0.4,
-                'user',
-                state.activeSessionId
+                'user_input',
+                'context'
             ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
         }
 
@@ -234,7 +283,7 @@ export class AgentService {
                             ).catch(e => logger.warn('[AgentService] Autorater execution error:', e));
 
                             // Phase 3: Trigger Visual Autorater for image tool completions
-                            if (resultMsg.text && this.containsImageToolOutput(resultMsg.text)) {
+                            if (resultMsg.text && this.containsImageToolOutput(resultMsg)) {
                                 this.triggerVisualAutorater(
                                     resultMsg.text,
                                     redactedText,
@@ -292,7 +341,7 @@ export class AgentService {
                     } else {
                         // Case C: Standard timeout
                         updateMsg(responseId, {
-                            text: `⏳ **Still Thinking...** The AI is diving deep into this one. It's taking longer than expected (${timeoutMs / 1000}s), but don't hit the panic button yet! Grab a coffee. If you're generating heavy assets, they're probably still cooking and will show up in your Gallery soon.`,
+                            text: `⏳ **Still Thinking...** The Intelligence is diving deep into this one. It's taking longer than expected (${timeoutMs / 1000}s), but don't hit the panic button yet! Grab a coffee. If you're generating heavy assets, they're probably still cooking and will show up in your Gallery soon.`,
                             thoughts: [{
                                 id: uuidv4(),
                                 text: 'Request exceeded time limit',
@@ -370,14 +419,57 @@ export class AgentService {
         }
 
         if (conversationMode === 'direct') {
-            // Check if direct flow should be bypassed to standard graph orchestration,
-            // or handled via the pure LLM path if provider is set to 'direct'
-            if (state.activeAgentProvider === 'direct') {
-                logger.debug('[AgentService] Routing to direct chat flow (provider override)');
+            const targetAgentId = state.directTargetAgentId || 'generalist';
+            if (state.activeAgentProvider === 'direct' && targetAgentId === 'generalist') {
+                logger.debug('[AgentService] Routing to direct chat flow (provider override) for generalist');
                 await this.handleDirectChatFlow(text, attachments, context, responseId);
                 return;
             }
-            // If direct mode, and provider is not 'direct', we proceed to standard orchestration
+            
+            // For targeted specialists, bypass orchestration and execute directly via their executor!
+            logger.debug(`[AgentService] Executing direct specialist agent: ${targetAgentId}`);
+            updateAgentMessage(responseId, { agentId: targetAgentId });
+            
+            let currentStreamedText = '';
+            const result = await this.executor.execute(targetAgentId, text, context as PipelineContext, (event) => {
+                if (event.type === 'token') {
+                    currentStreamedText += event.content;
+                    updateAgentMessage(responseId, { text: currentStreamedText });
+                }
+
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                    const currentMsg = useStore.getState().agentHistory.find((m: AgentMessage) => m.id === responseId);
+                    const newThought: AgentThought = {
+                        id: uuidv4(),
+                        text: event.content || '',
+                        timestamp: Date.now(),
+                        type: event.type as AgentThought["type"],
+                    };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) newThought.toolName = event.toolName;
+                    }
+
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    if (currentMsg) {
+                        updateAgentMessage(responseId, {
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
+                        });
+                    }
+                }
+            }, undefined, undefined, attachments);
+
+            if (result && result.text) {
+                updateAgentMessage(responseId, {
+                    text: result.text,
+                    thoughtSignature: result.thoughtSignature
+                });
+            } else {
+                updateAgentMessage(responseId, {
+                    thoughtSignature: result?.thoughtSignature
+                });
+            }
+            return;
         }
 
         // 1. Resolve Orchestration Path
@@ -472,13 +564,11 @@ export class AgentService {
 
             // Tier 2: Index model response
             if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
-                memoryService.saveMemory(
-                    state.currentProjectId,
+                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                alwaysOnMemoryEngine.ingest(
                     result.text,
-                    'session_message',
-                    0.4,
-                    'agent',
-                    state.activeSessionId
+                    'agent_output',
+                    'context'
                 ).catch(err => logger.warn('[AgentService] Failed to index agent response:', err));
             }
         } else {
@@ -774,6 +864,14 @@ export class AgentService {
                     useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
                 }
 
+                // Sync initial message immediately
+                const initMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                if (initMsg) {
+                    agentFirebaseConnector.syncMessage(initMsg).catch(err => 
+                        logger.error(`[AgentService] Swarm initial sync failed for ${resId}:`, err)
+                    );
+                }
+
                 let currentStreamedText = '';
 
                 // Build the seated-agents manifest so the Conductor knows who is in the room
@@ -797,7 +895,7 @@ export class AgentService {
 
         const enhancedText = sanitizedText + assetContext + 
             '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-            `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
+            `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.` +
             (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
                 try {
@@ -811,6 +909,7 @@ export class AgentService {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
                                 useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                                this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                                 const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
@@ -828,6 +927,7 @@ export class AgentService {
                                     useStore.getState().updateBoardroomMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
+                                    this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                                 }
                             }
                         },
@@ -879,6 +979,10 @@ export class AgentService {
                             });
                         }
                     }
+
+                    // Sync final completed message state to Firestore
+                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+
                     return { agentId, result };
                 } catch (err) {
                     logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
@@ -892,6 +996,10 @@ export class AgentService {
                             type: 'error'
                         }]
                     });
+
+                    // Sync error/failure state
+                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+
                     return { agentId, result: null };
                 }
             });
@@ -908,7 +1016,7 @@ export class AgentService {
 
     /**
      * Direct Chat Flow: Bypasses all orchestration and talks straight to the LLM.
-     * Uses FirebaseAIService streaming for low-latency conversational responses.
+     * Uses FirebaseIntelligenceService streaming for low-latency conversational responses.
      * No tools, no specialist agents, no context pipeline overhead.
      */
     private async handleDirectChatFlow(
@@ -1034,9 +1142,29 @@ The user will see this plan and can approve it to start execution.`;
         ];
 
         try {
-            const { stream } = await GenAI.generateContentStream(
+
+        // Cost Control: Agent streaming is inexpensive but still tracked
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            const streamCostCheck = await CostControlService.checkAndReserve({
+                operationType: 'agent_stream',
+                estimatedCost: 0.001, // ~$0.001 per request
+                userId: currentUser.uid,
+                metadata: {
+                    model: INTELLIGENCE_MODELS.TEXT.FAST,
+                    messageLength: text.length,
+                    source: 'web',
+                },
+            });
+
+            if (!streamCostCheck.allowed) {
+                throw new Error(`Agent streaming blocked: ${streamCostCheck.reason}`);
+            }
+        }
+
+            const { stream } = await AutonomousIntelligence.generateContentStream(
                 contents,
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 undefined,
                 systemPrompt
             );
@@ -1066,11 +1194,14 @@ The user will see this plan and can approve it to start execution.`;
             if (jsonMatch && jsonMatch[1]) {
                 try {
                     const parsed = JSON.parse(jsonMatch[1]);
-                    const planDraft = parsed.livingPlan;
+                        const planDraft = parsed.livingPlan;
 
-                    if (planDraft && context.projectId) {
-                        const { auth } = await import('@/services/firebase');
-                        const userId = auth.currentUser?.uid || 'unknown';
+                        if (planDraft && context.projectId) {
+                            const { auth } = await import('@/services/firebase');
+                            const userId = auth.currentUser?.uid || null;
+                            if (!userId) {
+                                throw new Error('User must be authenticated to create living plans.');
+                            }
 
                         const plan = await livingPlanService.create(
                             userId,
@@ -1094,10 +1225,10 @@ The user will see this plan and can approve it to start execution.`;
                 planId,
                 thoughts: [{
                     id: crypto.randomUUID(),
-                    text: planId ? 'Drafted execution plan' : 'Direct Chat (Fast Path)',
+                    text: planId ? 'Drafted execution plan' : 'Analyzed Context',
                     timestamp: Date.now(),
                     type: planId ? 'logic' : 'logic',
-                    toolName: 'Direct LLM'
+                    toolName: 'Agent Core'
                 }]
             });
         } catch (err: unknown) {
@@ -1149,13 +1280,14 @@ The user will see this plan and can approve it to start execution.`;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const memories = await memoryService.retrieveRelevantMemories(projectId, task, 5);
-                    if (memories && memories.length > 0) {
-                        context.relevantMemories = memories;
-                        context.memoryContext = memories
-                            .map(m => `- ${m}`)
+                    const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                    const results = await alwaysOnMemoryEngine.retrieve({ query: task, limit: 5 });
+                    if (results && results.length > 0) {
+                        context.relevantMemories = results.map(m => m.summary || m.content);
+                        context.memoryContext = results
+                            .map(m => `- ${m.summary || m.content}`)
                             .join('\n');
-                        logger.debug(`[AgentService] Injected ${memories.length} memories into context.`);
+                        logger.debug(`[AgentService] Injected ${results.length} memories into context.`);
                     }
                 } catch (e: unknown) {
                     logger.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);
@@ -1317,7 +1449,7 @@ The user will see this plan and can approve it to start execution.`;
                     }
                 }
 
-                // Send a silent system prompt to make the AI aware of the user's action
+                // Send a silent system prompt to make the Autonomous aware of the user's action
                 await this.sendMessage(`[System Note] The user manually executed the tool '${toolName}' via the UI. Action complete.`, undefined, agentId, { source: 'desktop' });
             } else {
                 throw new Error(`Tool ${toolName} not found in registry.`);
@@ -1369,17 +1501,67 @@ The user will see this plan and can approve it to start execution.`;
     }
 
     /**
-     * Checks whether a message's text contains output from an image-producing tool.
-     * Used to gate the visual autorater — we only run it when an image was actually generated.
+     * Checks whether a message contains output from an image-producing tool.
+     * Checks both the message text and the structured thoughts (tool results).
      */
-    private containsImageToolOutput(text: string): boolean {
+    private containsImageToolOutput(message: AgentMessage): boolean {
+        // 1. Check thoughts (tool results) - most reliable
+        if (message.thoughts) {
+            const hasImageTool = message.thoughts.some(t => 
+                t.type === 'tool_result' && 
+                ['generate_image', 'edit_image', 'batch_edit_images', 'edit_image_with_annotations'].includes(t.toolName || '')
+            );
+            if (hasImageTool) return true;
+        }
+
+        // 2. Fallback to text patterns
         const imageToolPatterns = [
             /\[Tool: generate_image\]/,
             /\[Tool: edit_image_with_annotations\]/,
             /\[Tool: batch_edit_images\]/,
             /\[Tool: edit_image\]/,
         ];
-        return imageToolPatterns.some(pattern => pattern.test(text));
+        return imageToolPatterns.some(pattern => pattern.test(message.text || ''));
+    }
+
+    /**
+     * Helper to extract image data from a message's tool results.
+     */
+    private findImageInThoughts(thoughts: AgentThought[]): { url: string; mimeType: string } | null {
+        const imageThoughts = thoughts.filter(t => 
+            t.type === 'tool_result' && 
+            ['generate_image', 'edit_image', 'batch_edit_images', 'edit_image_with_annotations'].includes(t.toolName || '')
+        );
+
+        if (imageThoughts.length === 0) return null;
+
+        // Take the most recent image tool result
+        const lastThought = imageThoughts[imageThoughts.length - 1];
+        if (!lastThought || !lastThought.text) return null;
+
+        try {
+            const result = JSON.parse(lastThought.text);
+            const images = Array.isArray(result) ? result : [result];
+            const firstImage = images[0];
+
+            if (firstImage && firstImage.url) {
+                return {
+                    url: firstImage.url,
+                    mimeType: firstImage.url.includes('image/webp') ? 'image/webp' : 'image/png'
+                };
+            }
+        } catch (e) {
+            logger.warn('[AgentService] Failed to parse image tool result from thoughts:', e);
+            
+            // Fallback: try regex on the raw text if JSON parse fails
+            const base64Pattern = /data:(image\/[a-zA-Z+]+);base64,([a-zA-Z0-9+/=]+)/;
+            const match = lastThought.text.match(base64Pattern);
+            if (match && match[1]) {
+                return { url: match[0], mimeType: match[1] };
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1398,6 +1580,17 @@ The user will see this plan and can approve it to start execution.`;
     ): Promise<void> {
         try {
             const { VisualOutputAutorater } = await import('./governance/VisualOutputAutorater');
+            const { useStore } = await import('@/core/store');
+
+            // Find the message in history to access thoughts/tool results
+            const currentState = useStore.getState();
+            const history = isBoardroomMode ? currentState.boardroomMessages : currentState.agentHistory;
+            const message = (history as AgentMessage[]).find(m => m.id === responseId);
+
+            if (!message) {
+                logger.warn(`[AgentService] Visual autorater: Message ${responseId} not found in history`);
+                return;
+            }
 
             const traceId = `visual-${responseId}`;
             const originalImageId = responseId; // Use the response message ID as the image identifier
@@ -1408,12 +1601,39 @@ The user will see this plan and can approve it to start execution.`;
                 return;
             }
 
+            // Extract the actual image data from thoughts
+            let imageBytes = '';
+            let mimeType = 'image/png';
+
+            if (message.thoughts) {
+                const imageData = this.findImageInThoughts(message.thoughts);
+                if (imageData) {
+                    imageBytes = imageData.url;
+                    mimeType = imageData.mimeType;
+                }
+            }
+
+            // If no image data found in thoughts, try fallback to responseText regex
+            if (!imageBytes && responseText) {
+                const base64Pattern = /data:(image\/[a-zA-Z+]+);base64,([a-zA-Z0-9+/=]+)/;
+                const match = responseText.match(base64Pattern);
+                if (match && match[1]) {
+                    imageBytes = match[0];
+                    mimeType = match[1];
+                }
+            }
+
+            if (!imageBytes) {
+                logger.warn(`[AgentService] Visual autorater: No image data found for ${traceId}, proceeding with text-only evaluation (degraded)`);
+            }
+
             const input = {
-                imageBytes: '', // We pass the brief only — the LLM judge evaluates from the tool output description
+                imageBytes,
                 originalBrief,
                 agentId,
                 traceId,
                 originalImageId,
+                mimeType
             };
 
             const score = await VisualOutputAutorater.evaluateImage(input);

@@ -1,24 +1,28 @@
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
-import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { VideoJob, VideoSafetyRating } from '@/types/video';
 import { logger } from '@/utils/logger';
-import { neuralCortex, type RenderDirectives } from '@/services/ai/NeuralCortexService';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
 /** Strip undefined values from an object to prevent Firestore rejection. */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -28,7 +32,7 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
 }
 
 /**
- * VideoGenerationService - Client-side orchestrator for AI video production
+ * VideoGenerationService - Client-side orchestrator for Intelligence video production
  * 
  * Handles quota checking, prompt enrichment (cinematography/physics), 
  * temporal context analysis, and triggering both atomic and long-form 
@@ -224,7 +228,7 @@ export class VideoGenerationService {
 
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
-            return await GenAI.analyzeImage(analysisPrompt, image);
+            return await AutonomousIntelligence.analyzeImage(analysisPrompt, image);
         } catch (__e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
@@ -243,9 +247,20 @@ export class VideoGenerationService {
             if (import.meta.env.PROD) {
                 return { canGenerate: false, reason: 'Service unavailable. Please try again.' };
             }
-            // Fail open in DEV
-            return { canGenerate: true };
+            // FAIL-SECURE: Block if check fails (safety-first, not fail-open)
+            return { canGenerate: false, reason: 'Quota check unavailable. Please try again.' };
         }
+    }
+
+
+    /**
+     * Estimate the cost of video generation based on duration and model.
+     * Pricing: fast=$0.10/sec, pro=$0.40/sec
+     */
+    private estimateVideoCost(durationSeconds: number, model?: string): number {
+        const actualModel = model || DEFAULT_VIDEO_MODEL;
+        const rate = actualModel.includes('pro') ? 0.40 : 0.10;
+        return durationSeconds * rate;
     }
 
     private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high' }, userProfile?: UserProfile): string {
@@ -285,7 +300,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseAIService (no Cloud Functions).
+     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -299,251 +314,59 @@ export class VideoGenerationService {
             throw new Error(`Invalid video parameters: ${errorMsg}`);
         }
 
-        // Enforce Authentication — capture UID immediately to prevent race condition
-        // (auth.currentUser can become null between check and use)
         const currentUser = auth.currentUser;
         if (!currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
         }
         const userId = currentUser.uid;
 
-        logger.info('[VideoGeneration] 🎬 generateVideo() called:', {
+        const quotaCheck = await this.checkVideoQuota();
+        if (!quotaCheck.canGenerate) {
+            const tierInfo = await subscriptionService.getCurrentSubscription();
+            throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
+        }
+
+        logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
             promptPreview: options.prompt.substring(0, 100),
-            model: options.model || DEFAULT_VIDEO_MODEL,
-            duration: options.duration || options.durationSeconds || 8,
-            aspectRatio: options.aspectRatio,
-            hasFirstFrame: !!options.firstFrame,
-            hasLastFrame: !!options.lastFrame,
-            hasReferenceImages: !!options.referenceImages?.length,
             userId,
         });
 
-        // ISSUE-008 FIX: Veo 3.1 does not support 4K output. 
-        // Auto-downgrade to 1080p at the service level to prevent silent failures
-        // across all call sites (DirectGeneration, CreativeStudio, Andromeda, DaisyChain).
-        if (options.resolution === '4k') {
-            logger.warn('[VideoGeneration] 4K resolution requested but not supported by Veo. Auto-downgrading to 1080p.');
-            options = { ...options, resolution: '1080p' };
+        // Upload first frame if present
+        let firstFrameUri;
+        if (options.firstFrame) {
+            // firstFrame is a base64 or data URI. Upload it to get a gs:// URI.
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, options.firstFrame, 'image');
+        } else if (options.image && options.image.imageBytes) {
+            // handle the old imageBytes format just in case
+            const b64 = options.image.imageBytes;
+            const mime = options.image.mimeType || 'image/jpeg';
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, `data:${mime};base64,${b64}`, 'image');
         }
 
-        // Enforce quota check
-        const quota = await this.checkVideoQuota(1);
-        if (!quota.canGenerate) {
-            throw new Error(`Quota exceeded: ${quota.reason}`);
-        }
-
-        // Security: Sanitize Prompt (Redact PII)
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
-
-        // Temporal context analysis
-        let temporalContext = "";
-        if (options.firstFrame || options.lastFrame) {
-            const reference = options.firstFrame || options.lastFrame;
-            if (reference) {
-                temporalContext = await this.analyzeTemporalContext(reference, options.timeOffset || 4, options.prompt);
-            }
-        }
-
-        // Map internal parameters to AI service expectations
-        let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
+        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps,
             thinkingLevel: options.thinkingLevel
         }, options.userProfile);
 
-        if (temporalContext) {
-            enrichedPrompt += ` ${temporalContext}`;
-        }
-
-        const targetAspectRatio = this.determineTargetAspectRatio(options);
-
-        const { useStore } = await import('@/core/store');
-        const orgId = useStore.getState().currentOrganizationId;
-        const jobId = uuidv4();
-
-        // Write initial job record to Firestore for UI subscription
-        const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        const jobRef = doc(db, 'videoJobs', jobId);
-        await setDoc(jobRef, stripUndefined({
-            id: jobId,
-            userId,
-            orgId: orgId || 'personal',
-            prompt: enrichedPrompt,
-            status: 'processing',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            options: stripUndefined({
-                aspectRatio: targetAspectRatio,
-                resolution: options.resolution,
-                duration: options.duration || options.durationSeconds || 8,
-                // Audio is always-on for Veo 3.1
-                model: options.model || DEFAULT_VIDEO_MODEL,
-            }),
-        }));
-
-        // Persist video metadata for future retrieval and agent context
-        metadataPersistenceService.save('video', {
-            jobId,
-            prompt: options.prompt,
-            enrichedPrompt,
-            aspectRatio: targetAspectRatio,
-            cameraMovement: options.cameraMovement,
-            motionStrength: options.motionStrength,
-            duration: options.duration || 4,
-            hasFirstFrame: !!options.firstFrame,
-            hasLastFrame: !!options.lastFrame,
-            // Audio is always-on for Veo 3.1
-            model: options.model,
-            status: 'processing',
-            generatedAt: new Date().toISOString(),
-        }, {
-            showToasts: false,
-            maxRetries: 1,
-            queueOnFailure: true,
-        }).catch(err => {
-            logger.warn('[VideoGeneration] Failed to persist video metadata:', err);
-        });
-
-        // Build the image input if first frame is provided
-        // The Veo API expects raw base64 bytes, NOT data URIs with the prefix.
-        let firstFrameBytes: string | undefined;
-        if (options.firstFrame) {
-            firstFrameBytes = options.firstFrame;
-            // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,...")
-            const commaIndex = firstFrameBytes.indexOf(',');
-            if (firstFrameBytes.startsWith('data:') && commaIndex !== -1) {
-                firstFrameBytes = firstFrameBytes.substring(commaIndex + 1);
-            }
-        }
-
-        const imageInput = firstFrameBytes
-            ? { imageBytes: firstFrameBytes, mimeType: 'image/jpeg' }
-            : options.image
-                ? { imageBytes: options.image.imageBytes, mimeType: options.image.mimeType || 'image/jpeg' }
-                : undefined;
-
-        // Build lastFrame as the @google/genai SDK Image type.
-        // SDK expects: { imageBytes: string; mimeType: string } (flat, no nesting).
-        // See: node_modules/@google/genai/dist/genai.d.ts → Image_2
-        let lastFrameConfig: { imageBytes: string; mimeType: string } | undefined;
-        if (options.lastFrame) {
-            let lastFrameBytes = options.lastFrame;
-            // Strip data URI prefix if present safely
-            const commaIndex = lastFrameBytes.indexOf(',');
-            if (lastFrameBytes.startsWith('data:') && commaIndex !== -1) {
-                lastFrameBytes = lastFrameBytes.substring(commaIndex + 1);
-            }
-            lastFrameConfig = {
-                imageBytes: lastFrameBytes,
-                mimeType: 'image/jpeg'
-            };
-        }
-
-        // Generate video via direct @google/genai SDK (no Cloud Functions)
         try {
-            // Build the AI service request object
-            const aiRequest = {
+            const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
+            const res = await generateVideoV3({
                 prompt: enrichedPrompt,
-                model: options.model || DEFAULT_VIDEO_MODEL,
-                image: imageInput,
-                config: stripUndefined({
-                    aspectRatio: targetAspectRatio || '16:9',
-                    resolution: options.resolution,
-                    durationSeconds: options.duration || options.durationSeconds || 8,
-                    // NOTE: generateAudio and personGeneration are NOT supported in Veo 3.1 preview.
-                    // Including them causes 400 errors. Do NOT add them back without API verification.
-                    negativePrompt: options.negativePrompt,
-                    referenceImages: options.referenceImages?.length ? options.referenceImages : undefined,
-                    lastFrame: lastFrameConfig,
-                }),
-            };
-
-            logger.info('[VideoGeneration] 🚀 Calling GenAI.generateVideo() with:', {
-                model: aiRequest.model,
-                promptLength: aiRequest.prompt.length,
-                hasImage: !!aiRequest.image,
-                config: JSON.stringify(aiRequest.config),
+                firstFrameUri
             });
+            const data = res.data as { jobId: string };
 
-            const videoUrl = await this.withRetry(
-                () => GenAI.generateVideo(aiRequest),
-                'generateVideo (atomic)',
-                3,
-                2000
-            );
-
-            // Update Firestore with completed status for UI subscription
-            const { updateDoc } = await import('firebase/firestore');
-            await updateDoc(jobRef, {
-                status: 'completed',
-                videoUrl: videoUrl,
-                'output.url': videoUrl,
-                'output.metadata.quality': 'pro',
-                'output.metadata.mime_type': 'video/mp4',
-                updatedAt: serverTimestamp(),
-                completedAt: serverTimestamp(),
-            });
-
-            // 🔥 Fire-and-forget: Upload blob to Firebase Storage for durable persistence.
-            // Blob URLs are session-scoped and won't survive page refresh.
-            // This background upload ensures the video remains accessible in future sessions.
-            if (typeof videoUrl === 'string' && videoUrl.startsWith('blob:')) {
-                (async () => {
-                    try {
-                        const blobResponse = await fetch(videoUrl);
-                        const blob = await blobResponse.blob();
-                        const file = new File([blob], `veo_${jobId}.mp4`, { type: 'video/mp4' });
-
-                        const { VideoUploadService } = await import('./VideoUploadService');
-                        const storagePath = `videos/${userId}/${jobId}.mp4`;
-                        const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
-
-                        // Update Firestore with durable Storage URL
-                        const { updateDoc: updateDocAsync } = await import('firebase/firestore');
-                        await updateDocAsync(jobRef, {
-                            videoUrl: uploadResult.url,
-                            'output.url': uploadResult.url,
-                            'output.storagePath': uploadResult.path,
-                            updatedAt: serverTimestamp(),
-                        });
-
-                        // 🔑 Critical: Propagate the durable URL to in-memory Zustand state.
-                        // Without this, the store retains the ephemeral blob: URL and
-                        // video playback breaks after page refresh or blob GC.
-                        const { useStore: storeRef } = await import('@/core/store');
-                        storeRef.getState().updateHistoryItem(jobId, { url: uploadResult.url });
-
-                        logger.info(`[VideoGeneration] ✅ Video persisted to Storage: ${uploadResult.url}`);
-                    } catch (uploadError: unknown) {
-                        logger.warn('[VideoGeneration] Background Storage upload failed (non-blocking):', uploadError);
-                    }
-                })();
-            }
-
+            // We return a placeholder URL; the actual video will be resolved by waitForJob or the UI listener
             return [{
-                id: jobId,
-                url: videoUrl,
+                id: data.jobId,
+                url: '', 
                 prompt: enrichedPrompt
             }];
         } catch (error: unknown) {
-            // Update Firestore with failure for UI subscription
-            const { updateDoc } = await import('firebase/firestore');
-            const errorMsg = error instanceof Error ? error.message : String(error);
-
-            logger.error('[VideoGeneration] ❌ generateVideo() failed:', {
-                errorMessage: errorMsg,
-                errorName: error instanceof Error ? error.name : 'unknown',
-                errorType: error?.constructor?.name || 'unknown',
-                jobId,
-            });
-
-            await updateDoc(jobRef, {
-                status: 'failed',
-                error: errorMsg,
-                updatedAt: serverTimestamp(),
-            }).catch(e => logger.warn('[VideoGeneration] Failed to update job status:', e));
-
+            logger.error('[VideoGeneration] ❌ Gateway generateVideoV3 failed:', error);
             throw error;
         }
     }
@@ -588,7 +411,7 @@ export class VideoGenerationService {
     /**
      * Await a job to reach a terminal state (completed or failed).
      */
-    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<VideoJob> {
+    async waitForJob(jobId: string, timeoutMs: number = INTELLIGENCE_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<VideoJob> {
         let unsub: (() => void) | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -609,7 +432,7 @@ export class VideoGenerationService {
                         const videoUrl = job.output?.url;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (videoUrl && !videoUrl.startsWith('blob:')) {
+                        if (videoUrl && typeof videoUrl === 'string' && !videoUrl.startsWith('blob:')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(videoUrl, { method: 'HEAD' });
@@ -763,7 +586,7 @@ export class VideoGenerationService {
                 //   - Fails fast on 400, 401, 403, quota, safety violations
                 //   - Respects Retry-After headers when present
                 const videoUrl = await this.withRetry(
-                    () => GenAI.generateVideo({
+                    () => AutonomousIntelligence.generateVideo({
                         prompt: segmentPrompt,
                         model: options.model || DEFAULT_VIDEO_MODEL,
                         image: previousLastFrame

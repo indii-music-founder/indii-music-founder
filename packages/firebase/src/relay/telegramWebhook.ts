@@ -1,5 +1,5 @@
 /**
- * telegramWebhook — Telegram Bot → indiiOS Relay Bridge
+ * telegramWebhook — Telegram Bot → indii Relay Bridge
  *
  * HTTPS Cloud Function that receives Telegram Bot API webhook updates
  * and bridges them into the existing processRelayCommand pipeline via
@@ -11,10 +11,10 @@
  *
  * Commands:
  *   /start         — Welcome message + linking instructions
- *   /link <code>   — Link Telegram chat to indiiOS account
+ *   /link <code>   — Link Telegram chat to indii account
  *   /unlink        — Remove link
  *   /agent <id>    — Set default agent for this chat
- *   (any text)     — Forward to the linked indiiOS account's relay
+ *   (any text)     — Forward to the linked indii account's relay
  *
  * Architecture: Gen 1 HTTPS function with secrets
  * Timeout: 120s (webhook must respond within 60s to Telegram, but we need time to poll)
@@ -139,17 +139,17 @@ export const telegramWebhook = functions
  */
 async function handleStart(chatId: number, username: string): Promise<void> {
     const message = [
-        `🎵 Welcome to indiiOS, ${username}!`,
+        `🎵 Welcome to indii, ${username}!`,
         "",
-        "I'm your AI music assistant. Connect me to your indiiOS account to get started.",
+        "I'm your AI music assistant. Connect me to your indii account to get started.",
         "",
         "**How to link:**",
-        "1. Open indiiOS Studio → Settings → Integrations",
+        "1. Open indii Studio → Settings → Integrations",
         "2. Click \"Link Telegram\" to get a code",
         "3. Send me: `/link YOUR_CODE`",
         "",
         "**Commands:**",
-        "/link `<code>` — Connect to your indiiOS account",
+        "/link `<code>` — Connect to your indii account",
         "/unlink — Disconnect your account",
         "/agent `<id>` — Switch AI agent (e.g. `/agent brand`)",
         "/help — Show this message",
@@ -168,13 +168,13 @@ async function handleHelp(chatId: number): Promise<void> {
 }
 
 /**
- * /link <code> — Link Telegram chat to indiiOS account
+ * /link <code> — Link Telegram chat to indii account
  */
 async function handleLink(chatId: number, text: string, username: string): Promise<void> {
     const code = text.replace("/link ", "").trim();
 
     if (!code || code.length < 6) {
-        await sendTelegramMessage(chatId, "⚠️ Invalid code. Use `/link YOUR_CODE` with the code from indiiOS Studio.");
+        await sendTelegramMessage(chatId, "⚠️ Invalid code. Use `/link YOUR_CODE` with the code from indii Studio.");
         return;
     }
 
@@ -184,7 +184,7 @@ async function handleLink(chatId: number, text: string, username: string): Promi
     const codeDoc = await db.collection("telegram-link-codes").doc(code).get();
 
     if (!codeDoc.exists) {
-        await sendTelegramMessage(chatId, "❌ Code not found. Please generate a new one from indiiOS Studio.");
+        await sendTelegramMessage(chatId, "❌ Code not found. Please generate a new one from indii Studio.");
         return;
     }
 
@@ -193,7 +193,7 @@ async function handleLink(chatId: number, text: string, username: string): Promi
     // Check expiration
     const expiresAt = codeData.expiresAt?.toMillis?.() || 0;
     if (Date.now() > expiresAt) {
-        await sendTelegramMessage(chatId, "⏰ Code expired. Please generate a new one from indiiOS Studio.");
+        await sendTelegramMessage(chatId, "⏰ Code expired. Please generate a new one from indii Studio.");
         await codeDoc.ref.delete();
         return;
     }
@@ -275,7 +275,7 @@ async function handleMessage(chatId: number, text: string, username: string): Pr
 
     if (!linkDoc.exists) {
         await sendTelegramMessage(chatId, [
-            "⚠️ Your Telegram isn't linked to an indiiOS account yet.",
+            "⚠️ Your Telegram isn't linked to an indii account yet.",
             "",
             "Send /start for instructions on how to link.",
         ].join("\n"));
@@ -317,7 +317,7 @@ async function handleMessage(chatId: number, text: string, username: string): Pr
             await sendTelegramMessage(chatId, chunk);
         }
     } else {
-        await sendTelegramMessage(chatId, "⏰ Response timed out. The agent may still be processing — check indiiOS Studio for the full response.");
+        await sendTelegramMessage(chatId, "⏰ Response timed out. The agent may still be processing — check indii Studio for the full response.");
     }
 }
 

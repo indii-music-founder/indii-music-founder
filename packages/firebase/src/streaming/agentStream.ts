@@ -11,6 +11,8 @@ import { onRequest } from "firebase-functions/v2/https";
 import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Request, Response } from "express";
+import { GoogleGenAI } from "@google/genai";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 interface StreamToken {
   token: string;
@@ -54,6 +56,16 @@ export const agentStreamResponse = onRequest(
     secrets: ["GEMINI_API_KEY"]
   },
   async (req: Request, res: Response): Promise<void> => {
+    // Handle CORS preflight
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
     // Validate request method
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method not allowed" });
@@ -113,31 +125,57 @@ export const agentStreamResponse = onRequest(
         `[AgentStream] Starting stream for user=${userId}, agent=${agentId}`
       );
 
-      // TODO: Integrate with actual agent orchestration
-      // For now, simulate streaming response
-
-      let tokenIndex = 0;
-      const baseResponse = `I am processing your input: "${input}". `;
-      const words = baseResponse.split(" ");
-
-      // Simulate streaming tokens
-      for (const word of words) {
-        const streamToken: StreamToken = {
-          token: word + " ",
-          index: tokenIndex++,
-          timestamp: Date.now()
-        };
-
-        // Write SSE-formatted data
-        res.write(`data: ${JSON.stringify(streamToken)}\n\n`);
-
-        // Simulate processing delay (remove in production)
-        await new Promise((resolve) => setTimeout(resolve, 50));
+      // Initialize Gemini API client
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new HttpsError(
+          "internal",
+          "GEMINI_API_KEY not configured"
+        );
       }
 
-      // Send completion signal
-      res.write(`data: ${JSON.stringify({ complete: true, totalTokens: tokenIndex })}\n\n`);
-      res.end();
+      const genai = new GoogleGenAI({ apiKey });
+      let tokenIndex = 0;
+
+      try {
+        // Stream agent response from Gemini API
+        const stream = await genai.models.generateContentStream({
+          model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST,
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: input }]
+            }
+          ]
+        });
+
+        // Stream tokens to client
+        for await (const chunk of stream) {
+          if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
+            for (const part of chunk.candidates[0].content.parts) {
+              if ("text" in part && part.text) {
+                const streamToken: StreamToken = {
+                  token: part.text,
+                  index: tokenIndex++,
+                  timestamp: Date.now()
+                };
+
+                res.write(`data: ${JSON.stringify(streamToken)}\n\n`);
+              }
+            }
+          }
+        }
+
+        // Send completion signal
+        res.write(`data: ${JSON.stringify({ complete: true, totalTokens: tokenIndex })}\n\n`);
+        res.end();
+      } catch (error) {
+        console.error("[AgentStream] API error:", error);
+        throw new HttpsError(
+          "internal",
+          error instanceof Error ? error.message : "Failed to stream agent response"
+        );
+      }
 
       console.info(
         `[AgentStream] Completed stream for user=${userId}, tokenCount=${tokenIndex}`
@@ -170,6 +208,16 @@ export const agentStreamHealth = onRequest(
     region: "us-central1"
   },
   (req: Request, res: Response) => {
+    // Handle CORS preflight
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
     if (req.method !== "GET") {
       res.status(405).json({ error: "Method not allowed" });
       return;

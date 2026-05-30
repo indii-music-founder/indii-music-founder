@@ -2,7 +2,7 @@ import { serverTimestamp, where, orderBy, limit, Timestamp } from 'firebase/fire
 import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import type { EarningsDocument } from '@/types/firestore';
-import type { DateRange } from '@/services/ddex/types/common';
+import type { DateRange } from '@/services/distribution/proprietary-ingestion/types/common';
 import type { DistributorEarnings, DistributorId } from './types/distributor';
 import { logger } from '@/utils/logger';
 
@@ -108,7 +108,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
         return {
             ...doc,
             distributorId: doc.distributorId as DistributorId,
-            lastUpdated: doc.updatedAt.toDate().toISOString()
+            lastUpdated: (doc.updatedAt && typeof (doc.updatedAt as any).toDate === 'function') ? (doc.updatedAt as any).toDate().toISOString() : (doc.updatedAt ? new Date(doc.updatedAt as any).toISOString() : new Date().toISOString())
         };
     }
 }

@@ -1,5 +1,6 @@
-import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { db, functions } from '@/services/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { logger } from '@/utils/logger';
 
@@ -141,7 +142,7 @@ export class FraudDetectionService {
      * Legacy URL-based copyright check (maintained for backward compatibility)
      */
     /**
-     * Requirement 108: Copyright AI Filter
+     * Requirement 108: Copyright Autonomous Filter
      * Implements a preliminary hashing/screening layer using the Audio Fingerprinting service
      * before distribution to catch uncleared samples.
      * Backwards compatibility: If file is not provided (legacy call), we skip fingerprinting and only check URL.
@@ -194,7 +195,7 @@ export class FraudDetectionService {
             return { safe: true, fingerprint: fingerprint || undefined };
 
         } catch (e: unknown) {
-            logger.error('[FraudDetection] Failed to run Copyright AI filter', e);
+            logger.error('[FraudDetection] Failed to run Copyright Autonomous filter', e);
             // Fail open so we don't block distribution completely on external API failure,
             // but we log it heavily for manual review.
             return { safe: true };
@@ -232,9 +233,11 @@ export class FraudDetectionService {
 
     private static async persistAlert(alert: FraudAlert) {
         try {
-            await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
+            const persistFraudAlertFn = httpsCallable(functions, 'persistFraudAlert');
+            await persistFraudAlertFn(alert);
+            logger.info('[FraudDetection] Successfully persisted fraud alert via Cloud Function.');
         } catch (e: unknown) {
-            logger.error('[FraudDetection] Failed to persist alert', e);
+            logger.error('[FraudDetection] Failed to persist alert via Cloud Function', e);
         }
     }
 }

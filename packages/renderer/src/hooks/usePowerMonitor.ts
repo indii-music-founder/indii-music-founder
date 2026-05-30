@@ -15,7 +15,7 @@ export function usePowerMonitor() {
             const api = window.electronAPI;
 
             // Get initial state
-            api.power?.getState().then((state: string) => {
+            api.power?.getState().then((state: any) => {
                 setIsOnBattery(state === 'battery');
             }).catch((e: Error) => logger.warn('[usePowerMonitor] Failed to get initial power state', e));
 

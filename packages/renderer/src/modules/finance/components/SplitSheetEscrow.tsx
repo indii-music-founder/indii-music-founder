@@ -23,6 +23,7 @@ interface Collaborator {
 
 export function SplitSheetEscrow() {
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+    const [releaseTitle, setReleaseTitle] = useState('');
     const [escrowAmount, setEscrowAmount] = useState(0);
     const [released, setReleased] = useState(false);
     const [releasing, setReleasing] = useState(false);
@@ -35,12 +36,6 @@ export function SplitSheetEscrow() {
     const totalCount = collaborators.length;
     const allSigned = signedCount === totalCount;
     const progressPct = Math.round((signedCount / totalCount) * 100);
-
-    const handleSimulateSign = (id: string) => {
-        setCollaborators(prev =>
-            prev.map(c => c.id === id ? { ...c, signed: true } : c)
-        );
-    };
 
     /**
      * Item 202: Wire release to the real createTransfer Cloud Function.
@@ -61,12 +56,16 @@ export function SplitSheetEscrow() {
         try {
             // Only attempt real transfers for collaborators with a connected account.
             // Others are acknowledged but not transferred (they need to complete onboarding first).
-            const transferPromises = collaborators
-                .filter(c => c.accountId)
-                .map(c => {
-                    const splitAmount = Math.round((escrowAmount * 100 * c.splitPct) / 100); // cents
-                    return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
-                });
+            const connectedCollaborators = collaborators.filter(c => c.accountId);
+            const totalCents = Math.round(escrowAmount * 100);
+            let remainingCents = totalCents;
+
+            const transferPromises = connectedCollaborators.map((c, index) => {
+                const isLast = index === connectedCollaborators.length - 1;
+                const splitAmount = isLast ? remainingCents : Math.round((totalCents * c.splitPct) / 100);
+                remainingCents -= splitAmount;
+                return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
+            });
 
             await Promise.all(transferPromises);
             setReleased(true);
@@ -84,6 +83,11 @@ export function SplitSheetEscrow() {
      */
     const handleExportSplitSheet = async () => {
         if (collaborators.length === 0 || exporting) return;
+        const trimmedReleaseTitle = releaseTitle.trim();
+        if (!trimmedReleaseTitle) {
+            setReleaseError('Release title is required to export a split sheet.');
+            return;
+        }
         setExporting(true);
         setExportUrl(null);
         try {
@@ -94,7 +98,7 @@ export function SplitSheetEscrow() {
             >(functions, 'exportSplitSheet');
             const result = await exportFn({
                 splitSheetId: `ss_${Date.now()}`,
-                releaseTitle: 'Untitled Release',
+                releaseTitle: trimmedReleaseTitle,
                 collaborators,
                 totalEscrowAmount: escrowAmount || undefined,
             });
@@ -168,9 +172,16 @@ export function SplitSheetEscrow() {
                         <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                             <DollarSign size={20} className="text-emerald-400" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-3">
                             <p className="text-2xl font-black text-white">${escrowAmount.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 mt-0.5">Total escrowed — locked until all parties sign</p>
+                            <input
+                                type="text"
+                                value={releaseTitle}
+                                onChange={(event) => setReleaseTitle(event.target.value)}
+                                placeholder="Release title"
+                                className="w-full max-w-sm rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none transition-colors placeholder:text-gray-600 focus:border-emerald-400/60"
+                            />
                         </div>
                         <div className="text-right">
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${allSigned ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'}`}>
@@ -231,11 +242,11 @@ export function SplitSheetEscrow() {
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={() => handleSimulateSign(c.id)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-400 hover:text-white text-[10px] font-bold flex-shrink-0 transition-colors"
+                                            disabled
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-gray-500 text-[10px] font-bold flex-shrink-0 cursor-not-allowed"
                                         >
                                             <Clock size={10} />
-                                            Simulate Sign
+                                            Signature Required
                                         </button>
                                     )}
                                 </div>

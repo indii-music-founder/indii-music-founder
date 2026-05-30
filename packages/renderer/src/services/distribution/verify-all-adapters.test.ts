@@ -42,8 +42,8 @@ vi.mock('../EarningsService', () => ({
     }
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
     }
 }));
@@ -68,7 +68,7 @@ describe('All Distribution Adapters Integration', () => {
         isrc: 'US-GEN-25-00001',
         upc: '123456789012',
         catalogNumber: 'GEN-001',
-        dpid: 'PADPIDA2014040101U',
+        systemIdentifier: 'PADPIDA2014040101U',
         labelName: 'Generic Records',
         marketingComment: 'A test release for adapter verification.',
         originalReleaseDate: '2025-02-01',
@@ -90,7 +90,7 @@ describe('All Distribution Adapters Integration', () => {
 
     beforeAll(() => {
         // Setup Mock Assets
-        tempDir = path.join(os.tmpdir(), 'indiiOS_verify_assets');
+        tempDir = path.join(os.tmpdir(), 'indii_verify_assets');
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
         audioPath = path.join(tempDir, 'test_audio.wav');

@@ -1,7 +1,6 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getFineTunedModel } from '../fine-tuned-models';
@@ -34,7 +33,7 @@ export class MultiTurnAutorater {
     ): Promise<AutoraterScore | null> {
         try {
             const prompt = `
-You are an expert AI Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an AI agent.
+You are an expert Intelligence Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an Autonomous agent.
 
 Goal of the conversation:
 ${goalDescription}
@@ -67,12 +66,12 @@ Return the evaluation in structured JSON matching the requested schema.
                 required: ['goalCompletion', 'adherence', 'coherence', 'toolEfficiency', 'reasoning', 'overallPass']
             };
 
-            const result = await GenAI.generateStructuredData<AutoraterScore>(
+            const result = await AutonomousIntelligence.generateStructuredData<AutoraterScore>(
                 prompt,
                 schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                AI_MODELS.TEXT.AGENT
+                getFineTunedModel('generalist')
             );
 
             if (!result) {
@@ -123,7 +122,7 @@ Return the evaluation in structured JSON matching the requested schema.
     ): Promise<void> {
         try {
             const datasetRef = collection(db, 'users', userId, 'fineTuningDataset');
-            const targetModel = getFineTunedModel(agentId) || 'base_model';
+            const targetModel = getFineTunedModel(agentId);
             
             // Calculate quality average for easy sorting/filtering in the ADK Export phase
             const qualityAverage = (score.goalCompletion + score.adherence + score.coherence + score.toolEfficiency) / 4;
@@ -143,7 +142,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 messages,
                 metadata: {
                     evaluatedAt: new Date().toISOString(),
-                    autoraterModel: AI_MODELS.TEXT.AGENT,
+                    autoraterModel: getFineTunedModel('generalist'),
                     version: '1.1.0-platinum'
                 },
                 createdAt: serverTimestamp(),
@@ -155,4 +154,3 @@ Return the evaluation in structured JSON matching the requested schema.
         }
     }
 }
-

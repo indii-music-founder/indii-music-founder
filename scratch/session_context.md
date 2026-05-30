@@ -2,12 +2,12 @@
 
 ## 1. Environment & Workspace
 - **Operating System:** macOS
-- **Workspace:** `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean` (indiiOS-Clean)
+- **Workspace:** `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean` (indii-Clean)
 - **App Data Directory:** `/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity`
 - **Current Conversation ID:** 56ae9916-4222-41c8-9e4a-4346202d523f
 
-## 2. Project Overview: indiiOS
-**indiiOS** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators.
+## 2. Project Overview: indii
+**indii** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators.
 - **Version:** 0.1.0-beta.2
 - **Architecture:** 3-Layer Architecture (Directive -> Orchestration -> Execution)
 - **Tech Stack:**

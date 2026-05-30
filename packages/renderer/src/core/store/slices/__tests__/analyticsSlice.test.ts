@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { AnalyticsEvent } from '@indiios/shared';
+import type { AnalyticsEvent } from '@indii/shared';
 
 describe('analyticsSlice Phase 4', () => {
   const mockEvent: AnalyticsEvent = {

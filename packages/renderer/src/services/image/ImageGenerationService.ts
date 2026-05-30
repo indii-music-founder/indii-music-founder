@@ -2,8 +2,8 @@ import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -11,7 +11,8 @@ import type { SubscriptionTier } from '@/services/subscription/types';
 import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
-
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { CostControlService } from '@/services/billing/CostControlService';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -237,6 +238,58 @@ export class ImageGenerationService {
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
 
+        // Cost Control: Enforce budget limits before expensive API call
+        const estimatedCost = count * 0.04; // $0.04 per image
+        const uid = userId || auth.currentUser.uid;
+        let costCheck = await CostControlService.checkAndReserve({
+            operationType: 'image',
+            estimatedCost,
+            userId: uid,
+            metadata: {
+                imageCount: count,
+                prompt: options.prompt.substring(0, 100),
+                style: options.style,
+            },
+        });
+
+        if (!costCheck.allowed) {
+            if (costCheck.requiresConfirmation) {
+                const approved = await new Promise<boolean>((resolve) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        useStore.getState().setPendingCostWarning({
+                            estimatedCost,
+                            reason: costCheck.reason || 'This operation is expensive.',
+                            resolve
+                        });
+                    });
+                });
+
+                if (!approved) {
+                    throw new Error('Image generation cancelled by user (cost too high)');
+                }
+
+                // Retry with forceBypass
+                costCheck = await CostControlService.checkAndReserve({
+                    operationType: 'image',
+                    estimatedCost,
+                    userId: uid,
+                    forceBypass: true,
+                    metadata: {
+                        imageCount: count,
+                        prompt: options.prompt.substring(0, 100),
+                        style: options.style,
+                    },
+                });
+
+                if (!costCheck.allowed) {
+                     throw new Error(`Image generation blocked: ${costCheck.reason}`);
+                }
+            } else {
+                throw new Error(`Image generation blocked: ${costCheck.reason}`);
+            }
+        }
+
+
         if (!quotaCheck.allowed) {
             logger.error('[ImageGen] Quota exceeded');
             let tier: SubscriptionTier = 'free' as SubscriptionTier;
@@ -266,20 +319,23 @@ export class ImageGenerationService {
             const aspectRatio = this.getAspectRatio(options);
 
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
-            // The studioControls store uses video-style values ('720p', '1080p', '4k')
-            // but the Gemini image API expects '512' | '1K' | '2K' | '4K'.
             const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
-            // Build the full payload — pass ALL config through, no stripping.
-            // The backend Cloud Function + capability registry handles validation.
+            let referenceUri;
+            if (options.sourceImages && options.sourceImages.length > 0) {
+                const firstImg = options.sourceImages[0];
+                if (firstImg) {
+                    referenceUri = await CreativeStorageService.uploadReferenceMedia(uid, `data:${firstImg.mimeType};base64,${firstImg.data}`, 'image');
+                }
+            }
+
             const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
                 aspectRatio,
                 count,
                 model: options.model || 'fast',
                 imageSize,
-                // Reference images (for multi-image composition)
-                images: options.sourceImages,
+                referenceUri,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
                 includeThoughts: options.includeThoughts,
@@ -311,7 +367,7 @@ export class ImageGenerationService {
                 model: payload.model,
                 aspectRatio: payload.aspectRatio,
                 imageSize: payload.imageSize,
-                hasImages: !!(payload.images as unknown[])?.length,
+                hasReferenceUri: !!referenceUri,
                 hasThinking: !!payload.thinkingLevel,
                 hasGrounding: !!payload.useGoogleSearch,
                 hasHistory: !!(payload.conversationHistory as unknown[])?.length,
@@ -495,7 +551,7 @@ export class ImageGenerationService {
             // This eliminates the Firebase Auth dependency that caused
             // "Unauthenticated" errors when sessions expire or users aren't
             // signed in. Matches the EditingService pattern.
-            const { editImageDirectly } = await import('@/services/ai/generators/DirectImageEditor');
+            const { editImageDirectly } = await import('@/services/intelligence/generators/DirectImageEditor');
 
             logger.info('[ImageGen] remixImage: using Direct SDK path', {
                 hasContent: !!options.contentImage,
@@ -525,7 +581,7 @@ export class ImageGenerationService {
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         return withServiceError('ImageGeneration', 'extractStyle', async () => {
-            const response = await GenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -533,14 +589,14 @@ export class ImageGenerationService {
                         { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
                     responseMimeType: 'application/json',
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
 
-            return GenAI.parseJSON(response.response.text());
+            return AutonomousIntelligence.parseJSON(response.response.text());
         });
     }
 
@@ -654,12 +710,12 @@ export class ImageGenerationService {
     async captionImage(image: { mimeType: string, data: string }, category: 'subject' | 'scene' | 'style'): Promise<string> {
         return withServiceError('ImageGeneration', `captionImage(${category})`, async () => {
             const promptMap = {
-                subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an AI image generator.",
+                subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an Intelligence image generator.",
                 scene: "Describe the setting, environment, and background of this image. Focus on location, objects, architecture, and spatial arrangement.",
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            const response = await GenAI.generateContent(
+            const response = await AutonomousIntelligence.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -667,9 +723,9 @@ export class ImageGenerationService {
                         { inlineData: { mimeType: image.mimeType || 'image/png', data: image.data } }
                     ]
                 }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW
                 }
             );
             return response.response.text().trim();

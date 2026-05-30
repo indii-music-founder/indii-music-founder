@@ -47,7 +47,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-            libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+            libgbm1 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Synthesize minimal .env from secrets (so dev:web can boot)
         env:
@@ -254,7 +255,6 @@ jobs:
             const h2Content = (h2 === '_(not produced)_' && h2_outcome === 'skipped' && h1_dev_outcome !== 'success')
               ? `_(not produced)_\n\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.`
               : h2;
-
             const verdictMd = safeRead('.agent/DEMO_GO_NOGO.md');
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
@@ -309,4 +309,3 @@ jobs:
                 body,
               });
             }
-

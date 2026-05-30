@@ -99,6 +99,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         saveHistory: (id: string, data: unknown) => ipcRenderer.invoke('agent:save-history', id, data),
         getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
+        scanDirectory: () => ipcRenderer.invoke('agent:scan-directory'),
+        createArtifact: (filename: string, content: string, options: any) => ipcRenderer.invoke('agent:create-artifact', filename, content, options),
+        listArtifacts: () => ipcRenderer.invoke('agent:list-artifacts'),
+        readArtifact: (filename: string) => ipcRenderer.invoke('agent:read-artifact', filename),
+        multiReplaceFileContent: (args: any) => ipcRenderer.invoke('agent:multi-replace-file-content', args),
+        updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content),
+        getCapabilityRegistry: () => ipcRenderer.invoke('agent:get-capability-registry'),
     },
 
     // Video (Local Asset Management)

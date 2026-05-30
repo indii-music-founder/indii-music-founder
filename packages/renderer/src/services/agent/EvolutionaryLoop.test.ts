@@ -12,7 +12,7 @@ interface EvoAgent {
 
 // --- Mock Services ---
 
-// Mocking the AI Service for Mutation
+// Mocking the Intelligence Service for Mutation
 const mockAIMutation = vi.fn(async (prompt: string): Promise<string> => {
     return `Mutated: ${prompt}`;
 });

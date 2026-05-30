@@ -1,4 +1,4 @@
-# Graph Report - /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean  (2026-04-29)
+# Graph Report - /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean  (2026-04-29)
 
 ## Corpus Check
 - 2328 files · ~4,126,372 words
@@ -1438,15 +1438,15 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `ValidationError` --uses--> `Simple keyword search over the index.     Returns documents whose keyword list o`  [INFERRED]
-  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/graphify/worked/example/raw/validator.py → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/graphify/worked/example/raw/api.py
+  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/graphify/worked/example/raw/validator.py → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/graphify/worked/example/raw/api.py
 - `trim()` --calls--> `handleAddLocation()`  [INFERRED]
-  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/touring/RoadManager.tsx
+  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/src/modules/touring/RoadManager.tsx
 - `trim()` --calls--> `handleManualSubmit()`  [INFERRED]
-  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/touring/components/RoadMode.tsx
+  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/src/modules/touring/components/RoadMode.tsx
 - `trim()` --calls--> `handleSubmit()`  [INFERRED]
-  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/merchandise/components/PODIntegrationPanel.tsx
+  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/public/essentia-wasm.web.js → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/src/modules/merchandise/components/PODIntegrationPanel.tsx
 - `handleClear()` --calls--> `forEach()`  [INFERRED]
-  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/visualizer/SceneBuilder.tsx → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/services/agent/tools/__tests__/MarketingTools.integration.test.ts
+  /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/src/modules/video/visualizer/SceneBuilder.tsx → /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/packages/renderer/src/services/agent/tools/__tests__/MarketingTools.integration.test.ts
 
 ## Communities
 
@@ -1496,7 +1496,7 @@ Nodes (60): addWidget(), TemplateService, handleGenerationError(), fetchJson(), 
 
 ### Community 11 - "Community 11"
 Cohesion: 0.02
-Nodes (128): AutoAgent, Wrapper for indiiOS agents during optimization.     Proxies calls to the Gemini, Logs the execution trace to a file for later analysis., Finds the root directory of the indiiOS-Clean project., Loads the system prompt for the specified agent., Executes a task using the agent's system prompt and the user's goal., callAgent(), displayName() (+120 more)
+Nodes (128): AutoAgent, Wrapper for indii agents during optimization.     Proxies calls to the Gemini, Logs the execution trace to a file for later analysis., Finds the root directory of the indii-Clean project., Loads the system prompt for the specified agent., Executes a task using the agent's system prompt and the user's goal., callAgent(), displayName() (+120 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.02
@@ -8833,7 +8833,7 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 1039`** (1 nodes): `LicensingTools.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 1040`** (1 nodes): `SovereignTools.ts`
+- **Thin community `Community 1040`** (1 nodes): `IndependentTools.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 1041`** (1 nodes): `AnalysisTools.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.

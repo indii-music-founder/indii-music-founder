@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction, AgentContext } from '../types';
+import type { ToolExecutionContext } from '../ToolExecutionContext';
 import type { StoreState } from '@/core/store';
 
 import type { AgentMode } from '@/core/store/slices/agent';
@@ -121,10 +122,10 @@ export const CoreTools = {
         topic: string;
         initialTerms: string;
     }) => {
-        // AI-driven negotiation simulation using Gemini
+        // Intelligence-driven negotiation simulation using Gemini
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const { AI_MODELS } = await import('@/core/config/ai-models');
+            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const prompt = `Simulate a 3-turn multi-agent negotiation in the music industry.
 Agent A (${args.initiatingAgentId}) initiates. Agent B (${args.targetAgentId}) responds.
@@ -135,7 +136,7 @@ Apply standard music industry conventions (royalty splits, licensing windows, te
 Return JSON: { "negotiationLog": ["msg1","msg2","msg3"], "finalTerms": "...", "outcome": "accepted|rejected|counter_proposed" }
 Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
-            const result = await GenAI.generateStructuredData<{
+            const result = await AutonomousIntelligence.generateStructuredData<{
                 negotiationLog: string[];
                 finalTerms: string;
                 outcome: string;
@@ -147,7 +148,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as Parameters<typeof GenAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as Parameters<typeof AutonomousIntelligence.generateStructuredData>[1], undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST);
 
             return {
                 success: true,
@@ -200,7 +201,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
                 const releasesSnap = await getDocs(
                     query(
-                        collection(db, 'users', uid, 'ddexReleases'),
+                        collection(db, 'users', uid, 'proprietaryIngestionReleases'),
                         where('releaseDate', '>=', Timestamp.fromDate(now)),
                         where('releaseDate', '<=', Timestamp.fromDate(thirtyDaysOut))
                     )
@@ -208,7 +209,14 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
                 releasesSnap.forEach(doc => {
                     const release = doc.data();
-                    const releaseDate = (release.releaseDate as { toDate(): Date }).toDate();
+                    let releaseDate: Date;
+                    if (typeof (release.releaseDate as any)?.toDate === 'function') {
+                        releaseDate = typeof (release.releaseDate as any).toDate === 'function' ? (release.releaseDate as any).toDate() : new Date(release.releaseDate as any);
+                    } else if ((release.releaseDate as any)?.seconds !== undefined) {
+                        releaseDate = new Date((release.releaseDate as any).seconds * 1000);
+                    } else {
+                        releaseDate = new Date(release.releaseDate as unknown as string | number);
+                    }
                     const daysUntil = Math.ceil(
                         (releaseDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
                     );
@@ -248,32 +256,68 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
     }),
 
     initiate_voice_conversation: wrapTool('initiate_voice_conversation', async (args: { agentId: string }) => {
-        // Mock Agent Voice Interactions (Item 191)
-        return {
-            agentId: args.agentId,
-            status: 'Voice Session Active',
-            ttsModel: 'gemini-2.5-pro-tts',
-            message: `Voice interaction established with ${args.agentId}. Two-way STT/TTS pipeline active for hands-free conversational mode.`
-        };
+        void args;
+        return toolError('Voice conversation is unavailable: no live STT/TTS session bridge is configured.', 'VOICE_BRIDGE_UNAVAILABLE');
     }),
 
     sync_daw_vision: wrapTool('sync_daw_vision', async (args: { dawName: string; focusArea?: string }) => {
-        // Mock Vision API Workspace Sync (Item 194)
-        return {
-            dawName: args.dawName,
-            focusArea: args.focusArea || 'Arrangement View',
-            status: 'Vision Link Established',
-            message: `Electron screen capture bridge linked indii vision API to user's ${args.dawName} workspace. Live production feedback enabled.`
-        };
+        void args;
+        return toolError('DAW vision sync is unavailable: no Electron screen-capture bridge session is connected.', 'DAW_VISION_UNAVAILABLE');
     }),
 
     run_final_polish_strike: wrapTool('run_final_polish_strike', async () => {
-        // Mock Final Polishing Strike (Item 200)
+        return toolError('Final polish automation is unavailable: no verifier pipeline is configured.', 'POLISH_PIPELINE_UNAVAILABLE');
+    }),
+
+    verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+        const prompt = `Verify if the following content meets the goal.
+        Goal: ${args.goal}
+        Content: ${args.content}`;
+
+        try {
+            const verification = await AutonomousIntelligence.generateStructuredData<{
+                score: number;
+                pass: boolean;
+                reason: string;
+            }>(prompt, {
+                type: 'OBJECT' as const,
+                properties: {
+                    score: { type: 'NUMBER' as const },
+                    pass: { type: 'BOOLEAN' as const },
+                    reason: { type: 'STRING' as const },
+                },
+                required: ['score', 'pass', 'reason'],
+            } as any, undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST);
+
+            return {
+                verification,
+                message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
+            };
+        } catch (error: unknown) {
+            logger.error('[CoreTools] Verification failed:', error);
+            const fallback = { score: 0, pass: false, reason: 'Verification service error' };
+            return {
+                verification: fallback,
+                message: `Verification failed. Fallback: ${fallback.reason}`
+            };
+        }
+    }),
+
+    read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
+        const history = (toolContext
+            ? toolContext.get('agentHistory')
+            : useStore.getState().agentHistory) || [];
+
+        const recentHistory = history.slice(-10);
         return {
-            status: 'Zero-Defect Mode Engaged',
-            checksPassed: 100,
-            experienceLevel: 'Elite Creative Software',
-            message: `Absolute zero-defect pixel-perfection established. indiiOS experience transcends standard B2B enterprise SaaS.`
+            history: recentHistory.map(h => ({
+                role: h.role,
+                text: h.text.substring(0, 100)
+            })),
+            message: `Retrieved ${recentHistory.length} most recent history items.`
         };
     })
 } satisfies Record<string, AnyToolFunction>;

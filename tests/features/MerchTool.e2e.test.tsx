@@ -52,7 +52,7 @@ vi.mock('@/modules/merchandise/hooks/useMerchandise', () => ({
 vi.mock('@/core/store', () => ({
   useStore: vi.fn(() => ({
     userProfile: { id: 'test-user', displayName: 'Test Artist' },
-    user: { uid: 'test-user', email: 'artist@indiios.com' },
+    user: { uid: 'test-user', email: 'artist@indii.music' },
     generatedHistory: [],
     uploadedImages: [],
     currentProjectId: 'proj-001',

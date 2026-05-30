@@ -1,5 +1,5 @@
-import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { WikiDocument } from './WikiStorageAdapter';
 
@@ -31,7 +31,7 @@ export class WikiLinter {
                 return { passed: true, confidence: 1.0, issues: [], contradicts: false };
             }
 
-            const prompt = `You are the Wiki Context QA Linter for the indiiOS AI Agent system.
+            const prompt = `You are the Wiki Context QA Linter for the indii Autonomous Agent system.
 Your job is to read an EXISTING markdown document, and a PROPOSED updated version of it.
 You must determine if the PROPOSED version introduces any factual contradictions or hallucinations compared to the EXISTING version.
 Adding NEW facts is allowed. Changing facts directly contradicts the core knowledge base and must be flagged.
@@ -50,9 +50,9 @@ Analyze the changes. Output a JSON object exactly matching this schema:
   "contradicts": boolean (true if a core fact is altered/destroyed)
 }`;
 
-            const responseText = await FirebaseAIService.getInstance().generateText(
+            const responseText = await FirebaseIntelligenceService.getInstance().generateText(
                 prompt,
-                AI_MODELS.TEXT.FAST // gemini-3-flash-preview is perfect for fast JSON QA
+                INTELLIGENCE_MODELS.TEXT.FAST // gemini-3-flash-preview is perfect for fast JSON QA
             );
 
             // Clean json response
@@ -61,8 +61,8 @@ Analyze the changes. Output a JSON object exactly matching this schema:
 
             return result;
         } catch (e) {
-            logger.error(`[WikiLinter] Linting failed, defaulting to pass (fallback mode):`, e);
-            return { passed: true, confidence: 0.5, issues: ['Linting engine failed to parse response'], contradicts: false };
+            logger.error(`[WikiLinter] Linting failed; blocking merge until QA can run:`, e);
+            return { passed: false, confidence: 0, issues: ['Linting engine failed to parse response'], contradicts: true };
         }
     }
 }

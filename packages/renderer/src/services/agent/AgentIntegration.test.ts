@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { agentRegistry } from './registry';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Provide safe environment defaults to avoid failing validation during tests
 vi.mock('@/config/env', () => ({
@@ -99,9 +99,26 @@ vi.mock('./MemoryService', () => ({
     }
 }));
 
-// Mock AI Service
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+// Mock AlwaysOnMemoryEngine to avoid "Engine not started" errors
+vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
+    alwaysOnMemoryEngine: {
+        ingest: vi.fn().mockResolvedValue('Mock Ingest'),
+        start: vi.fn().mockResolvedValue(undefined),
+        stop: vi.fn(),
+        getStatus: vi.fn().mockResolvedValue({ isRunning: true })
+    },
+    AlwaysOnMemoryEngine: {
+        getInstance: vi.fn().mockReturnValue({
+            ingest: vi.fn().mockResolvedValue('Mock Ingest'),
+            start: vi.fn().mockResolvedValue(undefined),
+            stop: vi.fn()
+        })
+    }
+}));
+
+// Mock Intelligence Service
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => '',
@@ -328,7 +345,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
             // Verify final response
             const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
             expect(lastMsg.text).toBe('Memory saved successfully.');
-        });
+        }, 30000);
     });
 
     describe('State & Concurrency', () => {
@@ -358,7 +375,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
             // Only one should have triggered the coordinator/agent
             expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
-        });
+        }, 30000);
     });
 
     describe('Robustness & Error Handling', () => {

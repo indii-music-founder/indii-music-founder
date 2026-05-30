@@ -117,7 +117,7 @@ test.describe('Authentication Flow', () => {
             w.FIREBASE_E2E_MOCK = true;
             w.FIREBASE_USER_MOCK = {
                 uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
+                email: 'e2e@indii.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
                 getIdToken: () => Promise.resolve('mock-id-token-e2e'),
@@ -125,8 +125,8 @@ test.describe('Authentication Flow', () => {
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
                 localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+                localStorage.setItem('indii_tour_completed_v1', 'true');
+                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
             } catch { /* ignore */ }
         });
 
@@ -173,7 +173,7 @@ test.describe('Authentication Flow', () => {
             w.FIREBASE_E2E_MOCK = true;
             w.FIREBASE_USER_MOCK = {
                 uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
+                email: 'e2e@indii.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
                 getIdToken: () => Promise.resolve('mock-id-token-e2e'),
@@ -181,8 +181,8 @@ test.describe('Authentication Flow', () => {
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
                 localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+                localStorage.setItem('indii_tour_completed_v1', 'true');
+                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
             } catch { /* ignore */ }
         });
 
@@ -235,7 +235,7 @@ test.describe('Authentication Flow', () => {
             w.FIREBASE_E2E_MOCK = true;
             w.FIREBASE_USER_MOCK = {
                 uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
+                email: 'e2e@indii.test',
                 displayName: 'E2E Test User',
                 isAnonymous: false,
                 getIdToken: () => Promise.resolve('mock-id-token-e2e'),
@@ -243,8 +243,8 @@ test.describe('Authentication Flow', () => {
             try {
                 localStorage.setItem('FIREBASE_E2E_MOCK', '1');
                 localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+                localStorage.setItem('indii_tour_completed_v1', 'true');
+                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
             } catch { /* ignore */ }
         });
 

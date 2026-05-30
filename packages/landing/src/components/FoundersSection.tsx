@@ -149,7 +149,7 @@ export default function FoundersSection() {
             {
               icon: '$',
               title: 'API Costs At Cost',
-              desc: 'AI generation costs (Gemini, Vertex) are passed through at no markup — just what Google charges.',
+              desc: 'Intelligence generation costs (Gemini, Vertex) are passed through at no markup — just what Google charges.',
             },
             {
               icon: '⌗',

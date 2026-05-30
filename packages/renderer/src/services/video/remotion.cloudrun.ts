@@ -4,7 +4,7 @@
  * Configuration for Remotion Cloud Run (GCP) rendering.
  *
  * This replaces the previous Lambda (AWS) configuration to keep
- * indiiOS fully within the Google Cloud ecosystem.
+ * indii fully within the Google Cloud ecosystem.
  *
  * Required environment variables:
  *   VITE_REMOTION_GCP_PROJECT_ID  – GCP project ID (defaults to Firebase project)
@@ -36,7 +36,7 @@ export const RemotionCloudRunConfig = {
      * Created via `npx remotion cloudrun sites create`.
      * Format: https://storage.googleapis.com/{bucket}/sites/{site-id}
      */
-    siteName: import.meta.env.VITE_REMOTION_SITE_NAME || 'indii-os-remotion-site',
+    siteName: import.meta.env.VITE_REMOTION_SITE_NAME || 'indii.music-remotion-site',
 
     /**
      * GCP Project ID — defaults to the Firebase project for billing/IAM alignment.

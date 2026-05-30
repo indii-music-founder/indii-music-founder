@@ -6,6 +6,9 @@
  */
 
 import { AgentConfig } from "../types";
+import { DistributionTools } from '../tools/DistributionTools';
+import { MusicTools } from '../tools/MusicTools';
+import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/distribution/prompt.md?raw';
 
 export const DistributionAgent: AgentConfig = {
@@ -15,26 +18,24 @@ export const DistributionAgent: AgentConfig = {
     color: "bg-cyan-500",
     category: "department",
     systemPrompt: systemPrompt,
-    functions: {
-        prepare_release: async (args: any) => ({ success: true, data: { status: "STAGED", ddex_id: `DDEX-${Math.random().toString(36).substring(7).toUpperCase()}`, message: `Release '${args.title}' prepared for DDEX delivery.` } }),
-        run_audio_qc: async (args: any) => ({ success: true, data: { status: "PASSED", fidelity: "High", atmos: args.checkAtmos ? "Validated" : "N/A" } }),
-        issue_isrc: async (args: any) => ({ success: true, data: { isrc: `CC-IND-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(10000 + Math.random() * 90000)}`, status: "Issued" } }),
-        certify_tax_profile: async (args: any) => ({ success: true, data: { status: "CERTIFIED", method: args.isUsPerson ? "W-9" : "W-8BEN", message: "Tax identity verified." } }),
-        calculate_payout: async (args: any) => {
-            const fee = args.grossRevenue * (args.indiiFeePercent || 10) / 100;
-            const net = args.grossRevenue - fee - (args.recoupableExpenses || 0);
-            return { success: true, data: { gross: args.grossRevenue, fee, net, splits: args.splits } };
-        },
-        run_metadata_qc: async (args: any) => ({ success: true, data: { status: "COMPLIANT", message: "Metadata meets Apple/Spotify style guides." } }),
-        generate_bwarm: async (args: any) => ({ success: true, data: { status: "GENERATED", count: args.works.length, file: "MLC_BWARM_EXPORT.csv" } }),
-        check_merlin_status: async (args: any) => ({ success: true, data: { status: "READY", eligibility: "100%", message: "Catalog meets Merlin Network requirements." } }),
-        create_music_metadata: async (args: any) => ({ success: true, data: { status: "GENERATED", metadata: { title: args.trackTitle || "Detected Title", artist: args.artistName || "Detected Artist", genre: "Electronic", mood: "Energetic" } } }),
-        verify_metadata_golden: async (args: any) => ({ success: true, data: { status: "GOLDEN", score: 100 } }),
-        update_track_metadata: async (args: any) => ({ success: true, data: { status: "UPDATED", fingerprint: args.fingerprint } }),
-        browser_tool: async (args: any) => ({ success: true, data: { status: "Navigated", url: args.url } }),
-        pro_scraper: async (args: any) => ({ success: true, data: { status: "SCRAPED", results: 12, source: args.society } }),
-        payment_gate: async (args: any) => ({ success: true, data: { status: "AUTHORIZED", amount: args.amount, vendor: args.vendor } }),
-        credential_vault: async (args: any) => ({ success: true, data: { status: "SECURED", service: args.service } })
+    get functions() {
+        return {
+            prepare_release: DistributionTools.prepare_release,
+            run_audio_qc: DistributionTools.run_audio_qc,
+            issue_isrc: DistributionTools.issue_isrc,
+            certify_tax_profile: DistributionTools.certify_tax_profile,
+            calculate_payout: DistributionTools.calculate_payout,
+            run_metadata_qc: DistributionTools.run_metadata_qc,
+            generate_bwarm: DistributionTools.generate_bwarm,
+            check_merlin_status: DistributionTools.check_merlin_status,
+            create_music_metadata: MusicTools.create_music_metadata,
+            verify_metadata_golden: MusicTools.verify_metadata_golden,
+            update_track_metadata: MusicTools.update_track_metadata,
+            browser_tool: UniversalTools.browser_tool,
+            pro_scraper: UniversalTools.pro_scraper,
+            payment_gate: UniversalTools.payment_gate,
+            credential_vault: UniversalTools.credential_vault
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
     tools: [{
@@ -49,10 +50,13 @@ export const DistributionAgent: AgentConfig = {
                         artist: { type: "STRING", description: "Primary artist name" },
                         upc: { type: "STRING", description: "UPC barcode (12-13 digits)" },
                         isrc: { type: "STRING", description: "ISRC for the primary track" },
-                        label: { type: "STRING", description: "Label name (default: indii Records)" },
+                        label: { type: "STRING", description: "Label name" },
+                        genre: { type: "STRING", description: "Primary release genre" },
+                        language: { type: "STRING", description: "ISO language code for lyrics or zxx for instrumental" },
+                        releaseDate: { type: "STRING", description: "Release date in YYYY-MM-DD format" },
                         releaseType: { type: "STRING", enum: ["Single", "EP", "Album"], description: "Single, EP, or Album" }
                     },
-                    required: ["title", "artist", "upc", "isrc"]
+                    required: ["title", "artist", "upc", "isrc", "label", "genre", "language", "releaseDate"]
                 }
             },
             {

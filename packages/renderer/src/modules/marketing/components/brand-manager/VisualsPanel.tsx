@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useStore } from '@/core/store';
 import {
     Plus, Trash2, Palette, Activity,
     Loader2, CheckCircle, ShieldCheck
@@ -19,6 +20,26 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 }) => {
     const toast = useToast();
     const [isAuditingAssets, setIsAuditingAssets] = useState(false);
+
+    // -- Handoff Intercept Hook --
+    const consumeHandoff = useStore(state => state.consumeHandoff);
+
+    useEffect(() => {
+        const payload = consumeHandoff('marketing');
+        if (payload) {
+            const newAsset = {
+                id: payload.assetId || crypto.randomUUID(),
+                url: payload.assetUrl,
+                description: payload.prompt || 'Imported Campaign Asset',
+                category: 'other' as const,
+                tags: ['staged-creative']
+            };
+            const updatedAssets = [...(brandKit.brandAssets || []), newAsset];
+            updateBrandKit({ brandAssets: updatedAssets });
+            saveBrandKit({ brandAssets: updatedAssets });
+            toast.success(`Staged creative "${newAsset.description}" loaded into Campaigns!`);
+        }
+    }, [consumeHandoff, brandKit, updateBrandKit, saveBrandKit, toast]);
 
     // -- Color Handlers --
     const handleAddColor = () => {
@@ -65,7 +86,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 
         setIsAuditingAssets(true);
         try {
-            // AI-powered visual consistency check across both collections
+            // Intelligence-driven visual consistency check across both collections
             await new Promise(resolve => setTimeout(resolve, 2500));
             toast.success(`Visual audit complete. ${totalAssets} assets are brand-aligned.`);
         } catch (__e: unknown) {

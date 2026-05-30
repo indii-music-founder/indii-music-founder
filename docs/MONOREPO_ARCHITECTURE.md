@@ -1,4 +1,4 @@
-# indiiOS Monorepo Architecture
+# indii Monorepo Architecture
 
 > **Migration completed:** April 6, 2026
 > **From:** Flat single-package Electron + Firebase project
@@ -8,7 +8,7 @@
 
 ## Why We Did This
 
-indiiOS started life as a single `package.json` project — one directory with the Electron main process, the React renderer, Firebase Cloud Functions, shared type contracts, and the landing page website all living together in the same dependency tree. This is normal for early-stage products. You move fast, everything imports everything, and the friction is low.
+indii started life as a single `package.json` project — one directory with the Electron main process, the React renderer, Firebase Cloud Functions, shared type contracts, and the landing page website all living together in the same dependency tree. This is normal for early-stage products. You move fast, everything imports everything, and the friction is low.
 
 The problem is that this structure doesn't scale. Here's what was actually breaking:
 
@@ -36,10 +36,10 @@ As the codebase grew (40+ services, 20+ modules, an agent fleet, a Python sideca
 
 ## What We Built
 
-The migration restructured `indiiOS-Clean` into **five npm workspace packages**, each with its own `package.json`, `tsconfig.json`, and clear responsibility:
+The migration restructured `indii-Clean` into **five npm workspace packages**, each with its own `package.json`, `tsconfig.json`, and clear responsibility:
 
 ```
-indiiOS-Clean/
+indii-Clean/
 ├── package.json                  ← Root: workspace orchestrator
 ├── electron.vite.config.ts       ← Unified Electron build config
 │
@@ -102,7 +102,7 @@ The root `package.json` doesn't contain application code. It's a **workspace orc
 }
 ```
 
-When you run `npm install` at the root, npm hoists shared dependencies to the top-level `node_modules/` and creates symlinks for each workspace package. This means `packages/renderer` can import from `@indiios/shared` as if it were a published npm package — but it resolves to the local source code.
+When you run `npm install` at the root, npm hoists shared dependencies to the top-level `node_modules/` and creates symlinks for each workspace package. This means `packages/renderer` can import from `@indii/shared` as if it were a published npm package — but it resolves to the local source code.
 
 ### The Shared Package
 

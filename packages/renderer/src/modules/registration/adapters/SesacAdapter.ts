@@ -1,6 +1,7 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
+import { getConfirmedAutomationResult } from './automationResult';
 
 export const SesacAdapter: OrgAdapter = {
   id: 'sesac',
@@ -55,7 +56,7 @@ export const SesacAdapter: OrgAdapter = {
           Return the work registration confirmation number.`,
         'https://www.sesac.com'
       );
-      const confirmationNumber = result.result ?? result.id;
+      const confirmationNumber = getConfirmedAutomationResult(result, 'SESAC');
       await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
 
       return { success: true, confirmationNumber, submittedAt: new Date() };
@@ -69,7 +70,7 @@ export const SesacAdapter: OrgAdapter = {
         requiresManualStep: true,
         manualStepUrl: 'https://www.sesac.com',
         manualStepInstructions: isWebSession
-          ? 'SESAC registration requires the indiiOS desktop app or manual login at sesac.com.'
+          ? 'SESAC registration requires the indii desktop app or manual login at sesac.com.'
           : 'SESAC browser automation failed. Please complete registration manually at sesac.com.',
       };
     }

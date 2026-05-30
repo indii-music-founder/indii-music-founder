@@ -65,7 +65,7 @@ export default function FoundersPortal() {
                 </div>
 
                 <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
-                    Download <span className="text-amber-400">indiiOS</span>.
+                    Download <span className="text-amber-400">indii</span>.
                 </h1>
 
                 {!isFounder ? (
@@ -147,7 +147,7 @@ export default function FoundersPortal() {
                         </div>
 
                         <p className="mt-8 text-gray-500 text-xs font-mono">
-                            By downloading indiiOS, you agree to the Founders Agreement and Alpha Testing terms.
+                            By downloading indii, you agree to the Founders Agreement and Alpha Testing terms.
                         </p>
                     </>
                 )}

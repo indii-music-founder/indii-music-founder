@@ -1,10 +1,10 @@
 
-import { DPID } from '../ddex/types/common';
+import { type SystemIdentity } from './proprietary-ingestion/types/common';
 
 /**
  * DeliveryProfile
  *
- * Configures how indiiOS (as a registered DDEX sender, PA-DPIDA-2025122604-E)
+ * Configures how indii (as a registered DDEX sender, PA-DPIDA-2025122604-E)
  * delivers to a specific partner. All Party IDs sourced from dpid.ddex.net.
  *
  * Mode is controlled per-environment via the DDEX_LIVE_MODE env var:
@@ -17,7 +17,7 @@ const isLiveMode = import.meta.env.VITE_DDEX_LIVE_MODE === 'true';
 export interface DeliveryProfile {
     id: string;
     partnerName: string;
-    dpid: DPID;
+    dpid: SystemIdentity;
     isTestMode: boolean;
     deliveryMethod: 'SFTP_Batch' | 'SFTP_Single' | 'ITMSP' | 'S3';
     ernVersion: '4.3' | '3.8.2';
@@ -28,7 +28,7 @@ export interface DeliveryProfile {
 }
 
 // ---------------------------------------------------------------------------
-// Direct Delivery Profiles (indiiOS as the distributor)
+// Direct Delivery Profiles (indii as the distributor)
 // All DPIDs verified against dpid.ddex.net
 // ---------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ export interface DeliveryProfile {
 export const MERLIN_PROFILE: DeliveryProfile = {
     id: 'merlin',
     partnerName: 'Merlin Network',
-    dpid: { partyId: 'PADPIDA2012110501U', partyName: 'Merlin Network' },
+    dpid: { systemIdentifier: 'PADPIDA2012110501U', entityName: 'Merlin Network' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3',
@@ -49,7 +49,7 @@ export const MERLIN_PROFILE: DeliveryProfile = {
 export const SPOTIFY_PROFILE: DeliveryProfile = {
     id: 'spotify',
     partnerName: 'Spotify',
-    dpid: { partyId: 'PADPIDA2011112001R', partyName: 'Spotify' },
+    dpid: { systemIdentifier: 'PADPIDA2011112001R', entityName: 'Spotify' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3',
@@ -63,7 +63,7 @@ export const SPOTIFY_PROFILE: DeliveryProfile = {
 export const APPLE_PROFILE: DeliveryProfile = {
     id: 'apple',
     partnerName: 'Apple Music',
-    dpid: { partyId: 'PADPIDA200911030', partyName: 'Apple Music' },
+    dpid: { systemIdentifier: 'PADPIDA200911030', entityName: 'Apple Music' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'ITMSP',
     ernVersion: '4.3',
@@ -76,7 +76,7 @@ export const APPLE_PROFILE: DeliveryProfile = {
 export const AMAZON_PROFILE: DeliveryProfile = {
     id: 'amazon',
     partnerName: 'Amazon Music',
-    dpid: { partyId: 'PADPIDA2011110101', partyName: 'Amazon Music' },
+    dpid: { systemIdentifier: 'PADPIDA2011110101', entityName: 'Amazon Music' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3',
@@ -88,7 +88,7 @@ export const AMAZON_PROFILE: DeliveryProfile = {
 export const TIDAL_PROFILE: DeliveryProfile = {
     id: 'tidal',
     partnerName: 'Tidal',
-    dpid: { partyId: 'PADPIDA2014042201H', partyName: 'Tidal' },
+    dpid: { systemIdentifier: 'PADPIDA2014042201H', entityName: 'Tidal' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3',
@@ -100,7 +100,7 @@ export const TIDAL_PROFILE: DeliveryProfile = {
 export const DEEZER_PROFILE: DeliveryProfile = {
     id: 'deezer',
     partnerName: 'Deezer',
-    dpid: { partyId: 'PADPIDA2009060301Q', partyName: 'Deezer' },
+    dpid: { systemIdentifier: 'PADPIDA2009060301Q', entityName: 'Deezer' },
     isTestMode: !isLiveMode,
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3',

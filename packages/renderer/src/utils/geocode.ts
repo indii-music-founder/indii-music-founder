@@ -29,7 +29,7 @@ export async function geocodeLocation(location: string): Promise<GeocodeResult |
         const query = encodeURIComponent(location);
         const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1`, {
             headers: {
-                'User-Agent': 'indiiOS-App/1.0 (contact@thewalkingagency.com)'
+                'User-Agent': 'indii.music-App/1.0 (contact@thewalkingagency.com)'
             }
         });
 

@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 /**
  * SuperfanCRM — Item 129 (PRODUCTION_200)
  * Fan tiering dashboard: Standard / VIP / Superfan
  * Tracks fan spend, engagement, and tier progression.
- * Uses Contact type extended with mock fan-tier data.
+ * Fan-tier metrics require CRM/commerce integrations.
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -54,6 +55,7 @@ interface SuperfanCRMProps {
 }
 
 export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
+    const { t } = useTranslation();
     const [activeTier, setActiveTier] = useState<FanTier | 'all'>('all');
     const [search, setSearch] = useState('');
     const [fans] = useState<FanRecord[]>([]);
@@ -81,9 +83,9 @@ export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
                         <h2 className="text-2xl font-bold text-white">Superfan CRM</h2>
                         <p className="text-sm text-slate-500 mt-0.5">Track and engage your most loyal fans</p>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-dept-marketing/20 border border-dept-marketing/30 text-dept-marketing-glow rounded-lg text-xs font-bold hover:bg-dept-marketing/30 transition-all">
+                    <button disabled className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-500 rounded-lg text-xs font-bold cursor-not-allowed">
                         <Send size={12} />
-                        Broadcast Message
+                        Broadcast backend required
                     </button>
                 </div>
 
@@ -127,7 +129,7 @@ export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search fans..."
+                        placeholder={t('publicist.hints.search_fans')}
                         className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-white/20 transition-colors"
                     />
                 </div>
@@ -179,12 +181,12 @@ export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
                                     {/* Actions */}
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         {fan.tier !== 'Superfan' && (
-                                            <button className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold ${cfg.bg} ${cfg.color} hover:opacity-80 transition-opacity`}>
+                                            <button disabled className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold ${cfg.bg} ${cfg.color} opacity-50 cursor-not-allowed`}>
                                                 <ChevronUp size={10} />
                                                 Upgrade
                                             </button>
                                         )}
-                                        <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/5 text-slate-400 hover:text-white transition-colors">
+                                        <button disabled className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/5 text-slate-500 cursor-not-allowed">
                                             <Gift size={10} />
                                             Exclusive
                                         </button>

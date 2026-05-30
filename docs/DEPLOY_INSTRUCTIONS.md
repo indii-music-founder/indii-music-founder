@@ -18,7 +18,7 @@ The logs indicate:
    firebase login:ci
    ```
 
-   This will open a browser. Authenticate with the owner account (`Narrow Channel` / `automator@indiios.com`).
+   This will open a browser. Authenticate with the owner account (`Narrow Channel` / `automator@indii.music`).
 
 2. **Update GitHub Secrets:**
    - Copy the token output from the terminal.

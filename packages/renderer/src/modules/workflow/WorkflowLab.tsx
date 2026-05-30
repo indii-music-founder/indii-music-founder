@@ -17,6 +17,9 @@ import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
+import { WORKFLOW_REGISTRY, type WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
+import { SystemProtocolsWidget, SavedWorkflowsWidget } from './components/WorkflowSidebarWidgets';
+import { protocolToReactFlow } from './utils/maestroAdapter';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { useMobile } from '@/hooks/useMobile';
@@ -34,17 +37,18 @@ import 'driver.js/dist/driver.css';
 /*  │  Actions │    (React Flow)           │   Inspector  │            */
 /*  │  Save    │                           │   Help       │            */
 /*  └──────────┴───────────────────────────┴──────────────┘            */
-/* ================================================================== */
+
 
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
-    const { nodes, edges, setNodes, setEdges, user, selectedNodeId } = useStore(useShallow(state => ({
+    const { nodes, edges, setNodes, setEdges, user, selectedNodeId, setHasUnsavedChanges } = useStore(useShallow(state => ({
         nodes: state.nodes,
         edges: state.edges,
         setNodes: state.setNodes,
         setEdges: state.setEdges,
         user: state.user,
-        selectedNodeId: state.selectedNodeId
+        selectedNodeId: state.selectedNodeId,
+        setHasUnsavedChanges: state.setHasUnsavedChanges
     })));
     const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
@@ -91,6 +95,11 @@ export default function WorkflowLab() {
         return () => clearTimeout(saveTimer);
     }, [nodes, edges, workflowName, currentWorkflowId, currentUser, setNodes]);
 
+    useEffect(() => {
+        setHasUnsavedChanges(saveStatus === 'unsaved');
+        return () => setHasUnsavedChanges(false);
+    }, [saveStatus, setHasUnsavedChanges]);
+
     // Reactive mobile detection via centralized hook
     const { isAnyPhone: isMobile } = useMobile();
 
@@ -119,6 +128,7 @@ export default function WorkflowLab() {
         if (!currentWorkflowId && nodes.length > 0) {
             const draft = JSON.stringify({ nodes, edges, name: workflowName });
             localStorage.setItem('workflow_draft', draft);
+            setSaveStatus('unsaved');
         } else if (currentWorkflowId) {
             // If we have a real ID, clear the draft to avoid confusion
             localStorage.removeItem('workflow_draft');
@@ -143,7 +153,7 @@ export default function WorkflowLab() {
             animate: true,
             steps: [
                 { element: '#tour-workflow-controls', popover: { title: 'Controls Panel', description: 'Manage your workflow files, run executions, and save changes here.' } },
-                { element: '#tour-workflow-generator', popover: { title: 'AI Generator', description: 'Describe what you want to achieve, and let AI build the initial node structure for you.' } },
+                { element: '#tour-workflow-generator', popover: { title: 'Autonomous Generator', description: 'Describe what you want to achieve, and let Autonomous build the initial node structure for you.' } },
                 { element: '#tour-workflow-canvas', popover: { title: 'Node Editor', description: 'Drag and drop nodes here. Connect them to build automation logic.' } },
                 { element: '#tour-workflow-library', popover: { title: 'Node Library', description: 'A collection of available triggers, actions, and logic gates.' } },
                 { element: '#tour-workflow-inspector', popover: { title: 'Inspector', description: 'Select a node to view and edit its detailed configuration.' } },
@@ -156,22 +166,91 @@ export default function WorkflowLab() {
         if (nodes.length === 0) return;
         setIsRunning(true);
         try {
-            const engine = new WorkflowEngine(nodes, edges, setNodes);
-            await engine.run();
+            if (currentWorkflowId?.startsWith('protocol-')) {
+                // Execute using AgentGraphService (Maestro System Protocol)
+                const protocolId = currentWorkflowId.replace('protocol-', '');
+                const protocol = WORKFLOW_REGISTRY[protocolId];
+                if (!protocol) throw new Error("Protocol not found");
+
+                // Dynamic import to avoid circular dependency
+                const { agentGraphService } = await import('@/services/agent/orchestration/AgentGraphService');
+                const { agentGraphStateService } = await import('@/services/agent/orchestration/AgentGraphStateService');
+                const { useStore } = await import('@/core/store');
+                const user = useStore.getState().user;
+                if (!user) throw new Error("User not authenticated for graph execution");
+
+                // Convert protocol back to AgentGraph
+                const agentGraph = {
+                    id: protocol.id,
+                    name: protocol.name,
+                    entryNodeId: protocol.steps.find(s => !protocol.edges.some(e => e.to === s.id))?.id || protocol.steps[0]?.id || '',
+                    nodes: protocol.steps.map(s => ({
+                        id: s.id,
+                        agentId: s.agentId as any,
+                        taskTemplate: s.prompt,
+                        waitCondition: 'all' as const
+                    })),
+                    edges: protocol.edges.map(e => ({
+                        sourceId: e.from,
+                        targetId: e.to
+                    })),
+                    description: protocol.description || '',
+                    metadata: { version: '1.0', author: 'system', createdAt: Date.now() }
+                };
+
+                const executionId = await agentGraphService.executeGraph(
+                    agentGraph,
+                    { userId: user.uid, traceId: `manual-run-${Date.now()}` },
+                    '' // initial input
+                );
+
+                // Start polling state to update UI nodes
+                const interval = setInterval(async () => {
+                    const state = await agentGraphStateService.getExecution(user.uid, executionId);
+                    if (!state) return;
+
+                    setNodes(currentNodes => currentNodes.map(node => {
+                        const nodeState = state.nodeStates[node.id];
+                        if (nodeState) {
+                            let status = Status.PENDING;
+                            if (nodeState.status === 'executing') status = Status.WORKING;
+                            if (nodeState.status === 'step_complete') status = Status.DONE;
+                            if (nodeState.status === 'failed') status = Status.ERROR;
+                            
+                            return { ...node, data: { ...node.data, status, output: nodeState.output } };
+                        }
+                        return node;
+                    }));
+
+                    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+                        clearInterval(interval);
+                        setIsRunning(false);
+                    }
+                }, 1000);
+
+                // Note: We don't await the interval here because the UI should show the "Running" state while polling
+                return;
+            } else {
+                const engine = new WorkflowEngine(nodes, edges, setNodes);
+                await engine.run();
+            }
         } catch (e: unknown) {
             logger.error("Workflow failed", e);
-        } finally {
+            setIsRunning(false);
+        }
+        if (!currentWorkflowId?.startsWith('protocol-')) {
             setIsRunning(false);
         }
     };
 
-    const handleGenerateWorkflow = async () => {
-        if (!generatorPrompt.trim()) return;
+    const handleGenerateWorkflow = async (promptToUse?: string) => {
+        const targetPrompt = promptToUse ?? generatorPrompt;
+        if (!targetPrompt.trim()) return;
         setIsGenerating(true);
         try {
             // Dynamic import to avoid circular deps
             const { generateWorkflowFromPrompt } = await import('./services/workflowGenerator');
-            const workflow = await generateWorkflowFromPrompt(generatorPrompt);
+            const workflow = await generateWorkflowFromPrompt(targetPrompt);
 
             setNodes(workflow.nodes);
             setEdges(workflow.edges);
@@ -258,6 +337,16 @@ export default function WorkflowLab() {
         setWorkflowName(workflow.name);
         setCurrentWorkflowId(workflow.id);
         setShowLoadModal(false);
+    };
+
+    const handleLoadProtocol = (protocol: WorkflowDefinition) => {
+        const { nodes: newNodes, edges: newEdges } = protocolToReactFlow(protocol);
+        setNodes(newNodes);
+        setEdges(newEdges);
+        setWorkflowName(protocol.name);
+        setCurrentWorkflowId(`protocol-${protocol.id}`);
+        // Let it auto-fit the view since new nodes might be out of viewport
+        setTimeout(() => rfInstanceRef.current?.fitView(), 100);
     };
 
     return (
@@ -373,7 +462,13 @@ export default function WorkflowLab() {
                     </div>
 
                     {/* Saved Workflows Quick List */}
-                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                        <SystemProtocolsWidget
+                            protocols={Object.values(WORKFLOW_REGISTRY)}
+                            onLoad={handleLoadProtocol}
+                            currentWorkflowId={currentWorkflowId}
+                        />
+
                         <SavedWorkflowsWidget
                             savedWorkflows={savedWorkflows}
                             onLoad={handleLoadSavedWorkflow}
@@ -406,7 +501,7 @@ export default function WorkflowLab() {
                         onClose={() => setShowGenerator(false)}
                         onGenerate={(prompt) => {
                             setGeneratorPrompt(prompt);
-                            return handleGenerateWorkflow();
+                            return handleGenerateWorkflow(prompt);
                         }}
                     />
                 )}
@@ -436,38 +531,7 @@ export default function WorkflowLab() {
 /*  Left Panel Widgets                                                  */
 /* ================================================================== */
 
-function SavedWorkflowsWidget({
-    savedWorkflows,
-    onLoad,
-    currentWorkflowId,
-}: {
-    savedWorkflows: SavedWorkflow[];
-    onLoad: (workflow: SavedWorkflow) => void;
-    currentWorkflowId?: string;
-}) {
-    if (savedWorkflows.length === 0) return null;
 
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Recent Workflows</h3>
-            <div className="space-y-1">
-                {savedWorkflows.slice(0, 5).map((w) => (
-                    <button
-                        key={w.id}
-                        onClick={() => onLoad(w)}
-                        className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${w.id === currentWorkflowId
-                            ? 'bg-purple-500/10 text-purple-400'
-                            : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
-                            }`}
-                    >
-                        <GitBranch size={12} className="flex-shrink-0" />
-                        <span className="truncate">{w.name}</span>
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 /* ================================================================== */
 /*  Right Panel Widgets                                                 */
@@ -475,9 +539,9 @@ function SavedWorkflowsWidget({
 
 function NodeLibraryPanel() {
     const nodeDefs = [
-        { name: 'AI Generate', nodeType: 'departmentNode', data: { departmentName: 'AI Department' }, icon: Sparkles, category: 'AI', color: 'text-purple-400' },
+        { name: 'Autonomous Generate', nodeType: 'departmentNode', data: { departmentName: 'Autonomous Department' }, icon: Sparkles, category: 'Autonomous', color: 'text-purple-400' },
         { name: 'Process Audio', nodeType: 'audioSegmentNode', data: {}, icon: Music, category: 'Audio', color: 'text-blue-400' },
-        { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'AI', color: 'text-pink-400' },
+        { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'Autonomous', color: 'text-pink-400' },
         { name: 'Send Email', nodeType: 'outputNode', data: {}, icon: Mail, category: 'Action', color: 'text-green-400' },
         { name: 'Filter', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'gatekeeper' }, icon: Filter, category: 'Logic', color: 'text-yellow-400' },
         { name: 'Webhook', nodeType: 'inputNode', data: {}, icon: Webhook, category: 'Integration', color: 'text-orange-400' },
@@ -596,3 +660,4 @@ function HelpDocsPanel() {
         </div>
     );
 }
+

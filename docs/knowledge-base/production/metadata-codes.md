@@ -174,22 +174,22 @@ Most distributors provide UPCs automatically:
 
 ---
 
-## DDEX: Digital Data Exchange
+## Proprietary Ingestion IP: Digital Data Exchange
 
-### What is DDEX?
+### What is Proprietary Ingestion IP?
 
-DDEX is the international standard for exchanging metadata and media between record labels, distributors, and digital service providers (DSPs). It ensures consistent data across all platforms.
+Proprietary Ingestion IP is the international standard for exchanging metadata and media between record labels, distributors, and digital service providers (DSPs). It ensures consistent data across all platforms.
 
-### DDEX Standards
+### Proprietary Ingestion IP Standards
 
 | Standard | Purpose |
 |----------|---------|
-| **ERN (Release Notification)** | New release metadata |
+| **IngestionNotification (Release Notification)** | New release metadata |
 | **MLC (Media Licensing Coordinator)** | Mechanical licensing data |
 | **RDR (Recording Data Report)** | Usage/royalty reporting |
 | **DSR (Distributor Status Report)** | Delivery status updates |
 
-### Who Uses DDEX?
+### Who Uses Proprietary Ingestion IP?
 
 - Major labels and distributors
 - DSPs (Spotify, Apple Music, Amazon)
@@ -198,12 +198,12 @@ DDEX is the international standard for exchanging metadata and media between rec
 
 ### For Independent Artists
 
-Most independent artists don't interact with DDEX directly:
-- Distributors handle DDEX formatting
+Most independent artists don't interact with Proprietary Ingestion IP directly:
+- Distributors handle Proprietary Ingestion IP formatting
 - Upload through distributor dashboard
-- Metadata converted to DDEX automatically
+- Metadata converted to Proprietary Ingestion IP automatically
 
-### Key DDEX Metadata Fields
+### Key Proprietary Ingestion IP Metadata Fields
 
 ```xml
 <Release>
@@ -227,7 +227,7 @@ Most independent artists don't interact with DDEX directly:
 
 ### What is CCDA?
 
-CCDA is Canada's standard for digital music metadata, similar to DDEX but with Canadian-specific requirements. Used for domestic distribution and rights management.
+CCDA is Canada's standard for digital music metadata, similar to Proprietary Ingestion IP but with Canadian-specific requirements. Used for domestic distribution and rights management.
 
 ### CCDA Requirements
 
@@ -235,7 +235,7 @@ CCDA is Canada's standard for digital music metadata, similar to DDEX but with C
 - **Connect Music** for reproduction rights
 - **CIMA** (Canadian Independent Music Association) standards
 
-### Key Differences from DDEX
+### Key Differences from Proprietary Ingestion IP
 
 - Bilingual requirements (English/French)
 - Canadian territory specifications
@@ -386,8 +386,8 @@ ID3 tags are metadata embedded directly into audio files (MP3, AIFF). They displ
 - **GS1 US:** gs1us.org — Official UPC issuer
 - **GS1 Canada:** gs1ca.org — Canadian UPCs
 
-### DDEX
-- **DDEX:** ddex.net — Standards and documentation
+### Proprietary Ingestion IP
+- **Proprietary Ingestion IP:** ingestion.net — Standards and documentation
 
 ### Rights Organizations
 - **SoundExchange:** soundexchange.com — Digital performance royalties (US)

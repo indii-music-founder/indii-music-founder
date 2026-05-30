@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 interface VideoGenerateEventData {
     jobId: string;
@@ -62,8 +62,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
             const operation = await step.run("trigger-vertex-ai-video", async () => {
                 const { model: requestedModel, generateAudio: requestedAudio } = options || {};
                 const modelId = requestedModel === 'fast'
-                    ? FUNCTION_AI_MODELS.VIDEO.FAST
-                    : FUNCTION_AI_MODELS.VIDEO.PRO;
+                    ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+                    : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
                 const auth = new GoogleAuth({
                     scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -72,7 +72,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
                 const projectId = await auth.getProjectId();
                 const accessToken = await client.getAccessToken();
 
-                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
+                const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
                 interface VertexVideoRequest {
                     instances: Array<{
@@ -290,7 +291,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
 
                     // operationName from Vertex is usually: projects/.../locations/.../operations/...
                     // So we can use the aiplatform endpoint directly with the name
-                    const statusEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`;
+                    const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                    const statusEndpoint = `https://${location}-aiplatform.googleapis.com/v1beta/${operationName}`;
 
                     const statusResponse = await fetch(statusEndpoint, {
                         headers: {

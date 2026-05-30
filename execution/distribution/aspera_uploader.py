@@ -140,7 +140,7 @@ class AsperaUploader:
             return {"status": "FAIL", "error": str(e)}
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="IndiiOS Aspera Transmission Engine")
+    parser = argparse.ArgumentParser(description="indii Aspera Transmission Engine")
     parser.add_argument("--host", required=True, help="Aspera Host")
     parser.add_argument("--port", type=int, default=33001, help="Aspera Port")
     parser.add_argument("--user", required=True, help="Aspera Username")

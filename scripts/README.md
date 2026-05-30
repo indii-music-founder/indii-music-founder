@@ -1,4 +1,4 @@
-# indiiOS Scripts Manifest
+# indii Scripts Manifest
 
 > **101 scripts** across dev, ops, testing, seeding, and deployment. Find what you need here before writing a new one.
 

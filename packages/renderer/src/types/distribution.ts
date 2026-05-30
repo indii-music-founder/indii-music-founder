@@ -98,7 +98,7 @@ export interface UPCGenerationOptions {
     type?: 'ALBUM' | 'SINGLE' | 'EP';
 }
 
-export interface DDEXTrack {
+export interface IngestionTrack {
     isrc?: string;
     title: string;
     version?: string; // e.g. "Remix", "Radio Edit"
@@ -126,13 +126,13 @@ export interface DDEXTrack {
     [key: string]: unknown;
 }
 
-export interface DDEXMetadata {
+export interface IngestionMetadata {
     releaseId: string;
     title: string;
     version?: string;
     artist?: string;
     artists?: string[];
-    tracks: DDEXTrack[];
+    tracks: IngestionTrack[];
     label?: string;
     upc?: string;
     isrc?: string; // Release level identifier
@@ -203,7 +203,7 @@ export interface UPCResponse extends IPCResponse<unknown> {
     upc?: string;
 }
 
-export interface DDEXResponse extends IPCResponse<unknown> {
+export interface IngestionResponse extends IPCResponse<unknown> {
     xml?: string;
 }
 

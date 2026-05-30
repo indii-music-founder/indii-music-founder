@@ -96,7 +96,7 @@ export const reportBugFn = functions.https.onCall(
 
         // 2. GitHub integration (server-side token)
         const githubToken = process.env.GITHUB_TOKEN || '';
-        const githubRepo = process.env.GITHUB_REPO || 'new-detroit-music-llc/indiiOS-Alpha-Electron';
+        const githubRepo = process.env.GITHUB_REPO || 'new-detroit-music-llc/indii-Alpha-Electron';
 
         if (githubToken) {
             try {
@@ -123,7 +123,7 @@ ${actualBehavior}
 ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
 
 ---
-*Reported from indiiOS*`;
+*Reported from indii*`;
 
                 // Search for existing issues with same title + module
                 const searchQuery = `repo:${githubRepo} is:open type:issue title:"${title}" label:module:${module}`;

@@ -95,6 +95,13 @@ mockBuilder.runWith.mockReturnValue(mockBuilder);
 
 vi.mock('firebase-functions/v1', () => ({
     ...mockBuilder,
+    logger: {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
     region: vi.fn(() => mockBuilder),
     runWith: vi.fn(() => mockBuilder),
     https: {
@@ -137,7 +144,9 @@ vi.mock('google-auth-library', () => ({
 vi.mock('firebase-functions/params', () => ({
     defineSecret: vi.fn(() => ({
         value: () => 'mock-secret'
-    }))
+    })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock Stripe to prevent initialization error

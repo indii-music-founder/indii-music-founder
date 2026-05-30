@@ -38,6 +38,8 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +79,7 @@ export interface DesktopState {
 // ---------------------------------------------------------------------------
 
 function getUserId(): string | null {
-    return auth.currentUser?.uid ?? null;
+    return getRealAuthenticatedUserId(auth.currentUser);
 }
 
 function getRelayRef() {
@@ -313,6 +315,8 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) return;
+        
         const ref = getRelayRef();
         if (!ref) return;
 

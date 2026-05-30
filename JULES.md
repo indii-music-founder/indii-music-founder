@@ -6,6 +6,20 @@
 
 ---
 
+## Your Team Structure
+
+**You are:** Solo operator + IDE + agent swarm (Claude, Gemini, DROID, JULES, CODEX)
+
+**Our role:** Execute your intent with guardrails that prevent mistakes, learn your patterns from memory, anticipate your needs.
+
+**How you work:** Fast, parallel agents, consolidation before push. You don't have time for friction — the system removes it.
+
+**What we expect:** Trust our routing decisions. Use `/skill – skill` as your primary entry point. We get smarter with every session.
+
+---
+
+---
+
 ## MANDATORY SESSION BOOTSTRAP
 
 > This section is non-negotiable. There are no lifecycle hooks in this environment —
@@ -52,11 +66,11 @@ bash .claude/scripts/checkpoint.sh
 
 > **Canonical product documentation lives in `.agent-os/product/`. Read those 5 files first before acting on instructions in this file.**
 
-**indiiOS** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
+**indii** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
 
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
-- **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
+- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
 - **Node Requirement:** >= 22.0.0
 
 ---
@@ -98,19 +112,18 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 ## Codebase Structure
 
 ```
-indiiOS-Alpha-Electron/
+indii-Alpha-Electron/
 ├── packages/
-│   ├── renderer/               # Main React application source (indiiOS studio)
+│   ├── renderer/               # Main React application source (indii studio)
 │   ├── main/                   # Electron desktop wrapper
 │   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
 │   ├── shared/                 # Shared types and schemas
 │   ├── landing/                # Separate marketing site (React + Vite)
 │   ├── sdk/                    # SDKs
 │   └── mcp-server-local/       # Local MCP server
-├── agents/                     # AI agent definitions (hub-and-spoke architecture)
+├── agents/                     # AI agent definitions (A2A Swarm Protocol)
 ├── execution/                  # Deterministic scripts for agent tools (Layer 3)
 ├── directives/                 # AI agent SOPs (Layer 1)
-├── python/                     # Python agent tools and API handlers
 ├── e2e/                        # Playwright E2E tests (60+ spec files)
 ├── docs/                       # Documentation (specs, plans, design, testing)
 ├── .agent/                     # Agent system configuration and error memory
@@ -307,7 +320,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `packages/renderer/src/test/setup.ts` prevents import errors
+- indii Conductor replaced AgentZeroService (Native Node.js/TypeScript orchestrator) — see `src/services/agent/orchestration/AgentGraphService.ts`
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
@@ -342,30 +355,37 @@ The `build` script runs three steps sequentially:
 
 ---
 
-## Hub-and-Spoke Agent Architecture
-
 ```
-         ┌─────────────────────┐
-         │  indii Conductor (Hub) │
-         │    (Orchestrator)      │
-         └──────────┬──────────┘
-                    │
-    ┌───────────────┼───────────────┐
-    │       │       │       │       │
-  Legal   Brand  Marketing Music  Video
-  Agent   Agent   Agent   Agent  Agent
-    │
-  [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
+                    ┌─────────────────────────┐
+                    │      A2A Swarm          │
+                    │   (Decentralized)       │
+                    └──────────┬──────────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Legal Agent   │──│ Creative Agent│──│ Brand Agent   │
+    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Marketing Agt │──│ Finance Agent │──│ Music Agent   │
+    └───────────────┘  └───────────────┘  └───────────────┘
 ```
 
-- **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
-- **Specialist Agents** - Domain experts with focused capabilities
-- **AI Sidecar** - Dockerized Python runtime (`docker-compose.yml`) on `localhost:50080`
-- **Python Tools** (`python/tools/`) - 20+ execution tools (image gen, video gen, audio analysis, browser automation, DDEX, payment gate, etc.)
+- **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
+- **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
+- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
 
 ---
 
 ## Operating Principles
+
+### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
+
+> Token efficiency applies to **communication only**, NEVER to code.
+
+- **Terse Talk:** Adopt the `caveman` communication style for all chat, planning, and explanations. Drop pleasantries, filler words, and over-explanations.
+- **Complete Code:** When generating code, you MUST still output 100% functional, complete code with no placeholders. Use chunk-based replacement tools to edit specific blocks of code in-place rather than rewriting entire files.
 
 ### 1. Check for tools first
 
@@ -428,7 +448,7 @@ Before debugging ANY error, you MUST follow this workflow:
 
 1. **STOP** - Do not immediately attempt a fix.
 2. **CHECK LEDGER** - Open `.agent/skills/error_memory/ERROR_LEDGER.md` and search for matching patterns.
-3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indiiOS-errors")`.
+3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indii-errors")`.
 4. **APPLY FIX** - If a match is found, apply the documented solution verbatim.
 5. **DOCUMENT NEW** - If this is a genuinely new error, add it to the ledger AND mem0 after solving.
 
@@ -437,7 +457,7 @@ Before debugging ANY error, you MUST follow this workflow:
 ```javascript
 mcp_mem0_add-memory(
   content="ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>",
-  userId="indiiOS-errors"
+  userId="indii-errors"
 )
 ```
 
@@ -455,6 +475,17 @@ Every code change, review, and agent-authored diff must meet the standards in th
 **Before every `git push`**, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md`, cross-references the Error Ledger, and produces an explicit GO / NO-GO verdict. Skipping `/plat` on a substantive branch is treated the same as skipping the Error Ledger check — a protocol violation.
 
 Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
+
+### 7. ASSET DELETION & PRUNING FAIL-SAFE (STRICT)
+
+> Never suggest deleting skills, workflows, or files simply because they do not appear in a manifest.
+
+Before suggesting the deletion or pruning of any tool, plugin, skill, or workflow to save context tokens, you MUST:
+1. **Check for prefixes:** Files/folders prefixed with `indii-` (e.g., `indii-cinema-worldbuilder`, `indii-director`) are explicitly built for this platform.
+2. **Check restricted zones:** Treat all files within `.agent/skills/`, `.agent/workflows/`, and `execution/` as MISSION CRITICAL by default.
+3. **Ask before acting:** Explicitly ask the user "What is [asset] used for?" before ever classifying it as obsolete or suggesting removal.
+
+Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds for deletion.
 
 ---
 
@@ -474,8 +505,7 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | `packages/firebase/storage.rules` | Cloud Storage security rules |
 | `packages/main/src/main.ts` | Electron main process |
 | `packages/main/src/preload.ts` | Electron IPC bridge |
-| `docker-compose.yml` | AI Sidecar + Ollama containers |
-| `.env.example` | Environment variable template |
+| .env.example | Environment variable template |
 | `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 | `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
@@ -498,6 +528,38 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
+---
+
+## Agent Skills Configuration
+
+The engineering skills (from Matt Pocock's suite) read three config files to understand how indii tracks work, manages triage, and documents domain knowledge.
+
+### Issue Tracker
+
+**GitHub Issues** — issues live in `indii-music/indiiOS-Clean` GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+Skills use the `gh` CLI to create, list, and manage issues. Infer repo from `git remote -v` automatically.
+
+### Triage Labels
+
+**Canonical five-state triage vocabulary:**
+
+| Role | Label | Meaning |
+| --- | --- | --- |
+| Needs Eval | `triage/eval-needed` | Maintainer assessment required |
+| Awaiting Info | `triage/awaiting-info` | Blocked waiting on reporter |
+| Ready for Agent | `triage/ready-for-agent` | Fully specified, agent can pick up |
+| Ready for Human | `triage/ready-for-human` | Ready for human implementation |
+| Won't Fix | `wontfix` | Decided not to pursue |
+
+See `docs/agents/triage-labels.md` for full mapping.
+
+### Domain Context
+
+**Single-context** — all architectural decisions and domain knowledge live in `CLAUDE.md`. No separate ADRs. See `docs/agents/domain.md` for consumer rules.
+
+---
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
@@ -505,6 +567,46 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 **How to invoke a skill:** Read the file at the listed path, internalize the protocol, then execute it step-by-step. Do not summarize — execute.
 
 ### Agent Skills (`.agent/skills/`)
+
+#### Engineering (Matt Pocock Core Suite)
+
+| Trigger | Skill File |
+| --- | --- |
+| Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
+| Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
+| Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
+| Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
+| Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
+| Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
+
+#### Productivity (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
+| Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
+
+#### Misc (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
+| Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
+
+#### Indii-Specific Skills (Core & Essential)
+
+| Trigger | Skill File |
+| --- | --- |
+| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
+| Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
+| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
+| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
+| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
+| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
+| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
+| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
+| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
+| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
 
 | Trigger | Skill File |
 |---------|-----------|

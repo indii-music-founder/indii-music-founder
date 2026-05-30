@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, Megaphone, Mic2, Disc, MapPin, DollarSign } from 'lucide-react';
@@ -11,6 +12,7 @@ interface CreateCampaignModalProps {
 }
 
 export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen, onClose, userId }) => {
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
     const [type, setType] = useState<'Album' | 'Single' | 'Tour'>('Single');
@@ -35,7 +37,6 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                 progress: 0,
                 openRate: 0,
                 budget: Number(budget) || 0, // Ensure strictly number
-                coverUrl: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=2670&auto=format&fit=crop" // Default placeholder
             });
 
             // Reset and close
@@ -96,7 +97,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="e.g. Neon Nights Album Launch"
+                                    placeholder={t('publicist.hints.campaign_name')}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                     autoFocus
                                 />
@@ -109,7 +110,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                                     type="text"
                                     value={artist}
                                     onChange={(e) => setArtist(e.target.value)}
-                                    placeholder="e.g. The Midnight Echo"
+                                    placeholder={t('publicist.hints.campaign_target')}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                 />
                             </div>
@@ -124,7 +125,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                                         min="0"
                                         value={budget}
                                         onChange={(e) => setBudget(Number(e.target.value))}
-                                        placeholder="0.00"
+                                        placeholder={t('publicist.hints.campaign_budget')}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                     />
                                 </div>

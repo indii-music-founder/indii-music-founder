@@ -1,5 +1,5 @@
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export interface AgentAction {
     thought: string;
@@ -34,7 +34,7 @@ export class BrowserAgentDriver {
         try {
             // 1. Navigate to initial URL
             logs.push(`[Driver] Navigating to ${url}...`);
-            let currentState = await api.agent.navigateAndExtract(url);
+            let currentState = await api.agent.navigateAndExtract(url) as any;
 
             if (!currentState.success) {
                 throw new Error(`Navigation failed: ${currentState.error}`);
@@ -87,16 +87,16 @@ export class BrowserAgentDriver {
                             ]
                         }
                     ],
-                    AI_MODELS.BROWSER.AGENT,
+                    INTELLIGENCE_MODELS.BROWSER.AGENT,
                     {
                         responseMimeType: 'application/json',
                         temperature: 0.0 // Precise actions
                     }
                 );
 
-                const plan = AI.parseJSON(response.response.text()) as AgentAction;
-                logs.push(`[Driver] AI Thought: ${plan.thought}`);
-                logs.push(`[Driver] AI Action: ${plan.action} ${plan.params?.selector || ''}`);
+                const plan = AI.parseJSON(getResponseText(response)) as AgentAction;
+                logs.push(`[Driver] Autonomous Thought: ${plan.thought}`);
+                logs.push(`[Driver] Autonomous Action: ${plan.action} ${plan.params?.selector || ''}`);
 
                 // Execute Action
                 if (plan.action === 'finish') {
@@ -115,21 +115,21 @@ export class BrowserAgentDriver {
                 switch (plan.action) {
                     case 'click':
                         if (!selector) throw new Error('Missing selector for click');
-                        actionResult = await api.agent.performAction('click', selector);
+                        actionResult = await api.agent.performAction('click', selector) as any;
                         break;
                     case 'type':
                         if (!selector || !text) throw new Error('Missing params for type');
-                        actionResult = await api.agent.performAction('type', selector, text);
+                        actionResult = await api.agent.performAction('type', selector, text) as any;
                         break;
                     case 'scroll': {
                         const direction = selector || 'down';
                         const amount = text || '500';
-                        actionResult = await api.agent.performAction('scroll', direction, amount);
+                        actionResult = await api.agent.performAction('scroll', direction, amount) as any;
                         break;
                     }
                     case 'wait': {
                         const duration = text || '1000';
-                        actionResult = await api.agent.performAction('wait', '', duration);
+                        actionResult = await api.agent.performAction('wait', '', duration) as any;
                         break;
                     }
                     default:
@@ -141,7 +141,7 @@ export class BrowserAgentDriver {
                 }
 
                 // Get new state (snapshot)
-                currentState = await api.agent.captureState();
+                currentState = await api.agent.captureState() as any;
             }
 
             throw new Error('Max steps exceeded');

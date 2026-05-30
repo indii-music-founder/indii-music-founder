@@ -81,7 +81,7 @@ class AutoOptimizer:
 
     def _get_optimized_prompt(self, current_prompt: str, instruction: str, error: str) -> str:
         prompt = f"""
-You are the indiiOS Meta-Agent. Your goal is to optimize a specialist agent's SYSTEM_PROMPT.
+You are the indii Meta-Agent. Your goal is to optimize a specialist agent's SYSTEM_PROMPT.
 
 CURRENT SYSTEM_PROMPT:
 ---

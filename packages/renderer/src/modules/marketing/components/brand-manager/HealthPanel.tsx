@@ -6,7 +6,7 @@ import {
 import { motion } from 'motion/react';
 import { Schema } from 'firebase/ai';
 import { useToast } from '@/core/context/ToastContext';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { TourMap } from '@/modules/touring/components/TourMap';
 import type { BrandManagerTabProps, AnalysisResult, HealthHistoryEntry } from './types';
 

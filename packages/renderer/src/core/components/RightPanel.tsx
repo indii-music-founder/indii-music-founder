@@ -1,11 +1,12 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText } from 'lucide-react';
 import StudioControlsPanel from './right-panel/StudioControlsPanel';
 import WorkflowPanel from './right-panel/WorkflowPanel';
 import KnowledgePanel from './right-panel/KnowledgePanel';
 import AssetsPanel from './right-panel/AssetsPanel';
+import ArtifactsPanel from './right-panel/ArtifactsPanel';
 import MarketingPanel from './right-panel/MarketingPanel';
 import { motion, AnimatePresence } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
@@ -197,10 +198,14 @@ export default function RightPanel() {
             return <AssetsPanel toggleRightPanel={toggleRightPanel} />;
         }
 
+        // TAB: ARTIFACTS
+        if (rightPanelTab === 'artifacts') {
+            return <ArtifactsPanel toggleRightPanel={toggleRightPanel} />;
+        }
+
         // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
-            case 'video':
                 return <StudioControlsPanel toggleRightPanel={toggleRightPanel} />;
             case 'workflow':
                 return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
@@ -250,6 +255,7 @@ export default function RightPanel() {
     const tabs = [
         { id: 'context', icon: SlidersHorizontal, label: 'Context Controls' },
         { id: 'assets', icon: Folder, label: 'Project Assets' },
+        { id: 'artifacts', icon: FileText, label: 'Artifacts' },
         { id: 'agent', icon: Bot, label: 'Omni Agent' }
     ] as const;
 

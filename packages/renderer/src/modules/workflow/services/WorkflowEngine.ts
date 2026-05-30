@@ -1,9 +1,9 @@
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -245,18 +245,18 @@ export class WorkflowEngine {
                     }]
                     : [{ role: 'user' as const, parts: [{ text: `Write marketing copy for: ${prompt}` }] }];
 
-                const res = await AI.generateContent(contents, AI_MODELS.TEXT.AGENT);
-                return res.response.text();
+                const res = await AI.generateContent(contents, INTELLIGENCE_MODELS.TEXT.AGENT);
+                return getResponseText(res);
             }
 
             // ── Social Media Department ─────────────────────────────────────
             case 'Social Media Department': {
-                // Generate caption via AI then schedule as a draft post
+                // Generate caption via Autonomous then schedule as a draft post
                 const captionRes = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Write a social media caption for: ${prompt}` }] }],
-                    AI_MODELS.TEXT.AGENT
+                    INTELLIGENCE_MODELS.TEXT.AGENT
                 );
-                const caption = captionRes.response.text();
+                const caption = getResponseText(captionRes);
 
                 // Schedule as a post (no real publish — leaves it as DRAFT for human approval)
                 const mediaUrls: string[] = typeof inputs.data === 'string' && inputs.data.startsWith('http')
@@ -270,9 +270,9 @@ export class WorkflowEngine {
             case 'Campaign Manager': {
                 const res = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Create a detailed campaign strategy for: ${prompt}` }] }],
-                    AI_MODELS.TEXT.AGENT
+                    INTELLIGENCE_MODELS.TEXT.AGENT
                 );
-                return res.response.text();
+                return getResponseText(res);
             }
 
             // ── Knowledge Base ──────────────────────────────────────────────

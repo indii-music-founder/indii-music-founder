@@ -10,7 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { voiceService } from '@/services/ai/VoiceService';
+import { voiceService } from '@/services/intelligence/VoiceService';
 import { cn } from '@/lib/utils';
 import {
     PromptInput,
@@ -69,7 +69,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         conversationMode,
         setConversationMode,
         stopAgent,
-        isAgentProcessing
+        isAgentProcessing,
+        directTargetAgentId,
+        activeDepartmentId
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -88,7 +90,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         conversationMode: state.conversationMode,
         setConversationMode: state.setConversationMode,
         stopAgent: state.stopAgent,
-        isAgentProcessing: state.isAgentProcessing
+        isAgentProcessing: state.isAgentProcessing,
+        directTargetAgentId: state.directTargetAgentId,
+        activeDepartmentId: state.activeDepartmentId
     })));
 
     const isBoardroom = conversationMode === 'boardroom';
@@ -127,16 +131,31 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
 
+    const activeAgentName = useMemo(() => {
+        if (conversationMode === 'direct' && directTargetAgentId) {
+            const agent = agentRegistry.get(directTargetAgentId);
+            return agent ? agent.name : directTargetAgentId;
+        }
+        if (conversationMode === 'department' && activeDepartmentId) {
+            const agent = agentRegistry.get(activeDepartmentId);
+            return agent ? agent.name : activeDepartmentId;
+        }
+        if (conversationMode === 'boardroom') {
+            return 'Boardroom';
+        }
+        return 'indii Conductor';
+    }, [conversationMode, directTargetAgentId, activeDepartmentId]);
+
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
 
     const handleInputValueChange = useCallback((value: string) => {
         setCommandBarInput(value);
 
-        // Find last word matching @ or #
-        const match = value.match(/(?:^|\s)([@#])([\w-]*)$/);
+        // Find last word matching @, #, or /
+        const match = value.match(/(?:^|\s)([@#/])([\w-]*)$/);
         if (match && match.index !== undefined) {
             setTypeaheadContext({
-                type: match[1] as '@' | '#',
+                type: match[1] as '@' | '#' | '/',
                 query: match[2] || '',
                 position: match.index + (value[match.index] === ' ' ? 1 : 0)
             });
@@ -220,20 +239,17 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
-            console.log('[PromptArea] handleSubmit fired!', { commandBarInput });
             e?.preventDefault();
             const input = commandBarInput || '';
             if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
-                console.log('[PromptArea] Aborting submit: input is empty');
                 return;
             }
             if (isProcessing) {
-                console.log('[PromptArea] Aborting submit: already processing');
                 return;
             }
 
             setIsProcessing(true);
-            const currentInput = input;
+            let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
             if (currentInput.trim() === '/deploy-andromeda') {
@@ -255,6 +271,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 setCommandBarAttachments([]);
                 setIsProcessing(false);
                 return;
+            }
+
+            // --- DNA INFUSION: Slash Command Interceptor ---
+            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-andromeda') && !currentInput.trim().startsWith('/status-blitz')) {
+                const parts = currentInput.trim().split(' ');
+                const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
+                
+                // Wrap the user's input with a system directive forcing the agent into the skill
+                currentInput = `[SYSTEM INTERCEPT: User executed slash command /${command}. Please immediately load the skill from \`.agent/skills/${command}/SKILL.md\` and follow its protocol strictly without deviating.]\n\n${currentInput}`;
             }
 
             setCommandBarInput('');
@@ -339,8 +364,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
-                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${currentModule}...`)}
-                    aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
+                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${activeAgentName}...`)}
+                    aria-label={isIndiiMode ? "Ask indii" : `Message ${activeAgentName}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                     data-testid="main-prompt-input"
                 />
@@ -401,7 +426,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     setKnowledgeBaseEnabled(next);
                                     if (isMobile) {
                                         toast.success(next
-                                            ? "Knowledge Base connected — AI will reference your docs"
+                                            ? "Knowledge Base connected — Intelligence will reference your docs"
                                             : "Knowledge Base disconnected"
                                         );
                                     }

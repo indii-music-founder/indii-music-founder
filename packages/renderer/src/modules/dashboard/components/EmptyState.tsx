@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
     MousePointer2,
@@ -13,7 +13,10 @@ import {
     TrendingUp,
     Network,
     MessageSquare,
+    Zap,
 } from 'lucide-react';
+import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
+import type { SavedWorkflow } from '@/modules/workflow/types';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -27,11 +30,24 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps) {
-    const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed } = useStore(useShallow(state => ({
+    const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed, user, setNodes, setEdges } = useStore(useShallow(state => ({
         setModule: state.setModule,
         isEntryAssistantDismissed: state.isEntryAssistantDismissed,
-        setEntryAssistantDismissed: state.setEntryAssistantDismissed
+        setEntryAssistantDismissed: state.setEntryAssistantDismissed,
+        user: state.user,
+        setNodes: state.setNodes,
+        setEdges: state.setEdges,
     })));
+
+    const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            getUserWorkflows(user.uid)
+                .then(setSavedWorkflows)
+                .catch(err => console.error("Failed to load workflows for EmptyState:", err));
+        }
+    }, [user?.uid]);
 
     const suggestions = [
         // Row 1 — each fires its command immediately on click
@@ -54,6 +70,22 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
         },
     ];
 
+    // Combine user workflows with default suggestions
+    const displayItems = [
+        ...savedWorkflows.map(wf => ({
+            icon: Zap,
+            title: wf.name,
+            prompt: null as string | null,
+            action: () => {
+                setNodes(wf.nodes);
+                setEdges(wf.edges);
+                setModule('workflow');
+            },
+            isWorkflow: true
+        })),
+        ...suggestions
+    ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
+
     return (
         <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 max-w-6xl mx-auto w-full">
             <motion.div
@@ -70,7 +102,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.1 }}
                 className="text-3xl font-semibold text-white tracking-wide text-center leading-none"
             >
-                indiiOS
+                indii
             </motion.h2>
 
             <motion.p
@@ -79,13 +111,13 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.2 }}
                 className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
             >
-                Your AI Creative Engine • What Would You Like To Do?
+                Your Creative Intelligence Engine • What Would You Like To Do?
             </motion.p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full px-4">
-                {suggestions.map((s, i) => (
+                {displayItems.map((s, i) => (
                     <motion.button
-                        key={s.title}
+                        key={s.title + i}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
@@ -96,15 +128,19 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                                 onCommandSubmit(s.prompt);
                             }
                         }}
-                        className="group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 text-left overflow-hidden h-full"
+                        className={`group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border hover:bg-white/[0.06] hover:shadow-lg transition-all duration-300 text-left overflow-hidden h-full ${
+                            (s as any).isWorkflow 
+                            ? 'border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' 
+                            : 'border-white/5 hover:border-emerald-500/40 hover:shadow-emerald-500/5'
+                        }`}
                     >
                         <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MousePointer2 size={12} className="text-emerald-400" />
+                            <MousePointer2 size={12} className={(s as any).isWorkflow ? "text-amber-400" : "text-emerald-400"} />
                         </div>
-                        <s.icon size={22} className="text-emerald-400 mb-3 group-hover:scale-110 transition-transform duration-300" />
-                        <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5">{s.title}</h3>
+                        <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${(s as any).isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
+                        <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
-                            {s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0]}
+                            {(s as any).isWorkflow ? 'Custom User Workflow' : (s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0])}
                         </p>
                     </motion.button>
                 ))}

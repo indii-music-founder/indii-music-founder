@@ -187,7 +187,7 @@
 - **Key Issues:**
   - ✅ "The Independence Hub" visible and correctly styled.
   - ✅ "Sonic Identity" visible and correctly styled.
-  - ✅ "Sovereign Command" visible and correctly styled.
+  - ✅ "Independent Command" visible and correctly styled.
   - ✅ High-fidelity studio screenshots load without error and fit the layout gracefully.
 - **Coverage Delta:**
   - ✅ First test: Landing page Phase 7.3 branding update verification.
@@ -219,7 +219,7 @@
 - **Duration:** 8 minutes
 - **Findings:** 0 issues filed.
 - **Key Issues:**
-  - ✅ All branding requirements ("Independence Hub", "Sonic Identity", "Sovereign Command") are confirmed on the Landing Page.
+  - ✅ All branding requirements ("Independence Hub", "Sonic Identity", "Independent Command") are confirmed on the Landing Page.
   - ✅ High-fidelity studio screenshots render correctly on the landing page layout.
   - ✅ Studio UI integrations (PromptKit `<PromptInput>`, Kokonut UI dropzones) function as designed with clear state changes.
   - ✅ Motion primitives fade-in animations on Assistant welcome messages deliver a premium 10/10 aesthetic.
@@ -393,3 +393,11 @@
     *   🟢 ISSUE-052: Modal Backdrop Click Does Not Close Global Command Menu
     *   🔴 ISSUE-053: Creative Director CanvasTools draw_shape Fails to Render
     *   🟡 ISSUE-054: Boardroom Import Error (@/core/store)
+
+## 2026-05-23 - Tour Manager - Road Manager API Verification
+- **Modules Tested:** Auth, Dashboard, Road Manager
+- **Duration:** 15 minutes
+- **Findings:** 1 HIGH
+- **Key Issues:** New accounts and Guests are blocked by Firestore Permission Denied errors.
+- **Coverage Delta:** First live test of Road Manager map initialization.
+- **UX Score:** 12/30 (Blocked by errors)

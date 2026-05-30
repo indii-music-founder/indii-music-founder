@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect } from 'react';
 
 import { motion } from 'motion/react';
@@ -46,11 +47,10 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     fuelLogistics,
     itinerary
 }) => {
+    const { t } = useTranslation();
     // Find next stop logic
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
-
-    // Simulate telemetry updates
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
@@ -81,7 +81,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Live Feed</span>
+                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Route View</span>
                         </div>
                     </div>
 
@@ -256,7 +256,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Current Location..."
+                                placeholder={t('touring.hints.current_location')}
                                 value={currentLocation}
                                 onChange={(e) => setCurrentLocation(e.target.value)}
                                 className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"

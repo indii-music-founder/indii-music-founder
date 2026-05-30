@@ -65,7 +65,6 @@ export const MobileNav = () => {
         { id: 'agent', icon: Network, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
-        { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
     const departmentItems: NavItem[] = [

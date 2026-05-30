@@ -43,7 +43,7 @@ class IdentityManager:
             self.store_path = store_path
         else:
             # Default to a protected user directory to avoid "BS" in project root
-            data_dir = os.path.expanduser("~/.indiiOS/data")
+            data_dir = os.path.expanduser("~/.indii/data")
             os.makedirs(data_dir, exist_ok=True)
             self.store_path = os.path.join(data_dir, "identity_store.json")
 
@@ -110,7 +110,7 @@ class IdentityManager:
         self.data["isrc_count"] += 1
         sequence = str(self.data["isrc_count"]).zfill(5)
 
-        # Format: CCXXXRRNNNNN (12 characters, no dashes for DDEX compliance)
+        # Format: CCXXXRRNNNNN (12 characters, no dashes for Proprietary Ingestion IP compliance)
         isrc = f"{resolved_country}{resolved_registrant}{year}{sequence}"
 
         # Uniqueness check — prevent reissuing same ISRC across releases

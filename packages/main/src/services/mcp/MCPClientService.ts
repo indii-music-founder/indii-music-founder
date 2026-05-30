@@ -13,6 +13,9 @@ export class MCPClientService {
     private remoteClient: Client | null = null;
     private remoteTransport: SSEClientTransport | null = null;
 
+    private harnessClient: Client | null = null;
+    private harnessTransport: StdioClientTransport | null = null;
+
     /**
      * Initializes the connection to the local MCP server running over stdio
      */
@@ -44,7 +47,7 @@ export class MCPClientService {
 
         this.localClient = new Client(
             {
-                name: 'indiiOS-main-mcp-client-local',
+                name: 'indii-main-mcp-client-local',
                 version: '0.1.0',
             },
             {
@@ -54,6 +57,54 @@ export class MCPClientService {
 
         await this.localClient.connect(this.localTransport);
         log.info('[MCP] ✅ Connected to local MCP Server over Stdio');
+
+        // Automatically connect harness MCP server
+        await this.connectHarness().catch(err => {
+            log.error('[MCP] ❌ Failed to automatically connect harness MCP:', err);
+        });
+    }
+
+    /**
+     * Initializes the connection to the harness MCP server running over stdio
+     */
+    public async connectHarness(): Promise<void> {
+        if (this.harnessClient) {
+            return;
+        }
+
+        let serverPath;
+        if (app.isPackaged) {
+            serverPath = path.join(process.resourcesPath, 'mcp-server-harness', 'dist', 'index.js');
+        } else {
+            const appPath = app.getAppPath();
+            // Try root-relative first (common in some dev runners)
+            const rootRelative = path.resolve(appPath, 'packages', 'mcp-server-harness', 'dist', 'index.js');
+            if (existsSync(rootRelative)) {
+                serverPath = rootRelative;
+            } else {
+                // Try package-relative (standard electron-vite structure)
+                serverPath = path.resolve(appPath, '..', 'mcp-server-harness', 'dist', 'index.js');
+            }
+        }
+
+        this.harnessTransport = new StdioClientTransport({
+            command: 'node',
+            args: [serverPath],
+            env: process.env as Record<string, string>,
+        });
+
+        this.harnessClient = new Client(
+            {
+                name: 'indii-main-mcp-client-harness',
+                version: '0.1.0',
+            },
+            {
+                capabilities: {},
+            }
+        );
+
+        await this.harnessClient.connect(this.harnessTransport);
+        log.info('[MCP] ✅ Connected to harness MCP Server over Stdio');
     }
 
     /**
@@ -68,7 +119,7 @@ export class MCPClientService {
 
         this.remoteClient = new Client(
             {
-                name: 'indiiOS-main-mcp-client-remote',
+                name: 'indii-main-mcp-client-remote',
                 version: '0.1.0',
             },
             {
@@ -81,7 +132,7 @@ export class MCPClientService {
     }
 
     /**
-     * Disconnects both MCP connections
+     * Disconnects all MCP connections
      */
     public async disconnect(): Promise<void> {
         if (this.localTransport) {
@@ -94,6 +145,17 @@ export class MCPClientService {
         }
         this.localClient = null;
         log.info('[MCP] 🛑 Disconnected from local MCP Server');
+
+        if (this.harnessTransport) {
+            try {
+                await this.harnessTransport.close();
+            } catch (e) {
+                log.warn('[MCP] Harness transport close error:', e);
+            }
+            this.harnessTransport = null;
+        }
+        this.harnessClient = null;
+        log.info('[MCP] 🛑 Disconnected from harness MCP Server');
 
         if (this.remoteTransport) {
             try {
@@ -113,6 +175,16 @@ export class MCPClientService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public async executeTool(toolName: string, args: Record<string, unknown>): Promise<any> {
         const remoteTools = ['format_dsp_metadata'];
+        const harnessTools = [
+            'list_harness_catalog',
+            'compile_harness',
+            'get_harness_run',
+            'list_harness_runs',
+            'get_agent_harness_skill',
+            'get_agent_harness_brief',
+            'create_boardroom_decision',
+            'explain_approval_gates'
+        ];
 
         let targetClient = this.localClient;
         let clientType = 'local';
@@ -120,6 +192,9 @@ export class MCPClientService {
         if (remoteTools.includes(toolName)) {
             targetClient = this.remoteClient;
             clientType = 'remote';
+        } else if (harnessTools.includes(toolName)) {
+            targetClient = this.harnessClient;
+            clientType = 'harness';
         }
 
         if (!targetClient) {

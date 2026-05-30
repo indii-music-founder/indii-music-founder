@@ -76,15 +76,19 @@ export function buildCreativeHistoryState(
 
                 // Auto-persistence to project asset folder
                 if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
-                    const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
-                    createFileNode(
-                        filename,
-                        null, // root
-                        currentProjectId,
-                        user?.uid || 'anonymous',
-                        enrichedItem.type as any,
-                        { url: enrichedItem.url, origin: enrichedItem.origin }
-                    ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                    if (!user?.uid) {
+                        logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
+                    } else {
+                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                        createFileNode(
+                            filename,
+                            null, // root
+                            currentProjectId,
+                            user.uid,
+                            enrichedItem.type as any,
+                            { url: enrichedItem.url, origin: enrichedItem.origin }
+                        ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                    }
                 }
 
                 import('@/services/StorageService').then(({ StorageService }) => {

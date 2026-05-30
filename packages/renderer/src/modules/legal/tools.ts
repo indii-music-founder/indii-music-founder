@@ -1,5 +1,5 @@
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export const LEGAL_TOOLS = {
     analyze_contract: async (args: { text: string }) => {
@@ -13,9 +13,10 @@ export const LEGAL_TOOLS = {
         `;
         const res = await AI.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
-        return res.response.text() || "Analysis failed.";
+        const text = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+        return text || "Analysis failed.";
     },
     check_compliance: async (args: { region: string }) => {
         const prompt = `
@@ -25,9 +26,10 @@ export const LEGAL_TOOLS = {
         `;
         const res = await AI.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT
+            INTELLIGENCE_MODELS.TEXT.AGENT
         );
-        return res.response.text() || "Compliance check failed.";
+        const text = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+        return text || "Compliance check failed.";
     }
 };
 

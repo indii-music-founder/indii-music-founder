@@ -48,7 +48,11 @@ vi.mock('cors', () => {
 
 // Mock firebase-admin
 vi.mock('firebase-admin', () => {
-    const mockDocRef = { id: 'mock-doc' };
+    const mockDocRef = {
+        id: 'mock-doc',
+        set: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+    };
     const mockTx = {
         get: vi.fn().mockResolvedValue({ data: () => undefined, exists: false }),
         set: vi.fn(),
@@ -126,9 +130,26 @@ vi.mock('firebase-functions/v1', () => {
     return builder;
 });
 
+// Mock firebase-functions/v2 callables exported by functions/creative/gateway.ts.
+vi.mock('firebase-functions/v2/https', () => ({
+    onCall: vi.fn((_options: unknown, handler?: unknown) => handler ?? _options),
+    onRequest: vi.fn((_options: unknown, handler?: unknown) => handler ?? _options),
+    HttpsError: class extends Error {
+        code: string;
+        details?: unknown;
+        constructor(code: string, message: string, details?: unknown) {
+            super(message);
+            this.code = code;
+            this.details = details;
+        }
+    }
+}));
+
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
-    defineSecret: vi.fn(() => ({ value: mocks.secrets.value }))
+    defineSecret: vi.fn(() => ({ value: mocks.secrets.value })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock specific logic in index.ts if needed, but here we test the exported functions
@@ -161,26 +182,24 @@ describe('Image and Content Generation Functions', () => {
             });
 
             const generateImageCall = generateImageV3 as any;
-            const result = await generateImageCall(data, context);
+            const result = await generateImageCall({ data, auth: context.auth });
 
             expect(mocks.generateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: 'gemini-3.1-flash-image',
+                    model: 'gemini-3.1-flash-image-preview',
                     contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
                     config: expect.objectContaining({
-                        candidateCount: 2,
-                        responseModalities: ["IMAGE"]
+                        responseModalities: ["IMAGE"],
+                        imageConfig: expect.objectContaining({
+                            aspectRatio: '1:1'
+                        })
                     })
                 })
             );
 
             expect(result).toEqual(expect.objectContaining({
-                images: [
-                    { bytesBase64Encoded: 'base64-image-1', mimeType: 'image/png' },
-                    { bytesBase64Encoded: 'base64-image-2', mimeType: 'image/png' }
-                ],
-                aiMetadata: expect.any(Object),
-                aiGenerationInfo: expect.any(Object)
+                jobId: 'mock-doc',
+                resultUri: expect.stringContaining('gs://')
             }));
         });
     });

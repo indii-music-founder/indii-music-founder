@@ -11,7 +11,7 @@ import type {
 } from './scheduler/types';
 
 /**
- * indiiOS Built-in Task Scheduler
+ * indii Built-in Task Scheduler
  *
  * A first-party, zero-dependency cron/task scheduler running in the
  * Electron main process. Uses Node.js setInterval/setTimeout under the hood,
@@ -331,7 +331,7 @@ export const SchedulerService = {
         // Optional desktop notification
         if (task.notify && Notification.isSupported()) {
             const notif = new Notification({
-                title: `indiiOS Scheduler`,
+                title: `indii Scheduler`,
                 body: `Task "${task.name}" completed`,
                 icon: path.join(app.getAppPath(), 'public/icon-192.png'),
                 silent: true,
@@ -356,7 +356,7 @@ export const SchedulerService = {
     },
 
     /**
-     * Register built-in indiiOS system tasks.
+     * Register built-in indii system tasks.
      * Called once from main.ts after start().
      */
     registerBuiltInTasks(): void {

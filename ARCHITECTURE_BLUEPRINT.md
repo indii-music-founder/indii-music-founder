@@ -1,6 +1,6 @@
-# indiiOS Architecture Blueprint (The Map)
+# indii Architecture Blueprint (The Map)
 
-This document is the "anti-bus-factor" map of indiiOS. It explains exactly how the 191K lines of code talk to each other so that any new engineer (or AI agent) can instantly understand the stack without reading every file.
+This document is the "anti-bus-factor" map of indii. It explains exactly how the 191K lines of code talk to each other so that any new engineer (or AI agent) can instantly understand the stack without reading every file.
 
 ## 1. The Core Data Flow
 
@@ -27,7 +27,7 @@ Every interaction in the app follows this exact cycle:
 
 ## 2. The 5-Layer Memory Architecture
 
-How indiiOS "remembers" context across sessions:
+How indii "remembers" context across sessions:
 
 1. **L1 Scratchpad:** Transient state for rapid processing.
 2. **L2 Session Memory:** Handled by Zustand across tabs during an active session.

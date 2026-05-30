@@ -13,7 +13,7 @@ description: >
 
 > **Purpose:** Unify all Mega Stress Test plans (V1–V7+) into a single, continuous,
 > long-running test system that simulates sustained real-user abuse across the
-> entire indiiOS platform.
+> entire indii platform.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications. EVER.
 > **Duration:** Designed to run for hours or days. The agent cycles through every
 > plan on a loop until the user says stop.

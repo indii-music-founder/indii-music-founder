@@ -77,7 +77,7 @@ We are adopting a backend-first monitoring approach:
 - **PR**: Updates pushed to "Video Generation Updates" PR.
 ### 3. Deployment
 
-- **Functions**: Successfully deployed to `indiios-v-1-1` (us-central1).
+- **Functions**: Successfully deployed to `indii-v-1-1` (us-central1).
 - **PR**: Updates pushed to PR #304 (`conflict-resolution...`).
 
 ## Verification

@@ -1,5 +1,5 @@
 // ============================================================================
-// IndiiOS Music Growth Intelligence Engine — Core Types
+// indii Music Growth Intelligence Engine — Core Types
 // ============================================================================
 
 export type Platform =
@@ -49,7 +49,9 @@ export interface PlatformData {
     streams: number;
     saves: number;
     completionRate: number; // 0-1
-    creatorCount?: number;  // TikTok / Reels creators using audio
+    creatorCount?: number;
+    isSynthetic?: boolean;
+    syntheticLabel?: string;  // TikTok / Reels creators using audio
 }
 
 export interface RegionData {

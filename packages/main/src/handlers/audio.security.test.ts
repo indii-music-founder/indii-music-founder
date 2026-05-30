@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { describe, it, expect, vi, afterEach, type Mock } from 'vitest';
 import { registerAudioHandlers } from './audio';

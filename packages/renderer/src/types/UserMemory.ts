@@ -18,7 +18,9 @@ export type MemoryCategory =
   | 'skill'          // User skills and expertise (e.g., "expert in sound design")
   | 'interaction'    // Notable interaction patterns (e.g., "asks detailed technical questions")
   | 'feedback'       // User feedback and corrections (e.g., "doesn't like auto-suggestions")
-  | 'relationship';  // Social/professional relationships (e.g., "collaborates with @username")
+  | 'relationship'   // Social/professional relationships (e.g., "collaborates with @username")
+  | 'summary'        // Consolidated memory summary
+  | 'insight';       // System-generated pattern insight
 
 /**
  * Memory importance levels for prioritization
@@ -55,6 +57,8 @@ export interface UserMemory {
   // Relationships
   relatedMemoryIds: string[];   // IDs of related memories
   supersedes?: string;          // ID of memory this replaces
+  supersededBy?: string;        // ID of the memory that replaced this one
+  consolidatedInto?: string;    // ID of the summary this was folded into
 
   // Vector search
   embedding?: number[];         // Vector embedding for semantic search
@@ -107,6 +111,15 @@ export interface MemorySearchQuery {
   isActive?: boolean;                // Filter by active status
   limit?: number;                    // Maximum results
   minRelevanceScore?: number;        // Minimum similarity score (0-1)
+
+  /**
+   * When true, enables timeline-aware search:
+   * - Disables recency decay (old memories scored equally)
+   * - Includes superseded memories in results
+   * - Sorts chronologically instead of by relevance
+   * Use for queries like "how has X evolved" or "what changed since 2023"
+   */
+  temporalMode?: boolean;
 }
 
 /**

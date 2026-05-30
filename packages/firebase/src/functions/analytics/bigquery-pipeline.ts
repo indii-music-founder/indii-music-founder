@@ -11,7 +11,7 @@ import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'fireba
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
-import type { AnalyticsEvent } from '@indiios/shared';
+import type { AnalyticsEvent } from '@indii/shared';
 
 const db = admin.firestore();
 const bigquery = new BigQuery({
@@ -101,7 +101,8 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
   try {
     const result = await table.insert(rows);
     console.log(`[BigQueryEventsPipeline] Inserted ${result.length} rows`);
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { errors?: unknown[] };
     if (err.name === 'PartialFailureError') {
       console.warn('[BigQueryEventsPipeline] Partial insert failure:', err.errors);
     } else {

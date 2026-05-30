@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * EventBusService — Collects and dispatches events throughout the application
  *
@@ -6,8 +8,8 @@
  * - track_created: New track/project created
  * - track_updated: Track metadata updated
  * - distribution_started: Release distribution initiated
- * - ai_generation_started: AI task started
- * - ai_generation_completed: AI task completed
+ * - ai_generation_started: Autonomous task started
+ * - ai_generation_completed: Autonomous task completed
  * - error_occurred: Application error
  * - performance_metric: Performance data
  */
@@ -93,10 +95,10 @@ export class EventBusService {
     combined.forEach(handler => {
       try {
         Promise.resolve(handler(event)).catch(err => {
-          console.error(`[EventBus] Handler error for ${event.eventType}:`, err);
+          logger.error(`[EventBus] Handler error for ${event.eventType}:`, err);
         });
       } catch (err) {
-        console.error(`[EventBus] Error dispatching ${event.eventType}:`, err);
+        logger.error(`[EventBus] Error dispatching ${event.eventType}:`, err);
       }
     });
   }

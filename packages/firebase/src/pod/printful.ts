@@ -1,18 +1,16 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import fetch from 'node-fetch';
+import { printfulApiKey, getPrintfulApiKey } from '../config/secrets';
 
-const PRINTFUL_API_KEY = process.env.PRINTFUL_API_KEY;
 const BASE_URL = 'https://api.printful.com';
 
-async function request<T>(endpoint: string, options: any = {}): Promise<T> {
-    if (!PRINTFUL_API_KEY) {
-        throw new HttpsError('internal', 'Printful API key not configured.');
-    }
+async function request<T>(endpoint: string, options: { method?: string; body?: string; headers?: Record<string, string> } = {}): Promise<T> {
+    const apiKey = getPrintfulApiKey();
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
         ...options,
         headers: {
-            'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
             ...options.headers
         }
@@ -23,23 +21,23 @@ async function request<T>(endpoint: string, options: any = {}): Promise<T> {
         throw new HttpsError('internal', `Printful API error: ${errorBody.error?.message || errorBody.message || response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.result as T;
+    const data = await response.json() as { result: T };
+    return data.result;
 }
 
-export const pod_printfulGetProducts = onCall(async () => {
-    return await request<any[]>('/store/products');
+export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey] }, async () => {
+    return await request<unknown[]>('/store/products');
 });
 
-export const pod_printfulGetProduct = onCall(async (req) => {
-    return await request<any>(`/store/products/${req.data.productId}`);
+export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown>(`/store/products/${req.data.productId}`);
 });
 
-export const pod_printfulCalculatePrice = onCall(async (req) => {
-    return await request<any>('/orders/estimate-costs', {
+export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown>('/orders/estimate-costs', {
         method: 'POST',
         body: JSON.stringify({
-            items: req.data.items.map((item: any) => ({
+            items: req.data.items.map((item: Record<string, unknown>) => ({
                 sync_variant_id: item.variantId,
                 quantity: item.quantity,
                 files: [{ url: item.designUrl }]
@@ -48,8 +46,8 @@ export const pod_printfulCalculatePrice = onCall(async (req) => {
     });
 });
 
-export const pod_printfulGetShippingRates = onCall(async (req) => {
-    return await request<any[]>('/shipping/rates', {
+export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown[]>('/shipping/rates', {
         method: 'POST',
         body: JSON.stringify({
             recipient: {
@@ -59,7 +57,7 @@ export const pod_printfulGetShippingRates = onCall(async (req) => {
                 country_code: req.data.address.countryCode,
                 zip: req.data.address.postalCode
             },
-            items: req.data.items.map((item: any) => ({
+            items: req.data.items.map((item: Record<string, unknown>) => ({
                 sync_variant_id: item.variantId,
                 quantity: item.quantity
             }))
@@ -67,8 +65,8 @@ export const pod_printfulGetShippingRates = onCall(async (req) => {
     });
 });
 
-export const pod_printfulCreateOrder = onCall(async (req) => {
-    return await request<any>('/orders', {
+export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown>('/orders', {
         method: 'POST',
         body: JSON.stringify({
             recipient: {
@@ -83,7 +81,7 @@ export const pod_printfulCreateOrder = onCall(async (req) => {
                 phone: req.data.address.phone,
                 email: req.data.address.email
             },
-            items: req.data.items.map((item: any) => ({
+            items: req.data.items.map((item: Record<string, unknown>) => ({
                 sync_variant_id: item.variantId,
                 quantity: item.quantity,
                 files: [{
@@ -96,16 +94,16 @@ export const pod_printfulCreateOrder = onCall(async (req) => {
     });
 });
 
-export const pod_printfulGetOrder = onCall(async (req) => {
-    return await request<any>(`/orders/${req.data.orderId}`);
+export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown>(`/orders/${req.data.orderId}`);
 });
 
-export const pod_printfulCancelOrder = onCall(async (req) => {
-    return await request<any>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
+export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    return await request<unknown>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
 });
 
-export const pod_printfulGenerateMockup = onCall(async (req) => {
-    const result = await request<any>('/mockup-generator/create-task', {
+export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey] }, async (req) => {
+    const result = await request<unknown>('/mockup-generator/create-task', {
         method: 'POST',
         body: JSON.stringify({
             variant_ids: [parseInt(req.data.variantId)],
@@ -116,19 +114,20 @@ export const pod_printfulGenerateMockup = onCall(async (req) => {
         })
     });
 
-    const taskId = result.task_key;
+    const taskId = (result as { task_key: string }).task_key;
     let attempts = 0;
     const maxAttempts = 30;
 
     while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const status = await request<any>(`/mockup-generator/task?task_key=${taskId}`);
+        const status = await request<unknown>(`/mockup-generator/task?task_key=${taskId}`);
+        const typedStatus = status as { status: string, mockups?: Array<{ mockup_url: string }> };
 
-        if (status.status === 'completed') {
-            return status.mockups?.[0]?.mockup_url || '';
+        if (typedStatus.status === 'completed') {
+            return typedStatus.mockups?.[0]?.mockup_url || '';
         }
 
-        if (status.status === 'failed') {
+        if (typedStatus.status === 'failed') {
             throw new HttpsError('internal', 'Mockup generation failed');
         }
         attempts++;

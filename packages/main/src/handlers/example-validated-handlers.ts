@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
  * Example: Refactored IPC Handlers with Validation

@@ -43,7 +43,7 @@ describe('CredentialService', () => {
             expect(safeStorage.isEncryptionAvailable).toHaveBeenCalled();
             expect(safeStorage.encryptString).toHaveBeenCalledWith(JSON.stringify(creds));
             expect(keytar.setPassword).toHaveBeenCalledWith(
-                'IndiiOS_Distribution',
+                'indii_Distribution',
                 'dist1',
                 mockBuffer.toString('base64')
             );
@@ -135,7 +135,7 @@ describe('CredentialService', () => {
 
             const result = await service.deleteCredentials('dist1');
 
-            expect(keytar.deletePassword).toHaveBeenCalledWith('IndiiOS_Distribution', 'dist1');
+            expect(keytar.deletePassword).toHaveBeenCalledWith('indii_Distribution', 'dist1');
             expect(result).toBe(true);
         });
 

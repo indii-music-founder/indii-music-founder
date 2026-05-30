@@ -41,7 +41,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | BandLab | Free | $9.99/mo | $19.99/mo |
 | LANDR | Free master | $12.49/mo | $35.99/mo |
 
-> **Recommendation:** indiiOS does significantly more than any single competitor (AI generation + distribution + legal + finance + social). Pricing in the $15–30/mo range for Pro and $30–50/mo for Studio positions the platform as premium but accessible.
+> **Recommendation:** indii does significantly more than any single competitor (AI generation + distribution + legal + finance + social). Pricing in the $15–30/mo range for Pro and $30–50/mo for Studio positions the platform as premium but accessible.
 
 **Your pricing:**
 
@@ -79,12 +79,12 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 
 ## Decision B3: Distribution Revenue Model
 
-> **Question:** How does indiiOS make money from distribution?
+> **Question:** How does indii make money from distribution?
 
 | Option | How it works | Industry standard |
 |--------|-------------|-------------------|
 | **(a) Flat fee per release** | User pays $X per single, $Y per album pushed to DSPs | TuneCore model |
-| **(b) Revenue share** | indiiOS takes X% of all royalties collected through the platform | CD Baby model (9%) |
+| **(b) Revenue share** | indii takes X% of all royalties collected through the platform | CD Baby model (9%) |
 | **(c) Included in subscription** | Pro/Studio tiers include unlimited distribution | DistroKid model |
 | **(d) Tiered: free tier = revenue share, paid tier = flat/unlimited** | Free users pay revenue share; paid users get unlimited | Hybrid model |
 
@@ -120,11 +120,11 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 
 | Product | Type | Price | Stripe Price ID | Status |
 |---------|------|-------|----------------|--------|
-| indiiOS Pro Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
-| indiiOS Pro Annual | Recurring | $__/yr | `price_________________` | 🔴 |
-| indiiOS Studio Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
-| indiiOS Studio Annual | Recurring | $__/yr | `price_________________` | 🔴 |
-| indiiOS Founders Pass | One-time | $2,500 | `price_________________` | 🔴 |
+| indii Pro Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
+| indii Pro Annual | Recurring | $__/yr | `price_________________` | 🔴 |
+| indii Studio Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
+| indii Studio Annual | Recurring | $__/yr | `price_________________` | 🔴 |
+| indii Founders Pass | One-time | $2,500 | `price_________________` | 🔴 |
 
 ### After Creating Products
 

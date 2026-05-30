@@ -162,7 +162,7 @@ export default function FieldRecorder() {
           <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
             Field <span className="text-purple-500">Capture</span>
           </h1>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]">indiiOS Professional Audio Interface</p>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]">indii Professional Audio Interface</p>
         </header>
 
         <div className="w-full space-y-8 flex flex-col items-center">
@@ -266,7 +266,7 @@ export default function FieldRecorder() {
                       {!user && (
                         <p className="flex items-center gap-1.5 text-[9px] font-bold text-amber-500/80 uppercase tracking-tight justify-center">
                           <AlertCircle size={10} />
-                          Sign in to sync with indiiOS Studio
+                          Sign in to sync with indii Studio
                         </p>
                       )}
                     </div>

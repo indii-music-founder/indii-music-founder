@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { vi } from 'vitest';
+vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
 import React from 'react';
 
 // Only import DOM-specific modules when running in jsdom environment
@@ -251,6 +252,9 @@ vi.mock('@/core/store', () => {
         setActiveSessionId: vi.fn(),
         registerSubscription: vi.fn(() => () => { }),
         setHasUnsavedChanges: vi.fn(),
+        consumeHandoff: vi.fn(() => null),
+        pinToClipboard: vi.fn(),
+        sendToModule: vi.fn(),
         // Agent UI slice — required by AgentService.sendMessage (ISSUE-045)
         isAgentProcessing: false,
         setAgentProcessing: vi.fn(),
@@ -418,7 +422,11 @@ vi.mock('firebase/storage', () => ({
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn(() => Promise.resolve(true)),
     getValue: vi.fn((rc, key) => ({
-        asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1',
+        asString: () => {
+            if (key === 'model_name') return 'mock-model-v1';
+            if (key === 'ai_system_config') return JSON.stringify({ overrides: {}, pricing: {}, config: { think_budget_multiplier: 1.0 } });
+            return 'us-central1';
+        },
         asBoolean: () => false,
         asNumber: () => 1
     })),
@@ -437,7 +445,8 @@ vi.mock('firebase/messaging', () => ({
 // Mock Firebase App Check
 vi.mock('firebase/app-check', () => ({
     initializeAppCheck: vi.fn(() => ({})),
-    getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' }))
+    getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' })),
+    ReCaptchaV3Provider: class ReCaptchaV3Provider {}
 }));
 // Mock Firebase AI
 vi.mock('firebase/ai', () => ({
@@ -532,6 +541,25 @@ vi.mock('@/services/CloudStorageService', () => ({
     },
 }));
 
+// Mock CostControlService globally to prevent blocking Autonomous operations in tests
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
+    }
+}));
+
 // Mock @react-three/fiber and @react-three/drei to prevent event initialization errors in JSDOM
 vi.mock('@react-three/fiber', () => ({
     Canvas: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'mock-canvas' }, children),
@@ -572,7 +600,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock video editor store globally
-vi.mock('@/modules/video/store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockState = {
         project: { id: 'test-project', clips: [], tracks: [], duration: 0 },
         currentTime: 0,

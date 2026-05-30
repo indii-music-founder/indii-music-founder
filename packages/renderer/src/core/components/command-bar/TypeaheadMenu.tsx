@@ -2,8 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { agentRegistry } from '@/services/agent/registry';
 export type TypeaheadContext = {
-    type: '@' | '#';
+    type: '@' | '#' | '/';
     query: string;
     position: number;
 } | null;
@@ -13,29 +16,41 @@ interface TypeaheadMenuProps {
     onSelect: (value: string, display: string) => void;
 }
 
-// Hardcoded mock data for V1
-const MOCK_AGENTS = [
-    { id: 'director', name: 'Creative Director', role: 'Visuals & Design' },
-    { id: 'finance', name: 'Finance Agent', role: 'Budget & Analytics' },
-    { id: 'marketing', name: 'Marketing Agent', role: 'Campaigns & Copy' },
-    { id: 'legal', name: 'Legal Agent', role: 'Contracts & Rights' }
-];
-
-const MOCK_ASSETS = [
-    { id: 'brand-kit', name: 'Brand Kit 2026', type: 'document' },
-    { id: 'q3-financials', name: 'Q3 Financials', type: 'spreadsheet' },
-    { id: 'campaign-brief', name: 'Campaign Brief', type: 'document' }
+const SLASH_COMMANDS = [
+    { id: 'issue', name: 'Fix Agent', role: 'Resolve open issues' },
+    { id: 'mega', name: 'Mega Stress Test', role: 'Run all test suites' },
+    { id: 'real', name: 'Real Life Test', role: 'Adaptive scenario testing' },
+    { id: 'go', name: 'Go', role: 'Universal execution loop' },
+    { id: 'hunter', name: 'Bug Hunter', role: 'Autonomous codebase scan' }
 ];
 
 export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
+    const { generatedHistory, uploadedImages, uploadedAudio } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages,
+        uploadedAudio: state.uploadedAudio
+    })));
+
     if (!context) return null;
 
     const query = context.query.toLowerCase();
+    const agentItems = agentRegistry.getAll().map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        role: agent.description
+    }));
+    const assetItems = [...generatedHistory, ...uploadedImages, ...uploadedAudio].map(asset => ({
+        id: asset.id,
+        name: asset.prompt || asset.id,
+        role: asset.type
+    }));
 
     // Filter based on context
     const items = context.type === '@'
-        ? MOCK_AGENTS.filter(a => a.name.toLowerCase().includes(query) || a.role.toLowerCase().includes(query))
-        : MOCK_ASSETS.filter(a => a.name.toLowerCase().includes(query));
+        ? agentItems.filter(a => a.name.toLowerCase().includes(query) || a.role.toLowerCase().includes(query))
+        : context.type === '/'
+        ? SLASH_COMMANDS.filter(s => s.id.toLowerCase().includes(query) || s.name.toLowerCase().includes(query))
+        : assetItems.filter(a => a.name.toLowerCase().includes(query));
 
     if (items.length === 0) return null;
 
@@ -48,7 +63,7 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
                 className="absolute bottom-full left-4 mb-2 w-64 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
             >
                 <div className="px-3 py-2 border-b border-white/5 bg-white/5 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    {context.type === '@' ? 'Select Agent' : 'Reference Asset'}
+                    {context.type === '@' ? 'Select Agent' : context.type === '/' ? 'Slash Command' : 'Reference Asset'}
                 </div>
                 <div className="max-h-60 overflow-y-auto p-1">
                     {items.map((item, i) => (
@@ -66,12 +81,12 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
                             )}
                         >
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center border border-white/5">
-                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : <FileText size={14} className="text-purple-400" />}
+                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : context.type === '/' ? <FileText size={14} className="text-amber-400" /> : <FileText size={14} className="text-purple-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-200 truncate">{item.name}</p>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {context.type === '@' ? ('role' in item ? item.role : '') : 'Asset Resource'}
+                                    {context.type === '@' ? ('role' in item ? item.role : '') : context.type === '/' ? ('role' in item ? item.role : '') : 'Asset Resource'}
                                 </p>
                             </div>
                         </button>

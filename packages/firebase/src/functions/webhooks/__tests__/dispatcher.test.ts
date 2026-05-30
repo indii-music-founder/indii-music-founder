@@ -132,13 +132,13 @@ describe('WebhookDispatcher', () => {
     it('should send webhook with HMAC header', () => {
       const headers = {
         'Content-Type': 'application/json',
-        'X-IndiiOS-Signature': 'sig123',
-        'X-IndiiOS-Event-ID': 'evt1',
-        'X-IndiiOS-Event-Type': 'user_action',
-        'X-IndiiOS-Timestamp': '2026-04-24T12:00:00Z',
+        'X-indii-Signature': 'sig123',
+        'X-indii-Event-ID': 'evt1',
+        'X-indii-Event-Type': 'user_action',
+        'X-indii-Timestamp': '2026-04-24T12:00:00Z',
       };
 
-      expect(headers['X-IndiiOS-Signature']).toBeDefined();
+      expect(headers['X-indii-Signature']).toBeDefined();
     });
 
     it('should set timeout to 10 seconds', () => {
@@ -149,10 +149,10 @@ describe('WebhookDispatcher', () => {
     it('should include event ID for idempotency', () => {
       const eventId = 'evt-1234567890';
       const headers = {
-        'X-IndiiOS-Event-ID': eventId,
+        'X-indii-Event-ID': eventId,
       };
 
-      expect(headers['X-IndiiOS-Event-ID']).toBe(eventId);
+      expect(headers['X-indii-Event-ID']).toBe(eventId);
     });
   });
 

@@ -5,7 +5,7 @@ import en from '@/assets/locales/en.json';
 import es from '@/assets/locales/es.json';
 
 /**
- * i18n Configuration — indiiOS Internationalization Foundation
+ * i18n Configuration — indii.music Internationalization Foundation
  *
  * Setup:
  *   - Uses browser language detection (navigator.language, localStorage, querystring)
@@ -40,7 +40,7 @@ i18n
             order: ['querystring', 'localStorage', 'navigator'],
             caches: ['localStorage'],
             lookupQuerystring: 'lng',
-            lookupLocalStorage: 'indiiOS_language',
+            lookupLocalStorage: 'indii_language',
         },
         returnNull: false,
     });

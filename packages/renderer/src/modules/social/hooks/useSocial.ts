@@ -92,18 +92,35 @@ export function useSocial(userId?: string) {
 
         // 2. Scheduled Posts Listener
         const scheduledQuery = query(
-            collection(db, "scheduled_posts"),
-            where("authorId", "==", userProfile.id),
-            where("status", "==", "PENDING"),
-            orderBy("scheduledTime", "asc")
+            collection(db, "scheduledPosts"),
+            where("userId", "==", userProfile.id),
+            where("status", "==", "pending"),
+            orderBy("scheduledAt", "asc")
         );
 
         const scheduledUnsub = onSnapshot(scheduledQuery, (snapshot) => {
             if (!isMountedRef.current) return;
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as ScheduledPost[];
+            const data = snapshot.docs.map(doc => {
+                const raw = doc.data();
+                const scheduledAt = raw.scheduledAt as { toMillis?: () => number } | undefined;
+                return {
+                    id: doc.id,
+                    platform: raw.platform === 'instagram' ? 'Instagram' : 'Twitter',
+                    copy: String(raw.copy || raw.text || ''),
+                    imageAsset: raw.mediaUrl ? {
+                        assetType: 'image',
+                        title: 'Scheduled media',
+                        imageUrl: String(raw.mediaUrl),
+                        caption: String(raw.copy || raw.text || ''),
+                    } : undefined,
+                    day: typeof raw.day === 'number' ? raw.day : 1,
+                    scheduledTime: typeof raw.scheduledTime === 'number' ? raw.scheduledTime : scheduledAt?.toMillis?.(),
+                    status: 'PENDING',
+                    errorMessage: typeof raw.deliveryError === 'string' ? raw.deliveryError : undefined,
+                    postId: typeof raw.platformPostId === 'string' ? raw.platformPostId : undefined,
+                    authorId: String(raw.authorId || raw.userId || ''),
+                };
+            }) as ScheduledPost[];
             setScheduledPosts(data);
         });
 

@@ -29,11 +29,20 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
-    const uid = auth.currentUser?.uid;
+    const uid = getRealAuthenticatedUserId(auth.currentUser);
     if (!uid) return;
+    
+    // Skip diagnostics in E2E tests to prevent Firestore invalid segment errors
+    // when project ID is mocked/missing
+    if (isFirebaseE2EMockEnabled()) {
+        return;
+    }
+
     try {
         await setDoc(doc(db, 'users', uid, 'remote-relay', 'diagnostics'), {
             stage,
@@ -203,6 +212,7 @@ function useFirestoreRelay(enabled: boolean) {
 
     // Diagnostic: log every enabled transition
     useEffect(() => {
+        if (!enabled) return;
         logger.info(`[RemoteRelay/Firestore] ⚡ Hook enabled state: ${enabled}`);
         writeDiagnostic('hook_enabled_changed', { enabled });
     }, [enabled]);
@@ -587,18 +597,24 @@ function useFirestoreRelay(enabled: boolean) {
 // Main Hook — auto-selects Firestore or HTTP based on auth
 // ---------------------------------------------------------------------------
 export function useRemoteCommandListener() {
+    const { user } = useStore(useShallow(state => ({ user: state.user })));
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         logger.info('[RemoteRelay] 🔐 Setting up auth listener...');
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             logger.info(`[RemoteRelay] 🔐 Auth state changed: ${user ? 'SIGNED IN (' + user.uid.substring(0, 8) + ')' : 'SIGNED OUT'}`);
-            setIsAuthenticated(!!user);
+            setIsAuthenticated(!isAnonymousOrDemoUser(user));
         });
         return unsubscribe;
     }, []);
 
+    // Disable remote command listener completely for guest sessions or mock user to prevent
+    // console permission errors and unneeded firestore polling.
+    const isGuest = isAnonymousOrDemoUser(user);
+    const shouldEnableRelay = isAuthenticated && !isGuest;
+
     // Use Firestore relay when authenticated.
-    useFirestoreRelay(isAuthenticated);
+    useFirestoreRelay(shouldEnableRelay);
     useHttpRelayFallback(false); // HTTP relay fallback disabled to prevent 404 spam in dev
 }

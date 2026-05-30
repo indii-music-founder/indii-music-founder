@@ -12,7 +12,7 @@ app.use(cors({ origin: true }));
 
 const server = new Server(
     {
-        name: 'indiios-remote-mcp-server',
+        name: 'indii-remote-mcp-server',
         version: '0.1.0',
     },
     {
@@ -92,25 +92,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             artists: string[];
             genre: string;
         };
-        const { releaseTitle, artists, genre } = args;
-
-        // Mocked remote operation that would actually hit Firestore/BigQuery
-        const formattedMetadata = {
-            upc: `US-INDIIOS-${Math.floor(Math.random() * 100000)}`,
-            dspTitle: `${releaseTitle} - Single`,
-            primaryArtistString: artists.join(' & '),
-            genreCategory: genre.toUpperCase(),
-            formattedAt: new Date().toISOString(),
-        };
-
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(formattedMetadata, null, 2),
-                },
-            ],
-        };
+        void args;
+        throw new Error('format_dsp_metadata requires the production metadata service; no placeholder UPC or DSP payload was generated.');
     }
 
     throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);

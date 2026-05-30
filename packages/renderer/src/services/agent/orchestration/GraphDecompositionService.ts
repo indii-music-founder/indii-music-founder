@@ -8,15 +8,16 @@ import {
     VALID_AGENT_IDS,
     ValidAgentId
 } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator
  * 
  * Pillar 3: Graph-Based Orchestration
  * 
- * This service uses high-reasoning AI to decompose a novel user request 
+ * This service uses high-reasoning Autonomous to decompose a novel user request 
  * into a structured AgentGraph. This allows for truly autonomous, 
  * non-linear multi-agent coordination.
  */
@@ -84,14 +85,14 @@ export class GraphDecompositionService {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT, // Use Agent for complex architecture
+                getFineTunedModel('generalist'),
                 {
-                    ...AI_CONFIG.THINKING.HIGH,
+                    ...INTELLIGENCE_CONFIG.THINKING.HIGH,
                     responseMimeType: 'application/json'
                 }
             );
 
-            const jsonText = response.response.text() || '{}';
+            const jsonText = getResponseText(response) || '{}';
             const rawGraph = JSON.parse(jsonText);
 
             // Validate and Polish
@@ -116,8 +117,8 @@ export class GraphDecompositionService {
 
         } catch (error: any) {
             logger.error('[GraphDecomposition] Decomposition failed:', error);
-            // Fallback to a single-node generalist graph
-            return this.createFallbackGraph(userQuery);
+            void userQuery;
+            throw new Error(`Graph decomposition failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -170,27 +171,6 @@ export class GraphDecompositionService {
         }
     }
 
-    private createFallbackGraph(userQuery: string): AgentGraph {
-        const nodeId = 'fallback_node';
-        return {
-            id: uuidv4(),
-            name: 'Fallback Workflow',
-            description: 'Simple single-agent routing',
-            nodes: [{
-                id: nodeId,
-                agentId: 'generalist',
-                taskTemplate: userQuery,
-                waitCondition: 'all'
-            }],
-            edges: [],
-            entryNodeId: nodeId,
-            metadata: {
-                version: '1.0.0',
-                author: 'indii-architect',
-                createdAt: Date.now()
-            }
-        };
-    }
 }
 
 export const graphDecompositionService = new GraphDecompositionService();

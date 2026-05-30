@@ -53,8 +53,8 @@ const ARCHIVE_THRESHOLD_DAYS = 90;
  * Schedule: Every Sunday at 3:00 AM UTC
  */
 export const cleanupOrphanedVideos = functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "1GB",
      })
@@ -194,8 +194,8 @@ export const cleanupOrphanedVideos = functions
  * Schedule: Every day at 2:00 AM UTC
  */
 export const trackStorageQuotas = functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "1GB",
      })
@@ -294,8 +294,8 @@ export const trackStorageQuotas = functions
  * Schedule: First of each month at 4:00 AM UTC
  */
 export const flagVideosForArchival = functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true, 
         timeoutSeconds: 540,
         memory: "512MB",
      })

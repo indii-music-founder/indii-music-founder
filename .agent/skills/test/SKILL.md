@@ -1,6 +1,6 @@
 ---
 name: test
-description: Context-aware test runner for indiiOS. Automatically identifies which tests to run based on the current modified files, then triages failures. Covers Vitest unit tests, Playwright E2E, and Python pytest.
+description: Context-aware test runner for indii. Automatically identifies which tests to run based on the current modified files, then triages failures. Covers Vitest unit tests, Playwright E2E, and Python pytest.
 ---
 
 # @test — Smart Test Runner

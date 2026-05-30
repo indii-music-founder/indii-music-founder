@@ -11,22 +11,22 @@ import {
 import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
@@ -115,35 +115,29 @@ describe('SecurityTools (Mocked)', () => {
             expect(adminRole.count).toBe(1);
             expect(viewerRole.count).toBe(2);
 
-            // AI should NOT be called
-            expect(GenAI.generateStructuredData).not.toHaveBeenCalled();
+            // Autonomous should NOT be called
+            expect(AutonomousIntelligence.generateStructuredData).not.toHaveBeenCalled();
         });
 
-        it('should fallback to AI if Firestore returns empty/error', async () => {
+        it('should return error if Firestore returns empty/error', async () => {
             // Mock Firestore not found
             vi.mocked(getDoc).mockResolvedValue({ exists: () => false } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
-            // Mock AI response
-            const mockAIResponse = {
-                project_id: 'test-project',
-                status: 'AI Audit',
-                roles: [{ role: 'admin', count: 1, risk: 'LOW' }],
-                recommendations: []
-            };
-
-            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
-
             const result = await audit_permissions({ project_id: 'test-project' });
-            const parsed = result.data;
 
-            expect(parsed.status).toBe("AI Audit");
-            expect(GenAI.generateStructuredData).toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("No live organization permission data found for test-project.");
         });
     });
 
     describe('check_api_status', () => {
         it('should return ACTIVE for known active API', async () => {
+            vi.mocked(getDoc).mockResolvedValue({
+                exists: () => true,
+                data: () => ({ status: 'ACTIVE', environment: 'production' })
+            } as any);
             const result = await check_api_status({ api_name: 'payment-api' });
+            expect(result.success).toBe(true);
             const parsed = result.data;
             expect(parsed.api).toBe('payment-api');
             expect(parsed.status).toBe('ACTIVE');
@@ -151,13 +145,23 @@ describe('SecurityTools (Mocked)', () => {
         });
 
         it('should return DISABLED for known disabled API', async () => {
+            vi.mocked(getDoc).mockResolvedValue({
+                exists: () => true,
+                data: () => ({ status: 'DISABLED' })
+            } as any);
             const result = await check_api_status({ api_name: 'test-endpoint' });
+            expect(result.success).toBe(true);
             const parsed = result.data;
             expect(parsed.status).toBe('DISABLED');
         });
 
         it('should return UNKNOWN for unknown API', async () => {
+            vi.mocked(getDoc).mockResolvedValue({
+                exists: () => true,
+                data: () => ({ status: 'UNKNOWN' })
+            } as any);
             const result = await check_api_status({ api_name: 'random-api' });
+            expect(result.success).toBe(true);
             const parsed = result.data;
             expect(parsed.status).toBe('UNKNOWN');
         });
@@ -186,57 +190,29 @@ describe('SecurityTools (Mocked)', () => {
     });
 
     describe('verify_zero_touch_prod', () => {
-        it('should return compliant for prod- prefixed services', async () => {
+        it('should return non-compliant/unavailable due to missing compliance inventory', async () => {
             const result = await verify_zero_touch_prod({ service_name: 'prod-payment-service' });
-            const parsed = result.data;
-            expect(parsed.compliant).toBe(true);
-            expect(parsed.automation_level).toBe('FULL_NOPE');
-        });
-
-        it('should return non-compliant for dev services', async () => {
-            const result = await verify_zero_touch_prod({ service_name: 'dev-sandbox' });
-            const parsed = result.data;
-            expect(parsed.compliant).toBe(false);
-            expect(parsed.automation_level).toBe('PARTIAL');
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 
     describe('check_core_dump_policy', () => {
-        it('should confirm core dumps disabled for foundational auth service', async () => {
+        it('should return unavailable due to missing security posture inventory', async () => {
             const result = await check_core_dump_policy({ service_name: 'foundational-auth' });
-            const parsed = result.data;
-            expect(parsed.compliant).toBe(true);
-            expect(parsed.setting).toBe('DISABLED');
-            expect(parsed.risk_level).toBe('LOW');
-        });
-
-        it('should show enabled (and medium risk) for non-critical service', async () => {
-            const result = await check_core_dump_policy({ service_name: 'generic-app' });
-            const parsed = result.data;
-            expect(parsed.setting).toBe('ENABLED');
-            expect(parsed.risk_level).toBe('MEDIUM');
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 
     describe('audit_workload_isolation', () => {
-        it('should assign RING_0 to FOUNDATIONAL workloads and verify no neighbors', async () => {
+        it('should return unavailable due to missing deployment inventory', async () => {
             const result = await audit_workload_isolation({
                 service_name: 'identity-provider',
                 workload_type: 'FOUNDATIONAL'
             });
-            const parsed = result.data;
-            expect(parsed.assigned_ring).toBe('RING_0_CORE');
-            expect(parsed.neighbors).toHaveLength(0);
-        });
-
-        it('should assign RING_2 to LOWER_PRIORITY workloads', async () => {
-            const result = await audit_workload_isolation({
-                service_name: 'daily-report-job',
-                workload_type: 'LOWER_PRIORITY'
-            });
-            const parsed = result.data;
-            expect(parsed.assigned_ring).toBe('RING_2_BATCH');
-            expect(parsed.neighbors).not.toHaveLength(0);
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
         });
     });
 });

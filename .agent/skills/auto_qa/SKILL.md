@@ -1,6 +1,6 @@
 ---
 name: auto_qa
-description: Autonomous Visual QA for indiiOS. Uses the browser subagent to visually inspect the live app at localhost:4242, capture screenshots, and report results back via AGENT_BRIDGE.md for INDEX to read. Triggered when a build completes or when INDEX signals BUILD_COMPLETE.
+description: Autonomous Visual QA for indii. Uses the browser subagent to visually inspect the live app at localhost:4242, capture screenshots, and report results back via AGENT_BRIDGE.md for INDEX to read. Triggered when a build completes or when INDEX signals BUILD_COMPLETE.
 ---
 
 # @auto_qa — Autonomous Visual QA

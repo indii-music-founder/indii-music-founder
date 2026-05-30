@@ -1,10 +1,10 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
+const ENFORCE_APP_CHECK = true;
 
 export const generateReleaseDownloadUrl = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 30,
@@ -43,7 +43,7 @@ export const generateReleaseDownloadUrl = functions
             );
         }
 
-        const fileName = platform === 'mac' ? 'indiiOS-Installer.dmg' : 'indiiOS-Setup.exe';
+        const fileName = platform === 'mac' ? 'indii-Installer.dmg' : 'indii-Setup.exe';
         const filePath = `founders/releases/${fileName}`;
 
         try {

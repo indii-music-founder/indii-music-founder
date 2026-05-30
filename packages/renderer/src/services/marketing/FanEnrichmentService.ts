@@ -109,17 +109,15 @@ export class FanEnrichmentService {
                 results.push(...enrichedBatch);
             } catch (error: unknown) {
                 logger.error(`[FanEnrichment] Batch ${i} failed:`, error);
-
-                // Fallback: Add placeholder data for failed enrichments so the UI doesn't lose the record
-                const fallback = batch.map(f => ({
-                    ...f,
-                    location: 'Unknown',
-                    ageRange: 'Unknown',
-                    incomeBracket: 'Unknown',
-                    topGenre: 'Unknown',
-                    lastEnriched: new Date().toISOString()
-                }));
-                results.push(...fallback);
+                if (onProgress) {
+                    onProgress({
+                        processed: i,
+                        total,
+                        currentEmail: batch[0]?.email,
+                        status: 'error'
+                    });
+                }
+                throw error;
             }
         }
 

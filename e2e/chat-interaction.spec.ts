@@ -77,7 +77,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         }
 
         await inputRetry.click({ force: true });
-        await inputRetry.fill('hello indiiOS');
+        await inputRetry.fill('hello indii');
 
         const value = await inputRetry.inputValue().catch(() =>
             inputRetry.textContent()

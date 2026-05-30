@@ -1,5 +1,5 @@
 {
-    "compilerOptions": {
+    "compilerOptions": { "forceConsistentCasingInFileNames": true,
         "target": "ES2022",
         "useDefineForClassFields": true,
         "lib": [
@@ -28,10 +28,10 @@
             "@agents/*": [
                 "../../agents/*"
             ],
-            "@shared": [
+            "@indii/shared": [
                 "../shared/src/index.ts"
             ],
-            "@shared/*": [
+            "@indii/shared/*": [
                 "../shared/src/*"
             ]
         }

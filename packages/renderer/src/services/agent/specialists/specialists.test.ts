@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
-vi.mock('../tools', () => ({
+vi.mock('../tools/index', () => ({
     TOOL_REGISTRY: {
         save_memory: vi.fn(),
         recall_memories: vi.fn(),
@@ -58,8 +58,8 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => 'Mock Response',
@@ -120,13 +120,13 @@ describe('Specialist Agents Connection', () => {
         const brandAgent = await agentRegistry.getAsync('brand');
         if (!brandAgent) throw new Error('Brand agent not found');
 
-        // We can't easily inspect the private/protected execution logic without spying on GenAI.generateContent
+        // We can't easily inspect the private/protected execution logic without spying on AutonomousIntelligence.generateContent
         // But we can check if the tools are being passed correctly
 
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         await brandAgent.execute('Test Task', {});
 
-        const tools = vi.mocked(GenAI.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
+        const tools = vi.mocked(AutonomousIntelligence.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
 
         // Create a flat list of all function declarations from all tool objects
         const allFunctionDeclarations = tools.flatMap((t: unknown) => (t as { functionDeclarations?: { name: string }[] }).functionDeclarations || []);

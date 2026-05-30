@@ -1,6 +1,7 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
+import { getConfirmedAutomationResult } from './automationResult';
 
 export const MlcAdapter: OrgAdapter = {
   id: 'mlc',
@@ -65,7 +66,7 @@ export const MlcAdapter: OrgAdapter = {
           Complete the work registration form and return the MLC work registration ID.`,
         'https://portal.themlc.com'
       );
-      const confirmationNumber = result.result ?? result.id;
+      const confirmationNumber = getConfirmedAutomationResult(result, 'MLC');
       await persistOrgRecord(userId, track.id, 'mlc', data, confirmationNumber);
 
       return { success: true, confirmationNumber, submittedAt: new Date() };
@@ -79,7 +80,7 @@ export const MlcAdapter: OrgAdapter = {
         requiresManualStep: true,
         manualStepUrl: 'https://portal.themlc.com',
         manualStepInstructions: isWebSession
-          ? 'MLC registration requires the indiiOS desktop app or manual login at themlc.com.'
+          ? 'MLC registration requires the indii desktop app or manual login at themlc.com.'
           : 'MLC browser automation failed. Please complete registration manually at themlc.com.',
       };
     }

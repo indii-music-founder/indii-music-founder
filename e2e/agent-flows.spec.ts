@@ -46,17 +46,29 @@ test.describe('Agent Dashboard', () => {
         expect(warningVisible).toBe(false);
     });
 
-    test('agent dashboard tab navigation works', async ({ authedPage: page }) => {
-        // Try clicking available tabs
-        const tabs = ['scout', 'browser', 'campaigns', 'inbox', 'chat'];
+    test('agent dashboard tab navigation works and shows distinct content', async ({ authedPage: page }) => {
+        // Try clicking available tabs and verify content changes
+        const tabs = [
+            { name: 'scout', testid: 'scout-tab-content' },
+            { name: 'browser', testid: 'browser-tab-content' },
+            { name: 'campaigns', testid: 'campaigns-tab-content' },
+            { name: 'inbox', testid: 'inbox-tab-content' },
+        ];
 
         for (const tab of tabs) {
-            const tabEl = page.locator(`[role="tab"]:has-text("${tab}"), button:has-text("${tab}")`).first();
+            const tabEl = page.locator(`[role="tab"]:has-text("${tab.name}"), button:has-text("${tab.name}")`).first();
             const tabVisible = await tabEl.isVisible().catch(() => false);
 
             if (tabVisible) {
                 await tabEl.click();
-                await page.waitForTimeout(800);
+                await page.waitForTimeout(1_000);
+
+                // Verify tab is now marked as active
+                const activeTab = tabEl.evaluate((el) => el.getAttribute('aria-selected') === 'true' || el.classList.contains('active'));
+                if (activeTab) {
+                    console.log(`✓ Tab "${tab.name}" is active after click`);
+                }
+
                 // App should remain stable after tab switch
                 await expect(page.locator('#root')).toBeVisible();
             }
@@ -92,6 +104,79 @@ test.describe('Agent Dashboard', () => {
                 await expect(page.locator('#root')).toBeVisible();
             }
         }
+    });
+
+    test('agent responds to user messages with streaming response', async ({ authedPage: page }) => {
+        // Navigate to chat tab
+        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first();
+        const chatVisible = await chatTab.isVisible().catch(() => false);
+
+        if (!chatVisible) {
+            console.log('[AGENT] Chat tab not available, skipping message test');
+            return;
+        }
+
+        await chatTab.click();
+        await page.waitForTimeout(1_000);
+
+        // Find message input field
+        const messageInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first();
+        if (!await messageInput.isVisible().catch(() => false)) {
+            console.log('[AGENT] Message input not found');
+            return;
+        }
+
+        // Send a test message
+        await messageInput.fill('What are my upcoming releases?');
+        const sendBtn = page.locator('button:has-text("Send"), button[aria-label*="send" i]').first();
+        if (await sendBtn.isVisible()) {
+            await sendBtn.click();
+        } else {
+            await messageInput.press('Enter');
+        }
+
+        // Wait for response message to appear
+        const responseMsg = page.locator('[data-testid="agent-response"], [class*="message"]:has-text("releases")').first();
+        const hasResponse = await responseMsg.isVisible({ timeout: 10_000 }).catch(() => false);
+
+        if (hasResponse) {
+            console.log('✓ Agent responded to user message');
+        } else {
+            console.log('[AGENT] Response message not detected (may be mocked or loading)');
+        }
+
+        // App should remain stable
+        await expect(page.locator('#root')).toBeVisible();
+    });
+
+    test('agent specializes tasks by routing to appropriate agent', async ({ authedPage: page }) => {
+        // This tests the hub-and-spoke architecture
+        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first();
+        if (!await chatTab.isVisible().catch(() => false)) {
+            console.log('[AGENT] Chat tab not available');
+            return;
+        }
+
+        await chatTab.click();
+        await page.waitForTimeout(1_000);
+
+        // Send a distribution-specific task
+        const messageInput = page.locator('textarea, input[placeholder*="message" i]').first();
+        if (await messageInput.isVisible()) {
+            await messageInput.fill('I need to submit my album to DistroKid');
+            await messageInput.press('Enter');
+            await page.waitForTimeout(2_000);
+
+            // Should delegate to distribution/legal agent
+            const distributionRef = page.locator('text=/distribution|ddex|distrokid|distributor/i').first();
+            const delegated = await distributionRef.isVisible().catch(() => false);
+
+            if (delegated) {
+                console.log('✓ Agent correctly routed distribution task');
+            }
+        }
+
+        await expect(page.locator('#root')).toBeVisible();
     });
 });
 

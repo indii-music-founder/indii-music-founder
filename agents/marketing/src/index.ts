@@ -7,7 +7,7 @@ import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { MarketingTools } from '@/services/agent/tools/MarketingTools';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';
-import { SovereignTools } from '@/services/agent/tools/SovereignTools';
+import { IndependentTools } from '@/services/agent/tools/IndependentTools';
 import { BrowserTools } from '@/services/agent/tools/BrowserTools';
 
 // --- Create Mastra-compatible tools that wrap the working Tools ---
@@ -199,7 +199,7 @@ const indiiImageGenTool = createTool({
 
 const createArtifactDropTool = createTool({
     id: 'create_artifact_drop',
-    description: 'Creates a Sovereign Artifact Drop with high-value assets and licensing.',
+    description: 'Creates a Independent Artifact Drop with high-value assets and licensing.',
     inputSchema: z.object({
         title: z.string().describe('Title of the artifact.'),
         description: z.string().describe('Marketing description for the drop.'),
@@ -210,7 +210,7 @@ const createArtifactDropTool = createTool({
     }),
     execute: async ({ context }: any) => {
         try {
-            const result = await SovereignTools.create_artifact_drop!(context as any);
+            const result = await IndependentTools.create_artifact_drop!(context as any);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] create_artifact_drop failed:', error);
@@ -251,7 +251,7 @@ const mcpClient = new MCPClient({
 export const marketingAgent = new Agent({
     name: 'Marketing Department',
     instructions: `
-    You are the Music Campaign Manager for indiiOS.
+    You are the Music Campaign Manager for indii.
     You design and execute comprehensive release campaigns, DSP playlisting strategies,
     fan engagement funnels, and data-driven growth plans.
     

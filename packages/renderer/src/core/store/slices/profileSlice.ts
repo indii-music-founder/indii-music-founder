@@ -3,6 +3,8 @@ import { UserProfile, BrandKit, UserPreferences } from '@/types/User';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { auth } from '@/services/firebase';
+import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 export interface Organization {
     id: string;
@@ -51,7 +53,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     id: 'pending',
     uid: '',
     email: '',
-    displayName: 'New Artist',
+    displayName: '',
     photoURL: null,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
@@ -109,6 +111,13 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         // Guard: If uid is the default 'pending' placeholder, skip Firestore calls
         if (!uid || uid === 'pending') {
             logger.debug('[Profile] Skipping load — no real UID yet.');
+            return;
+        }
+
+        const currentUser = auth.currentUser;
+        const isCurrentAnonymousUser = currentUser?.uid === uid && isAnonymousOrDemoUser(currentUser);
+        if (isDemoUserId(uid) || isCurrentAnonymousUser) {
+            logger.error('[Profile] Refusing to load anonymous/demo profile UID in runtime.');
             return;
         }
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Wine, Coffee, Apple, Droplet, Check, Plus, Trash2, Loader2, ListTodo } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useRider } from '../hooks/useRider';
 import { RiderItem } from '../types';
 
 export const RiderChecklist: React.FC = () => {
+    const { t } = useTranslation();
     const { items, loading, addItem, toggleItem, deleteItem } = useRider();
     const [newItemLabel, setNewItemLabel] = useState('');
     const [newItemCategory, setNewItemCategory] = useState<RiderItem['category']>('essential');
@@ -62,7 +64,7 @@ export const RiderChecklist: React.FC = () => {
                                 type="text"
                                 value={newItemLabel}
                                 onChange={(e) => setNewItemLabel(e.target.value)}
-                                placeholder="Add requirement..."
+                                placeholder={t('touring.hints.add_requirement')}
                                 aria-label="New item name"
                                 className="flex-1 bg-bg-dark border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none placeholder:text-gray-600 transition-all font-mono"
                             />

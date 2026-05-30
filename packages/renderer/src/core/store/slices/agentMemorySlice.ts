@@ -6,17 +6,10 @@
  */
 
 import { StateCreator } from 'zustand';
-import type { Memory, MemoryLayer } from '@/services/memory/PersistentMemoryService';
 import type { ReflectionIteration } from '@/services/agent/ReflectionLoop';
 import type { ContextFrame } from '@/services/agent/ContextStackService';
 
 export interface AgentMemoryState {
-  // Persistent memory
-  cachedMemories: Map<string, Memory>;
-  selectedLayer: MemoryLayer;
-  memorySearchQuery: string;
-  isMemoryLoading: boolean;
-
   // Reflection results
   reflectionHistory: ReflectionIteration[];
   currentReflectionId: string | null;
@@ -32,14 +25,6 @@ export interface AgentMemoryState {
   streamingComplete: boolean;
   streamingError: Error | null;
 
-  // Actions
-  setCachedMemories: (memories: Memory[]) => void;
-  addCachedMemory: (memory: Memory) => void;
-  clearCachedMemories: () => void;
-
-  setSelectedLayer: (layer: MemoryLayer) => void;
-  setMemorySearchQuery: (query: string) => void;
-  setIsMemoryLoading: (loading: boolean) => void;
 
   setReflectionHistory: (iterations: ReflectionIteration[]) => void;
   addReflectionIteration: (iteration: ReflectionIteration) => void;
@@ -66,10 +51,6 @@ export const createAgentMemorySlice: StateCreator<
   AgentMemoryState
 > = (set) => ({
   // Initial state
-  cachedMemories: new Map(),
-  selectedLayer: 'session',
-  memorySearchQuery: '',
-  isMemoryLoading: false,
 
   reflectionHistory: [],
   currentReflectionId: null,
@@ -83,39 +64,6 @@ export const createAgentMemorySlice: StateCreator<
   streamingComplete: false,
   streamingError: null,
 
-  // Memory actions
-  setCachedMemories: (memories) =>
-    set(() => ({
-      cachedMemories: new Map(memories.map((m) => [m.id, m]))
-    })),
-
-  addCachedMemory: (memory) =>
-    set((state) => {
-      const updated = new Map(state.cachedMemories);
-      updated.set(memory.id, memory);
-      return { cachedMemories: updated };
-    }),
-
-  clearCachedMemories: () =>
-    set(() => ({
-      cachedMemories: new Map(),
-      memorySearchQuery: ''
-    })),
-
-  setSelectedLayer: (layer) =>
-    set(() => ({
-      selectedLayer: layer
-    })),
-
-  setMemorySearchQuery: (query) =>
-    set(() => ({
-      memorySearchQuery: query
-    })),
-
-  setIsMemoryLoading: (loading) =>
-    set(() => ({
-      isMemoryLoading: loading
-    })),
 
   // Reflection actions
   setReflectionHistory: (iterations) =>

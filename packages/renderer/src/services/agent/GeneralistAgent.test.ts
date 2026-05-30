@@ -8,12 +8,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './specialists/GeneralistAgent';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { TOOL_REGISTRY } from './tools';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/services/ai/GenAI');
+vi.mock('@/services/intelligence/AutonomousIntelligence');
 vi.mock('./tools', () => ({
     TOOL_REGISTRY: {
         test_tool: vi.fn().mockResolvedValue('Tool executed successfully'),
@@ -107,7 +107,7 @@ describe('GeneralistAgent', () => {
     });
 
     it('detects and prevents infinite loops', async () => {
-        // Simulate the AI calling the same tool repeatedly
+        // Simulate the Autonomous calling the same tool repeatedly
         vi.mocked(AI.generateContentStream)
             .mockResolvedValue(mockFunctionCallResponse('test_tool', { same: 'args' }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 

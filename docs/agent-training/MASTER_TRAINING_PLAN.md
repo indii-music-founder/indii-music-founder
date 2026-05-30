@@ -1,4 +1,4 @@
-# indiiOS Agent Training — Master Plan
+# indii Agent Training — Master Plan
 
 > **For any agent picking this up:** Start here. This document is the single source of truth
 > for all agent training work. Check STATUS column first, then resume from the first `⏳ IN PROGRESS`

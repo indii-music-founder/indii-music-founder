@@ -2,7 +2,7 @@
 
 **Version 1.0 (Production Grade)**
 
-The indii Conductor is the central nervous system of the indiiOS agentic fleet. It represents a paradigm shift from toy LLM scripts to a mission-critical, production-grade autonomous orchestration engine. Built entirely on 12 security-first primitives, it ensures that AI agents can execute complex, multi-step workflows with the speed of automation and the safety of human oversight.
+The indii Conductor is the central nervous system of the indii agentic fleet. It represents a paradigm shift from toy LLM scripts to a mission-critical, production-grade autonomous orchestration engine. Built entirely on 12 security-first primitives, it ensures that AI agents can execute complex, multi-step workflows with the speed of automation and the safety of human oversight.
 
 ---
 

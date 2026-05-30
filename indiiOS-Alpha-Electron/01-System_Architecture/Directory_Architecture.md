@@ -1,7 +1,7 @@
 # Task 1: Generate File Directory Architecture
 
 ```text
-/indiiOS-Alpha-Electron
+/indii-Alpha-Electron
 ├── /01-System_Architecture
 │   ├── /client_electron_app
 │   ├── /state_management

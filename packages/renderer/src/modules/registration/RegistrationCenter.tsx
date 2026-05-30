@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { CatalogRail } from './components/CatalogRail';
 import { RegistrationSheet } from './components/RegistrationSheet';
-import { RegistrationAIRail } from './components/RegistrationAIRail';
+import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
 import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
@@ -73,12 +73,12 @@ async function loadRegistrationStates(
       orgs[orgId] = {
         orgId,
         status: d.status,
-        submittedAt: d.submittedAt?.toDate(),
-        confirmedAt: d.confirmedAt?.toDate(),
+        submittedAt: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate() : (d.submittedAt ? new Date(d.submittedAt as any) : undefined),
+        confirmedAt: (d.confirmedAt && typeof (d.confirmedAt as any).toDate === 'function') ? (d.confirmedAt as any).toDate() : (d.confirmedAt ? new Date(d.confirmedAt as any) : undefined),
         confirmationNumber: d.confirmationNumber,
         formSnapshot: d.formSnapshot,
         errorMessage: d.errorMessage,
-        lastUpdated: d.lastUpdated?.toDate() ?? new Date(),
+        lastUpdated: (d.lastUpdated && typeof (d.lastUpdated as any).toDate === 'function') ? (d.lastUpdated as any).toDate() : (d.lastUpdated ? new Date(d.lastUpdated as any) : new Date()),
       };
       if (d.status === 'confirmed') confirmed++;
     });
@@ -240,9 +240,9 @@ export default function RegistrationCenter() {
         />
       </div>
 
-      {/* Right: AI Co-Pilot Rail */}
+      {/* Right: Intelligence Co-Pilot Rail */}
       <div className="w-72 flex-shrink-0">
-        <RegistrationAIRail
+        <RegistrationAutonomousRail
           focusedAdapter={focusedAdapter}
           track={selectedTrack}
         />

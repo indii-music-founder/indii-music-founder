@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
@@ -7,19 +8,206 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary, NearbyPlace, FuelLogistics, LogisticsReport } from './types';
+import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics, LogisticsReport, EmergencyContact } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
-import { Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
+import { Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+
+interface EmergencyContactsPanelProps {
+    contacts: EmergencyContact[];
+    onSave: (contact: { id?: string; name: string; phone: string; relationship: string }) => Promise<void>;
+    onDelete: (id: string) => Promise<void>;
+}
+
+function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContactsPanelProps) {
+    const { t } = useTranslation();
+    const [isOpen, setIsOpen] = useState(false);
+    const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [relationship, setRelationship] = useState('Manager');
+
+    const handleOpenAdd = () => {
+        setEditingContact(null);
+        setName('');
+        setPhone('');
+        setRelationship('Manager');
+        setIsOpen(true);
+    };
+
+    const handleOpenEdit = (contact: EmergencyContact) => {
+        setEditingContact(contact);
+        setName(contact.name);
+        setPhone(contact.phone);
+        setRelationship(contact.relationship);
+        setIsOpen(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name.trim() || !phone.trim() || !relationship.trim()) return;
+
+        await onSave({
+            id: editingContact?.id,
+            name: name.trim(),
+            phone: phone.trim(),
+            relationship: relationship.trim()
+        });
+
+        setIsOpen(false);
+    };
+
+    return (
+        <div className="rounded-xl bg-red-950/10 border border-red-500/20 p-3 relative overflow-hidden flex flex-col transition-all duration-300 hover:border-red-500/30">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 blur-2xl rounded-full pointer-events-none" />
+
+            <div className="flex items-center justify-between mb-3 px-1">
+                <h3 className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1.5 italic">
+                    <Phone className="text-red-500" size={10} />
+                    Emergency
+                </h3>
+                {!isOpen && (
+                    <button
+                        onClick={handleOpenAdd}
+                        className="p-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-mono uppercase tracking-wider transition-all flex items-center gap-1 focus:ring-1 focus:ring-red-500/50 outline-none cursor-pointer"
+                    >
+                        <Plus size={10} />
+                        Add
+                    </button>
+                )}
+            </div>
+
+            {isOpen ? (
+                <form onSubmit={handleSubmit} className="space-y-2 bg-[#161b22]/50 p-2.5 rounded-lg border border-red-500/10 z-10">
+                    <h4 className="text-[9px] font-mono uppercase tracking-widest text-red-400 font-bold">
+                        {editingContact ? 'Edit Emergency Contact' : 'New Emergency Contact'}
+                    </h4>
+                    <div className="space-y-1.5">
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder={t('touring.hints.contact_name_tour')}
+                            className="w-full bg-[#0d1117] border border-gray-800 rounded px-2 py-1 text-xs text-white focus:border-red-500 outline-none placeholder:text-gray-700 font-mono"
+                            required
+                        />
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder={t('touring.hints.phone_number')}
+                            className="w-full bg-[#0d1117] border border-gray-800 rounded px-2 py-1 text-xs text-white focus:border-red-500 outline-none placeholder:text-gray-700 font-mono"
+                            required
+                        />
+                        <select
+                            value={relationship}
+                            onChange={(e) => setRelationship(e.target.value)}
+                            className="w-full bg-[#0d1117] border border-gray-800 rounded px-1.5 py-1 text-xs text-gray-400 focus:border-red-500 outline-none cursor-pointer uppercase font-bold tracking-wider font-mono"
+                        >
+                            <option value="Manager">Manager</option>
+                            <option value="Venue">Venue</option>
+                            <option value="Promoter">Promoter</option>
+                            <option value="Band">Band/Crew</option>
+                            <option value="Spouse/Family">Spouse/Family</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div className="flex gap-1.5 justify-end pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen(false)}
+                            className="p-1 px-2 text-[10px] text-gray-500 hover:text-gray-300 font-mono uppercase transition-colors cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="p-1 px-2.5 rounded bg-red-600 hover:bg-red-500 text-white text-[10px] font-mono uppercase transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] cursor-pointer"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </form>
+            ) : contacts.length === 0 ? (
+                <div
+                    onClick={handleOpenAdd}
+                    className="group border border-dashed border-red-950 rounded-lg py-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-red-500/5 hover:border-red-500/40 z-10"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleOpenAdd();
+                        }
+                    }}
+                >
+                    <Phone size={16} className="text-red-500/40 mb-1.5 group-hover:text-red-400 group-hover:scale-110 transition-all duration-300" />
+                    <p className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors uppercase font-mono tracking-wider">No contacts saved</p>
+                    <p className="text-[9px] text-red-500/50 mt-1 uppercase font-mono tracking-widest font-black underline underline-offset-2">Click here to add one</p>
+                </div>
+            ) : (
+                <div className="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1 z-10">
+                    {contacts.map((contact) => (
+                        <div
+                            key={contact.id}
+                            className="group flex items-center justify-between p-2 rounded-lg bg-red-500/[0.02] border border-red-500/5 hover:border-red-500/20 hover:bg-red-500/[0.04] transition-all duration-300"
+                        >
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-white truncate max-w-[120px] font-mono leading-none">
+                                        {contact.name}
+                                    </span>
+                                    <span className="text-[8px] px-1 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-bold uppercase tracking-wide scale-90 origin-left font-mono">
+                                        {contact.relationship}
+                                    </span>
+                                </div>
+                                <a
+                                    href={`tel:${contact.phone}`}
+                                    className="text-[10px] text-gray-500 hover:text-white transition-colors flex items-center gap-1 mt-1 font-mono outline-none"
+                                >
+                                    {contact.phone}
+                                </a>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                <a
+                                    href={`tel:${contact.phone}`}
+                                    className="p-1 text-gray-500 hover:text-green-400 hover:bg-green-500/10 rounded transition-all focus-visible:opacity-100 outline-none cursor-pointer"
+                                    title="Call contact"
+                                >
+                                    <Phone size={11} />
+                                </a>
+                                <button
+                                    onClick={() => handleOpenEdit(contact)}
+                                    className="p-1 text-gray-600 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 outline-none cursor-pointer"
+                                    title="Edit contact"
+                                >
+                                    <Edit2 size={11} />
+                                </button>
+                                <button
+                                    onClick={() => onDelete(contact.id)}
+                                    className="p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 outline-none cursor-pointer"
+                                    title="Delete contact"
+                                >
+                                    <Trash2 size={11} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 const RoadManager: React.FC = () => {
     // Hooks must be called unconditionally before early returns
@@ -31,6 +219,9 @@ const RoadManager: React.FC = () => {
         updateItineraryStop,
         vehicleStats,
         saveVehicleStats,
+        emergencyContacts,
+        saveEmergencyContact,
+        deleteEmergencyContact,
         loading: touringLoading
     } = useTouring();
 
@@ -68,7 +259,21 @@ const RoadManager: React.FC = () => {
 
     const handleAddLocation = () => {
         if (newLocation.trim()) {
-            setLocations([...locations, newLocation.trim()]);
+            const rawParts = newLocation.split(',').map(p => p.trim()).filter(Boolean);
+            const parsed: string[] = [];
+            for (let i = 0; i < rawParts.length; i++) {
+                const part = (rawParts[i] || '').trim();
+                const nextPart = (rawParts[i + 1] || '').trim();
+                if (nextPart && nextPart.length === 2 && /^[A-Za-z]{2}$/.test(nextPart)) {
+                    parsed.push(`${part}, ${nextPart.toUpperCase()}`);
+                    i++;
+                } else {
+                    parsed.push(part);
+                }
+            }
+            if (parsed.length > 0) {
+                setLocations([...locations, ...parsed]);
+            }
             setNewLocation('');
         }
     };
@@ -90,10 +295,21 @@ const RoadManager: React.FC = () => {
         try {
             const generateItinerary = httpsCallable(functions, 'generateItinerary');
             const response = await generateItinerary({ locations, dates: { start: startDate, end: endDate } });
-            const result = response.data as Itinerary;
+            const rawResult = response.data as any;
+
+            const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
+                city: stop.city || '',
+                date: stop.date || '',
+                venue: stop.venue || '',
+                activity: stop.activity || '',
+                type: stop.type || 'Travel',
+                notes: stop.notes || '',
+            }));
 
             await saveItinerary({
-                ...result,
+                stops: mappedStops,
+                totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : '0 miles',
+                estimatedBudget: 'TBD',
                 tourName: `Tour ${startDate} - ${locations[0]}`
             });
 
@@ -286,7 +502,11 @@ const RoadManager: React.FC = () => {
                     <ItinerarySummaryPanel itinerary={itinerary} />
                     <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
                     <RiderQuickPanel onNavigate={() => setActiveTab('rider')} />
-                    <EmergencyContactsPanel />
+                    <EmergencyContactsPanel
+                        contacts={emergencyContacts}
+                        onSave={saveEmergencyContact}
+                        onDelete={deleteEmergencyContact}
+                    />
                 </aside>
             </div>
         </ModuleErrorBoundary>
@@ -401,19 +621,6 @@ function RiderQuickPanel({ onNavigate }: { onNavigate?: () => void }) {
                 ) : (
                     <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
                 )}
-            </div>
-        </div>
-    );
-}
-
-function EmergencyContactsPanel() {
-    return (
-        <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
-            <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3 px-1">Emergency</h3>
-            <div className="flex flex-col items-center justify-center py-3 text-center">
-                <Phone size={14} className="text-red-400/50 mb-1.5" />
-                <p className="text-[10px] text-gray-600">No contacts saved</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">Add numbers in tour settings</p>
             </div>
         </div>
     );

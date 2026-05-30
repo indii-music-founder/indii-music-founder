@@ -1,19 +1,19 @@
 <div align="center">
-  <img width="1280" height="560" alt="indiiOS Banner" src="docs/assets/indiios-banner.png" />
+  <img width="1280" height="560" alt="indii Banner" src="docs/assets/indii-banner.png" />
 </div>
 
-# indiiOS: The Sovereign Creative Engine
+# indii: The Independent Creative Engine
 
-**The First AI-Native Operating System for Independent Artists & Producers.**
+**The First Intelligence-Native Operating System for Independent Artists & Producers.**
 
-indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
+indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron)
-[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
+[![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/new-detroit-music-llc/indii-Alpha-Electron)
+[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
-[![Gemini](https://img.shields.io/badge/AI-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
+[![Intelligence](https://img.shields.io/badge/Intelligence-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22.0.0-339933?logo=node.js)](https://nodejs.org)
 
 ---
@@ -25,8 +25,8 @@ indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-ten
 
 ```bash
 # 1. Clone (1 min)
-git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
-cd indiiOS-Alpha-Electron
+git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
+cd indii-Alpha-Electron
 
 # 2. Bootstrap environment (5 min)
 make prime                  # installs deps, runs health check
@@ -55,15 +55,15 @@ make dev                    # Full Electron + Vite on :4242
 
 ## 💠 The Vision
 
-indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
+indii solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
 
-**indiiOS is the distributor.** We hold a registered DDEX Party ID and deliver directly to DSPs. The aggregator middleman layer doesn't exist here. Your masters stay yours, your royalties stay yours, and your data stays yours.
+**indii is the platform of record. We hold sophisticated, proprietary system IP that interfaces directly with global distribution infrastructure. By bypassing traditional third-party aggregator layers, indii enables creators to maintain absolute control over their masters, royalties, and creative data through a direct-to-DSP transmission rail.**
 
 ---
 
 ## 🏗️ 3-Layer Architecture
 
-To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a rigorous 3-layer system:
+To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a rigorous 3-layer system:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -72,66 +72,73 @@ To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a
 │  → directives/                                               │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 2: ORCHESTRATION (Intelligence)                       │
-│  Hub-and-spoke agent system — reasons, routes, manages       │
+│  A2A swarm protocol — reasons, routes, manages               │
 │  → agents/ + src/services/agent/                             │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Deterministic)                          │
-│  Hard-coded scripts for API calls, file ops, DDEX gen        │
+│  Hard-coded scripts for API calls, file ops, Proprietary Ingestion IP generation  │
 │  → execution/ + python/tools/                                │
 └──────────────────────────────────────────────────────────────┘
-```
 
 **The Multiplier Effect:** By pushing complexity into deterministic execution layers, we avoid the "compound error" trap (where 90% accuracy over 5 biological steps leads to 59% overall success). Determinism at the base allows for reliability at the peak.
 
+**Omni-Aware Routing:** The orchestration layer is built with "Context-First" routing. Agents intelligently prioritize current conversation intent and user specific requests over the active document, preventing target collisions and ensuring a focused execution loop even in complex, multi-file workspaces.
+
 ---
 
-## 🤖 indii: The Hub-and-Spoke Agent System
+## 🤖 indii: The A2A Swarm Protocol
 
-The core of indiiOS is **indii**, an intelligent orchestration hub with **17 specialist agents**.
+The core of indii is the **Agent Swarm**, a decentralized orchestration protocol with **20 specialist agents** seeded with verifiable technical tools.
 
 ```
               ┌─────────────────────┐
-              │   Agent Zero (Hub)  │
-              │   Orchestrator      │
+              │indii Conductor (Swarm)│
+              │    Orchestrator     │
               └──────────┬──────────┘
                          │
     ┌────────────────────┼────────────────────┐
     │        │        │        │        │      │
- Creative  Brand   Music   Legal   Finance  Video
- Director  Agent   Agent   Agent   Agent   Agent
+  Creative  Brand   Music   Legal   Finance  Video
+  Director  Agent   Agent   Agent   Agent   Agent
     │
   ┌─┴──────────────────────────────────────────┐
   Marketing  Social  Publishing  Licensing     │
   Agent      Agent   Agent       Agent         │
   │                                             │
-  Publicist  Road    Generalist  Executor       │
+  Publicist  Road    Generalist  Executor      │
   Agent      Agent   Agent       Agent         │
+  │                                             │
+  Merch      Analytics  IndiiOD  Strategy      │
+  Agent      Agent      Agent    Agent         │
   └────────────────────────────────────────────┘
 ```
 
-| Agent | Domain | Capabilities |
-|-------|--------|-------------|
-| **Agent Zero** | Hub Orchestrator | Session context, task routing, multi-agent coordination |
-| **Creative Director** | Visual Identity | Brand-consistent AI image/video generation, style enforcement |
-| **Music Agent** | Audio Intelligence | BPM, key, timbre analysis via `Essentia.js`, mastering QA |
-| **Legal Agent** | Rights & Contracts | Real-time contract review, rights management, IP protection |
-| **Finance Agent** | Revenue | Waterfall payout calculations, royalty tracking, tax reporting |
-| **Marketing Agent** | Growth | Campaign execution, AI copywriting, audience targeting |
-| **Video Agent** | Video Production | Veo 3.1 synthesis, shot sequencing, Director's Cut QA |
-| **Brand Agent** | Brand Identity | Brand kit management, style guide enforcement |
-| **Social Agent** | Social Media | Cross-platform posting, analytics, engagement optimization |
-| **Publishing Agent** | Music Publishing | Song registration, rights administration |
-| **Licensing Agent** | Sync & Licensing | Licensing deal management, sync opportunity matching |
-| **Publicist Agent** | PR & Media | Press release generation, media outreach |
-| **Road Agent** | Touring | Route planning, venue discovery, logistics |
-| **Generalist Agent** | General Tasks | Flexible agent for uncategorized tasks |
-| **Executor Agent** | Task Execution | High-reliability script execution and validation |
+| Agent | Domain | Technical Core (Seeded Tools) |
+|-------|--------|-------------------------------|
+| **indii Conductor** | Swarm Orchestrator | Foundational Audit & Memory Skills |
+| **Music Agent** | Audio Intelligence | `calculate_splits.py`, BPM/Key analysis |
+| **Merchandise** | E-commerce Ops | `margin_calculator.py`, SKU generation |
+| **Legal Agent** | Rights & Contracts | `nda_generator.py`, Contract Risk Audit |
+| **Social Agent** | Social Media | `post_formatter.py`, Engagement optimization |
+| **Finance Agent** | Revenue | `royalty_estimator.py`, Waterfall splits |
+| **Creative Dir** | Visual Identity | Brand kit enforcement, Image synthesis |
+| **Video Agent** | Video Production | Veo 3.1 synthesis, Director's Cut QA |
+| **Analytics Agent**| Growth | Viral scoring, Breakout prediction |
+| **All Others (11)** | Various | `domain_readiness.py` (Seeding ongoing) |
+
+**Foundational Skills:**
+- **Audit Skill**: Decentralized capability discovery via `scan_directory.py`.
+- **Memory Skill**: Persistent procedural "Brain Surgery" via `update_knowledge.py`.
+- **Capability Registry**: Centralized `agents/capability_registry.json` for tool discovery.
+- **Swarm Dashboard**: Real-time visualization of agent capabilities in the Creative Studio UI.
+
+For more details on the autonomous evolution, see [CAPABILITY_DEPLOYMENT.md](docs/CAPABILITY_DEPLOYMENT.md).
 
 ---
 
 ## 📱 indiiREMOTE Edge Infrastructure
 
-**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indiiOS desktop mainframe from any mobile device, instantly and securely.
+**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indii desktop mainframe from any mobile device, instantly and securely.
 
 Instead of routing sensitive, unreleased creative assets through a public cloud server, indiiREMOTE provisions a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process.
 
@@ -142,15 +149,22 @@ Instead of routing sensitive, unreleased creative assets through a public cloud 
 3. **End-to-End Encryption:** After entering the PIN, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
 4. **Live Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) without being physically present at their computer.
 
-By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indiiOS enables true untethered mobility without compromising data sovereignty or relying on external cloud storage.
+By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indii enables true untethered mobility without compromising data independence or relying on external cloud storage.
 
 ---
 
-## 🧠 Always-On Memory Agent
+## 🧠 indii Cognitive Core: Always-On Memory Agent
 
-Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, rebuilt as a native TypeScript service with significant enhancements.
+Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, indii's memory system is a native TypeScript **Neural Engine** built for absolute persistence and zero-latency recall.
 
-The Memory Agent is a **persistent, evolving memory system** that runs in the background — continuously ingesting, consolidating, and connecting information. Think of it as the platform's hippocampus: it processes raw experiences during idle time and surfaces cross-cutting insights on demand.
+The Memory Agent is a **state-of-the-art, autonomous cognitive system** that operates silently in the background — continuously ingesting, consolidating, and synthesizing information across your entire creative business. It functions as the platform's **Digital Hippocampus**: it converts raw daily interactions into a rich, structured knowledge graph during idle cycles, ensuring your agents are always grounded in the precise truth of your brand.
+
+### ✨ The Memory Advantage
+
+- **Infinite Recall:** Never repeat yourself. Every decision, stylistic preference, and business rule is etched into the long-term vector store.
+- **Cross-Module Intelligence:** Knowledge generated in the *Legal* module (e.g., a specific royalty split) is instantly available to the *Finance* and *Social* agents.
+- **Autonomous Consolidation:** During "sleep cycles," the engine automatically merges redundant facts and resolves contradictory information using high-thinking reasoning loops.
+- **Temporal Awareness:** Navigate your brand's history with a visual timeline that shows how your creative identity has evolved over months and years.
 
 ### How It Works
 
@@ -182,14 +196,14 @@ User Input / Files / Sessions
 
 | Feature | Description |
 |---------|-------------|
-| **4-Tier Memory** | Memories move through `working → shortTerm → longTerm → archived` based on age, access frequency, and importance |
-| **Importance Decay** | Memories lose importance over time unless accessed (reinforcement learning) |
-| **Entity Graph** | Extracted entities (people, companies, products) are linked across memories |
-| **Multimodal Ingestion** | Supports 27 file types: text, images, audio, video, and PDFs |
-| **Cross-Cutting Insights** | Background consolidation discovers patterns and generates insights with confidence scores |
-| **Semantic Search** | Multi-signal ranking: semantic similarity + importance + recency + tier bonus |
-| **Electron Inbox** | File watcher via IPC polls `~/indiiOS/memory-inbox/` for new files (desktop only) |
-| **Dashboard UI** | Premium React dashboard with memory timeline, insight cards, and query interface |
+| **Longitudinal Timeline** | Tracks facts over years with semantic supersession chains (`supersedes` / `supersededBy`). The system knows what was true 4 years ago vs. what is true today. |
+| **Temporal Search** | Multi-mode retrieval: switch between `Recency-Weighted` (latest news) and `Temporal-Aware` (deep historical context) modes. |
+| **Performance Lookback** | $O(1)$ write performance at scale. Semantic dedup only audits the last 30 days of high-density facts, maintaining speed even as history grows to 10k+ records. |
+| **Metadata Preservation** | Automated consolidation preserves original categories. The system explicitly distinguishes between a raw `fact`, a system-generated `insight`, and a high-level `summary`. |
+| **Tiered Memory Store** | Memories move through `working → shortTerm → longTerm → archived` based on importance decay and reinforcement on access. |
+| **Semantic Supersession** | Detects when new information makes an old fact obsolete. Links the timeline automatically while preserving the archived "original" fact for provenance. |
+| **Entity Graph** | Extracted entities (people, companies, products) are linked across memories to build a global relationship graph. |
+| **Dashboard UI** | Premium React dashboard with a visual memory timeline, insight cards, and temporal query interface. |
 
 ### Usage
 
@@ -216,7 +230,7 @@ await engine.runConsolidation('user-123');
 
 ## ⏱️ Timeline Orchestrator (Autonomous Campaign Engine)
 
-The **Timeline Orchestrator** is indiiOS's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
+The **Timeline Orchestrator** is indii's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
 
 ### How It Works
 
@@ -300,7 +314,7 @@ functions/src/timeline/
 
 ## 📊 Growth Intelligence Engine
 
-The **Growth Intelligence Engine** is indiiOS's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
+The **Growth Intelligence Engine** is indii's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
 
 ### How It Works
 
@@ -387,7 +401,7 @@ indiiREMOTE transforms your desktop into a globally accessible, private edge ser
 
 ### How It Works
 
-Instead of relying on cloud databases to relay commands, the indiiOS Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+Instead of relying on cloud databases to relay commands, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
 
 ```
 📱 Phone (Anywhere on Earth)
@@ -406,7 +420,7 @@ Instead of relying on cloud databases to relay commands, the indiiOS Electron ap
                    │
                    ▼ (IPC Bus)
 ┌───────────────────────────────────────────┐
-│  indiiOS Desktop React App                │
+│  indii Desktop React App                │
 │  Mainframe Execution                      │
 └───────────────────────────────────────────┘
 ```
@@ -425,7 +439,7 @@ Instead of relying on cloud databases to relay commands, the indiiOS Electron ap
 
 ## 📦 Core Modules (36)
 
-indiiOS ships with 36 lazy-loaded modules organized across four domains:
+indii ships with 36 lazy-loaded modules organized across four domains:
 
 ### 🎨 Creative Studios
 
@@ -441,7 +455,7 @@ indiiOS ships with 36 lazy-loaded modules organized across four domains:
 
 | Module | Route | Description |
 |--------|-------|-------------|
-| **Distribution** | `/distribution` | Direct DDEX delivery to DSPs (Merlin, Apple, Spotify, Amazon, Tidal) — no aggregator middlemen |
+| **Distribution** | `/distribution` | Direct Proprietary Ingestion delivery to DSPs (Merlin, Apple, Spotify, Amazon, Tidal) — no aggregator middlemen |
 | **Release Manager** | `/release` | End-to-end release lifecycle: metadata, artwork, scheduling, delivery, and QC |
 | **Finance** | `/finance` | Streaming revenue tracking, waterfall royalty splits, and automated payout calculations |
 | **Royalty** | `/royalty` | Detailed royalty statement parsing, reconciliation, and split management |
@@ -466,7 +480,7 @@ indiiOS ships with 36 lazy-loaded modules organized across four domains:
 
 | Module | Route | Description |
 |--------|-------|-------------|
-| **Agent Tools** | `/agent` | Hub for Agent Zero interactions and specialist agent routing |
+| **Agent Tools** | `/agent` | Hub for Agent Swarm interactions and specialist agent routing |
 | **Memory Agent** | `/memory` | Always-On Memory dashboard — memory timeline, insights, and query interface |
 | **Knowledge Base** | `/knowledge` | Searchable knowledge repository for artists and labels |
 | **Audio Analyzer** | `/audio-analyzer` | Deep audio analysis — BPM, key detection, timbre analysis via Essentia.js |
@@ -546,7 +560,7 @@ Firebase API keys are **identifiers, not secrets** — security is enforced via 
 | Database | Firestore | Real-time sync with security rules |
 | Storage | Firebase Storage | Media assets with security rules |
 | Analytics | BigQuery | Revenue analytics pipeline |
-| Distribution | DDEX ERN 4.3 | Direct DSP delivery via SFTP |
+| Distribution | Proprietary Ingestion IP 4.3 | Direct DSP delivery via SFTP |
 
 ### AI Model Policy
 
@@ -578,8 +592,8 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ### Installation
 
 ```bash
-git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
-cd indiiOS-Alpha-Electron
+git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
+cd indii-Alpha-Electron
 make prime                 # installs deps + runs health check
 ```
 
@@ -680,7 +694,7 @@ The project includes a rich catalog of 20+ automation scripts for environment se
 
 ## 🧪 Testing & Quality
 
-indiiOS maintains a **"Zero-Regression"** policy with multi-layer testing:
+indii maintains a **"Zero-Regression"** policy with multi-layer testing:
 
 ```bash
 npm test                   # Vitest in watch mode
@@ -731,7 +745,7 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 ## 📂 Project Structure
 
 ```
-indiiOS-Alpha-Electron/
+indii-Alpha-Electron/
 ├── src/                    # React application source
 │   ├── core/               # App infrastructure (store, contexts, themes)
 │   ├── modules/            # 36 lazy-loaded feature modules
@@ -741,7 +755,7 @@ indiiOS-Alpha-Electron/
 │   ├── lib/                # Utility libraries
 │   ├── types/              # TypeScript type definitions
 │   └── config/             # App configuration
-├── agents/                 # 17 AI agent definitions (hub-and-spoke)
+├── agents/                 # 20 AI agent definitions (A2A swarm)
 ├── execution/              # Deterministic scripts (Layer 3)
 ├── directives/             # AI agent SOPs (Layer 1)
 ├── python/                 # Python tools and API handlers
@@ -761,9 +775,10 @@ For deep-dives into specific subsystems:
 
 | Document | Description |
 |----------|-------------|
+| [indii.music Architecture Blueprint](docs/INDII_MUSIC_ARCHITECTURE.md) | 5-API Waterfall and thin client architecture |
 | [Architecture Standard](directives/architecture_standard.md) | 3-layer architecture guidelines |
 | [Agent Stability Protocol](directives/agent_stability.md) | Agent reliability standards |
-| [DDEX Implementation Plan](docs/DDEX_IMPLEMENTATION_PLAN.md) | Distribution engine specification |
+| [Proprietary Ingestion Implementation Plan](docs/PROPRIETARY_INGESTION_IMPLEMENTATION_PLAN.md) | Distribution engine specification |
 | [Model Usage Policy](MODEL_POLICY.md) | AI model selection and enforcement |
 | [API Credentials Policy](docs/API_CREDENTIALS_POLICY.md) | Security policy for credential management |
 | [Production Checklist](docs/PRODUCTION_300.md) | 300+ item production readiness audit |
@@ -887,7 +902,7 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 **Remote Relay Hardening & Telegram Bot Adapter**
 
-- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indiios-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
+- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indii-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
 - **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
 - **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
 

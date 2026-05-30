@@ -80,11 +80,21 @@ export interface NearbyPlace {
     };
 }
 
-// Logistics feasibility report returned by the AI logistics check
+// Logistics feasibility report returned by the Autonomous logistics check
 export interface LogisticsReport {
     isFeasible: boolean;
     issues: string[];
     suggestions: string[];
     summary?: string;
+}
+
+export interface EmergencyContact {
+    id: string;
+    userId: string;
+    name: string;
+    phone: string;
+    relationship: string;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
 }
 

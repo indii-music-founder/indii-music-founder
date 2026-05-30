@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { functionsWest1 } from '@/services/firebase';
+import { auth, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Image as ImageIcon, Plus, Camera, ArrowRightLeft, Trash2, Tag } from 'lucide-react';
@@ -8,8 +8,9 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import type { BrandAsset } from '@/types/User';
-import { AI_CONFIG } from '@/core/config/ai-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import type { StoreState } from '@/core/store';
+import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -49,8 +50,14 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     const processFiles = async (files: File[]) => {
+        const userId = getRealAuthenticatedUserId(auth.currentUser);
+        if (!userId || !userProfile?.id || userProfile.id !== userId) {
+            toast.error('Sign in before uploading brand assets.');
+            return;
+        }
+
         // For uploads, we'll default to style_reference if under limit, else logo
-        const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+        const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
         const currentCount = userProfile?.brandKit?.referenceImages?.length || 0;
 
         setIsGenerating(true);
@@ -62,7 +69,6 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
             for (const file of files) {
                 const assetId = crypto.randomUUID();
-                const userId = userProfile?.id || 'guest';
                 const path = `users/${userId}/brand_assets/${assetId}`;
                 
                 logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);
@@ -131,7 +137,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             toast.success("Moved to Logos & Graphics");
         } else {
             // Move from Logos to Style References
-            const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+            const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
             if ((currentKit.referenceImages || []).length >= MAX_REF) {
                 toast.error(`Limit reached. You can only have up to ${MAX_REF} style references.`);
                 return;
@@ -169,51 +175,35 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            const { auth } = await import('@/services/firebase');
             let downloadUrl = '';
             const assetId = crypto.randomUUID();
+            const userId = getRealAuthenticatedUserId(auth.currentUser);
 
-            // Check if we should use mock generation (either no auth or explicit guest)
-            const isGuest = !auth.currentUser || userProfile?.id === 'guest';
-            
-            if (import.meta.env.DEV && isGuest) {
-                logger.warn("[BrandAssets] Mocking generation for guest session:", prompt);
-                downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
-                await new Promise(resolve => setTimeout(resolve, 1500));
+            if (!userId || !userProfile?.id || userProfile.id !== userId) {
+                throw new Error('User must be authenticated to generate brand assets.');
+            }
+
+            const { httpsCallable } = await import('firebase/functions');
+            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+
+            const response = await generateImage({
+                prompt: prompt + " -- style: high quality, professional brand asset",
+                count: 1,
+                aspectRatio: '1:1'
+            });
+
+            const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
+            const candidate = data.candidates?.[0];
+            const part = candidate?.content?.parts?.find(p => p.inlineData);
+
+            if (part?.inlineData) {
+                const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                const res = await fetch(base64Url);
+                const blob = await res.blob();
+                const path = `users/${userId}/brand_assets/${assetId}`;
+                downloadUrl = await StorageService.uploadFile(blob, path);
             } else {
-                try {
-                    const { httpsCallable } = await import('firebase/functions');
-                    const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-                    const response = await generateImage({
-                        prompt: prompt + " -- style: high quality, professional brand asset",
-                        count: 1,
-                        aspectRatio: '1:1'
-                    });
-
-                    const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
-                    const candidate = data.candidates?.[0];
-                    const part = candidate?.content?.parts?.find(p => p.inlineData);
-
-                    if (part?.inlineData) {
-                        const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                        const res = await fetch(base64Url);
-                        const blob = await res.blob();
-                        const path = `users/${userProfile?.id}/brand_assets/${assetId}`;
-                        
-                        // StorageService now handles DEV-mode permission fallbacks internally
-                        downloadUrl = await StorageService.uploadFile(blob, path);
-                    } else {
-                        throw new Error("No image data in AI response");
-                    }
-                } catch (apiError: unknown) {
-                    if (import.meta.env.DEV) {
-                        logger.error("[BrandAssets] AI API failed in dev, falling back to mock", apiError);
-                        downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
-                    } else {
-                        throw apiError;
-                    }
-                }
+                throw new Error("No image data in Autonomous response");
             }
 
             if (downloadUrl) {
@@ -226,7 +216,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
 
                 if (targetCategory === 'style_reference') {
-                    const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                    const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
                     const currentCount = currentKit.referenceImages?.length || 0;
 
                     if (currentCount >= MAX_REF) {
@@ -294,7 +284,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     onClick={() => setActiveTab('generate')}
                     className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${activeTab === 'generate' ? 'bg-[#333] text-white' : 'text-gray-500 hover:text-gray-300'}`}
                 >
-                    Generate AI
+                    Generate Intelligence
                 </button>
             </div>
 
@@ -386,8 +376,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     <div>
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex justify-between">
                             Style References
-                            <span className={refImages.length >= AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages ? 'text-orange-500' : 'text-gray-400'}>
-                                {refImages.length}/{AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages}
+                            <span className={refImages.length >= INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages ? 'text-orange-500' : 'text-gray-400'}>
+                                {refImages.length}/{INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages}
                             </span>
                         </h4>
                         {refImages.length === 0 ? (

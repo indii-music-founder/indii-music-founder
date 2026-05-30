@@ -1,13 +1,13 @@
 /**
  * client.test.ts
- * Unit tests for IndiiOS SDK client
+ * Unit tests for indii SDK client
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { IndiiOSClient, createClient, IndiiOSError } from './client';
+import { indiiClient, createClient, indiiError } from './client';
 
-describe('IndiiOSClient', () => {
-  let client: IndiiOSClient;
+describe('indiiClient', () => {
+  let client: indiiClient;
 
   beforeEach(() => {
     client = createClient({
@@ -20,7 +20,7 @@ describe('IndiiOSClient', () => {
   describe('Initialization', () => {
     it('should create client with config', () => {
       expect(client).toBeDefined();
-      expect(client).toBeInstanceOf(IndiiOSClient);
+      expect(client).toBeInstanceOf(indiiClient);
     });
 
     it('should handle trailing slash in API URL', () => {
@@ -93,16 +93,16 @@ describe('IndiiOSClient', () => {
   });
 
   describe('Error Handling', () => {
-    it('should throw IndiiOSError with status code', () => {
-      const error = new IndiiOSError('Test error', 400, { field: 'value' });
+    it('should throw indiiError with status code', () => {
+      const error = new indiiError('Test error', 400, { field: 'value' });
       expect(error).toBeInstanceOf(Error);
       expect(error.statusCode).toBe(400);
       expect(error.details).toEqual({ field: 'value' });
     });
 
     it('should have correct error name', () => {
-      const error = new IndiiOSError('Test');
-      expect(error.name).toBe('IndiiOSError');
+      const error = new indiiError('Test');
+      expect(error.name).toBe('indiiError');
     });
   });
 

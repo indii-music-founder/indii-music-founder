@@ -9,7 +9,7 @@
 
 ## Overview
 
-This directive codifies the architectural patterns synthesized from OpenClaw's persistent abstractions and Antigravity's Mobile Viewport design, hardened against their documented security vulnerabilities, and implemented natively within indiiOS's 3-layer architecture.
+This directive codifies the architectural patterns synthesized from OpenClaw's persistent abstractions and Antigravity's Mobile Viewport design, hardened against their documented security vulnerabilities, and implemented natively within indii's 3-layer architecture.
 
 **Core principle:** Security-by-default, not security-by-configuration.
 

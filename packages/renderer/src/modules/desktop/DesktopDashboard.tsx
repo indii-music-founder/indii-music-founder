@@ -85,7 +85,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Power}
                                 title="Run on System Startup"
-                                description="Launch indiiOS automatically in the background when your computer starts."
+                                description="Launch indii automatically in the background when your computer starts."
                                 enabled={settings.runOnStartup}
                                 onClick={() => toggleSetting('runOnStartup')}
                             />
@@ -93,7 +93,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Cpu}
                                 title="Hardware Acceleration"
-                                description="Utilize GPU for rendering the UI and accelerating local AI processing models."
+                                description="Utilize GPU for rendering the UI and accelerating local Autonomous processing models."
                                 enabled={settings.hardwareAcceleration}
                                 onClick={() => toggleSetting('hardwareAcceleration')}
                             />
@@ -109,7 +109,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Keyboard}
                                 title="Global Command Shortcuts"
-                                description="Enable system-wide hotkeys (e.g., CMD+SHIFT+Space) to instantly summon the AI agent."
+                                description="Enable system-wide hotkeys (e.g., CMD+SHIFT+Space) to instantly summon the Autonomous agent."
                                 enabled={settings.globalShortcuts}
                                 onClick={() => toggleSetting('globalShortcuts')}
                             />
@@ -117,7 +117,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Network}
                                 title="Background Agent Daemon"
-                                description="Allow non-intrusive AI agents to continue processing generation tasks while minimized."
+                                description="Allow non-intrusive Autonomous agents to continue processing generation tasks while minimized."
                                 enabled={settings.backgroundAgent}
                                 onClick={() => toggleSetting('backgroundAgent')}
                             />

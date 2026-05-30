@@ -49,7 +49,7 @@ export function registerSecurityHandlers() {
                         'Authorization': `Bearer ${stripeSecret}`,
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: 'name=indiiOS-rotated&restrictions[resources][]=charges&restrictions[resources][]=customers',
+                    body: 'name=indii-rotated&restrictions[resources][]=charges&restrictions[resources][]=customers',
                 });
                 if (!stripeRes.ok) {
                     const errBody = await stripeRes.text();

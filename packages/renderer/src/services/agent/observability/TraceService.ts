@@ -1,18 +1,23 @@
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
-import { MODEL_PRICING, getModelKey } from '@/core/config/ai-models';
+import { MODEL_PRICING, getModelKey } from '@/core/config/intelligence-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
-import { RemoteAIConfigSchema } from '@/services/ai/config/RemoteAIConfig';
+import { RemoteIntelligenceConfigSchema } from '@/services/intelligence/config/RemoteIntelligenceConfig';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
 
     // Part 1: Map to track local start times for duration calculation
     private static startTimeMap: Map<string, number> = new Map();
+
+    private static get isE2EMode(): boolean {
+        return isFirebaseE2EMockEnabled();
+    }
 
     /**
      * Start a new execution trace
@@ -24,6 +29,10 @@ export class TraceService {
         metadata?: Record<string, unknown>,
         parentTraceId?: string
     ): Promise<string> {
+        if (this.isE2EMode) {
+            return crypto.randomUUID();
+        }
+
         if (!userId) {
             logger.warn('[TraceService] No userId provided, skipping trace.');
             return '';
@@ -31,8 +40,8 @@ export class TraceService {
 
         try {
             if (!db) {
-                logger.warn('[TraceService] DB not initialized, returning mock ID');
-                return crypto.randomUUID();
+                logger.warn('[TraceService] DB not initialized, trace skipped.');
+                return '';
             }
 
             const docRef = doc(collection(db, this.COLLECTION));
@@ -61,7 +70,7 @@ export class TraceService {
             return traceId;
         } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
-            return crypto.randomUUID();
+            return '';
         }
     }
 
@@ -79,7 +88,7 @@ export class TraceService {
             const configStr = getValue(remoteConfig, 'ai_system_config').asString();
             if (configStr) {
                 const parsed = JSON.parse(configStr);
-                const validated = RemoteAIConfigSchema.safeParse(parsed);
+                const validated = RemoteIntelligenceConfigSchema.safeParse(parsed);
 
                 if (validated.success) {
                     const dynamicConfig = validated.data;
@@ -139,6 +148,7 @@ export class TraceService {
         rawUsage?: Record<string, unknown>,
         metadata?: Record<string, unknown>
     ): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         let usage: UsageMetrics | undefined;
@@ -205,6 +215,7 @@ export class TraceService {
      * Mark trace as completed
      */
     static async completeTrace(traceId: string, output?: unknown): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
@@ -228,6 +239,7 @@ export class TraceService {
      * Mark trace as failed
      */
     static async failTrace(traceId: string, error: string): Promise<void> {
+        if (this.isE2EMode) return;
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
@@ -251,6 +263,7 @@ export class TraceService {
      * Get the recursion depth of a trace by traversing parentTraceIds
      */
     static async getTraceDepth(traceId: string): Promise<number> {
+        if (this.isE2EMode) return 0;
         if (!traceId || !db) return 0;
 
         try {

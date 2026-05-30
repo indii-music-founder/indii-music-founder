@@ -6,13 +6,15 @@
  * - Storage: `users/{uid}/likeness/{imageId}.webp`
  *
  * These images persist across all projects and are auto-injected
- * into AI generation context for character consistency.
+ * into Autonomous generation context for character consistency.
  */
 import { auth, db, storage } from '@/services/firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { logger } from '@/utils/logger';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
+const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST;
 /** Maximum number of likeness images per user */
 export const MAX_LIKENESS_IMAGES = 5;
 
@@ -139,20 +141,20 @@ class LikenessServiceImpl {
     }
 
     /**
-     * Run an AI quality check on the uploaded image.
+     * Run an Intelligence quality check on the uploaded image.
      * Uses Gemini Vision to assess lighting, clarity, and face visibility.
      * Returns a soft verdict — never blocks the user.
      */
     async assessQuality(dataUrl: string): Promise<{ score: LikenessImage['qualityScore']; notes: string }> {
         try {
-            const { GoogleGenAI } = await import('@google/genai');
-            const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+            const { GoogleGenAI: GoogleAutonomousIntelligence } = await import('@google/genai');
+            const ai = new GoogleAutonomousIntelligence({ apiKey: import.meta.env.VITE_API_KEY });
 
             const base64Data = dataUrl.split(',')[1] || '';
             const mimeType = dataUrl.split(':')[1]?.split(';')[0] || 'image/jpeg';
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-preview-05-20',
+                model: INTELLIGENCE_MODELS.TEXT.FAST,
                 contents: [{
                     role: 'user',
                     parts: [
@@ -163,14 +165,14 @@ class LikenessServiceImpl {
                             },
                         },
                         {
-                            text: `You are an image quality assessor for AI character consistency.
-Evaluate this selfie/portrait for use as an AI likeness reference.
+                            text: `You are an image quality assessor for Intelligence character consistency.
+Evaluate this selfie/portrait for use as an Intelligence likeness reference.
 
 Rate on these criteria:
 1. Face clearly visible (not obstructed, not too far away)
 2. Lighting quality (even lighting preferred, not harsh shadows)
 3. Image sharpness (not blurry, not too compressed)
-4. Suitable for AI character reference (clear features, neutral-ish angle)
+4. Suitable for Intelligence character reference (clear features, neutral-ish angle)
 
 Respond in EXACTLY this JSON format:
 {"score": "good" | "acceptable" | "low", "notes": "Brief 1-sentence explanation"}

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { LayoutDashboard, Move, GripHorizontal } from 'lucide-react';
 
 export const CustomizableAnalyticsDashboard: React.FC = () => {
-    // Mock Customizable Dashboards (Item 159)
     const [widgets] = useState([
         { id: '1', title: 'Daily Streams', size: 'col-span-2 row-span-1', type: 'chart' },
         { id: '2', title: 'Revenue Forecast', size: 'col-span-1 row-span-1', type: 'metric' },
@@ -38,11 +37,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         </div>
                         <div className="flex-1 min-h-[120px] flex flex-col items-center justify-center bg-black/20 rounded border border-gray-800/50 border-dashed gap-2">
                             {widget.type === 'chart' && (
-                                <div className="flex items-end gap-1 h-10">
-                                    {[40, 65, 50, 80, 55, 70, 90].map((h, i) => (
-                                        <div key={i} className="w-3 bg-teal-500/30 rounded-t" style={{ height: `${h}%` }} />
-                                    ))}
-                                </div>
+                                <div className="h-10 w-24 border-b border-l border-gray-800" />
                             )}
                             {widget.type === 'metric' && (
                                 <span className="text-2xl font-bold text-teal-400/60 font-mono">—</span>

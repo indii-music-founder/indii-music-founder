@@ -55,7 +55,7 @@ export class AuthService {
             const validIssuers = [
                 'https://accounts.google.com',
                 'accounts.google.com',
-                'https://securetoken.google.com/indiios-v-1-1',
+                'https://securetoken.google.com/indii-v-1-1',
             ];
 
             const isGoogleIssuer = validIssuers.some(iss => payload.iss === iss || payload.iss.includes('securetoken.google.com'));
@@ -73,7 +73,7 @@ export class AuthService {
             }
 
             // Check audience for Firebase tokens
-            if (payload.aud && !payload.aud.includes('indiios')) {
+            if (payload.aud && !payload.aud.includes('indii')) {
                 // Allow Google OAuth tokens which have different audience
                 if (!payload.iss.includes('accounts.google.com')) {
                     return { valid: false, error: `Token has unexpected audience: ${payload.aud}` };
@@ -94,7 +94,7 @@ export class AuthService {
             const urlObj = new URL(url);
 
             // Must be our custom protocol
-            if (urlObj.protocol !== 'indii-os:') {
+            if (urlObj.protocol !== 'indii:') {
                 return { valid: false, error: `Invalid protocol: ${urlObj.protocol}` };
             }
 

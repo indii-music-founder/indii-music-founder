@@ -107,7 +107,7 @@ export class PublishingErrorBoundary extends Component<Props, State> {
                             </button>
                         </div>
 
-                        {process.env.NODE_ENV === 'development' && error && (
+                        {import.meta.env.DEV && error && (
                             <details className="mt-6 text-left">
                                 <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-400">
                                     Error Details (Dev Only)

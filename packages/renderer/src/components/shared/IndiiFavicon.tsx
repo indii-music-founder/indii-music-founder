@@ -6,7 +6,7 @@ interface IndiiFaviconProps {
 }
 
 /**
- * Inline SVG of the indiiOS favicon — the stylized "ii" mark.
+ * Inline SVG of the indii favicon — the stylized "ii" mark.
  * Cyan/teal gradient outer rounded square with a dark inset inner panel
  * and teal-colored lowercase "i" characters (bars + dots).
  * Matches the brand mark from the README banner and `/public/favicon.svg`.
@@ -22,7 +22,7 @@ export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className={className}
-            aria-label="indiiOS logo"
+            aria-label="indii logo"
         >
             <defs>
                 <linearGradient id={`${id}-outer`} x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">

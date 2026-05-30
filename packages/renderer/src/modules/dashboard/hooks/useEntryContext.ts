@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { memoryService } from '@/services/agent/MemoryService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { 
     Sparkles, 
     Play, 
@@ -55,7 +55,7 @@ export function useEntryContext(): EntryContext {
         .filter((s) => !s.namespace)
         .sort((a, b) => b.updatedAt - a.updatedAt)[0];
 
-    const isNew = sessionList.length === 0 && userProfile.displayName === 'New Artist';
+    const isNew = sessionList.length === 0 && !userProfile.displayName?.trim();
     const lastUpdateAge = mostRecent ? Date.now() - mostRecent.updatedAt : null;
     const isStale = lastUpdateAge ? lastUpdateAge > 7 * 86_400_000 : true;
 
@@ -76,14 +76,13 @@ export function useEntryContext(): EntryContext {
 
             try {
                 // Fetch recent high-priority memories to inject into greeting
-                const results = await memoryService.retrieveRelevantMemories(
-                    currentOrganizationId,
-                    'recent activity and current focus',
-                    1
-                );
+                const results = await alwaysOnMemoryEngine.retrieve({
+                    query: 'recent activity and current focus',
+                    limit: 1
+                });
                 
                 if (isMounted && results.length > 0) {
-                    setMemoryContext(results[0]!);
+                    setMemoryContext(results[0]!.summary || results[0]!.content);
                 }
             } catch (err) {
                 logger.error('[useEntryContext] Memory retrieval failed:', err);
@@ -120,7 +119,7 @@ export function useEntryContext(): EntryContext {
 
     return {
         scenario,
-        userName: userProfile.displayName || 'Artist',
+        userName: userProfile.displayName || '',
         lastSessionTitle: mostRecent?.title || null,
         lastSessionId: mostRecent?.id || null,
         lastSessionAge: lastUpdateAge ? Math.floor(lastUpdateAge / 86_400_000) : null,

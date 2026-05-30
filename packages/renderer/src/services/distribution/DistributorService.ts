@@ -10,7 +10,7 @@
  */
 
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
+import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import type {
   DistributorId,
   ReleaseAssets,
@@ -35,7 +35,7 @@ import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resi
 import {
   ExtendedGoldenMetadataSchema,
   DistributorEarningsSchema
-} from '@/services/ddex/validation';
+} from '@/services/distribution/proprietary-ingestion/validation';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -652,25 +652,28 @@ class DistributorServiceImpl {
     const grouped: Record<string, DashboardRelease> = {};
 
     deployments.forEach((d: ReleaseDeploymentDocument) => {
+      if (!d.title || !d.artist) {
+        logger.warn('[DistributorService] Skipping release deployment with incomplete metadata', {
+          internalReleaseId: d.internalReleaseId,
+          hasTitle: !!d.title,
+          hasArtist: !!d.artist
+        });
+        return;
+      }
+
       if (!grouped[d.internalReleaseId]) {
         grouped[d.internalReleaseId] = {
           id: d.internalReleaseId,
-          title: d.title || 'Untitled Release',
-          artist: d.artist || 'Unknown Artist',
+          title: d.title,
+          artist: d.artist,
           coverArtUrl: d.coverArtUrl,
-          releaseDate: d.submittedAt?.toDate().toISOString(),
+          releaseDate: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
           deployments: {},
         };
       }
       grouped[d.internalReleaseId]!.deployments[d.distributorId] = { status: d.status as unknown as ReleaseStatus };
 
       // Update metadata if a more complete record is found
-      if (d.title && grouped[d.internalReleaseId]!.title === 'Untitled Release') {
-        grouped[d.internalReleaseId]!.title = d.title;
-      }
-      if (d.artist && grouped[d.internalReleaseId]!.artist === 'Unknown Artist') {
-        grouped[d.internalReleaseId]!.artist = d.artist;
-      }
       if (d.coverArtUrl && !grouped[d.internalReleaseId]!.coverArtUrl) {
         grouped[d.internalReleaseId]!.coverArtUrl = d.coverArtUrl;
       }

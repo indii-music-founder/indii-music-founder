@@ -48,7 +48,7 @@ interface QueuedSave {
     docId?: string;
 }
 
-const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
+const QUEUE_KEY = 'indii_pendingMetadataSaves';
 const MAX_QUEUE_SIZE = 10;
 
 /**

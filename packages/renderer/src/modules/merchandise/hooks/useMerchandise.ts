@@ -61,8 +61,9 @@ export const useMerchandise = () => {
             })
             .catch((err) => {
                 if (mounted) {
-                    logger.warn("[Merchandise] Failed to load catalog (non-fatal):", err);
-                    setCatalog([]); // Non-fatal, just show empty catalog
+                    logger.error("[Merchandise] Failed to load catalog:", err);
+                    setCatalog([]);
+                    setError("Could not load merchandise catalog.");
                     setIsCatalogLoading(false);
                 }
             });
@@ -72,7 +73,8 @@ export const useMerchandise = () => {
             if (mounted) {
                 setIsCatalogLoading((prev) => {
                     if (prev) {
-                        logger.warn("[Merchandise] Catalog load timed out, proceeding...");
+                        logger.warn("[Merchandise] Catalog load timed out.");
+                        setError("Merchandise catalog timed out.");
                         return false;
                     }
                     return prev;
@@ -106,21 +108,17 @@ export const useMerchandise = () => {
         }, (err) => {
             initialLoadComplete = true;
             logger.error("Product subscription failed, likely auth or permissions:", err);
-            // Graceful fallback for E2E/No-Auth: Render empty dashboard instead of blocking error
-            if (err?.code === 'permission-denied' || err?.code === 'failed-precondition' || err?.message?.includes('permission')) {
-                setProducts([]);
-                setIsProductsLoading(false);
-            } else {
-                setError("Could not load products.");
-                setIsProductsLoading(false);
-            }
+            setProducts([]);
+            setError("Could not load products.");
+            setIsProductsLoading(false);
         });
 
         // Defensive timeout for products (e.g. if Firestore hangs)
         const safetyTimer = setTimeout(() => {
             if (!initialLoadComplete) {
-                logger.warn("[Merchandise] Product subscription timed out (persistence check). forcing load.");
+                logger.warn("[Merchandise] Product subscription timed out.");
                 setProducts([]);
+                setError("Product subscription timed out.");
                 setIsProductsLoading(false);
             }
         }, 5000);
@@ -183,7 +181,8 @@ export const useMerchandise = () => {
                     setTopSellingProducts(topSellers);
                 }
             } catch (err: unknown) {
-                logger.warn("[Merchandise] Failed to load merch stats or timed out:", err);
+                logger.error("[Merchandise] Failed to load merch stats or timed out:", err);
+                setError("Could not load merchandise revenue stats.");
             } finally {
                 setIsStatsLoading(false);
             }

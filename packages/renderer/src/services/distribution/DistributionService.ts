@@ -4,7 +4,7 @@ import { FirestoreService } from '@/services/FirestoreService';
 import {
     DistributionTaskDocument,
     TaxProfileDocument,
-    DDEXReleaseDocument,
+    IngestionReleaseDocument,
     ReleaseDistributionStatus
 } from '@/types/firestore';
 import { isrcService } from './ISRCService';
@@ -14,10 +14,11 @@ import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firesto
 import { ref, uploadString } from 'firebase/storage';
 import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
     MerlinCheckData, MerlinReport,
     BWarmData,
-    DDEXMetadata,
+    IngestionMetadata,
     ContentIdData,
     ISRCGenerationOptions,
     UPCGenerationOptions,
@@ -35,10 +36,9 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 export type { DistributionTaskDocument as DistributionTask };
 
 /** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
-async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata): Promise<void> {
+async function writeMetadataSnapshot(releaseId: string, metadata: IngestionMetadata): Promise<void> {
     try {
-        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
-        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+        if (isFirebaseE2EMockEnabled()) return;
 
         const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
         await addDoc(historyCol, {
@@ -57,8 +57,7 @@ async function writeDistributionAuditEvent(
     event: { type: string; status: string; detail?: string }
 ): Promise<void> {
     try {
-        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
-        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+        if (isFirebaseE2EMockEnabled()) return;
 
         const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
         await addDoc(eventsCol, {
@@ -72,7 +71,7 @@ async function writeDistributionAuditEvent(
 }
 
 class DistributionService extends FirestoreService<DistributionTaskDocument> {
-    private releasesService = new FirestoreService<DDEXReleaseDocument>('ddexReleases');
+    private releasesService = new FirestoreService<IngestionReleaseDocument>('proprietaryIngestionReleases');
 
     constructor() {
         super('distribution_tasks');
@@ -82,8 +81,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Track a new distribution task in Firestore
      */
     async createTask(type: DistributionTaskDocument['type'], title: string, metadata: Record<string, unknown> = {}): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
-            return `mock-task-${Date.now()}`;
+        if (isFirebaseE2EMockEnabled()) {
+            return `e2e-task-${Date.now()}`;
         }
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
@@ -102,7 +101,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Update task progress and status
      */
     async updateTask(taskId: string, updates: Partial<Pick<DistributionTaskDocument, 'status' | 'progress' | 'subtext' | 'error' | 'metadata'>>) {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return;
         }
         await this.update(taskId, updates);
@@ -137,7 +136,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Initializing spectral analysis...' });
 
         try {
-            const result = await window.electronAPI.distribution.runForensics(filePath);
+            const result = await window.electronAPI.distribution.runForensics(filePath) as any;
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
@@ -194,7 +193,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             // Updated to pass object as single argument matching new IPC signature
-            const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
+            const result = await window.electronAPI.distribution.calculateTax({ userId, amount }) as any;
             if (!result.success || !result.report) {
                 logger.error('[Distribution] Tax calculation failed:', result.error);
                 throw new Error(result.error || 'Tax calculation failed');
@@ -215,7 +214,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.certifyTax(userId, data);
+            const result = await window.electronAPI.distribution.certifyTax(userId, data) as any;
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Tax certification failed');
             }
@@ -254,7 +253,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.executeWaterfall(data);
+            const result = await window.electronAPI.distribution.executeWaterfall(data) as any;
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Waterfall execution failed');
             }
@@ -268,13 +267,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Validate release metadata via Electron IPC
      */
-    async validateReleaseMetadata(metadata: DDEXMetadata): Promise<ValidationReport> {
+    async validateReleaseMetadata(metadata: IngestionMetadata): Promise<ValidationReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for metadata validation');
         }
 
         try {
-            const result = await window.electronAPI.distribution.validateMetadata(metadata);
+            const result = await window.electronAPI.distribution.validateMetadata(metadata) as any;
             if (!result.success) {
                 logger.warn('[Distribution] Metadata validation failed:', result.report);
                 // Don't throw error if validation fails, just return report so UI can show errors
@@ -298,7 +297,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+            const result = await window.electronAPI.distribution.generateContentIdCSV(data) as any;
             if (!result.success || (!result.csvData && !result.report)) {
                 logger.error('[Distribution] Content ID generation failed:', result.error);
                 throw new Error(result.error || 'Content ID generation failed');
@@ -320,7 +319,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateISRC(options);
+            const result = await window.electronAPI.distribution.generateISRC(options) as any;
             if (!result.success || !result.isrc) {
                 logger.error('[Distribution] ISRC Generation failed:', result.error);
                 throw new Error(result.error || 'ISRC Generation failed');
@@ -330,13 +329,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             if (options?.releaseId && options?.trackTitle) {
                 const userId = auth.currentUser?.uid;
                 if (!userId) throw new Error('User must be authenticated to record ISRC assignment');
+                if (!options.artistName) throw new Error('Artist name is required to record ISRC assignment');
 
                 await isrcService.recordAssignment({
                     isrc: result.isrc,
                     releaseId: options.releaseId,
                     userId,
                     trackTitle: options.trackTitle,
-                    artistName: options.artistName || 'Unknown Artist',
+                    artistName: options.artistName,
                     assignedAt: Timestamp.now(),
                     metadataSnapshot: { ...options } as Record<string, unknown>
                 });
@@ -358,7 +358,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateUPC(options);
+            const result = await window.electronAPI.distribution.generateUPC(options) as any;
             if (!result.success || !result.upc) {
                 throw new Error(result.error || 'UPC Generation failed');
             }
@@ -372,13 +372,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate DDEX ERN 4.3 XML via Python engine
      */
-    async generateDDEX(metadata: DDEXMetadata): Promise<string> {
+    async generateIngestionNotification(metadata: IngestionMetadata): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for DDEX generation');
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateDDEX(metadata);
+            const result = await (window.electronAPI.distribution as any).generateIngestionNotification(metadata) as any;
             if (!result.success || !result.xml) {
                 throw new Error(result.error || 'DDEX Generation failed');
             }
@@ -398,7 +398,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.checkMerlinStatus(data);
+            const result = await window.electronAPI.distribution.checkMerlinStatus(data) as any;
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Merlin status check failed');
             }
@@ -418,7 +418,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateBWARM(data);
+            const result = await window.electronAPI.distribution.generateBWARM(data) as any;
             if (!result.success || (!result.csv && !result.report)) {
                 throw new Error(result.error || 'BWARM generation failed');
             }
@@ -438,7 +438,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.transmit(config);
+            const result = await window.electronAPI.distribution.transmit(config) as any;
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Transmission failed');
             }
@@ -459,7 +459,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.packageSpotify(releaseId, stagingPath, outputPath);
+            const result = await window.electronAPI.distribution.packageSpotify(releaseId, stagingPath, outputPath) as any;
             if (!result.success) {
                 throw new Error(result.error || 'Spotify packaging failed');
             }
@@ -481,7 +481,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             // Step 1: Create ITMSP bundle via existing packageITMSP
-            const packageResult = await window.electronAPI.distribution.packageITMSP(releaseId);
+            const packageResult = await window.electronAPI.distribution.packageITMSP(releaseId) as any;
 
             if (!packageResult.success) {
                 throw new Error(packageResult.error || 'ITMSP packaging failed');
@@ -489,7 +489,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             // Step 2: Optionally deliver via Transporter
             if (options?.upload && packageResult.packagePath) {
-                const deliverResult = await window.electronAPI.distribution.deliverApple('upload', packageResult.packagePath);
+                const deliverResult = await window.electronAPI.distribution.deliverApple('upload', packageResult.packagePath) as any;
 
                 if (!deliverResult.success) {
                     throw new Error(deliverResult.error || 'Apple Transporter upload failed');
@@ -521,7 +521,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.validateXSD(xmlContent);
+            const result = await window.electronAPI.distribution.validateXSD(xmlContent) as any;
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'XSD validation failed');
             }
@@ -544,8 +544,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         assets: Array<{ id: string; type: string; url: string; role: string }>;
         metadata?: Record<string, unknown>;
     }): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
-            return `mock-release-${Date.now()}`;
+        if (isFirebaseE2EMockEnabled()) {
+            return `e2e-release-${Date.now()}`;
         }
 
         const userId = auth.currentUser?.uid;
@@ -557,13 +557,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             status: 'validating' as ReleaseDistributionStatus,
             lastCheckedAt: Timestamp.now(),
             submittedAt: null
-        } as unknown as DDEXReleaseDocument);
+        } as unknown as IngestionReleaseDocument);
     }
 
     /**
      * Get all releases for the current user/org
      */
-    async getReleases(orgId?: string): Promise<DDEXReleaseDocument[]> {
+    async getReleases(orgId?: string): Promise<IngestionReleaseDocument[]> {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
@@ -582,7 +582,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * @param onProgress   Optional callback for step-by-step progress events
      */
     async submitRelease(
-        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
+        releaseData: IngestionMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
     ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
         if (!window.electronAPI) {
@@ -632,7 +632,10 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 releaseData.upc = await upcService.assignNextUPC(releaseId);
                 logger.info(`[Distribution] Auto-assigned UPC ${releaseData.upc} to release "${releaseData.title}"`);
                 // Record in registry for audit trail
-                const userId = auth.currentUser?.uid ?? 'unknown';
+                const userId = auth.currentUser?.uid;
+                if (!userId) {
+                    throw new Error('User must be authenticated to record UPC assignment.');
+                }
                 upcService.recordAssignment({
                     upc: releaseData.upc,
                     releaseId,
@@ -646,7 +649,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         // Item 408: Auto-assign ISRCs to tracks that are missing them
-        // Item 415: Map AI Audio DNA into DDEX Payload
+        // Item 415: Map Autonomous Audio DNA into DDEX Payload
         if (releaseData.tracks?.length) {
             for (const track of releaseData.tracks) {
                 if (!track.isrc || track.isrc.trim() === '') {
@@ -658,13 +661,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                     }
                 }
 
-                // Map AI Audio DNA into the DDEX Payload if track has a file hash
+                // Map Autonomous Audio DNA into the DDEX Payload if track has a file hash
                 if (track.file_hash) {
                     try {
                         const analysis = await musicLibraryService.getAnalysisByHash(track.file_hash);
                         if (analysis && analysis.semantic) {
                             const semantic = analysis.semantic;
-                            // Map AI Semantic Data to DDEX Track
+                            // Map Autonomous Semantic Data to DDEX Track
                             track.genre = track.genre || semantic.ddexGenre;
                             track.sub_genre = track.sub_genre || semantic.ddexSubGenre;
                             track.language = track.language || semantic.language;
@@ -683,11 +686,11 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         let cleanup: (() => void) | undefined;
         if (onProgress && window.electronAPI) {
-            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
+            cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
         }
 
         try {
-            const result = await window.electronAPI.distribution.submitRelease(releaseData);
+            const result = await window.electronAPI.distribution.submitRelease(releaseData) as any;
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
@@ -718,7 +721,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             if (window.electronAPI) {
                 const body = result.report?.sftp_skipped
-                    ? `${releaseData.title} DDEX package is ready (SFTP skipped).`
+                    ? `${releaseData.title} delivery metadata is ready (SFTP skipped).`
                     : `${releaseData.title} has been delivered to your distributor.`;
                 window.electronAPI.showNotification(
                     'Release Submitted',
@@ -768,7 +771,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Subscribe to releases
      */
-    subscribeReleases(callback: (releases: DDEXReleaseDocument[]) => void, orgId?: string) {
+    subscribeReleases(callback: (releases: IngestionReleaseDocument[]) => void, orgId?: string) {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 

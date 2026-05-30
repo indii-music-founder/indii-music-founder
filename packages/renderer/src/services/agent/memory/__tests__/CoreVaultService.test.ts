@@ -37,16 +37,16 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: { text: () => 'Test summary of artist_identity facts.' },
         }),
     },
 }));
 
-vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: {
+vi.mock('@/core/config/intelligence-models', () => ({
+    INTELLIGENCE_MODELS: {
         TEXT: { FAST: 'gemini-3-flash-preview', COMPLEX: 'gemini-3.1-pro-preview' },
     },
 }));

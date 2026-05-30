@@ -1,7 +1,7 @@
 /**
  * DJ AXIOM — CREATIVE SESSION
  * ============================
- * Actually generates real assets using the indiiOS Creative Studio.
+ * Actually generates real assets using the indii Creative Studio.
  * 
  * Generates:
  *   1. Main event flyer (landscape 16:9)

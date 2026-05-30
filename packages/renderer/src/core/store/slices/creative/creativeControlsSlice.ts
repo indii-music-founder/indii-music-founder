@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { z } from 'zod';
-import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/creative/video/schemas';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -23,6 +23,15 @@ export interface SavedPrompt {
     date: number;
 }
 
+export interface ClipboardItem {
+    id: string;
+    url: string;
+    thumbnailUrl?: string;
+    prompt?: string;
+    type: 'image' | 'video';
+    timestamp: number;
+}
+
 export interface ShotItem {
     id: string;
     title: string;
@@ -38,7 +47,7 @@ export interface WhiskItem {
     id: string;
     type: 'text' | 'image' | 'video';
     content: string; // user text or original image data/url
-    aiCaption?: string; // Generated caption for images
+    intelligenceCaption?: string; // Generated caption for images
     checked: boolean;
     category: WhiskCategory;
 }
@@ -87,6 +96,19 @@ export interface CreativeControlsSlice {
         responseFormat: 'image_only' | 'image_and_text';
         /** Whether to include the model's thinking/reasoning in the response. */
         includeThoughts: boolean;
+
+        // ── Gemini Omni API Extensions ──────────────────────────────────────
+        posePreservation: number;
+        beatPulse: number;
+        characterXRay: boolean;
+        synthIdEnabled: boolean;
+        selectedLanguage: string;
+        omniReferenceVideo: string | null;
+        omniPipelineMode: 'pure-omni' | 'hybrid-veo';
+        activePosePreset: string;
+        lyricsText: string;
+        typographyStyle: 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic';
+        visualizerColor: string;
     };
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
@@ -127,8 +149,8 @@ export interface CreativeControlsSlice {
     clearCharacterReferences: () => void;
     updateCharacterReference: (id: string, updates: Partial<{ referenceType: 'subject' | 'style' | 'reference'; name: string }>) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni') => void;
 
     // Showroom Mode State
     showroomState: {
@@ -168,7 +190,7 @@ export interface CreativeControlsSlice {
 
     // Whisk
     whiskState: WhiskState;
-    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
+    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, intelligenceCaption?: string, explicitId?: string) => void;
     updateWhiskItem: (category: WhiskCategory, id: string, updates: Partial<WhiskItem>) => void;
     removeWhiskItem: (category: WhiskCategory, id: string) => void;
     toggleWhiskItem: (category: WhiskCategory, id: string) => void;
@@ -183,14 +205,20 @@ export interface CreativeControlsSlice {
     addVideoJob: (job: ActiveVideoJob) => void;
     updateVideoJob: (id: string, updates: Partial<ActiveVideoJob>) => void;
     removeVideoJob: (id: string) => void;
+
+    // Clipboard State
+    clipboardItems: ClipboardItem[];
+    pinToClipboard: (item: HistoryItem | ClipboardItem) => void;
+    unpinFromClipboard: (id: string) => void;
+    clearClipboard: () => void;
 }
 
 /**
  * Factory that returns the controls/inputs portion of the creative slice.
  */
 export function buildCreativeControlsState(
-    set: Parameters<StateCreator<CreativeControlsSlice>>[0],
-    _get: Parameters<StateCreator<CreativeControlsSlice>>[1]
+    set: any,
+    _get: any
 ): CreativeControlsSlice {
     const whiskKeyMap: Record<WhiskCategory, keyof WhiskState> = {
         subject: 'subjects',
@@ -225,29 +253,41 @@ export function buildCreativeControlsState(
             useImageSearch: false,
             responseFormat: 'image_only',
             includeThoughts: false,
+            // Gemini Omni defaults
+            posePreservation: 0.8,
+            beatPulse: 0.5,
+            characterXRay: true,
+            synthIdEnabled: true,
+            selectedLanguage: 'es',
+            omniReferenceVideo: null,
+            omniPipelineMode: 'pure-omni',
+            activePosePreset: 'guitar_solo',
+            lyricsText: '',
+            typographyStyle: 'cyberpunk',
+            visualizerColor: '#8B5CF6',
         },
-        setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
-        enableCoverArtMode: () => set((state) => ({
+        setStudioControls: (controls) => set((state: CreativeControlsSlice) => ({ studioControls: { ...state.studioControls, ...controls } })),
+        enableCoverArtMode: () => set((state: CreativeControlsSlice) => ({
             studioControls: {
                 ...state.studioControls,
                 aspectRatio: '1:1', // Cover art mode enforces 1:1 format
                 isCoverArtMode: true
             }
         })),
-        disableCoverArtMode: () => set((state) => ({
+        disableCoverArtMode: () => set((state: CreativeControlsSlice) => ({
             studioControls: {
                 ...state.studioControls,
                 aspectRatio: '16:9',
                 isCoverArtMode: false
             }
         })),
-        enableAndromedaMode: () => set((state) => ({
+        enableAndromedaMode: () => set((state: CreativeControlsSlice) => ({
             studioControls: {
                 ...state.studioControls,
                 isAndromedaMode: true
             }
         })),
-        disableAndromedaMode: () => set((state) => ({
+        disableAndromedaMode: () => set((state: CreativeControlsSlice) => ({
             studioControls: {
                 ...state.studioControls,
                 isAndromedaMode: false
@@ -270,24 +310,24 @@ export function buildCreativeControlsState(
             timeOffset: 0,
             ingredients: []
         },
-        setVideoInput: (key, value) => set(state => ({
+        setVideoInput: (key, value) => set((state: CreativeControlsSlice) => ({
             videoInputs: { ...state.videoInputs, [key]: value }
         })),
-        setVideoInputs: (inputs) => set(state => ({
+        setVideoInputs: (inputs) => set((state: CreativeControlsSlice) => ({
             videoInputs: { ...state.videoInputs, ...inputs }
         })),
 
         characterReferences: [],
-        addCharacterReference: (ref) => set((state) => {
+        addCharacterReference: (ref) => set((state: CreativeControlsSlice) => {
             if (state.characterReferences.length >= 3) return state;
             return { characterReferences: [...state.characterReferences, ref] };
         }),
-        removeCharacterReference: (id) => set((state) => ({
-            characterReferences: state.characterReferences.filter(r => r.image.id !== id)
+        removeCharacterReference: (id) => set((state: CreativeControlsSlice) => ({
+            characterReferences: state.characterReferences.filter((r: any) => r.image.id !== id)
         })),
         clearCharacterReferences: () => set({ characterReferences: [] }),
-        updateCharacterReference: (id, updates) => set((state) => ({
-            characterReferences: state.characterReferences.map(r => r.image.id === id ? { ...r, ...updates } : r)
+        updateCharacterReference: (id, updates) => set((state: CreativeControlsSlice) => ({
+            characterReferences: state.characterReferences.map((r: any) => r.image.id === id ? { ...r, ...updates } : r)
         })),
 
         viewMode: 'direct',
@@ -303,7 +343,7 @@ export function buildCreativeControlsState(
             isGeneratingMockup: false,
             isGeneratingVideo: false,
         },
-        setShowroomState: (updates) => set((state) => ({
+        setShowroomState: (updates) => set((state: CreativeControlsSlice) => ({
             showroomState: { ...state.showroomState, ...updates }
         })),
 
@@ -315,14 +355,14 @@ export function buildCreativeControlsState(
 
         isPromptBuilderOpen: false,
         setPromptBuilderOpen: (open) => set({ isPromptBuilderOpen: open }),
-        togglePromptBuilder: () => set((state) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
+        togglePromptBuilder: () => set((state: CreativeControlsSlice) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
 
         selectedItem: null,
         setSelectedItem: (item) => set({ selectedItem: item }),
 
         savedPrompts: [],
-        savePrompt: (prompt) => set((state) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
-        deletePrompt: (id) => set((state) => ({ savedPrompts: state.savedPrompts.filter(p => p.id !== id) })),
+        savePrompt: (prompt) => set((state: CreativeControlsSlice) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
+        deletePrompt: (id) => set((state: CreativeControlsSlice) => ({ savedPrompts: state.savedPrompts.filter((p: any) => p.id !== id) })),
 
         whiskState: {
             subjects: [],
@@ -332,12 +372,12 @@ export function buildCreativeControlsState(
             preciseReference: false,
             targetMedia: 'image' as TargetMedia
         },
-        addWhiskItem: (category, type, content, aiCaption, explicitId) => set((state) => {
+        addWhiskItem: (category, type, content, intelligenceCaption, explicitId) => set((state: CreativeControlsSlice) => {
             const newItem: WhiskItem = {
                 id: explicitId || crypto.randomUUID(),
                 type,
                 content,
-                aiCaption,
+                intelligenceCaption,
                 checked: true,
                 category
             };
@@ -349,7 +389,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        updateWhiskItem: (category, id, updates) => set((state) => {
+        updateWhiskItem: (category, id, updates) => set((state: CreativeControlsSlice) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -358,7 +398,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        removeWhiskItem: (category, id) => set((state) => {
+        removeWhiskItem: (category, id) => set((state: CreativeControlsSlice) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -367,7 +407,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        toggleWhiskItem: (category, id) => set((state) => {
+        toggleWhiskItem: (category, id) => set((state: CreativeControlsSlice) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -376,10 +416,10 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        setPreciseReference: (precise) => set((state) => ({
+        setPreciseReference: (precise) => set((state: CreativeControlsSlice) => ({
             whiskState: { ...state.whiskState, preciseReference: precise }
         })),
-        setTargetMedia: (target) => set((state) => ({
+        setTargetMedia: (target) => set((state: CreativeControlsSlice) => ({
             whiskState: { ...state.whiskState, targetMedia: target }
         })),
 
@@ -387,10 +427,10 @@ export function buildCreativeControlsState(
         setIsGenerating: (isGenerating) => set({ isGenerating }),
 
         activeVideoJobs: {},
-        addVideoJob: (job) => set((state) => ({
+        addVideoJob: (job) => set((state: CreativeControlsSlice) => ({
             activeVideoJobs: { ...state.activeVideoJobs, [job.id]: job }
         })),
-        updateVideoJob: (id, updates) => set((state) => {
+        updateVideoJob: (id, updates) => set((state: CreativeControlsSlice) => {
             const existingJob = state.activeVideoJobs[id];
             if (!existingJob) return state;
             return {
@@ -400,10 +440,29 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        removeVideoJob: (id) => set((state) => {
+        removeVideoJob: (id) => set((state: CreativeControlsSlice) => {
             const newJobs = { ...state.activeVideoJobs };
             delete newJobs[id];
             return { activeVideoJobs: newJobs };
         }),
+
+        // Clipboard Actions
+        clipboardItems: [],
+        pinToClipboard: (item) => set((state: CreativeControlsSlice) => {
+            if (state.clipboardItems.some((i: any) => i.id === item.id)) return state;
+            const newItem: ClipboardItem = {
+                id: item.id,
+                url: item.url,
+                thumbnailUrl: item.thumbnailUrl || item.url,
+                prompt: item.prompt || 'Untitled Asset',
+                type: item.type as 'image' | 'video',
+                timestamp: Date.now()
+            };
+            return { clipboardItems: [newItem, ...state.clipboardItems] };
+        }),
+        unpinFromClipboard: (id) => set((state: CreativeControlsSlice) => ({
+            clipboardItems: state.clipboardItems.filter((i: any) => i.id !== id)
+        })),
+        clearClipboard: () => set({ clipboardItems: [] }),
     };
 }

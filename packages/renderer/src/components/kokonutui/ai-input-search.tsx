@@ -2,7 +2,7 @@
 
 /**
  * @author: @kokonutui
- * @description: AI Input Search
+ * @description: Intelligence Input Search
  * @version: 1.0.0
  * @date: 2025-06-26
  * @license: MIT

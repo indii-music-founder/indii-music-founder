@@ -1,6 +1,6 @@
 # BMI vs ASCAP vs SESAC: Which is Right for You?
 
-**For:** indiiOS Artists  
+**For:** indii Artists  
 **Reading Time:** 4 minutes  
 **Last Updated:** March 2026
 

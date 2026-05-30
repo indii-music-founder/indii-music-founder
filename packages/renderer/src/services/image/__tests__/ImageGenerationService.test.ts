@@ -15,7 +15,7 @@ vi.mock("@/services/firebase", () => ({
     }
   },
   remoteConfig: {},
-  storage: {},
+  storage: { app: { options: { storageBucket: 'mock-bucket' } } },
   db: {},
   ai: {},
 }));
@@ -24,31 +24,39 @@ vi.mock("firebase/functions", () => ({
   httpsCallable: vi.fn(),
 }));
 
-vi.mock("@/services/ai/GenAI", () => ({
-  GenAI: {
+vi.mock("firebase/storage", () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    uploadBytes: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    getDownloadURL: vi.fn().mockResolvedValue('gs://mock-bucket/mock-file')
+}));
+
+vi.mock("@/services/intelligence/AutonomousIntelligence", () => ({
+  AutonomousIntelligence: {
     generateContent: vi.fn(),
     parseJSON: vi.fn(),
   },
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
     };
 });
 
-vi.mock("@/services/ai/generators/DirectImageEditor", () => ({
+vi.mock("@/services/intelligence/generators/DirectImageEditor", () => ({
   editImageDirectly: vi.fn(),
 }));
 
@@ -251,7 +259,7 @@ describe("ImageGenerationService", () => {
 
   describe("remixImage", () => {
     it("should remix images with style reference via Direct SDK", async () => {
-      const { editImageDirectly } = await import("@/services/ai/generators/DirectImageEditor");
+      const { editImageDirectly } = await import("@/services/intelligence/generators/DirectImageEditor");
       
       const mockDirectResponse = {
         url: "data:image/png;base64,remixeddata",
@@ -308,14 +316,14 @@ describe("ImageGenerationService", () => {
   });
 });
 describe("captionImage", () => {
-  it("should call GenAI.generateContent and return caption text", async () => {
-    const { GenAI } = await import('@/services/ai/GenAI');
+  it("should call AutonomousIntelligence.generateContent and return caption text", async () => {
+    const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
     const mockResponse = {
       response: {
         text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
       },
     };
-    vi.mocked(GenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+    vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
     const result = await ImageGeneration.captionImage(
       { mimeType: "image/png", data: "cleanBase64Data" },
@@ -323,6 +331,6 @@ describe("captionImage", () => {
     );
 
     expect(result).toBe("A glowing orb in a dark forest.");
-    expect(GenAI.generateContent).toHaveBeenCalledOnce();
+    expect(AutonomousIntelligence.generateContent).toHaveBeenCalledOnce();
   });
 });

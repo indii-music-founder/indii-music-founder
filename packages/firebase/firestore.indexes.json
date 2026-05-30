@@ -2,6 +2,82 @@
   "fieldOverrides": [],
   "indexes": [
     {
+      "collectionGroup": "boardroom_messages",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "proactive_tasks",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "triggerType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "executeAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "proactive_tasks",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "triggerType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventPattern",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "history",
+      "fields": [
+        {
+          "fieldPath": "orgId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "history",
       "fields": [
         {
@@ -353,7 +429,7 @@
           "order": "DESCENDING"
         }
       ],
-      "queryScope": "COLLECTION"
+      "queryScope": "COLLECTION_GROUP"
     },
     {
       "collectionGroup": "analyzed_tracks",
@@ -412,6 +488,20 @@
       "queryScope": "COLLECTION"
     },
     {
+      "collectionGroup": "tour_rider_items",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "riders",
       "fields": [
         {
@@ -456,6 +546,28 @@
         },
         {
           "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "executeAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "proactive_tasks",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "triggerType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userId",
           "order": "ASCENDING"
         },
         {
@@ -642,6 +754,20 @@
           "fieldPath": "category",
           "order": "ASCENDING"
         },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
         {
           "fieldPath": "isActive",
           "order": "ASCENDING"
@@ -910,6 +1036,170 @@
         },
         {
           "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "proprietaryIngestionReleases",
+      "fields": [
+        {
+          "fieldPath": "orgId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "proprietaryIngestionReleases",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "tasks",
+      "fields": [
+        {
+          "fieldPath": "projectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "tasks",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "tasks",
+      "fields": [
+        {
+          "fieldPath": "projectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
+        {
+          "fieldPath": "sourceProjectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
+        {
+          "fieldPath": "sourceSessionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "alwaysOnMemories",
+      "fields": [
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "earnings",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "distributorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "releaseId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "period.endDate",
           "order": "DESCENDING"
         }
       ],

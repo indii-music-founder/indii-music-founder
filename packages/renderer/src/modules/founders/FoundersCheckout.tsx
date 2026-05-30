@@ -48,7 +48,7 @@ export default function FoundersCheckout() {
                         <h3 className="text-xl font-bold text-white mb-2">Cash App</h3>
                         <p className="text-gray-400 text-sm mb-6 h-12">The fastest way to secure your seat. Processed immediately during business hours.</p>
                         <div className="bg-black/50 p-4 rounded-xl border border-white/5 font-mono text-amber-400 text-lg font-bold text-center">
-                            $indiiOS
+                            $indii
                         </div>
                     </div>
 

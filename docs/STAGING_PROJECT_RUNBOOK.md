@@ -1,6 +1,6 @@
 # Staging Firebase Project Runbook
 
-## Item 293: Create `indiiOS-staging` Firebase Project
+## Item 293: Create `indii-staging` Firebase Project
 
 ### Overview
 
@@ -14,39 +14,39 @@ the production database.
 
 ```bash
 # Create project
-gcloud projects create indiiOS-staging --name="indiiOS Staging"
+gcloud projects create indii-staging --name="indii Staging"
 
 # Link to billing account
-gcloud billing projects link indiiOS-staging --billing-account=BILLING_ACCOUNT_ID
+gcloud billing projects link indii-staging --billing-account=BILLING_ACCOUNT_ID
 ```
 
 ## Step 2: Initialize Firebase
 
 ```bash
-firebase projects:addfirebase --project indiiOS-staging
+firebase projects:addfirebase --project indii-staging
 ```
 
 ## Step 3: Enable Required Services
 
 ```bash
 # Authentication
-firebase auth:import --project indiiOS-staging
+firebase auth:import --project indii-staging
 
 # Firestore
-firebase firestore:databases:list --project indiiOS-staging
+firebase firestore:databases:list --project indii-staging
 # If empty, create:
-gcloud firestore databases create --project=indiiOS-staging --location=us-central
+gcloud firestore databases create --project=indii-staging --location=us-central
 
 # Storage
-gsutil mb -p indiiOS-staging gs://indiiOS-staging.appspot.com
+gsutil mb -p indii-staging gs://indii-staging.appspot.com
 
 # Cloud Functions
-gcloud services enable cloudfunctions.googleapis.com --project=indiiOS-staging
+gcloud services enable cloudfunctions.googleapis.com --project=indii-staging
 ```
 
 ## Step 4: Configure Auth Providers
 
-In Firebase Console → indiiOS-staging → Authentication → Sign-in method:
+In Firebase Console → indii-staging → Authentication → Sign-in method:
 
 1. Enable **Email/Password**
 2. Enable **Google** (configure OAuth consent screen)
@@ -55,16 +55,16 @@ In Firebase Console → indiiOS-staging → Authentication → Sign-in method:
 ## Step 5: Deploy Security Rules
 
 ```bash
-firebase deploy --only firestore:rules,storage --project indiiOS-staging
+firebase deploy --only firestore:rules,storage --project indii-staging
 ```
 
 ## Step 6: Create `.env.staging`
 
 ```env
 VITE_FIREBASE_API_KEY=<staging-api-key>
-VITE_FIREBASE_PROJECT_ID=indiiOS-staging
-VITE_FIREBASE_AUTH_DOMAIN=indiiOS-staging.firebaseapp.com
-VITE_FIREBASE_STORAGE_BUCKET=indiiOS-staging.appspot.com
+VITE_FIREBASE_PROJECT_ID=indii-staging
+VITE_FIREBASE_AUTH_DOMAIN=indii-staging.firebaseapp.com
+VITE_FIREBASE_STORAGE_BUCKET=indii-staging.appspot.com
 VITE_FIREBASE_APP_ID=<staging-app-id>
 VITE_SENTRY_DSN=<staging-sentry-dsn>
 ```
@@ -76,12 +76,12 @@ PR preview deploys should target the staging project:
 
 ```yaml
 - name: Deploy preview to staging
-  run: firebase hosting:channel:deploy preview-${{ github.head_ref }} --project indiiOS-staging
+  run: firebase hosting:channel:deploy preview-${{ github.head_ref }} --project indii-staging
 ```
 
 ## Step 8: Verification
 
-1. Deploy to staging: `firebase deploy --project indiiOS-staging`
+1. Deploy to staging: `firebase deploy --project indii-staging`
 2. Open the staging URL and verify auth works
 3. Create a test user and verify Firestore data lands in the staging project
 4. Confirm production Firestore is unaffected
@@ -93,7 +93,7 @@ PR preview deploys should target the staging project:
 If the staging project needs to be deleted:
 
 ```bash
-gcloud projects delete indiiOS-staging
+gcloud projects delete indii-staging
 ```
 
 ---

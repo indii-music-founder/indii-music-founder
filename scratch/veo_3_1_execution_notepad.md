@@ -1,6 +1,6 @@
 # Veo 3.1 Platinum Execution Notepad
 
-This document serves as the master, step-by-step execution plan for achieving a 10/10 Platinum integration of the Veo 3.1 capabilities (Ingredients-to-Video, Scene Extension, Frame Transitions) into the indiiOS Creative Studio.
+This document serves as the master, step-by-step execution plan for achieving a 10/10 Platinum integration of the Veo 3.1 capabilities (Ingredients-to-Video, Scene Extension, Frame Transitions) into the indii Creative Studio.
 
 ## Phase 1: Core State & Type Architecture
 - [ ] **Audit & Update `schemas.ts`:**

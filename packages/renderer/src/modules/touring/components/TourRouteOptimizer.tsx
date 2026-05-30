@@ -1,11 +1,8 @@
-/**
- * TourRouteOptimizer — Item 131 (PRODUCTION_200)
- * Plots geo-optimized tour routes based on regional Spotify listener density.
- * Greedy nearest-neighbor sort on mock city coordinates + listener weighting.
- */
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Music2, Plus, X, ArrowRight, Zap, Users, Clock, Route } from 'lucide-react';
+import { MapPin, Music2, Plus, X, ArrowRight, Zap, Users, Clock, Route, HelpCircle, Info, BookOpen } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Modal } from '@/components/ui/Modal';
 
 interface City {
     id: string;
@@ -13,12 +10,12 @@ interface City {
     state: string;
     lat: number;
     lng: number;
-    listeners: number; // mock Spotify monthly listeners in region
+    listeners: number; // modeled monthly streaming reach in region
     avgTicketPrice: number;
     venues: number;
 }
 
-// Top 45 US touring markets — real coordinates, population-calibrated listener
+// Top 45 US touring markets — real coordinates, population-calibrated reach
 // estimates, market-rate avg ticket prices, and rough venue counts.
 // Listener figures use metro-population × ~0.35 streaming penetration × genre index.
 const CITY_POOL: City[] = [
@@ -111,6 +108,7 @@ function formatListeners(n: number): string {
 export function TourRouteOptimizer() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [optimized, setOptimized] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     const selected = CITY_POOL.filter(c => selectedIds.has(c.id));
     const available = CITY_POOL.filter(c => !selectedIds.has(c.id));
@@ -136,11 +134,24 @@ export function TourRouteOptimizer() {
     };
 
     return (
-        <div className="flex gap-6 h-full">
-            {/* Left — city picker */}
-            <div className="w-56 flex-shrink-0 space-y-4">
-                <div>
-                    <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">Add Cities</h4>
+        <TooltipProvider delayDuration={200}>
+            <div className="flex gap-6 h-full">
+                {/* Left — city picker */}
+                <div className="w-56 flex-shrink-0 space-y-4">
+                    <div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 cursor-help flex items-center gap-1 hover:text-neutral-300 transition-colors">
+                                    Add Cities <Info size={10} className="opacity-60" />
+                                </h4>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
+                                <p className="font-bold text-[#FFE135] mb-1">Regional Fan Database</p>
+                                <p className="text-neutral-400 text-[10px]">Select markets to build your tour legs. The database features 45 calibrated touring regions across the U.S., populated with geographical coordinates, average ticket prices, and modeled monthly streaming reach.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+
                     <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
                         {available.map(city => (
                             <button
@@ -172,33 +183,71 @@ export function TourRouteOptimizer() {
                         <span className="text-neutral-600">Distance</span>
                         <span className="text-white font-bold">{totalDistance.toLocaleString()} mi</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-neutral-600">Reach</span>
-                        <span className="text-white font-bold">{formatListeners(totalListeners)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-neutral-600">Est. Revenue</span>
-                        <span className="text-[#FFE135] font-bold">${(estimatedRevenue / 1000).toFixed(0)}K</span>
-                    </div>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex justify-between cursor-help hover:bg-white/[0.02] p-1 -mx-1 rounded transition-colors">
+                                <span className="text-neutral-600 flex items-center gap-1">Reach <Info size={10} className="opacity-55" /></span>
+                                <span className="text-white font-bold">{formatListeners(totalListeners)}</span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
+                            <p className="font-bold text-[#FFE135] mb-0.5">Total Fan Reach</p>
+                            <p className="text-neutral-400 text-[10px]">The sum of modeled regional monthly streaming reach in the metropolitan statistical areas of your chosen stops. High reach represents a stronger potential base of local ticket buyers.</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex justify-between cursor-help hover:bg-white/[0.02] p-1 -mx-1 rounded transition-colors">
+                                <span className="text-neutral-600 flex items-center gap-1">Est. Revenue <Info size={10} className="opacity-55" /></span>
+                                <span className="text-[#FFE135] font-bold">${(estimatedRevenue / 1000).toFixed(0)}K</span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
+                            <p className="font-bold text-[#FFE135] mb-0.5">Estimated Ticket Revenue</p>
+                            <p className="text-neutral-400 text-[10px] mb-1">Estimated gross sales modeled by converting regional Spotify listener density into ticket buyers:</p>
+                            <p className="text-[#FFE135] font-mono text-[9px] bg-black/40 p-1.5 rounded">Avg Ticket Price × (0.2% of Metro Listeners)</p>
+                            <p className="text-neutral-500 text-[9px] mt-1 italic">This conversion benchmark is standard for artists with highly active streaming engagement.</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
-            </div>
 
             {/* Right — route display */}
             <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h4 className="text-sm font-bold text-white">Route Planner</h4>
+                        <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-white">Route Planner</h4>
+                            <button
+                                onClick={() => setIsGuideOpen(true)}
+                                className="px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-neutral-400 hover:text-white flex items-center gap-1 text-[9px] font-black tracking-wide uppercase"
+                                title="Open User Guide"
+                            >
+                                <BookOpen size={9} className="text-[#FFE135]" /> User Guide
+                            </button>
+                        </div>
                         <p className="text-[10px] text-neutral-500 mt-0.5">
                             {optimized ? 'Geo-optimized by listener density' : 'Add cities and optimize'}
                         </p>
                     </div>
-                    <button
-                        onClick={() => setOptimized(true)}
-                        disabled={selected.length < 2}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#FFE135] text-black text-xs font-black rounded-xl hover:bg-[#FFD700] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Zap size={13} /> Optimize Route
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <button
+                                    onClick={() => setOptimized(true)}
+                                    disabled={selected.length < 2}
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#FFE135] text-black text-xs font-black rounded-xl hover:bg-[#FFD700] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <Zap size={13} /> Optimize Route
+                                </button>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="end" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
+                            <p className="font-bold text-[#FFE135] mb-0.5">Audience-Weighted Optimization</p>
+                            <p className="text-neutral-400 text-[10px]">Executes a greedy nearest-neighbor algorithm that sorts your tour routing. It calculates optimal legs based on Haversine distance, with a **weighting index** that draws routes closer to cities with higher Spotify listener concentrations.</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
 
                 {/* Route cards */}
@@ -243,18 +292,26 @@ export function TourRouteOptimizer() {
                                                     <span className="text-[9px] text-neutral-700">· {city.venues} venues</span>
                                                 </div>
                                                 {/* Listener density bar */}
-                                                <div className="flex items-center gap-2">
-                                                    <Music2 size={9} className="text-neutral-600 flex-shrink-0" />
-                                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-[#FFE135] rounded-full"
-                                                            style={{ width: `${barPct}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[9px] text-neutral-500 font-mono flex-shrink-0">
-                                                        {formatListeners(city.listeners)}
-                                                    </span>
-                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="flex items-center gap-2 cursor-help py-0.5">
+                                                            <Music2 size={9} className="text-neutral-600 flex-shrink-0" />
+                                                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#FFE135] rounded-full"
+                                                                    style={{ width: `${barPct}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[9px] text-neutral-500 font-mono flex-shrink-0 hover:text-[#FFE135] transition-colors">
+                                                                {formatListeners(city.listeners)}
+                                                            </span>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
+                                                        <p className="font-bold text-[#FFE135] mb-0.5">{city.name} Audience Density</p>
+                                                        <p className="text-neutral-400 text-[10px]">{formatListeners(city.listeners)} modeled monthly streaming reach in the metro region. Representing {barPct}% of the top market density size in your current list.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </div>
 
                                             {/* Avg ticket */}
@@ -294,5 +351,36 @@ export function TourRouteOptimizer() {
                 )}
             </div>
         </div>
+
+        {/* User Guide Modal */}
+        <Modal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} titleId="guide-modal-title" maxWidth="max-w-xl" className="bg-[#0c0c0c]">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <BookOpen size={16} className="text-[#FFE135]" />
+                    <h3 id="guide-modal-title" className="text-sm font-black text-white uppercase tracking-wider">Tour Route Optimizer Guide</h3>
+                </div>
+                <button onClick={() => setIsGuideOpen(false)} className="text-neutral-500 hover:text-white transition-colors p-1 rounded hover:bg-white/5">
+                    <X size={14} />
+                </button>
+            </div>
+            <div className="p-6 space-y-4 text-xs text-neutral-400 leading-relaxed font-mono">
+                <p>
+                    Welcome to the <span className="text-[#FFE135] font-bold">indii Route Optimizer</span>. This tool is designed to help touring artists plan high-revenue, geo-efficient tour legs by analyzing listener densities.
+                </p>
+                <div>
+                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">1. Pick Your Markets</h4>
+                    <p>Select target cities from the left panel. Each city displays its Spotify monthly listener count (calibrated with regional streaming indexes) and average venue counts.</p>
+                </div>
+                <div>
+                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">2. Weigh Your Audience</h4>
+                    <p>When you click <span className="text-[#FFE135] font-bold">Optimize Route</span>, the system runs an audience-weighted nearest-neighbor TSP algorithm. Instead of purely sorting by driving distance, it biases routing towards cities with higher listener densities to maximize potential sales.</p>
+                </div>
+                <div>
+                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">3. Analyze Revenue Projections</h4>
+                    <p>The Summary Panel projects estimated gross ticket sales based on standard conversion models (average ticket price × 0.2% listener-to-ticket conversion rate) to help forecast touring feasibility.</p>
+                </div>
+            </div>
+        </Modal>
+        </TooltipProvider>
     );
 }

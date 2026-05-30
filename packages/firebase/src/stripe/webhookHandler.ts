@@ -58,10 +58,50 @@ async function handleFounderPassCheckoutCompleted(session: Stripe.Checkout.Sessi
 /**
  * Handle checkout.session.completed event
  */
+async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId;
+  const credits = parseInt(session.metadata?.credits || '0', 10);
+  
+  if (!userId || isNaN(credits) || credits <= 0) {
+    console.error('[handleMicroTransaction] Invalid metadata for micro-transaction');
+    return;
+  }
+
+  const db = getFirestore();
+  const creditsRef = db.collection('user_credits').doc(userId);
+  
+  await db.runTransaction(async (t) => {
+    const doc = await t.get(creditsRef);
+    if (!doc.exists) {
+      t.set(creditsRef, { balance: credits, updatedAt: Date.now() });
+    } else {
+      const currentBalance = doc.data()?.balance || 0;
+      t.update(creditsRef, { balance: currentBalance + credits, updatedAt: Date.now() });
+    }
+    
+    // Log transaction
+    const logRef = db.collection('user_credits').doc(userId).collection('transactions').doc(session.id);
+    t.set(logRef, {
+      amount: credits,
+      type: 'purchase',
+      sessionId: session.id,
+      timestamp: Date.now()
+    });
+  });
+
+  console.log(`[handleMicroTransaction] Added ${credits} credits to user ${userId}`);
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
   // Route founder pass payments separately
+    // Route micro-transactions separately
+  if (session.metadata?.type === 'micro_transaction') {
+    await handleMicroTransactionCheckoutCompleted(session);
+    return;
+  }
+
   if (session.metadata?.type === 'founder_pass') {
     await handleFounderPassCheckoutCompleted(session);
     return;

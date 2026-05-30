@@ -18,20 +18,20 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mockToast
 }));
 
-// The component dynamically imports DirectImageGenerator — mock it so the
-// dynamic import resolves to our spy.
-const mockGenerateImageDirectly = vi.fn();
-vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
-    generateImageDirectly: (...args: any[]) => mockGenerateImageDirectly(...args)
+// The component uses httpsCallable.
+const mockHttpsCallableFn = vi.fn();
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallableFn,
+    getFunctions: vi.fn()
 }));
 
-// Mock the AI_MODELS config that the component also imports dynamically.
-vi.mock('@/core/config/ai-models', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@/core/config/ai-models')>();
+// Mock the INTELLIGENCE_MODELS config that the component also imports dynamically.
+vi.mock('@/core/config/intelligence-models', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/core/config/intelligence-models')>();
     return {
         ...actual,
-        AI_MODELS: {
-            ...actual.AI_MODELS,
+        INTELLIGENCE_MODELS: {
+            ...actual.INTELLIGENCE_MODELS,
             IMAGE: {
                 DIRECT_PRO: 'gemini-3-pro-image-preview',
                 DIRECT_FAST: 'gemini-3-flash-preview'
@@ -43,7 +43,8 @@ vi.mock('@/core/config/ai-models', async (importOriginal) => {
 const mockGenerateVideo = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: (...args: any[]) => mockGenerateVideo(...args)
+        generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        subscribeToJob: vi.fn(() => () => {})
     }
 }));
 
@@ -100,8 +101,7 @@ describe('DirectGenerationTab', () => {
             resolveGeneration = resolve;
         });
 
-        // generateImageDirectly returns an array of URL strings (data URIs in production)
-        mockGenerateImageDirectly.mockReturnValue(generationPromise);
+        mockHttpsCallableFn.mockReturnValue(generationPromise);
 
         (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
@@ -122,9 +122,9 @@ describe('DirectGenerationTab', () => {
         expect(screen.getByTestId('loader')).toBeInTheDocument();
         expect(sendButton).toBeDisabled();
 
-        // Resolve generation — component expects an array of URL strings
+        // Resolve generation — component expects { data: { jobId: ... } }
         await act(async () => {
-            resolveGeneration!(['https://example.com/cat.jpg']);
+            resolveGeneration!({ data: { jobId: 'mock-job' } });
         });
 
         // Assert success state
@@ -132,14 +132,13 @@ describe('DirectGenerationTab', () => {
             expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
         });
 
-        expect(screen.getByAltText('A cute cat')).toBeInTheDocument();
         await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith('Image generated directly successfully');
+            expect(mockToast.info).toHaveBeenCalledWith('Image job queued. Check gallery for progress.');
         });
     });
 
     it('handles generation error correctly', async () => {
-        mockGenerateImageDirectly.mockRejectedValue(new Error('API Error'));
+        mockHttpsCallableFn.mockRejectedValue(new Error('API Error'));
 
         (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,

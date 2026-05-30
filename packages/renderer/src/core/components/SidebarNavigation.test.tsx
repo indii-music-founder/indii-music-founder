@@ -46,7 +46,7 @@ vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testi
 vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
 vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
 vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
+vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
 vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
@@ -58,6 +58,16 @@ vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window"
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
 vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
+vi.mock('@/modules/finance/hooks/useSubscription', () => ({
+    useSubscription: vi.fn(() => ({
+        subscription: { tier: 'pro', status: 'active' },
+        loading: false,
+        error: null,
+        refresh: vi.fn(),
+        createCheckoutSession: vi.fn(),
+        getPortalUrl: vi.fn()
+    }))
+}));
 
 // Mock feature flags — useGatedModules returns empty Set (all modules visible) in tests
 vi.mock('@/config/featureFlags', () => ({

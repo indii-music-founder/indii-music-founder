@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import FilePreview from './FilePreview';
 import { NavItem } from './components/NavItem';
 import { DetailRow } from './components/DetailRow';
+import { FileTree } from './components/FileTree';
 
 export default function FileDashboard() {
     const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore(useShallow(state => ({
@@ -30,7 +31,7 @@ export default function FileDashboard() {
         const matchesSearch = node.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFilter = filterType === 'all' || node.fileType === filterType;
 
-        return matchesSearch && matchesFilter && node.type !== 'folder'; // Exclude folders for flat asset view, or keep them?
+        return matchesSearch && matchesFilter; // Show folders in grid view
     });
 
     const getFileIcon = (type?: FileNode['fileType'], className?: string) => {
@@ -85,6 +86,10 @@ export default function FileDashboard() {
                     <div className="mt-8 mb-2 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Locations</div>
                     <NavItem icon={Folder} label="All Files" onClick={() => setFilterType('all')} active={filterType === 'all'} />
                     <NavItem icon={Trash2} label="Trash" />
+                    
+                    <div className="mt-4 px-2">
+                        <FileTree nodes={fileNodes} parentId={null} />
+                    </div>
                 </nav>
             </div>
 

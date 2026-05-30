@@ -75,7 +75,7 @@ describe('RiderChecklist', () => {
         setupRiderMock({ addItem: addItemMock });
         render(<RiderChecklist />);
 
-        const input = screen.getByPlaceholderText('Add requirement...');
+        const input = screen.getByPlaceholderText('touring.hints.add_requirement');
         fireEvent.change(input, { target: { value: 'Beer' } });
 
         const addButton = screen.getByLabelText('Add Item');

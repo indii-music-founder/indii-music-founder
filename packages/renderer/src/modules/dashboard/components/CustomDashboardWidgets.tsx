@@ -49,7 +49,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
-    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent AI agent tasks and completions' },
+    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
     audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
     active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
     pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },
@@ -68,7 +68,7 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w6', type: 'active_campaigns', order: 5 },
 ];
 
-export const STORAGE_KEY = 'indiiOS_custom_dashboard_widgets';
+export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
 
 export function loadWidgets(): Widget[] {
     try {
@@ -235,7 +235,7 @@ function RevenueMTDWidget() {
     const monthName = now.toLocaleString('default', { month: 'long' });
 
     const displayValue = revenueData?.mtdRevenue.formatted || '--';
-    const growth = "+12.5%"; // Mock growth for visual elevation
+    const growth = '--';
 
     return (
         <div className="flex flex-col h-full justify-between group/widget">
@@ -263,7 +263,7 @@ function RevenueMTDWidget() {
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
                 <div className="flex flex-col">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Next Payout</span>
-                    <span className="text-xs font-bold text-white/60">May 21, 2026</span>
+                    <span className="text-xs font-bold text-white/60">Not scheduled</span>
                 </div>
                 <div className="w-12 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                     <div className="w-full h-full bg-linear-to-r from-green-500/20 to-emerald-500/40 animate-pulse" />
@@ -982,4 +982,3 @@ function RevenueAggregatedWidget() {
         </div>
     );
 }
-

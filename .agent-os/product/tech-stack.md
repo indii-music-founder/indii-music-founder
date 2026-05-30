@@ -1,10 +1,10 @@
-# indiiOS — Tech Stack
+# indii — Tech Stack
 
 > **Verified against** root `package.json`, `packages/*/package.json`, `electron.vite.config.ts`, `firebase.json`, `tsconfig.json`, and `.github/workflows/deploy.yml` at v1.55.3.
 
 ## Monorepo
 
-- **Root:** `indiios-monorepo` v1.55.3
+- **Root:** `indii-monorepo` v1.55.3
 - **Type:** ES module
 - **Node engine:** `>=22.0.0`
 - **Workspaces (6 packages):**
@@ -129,7 +129,7 @@
 ## Database and storage
 
 - **Firestore** — custom-claims auth, organization membership model, soft-delete on long-lived docs
-- **Firebase Storage** — bucket `indiios-alpha-electron`, rules enforce auth + org membership + size / content-type limits
+- **Firebase Storage** — bucket `indii-alpha-electron`, rules enforce auth + org membership + size / content-type limits
 - **Firestore Emulator** — `localhost:8080`, single-project mode for local dev
 - **BigQuery** — revenue analytics warehouse
 

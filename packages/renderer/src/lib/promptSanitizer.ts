@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 
 /**
- * Item 250: AI Prompt Injection Sanitizer
+ * Item 250: Autonomous Prompt Injection Sanitizer
  *
  * Filters dangerous patterns from user-provided text before it's passed to
  * Gemini's generateContent() calls. Prevents:

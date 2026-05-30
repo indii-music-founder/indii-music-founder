@@ -1,7 +1,5 @@
 import { logger } from '@/utils/logger';
 import { AGENT_CONFIGS } from './agentConfig';
-import { freezeAgentConfig } from './FreezeDiagnostic';
-
 import { SpecializedAgent, AgentRegistryProvider } from './types';
 import { DEPARTMENTS } from './departments';
 
@@ -57,12 +55,11 @@ export class AgentRegistry implements AgentRegistryProvider {
                 if (!module.GeneralistAgent) {
                     throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
-                const agent = new module.GeneralistAgent();
-                // Check for initialize method using type guard
-                if ('initialize' in agent && typeof agent.initialize === 'function') {
-                    await agent.initialize();
-                }
-                return agent;
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent(
+                    generalistKey,
+                    module.GeneralistAgent
+                );
             });
         } catch (e: unknown) {
             logger.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
@@ -73,7 +70,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             const merchMeta = {
                 id: 'merchandise',
                 name: 'Merchandise Specialist',
-                description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
+                description: 'Intelligence-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
                 color: '#FFE135',
                 category: 'specialist',
                 execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
@@ -81,7 +78,8 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(merchMeta, async () => {
                 const { MerchandiseAgent } = await import('./MerchandiseAgent');
-                return new MerchandiseAgent();
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent('merchandise', MerchandiseAgent);
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
@@ -101,12 +99,8 @@ export class AgentRegistry implements AgentRegistryProvider {
                     } as SpecializedAgent;
 
                     this.registerLazy(meta, async () => {
-                        const { RAGAgent } = await import('./RAGAgent');
-                        // Use RAGAgent which automatically queries File Search before execution
-                        // RAGAgent extends BaseAgent.
-                        const agent = new RAGAgent(config);
-                        freezeAgentConfig(agent);
-                        return agent;
+                        const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                        return SpecialistAgentFactory.createConfigAgent(config);
                     });
                 } catch (e: unknown) {
                     logger.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
@@ -126,22 +120,21 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(keeperMeta, async () => {
-                const { BaseAgent } = await import('./BaseAgent');
-                const agent = new BaseAgent({
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createBaseAgent({
                     id: 'keeper',
                     name: 'Keeper',
                     description: 'Context Integrity Guardian',
                     color: '#4B0082',
                     category: 'specialist',
-                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indiiOS. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
+                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indii. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
                     tools: []
                 });
-                freezeAgentConfig(agent);
-                return agent;
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
+
         // Register Curriculum Agent (Music Business Education)
         try {
             const curriculumMeta = {
@@ -155,13 +148,41 @@ export class AgentRegistry implements AgentRegistryProvider {
 
             this.registerLazy(curriculumMeta, async () => {
                 const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
-                return new CurriculumAgent();
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createSpecialistAgent('curriculum', CurriculumAgent);
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
 
-        // Register worker placeholders from DEPARTMENTS
+        // Register Analytics Agent (Intelligence Analytics Specialist)
+        try {
+            const analyticsMeta = {
+                id: 'analytics',
+                name: 'Intelligence Analytics Specialist',
+                description: 'Analyzes audience intelligence, streaming data, and career metrics for independent artists.',
+                color: '#9C27B0',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(analyticsMeta, async () => {
+                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                return SpecialistAgentFactory.createBaseAgent({
+                    id: 'analytics',
+                    name: 'Analytics',
+                    description: 'Intelligence Analytics Specialist',
+                    color: '#9C27B0',
+                    category: 'specialist',
+                    systemPrompt: 'You are the Intelligence Analytics Specialist for indii. Your role is to analyze audience intelligence, streaming data, and career metrics to provide insights for independent artists.',
+                    tools: []
+                });
+            });
+        } catch (e: unknown) {
+            logger.warn("[AgentRegistry] Failed to register Analytics agent:", e);
+        }
+
+        // Register metadata-only worker entries from DEPARTMENTS
         try {
             for (const dept of Object.values(DEPARTMENTS)) {
                 const typedDept = dept as any;
@@ -179,8 +200,8 @@ export class AgentRegistry implements AgentRegistryProvider {
                         } as SpecializedAgent;
 
                         this.registerLazy(workerMeta, async () => {
-                            const { BaseAgent } = await import('./BaseAgent');
-                            const agent = new BaseAgent({
+                            const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                            return SpecialistAgentFactory.createBaseAgent({
                                 id: workerId,
                                 name: workerMeta.name,
                                 description: workerMeta.description,
@@ -189,8 +210,6 @@ export class AgentRegistry implements AgentRegistryProvider {
                                 systemPrompt: `You are a worker in the ${typedDept.displayName} department.`,
                                 tools: []
                             });
-                            freezeAgentConfig(agent);
-                            return agent;
                         });
                     } catch (e: unknown) {
                         logger.warn(`[AgentRegistry] Failed to register worker agent '${workerId}':`, e);
@@ -213,12 +232,12 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     get(id: string): SpecializedAgent | undefined {
-        // Legacy synchronous get - only works if already loaded
-        return this.agents.get(id);
+        // Return loaded agent or metadata-only entry
+        return this.agents.get(id) || this.metadata.get(id);
     }
 
     async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {
-        const MAX_RETRIES = 2;
+        const MAX_RETRIES = 3;
         const RETRY_DELAY_MS = 500;
 
         // Return cached agent if already loaded
@@ -227,53 +246,66 @@ export class AgentRegistry implements AgentRegistryProvider {
         }
 
         // Deduplicate concurrent loads - if already loading, wait for that promise
-        if (this.loadingPromises.has(id)) {
+        // BUT only if we are not in a retry loop (to avoid potential recursive locking logic issues)
+        if (retryCount === 0 && this.loadingPromises.has(id)) {
             return this.loadingPromises.get(id);
         }
 
         const loader = this.loaders.get(id);
         if (!loader) {
+            if (retryCount === 0) {
+                logger.warn(`[AgentRegistry] No loader registered for agent '${id}'`);
+            }
             return undefined;
         }
 
-        // Create the loading promise and cache it to prevent duplicate loads
         const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
+            const attempts = retryCount + 1;
             try {
-                logger.debug(`[AgentRegistry] Loading agent '${id}'...`);
+                logger.debug(`[AgentRegistry] Loading agent '${id}' (attempt ${attempts})...`);
                 const agent = await loader();
                 this.agents.set(id, agent);
-                // Clear any previous error state
                 this.loadErrors.delete(id);
                 logger.debug(`[AgentRegistry] Agent '${id}' loaded successfully`);
                 return agent;
             } catch (e: unknown) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                const existingError = this.loadErrors.get(id);
-                const attempts = (existingError?.attempts || 0) + 1;
-
                 logger.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                
+                // Track error state
                 this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
 
                 // Retry with exponential backoff
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-                    logger.debug(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
+                    logger.warn(`[AgentRegistry] Retrying '${id}' in ${delay}ms... (Remaining retries: ${MAX_RETRIES - retryCount})`);
                     await new Promise(resolve => setTimeout(resolve, delay));
-                    this.loadingPromises.delete(id); // Clear so retry can proceed
+                    
+                    // Recursive call for retry
                     return this.getAsync(id, retryCount + 1);
                 }
 
-                logger.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
+                logger.error(`[AgentRegistry] Agent '${id}' PERMANENTLY failed after ${attempts} attempts. Error: ${error.message}`);
                 return undefined;
             } finally {
-                // Clean up loading promise after completion (unless retrying)
-                if (retryCount >= MAX_RETRIES || this.agents.has(id)) {
-                    this.loadingPromises.delete(id);
+                // Clear the loading promise from our map only at the very top level
+                if (retryCount === 0) {
+                    // This is handled by the .finally block on the returned promise below
                 }
             }
         })();
 
-        this.loadingPromises.set(id, loadPromise);
+        if (retryCount === 0) {
+            this.loadingPromises.set(id, loadPromise);
+            
+            // Cleanup promise from map once settled to allow future re-loads if it failed
+            loadPromise.finally(() => {
+                if (!this.agents.has(id)) {
+                    this.loadingPromises.delete(id);
+                }
+            });
+        }
+
         return loadPromise;
     }
 
@@ -285,7 +317,7 @@ export class AgentRegistry implements AgentRegistryProvider {
     }
 
     getAll(): SpecializedAgent[] {
-        // Returns mixed active agents and metadata-only placeholders
+        // Returns mixed active agents and metadata-only entries
         // Use with caution for execution. Use for listing capabilities.
         return Array.from(this.metadata.values());
     }
@@ -298,4 +330,6 @@ export class AgentRegistry implements AgentRegistryProvider {
 }
 
 export const agentRegistry = new AgentRegistry();
-
+if (typeof window !== 'undefined') {
+    (window as any).agentRegistry = agentRegistry;
+}

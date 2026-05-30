@@ -4,7 +4,7 @@ import {
     Loader2, Send, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 type EmailPlatform = 'Mailchimp' | 'Klaviyo';
 

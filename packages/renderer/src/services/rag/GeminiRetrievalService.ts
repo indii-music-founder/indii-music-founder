@@ -5,7 +5,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 
 // Switch to File API resource types
-import { AI_MODELS } from '../../core/config/ai-models.ts';
+import { INTELLIGENCE_MODELS } from '../../core/config/intelligence-models.ts';
 import { delay } from '@/utils/async';
 import { logger } from '@/utils/logger';
 
@@ -33,7 +33,7 @@ export class GeminiRetrievalService {
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
-        const projectId = env.projectId || env.firebaseProjectId || 'indiios-v-1-1';
+        const projectId = env.projectId || env.firebaseProjectId || 'indii-v-1-1';
         const location = env.location || 'us-central1';
         const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net`;
 
@@ -63,16 +63,25 @@ export class GeminiRetrievalService {
             headers['Content-Type'] = 'application/json';
         }
 
-        // Add Firebase Auth token for ragProxy authentication
+        // Add Firebase Auth token and App Check token for ragProxy authentication
         try {
-            const { auth } = await import('@/services/firebase');
+            const firebase = await import('@/services/firebase');
+            const auth = firebase.auth;
+            const appCheck: any = firebase.appCheck;
             const currentUser = auth.currentUser;
             if (currentUser) {
                 const idToken = await currentUser.getIdToken();
                 headers['Authorization'] = `Bearer ${idToken}`;
             }
+            if (appCheck) {
+                const { getToken } = await import('firebase/app-check');
+                const appCheckToken = await getToken(appCheck, false);
+                if (appCheckToken.token) {
+                    headers['X-Firebase-AppCheck'] = appCheckToken.token;
+                }
+            }
         } catch (e: unknown) {
-            logger.warn('[GeminiRetrieval] Could not get auth token:', e);
+            logger.warn('[GeminiRetrieval] Could not get auth or appcheck token:', e);
         }
 
         while (attempt < maxRetries) {
@@ -213,7 +222,7 @@ export class GeminiRetrievalService {
         const cacheKey = projectId || 'default';
         if (this.storeCache.has(cacheKey)) return this.storeCache.get(cacheKey)!;
 
-        const displayName = projectId ? `indiiOS Store - ${projectId}` : "indiiOS Default Store";
+        const displayName = projectId ? `indii Store - ${projectId}` : "indii Default Store";
 
         // 1. List existing stores to find a match
         try {
@@ -313,7 +322,7 @@ export class GeminiRetrievalService {
      */
     async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any) {
         let tools: Record<string, unknown>[] | undefined;
-        const targetModel = model || AI_MODELS.TEXT.AGENT;
+        const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
@@ -383,7 +392,7 @@ export class GeminiRetrievalService {
      */
     async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any): AsyncGenerator<string> {
         let tools: Record<string, unknown>[] | undefined;
-        const targetModel = model || AI_MODELS.TEXT.AGENT;
+        const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
@@ -417,14 +426,23 @@ export class GeminiRetrievalService {
         // Build auth headers matching the main fetch() method to avoid 403 on ragProxy
         const streamHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
         try {
-            const { auth } = await import('@/services/firebase');
+            const firebase = await import('@/services/firebase');
+            const auth = firebase.auth;
+            const appCheck: any = firebase.appCheck;
             const currentUser = auth.currentUser;
             if (currentUser) {
                 const idToken = await currentUser.getIdToken();
                 streamHeaders['Authorization'] = `Bearer ${idToken}`;
             }
+            if (appCheck) {
+                const { getToken } = await import('firebase/app-check');
+                const appCheckToken = await getToken(appCheck, false);
+                if (appCheckToken.token) {
+                    streamHeaders['X-Firebase-AppCheck'] = appCheckToken.token;
+                }
+            }
         } catch (e: unknown) {
-            logger.warn('[GeminiRetrieval] streamQuery: Could not get auth token:', e);
+            logger.warn('[GeminiRetrieval] streamQuery: Could not get auth or appcheck token:', e);
         }
 
         const response = await fetch(`${this.baseUrl}/models/${targetModel}:streamGenerateContent`, {

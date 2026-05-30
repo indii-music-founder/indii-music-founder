@@ -1,21 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn().mockResolvedValue('gs://mock-bucket/mock-uri')
+    }
+}));
+
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -36,6 +42,11 @@ vi.mock('@/services/firebase', () => ({
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
+}));
+
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallable
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
@@ -72,10 +83,19 @@ vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
 }));
 
 // Mock InputSanitizer
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: vi.fn((text: string) => text),
         sanitizePrompt: vi.fn((text: string) => text),
+    }
+}));
+
+// Mock CostControlService
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ allowed: true }),
+        releaseReservation: vi.fn().mockResolvedValue(undefined),
+        confirmUsage: vi.fn().mockResolvedValue(undefined),
     }
 }));
 
@@ -97,10 +117,10 @@ describe('VideoGenerationService', () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0]!.id).toBeDefined();
-            expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
-            // Verify it calls the direct SDK path, not Cloud Functions
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(result[0]!.id).toBe('mock-job-id');
+            expect(result[0]!.url).toBe('');
+            // Verify it calls the Cloud Functions, not direct SDK path
+            expect(mockHttpsCallable).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -114,13 +134,14 @@ describe('VideoGenerationService', () => {
                 .rejects.toThrow(/Quota exceeded/);
         });
 
-        it('should analyze temporal context when firstFrame is provided', async () => {
+        it('should upload firstFrame as reference media', async () => {
             await VideoGeneration.generateVideo({
                 prompt: 'test video',
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(GenAI.analyzeImage).toHaveBeenCalled();
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {
@@ -132,7 +153,7 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
         });
     });
 
