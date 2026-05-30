@@ -25,7 +25,7 @@ describe('CanvasBatchService', () => {
 
     it('should fail closed when no production renderer is configured', async () => {
         const originalBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
-        import.meta.env.VITE_FIREBASE_STORAGE_BUCKET = '';
+        (import.meta.env as Record<string, unknown>).VITE_FIREBASE_STORAGE_BUCKET = '';
 
         const mockCanvas = {};
         const selectedIds = ['square', 'story'];
@@ -45,7 +45,7 @@ describe('CanvasBatchService', () => {
                 'Canvas batch export renderer is not configured. No asset URL was generated.'
             );
         } finally {
-            import.meta.env.VITE_FIREBASE_STORAGE_BUCKET = originalBucket;
+            (import.meta.env as Record<string, unknown>).VITE_FIREBASE_STORAGE_BUCKET = originalBucket;
         }
     });
 
