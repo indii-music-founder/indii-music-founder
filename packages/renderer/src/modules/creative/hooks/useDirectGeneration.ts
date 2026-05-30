@@ -12,6 +12,7 @@ import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 type CallableGenerationError = {
     code?: unknown;
@@ -350,6 +351,31 @@ export function useDirectGeneration() {
         setIsGenerating(true);
 
         try {
+            if (isFirebaseE2EMockEnabled()) {
+                const mockJobId = `mock-job-${Date.now()}`;
+                const mockItem: HistoryItem = {
+                    id: mockJobId,
+                    url: mode === 'image'
+                        ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                        : 'data:video/mp4;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                    type: mode as 'image' | 'video',
+                    prompt: localPrompt,
+                    timestamp: Date.now(),
+                    projectId: currentProjectIdRef.current,
+                    origin: 'generated' as const
+                };
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                addToHistory(mockItem);
+                if (mode === 'image') {
+                    setSelectedItem(mockItem);
+                    setViewMode('editor');
+                }
+                toast.success(`${mode === 'image' ? 'Image' : 'Video'} generation finished!`);
+                return;
+            }
+
             if (mode === 'image') {
                 const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
                 await handleImageGenerate(finalPrompt);
