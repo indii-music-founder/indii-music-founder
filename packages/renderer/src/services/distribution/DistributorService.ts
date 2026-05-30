@@ -667,7 +667,7 @@ class DistributorServiceImpl {
           title: d.title,
           artist: d.artist,
           coverArtUrl: d.coverArtUrl,
-          releaseDate: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
+          releaseDate: (d.submittedAt && typeof (d.submittedAt as { toDate?: () => Date }).toDate === 'function') ? (d.submittedAt as { toDate: () => Date }).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as string | number | Date).toISOString() : undefined),
           deployments: {},
         };
       }

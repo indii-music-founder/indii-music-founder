@@ -3,6 +3,7 @@ import { db } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
  * Security Tools
@@ -19,6 +20,9 @@ import { logger } from '@/utils/logger';
 
 export const SecurityTools = {
     check_api_status: wrapTool('check_api_status', async ({ api_name }: { api_name: string }) => {
+        if (isFirebaseE2EMockEnabled()) {
+            return toolSuccess({ api: api_name, status: 'ONLINE', message: 'E2E mock bypass' });
+        }
         const apiKey = api_name.toLowerCase();
 
         // Try to get status from Firestore first
@@ -98,6 +102,9 @@ export const SecurityTools = {
     }),
 
     audit_permissions: wrapTool('audit_permissions', async ({ project_id }: { project_id?: string }) => {
+        if (isFirebaseE2EMockEnabled()) {
+            return toolSuccess({ project_id, status: 'MOCK_E2E', roles: {} });
+        }
         let realRoles: Record<string, number> | null = null;
 
         if (project_id) {
@@ -163,6 +170,9 @@ export const SecurityTools = {
 
     generate_security_report: wrapTool('generate_security_report', async ({ project_id }: { project_id?: string }) => {
         try {
+            if (isFirebaseE2EMockEnabled()) {
+                return toolSuccess({ status: 'MOCK_E2E', log_count: 0, logs: [], project_id });
+            }
             const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
             const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
             const snap = await getDocs(q);
@@ -195,6 +205,9 @@ export const SecurityTools = {
 
     log_audit_event: wrapTool('log_audit_event', async (args: { action: string; resourceId: string; severity: 'low' | 'medium' | 'high' | 'critical'; details?: string }) => {
         try {
+            if (isFirebaseE2EMockEnabled()) {
+                return toolSuccess({ logId: 'mock-e2e-log-id', ...args });
+            }
             const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
             const { auth } = await import('@/services/firebase');
 

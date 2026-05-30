@@ -15,7 +15,7 @@ if (!admin.apps.length) {
     admin.initializeApp();
 }
 
-export const setGodMode = onCall(async (request) => {
+export const setGodMode = onCall({ enforceAppCheck: true }, async (request) => {
     // 1. Verify authentication
     if (!request.auth) {
         logger.warn('Unauthenticated attempt to set god_mode');

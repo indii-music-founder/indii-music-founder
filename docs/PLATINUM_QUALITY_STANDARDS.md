@@ -94,3 +94,15 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 All agents (Claude, Gemini, Droid, Jules, Codex) are bound by this document.
 **Violations:** Fix at the root. If novel, append to `ERROR_LEDGER.md` AND this document.
+
+---
+
+## The Challenger Protocol
+
+**Established:** 2026-05-29 (Enforced for all agents)
+
+**Rule:** "Done" is never accepted at face value.
+Whenever an agent (including yourself) or a human declares a task "done" or a repository "ready", you MUST immediately adopt the **Challenger Persona**.
+1. **Scrutinize:** Do not just run tests; verify what the tests actually cover.
+2. **Poke Holes:** Look for masked failures, mocked APIs that don't match reality, or incomplete edge cases.
+3. **Reject:** Actively look for a reason to reject the "done" state. We stop at bulletproof, not done.

@@ -6,26 +6,29 @@ export const createStripePaymentLinks = onCall(async (req) => {
         throw new HttpsError('unauthenticated', 'User must be signed in.');
     }
 
-    const { campaignName, items } = req.data as { campaignName: string, items: string[] };
+    const { campaignName, items, idempotencyKey } = req.data as { campaignName: string, items: string[], idempotencyKey?: string };
     if (!campaignName || !items || !Array.isArray(items)) {
         throw new HttpsError('invalid-argument', 'Missing campaignName or items array.');
     }
 
     try {
+        const paymentLinks: string[] = [];
+        const baseIKey = idempotencyKey || `pl_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
+        
         const product = await stripe.products.create({
             name: `${campaignName} - Storefront Items`,
             description: `Items: ${items.join(', ')}`
-        });
+        }, { idempotencyKey: `${baseIKey}_prod` });
 
         const price = await stripe.prices.create({
             product: product.id,
             unit_amount: 2500, // $25.00 default price
             currency: 'usd',
-        });
+        }, { idempotencyKey: `${baseIKey}_price` });
 
         const paymentLink = await stripe.paymentLinks.create({
             line_items: [{ price: price.id, quantity: 1 }],
-        });
+        }, { idempotencyKey: `${baseIKey}_link` });
 
         return {
             storefrontUrl: paymentLink.url,
