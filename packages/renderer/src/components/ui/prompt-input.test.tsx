@@ -84,6 +84,7 @@ describe('PromptInput', () => {
   })
 
   it('does not submit when disabled', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const user = userEvent.setup()
     const onSubmit = vi.fn()
 

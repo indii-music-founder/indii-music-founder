@@ -14,6 +14,7 @@ import { UserProfile } from '@/types/User';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { updateProfile } from 'firebase/auth';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';

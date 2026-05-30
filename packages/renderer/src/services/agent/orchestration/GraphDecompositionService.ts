@@ -115,6 +115,7 @@ export class GraphDecompositionService {
             logger.info(`[GraphDecomposition] Generated graph "${graph.name}" with ${graph.nodes.length} nodes.`);
             return graph;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[GraphDecomposition] Decomposition failed:', error);
             void userQuery;
@@ -122,6 +123,7 @@ export class GraphDecompositionService {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private validateNodes(nodes: any[]): GraphNode[] {
         return nodes.map(n => ({
             id: String(n.id),
@@ -132,6 +134,7 @@ export class GraphDecompositionService {
         })).slice(0, 10); // Hard limit
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private validateEdges(edges: any[]): GraphEdge[] {
         return edges.map(e => ({
             sourceId: String(e.sourceId),

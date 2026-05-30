@@ -255,6 +255,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                     <div className="grid grid-cols-1 gap-3">
                         <AnimatePresence mode="popLayout">
                             {paginatedProducts.map((product, index) => (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 <ContextMenu.Root {...({ key: product.id } as any)}>
                                     <ContextMenu.Trigger asChild>
                                         <motion.div
@@ -321,6 +322,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                                         await MarketplaceService.deleteProduct(product.id);
                                                         toast.success('Product deleted successfully');
                                                         loadProducts();
+                                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                                     } catch (err: unknown) {
                                                         toast.error('Failed to delete product');
                                                     }

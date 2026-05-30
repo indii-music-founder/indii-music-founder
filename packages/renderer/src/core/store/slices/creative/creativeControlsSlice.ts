@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { z } from 'zod';
@@ -217,7 +218,9 @@ export interface CreativeControlsSlice {
  * Factory that returns the controls/inputs portion of the creative slice.
  */
 export function buildCreativeControlsState(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _get: any
 ): CreativeControlsSlice {
     const whiskKeyMap: Record<WhiskCategory, keyof WhiskState> = {
@@ -323,10 +326,12 @@ export function buildCreativeControlsState(
             return { characterReferences: [...state.characterReferences, ref] };
         }),
         removeCharacterReference: (id) => set((state: CreativeControlsSlice) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             characterReferences: state.characterReferences.filter((r: any) => r.image.id !== id)
         })),
         clearCharacterReferences: () => set({ characterReferences: [] }),
         updateCharacterReference: (id, updates) => set((state: CreativeControlsSlice) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             characterReferences: state.characterReferences.map((r: any) => r.image.id === id ? { ...r, ...updates } : r)
         })),
 
@@ -362,6 +367,7 @@ export function buildCreativeControlsState(
 
         savedPrompts: [],
         savePrompt: (prompt) => set((state: CreativeControlsSlice) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         deletePrompt: (id) => set((state: CreativeControlsSlice) => ({ savedPrompts: state.savedPrompts.filter((p: any) => p.id !== id) })),
 
         whiskState: {
@@ -449,6 +455,7 @@ export function buildCreativeControlsState(
         // Clipboard Actions
         clipboardItems: [],
         pinToClipboard: (item) => set((state: CreativeControlsSlice) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (state.clipboardItems.some((i: any) => i.id === item.id)) return state;
             const newItem: ClipboardItem = {
                 id: item.id,
@@ -461,6 +468,7 @@ export function buildCreativeControlsState(
             return { clipboardItems: [newItem, ...state.clipboardItems] };
         }),
         unpinFromClipboard: (id) => set((state: CreativeControlsSlice) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             clipboardItems: state.clipboardItems.filter((i: any) => i.id !== id)
         })),
         clearClipboard: () => set({ clipboardItems: [] }),

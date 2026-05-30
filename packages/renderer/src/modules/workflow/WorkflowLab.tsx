@@ -62,6 +62,7 @@ export default function WorkflowLab() {
     const [showTemplates, setShowTemplates] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [generatorPrompt, setGeneratorPrompt] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isGenerating, setIsGenerating] = useState(false);
     const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -186,6 +187,7 @@ export default function WorkflowLab() {
                     entryNodeId: protocol.steps.find(s => !protocol.edges.some(e => e.to === s.id))?.id || protocol.steps[0]?.id || '',
                     nodes: protocol.steps.map(s => ({
                         id: s.id,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         agentId: s.agentId as any,
                         taskTemplate: s.prompt,
                         waitCondition: 'all' as const

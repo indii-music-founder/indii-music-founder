@@ -182,6 +182,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         try {
             // DistroKid usually places status files or uses a specific folder structure
             // For this implementation, we check if a .live or .published file exists in the outbox
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const remotePath = `/outgoing/${releaseId}.status`;
             const result = await window.electronAPI.sftp.listDirectory(`/outgoing/`);
             

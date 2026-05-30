@@ -17,6 +17,7 @@ vi.mock('firebase/app', () => ({
     getApps: vi.fn(() => [])
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 vi.mock('firebase/auth', async (importOriginal) => {
     return {
         serverTimestamp: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock('firebase/auth', async (importOriginal) => {
     };
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 vi.mock('firebase/firestore', async (importOriginal) => {
     return {
         serverTimestamp: vi.fn(),

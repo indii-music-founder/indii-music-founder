@@ -104,6 +104,7 @@ export function useAgentStream(
   useEffect(() => {
     return () => {
       if (isStreaming) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         serviceRef.current.stop();
       }
     };

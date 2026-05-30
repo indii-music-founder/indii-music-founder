@@ -13,6 +13,7 @@ describe('Agent Schema Lock Proof', () => {
         if (tool && tool.parameters) {
             // This should throw in strict mode or simply not work
             try {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore - intentional mutation for test
                 (tool.parameters as unknown as { required: string[] }).required.push('MUTATION_ATTEMPT');
             } catch (_e: unknown) {

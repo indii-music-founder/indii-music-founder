@@ -60,6 +60,7 @@ import {
     type OnboardingPhase,
     type UserProfile,
     type ConversationFile,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     type ContentPart,
     type FunctionCallPart,
     type UpdateProfileArgs,
@@ -75,6 +76,7 @@ import {
 // --- Main Conversation Runner ---
 
 export async function runOnboardingConversation(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     history: { role: string, parts: any[], thoughtSignature?: string }[],
     userProfile: UserProfile,
     mode: 'onboarding' | 'update',

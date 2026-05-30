@@ -21,6 +21,7 @@ export const CoreTools = {
         targetAgentId: string;
         task: string;
         sharedContext?: string;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     }, context, toolContext) => {
         const { agentService } = await import('../AgentService');
         const { toolError } = await import('../utils/ToolUtils');
@@ -69,6 +70,7 @@ export const CoreTools = {
         const { useStore } = await import('@/core/store');
         // Use toolContext to get the state action if possible, 
         // fall back to global store for actions that mutate outside transaction scope
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const state = toolContext?.getState() || useStore.getState();
         const { requestApproval } = useStore.getState();
         const actionType = args.type || 'default';
@@ -289,6 +291,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     reason: { type: 'STRING' as const },
                 },
                 required: ['score', 'pass', 'reason'],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any, undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST);
 
             return {

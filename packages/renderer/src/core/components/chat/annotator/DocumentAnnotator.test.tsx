@@ -68,6 +68,7 @@ describe('DocumentAnnotator', () => {
         
         // Wait for PDF to load and pagination to show " / 3"
         await waitFor(() => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const pageText = screen.getByText((content, element) => content.includes('/ 3'));
             expect(pageText).toBeInTheDocument();
         });

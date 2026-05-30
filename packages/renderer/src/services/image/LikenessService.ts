@@ -14,6 +14,7 @@ import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storag
 import { logger } from '@/utils/logger';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST;
 /** Maximum number of likeness images per user */
 export const MAX_LIKENESS_IMAGES = 5;

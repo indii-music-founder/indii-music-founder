@@ -396,6 +396,7 @@ describe('Agent Delegation and Collaboration', () => {
 
         it('handles validation for all agent combinations efficiently', () => {
             const agents = VALID_AGENT_IDS;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const combinations = agents.length * agents.length;
 
             const start = Date.now();

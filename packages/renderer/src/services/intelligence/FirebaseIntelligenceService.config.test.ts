@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // HOISTED MOCKS
 const {
     mockGenerateContent,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockGenerateContentStream
 } = vi.hoisted(() => {
     return {

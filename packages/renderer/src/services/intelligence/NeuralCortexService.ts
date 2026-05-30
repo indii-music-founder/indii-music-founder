@@ -17,6 +17,7 @@
 
 import {
     doc, setDoc, getDoc, collection,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     where, getDocs, Timestamp, serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';

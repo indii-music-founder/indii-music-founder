@@ -173,6 +173,7 @@ export const createEmailSlice: StateCreator<EmailSlice> = (set, get) => ({
     },
 
     emailSync: async (provider?) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { emailSetSyncing, emailSetMessages, emailAppendMessages, emailAccounts, emailSetError } = get();
         emailSetSyncing(true);
         emailSetError(null);

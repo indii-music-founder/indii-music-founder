@@ -43,6 +43,7 @@ export class DigitalHandshake {
         isDestructive: boolean = false,
         toolName?: string,
         agentIdentity?: AgentIdentityCard,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         toolArgs?: Record<string, any>
     ): Promise<boolean> {
         const { computeAllocation } = directive;

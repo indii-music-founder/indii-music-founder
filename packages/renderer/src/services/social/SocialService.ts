@@ -432,6 +432,7 @@ export class SocialService {
   /**
    * Seed social database logic (REMOVED: Use real data only)
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static async seedDatabase(userId: string): Promise<void> {
     // No-op to prevent hardcoded stub data
   }

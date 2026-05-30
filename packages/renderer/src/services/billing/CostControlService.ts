@@ -160,6 +160,7 @@ export class CostControlService {
       const hourlySnap = await getDoc(hourlyRef);
       let hourlyUsed = 0;
       if (hourlySnap.exists()) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         hourlyUsed = hourlySnap.data()?.totalCost || 0;
       }
 

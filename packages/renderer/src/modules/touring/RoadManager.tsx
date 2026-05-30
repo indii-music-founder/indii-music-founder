@@ -222,6 +222,7 @@ const RoadManager: React.FC = () => {
         emergencyContacts,
         saveEmergencyContact,
         deleteEmergencyContact,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         loading: touringLoading
     } = useTouring();
 
@@ -295,8 +296,10 @@ const RoadManager: React.FC = () => {
         try {
             const generateItinerary = httpsCallable(functions, 'generateItinerary');
             const response = await generateItinerary({ locations, dates: { start: startDate, end: endDate } });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rawResult = response.data as any;
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
                 city: stop.city || '',
                 date: stop.date || '',

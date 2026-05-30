@@ -19,6 +19,7 @@ export interface AgentNode {
     moduleId?: ModuleId;
     label: string;
     status: AgentNodeStatus;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: Record<string, any>;
     position?: { x: number; y: number };
 }
@@ -40,6 +41,7 @@ export interface AgentEdge {
 export interface AgentGraph {
     nodes: AgentNode[];
     edges: AgentEdge[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
 
@@ -50,5 +52,6 @@ export interface AgentGraphContext {
     graphId: string;
     currentNodes: string[]; // Active node IDs
     history: string[];      // Path taken
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, any>; // Shared data between nodes
 }

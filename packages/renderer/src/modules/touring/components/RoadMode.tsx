@@ -118,6 +118,7 @@ interface NearbyResultsViewProps {
 }
 
 function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResultsViewProps) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { t } = useTranslation();
     const ActionIcon = action.icon;
 

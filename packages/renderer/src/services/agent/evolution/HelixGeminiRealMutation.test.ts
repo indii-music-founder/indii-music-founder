@@ -93,6 +93,7 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
 
     // 4. Initialize Engine with the "Real" Mutation Function
     const mockFitnessFn = vi.fn().mockImplementation(async (g) => g.fitness || 0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const mockCrossoverFn = vi.fn().mockImplementation(async (p1, p2) => ({
       ...p1,
       id: 'child',

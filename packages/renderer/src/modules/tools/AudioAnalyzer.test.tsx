@@ -132,6 +132,7 @@ describe('AudioAnalyzer (Sonic DNA Console)', () => {
     it('handles file upload and triggers analysis', async () => {
         render(<AudioAnalyzer />);
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const file = new File(['dummy content'], 'test-audio.mp3', { type: 'audio/mpeg' });
         // The input is hidden, so we query by type or traverse
         // In the component: <input type="file" ... onChange={handleFileUpload} />

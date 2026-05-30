@@ -279,6 +279,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                 <motion.button
                                     key={asset.id}
                                     draggable={asset.type === 'image' || asset.type === 'video'}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
                                         e.dataTransfer?.setData('text/plain', asset.id);
                                     }}
@@ -345,6 +346,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                 <motion.button
                                     key={asset.id}
                                     draggable={asset.type === 'image' || asset.type === 'video'}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
                                         e.dataTransfer?.setData('text/plain', asset.id);
                                     }}

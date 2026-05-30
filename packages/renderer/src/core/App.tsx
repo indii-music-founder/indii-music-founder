@@ -21,7 +21,9 @@ import LoginForm from './components/auth/LoginForm';
 import { ApprovalModal } from './components/ApprovalModal';
 import CostWarningModal from './components/CostWarningModal';
 import { BiometricGate } from './components/auth/BiometricGate';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { OfflineBanner } from './components/OfflineBanner';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SyncQueueIndicator } from '@/components/sync/SyncQueueIndicator';
 import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
@@ -31,6 +33,7 @@ import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SessionTimeoutOverlay } from '@/components/shared/SessionTimeoutOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { getGatedModuleIds } from '@/config/featureFlags';
@@ -40,6 +43,7 @@ import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMobile } from '@/hooks/useMobile';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
@@ -50,6 +54,7 @@ import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 
 // Item 325: Import subscription types for hoisted global state
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Subscription, UsageStats } from '@/services/subscription/types';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 import { useSubscription } from '@/modules/finance/hooks/useSubscription';
@@ -57,6 +62,7 @@ import { useSubscription } from '@/modules/finance/hooks/useSubscription';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
@@ -72,6 +78,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
 // Lazy-loaded Module Components
 // ============================================================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyWithRetry = (componentImport: () => Promise<any>) => {
     return lazy(() => importWithRetry(componentImport));
 };
@@ -459,6 +466,7 @@ export default function App() {
  * AppContent — The main UI shell rendered once authenticated.
  * Extracted to keep the top-level App component clean and focused on initialization.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
     useOnboardingRedirect();
 

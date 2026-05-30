@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { X, Search, ShoppingBag, Music, Check, Filter } from 'lucide-react';
 import { Product } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProductPickerModalProps {

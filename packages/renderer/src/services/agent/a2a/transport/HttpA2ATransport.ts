@@ -28,6 +28,7 @@ export class HttpA2ATransport implements A2ATransport {
     return response.json();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async postPlain(payload: any): Promise<any> {
     const response = await fetch(`${this.baseUrl}/rpc`, {
       method: 'POST',
@@ -42,6 +43,7 @@ export class HttpA2ATransport implements A2ATransport {
     return response.json();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async discovery(): Promise<{ agents: any[] }> {
     const response = await fetch(`${this.baseUrl}/discovery`, {
       method: 'GET',

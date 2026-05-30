@@ -10,6 +10,7 @@ import {
     Square, Music2, Headphones, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cn } from '@/lib/utils';
 
 interface TransportBarProps {

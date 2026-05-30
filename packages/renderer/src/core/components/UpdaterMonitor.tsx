@@ -27,6 +27,7 @@ export const UpdaterMonitor: React.FC = () => {
                 setStatus('checking');
                 setIsVisible(true);
             }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             api.updater.onAvailable((info: any) => {
                 logger.info(`[Updater] Update available: ${info.version}`);
                 setVersion(info.version);
@@ -37,16 +38,19 @@ export const UpdaterMonitor: React.FC = () => {
                 logger.info('[Updater] No update available');
                 setTimeout(() => setIsVisible(false), 3000);
             }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             api.updater.onProgress((data: any) => {
                 setStatus('downloading');
                 setProgress(data as UpdateProgress);
                 setIsVisible(true);
             }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             api.updater.onDownloaded((info: any) => {
                 logger.info(`[Updater] Update downloaded: ${info.version}`);
                 setStatus('downloaded');
                 setIsVisible(true);
             }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             api.updater.onError((err: any) => {
                 logger.error('[Updater] Error:', err.message);
                 setError(err.message);

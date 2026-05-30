@@ -22,6 +22,7 @@ const NodeWrapper: React.FC<{ children: React.ReactNode, selected: boolean, clas
 );
 
 export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { nodes, setSelectedNodeId, setNodes } = useStore(useShallow(state => ({
         nodes: state.nodes,
         setSelectedNodeId: state.setSelectedNodeId,

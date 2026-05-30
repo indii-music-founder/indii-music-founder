@@ -65,6 +65,7 @@ describe('FingerprintService', () => {
     });
 
     it('should use existing duration if provided (optimization check)', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const existingFeatures = {
             bpm: 128,
             key: 'A',

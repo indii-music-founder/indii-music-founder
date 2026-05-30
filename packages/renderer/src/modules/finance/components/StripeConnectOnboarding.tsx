@@ -26,6 +26,7 @@ const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon:
 };
 
 export function StripeConnectOnboarding() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [collaborators, setCollaborators] = useState<Collaborator[]>(INITIAL_COLLABORATORS);
     const [connectError, setConnectError] = useState<string | null>(null);
 

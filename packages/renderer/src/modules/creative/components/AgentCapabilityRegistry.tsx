@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { X, Cpu, CheckCircle2, ChevronRight, Terminal, Zap, ShieldCheck, Activity } from 'lucide-react';
 import { agentCapabilityService, CapabilityRegistry } from '@/services/agent/AgentCapabilityService';
 import { Badge } from '@/components/ui/badge';

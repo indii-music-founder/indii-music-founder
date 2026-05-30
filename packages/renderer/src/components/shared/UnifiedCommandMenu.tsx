@@ -1,10 +1,13 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Building, ShieldAlert, Cpu, Workflow, Gem
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';

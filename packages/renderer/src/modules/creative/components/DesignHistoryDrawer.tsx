@@ -21,6 +21,7 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
         try {
             await saveDesignVersion();
             toast.success("Design version saved!");
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
             toast.error("Failed to save version");
         } finally {

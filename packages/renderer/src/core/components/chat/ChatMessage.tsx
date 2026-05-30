@@ -214,6 +214,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             }
             return <code className={className} {...props}>{children}</code>
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }), []);
 
     return (

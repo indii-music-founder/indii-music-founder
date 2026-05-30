@@ -56,6 +56,7 @@ export const FinanceAgent: AgentConfig = {
             const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
                 // Formatting the image data for Gemini Vision via FirebaseIntelligenceService
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const contents: any[] = [
                     {
                         role: 'user' as const,
@@ -146,6 +147,7 @@ export const FinanceAgent: AgentConfig = {
                 }
             };
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         generate_tax_report: async (args: { year: number; transactions: any[] }) => {
             const highValuepayouts = args.transactions.filter(t => t.amount >= 600);
             return {

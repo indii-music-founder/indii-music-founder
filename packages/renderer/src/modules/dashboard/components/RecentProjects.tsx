@@ -30,6 +30,7 @@ export default function RecentProjects() {
         setModule('creative');
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleCreate = async (name: string, type: 'creative' | 'music' | 'marketing' | 'legal') => {
         try {
             const p = await DashboardService.createProject(name);

@@ -71,6 +71,7 @@ describe('📚 Keeper: Token Budget & Context Integrity', () => {
         const maxTokens = 800; // Should force dropping middle1 and middle2
 
         // Act
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const result = ContextManager.truncateContext(history, maxTokens);
 
         // Assert

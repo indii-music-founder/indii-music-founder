@@ -28,6 +28,7 @@ export const BrandAgent: AgentConfig = {
             try {
                 // If an asset path is provided, use the high-fidelity vision tool
                 if (args.assetPath && window.electronAPI?.brand) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const response = await window.electronAPI.brand.analyzeConsistency(args.assetPath, args.brandKit || {}) as any;
                     if (response.success) {
                         return { success: true, data: { analysis: response.report } };

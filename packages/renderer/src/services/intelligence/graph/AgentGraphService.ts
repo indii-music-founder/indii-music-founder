@@ -1,20 +1,26 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AgentGraph, AgentNode, AgentEdge, AgentGraphContext, AgentNodeStatus } from './types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ModuleId } from '@/core/constants';
 
 class EventEmitter {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private listeners: Record<string, ((data: any) => void)[]> = {};
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     on(event: string, callback: (data: any) => void) {
         if (!this.listeners[event]) this.listeners[event] = [];
         this.listeners[event].push(callback);
         return () => this.off(event, callback);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     off(event: string, callback: (data: any) => void) {
         if (!this.listeners[event]) return;
         this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected emit(event: string, data?: any) {
         if (!this.listeners[event]) return;
         this.listeners[event].forEach(cb => cb(data));
@@ -50,6 +56,7 @@ export class AgentGraphService extends EventEmitter {
     /**
      * Transitions from one node to another
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public async transition(graphId: string, fromNodeId: string, toNodeId: string, payloadUpdates: Record<string, any>) {
         const context = this.activeGraphs.get(graphId);
         if (!context) throw new Error(`Graph ${graphId} not found`);

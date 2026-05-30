@@ -50,6 +50,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         // Ensure inbox project exists and list all active projects
         try {
           await ProjectService.ensureInbox(user.uid);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
           if (e.message.includes('A real authenticated user ID is required')) {
             Logger.warn('ProjectList', 'Skipping inbox creation for unauthenticated user');
@@ -92,6 +93,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleRenameProject = async (e: React.MouseEvent, project: any) => {
     e.stopPropagation();
     const newName = prompt('Rename project:', project.name);
@@ -109,6 +111,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDeleteProject = async (e: React.MouseEvent, project: any) => {
     e.stopPropagation();
     if (project.name === 'Inbox') {
@@ -140,6 +143,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
 
   // Filter out duplicate Inbox entries if the backend hasn't cleaned them up yet
   const uniqueProjects = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   projects.forEach((p: any) => {
     if (p.name === 'Inbox' && uniqueProjects.has('Inbox')) return;
     uniqueProjects.set(p.name === 'Inbox' ? 'Inbox' : p.id, p);
@@ -183,6 +187,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
             ) : projectArray.length === 0 ? (
               <div className="px-4 py-2 text-xs text-gray-500">No projects</div>
             ) : (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               projectArray.map((project: any) => {
                 const isActive = selectedProjectId === project.id;
                 return (

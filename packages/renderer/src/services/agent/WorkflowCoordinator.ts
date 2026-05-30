@@ -157,6 +157,7 @@ export class WorkflowCoordinator {
             if (onStream) onStream(text);
             return text;
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
             return "DELEGATED_TO_AGENT";
         }

@@ -18,6 +18,7 @@ interface VisualVerificationRecord {
         overallPass: boolean;
         gapsFound: string;
     } | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     createdAt: any;
 }
 
@@ -89,6 +90,7 @@ export function VisualVerificationsPane() {
                             </span>
                             {record.createdAt?.toDate && (
                                 <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     {formatDistanceToNow(typeof record.createdAt.toDate === 'function' ? record.createdAt.toDate() : new Date(record.createdAt as any), { addSuffix: true })}
                                 </span>
                             )}

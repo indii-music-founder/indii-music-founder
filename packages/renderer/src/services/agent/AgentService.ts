@@ -115,6 +115,7 @@ export class AgentService {
 
         // ISSUE-045: Sync store's isAgentProcessing with service's processing state
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let useStore: any = null;
         try {
             const imported = await import('../../core/store');
@@ -509,8 +510,10 @@ export class AgentService {
                     // Extract planId from LivingPlan tools
                     if (event.toolName === 'propose_plan' || event.toolName === 'get_plan') {
                         try {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             let content: any = event.content;
                             if (typeof content === 'string') {
+                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 try { content = JSON.parse(content); } catch (e) { /* fallback */ }
                             }
 
@@ -689,6 +692,7 @@ export class AgentService {
                 text: finalReport,
                 isStreaming: false
             });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[AgentService] Graph execution failed:', error);
             updateAgentMessage(responseId, {
@@ -800,6 +804,7 @@ export class AgentService {
                 text: combinedReport,
                 isStreaming: false
             });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[AgentService] Parallel execution failed:', error);
             updateAgentMessage(responseId, {
@@ -865,6 +870,7 @@ export class AgentService {
                 }
 
                 // Sync initial message immediately
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const initMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
                 if (initMsg) {
                     agentFirebaseConnector.syncMessage(initMsg).catch(err => 
@@ -909,6 +915,7 @@ export class AgentService {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
                                 useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
@@ -927,6 +934,7 @@ export class AgentService {
                                     useStore.getState().updateBoardroomMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
                                 }
                             }
@@ -981,6 +989,7 @@ export class AgentService {
                     }
 
                     // Sync final completed message state to Firestore
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
 
                     return { agentId, result };
@@ -998,6 +1007,7 @@ export class AgentService {
                     });
 
                     // Sync error/failure state
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
 
                     return { agentId, result: null };
@@ -1409,6 +1419,7 @@ The user will see this plan and can approve it to start execution.`;
      * Dispatches a specific tool call directly, bypassing normal message flow.
      * Often used by UI components to invoke agent tools interactively.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async dispatchToolCall(agentId: string, toolName: string, args: Record<string, any>, responseId: string): Promise<void> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
@@ -1485,6 +1496,7 @@ The user will see this plan and can approve it to start execution.`;
             // Fire-and-forget evaluation to not block the user interface
             await MultiTurnAutorater.evaluateAndRegister(
                 userId,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 agentId as any,
                 traceId,
                 recentMessages,

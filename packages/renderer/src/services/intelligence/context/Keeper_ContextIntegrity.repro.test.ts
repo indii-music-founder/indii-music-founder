@@ -120,6 +120,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
     afterEach(() => {
         // Clean up the electronAPI we added
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         delete window.electronAPI;
     });

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from 'react';
 import { Paintbrush, Video, Megaphone, Users, Box, Search, Cog, Database, type LucideIcon } from 'lucide-react';
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { TransactionManager } from './context/TransactionManager';
 import { LoopDetector } from './LoopDetector';

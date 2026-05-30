@@ -5,6 +5,7 @@ import VideoWorkflow from './VideoWorkflow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../../services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 
 // --- Mocks ---
@@ -15,14 +16,14 @@ const {
     mockSetJobId,
     mockSetJobStatus,
     mockSetProgress,
-    mockSetPrompt,
+    mockSetCreativePrompt,
     mockUpdateJobStatus
 } = vi.hoisted(() => ({
     mockAddToHistory: vi.fn(),
     mockSetJobId: vi.fn(),
     mockSetJobStatus: vi.fn(),
     mockSetProgress: vi.fn(),
-    mockSetPrompt: vi.fn(),
+    mockSetCreativePrompt: vi.fn(),
     mockUpdateJobStatus: vi.fn()
 }));
 
@@ -34,7 +35,8 @@ vi.mock('@/core/store', () => {
         pendingPrompt: null,
         setPendingPrompt: vi.fn(),
         addToHistory: mockAddToHistory,
-        setPrompt: mockSetPrompt,
+        creativePrompt: '',
+        setCreativePrompt: mockSetCreativePrompt,
         studioControls: { resolution: '1080p', duration: 4, aspectRatio: '16:9' },
         videoInputs: {},
         currentOrganizationId: 'org-123',

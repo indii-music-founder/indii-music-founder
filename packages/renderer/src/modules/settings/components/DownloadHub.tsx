@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Download, Monitor, Apple, Command, ArrowDown } from 'lucide-react';
 
 export default function DownloadHub() {

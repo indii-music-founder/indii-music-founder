@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { AutonomousGenerationDialog } from './AutonomousGenerationDialog';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { QuotaExceededError } from '@/shared/types/errors';
 
 // Mock dependencies

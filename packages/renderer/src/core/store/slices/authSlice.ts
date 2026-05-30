@@ -17,10 +17,15 @@ import {
 /** Minimal interface for E2E mock auth objects that provide their own listener */
 interface E2EMockAuth {
     onAuthStateChanged: (callback: (user: User | null) => void) => () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInAnonymously: () => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     createUserWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendPasswordResetEmail: (email: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInWithPopup: (provider: any) => Promise<any>;
     signOut: () => Promise<void>;
 }
@@ -64,6 +69,7 @@ const wrappedSendPasswordResetEmail = (authObj: Auth | E2EMockAuth, email: strin
     return sendPasswordResetEmail(authObj as Auth, email);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const wrappedSignInWithPopup = (authObj: Auth | E2EMockAuth, provider: any) => {
     if (typeof (authObj as E2EMockAuth).signInWithPopup === 'function') {
         return (authObj as E2EMockAuth).signInWithPopup(provider);
@@ -303,8 +309,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
         if (electronAuth && electronAuth.onUserUpdate) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             electronUnsub = electronAuth.onUserUpdate(async (tokens: any) => {
                 if (tokens) {
                     logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');

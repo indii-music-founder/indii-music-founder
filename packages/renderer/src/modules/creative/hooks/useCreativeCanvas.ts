@@ -40,10 +40,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // UI State
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string>('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
     const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
 
     // Data State

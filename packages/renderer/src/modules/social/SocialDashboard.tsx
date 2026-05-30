@@ -381,6 +381,7 @@ function TrendingTopicsPanel() {
 }
 
 // Helper Icon Component
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ActivityIcon({ size, className }: { size: number, className?: string }) {
     return (
         <svg

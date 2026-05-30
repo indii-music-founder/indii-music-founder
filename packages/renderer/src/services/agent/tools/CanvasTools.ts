@@ -179,6 +179,7 @@ export const CanvasTools = {
                     else if (height) img.scaleToHeight(height);
                     
                     canvas.add(img);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     canvas.getObjects().sort((a: any, b: any) => {
                         const zA = (a.data?.zIndex as number) || 0;
                         const zB = (b.data?.zIndex as number) || 0;
@@ -191,6 +192,7 @@ export const CanvasTools = {
                         { shapeType, zIndex },
                         `Image drawn successfully at (${x}, ${y}) with z-index ${zIndex} directly onto the creative canvas.`
                     );
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (err: any) {
                     return toolError(`Failed to load image from URL: ${imageUrl}. Error: ${err.message}`);
                 }

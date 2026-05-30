@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // HOISTED MOCKS

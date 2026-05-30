@@ -724,6 +724,7 @@ Return a JSON object with:
     /**
      * Update a specific milestone within a timeline.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private async updateMilestone(timeline: Timeline, milestoneIndex: number): Promise<void> {
         timeline.completedCount = timeline.milestones.filter(m => m.status === 'completed').length;
         timeline.updatedAt = Date.now();

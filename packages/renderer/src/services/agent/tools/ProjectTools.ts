@@ -161,6 +161,7 @@ export const ProjectTools = {
         }
     }),
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     update_project_metadata: wrapTool('update_project_metadata', async (args: { projectId: string; metadata: Record<string, any> }) => {
         try {
             const { useStore } = await import('@/core/store');

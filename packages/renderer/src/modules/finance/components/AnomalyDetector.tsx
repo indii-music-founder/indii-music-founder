@@ -223,18 +223,21 @@ export function AnomalyDetector() {
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="trackA" name="trackA" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
+                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                         // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackA-${index}`} fill={entry.trackA_spike ? '#ef4444' : '#8b5cf6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackB" name="trackB" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
+                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                         // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackB-${index}`} fill={entry.trackB_spike ? '#ef4444' : '#3b82f6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackC" name="trackC" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
+                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                         // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackC-${index}`} fill={entry.trackC_spike ? '#ef4444' : '#10b981'} />;
                                     })}

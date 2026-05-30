@@ -15,6 +15,7 @@ describe('The Director 🎬', () => {
     });
 
     it('Scenario: The Rough Cut - manages a busy timeline', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const store = useVideoEditorStore.getState();
 
         // 1. Add multiple clips (The "Dailies")

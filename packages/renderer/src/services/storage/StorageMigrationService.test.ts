@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StorageMigrationService } from './StorageMigrationService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth, db, storage } from '../firebase';
 import { initDB } from './repository';
 import { uploadBytes } from 'firebase/storage';

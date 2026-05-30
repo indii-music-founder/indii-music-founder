@@ -10,6 +10,7 @@ export interface SongDnaInput {
   metadata?: Partial<ExtendedGoldenMetadata>;
   releaseIntent?: ReleaseHarnessInput['releaseIntent'];
   trackId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userProfile?: any;
 }
 

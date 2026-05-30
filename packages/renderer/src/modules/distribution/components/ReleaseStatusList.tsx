@@ -18,6 +18,7 @@ interface ReleaseStatusListProps {
     onViewReport: (releaseId: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ReleaseStatusList({ releases, onDeliver, onViewReport }: ReleaseStatusListProps) {
     if (releases.length === 0) {
         return (

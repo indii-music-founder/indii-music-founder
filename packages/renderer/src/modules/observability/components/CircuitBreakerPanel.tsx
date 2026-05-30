@@ -56,6 +56,7 @@ export const CircuitBreakerPanel: React.FC = () => {
     const [budget, setBudget] = useState<BudgetStatus | null>(null);
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { user } = useStore(useShallow(s => ({ user: s.user })));
 
     const checkBudget = useCallback(async () => {

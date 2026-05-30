@@ -10,6 +10,7 @@
  */
 
 import type { Track, CreateTrack, UpdateTrack, Distribution, CreateDistribution, AnalyticsEvent } from '@indii/shared';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TrackSchema, CreateTrackSchema, UpdateTrackSchema, DistributionSchema, CreateDistributionSchema } from '@indii/shared';
 
 export interface ClientConfig {

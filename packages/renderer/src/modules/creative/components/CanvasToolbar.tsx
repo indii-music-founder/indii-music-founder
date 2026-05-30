@@ -1,4 +1,5 @@
 import React from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Square, Circle as CircleIcon, Type, Wand2, Scan, Eraser, Crop, Trash2, MousePointer2, Minus, Pentagon, Undo2, Redo2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -19,6 +20,7 @@ interface CanvasToolbarProps {
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     addRectangle,
     addCircle,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addText,
     setTool,
     undo,
