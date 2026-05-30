@@ -123,7 +123,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
                 // 3. Stage and Upload
                 const releaseId = metadata.id || `DK-${Date.now()}`;
-                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files) as any;
+                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files);
 
                 if (!stagingValues.success || !stagingValues.packagePath) {
                     throw new Error(stagingValues.error || 'Failed to stage release files locally');
@@ -183,10 +183,10 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             // DistroKid usually places status files or uses a specific folder structure
             // For this implementation, we check if a .live or .published file exists in the outbox
             const remotePath = `/outgoing/${releaseId}.status`;
-            const result = await (window.electronAPI.sftp as any).listDirectory(`/outgoing/`) as any;
+            const result = await window.electronAPI.sftp.listDirectory(`/outgoing/`);
             
             if (result.success && result.files) {
-                const statusFile = result.files.find((f: any) => f.name.startsWith(releaseId));
+                const statusFile = result.files.find((f: { name: string }) => f.name.startsWith(releaseId));
                 if (statusFile) {
                     if (statusFile.name.endsWith('.live')) return 'live';
                     if (statusFile.name.endsWith('.failed')) return 'failed';
@@ -229,7 +229,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         try {
             // Attempt to fetch DSR from SFTP
             const remotePath = `/reports/sales_${period.startDate.substring(0, 7)}.tsv`;
-            const fileResult = await (window.electronAPI.sftp as any).readFile(remotePath) as any;
+            const fileResult = await window.electronAPI.sftp.readFile(remotePath);
 
             if (fileResult.success && fileResult.content) {
                 const { earningsReportService } = await import('@/services/distribution/proprietary-ingestion/EarningsReportService');

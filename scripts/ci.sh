@@ -8,7 +8,7 @@ echo "======================================"
 fail=0
 
 echo "--> Step 0: Preflight Config Check"
-if ! DEV=true npm run preflight; then
+if ! npm run preflight:dev; then
   echo "❌ Preflight config check failed."
   fail=1
 else

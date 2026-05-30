@@ -146,7 +146,7 @@ const GenerateAudioSchema = BaseMediaRequest.extend({
  */
 async function uploadToStorage(userId: string, buffer: Buffer, extension: string, contentType?: string): Promise<string> {
   const bucket = storage.bucket();
-  const filename = `creative/${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
+  const filename = `creative/${userId}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
   const file = bucket.file(filename);
   await file.save(buffer, {
     resumable: false,
@@ -444,7 +444,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
 /**
  * generateImageV3 - Routes to gemini-3-pro-image-preview
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, secrets: [geminiApiKey] }, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
@@ -519,7 +519,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, secrets: [geminiApi
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] }, async (request) => {
+export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
@@ -622,7 +622,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
  * Flow, and Shorts, with API access rolling out later. This callable is wired so
  * the UI can use the real backend path as soon as the API model ID is configured.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] }, async (request) => {
+export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
   const parsed = GenerateOmniRemixSchema.safeParse(request.data);
@@ -708,7 +708,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 /**
  * generateAudioV3 - Routes to NB2
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] }, async (request) => {
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateAudioSchema.safeParse(request.data);

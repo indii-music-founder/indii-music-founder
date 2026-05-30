@@ -62,7 +62,7 @@ export class RoadTravelCompiler implements HarnessCompiler<RoadTravelInput, Road
       if (amount <= 0) return;
       totalTravelCost += amount;
       costLines.push({
-        id: `cost_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `cost_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
         userId: ctx.userId,
         amount,
         currency: 'USD',
@@ -90,7 +90,7 @@ export class RoadTravelCompiler implements HarnessCompiler<RoadTravelInput, Road
     if (totalHours > 0 && input.timeValueRate) {
       totalTimeValue = totalHours * input.timeValueRate;
       costLines.push({
-        id: `cost_time_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `cost_time_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
         userId: ctx.userId,
         amount: totalTimeValue,
         currency: 'USD',
@@ -109,7 +109,7 @@ export class RoadTravelCompiler implements HarnessCompiler<RoadTravelInput, Road
     if (route.mileage > 0) {
       const mileageAmount = route.mileage * 0.67;
       costLines.push({
-        id: `cost_mileage_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `cost_mileage_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
         userId: ctx.userId,
         amount: mileageAmount,
         currency: 'USD',

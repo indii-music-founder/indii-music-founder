@@ -27,7 +27,7 @@ export const BugReportTools: Record<string, AnyToolFunction> = {
         const state = useStore.getState();
 
         const bugReport = {
-            id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            id: `bug-${Date.now()}-${crypto.randomUUID().split('-')[0]}`,
             title,
             description,
             stepsToReproduce,
@@ -170,7 +170,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         const state = useStore.getState();
 
         const featureRequest = {
-            id: `feat-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            id: `feat-${Date.now()}-${crypto.randomUUID().split('-')[0]}`,
             title,
             description,
             useCase,

@@ -4,7 +4,8 @@ import * as dotenv from "dotenv";
 // Load env vars from .env file
 dotenv.config();
 
-const isProd = process.env.NODE_ENV === "production" || process.env.DEV !== "true";
+const args = process.argv.slice(2);
+const isProd = args.includes("--prod") || process.env.NODE_ENV === "production";
 
 // ANSI colors
 const red = "\x1b[31m";

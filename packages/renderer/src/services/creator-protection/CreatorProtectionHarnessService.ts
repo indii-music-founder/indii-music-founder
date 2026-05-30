@@ -3,8 +3,8 @@ import type {
   HarnessFinding,
   HarnessLegalBasis,
   HarnessRecommendation,
-} from '@/services/business-harness';
-import { createHarnessRun } from '@/services/business-harness';
+} from '@/services/business-harness/types';
+import { createHarnessRun } from '@/services/business-harness/types';
 import type {
   CreatorProtectionReadinessOutput,
   CreatorProtectionRun,
