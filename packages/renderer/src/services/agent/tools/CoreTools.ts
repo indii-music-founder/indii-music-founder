@@ -210,10 +210,10 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                 releasesSnap.forEach(doc => {
                     const release = doc.data();
                     let releaseDate: Date;
-                    if (typeof (release.releaseDate as any)?.toDate === 'function') {
-                        releaseDate = typeof (release.releaseDate as any).toDate === 'function' ? (release.releaseDate as any).toDate() : new Date(release.releaseDate as any);
-                    } else if ((release.releaseDate as any)?.seconds !== undefined) {
-                        releaseDate = new Date((release.releaseDate as any).seconds * 1000);
+                    if (typeof (release.releaseDate as { toDate?: () => Date })?.toDate === 'function') {
+                        releaseDate = typeof (release.releaseDate as { toDate?: () => Date }).toDate === 'function' ? (release.releaseDate as { toDate?: () => Date }).toDate!() : new Date(release.releaseDate as string | number);
+                    } else if ((release.releaseDate as { seconds?: number })?.seconds !== undefined) {
+                        releaseDate = new Date((release.releaseDate as { seconds: number }).seconds * 1000);
                     } else {
                         releaseDate = new Date(release.releaseDate as unknown as string | number);
                     }

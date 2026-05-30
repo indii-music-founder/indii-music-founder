@@ -1,7 +1,4 @@
-import type { RenderMediaOptions } from '@remotion/renderer';
 import { logger } from '@/utils/logger';
-import { renderMediaOnCloudrun } from '@remotion/cloudrun/client';
-import type { GcpRegion } from '@remotion/cloudrun';
 import { RemotionCloudRunConfig } from './remotion.cloudrun';
 
 export interface RenderConfig {
@@ -35,8 +32,10 @@ export class RenderService {
         try {
             logger.info(`[CloudRenderService] Dispatching GCP Cloud Run render for ${config.compositionId}...`);
 
-            const result = await renderMediaOnCloudrun({
-                region: RemotionCloudRunConfig.region as GcpRegion,
+            const cloudrunPkg = '@remotion/cloudrun/client';
+            const remotionCloudrun = await import(/* @vite-ignore */ cloudrunPkg);
+            const result = await remotionCloudrun.renderMediaOnCloudrun({
+                region: RemotionCloudRunConfig.region as any,
                 serviceName: RemotionCloudRunConfig.serviceName,
                 serveUrl: RemotionCloudRunConfig.siteName,
                 composition: config.compositionId,
@@ -103,7 +102,8 @@ export class RenderService {
             // The bundle location is configured via environment variable.
             const bundleLocation = import.meta.env.VITE_REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
 
-            const { renderMedia } = await import('@remotion/renderer');
+            const remotionPkg = '@remotion/renderer';
+            const { renderMedia } = await import(/* @vite-ignore */ remotionPkg);
             await renderMedia({
                 composition: {
                     id: config.compositionId,
