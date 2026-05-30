@@ -58,21 +58,26 @@
 
 ---
 
-## 4. Micro-Transactions
+## 4. Micro-Transactions & Credit-Based Purchases
 
-**Problem:** A lower-tier user runs slightly over their quota — they don't need to upgrade their entire subscription, they just need a small top-up.
+**Problem:** A lower-tier user runs slightly over their quota — they don't need to upgrade their entire subscription, they just need a small top-up. 
 
 **Concept:**
 
-- Pay-as-you-go for overages and one-off needs
-- Examples:
-  - User on the Basic plan needs 1 more video generation → buy a single credit
-  - User ran over their image generation quota → micro-purchase to finish the job
-  - One-time Proprietary Ingestion IP submission without upgrading to Pro tier
-- No forced upselling — respect the user's current tier choice
-- Transparent per-unit pricing for each feature
+- Pay-as-you-go credit system for overages and one-off needs.
+- **Credit Packs:** Users purchase "Indii Credits" via Stripe (e.g. $5 for 500 credits, $20 for 2500 credits).
+- **Consumption Model:**
+  - AI Generation (Image/Video): 10-50 credits per generation based on complexity.
+  - Proprietary Ingestion IP submission (Distribution): 100 credits per track.
+  - Audio Analysis/Mastering: 50 credits per track.
+- **Ledger Integration:** The `MembershipService` ledger tracks credit balances alongside subscription quotas. A negative quota triggers the circuit breaker, prompting a credit purchase.
+- **Auto-Top Up:** Optional setting to auto-purchase a credit pack when balance falls below a threshold.
+- No forced upselling — respect the user's current tier choice.
 
-**Implementation notes:** Stripe already integrated for subscriptions — micro-transactions would extend the existing payment infrastructure with credit-based purchases.
+**Implementation Architecture:** 
+- **Stripe:** Use Stripe Payment Intents for one-off credit pack purchases.
+- **Firestore:** `users/{uid}/wallet` collection to track credit balance. `users/{uid}/ledger` to log credit consumption and purchase events.
+- **Security:** Cloud Functions enforce credit deduction atomically using transactions before fulfilling AI generation or distribution tasks.
 
 ---
 

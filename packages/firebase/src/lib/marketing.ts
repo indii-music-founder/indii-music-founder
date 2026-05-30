@@ -197,7 +197,7 @@ export const createInfluencerBounty = functions
             );
         }
 
-        const refCode = `REF-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        const refCode = `REF-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
         const link = `${bountyBaseUrl.replace(/\/$/, '')}/ref/${refCode}`;
 
         await admin.firestore().collection('influencerBounties').doc(refCode).set({

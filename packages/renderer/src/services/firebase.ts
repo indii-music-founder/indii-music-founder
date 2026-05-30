@@ -262,8 +262,10 @@ if (typeof window !== 'undefined') {
     if (env.DEV) {
         if (env.appCheckDebugToken) {
             window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
         } else {
             window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
     }
 
@@ -305,7 +307,7 @@ if (typeof window !== 'undefined') {
 
         try {
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaV3Provider(env.appCheckKey!),
+                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
                 isTokenAutoRefreshEnabled: true
             });
             logger.info('[App Check] Initialized successfully');

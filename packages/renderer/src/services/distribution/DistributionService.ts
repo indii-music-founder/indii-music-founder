@@ -136,7 +136,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Initializing spectral analysis...' });
 
         try {
-            const result = await window.electronAPI.distribution.runForensics(filePath) as any;
+            const result = await window.electronAPI.distribution.runForensics(filePath);
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
@@ -193,7 +193,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             // Updated to pass object as single argument matching new IPC signature
-            const result = await window.electronAPI.distribution.calculateTax({ userId, amount }) as any;
+            const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
             if (!result.success || !result.report) {
                 logger.error('[Distribution] Tax calculation failed:', result.error);
                 throw new Error(result.error || 'Tax calculation failed');
@@ -214,7 +214,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.certifyTax(userId, data) as any;
+            const result = await window.electronAPI.distribution.certifyTax(userId, data);
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Tax certification failed');
             }
@@ -253,7 +253,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.executeWaterfall(data) as any;
+            const result = await window.electronAPI.distribution.executeWaterfall(data);
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Waterfall execution failed');
             }
@@ -273,7 +273,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.validateMetadata(metadata) as any;
+            const result = await window.electronAPI.distribution.validateMetadata(metadata);
             if (!result.success) {
                 logger.warn('[Distribution] Metadata validation failed:', result.report);
                 // Don't throw error if validation fails, just return report so UI can show errors
@@ -297,7 +297,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateContentIdCSV(data) as any;
+            const result = await window.electronAPI.distribution.generateContentIdCSV(data);
             if (!result.success || (!result.csvData && !result.report)) {
                 logger.error('[Distribution] Content ID generation failed:', result.error);
                 throw new Error(result.error || 'Content ID generation failed');
@@ -319,7 +319,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateISRC(options) as any;
+            const result = await window.electronAPI.distribution.generateISRC(options);
             if (!result.success || !result.isrc) {
                 logger.error('[Distribution] ISRC Generation failed:', result.error);
                 throw new Error(result.error || 'ISRC Generation failed');
@@ -358,7 +358,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateUPC(options) as any;
+            const result = await window.electronAPI.distribution.generateUPC(options);
             if (!result.success || !result.upc) {
                 throw new Error(result.error || 'UPC Generation failed');
             }
@@ -378,7 +378,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await (window.electronAPI.distribution as any).generateIngestionNotification(metadata) as any;
+            const result = await window.electronAPI.distribution.generateIngestionNotification(metadata);
             if (!result.success || !result.xml) {
                 throw new Error(result.error || 'DDEX Generation failed');
             }
@@ -398,7 +398,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.checkMerlinStatus(data) as any;
+            const result = await window.electronAPI.distribution.checkMerlinStatus(data);
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Merlin status check failed');
             }
@@ -418,8 +418,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateBWARM(data) as any;
-            if (!result.success || (!result.csv && !result.report)) {
+            const result = await window.electronAPI.distribution.generateBWARM(data);
+            if (!result.success || (!result.csvData && !result.report)) {
                 throw new Error(result.error || 'BWARM generation failed');
             }
             return result.csv || JSON.stringify(result.report);
@@ -438,7 +438,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.transmit(config) as any;
+            const result = await window.electronAPI.distribution.transmit(config);
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'Transmission failed');
             }
@@ -459,7 +459,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.packageSpotify(releaseId, stagingPath, outputPath) as any;
+            const result = await window.electronAPI.distribution.packageSpotify(releaseId, stagingPath, outputPath);
             if (!result.success) {
                 throw new Error(result.error || 'Spotify packaging failed');
             }
@@ -481,7 +481,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         try {
             // Step 1: Create ITMSP bundle via existing packageITMSP
-            const packageResult = await window.electronAPI.distribution.packageITMSP(releaseId) as any;
+            const packageResult = await window.electronAPI.distribution.packageITMSP(releaseId);
 
             if (!packageResult.success) {
                 throw new Error(packageResult.error || 'ITMSP packaging failed');
@@ -489,7 +489,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             // Step 2: Optionally deliver via Transporter
             if (options?.upload && packageResult.packagePath) {
-                const deliverResult = await window.electronAPI.distribution.deliverApple('upload', packageResult.packagePath) as any;
+                const deliverResult = await window.electronAPI.distribution.deliverApple('upload', packageResult.packagePath);
 
                 if (!deliverResult.success) {
                     throw new Error(deliverResult.error || 'Apple Transporter upload failed');
@@ -521,7 +521,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.validateXSD(xmlContent) as any;
+            const result = await window.electronAPI.distribution.validateXSD(xmlContent);
             if (!result.success || !result.report) {
                 throw new Error(result.error || 'XSD validation failed');
             }
@@ -686,11 +686,11 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         let cleanup: (() => void) | undefined;
         if (onProgress && window.electronAPI) {
-            cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
+            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
         }
 
         try {
-            const result = await window.electronAPI.distribution.submitRelease(releaseData) as any;
+            const result = await window.electronAPI.distribution.submitRelease(releaseData);
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
