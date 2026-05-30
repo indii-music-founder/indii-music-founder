@@ -69,6 +69,16 @@ export class CostControlService {
   static async checkAndReserve(req: CostCheckRequest): Promise<CostCheckResponse> {
     // E2E BYPASS: Allow E2E mock runs to proceed without checking/writing to Firestore ledgers
     if (this.isE2EMode) {
+      if (!import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+        logger.error('[CostControl] CRITICAL: E2E Bypass attempted in production mode. Failing closed.');
+        return {
+          allowed: false,
+          reason: 'E2E Cost Bypass is strictly blocked in production.',
+          remainingBudget: 0,
+          dailyUsed: 0,
+          monthlyUsed: 0,
+        };
+      }
       return {
         allowed: true,
         remainingBudget: 1000,
