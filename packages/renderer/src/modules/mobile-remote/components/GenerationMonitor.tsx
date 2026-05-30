@@ -7,6 +7,8 @@
  *    and relays the resulting Firebase Storage URL back.
  * 2. Monitor — Shows the current generation status from creativeControlsSlice
  *    when a generation is running on the desktop.
+ *
+ * Polished to guarantee >= 44x44px touch targets for all interactive presets and buttons.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -284,21 +286,22 @@ export default function GenerationMonitor() {
             <div className="mt-auto space-y-4">
                 {/* Presets */}
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
-                    <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5">
-                        <Palette className="w-4 h-4 text-[#8e8e93]" />
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5" style={{ minWidth: '40px', minHeight: '40px' }}>
+                        <Palette className="w-5 h-5 text-[#8e8e93]" />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2.5">
                         {STYLE_PRESETS.map(preset => (
                             <motion.button
                                 key={preset.label}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleStylePreset(preset)}
                                 className={cn(
-                                    "px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border",
+                                    "px-4.5 py-3 rounded-full text-[10px] font-extrabold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border cursor-pointer",
                                     activeStylePreset === preset.label
                                         ? "bg-blue-500 text-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                                         : "bg-white/[0.03] text-[#8e8e93] border-white/5 hover:border-white/20"
                                 )}
+                                style={{ minHeight: '44px' }}
                             >
                                 {preset.label}
                             </motion.button>
@@ -308,23 +311,24 @@ export default function GenerationMonitor() {
 
                 {/* Aspect Ratio */}
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5">
-                        <ImageIcon className="w-4 h-4 text-[#8e8e93]" />
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5" style={{ minWidth: '40px', minHeight: '40px' }}>
+                        <ImageIcon className="w-5 h-5 text-[#8e8e93]" />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2.5">
                         {ASPECT_RATIOS.map(ar => (
                             <motion.button
                                 key={ar.value}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setAspectRatio(ar.value)}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all duration-300 border",
+                                    "px-4.5 py-3 rounded-xl text-[9px] font-extrabold uppercase tracking-widest transition-all duration-300 border cursor-pointer flex items-center gap-1.5",
                                     aspectRatio === ar.value
                                         ? "bg-white/[0.08] text-white border-white/20"
                                         : "bg-transparent text-[#636366] border-white/5 hover:border-white/10"
                                 )}
+                                style={{ minHeight: '44px' }}
                             >
-                                {ar.icon} {ar.label}
+                                <span>{ar.icon}</span> <span>{ar.label}</span>
                             </motion.button>
                         ))}
                     </div>
@@ -333,8 +337,8 @@ export default function GenerationMonitor() {
                 {/* Prompt Bar */}
                 <div className="relative group">
                     <div className="absolute inset-0 bg-blue-500/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-                    <div className="relative flex items-center gap-3 p-3 rounded-[28px] bg-white/[0.03] border border-white/10 focus-within:border-white/20 transition-all duration-300">
-                        <Wand2 className="w-5 h-5 text-blue-400 ml-2" />
+                    <div className="relative flex items-center gap-3.5 p-3.5 rounded-[28px] bg-white/[0.03] border border-white/10 focus-within:border-white/20 transition-all duration-300">
+                        <Wand2 className="w-5.5 h-5.5 text-blue-400 ml-2" />
                         <input
                             type="text"
                             value={inputPrompt}
@@ -354,16 +358,17 @@ export default function GenerationMonitor() {
                             onClick={handleGenerate}
                             disabled={!inputPrompt.trim() || isSending}
                             className={cn(
-                                "w-12 h-12 rounded-[20px] flex items-center justify-center transition-all shadow-lg",
+                                "w-12 h-12 rounded-[20px] flex items-center justify-center transition-all shadow-lg cursor-pointer",
                                 inputPrompt.trim() && !isSending 
                                     ? "bg-white text-black shadow-white/10" 
                                     : "bg-white/5 text-[#48484a] cursor-not-allowed"
                             )}
+                            style={{ minWidth: '48px', minHeight: '48px' }}
                         >
                             {isSending ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <Loader2 className="w-5.5 h-5.5 animate-spin" />
                             ) : (
-                                <Send className="w-5 h-5" />
+                                <Send className="w-5.5 h-5.5" />
                             )}
                         </motion.button>
                     </div>
