@@ -602,3 +602,14 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - **Integration tests > type checking** for delegation patterns and message envelope contracts. Structural typing makes it easy for a tiny shape mismatch to slip through static checks.
 - **Unifying implementations requires auditing both versions**, not just merging the happy path. Security guards are often implicit in the original design and must be **explicitly restored** when consolidating code.
 - **Streaming/generators are deceptively easy to get wrong** — if the generator's delegated function returns the wrong shape (or no explicit return), the iteration can hang or skip final events silently. Always test the full round-trip.
+
+## 2026-05-30 NPM ERESOLVE Silent DevDependency Drop (CI Failure)
+
+**SEVERITY:** High (Causes complete CI test suite failure with missing vitest/tsc commands and `@types/*` errors)
+
+**MISTAKE:**
+- CONTEXT: CI Script or agents running `npm install` (or implicitly via `npm run nuke`)
+- ERROR: `sh: vitest: command not found` and thousands of `Cannot find type definition file for...` during `npm run typecheck`
+- CAUSE: A peer dependency conflict (e.g., `@react-three/fiber` requiring `react@>=19` while the root workspace locks `react@18.3.1`) triggers an `ERESOLVE` error during `npm install`. When `npm install` hits `ERESOLVE`, it often aborts and **skips installing `devDependencies` entirely** without failing the parent shell script if error handling is weak.
+- FIX: Use `npm install --legacy-peer-deps` to bypass the strict peer dependency checks and force the installation of all `devDependencies`.
+- PREVENTION: When encountering sudden missing binary commands (`vitest`) or mass type definition errors in a monorepo, always assume a silent `npm install` failure due to `ERESOLVE` peer dependency conflicts. Never assume the binaries just magically vanished.
