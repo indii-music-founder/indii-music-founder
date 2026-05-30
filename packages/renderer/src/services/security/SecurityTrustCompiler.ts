@@ -166,7 +166,7 @@ export class SecurityTrustCompiler implements HarnessCompiler<SecurityTrustInput
       confidence: isBlocked ? 1.0 : 0.8,
       output: {
         actionApproved: !isBlocked,
-        auditLogId: `audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+        auditLogId: `audit_${Date.now()}_${crypto.randomUUID().split('-')[0]}`
       }
     });
   }

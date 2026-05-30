@@ -121,7 +121,7 @@ If a task is outside Security, say:
             const prompt = `Scan the following text for PII (Personally Identifiable Information), offensive content, or security secrets.
             Text: ${args.text}
             
-            Return a JSON object with: isSafe (boolean), issues (array of strings), redacted_text (string).`;
+            Return a JSON object with: isSafe (boolean), issues (array of strings), redacted_text (string).`.replace(/^\s+/gm, '');
             try {
                 const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { scan_result: response } };

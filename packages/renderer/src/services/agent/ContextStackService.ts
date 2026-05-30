@@ -394,7 +394,7 @@ export class ContextStackService {
   }
 
   private generateFrameId(): string {
-    return `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `frame-${Date.now()}-${crypto.randomUUID().split('-')[0]}`;
   }
 
   private simpleHash(str: string): string {
@@ -606,7 +606,7 @@ export class ContextStackServiceImpl {
     }
   ): Phase2ContextFrame {
     return {
-      turnId: `turn_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      turnId: `turn_${Date.now()}_${crypto.randomUUID().split('-')[0]}`,
       timestamp: Date.now(),
       userMessage,
       agentResponse,

@@ -34,7 +34,7 @@ const BATCH_SIZE = 100;
  * Format: userId-eventType-timestamp-hash
  */
 function generateIdempotencyKey(event: AnalyticsEvent): string {
-  const hash = Math.random().toString(36).substr(2, 9);
+  const hash = crypto.randomUUID().split('-')[0];
   return `${event.userId}-${event.eventType}-${event.timestamp}-${hash}`;
 }
 

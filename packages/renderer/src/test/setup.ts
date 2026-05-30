@@ -446,7 +446,7 @@ vi.mock('firebase/messaging', () => ({
 vi.mock('firebase/app-check', () => ({
     initializeAppCheck: vi.fn(() => ({})),
     getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' })),
-    ReCaptchaV3Provider: class ReCaptchaV3Provider {}
+    ReCaptchaEnterpriseProvider: class ReCaptchaEnterpriseProvider {}
 }));
 // Mock Firebase AI
 vi.mock('firebase/ai', () => ({

@@ -7,14 +7,28 @@ const BASE_URL = 'https://api.printful.com';
 async function request<T>(endpoint: string, options: { method?: string; body?: string; headers?: Record<string, string> } = {}): Promise<T> {
     const apiKey = getPrintfulApiKey();
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            ...options.headers
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    
+    let response;
+    try {
+        response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            signal: controller.signal as any,
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    } catch (e: any) {
+        if (e.name === 'AbortError') {
+            throw new HttpsError('deadline-exceeded', 'Printful API request timed out.');
         }
-    });
+        throw new HttpsError('internal', `Printful API request failed: ${e.message}`);
+    } finally {
+        clearTimeout(timeout);
+    }
 
     if (!response.ok) {
         const errorBody = await response.json().catch(() => ({ message: response.statusText }));

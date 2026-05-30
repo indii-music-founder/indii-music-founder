@@ -131,7 +131,7 @@ const createWindow = async () => {
 
     try {
         const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
-        const password = Math.floor(100000 + Math.random() * 900000).toString();
+        const password = crypto.randomUUID().substring(0, 6);
         try {
             const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);

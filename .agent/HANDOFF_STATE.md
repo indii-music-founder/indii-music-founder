@@ -1,28 +1,27 @@
 # Handoff State
-**Updated:** 2026-05-29 22:33 EDT
+**Updated:** 2026-05-30 10:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-93dc8d04c chore: session checkpoint [22:17]
-4c36a0e88 test: add progressive streaming integration tests and training audit report
-ff9bab804 fix(audio): apply strict null check guards in DAWIntegrationService
-28c80e29f Merge branch 'subagent-indiiREMOTE-UX-Designer-self-8958cb9b'
-0aaceb6e5 chore: session checkpoint [22:15]
-7f28cbaca Merge branch 'subagent-DAW-Integration-Engineer-self-fd4044d2'
-86244f612 Merge branch 'subagent-Analytics-Data-Engineer-self-a112727e'
-8612d13bc Merge branch 'subagent-Training-Data-Auditor-self-e291d627'
-2223e0a8f Merge branch 'subagent-Desktop-Release-Engineer-self-6e68f0e4'
-3300cf219 Merge branch 'subagent-E2E-Test-Architect-self-a73a537b'
+af72cec26 fix(auto): resolve Sentry/CodeRabbit issues
+a79328201 chore: session end checkpoint and error ledger update
+122520726 chore: session checkpoint [00:58]
+6e2a74a41 chore: session checkpoint [00:53]
+7baac5af5 test: finalize accessibility test for DailyItem component
+7641628be chore: session checkpoint [00:47]
+3d9128258 fix(auth): guard profile/project loading for anonymous users
+41a1aa2ed feat: complete Business Harness Wave 5 compilers and datasets
+82bcd13f6 chore: session checkpoint [00:39]
+22bc89bd1 chore: session checkpoint [00:37]
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
- M packages/renderer/src/services/agent/a2a/A2ARouter.ts
- M packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
- M packages/renderer/src/services/audio/DAWIntegrationService.test.ts
-?? .claude/checkpoints/
+?? docs/flowcharts/swarm-execution-macro.md
+?? fix-random.cjs
+?? packages/renderer/src/services/MembershipService.integration.test.ts
+?? packages/renderer/src/services/distribution/__tests__/SFTPDeliveryPipeline.test.ts
 ```
 
 ## Decisions
