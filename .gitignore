@@ -9,7 +9,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
+# package-lock.json is committed: CI runs `npm ci` + caches on hashFiles('package-lock.json'),
+# both of which require it tracked. Also prevents transitive version drift (e.g. @types/react major bump).
 yarn.lock
 pnpm-lock.yaml
 
