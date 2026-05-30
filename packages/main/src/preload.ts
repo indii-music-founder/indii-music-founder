@@ -169,6 +169,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         check: () => ipcRenderer.invoke('updater:check'),
         install: () => ipcRenderer.invoke('updater:install'),
         setChannel: (channel: 'stable' | 'beta') => ipcRenderer.invoke('updater:set-channel', channel),
+        setSource: (source: 'github' | 'firebase') => ipcRenderer.invoke('updater:set-source', source),
+        getConfig: () => ipcRenderer.invoke('updater:get-config'),
         onChecking: (callback: () => void) => {
             ipcRenderer.on('updater:checking', callback);
             return () => ipcRenderer.removeListener('updater:checking', callback);
