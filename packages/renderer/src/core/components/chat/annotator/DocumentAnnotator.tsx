@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { AgentService } from '@/services/agent/AgentService';
+import { Logger } from '@/core/logger/Logger';
 import { Eraser, Trash2, CheckCircle2, ChevronLeft, ChevronRight, Highlighter, StickyNote } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -60,7 +61,7 @@ export const DocumentAnnotator: React.FC<DocumentAnnotatorProps> = ({ documentUr
                 setNumPages(pdfDoc.numPages);
                 renderPage(pdfDoc, 1);
             } catch (error) {
-                console.error('Error loading PDF:', error);
+                Logger.error('DocumentAnnotator', 'Error loading PDF', error);
             }
         };
         loadPdf();
@@ -242,7 +243,7 @@ export const DocumentAnnotator: React.FC<DocumentAnnotatorProps> = ({ documentUr
             await agentService.dispatchToolCall(agentId, 'edit_document_with_annotations', payload, originalMessageId);
 
         } catch (error) {
-            console.error('Failed to submit document annotations', error);
+            Logger.error('DocumentAnnotator', 'Failed to submit document annotations', error);
         } finally {
             setIsSubmitting(false);
         }

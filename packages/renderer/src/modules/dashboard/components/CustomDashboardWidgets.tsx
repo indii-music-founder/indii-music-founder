@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import {
     Music,
     DollarSign,
@@ -919,7 +920,7 @@ function RevenueAggregatedWidget() {
                 const data = await revenueService.getUserRevenueStats(userId, '30d');
                 setStats(data);
             } catch (error) {
-                console.error('Error fetching revenue stats:', error);
+                Logger.error('CustomDashboardWidgets', 'Error fetching revenue stats', error);
             } finally {
                 setIsLoading(false);
             }

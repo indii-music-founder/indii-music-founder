@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { AgentService } from '@/services/agent/AgentService';
+import { Logger } from '@/core/logger/Logger';
 import { Eraser, Trash2, CheckCircle2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -180,7 +181,7 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
             await agentService.dispatchToolCall(agentId, 'edit_image_with_annotations', payload, originalMessageId);
 
         } catch (error) {
-            console.error('Failed to submit annotations', error);
+            Logger.error('ImageAnnotator', 'Failed to submit annotations', error);
         } finally {
             setIsSubmitting(false);
         }
