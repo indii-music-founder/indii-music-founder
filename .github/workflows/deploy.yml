@@ -54,7 +54,7 @@ jobs:
           npm config set fetch-retries 5
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
-          npm ci --prefer-offline --no-audit
+          npm install --prefer-offline --no-audit --no-fund
 
       - name: Sanity check - Duplicate identifiers (Item 342)
         run: |
