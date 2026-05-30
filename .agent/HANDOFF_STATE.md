@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-29 21:23 EDT
+**Updated:** 2026-05-29 22:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+69d9ace07 chore: session checkpoint [21:23]
 7d3aeeb6e fix(ux): prevent asynchronous memory leak and uncaught exception in CookieConsentBanner useEffect
 98043da1d fix(firebase): resolve Stripe functions type declarations and duplicate imports
 992f46694 test(a2a): enforce DigitalHandshake deny by default in test suite setup
@@ -13,13 +14,20 @@ bdd7ee5f9 docs: add AGENTS.md operating notes for swarms
 41e2f66df fix(test): resolve missing params mocks, SecurityTools assertions, and A2AClient import/mock desyncs
 3c74d308f chore: session checkpoint [14:54]
 9ed72ba80 fix(type): resolve SecurityTools.ts type error on merge
-ab8c4b9fc Merge integration branches
 ```
 
 ## Working State
 ```
  M .claude/settings.json
+ M packages/renderer/src/services/agent/a2a/A2ARouter.ts
+ M packages/renderer/src/services/agent/a2a/transport/A2ATransport.ts
  M packages/renderer/src/services/agent/tools/SwarmTools.ts
+ M packages/renderer/src/services/agent/types.ts
+?? docs/agent-training/provenance_scope_audit_report.md
+?? e2e/conductor-consult-streaming.spec.ts
+?? packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
+?? packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts
+?? packages/renderer/src/services/audio/DAWIntegrationService.test.ts
 ```
 
 ## Decisions
