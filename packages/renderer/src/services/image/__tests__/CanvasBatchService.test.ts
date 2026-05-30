@@ -24,22 +24,29 @@ describe('CanvasBatchService', () => {
     });
 
     it('should fail closed when no production renderer is configured', async () => {
+        const originalBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
+        import.meta.env.VITE_FIREBASE_STORAGE_BUCKET = '';
+
         const mockCanvas = {};
         const selectedIds = ['square', 'story'];
 
-        await expect(canvasBatchService.exportBatch(mockCanvas, selectedIds))
-            .rejects.toThrow('Canvas batch export renderer is not configured');
+        try {
+            await expect(canvasBatchService.exportBatch(mockCanvas, selectedIds))
+                .rejects.toThrow('Canvas batch export renderer is not configured');
 
-        expect(mockStore.addJob).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'running',
-            type: 'ai_generation'
-        }));
-        expect(mockStore.updateJobProgress).not.toHaveBeenCalled();
-        expect(mockStore.updateJobStatus).toHaveBeenCalledWith(
-            expect.any(String),
-            'error',
-            'Canvas batch export renderer is not configured. No asset URL was generated.'
-        );
+            expect(mockStore.addJob).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'running',
+                type: 'ai_generation'
+            }));
+            expect(mockStore.updateJobProgress).not.toHaveBeenCalled();
+            expect(mockStore.updateJobStatus).toHaveBeenCalledWith(
+                expect.any(String),
+                'error',
+                'Canvas batch export renderer is not configured. No asset URL was generated.'
+            );
+        } finally {
+            import.meta.env.VITE_FIREBASE_STORAGE_BUCKET = originalBucket;
+        }
     });
 
     it('should return an empty result when no targets are selected', async () => {
