@@ -15,6 +15,8 @@ export default defineConfig({
       '@agents': path.resolve(import.meta.dirname, './agents'),
       '@shared': path.resolve(import.meta.dirname, './packages/shared/src'),
       '@indii/shared': path.resolve(import.meta.dirname, './packages/shared/src'),
+      'react': path.resolve(import.meta.dirname, './node_modules/react'),
+      'react-dom': path.resolve(import.meta.dirname, './node_modules/react-dom'),
     },
   },
   test: {
