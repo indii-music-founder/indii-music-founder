@@ -17,7 +17,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     RefreshCw, Brain, TrendingUp, Globe, Bell,
-    BarChart2, GitBranch, Plug, Settings,
+    BarChart2, GitBranch, Plug, Settings, LayoutDashboard,
     type LucideIcon
 } from 'lucide-react';
 
@@ -35,12 +35,13 @@ import { AlertsPanel } from './components/AlertsPanel';
 import { PlatformBreakdown } from './components/PlatformBreakdown';
 import { RegionalMap } from './components/RegionalMap';
 import { PlatformConnector } from './components/PlatformConnector';
+import { CustomizableAnalyticsDashboard } from './components/CustomizableAnalyticsDashboard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Tab definitions
 // ──────────────────────────────────────────────────────────────────────────────
 
-type TabId = 'overview' | 'patterns' | 'platforms' | 'regions' | 'alerts';
+type TabId = 'overview' | 'patterns' | 'platforms' | 'regions' | 'alerts' | 'custom';
 
 const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: 'overview',  label: 'Overview',  icon: TrendingUp },
@@ -48,6 +49,7 @@ const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: 'platforms', label: 'Platforms', icon: BarChart2   },
     { id: 'regions',   label: 'Regions',   icon: Globe       },
     { id: 'alerts',    label: 'Alerts',    icon: Bell        },
+    { id: 'custom',    label: 'Customizer',icon: LayoutDashboard },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -504,6 +506,10 @@ export default function GrowthIntelligenceDashboard() {
                                         onDismiss={dismissAnalyticsAlert}
                                     />
                                 </div>
+                            )}
+
+                            {activeTab === 'custom' && (
+                                <CustomizableAnalyticsDashboard />
                             )}
                         </div>
                     )}
