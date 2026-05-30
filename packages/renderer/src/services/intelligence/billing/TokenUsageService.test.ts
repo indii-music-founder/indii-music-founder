@@ -60,9 +60,7 @@ describe('TokenUsageService', () => {
     });
 
     describe('checkQuota', () => {
-        it.skip('should allow if no usage doc exists', async () => {
-            // SKIPPED: GLOBAL_EMERGENCY_STOP = true prevents quota checks from running
-            // TODO: Mock GLOBAL_EMERGENCY_STOP when we have an injectable static property
+        it('should allow if no usage doc exists', async () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => false,
                 data: () => undefined
@@ -72,8 +70,7 @@ describe('TokenUsageService', () => {
             expect(allowed).toBe(true);
         });
 
-        it.skip('should allow if usage is under limit', async () => {
-            // SKIPPED: GLOBAL_EMERGENCY_STOP = true prevents quota checks from running
+        it('should allow if usage is under limit', async () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => true,
                 data: () => ({ tokensUsed: 5000 })
@@ -83,9 +80,7 @@ describe('TokenUsageService', () => {
             expect(allowed).toBe(true);
         });
 
-        it.skip('should throw QuotaExceededError if usage is over limit', async () => {
-            // SKIPPED: GLOBAL_EMERGENCY_STOP = true prevents quota checks from running
-            // These tests will re-enable once we inject GLOBAL_EMERGENCY_STOP as a configurable property
+        it('should throw QuotaExceededError if usage is over limit', async () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => true,
                 data: () => ({ tokensUsed: 100001 }) // Limit is 100k
@@ -95,8 +90,9 @@ describe('TokenUsageService', () => {
                 .rejects.toThrow('Daily Intelligence token limit exceeded');
         });
 
-        it.skip('should throw EMERGENCY_STOP when quota is disabled', async () => {
-            // This test documents the current production behavior
+        it('should throw EMERGENCY_STOP when quota is disabled', async () => {
+            // Mock GLOBAL_EMERGENCY_STOP to true for this test
+            (TokenUsageService as any).GLOBAL_EMERGENCY_STOP = true;
             await expect(TokenUsageService.checkQuota(mockUserId))
                 .rejects.toThrow('EMERGENCY STOP');
         });
