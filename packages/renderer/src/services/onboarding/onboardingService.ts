@@ -304,8 +304,8 @@ ALWAYS preserve what they're NOT changing.`;
         if (response.response.candidates && response.response.candidates[0]?.content?.parts) {
             const parts = response.response.candidates[0].content.parts;
             for (const part of parts) {
-                if ('thoughtSignature' in part && (part as any).thoughtSignature) {
-                    thoughtSignature = (part as any).thoughtSignature;
+                if ('thoughtSignature' in part && (part as Record<string, unknown>).thoughtSignature) {
+                    thoughtSignature = (part as Record<string, unknown>).thoughtSignature as string;
                     break;
                 }
             }
