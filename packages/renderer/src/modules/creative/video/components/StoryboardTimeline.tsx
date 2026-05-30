@@ -10,6 +10,7 @@ import { useVideoEditorStore } from '../store/videoEditorStore';
 import type { StoryboardSlot, StoryboardProject } from '../schemas/storyboard';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
+import { renderService } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
@@ -254,7 +255,7 @@ export function StoryboardTimeline() {
     };
 
     // Compile entire showreel video
-    const handleCompileVideo = () => {
+    const handleCompileVideo = async () => {
         if (!storyboardProject) return;
         
         const renderedCount = storyboardProject.slots.filter(s => !!s.videoUrl).length;
@@ -263,7 +264,20 @@ export function StoryboardTimeline() {
             return;
         }
 
-        toast.error("Showreel compile requires a configured Remotion/render backend. No master video was generated.");
+        toast.info("Dispatching Showreel render to Cloud Run...");
+        try {
+            const result = await renderService.renderComposition({
+                compositionId: 'Showreel',
+                inputProps: { project: storyboardProject },
+                outputLocation: 'local_ignored.mp4',
+                useCloudQueue: true
+            });
+            
+            toast.success(`Showreel dispatched successfully! URL: ${result}`);
+        } catch (error: any) {
+            logger.error('[StoryboardTimeline] Showreel render failed:', error);
+            toast.error(`Failed to render Showreel: ${error.message || String(error)}`);
+        }
     };
 
     return (
