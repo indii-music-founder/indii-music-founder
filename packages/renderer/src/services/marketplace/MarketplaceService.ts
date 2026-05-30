@@ -104,7 +104,7 @@ export class MarketplaceService {
                 product = {
                     id: docSnap.id,
                     ...data,
-                    createdAt: (data.createdAt && typeof (data.createdAt as any).toDate === 'function') ? (data.createdAt as any).toDate().toISOString() : (data.createdAt ? new Date(data.createdAt as any).toISOString() : new Date().toISOString())
+                    createdAt: (data.createdAt && typeof (data.createdAt as { toDate?: () => Date }).toDate === 'function') ? (data.createdAt as { toDate: () => Date }).toDate().toISOString() : (data.createdAt ? new Date(data.createdAt as string | number).toISOString() : new Date().toISOString())
                 } as Product;
             }
 
@@ -138,7 +138,7 @@ export class MarketplaceService {
         const results = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            createdAt: (doc.data().createdAt && typeof (doc.data().createdAt as any).toDate === 'function') ? (doc.data().createdAt as any).toDate().toISOString() : (doc.data().createdAt ? new Date(doc.data().createdAt as any).toISOString() : new Date().toISOString())
+            createdAt: (doc.data().createdAt && typeof (doc.data().createdAt as { toDate?: () => Date }).toDate === 'function') ? (doc.data().createdAt as { toDate: () => Date }).toDate().toISOString() : (doc.data().createdAt ? new Date(doc.data().createdAt as string | number).toISOString() : new Date().toISOString())
         } as Product));
 
         return results;

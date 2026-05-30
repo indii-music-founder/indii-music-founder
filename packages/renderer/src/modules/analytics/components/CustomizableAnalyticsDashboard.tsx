@@ -4,6 +4,8 @@ import { MembershipService, type DailyUsage, type TierLimits, type MembershipTie
 import { financeService, type Expense } from '@/services/finance/FinanceService';
 import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import type { EarningsSummary, DashboardEarningsSummary } from '@/services/revenue/schema';
+import { platformDataService } from '@/services/analytics/PlatformDataService';
+import type { TrackAnalytics } from '@/services/analytics/types';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, BarChart, Bar, Legend, Cell
@@ -28,6 +30,8 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
     const [earningsSummary, setEarningsSummary] = useState<EarningsSummary | null>(null);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [financeSummary, setFinanceSummary] = useState<DashboardEarningsSummary | null>(null);
+
+    const [catalogue, setCatalogue] = useState<TrackAnalytics[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -63,8 +67,11 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             const summary = await financeService.getEarningsSummary(userId);
             setFinanceSummary(summary);
 
+            const tracks = await platformDataService.buildCatalogue();
+            setCatalogue(tracks);
+
             // Detect if Firestore/Stripe databases actually have data or if they are blank (new user / sandbox)
-            const hasData = (stats?.totalRevenue > 0) || (expenseList.length > 0) || (usageObj.imagesGenerated > 0);
+            const hasData = (stats?.totalRevenue > 0) || (expenseList.length > 0) || (usageObj.imagesGenerated > 0) || (tracks.length > 0);
             setIsRealData(hasData);
 
         } catch (error) {
@@ -115,6 +122,8 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) || actualExpensesList.reduce((sum, e) => sum + e.amount, 0);
 
     const netProfit = totalEarnings - totalExpenses;
+
+    const totalStreams = catalogue.reduce((sum, t) => sum + t.totalStreams, 0);
 
     return (
         <div className="p-6 bg-[#090d13] text-slate-100 min-h-screen rounded-xl border border-white/5 shadow-2xl relative overflow-hidden">
@@ -419,6 +428,61 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
+                    </div>
+
+                    {/* ────────────────────────────────────────────────────────
+                        5. Stream Performance (PlatformDataService)
+                    ──────────────────────────────────────────────────────── */}
+                    <div className="lg:col-span-3 bg-[#101722]/80 backdrop-blur border border-white/10 rounded-2xl p-5 flex flex-col hover:border-white/20 transition-all shadow-xl">
+                        <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
+                            <div>
+                                <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
+                                    <Activity size={16} className="text-cyan-400" />
+                                    Cross-Platform Streaming Analytics
+                                </h3>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Aggregated metrics from Spotify, YouTube, TikTok</p>
+                            </div>
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
+                                {totalStreams.toLocaleString()} Total Streams
+                            </span>
+                        </div>
+
+                        {catalogue.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {catalogue.map((track) => (
+                                    <div key={track.trackId} className="p-4 bg-slate-900/50 border border-white/5 rounded-xl">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            {track.coverUrl ? (
+                                                <img src={track.coverUrl} className="w-10 h-10 rounded shadow-md" alt="Cover" />
+                                            ) : (
+                                                <div className="w-10 h-10 bg-slate-800 rounded flex items-center justify-center">
+                                                    <Activity size={16} className="text-slate-500" />
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-bold text-white truncate">{track.trackName}</p>
+                                                <p className="text-[10px] text-slate-400 truncate">{track.artistName}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-end border-t border-white/5 pt-3 mt-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-500 uppercase font-mono">Streams</span>
+                                                <span className="text-sm font-bold text-emerald-400 font-mono">{track.totalStreams.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex flex-col text-right">
+                                                <span className="text-[10px] text-slate-500 uppercase font-mono">Creators</span>
+                                                <span className="text-sm font-bold text-indigo-400 font-mono">{track.creatorCount.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="h-32 flex flex-col items-center justify-center text-slate-500 gap-3 border border-dashed border-white/10 rounded-xl">
+                                <Activity size={24} className="text-slate-600" />
+                                <p className="text-xs font-mono">No connected streaming platforms or catalog found.</p>
+                            </div>
+                        )}
                     </div>
 
                 </div>

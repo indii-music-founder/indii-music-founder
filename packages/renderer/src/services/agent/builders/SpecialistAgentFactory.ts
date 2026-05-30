@@ -32,8 +32,8 @@ export class SpecialistAgentFactory {
     ): Promise<T> {
         const agent = new AgentClass();
         agent.card = getCardForAgent(id);
-        if ('initialize' in agent && typeof (agent as any).initialize === 'function') {
-            await (agent as any).initialize();
+        if ('initialize' in agent && typeof (agent as { initialize?: () => Promise<void> }).initialize === 'function') {
+            await (agent as { initialize: () => Promise<void> }).initialize();
         }
         return agent;
     }

@@ -28,6 +28,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+// Helper for haptic feedback
+const triggerHaptic = (pattern: number | number[] = 50) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
 // Lazy load sub-components for performance on phone
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const CommandPad = lazy(() => import('./components/CommandPad'));
@@ -256,10 +263,49 @@ export default function MobileRemote() {
   }, [isPaired]);
 
   const handleManualRetry = () => {
+    triggerHaptic(50);
     logger.info('[MobileRemote] Manual reconnect triggered by user');
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
+  };
+
+  // Pull-to-refresh logic
+  const [pullProgress, setPullProgress] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const mainRef = useRef<HTMLElement>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (mainRef.current && mainRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    } else {
+      touchStartY.current = 0;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current > 0) {
+      const delta = e.touches[0].clientY - touchStartY.current;
+      if (delta > 0) {
+        setPullProgress(Math.min(delta / 2, 80));
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullProgress > 60 && !isRefreshing) {
+      setIsRefreshing(true);
+      triggerHaptic([50, 100, 50]);
+      handleManualRetry();
+      setTimeout(() => {
+         setIsRefreshing(false);
+         setPullProgress(0);
+      }, 1500);
+    } else {
+      setPullProgress(0);
+    }
+    touchStartY.current = 0;
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -387,10 +433,13 @@ export default function MobileRemote() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => setShowPairingModal(true)}
+                  onClick={() => {
+                    triggerHaptic(50);
+                    setShowPairingModal(true);
+                  }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 px-5 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
-                  style={{ minWidth: '80px', minHeight: '44px' }}
+                  style={{ minWidth: '80px', minHeight: '56px' }}
                 >
                   <QrCode className="w-4 h-4" />
                   <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -404,8 +453,36 @@ export default function MobileRemote() {
       </header>
 
       {/* ─── Body ───────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar">
-        <div className="p-6 pb-32 max-w-md mx-auto w-full">
+      <main 
+        ref={mainRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar"
+      >
+        <div className="p-6 pb-32 max-w-md mx-auto w-full relative">
+          
+          {/* Pull-to-refresh visualizer */}
+          <div 
+            className="absolute top-0 left-0 right-0 flex justify-center items-center pointer-events-none transition-opacity duration-300"
+            style={{ 
+              height: `${Math.max(0, pullProgress)}px`,
+              opacity: pullProgress > 10 ? 1 : 0
+            }}
+          >
+            <div 
+              className={cn(
+                "rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20 transition-all",
+                isRefreshing ? "w-10 h-10 animate-spin" : "w-8 h-8"
+              )}
+              style={{
+                transform: `scale(${Math.min(1, pullProgress / 60)}) rotate(${pullProgress * 3}deg)`
+              }}
+            >
+              <RefreshCw className={cn("text-white", isRefreshing ? "w-5 h-5" : "w-4 h-4")} />
+            </div>
+          </div>
+
           {/* Glassmorphic Auto-Reconnecting Indicator */}
           <AnimatePresence>
             {isReconnecting && (
@@ -455,9 +532,12 @@ export default function MobileRemote() {
               <div className="flex flex-col gap-4 w-full px-6">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowPairingModal(true)}
+                  onClick={() => {
+                    triggerHaptic(50);
+                    setShowPairingModal(true);
+                  }}
                   className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white text-black font-bold transition-all hover:bg-[#f2f2f7] shadow-xl shadow-white/5 cursor-pointer"
-                  style={{ minHeight: '44px' }}
+                  style={{ minHeight: '56px' }}
                 >
                   <QrCode className="w-5 h-5" />
                   Show Pairing Code
@@ -467,7 +547,7 @@ export default function MobileRemote() {
                   whileTap={{ scale: 0.95 }}
                   onClick={handleManualRetry}
                   className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white/5 border border-white/10 text-white font-bold transition-all hover:bg-white/10 shadow-lg cursor-pointer"
-                  style={{ minHeight: '44px' }}
+                  style={{ minHeight: '56px' }}
                 >
                   <RefreshCw className="w-5 h-5" />
                   Try Reconnecting Now
@@ -500,16 +580,21 @@ export default function MobileRemote() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button
+                <button
                 key={tab.id}
-                onClick={() => isPaired && setActiveTab(tab.id)}
+                onClick={() => {
+                  if (isPaired) {
+                    triggerHaptic(40);
+                    setActiveTab(tab.id);
+                  }
+                }}
                 disabled={!isPaired}
                 className={cn(
                   "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
                   !isPaired ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
                   isActive ? "text-white" : "text-[#636366] hover:text-[#8e8e93]"
                 )}
-                style={{ minHeight: '44px' }}
+                style={{ minHeight: '56px' }}
               >
                 <AnimatePresence>
                   {isActive && (

@@ -259,8 +259,8 @@ export class AgentService {
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
                         const currentState = useStore.getState();
                         const resultMsg = isBoardroomMode 
-                            ? (currentState.boardroomMessages as any[]).find(m => m.id === responseId)
-                            : (currentState.agentHistory as any[]).find(m => m.id === responseId);
+                            ? (currentState.boardroomMessages as AgentMessage[]).find(m => m.id === responseId)
+                            : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
 
                         // After success, populate cache if not a generation request
                         if (!isGenerationRequest) {
@@ -1441,7 +1441,7 @@ The user will see this plan and can approve it to start execution.`;
                     });
 
                     // For image-editing tools, surface the result as a new message so history is preserved
-                    const resultAsAny = result as any;
+                    const resultAsAny = result as unknown as Record<string, unknown>;
                     if (toolName === 'edit_image_with_annotations' && resultAsAny?.urls && Array.isArray(resultAsAny.urls) && resultAsAny.urls.length > 0) {
                         // Re-use the generate_image wire format so it renders naturally as image output
                         const imageMessage = `[Tool: generate_image]\n${JSON.stringify({ urls: resultAsAny.urls, prompt: args.colorPrompts })}\n[End Tool generate_image]`;

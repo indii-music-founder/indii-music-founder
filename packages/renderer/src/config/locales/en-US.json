@@ -85,7 +85,42 @@
     "status": "Status",
     "released": "Released",
     "scheduled": "Scheduled",
-    "draft": "Draft"
+    "draft": "Draft",
+    "title": "Distribution Center",
+    "liveSystem": "Live System",
+    "subtitle": "Direct Delivery Pipeline",
+    "tabs": {
+      "new": "New Release",
+      "catalogue": "Catalogue",
+      "analytics": "Bank",
+      "authority": "Authority",
+      "keys": "Keys",
+      "brain": "Brain QC",
+      "transmissions": "Transmissions"
+    }
+  },
+  "dashboard": {
+    "foundersRound": "Founders Round",
+    "active": "Active",
+    "foundersBannerText": "Participate in the Founders Round to secure your equity.",
+    "backVision": "Back the Vision",
+    "dismiss": "Dismiss",
+    "agentWorkspace": "Agent Workspace",
+    "commandCenter": "Command Center",
+    "custom": {
+      "title": "My Dashboard",
+      "activeWidgets": "{{count}} ACTIVE WIDGETS",
+      "undo": "Undo",
+      "finish": "Finish",
+      "edit": "Edit",
+      "addWidget": "Add Widget",
+      "availableIntelligence": "Available Intelligence",
+      "integrated": "Integrated",
+      "dragToReorder": "DRAG TO REORDER",
+      "emptyTitle": "Your OS is empty",
+      "emptySubtitle": "Initialize your dashboard by adding intelligence widgets to track your performance.",
+      "buildButton": "Build My Dashboard"
+    }
   },
   "finance": {
     "revenue": "Revenue",
@@ -151,9 +186,32 @@
     }
   },
   "settings": {
+    "title": "Settings",
     "hints": {
       "display_name": "Enter your public display name",
       "bio_desc": "Write a short bio detailing your artistic journey..."
+    },
+    "sections": {
+      "profile": {
+        "label": "Profile",
+        "description": "Name, avatar, and bio"
+      },
+      "connections": {
+        "label": "Connected Services",
+        "description": "Email, social, and integrations"
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Push, email, and sound preferences"
+      },
+      "appearance": {
+        "label": "Appearance",
+        "description": "Theme, layout, and animations"
+      },
+      "security": {
+        "label": "Account & Security",
+        "description": "Sign out, data export, delete"
+      }
     }
   },
   "social": {
@@ -189,6 +247,72 @@
       "email_example": "Enter email address",
       "special_requests": "Specify load-in, parking, catering, or other requests...",
       "country_example": "Enter destination country (e.g., UK, Japan, Brazil)..."
+    }
+  },
+  "onboarding": {
+    "greetings": [
+      "Hey! Let's get your artist profile set up.",
+      "Welcome to indii. Ready to build your brand?",
+      "Hello! Tell me a bit about your music to get started."
+    ],
+    "title": "Onboarding",
+    "closeLabel": "Close",
+    "processing": "Thinking...",
+    "processingOptions": [
+      "Analyzing your inputs...",
+      "Drafting profile...",
+      "Connecting the dots..."
+    ],
+    "attachLabel": "Attach File",
+    "voiceInput": "Voice Input",
+    "placeholder": "Type a message...",
+    "sendLabel": "Send",
+    "errors": [
+      "Oops, something went wrong.",
+      "I encountered an error. Please try again.",
+      "Connection failed. Please check your network."
+    ],
+    "profileStatus": "Profile Status",
+    "artistIdentity": "Artist Identity",
+    "currentRelease": "Current Release",
+    "livePreview": "Live Preview",
+    "bio": "Bio",
+    "activeRelease": "Active Release"
+  },
+  "agent": {
+    "title": "Agent Workspace",
+    "tabs": {
+      "scout": "Scout",
+      "campaigns": "Campaigns",
+      "inbox": "Inbox",
+      "browser": "Browser",
+      "chat": "Chat",
+      "tasks": "Tasks"
+    },
+    "campaigns": {
+      "noCampaigns": "No campaigns yet. Create one in the Marketing module.",
+      "goToMarketing": "Go to Marketing",
+      "budget": "Budget: {{amount}}"
+    },
+    "scout": {
+      "title": "The Scout",
+      "description": "Deploy autonomous agents to identify high-value performance opportunities. Select your target market and genre focus below.",
+      "ready": "Ready to deploy",
+      "initializing": "Initializing agent...",
+      "scanCompleteNoNew": "Scan complete. Found {{count}} venues (all already in roster).",
+      "missionComplete": "Mission complete. Discovered {{count}} new venues.",
+      "missionFailed": "Mission failed. Connection lost.",
+      "scoutedVenues": "Scouted Venues ({{count}})",
+      "noVenues": "No venues scouted yet",
+      "configureParams": "Configure your parameters above and deploy the scout."
+    },
+    "chat": {
+      "routeTo": "Route to:",
+      "exportTranscript": "Export chat transcript",
+      "startConversation": "Start a conversation with your Autonomous team."
+    },
+    "inbox": {
+      "loading": "Loading inbox..."
     }
   }
 }

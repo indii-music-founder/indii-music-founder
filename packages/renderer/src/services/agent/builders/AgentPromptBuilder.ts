@@ -107,8 +107,8 @@ export class AgentPromptBuilder {
             try {
                 if (typeof profile.createdAt.toDate === 'function') {
                     joinDate = profile.createdAt.toDate();
-                } else if ((profile.createdAt as any).seconds !== undefined) {
-                    joinDate = new Date((profile.createdAt as any).seconds * 1000);
+                } else if ((profile.createdAt as { seconds?: number }).seconds !== undefined) {
+                    joinDate = new Date((profile.createdAt as { seconds: number }).seconds * 1000);
                 } else {
                     joinDate = new Date(profile.createdAt as unknown as string | number);
                 }
@@ -130,8 +130,8 @@ export class AgentPromptBuilder {
                 try {
                     if (typeof profile.lastLoginAt.toDate === 'function') {
                         lastLogin = profile.lastLoginAt.toDate();
-                    } else if ((profile.lastLoginAt as any).seconds !== undefined) {
-                        lastLogin = new Date((profile.lastLoginAt as any).seconds * 1000);
+                    } else if ((profile.lastLoginAt as { seconds?: number }).seconds !== undefined) {
+                        lastLogin = new Date((profile.lastLoginAt as { seconds: number }).seconds * 1000);
                     } else {
                         lastLogin = new Date(profile.lastLoginAt as unknown as string | number);
                     }
