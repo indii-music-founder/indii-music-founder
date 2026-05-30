@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { motion } from 'motion/react';
 import {
     MousePointer2,
@@ -45,7 +46,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
         if (user?.uid) {
             getUserWorkflows(user.uid)
                 .then(setSavedWorkflows)
-                .catch(err => console.error("Failed to load workflows for EmptyState:", err));
+                .catch(err => Logger.error('EmptyState', 'Failed to load workflows for EmptyState', err));
         }
     }, [user?.uid]);
 
