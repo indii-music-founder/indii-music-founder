@@ -21,7 +21,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
-import { areFeedItemPropsEqual } from './SocialFeed.utils';
+import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
@@ -273,7 +273,7 @@ export default SocialFeed;
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
 // We use custom deep comparison here because Firestore onSnapshot often returns new object references
 // even for unchanged items, which defeats shallow comparison.
-const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
+const FeedItem = React.memo(({ post }: FeedItemProps) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {

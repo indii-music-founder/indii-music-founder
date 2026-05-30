@@ -101,6 +101,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt, messageI
 };
 
 interface ToolOutputProps {
+    key?: React.Key;
     toolName: string;
     idx: number;
     url: string;

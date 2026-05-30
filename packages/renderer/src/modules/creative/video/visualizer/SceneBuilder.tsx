@@ -19,8 +19,8 @@ interface DroppedAsset {
 }
 
 // Error boundary so a bad GLTF file doesn't crash the whole canvas
-class ModelErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { children: React.ReactNode }) {
+class ModelErrorBoundary extends Component<{ key?: React.Key; children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { key?: React.Key; children: React.ReactNode }) {
         super(props);
         this.state = { hasError: false };
     }

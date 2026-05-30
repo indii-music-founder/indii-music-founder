@@ -10,6 +10,7 @@ interface EquityDashboardProps {
         role: string;
         clearance: string;
     };
+    key?: React.Key;
 }
 
 export const EquityDashboard = ({ architect }: EquityDashboardProps) => {

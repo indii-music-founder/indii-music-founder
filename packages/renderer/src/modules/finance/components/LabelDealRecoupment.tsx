@@ -177,7 +177,7 @@ function AddDealForm({ onSave, onCancel }: AddDealFormProps) {
 
 // ── Deal Row ───────────────────────────────────────────────────────────────────
 
-function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped: (id: string, amount: number) => void }) {
+function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped: (id: string, amount: number) => void; key?: React.Key }) {
     const [expanded, setExpanded] = useState(false);
     const [editAmount, setEditAmount] = useState(String(deal.recoupedAmount));
     const status = getStatus(deal);

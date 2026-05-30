@@ -255,7 +255,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                     <div className="grid grid-cols-1 gap-3">
                         <AnimatePresence mode="popLayout">
                             {paginatedProducts.map((product, index) => (
-                                <ContextMenu.Root key={product.id}>
+                                <ContextMenu.Root {...({ key: product.id } as any)}>
                                     <ContextMenu.Trigger asChild>
                                         <motion.div
                                             layout

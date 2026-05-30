@@ -7,7 +7,7 @@ import { CreativeColor } from '../constants';
 
 interface CanvasViewportProps {
     item: HistoryItem;
-    canvasRef: React.RefObject<HTMLCanvasElement>;
+    canvasRef: React.RefObject<HTMLCanvasElement | null>;
     isMagicFillMode: boolean;
     activeColor: CreativeColor;
     generatedCandidates: Candidate[];

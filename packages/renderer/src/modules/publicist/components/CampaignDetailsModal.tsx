@@ -44,7 +44,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
         }
     };
 
-    const StatusBadge = ({ s }: { s: string }) => {
+    const StatusBadge = ({ s }: { s: string; key?: React.Key }) => {
         const isActive = status === s;
         return (
             <button

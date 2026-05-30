@@ -4,7 +4,7 @@ import { MyComposition } from '../../remotion/MyComposition';
 import { VideoProject } from '../../store/videoEditorStore';
 
 interface VideoPreviewProps {
-    playerRef: React.RefObject<PlayerRef>;
+    playerRef: React.RefObject<PlayerRef | null>;
     project: VideoProject;
     onFrameUpdate?: (frame: number) => void;
 }

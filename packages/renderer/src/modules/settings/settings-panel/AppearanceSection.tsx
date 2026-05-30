@@ -22,7 +22,7 @@ const AppearanceSection: React.FC = () => {
         setTheme: s.setTheme,
     })));
 
-    const prefs = userProfile?.preferences || {};
+    const prefs = (userProfile?.preferences || {}) as any;
     const compactMode = prefs.compactMode ?? false;
     const animationsEnabled = prefs.animationsEnabled ?? true;
 

@@ -29,7 +29,14 @@ interface IntelligencePromptBuilderProps {
 
 
 
-const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; onClick: () => void; variant?: 'creative' | 'royalties' }) => (
+interface TagButtonProps {
+    key?: React.Key;
+    tag: string;
+    onClick: () => void;
+    variant?: 'creative' | 'royalties';
+}
+
+const TagButton = memo(({ tag, onClick, variant = 'creative' }: TagButtonProps) => (
     <button
         onClick={onClick}
         role="menuitem"
@@ -41,14 +48,17 @@ const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; o
 ));
 TagButton.displayName = 'TagButton';
 
-const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick, variant = 'creative' }: {
+interface CategoryDropdownProps {
+    key?: React.Key;
     category: string;
     values: string[] | Record<string, string[]>;
     isOpen: boolean;
     onToggle: () => void;
     onTagClick: (tag: string) => void;
     variant?: 'creative' | 'royalties';
-}) => {
+}
+
+const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick, variant = 'creative' }: CategoryDropdownProps) => {
     const dropdownId = useId();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);

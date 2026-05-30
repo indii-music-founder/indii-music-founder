@@ -75,9 +75,8 @@ export const ValidationRequirementsModal: React.FC<ValidationRequirementsModalPr
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {categories.map(cat => (
-                                    <React.Fragment key={cat.id}>
+                            {categories.map(cat => (
+                                <tbody key={cat.id}>
                                         <tr className="bg-gray-900/30">
                                             <td colSpan={distributors.length + 1} className="py-2 px-4 border-y border-gray-800/50">
                                                 <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
@@ -119,9 +118,8 @@ export const ValidationRequirementsModal: React.FC<ValidationRequirementsModalPr
                                                 <Row label="Model" distributors={distributors} getValue={d => d.requirements.pricing.model.replace('_', ' ')} />
                                             </>
                                         )}
-                                    </React.Fragment>
+                                    </tbody>
                                 ))}
-                            </tbody>
                         </table>
                     </div>
 

@@ -5,9 +5,10 @@ import { formatCurrency } from '@/lib/utils';
 
 interface TopSellingProductItemProps {
     product: MerchProduct & { revenue: number, units: number };
+    key?: React.Key;
 }
 
-export const TopSellingProductItem = React.memo(({ product }: TopSellingProductItemProps) => {
+function TopSellingProductItemComponent({ product }: TopSellingProductItemProps) {
     return (
         <MerchCard className="group p-4 flex items-center gap-4 cursor-pointer">
             <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
@@ -29,7 +30,9 @@ export const TopSellingProductItem = React.memo(({ product }: TopSellingProductI
             </div>
         </MerchCard>
     );
-}, areTopSellingPropsEqual);
+}
+
+export const TopSellingProductItem = React.memo(TopSellingProductItemComponent, areTopSellingPropsEqual);
 
 function areTopSellingPropsEqual(prevProps: TopSellingProductItemProps, nextProps: TopSellingProductItemProps) {
     const prev = prevProps.product;

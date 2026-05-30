@@ -35,6 +35,7 @@ interface GalleryItemProps {
     isPlaying: boolean;
     pinToClipboard: (item: HistoryItem) => void;
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
+    key?: React.Key;
 }
 
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {

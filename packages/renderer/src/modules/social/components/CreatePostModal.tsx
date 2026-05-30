@@ -88,7 +88,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         }
 
         // Pass validated data
-        onSave(validation.data as ScheduledPost);
+        onSave(validation.data as unknown as ScheduledPost);
         onClose();
     };
 
