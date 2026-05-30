@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Globe, Plus, Trash2, CheckSquare, Clock, AlertTriangle, FileText, Sparkles, Send, MessageSquare, Loader2, Check } from 'lucide-react';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 /* ================================================================== */
@@ -175,7 +176,7 @@ export function VisaChecklist() {
         try {
             localStorage.setItem('indii_visa_checklist_entries', JSON.stringify(entries));
         } catch (e) {
-            console.error('Failed to save visa checklists:', e);
+            Logger.error('VisaChecklist', 'Failed to save visa checklists', e);
         }
     }, [entries]);
 
@@ -184,7 +185,7 @@ export function VisaChecklist() {
         try {
             localStorage.setItem('indii_visa_advisor_chat', JSON.stringify(chatHistory));
         } catch (e) {
-            console.error('Failed to save visa advisor chat:', e);
+            Logger.error('VisaChecklist', 'Failed to save visa advisor chat', e);
         }
     }, [chatHistory]);
 
@@ -294,7 +295,7 @@ Include 5 to 8 total documentation items tailored exactly to what an artist ente
             setCustomCountryName('');
             toast.success(`AI Road Director successfully drafted the ${normalizedCountry} Visa checklist!`);
         } catch (err) {
-            console.error("AI Visa Checklist Generation Failed:", err);
+            Logger.error('VisaChecklist', 'AI Visa Checklist Generation Failed', err);
             toast.error("Failed to generate custom country requirements. Please verify the country name and try again.");
         } finally {
             setIsGeneratingAI(false);
@@ -348,7 +349,7 @@ Provide a highly practical, precise, and expert answer. Be direct and realistic.
 
             setChatHistory(prev => [...prev, assistantMsg]);
         } catch (err) {
-            console.error("Visa Advisor error:", err);
+            Logger.error('VisaChecklist', 'Visa Advisor error', err);
             const errorMsg: Message = {
                 id: secureRandomAlphanumeric(7),
                 role: 'assistant',

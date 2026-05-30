@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { getAuth } from 'firebase/auth';
 import { useProjectSync } from '@/hooks/useProjectSync';
+import { Logger } from '@/core/logger/Logger';
 
 interface ProjectListProps {
   isSidebarOpen: boolean;
@@ -51,7 +52,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         const userProjects = await ProjectService.listByUser(user.uid);
         setProjects(userProjects);
       } catch (err) {
-        console.error('Failed to load projects:', err);
+        Logger.error('ProjectList', 'Failed to load projects', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -79,7 +80,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
       setSelectedProject(newProject);
       syncProject(newProject.id);
     } catch (err) {
-      console.error('Failed to create project:', err);
+      Logger.error('ProjectList', 'Failed to create project', err);
     }
   };
 
@@ -96,7 +97,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         setProjects(updatedProjects);
       }
     } catch (err) {
-      console.error('Failed to rename project:', err);
+      Logger.error('ProjectList', 'Failed to rename project', err);
     }
   };
 
@@ -125,7 +126,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         }
       }
     } catch (err) {
-      console.error('Failed to delete project:', err);
+      Logger.error('ProjectList', 'Failed to delete project', err);
     }
   };
 
