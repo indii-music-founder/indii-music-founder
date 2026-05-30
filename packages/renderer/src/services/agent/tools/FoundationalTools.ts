@@ -8,7 +8,7 @@ export const FoundationalTools = {
      */
     audit_architecture: wrapTool('audit_architecture', async () => {
         try {
-            const result = await (window as any).electronAPI.agent.scanDirectory();
+            const result = await window.electronAPI!.agent.scanDirectory();
             if (result.success) {
                 return toolSuccess(result.data, "Architecture audit complete. Map retrieved.");
             } else {
@@ -32,7 +32,7 @@ export const FoundationalTools = {
             // Construct path based on agentId
             const filePath = `agents/${args.agentId}/instructions.md`;
             
-            const result = await (window as any).electronAPI.agent.updateKnowledge(filePath, args.action, args.knowledge);
+            const result = await window.electronAPI!.agent.updateKnowledge(filePath, args.action, args.knowledge);
             
             if (result.success) {
                 return toolSuccess(result, `SYSTEM UPDATE COMPLETE: Changes permanently written to ${args.agentId}.`);
