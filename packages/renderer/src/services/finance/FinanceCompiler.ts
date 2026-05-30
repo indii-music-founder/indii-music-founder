@@ -146,11 +146,11 @@ export class FinanceCompiler implements HarnessCompiler<FinanceCompilerInput, Fi
     };
 
     if (input.revenueStats) {
-      totalRevenue = input.revenueStats.totalRevenue;
-      revenueSources.streaming = input.revenueStats.sources.streaming;
-      revenueSources.merch = input.revenueStats.sources.merch;
-      revenueSources.licensing = input.revenueStats.sources.licensing;
-      revenueSources.social = input.revenueStats.sources.social;
+      totalRevenue = input.revenueStats.totalRevenue || 0;
+      revenueSources.streaming = input.revenueStats.sources?.streaming || 0;
+      revenueSources.merch = input.revenueStats.sources?.merch || 0;
+      revenueSources.licensing = input.revenueStats.sources?.licensing || 0;
+      revenueSources.social = input.revenueStats.sources?.social || 0;
     }
 
     const projectRoi = costSummary.total > 0 
@@ -339,8 +339,8 @@ export class FinanceCompiler implements HarnessCompiler<FinanceCompilerInput, Fi
     });
   }
 
-  private inferTaxTreatment(category: string): string {
-    const normalized = category.toLowerCase();
+  private inferTaxTreatment(category?: string): string {
+    const normalized = (category || '').toLowerCase();
     if (normalized.includes('travel')) return 'travel_expense_review';
     if (normalized.includes('equipment')) return 'equipment_or_consumable_review';
     if (normalized.includes('marketing')) return 'marketing_expense_review';
