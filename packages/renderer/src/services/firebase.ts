@@ -196,6 +196,10 @@ export { remoteConfig };
 // Service Worker / Push API (e.g. Chrome iOS). Sentry fix 2026-04-15.
 import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
 import type { Messaging } from 'firebase/messaging';
+import { Logger } from '@/core/logger/Logger';
+
+const TAG = 'firebase';
+
 
 let _messagingInstance: Messaging | null = null;
 let _messagingChecked = false;
@@ -292,7 +296,7 @@ if (typeof window !== 'undefined') {
 
     if (shouldInitAppCheck) {
         if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
-            console.warn(
+            Logger.warn(TAG, 
                 '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
