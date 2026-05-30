@@ -7,7 +7,6 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
-import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
 import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
