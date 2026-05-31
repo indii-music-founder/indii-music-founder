@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+bb5d35e83 chore: session checkpoint [14:41]
 04b4342b1 chore: session checkpoint [14:41]
 62dd606f4 fix(e2e): resolve test environment initialization and dev server config
 f27e0b559 chore: session checkpoint [14:40]
@@ -13,7 +14,6 @@ f27e0b559 chore: session checkpoint [14:40]
 61d6c234b chore(docs): clarify a2a protocol role relative to Conductor orchestration
 6dbf9aa90 chore: session checkpoint [14:26]
 0ba8bd085 chore(docs): phase 1 stale ref sweep — update AgentService Gateway → indii Conductor
-9fc5b4cc2 chore: session checkpoint [14:23]
 ```
 
 ## Working State
