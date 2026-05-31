@@ -265,7 +265,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <select
                                         value={studioControls.typographyStyle}
                                         
-                                        onChange={(e) => setStudioControls({ typographyStyle: e.target.value as any })}
+                                        onChange={(e) => setStudioControls({ typographyStyle: e.target.value as 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic' })}
                                         className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
                                     >
                                         <option value="cyberpunk">Cyberpunk Glitch</option>
@@ -513,10 +513,10 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             <div className="pt-2 border-t border-white/10">
                                 <WhiskPresetStyles onSelectPreset={(preset) => {
                                     
-                                    const exists = whiskState.styles.some((s: any) => s.content === preset.prompt);
+                                    const exists = whiskState.styles.some((s: { content: string }) => s.content === preset.prompt);
                                     if (exists) {
                                         
-                                        const item = whiskState.styles.find((s: any) => s.content === preset.prompt);
+                                        const item = whiskState.styles.find((s: { content: string, id: string }) => s.content === preset.prompt);
                                         if (item) toggleWhiskItem('style', item.id);
                                     } else {
                                         addWhiskItem('style', 'text', preset.prompt, preset.label);
