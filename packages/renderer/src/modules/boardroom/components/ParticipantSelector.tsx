@@ -89,7 +89,7 @@ export default function ParticipantSelector() {
                     const top = 50 + radiusY * Math.sin(angle);
 
                     return (
-                        <React.Fragment {...({ key: agent.id } as any)}>
+                        <React.Fragment key={agent.id}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <motion.button

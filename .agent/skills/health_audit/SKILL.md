@@ -143,6 +143,14 @@ echo "TODOs: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' src/ --include='*.ts' --include
 echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 ```
 
+### 11. Anti-AI Slop
+
+```bash
+echo "=== ANTI-AI SLOP ==="
+echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+```
+
 ## Report Generation
 
 After all scans complete, produce a markdown artifact at:
