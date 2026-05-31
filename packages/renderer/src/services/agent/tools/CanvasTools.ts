@@ -39,7 +39,7 @@ export const CanvasTools = {
         agentId?: string;
     }) => {
         try {
-            const { type, title, data, agentId = 'conductor' } = args;
+            const { type, title, data, agentId = 'generalist' } = args;
 
             const validTypes: CanvasContentType[] = ['chart', 'table', 'card', 'html', 'markdown'];
             if (!validTypes.includes(type)) {

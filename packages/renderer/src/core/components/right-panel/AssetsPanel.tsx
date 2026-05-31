@@ -117,7 +117,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
             const q = searchQuery.toLowerCase();
             filtered = filtered.filter(a =>
                 a.prompt?.toLowerCase().includes(q) ||
-                a.tags?.some(t => t.toLowerCase().includes(q))
+                a.tags?.some(t => t?.toLowerCase().includes(q))
             );
         }
 
