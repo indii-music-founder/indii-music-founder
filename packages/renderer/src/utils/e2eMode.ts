@@ -1,6 +1,6 @@
 type RuntimeWindow = Window & {
     FIREBASE_E2E_MOCK?: unknown;
-    FIREBASE_USER_MOCK?: unknown;
+    FIREBASE_USER_MOCK?: Record<string, unknown>;
 };
 
 const trueLike = (value: unknown): boolean =>
@@ -65,7 +65,7 @@ export const getE2EMockUser = <T>(): T | null => {
 
     // 1. Check window object
     if ((window as RuntimeWindow).FIREBASE_USER_MOCK) {
-        customUser = (window as RuntimeWindow).FIREBASE_USER_MOCK;
+        customUser = (window as RuntimeWindow).FIREBASE_USER_MOCK ?? null;
     } else {
         // 2. Check localStorage
         try {
