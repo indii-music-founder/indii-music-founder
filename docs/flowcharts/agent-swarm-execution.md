@@ -1,6 +1,6 @@
 # Agent Swarm & Intelligence Protocol Flowchart
 
-This deep-dive flowchart maps the low-level technical execution of the indii Agent System. It details how the central Orchestrator (`AgentService`) routes tasks to specialists (`BaseAgent` subclasses), how agents use the native Gemini File Search API for RAG, and how deterministic tools are executed.
+This deep-dive flowchart maps the low-level technical execution of the indii Agent System. It details how the central Orchestrator (`AgentService`) routes tasks to specialists (`BaseAgent` subclasses), how agents use the native Gemini File Search API for RAG, and how deterministic tools are executed. (Note: High-level graph orchestration via `indii Conductor`/`AgentGraphService` is shown in `entire-app-architecture.md`.)
 
 ```mermaid
 graph TD

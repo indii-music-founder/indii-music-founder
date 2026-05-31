@@ -15,7 +15,7 @@ graph TD
     subgraph State ["Client State & Gateway"]
         MarketSlice["Zustand `marketingSlice`"]
         TourSlice["Zustand `touringSlice`"]
-        AgentGateway["AgentService Gateway"]
+        AgentGateway["indii Conductor (AgentGraphService)"]
     end
 
     %% Agent Swarm
@@ -83,7 +83,7 @@ graph TD
 
 ## Transition Breakdown
 
-1. **Campaign Ideation:** The user requests a release strategy in the **Campaign Strategy Builder**. The **AgentService Gateway** routes this intent to the **MarketingAgent**.
+1. **Campaign Ideation:** The user requests a release strategy in the **Campaign Strategy Builder**. The **indii Conductor** routes this intent to the **MarketingAgent**.
 2. **Strategy Generation:** The **MarketingAgent** uses the active project's context (e.g., genre, target audience) to generate a multi-week timeline of promotional beats, writing the necessary copy and tagging required assets. This data populates the **Zustand `marketingSlice`** and is saved as a draft in **Firestore**.
 3. **Social Scheduling:** The generated timeline is rendered on the **Social Media Content Calendar**. When the user attaches assets (from the Creative/Video studios) and clicks "Schedule", the system queues the posts in Google **Cloud Tasks**.
 4. **Automated Publishing:** **Cloud Tasks** holds the payload in a sleeping state until the exact scheduled timestamp. It then fires a secure webhook to the respective **Social DSP APIs** (TikTok, Instagram, X) to publish the content autonomously.
