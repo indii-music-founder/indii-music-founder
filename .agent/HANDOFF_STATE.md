@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+4c3dd7abe chore: session checkpoint [11:30]
 e5ca21828 chore: session checkpoint [11:30]
 86c6458d4 chore: session checkpoint [11:30]
 1196e8376 chore: session checkpoint [11:18]
@@ -13,7 +14,6 @@ fc12b5265 chore: session checkpoint [11:00]
 77d7dc023 fix(test): re-skip A2A streaming test pending loopback transport implementation
 42008448f chore: session checkpoint [10:54]
 3e7ae2a6a chore: session checkpoint [10:53]
-2d39a8a2e docs: update agent training datasets and entire-app architecture
 ```
 
 ## Working State
@@ -25,6 +25,7 @@ fc12b5265 chore: session checkpoint [11:00]
 ?? check-e2e.js
 ?? check-network.js
 ?? check-store.js
+?? check-store2.js
 ?? check-user.js
 ?? dump-console.js
 ?? dump-errors.js
