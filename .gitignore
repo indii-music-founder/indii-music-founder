@@ -156,3 +156,13 @@ jobs.json
 run.json
 
 /scratch/
+
+# Security: browser/gh session cookies must never be tracked
+gh_cookies.json
+
+# Generated build/test logs
+deploy_output.txt
+ci-full-output.txt
+test-results.txt
+test-results2.txt
+test_results.json

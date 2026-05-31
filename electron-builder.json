@@ -56,8 +56,8 @@
   ],
   "publish": {
     "provider": "github",
-    "owner": "the-walking-agency-det",
-    "repo": "indii-music",
+    "owner": "indii-music-founder",
+    "repo": "indii-music-founder",
     "releaseType": "release"
   },
   "win": {
