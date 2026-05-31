@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-31 14:05 EDT
+**Updated:** 2026-05-31 14:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+57af5f740 fix(ISSUE-004): wire bug reporter to centralized GCP Secret Manager infrastructure
+ce8790bcb chore: session checkpoint [14:05]
 52f3061dc chore: session checkpoint [14:05]
 eb2a2778a chore: session checkpoint [14:05]
 96fed1b6b chore: session checkpoint [14:05]
@@ -12,15 +14,11 @@ d7f96a31d chore: session checkpoint [14:04]
 d7461c2c0 chore: session checkpoint [14:04]
 d563d1e91 chore: session checkpoint [14:04]
 c3136c391 chore: session checkpoint [14:04]
-558c9b2a2 chore: session checkpoint [14:03]
-38972f17f chore: session checkpoint [14:03]
 ```
 
 ## Working State
 ```
- M packages/firebase/src/config/secrets.ts
- M packages/firebase/src/functions/agent/reportBugFn.ts
- M packages/renderer/src/services/agent/tools/BugReportTools.ts
+clean working tree
 ```
 
 ## Decisions
