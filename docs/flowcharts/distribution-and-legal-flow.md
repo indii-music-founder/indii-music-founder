@@ -15,7 +15,7 @@ graph TD
     subgraph State ["Client State & Gateway"]
         LegalSlice["Zustand `legalSlice`"]
         DistSlice["Zustand `distributionSlice`"]
-        AgentGateway["AgentService Gateway"]
+        AgentGateway["indii Conductor (AgentGraphService)"]
     end
 
     %% Agents & Logic
@@ -90,7 +90,7 @@ graph TD
 ## Transition Breakdown
 
 1. **Contract Ingestion:** A user uploads a music industry contract (PDF) into the **Legal / Contract Dropzone**. The file is uploaded to **Firebase Storage** and immediately indexed by the **Gemini File Search API** for native RAG capability.
-2. **AI Legal Parsing:** The **AgentService Gateway** routes the request to the **LegalAgent**. The LegalAgent natively queries the File Search API to read the document. It uses its deterministic tools to extract strict numerical splits, terms, and potential "red flag" clauses (e.g., perpetual rights).
+2. **AI Legal Parsing:** The **indii Conductor** routes the request to the **LegalAgent**. The LegalAgent natively queries the File Search API to read the document. It uses its deterministic tools to extract strict numerical splits, terms, and potential "red flag" clauses (e.g., perpetual rights).
 3. **Structured Persistence:** The parsed JSON data updates the **Zustand `legalSlice`** and is securely saved to **Firestore** `contracts` collection.
 4. **Distribution Setup:** The user prepares a release via the **Release Setup Form**. They input required metadata (ISRC, UPC) and attach WAV masters and 3000x3000px artwork.
 5. **Asset Validation:** Before submission, the **DSP Validation Rules** engine strictly checks the assets (e.g., rejecting CMYK images or MP3s instead of WAVs), saving valid drafts to the **Zustand `distributionSlice`** and **Firestore**.
