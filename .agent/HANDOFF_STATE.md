@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-05-30 17:02 EDT
+**Updated:** 2026-05-31 10:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-4300a1b56 fix(ci): commit package-lock.json (un-ignore) so npm ci works
-251ac0cc9 chore: session checkpoint [16:54]
-1ab4448e8 chore: session checkpoint [16:48]
-6baf60cb3 chore: session checkpoint [16:46]
-acba49745 fix: add TypeScript references and type guards for React Three and env access
-a211bfa01 fix(test): resolve canvas batch service test renderer failure
-1d65e9fb1 fix(test): resolve react double-import and token usage test quota fallback failures
-394f71aca chore(ux): merge sprint a UX branch fixes
-bde330e21 perf(bundle): merge lazy loading and vender chunk optimizations
-66e94ef42 refactor(integration): merge functional API integrations for licensing copyright and video
+ce5eee48e chore(end): session checkpoint + ERROR_LEDGER entry for migration repoint
+f68113c45 docs(flowcharts): rebuild entire-app architecture + fix stale orchestrator refs
+312b1b956 chore(migration): repoint all GitHub integrations and docs to island repo
+6bb6e9a27 chore: track package-lock.json to ensure dependency consistency and support CI caching
+5af9b7eaf chore(deps): pin react/react-dom in root dependencies to match overrides
+42fc3636b chore: fix flowchart validation heading and update ERROR_LEDGER with React 19 bleed issue
+e9b2a7704 fix(deps): downgrade react in admin-dashboard to v18 to fix CI ReactNode typing conflicts
+22c202b28 fix(landing): augment JSX IntrinsicElements with react-three-fiber to fix CI build
+fd8833171 fix(test): resolve final text matcher failures in AgentDashboard and SettingsPanel
+71acb7dc1 fix(e2e): resolve creative studio and video producer e2e test failures
 ```
 
 ## Working State
