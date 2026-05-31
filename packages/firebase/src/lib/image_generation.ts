@@ -96,7 +96,7 @@ export class GeminiImageService {
     private getClient(): GoogleGenAI {
         if (!this.client) {
             const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-            const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+            const projectId = process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
 
             // Retrieve API key if configured (Production secrets or local .env)
             let apiKey: string | null = null;

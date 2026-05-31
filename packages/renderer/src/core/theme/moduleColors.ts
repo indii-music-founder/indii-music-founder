@@ -77,7 +77,8 @@ export const departmentCssVars = {
  * Get the CSS variable for a department
  * @example getDepartmentCssVar('marketing') // 'var(--color-dept-marketing)'
  */
-export const getDepartmentCssVar = (dept: string): string => {
+export const getDepartmentCssVar = (dept?: string | null): string => {
+    if (!dept) return `var(${departmentCssVars.default})`;
     const key = dept.toLowerCase() as keyof typeof departmentCssVars;
     return `var(${departmentCssVars[key] || departmentCssVars.default})`;
 };

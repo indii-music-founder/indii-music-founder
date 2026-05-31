@@ -1,6 +1,6 @@
 # Agent-to-Agent (A2A) Swarm Protocol Flowchart
 
-This flowchart maps the highly specific communication protocol that allows the 21 isolated agents to delegate tasks, pass context, and synchronize responses without polluting the global state.
+This flowchart maps the highly specific communication protocol that allows the 21 isolated agents to delegate tasks, pass context, and synchronize responses without polluting the global state. This protocol operates *within* agent execution; high-level graph orchestration (task planning) is handled by the **indii Conductor** (AgentGraphService) shown in `entire-app-architecture.md`.
 
 ```mermaid
 graph TD
