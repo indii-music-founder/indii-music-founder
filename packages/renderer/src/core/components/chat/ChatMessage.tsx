@@ -175,7 +175,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
     }, [msg.text, msg.planId, msg.metadata]);
 
     const markdownComponents: Components = useMemo(() => ({
-        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />,
+        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} messageId={msg.id} agentId={(msg as any).agentId || 'generalist'} />,
         p: ({ children }: { children?: React.ReactNode }) => {
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
@@ -331,7 +331,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {json.urls.map((url: string, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={(msg as any).agentId || 'generalist'} />
                                         ))}
                                     </div>
                                 );
@@ -349,7 +349,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {images.map((img, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} messageId={msg.id} agentId={(msg as any).agentId || 'generalist'} />
                                         ))}
                                     </div>
                                 );
@@ -362,7 +362,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             return (
                                 <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     {urls.map((url: string, idx: number) => (
-                                        <ToolDocumentOutput key={idx} toolName={toolName} idx={idx} url={url} prompt={json.name || json.title} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                        <ToolDocumentOutput key={idx} toolName={toolName} idx={idx} url={url} prompt={json.name || json.title} messageId={msg.id} agentId={(msg as any).agentId || 'generalist'} />
                                     ))}
                                 </div>
                             );

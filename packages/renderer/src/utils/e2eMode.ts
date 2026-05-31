@@ -1,6 +1,6 @@
 type RuntimeWindow = Window & {
     FIREBASE_E2E_MOCK?: unknown;
-    FIREBASE_USER_MOCK?: unknown;
+    FIREBASE_USER_MOCK?: Record<string, unknown>;
 };
 
 const trueLike = (value: unknown): boolean =>
@@ -44,30 +44,7 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
 export const getE2EMockUser = <T>(): T | null => {
     if (!isFirebaseE2EMockEnabled() || typeof window === 'undefined') return null;
     
-    // 1. Check window object
-    if ((window as RuntimeWindow).FIREBASE_USER_MOCK) {
-        return (window as RuntimeWindow).FIREBASE_USER_MOCK as T;
-    }
-    
-    // 2. Check localStorage
-    try {
-        const stored = localStorage.getItem('FIREBASE_USER_MOCK');
-        if (stored) return JSON.parse(stored) as T;
-    } catch {
-        // ignore
-    }
-    
-    // 3. Check environment
-    try {
-        const envUser = import.meta.env.VITE_FIREBASE_USER_MOCK;
-        if (envUser) return JSON.parse(envUser) as T;
-    } catch {
-        // ignore
-    }
-
-    // 4. Default mock user fallback so login buttons/auth flows actually work
-    // instead of resolving with null and silently failing.
-    return {
+    const defaultUser = {
         uid: 'test-agent-123',
         email: 'test@indii.com',
         displayName: 'Automated Test Agent',
@@ -81,8 +58,39 @@ export const getE2EMockUser = <T>(): T | null => {
         getIdTokenResult: async () => ({ token: 'mock-id-token', claims: {}, authTime: new Date().toISOString(), issuedAtTime: new Date().toISOString(), signInProvider: 'password', signInSecondFactor: null }),
         reload: async () => {},
         delete: async () => {},
-        toJSON: () => ({ uid: 'test-agent-123' })
-    } as unknown as T;
+        toJSON: function() { return { uid: this.uid }; }
+    };
+
+    let customUser: Record<string, unknown> | null = null;
+
+    // 1. Check window object
+    if ((window as RuntimeWindow).FIREBASE_USER_MOCK) {
+        customUser = (window as RuntimeWindow).FIREBASE_USER_MOCK ?? null;
+    } else {
+        // 2. Check localStorage
+        try {
+            const stored = localStorage.getItem('FIREBASE_USER_MOCK');
+            if (stored) customUser = JSON.parse(stored);
+        } catch {
+            // ignore
+        }
+        
+        // 3. Check environment
+        if (!customUser) {
+            try {
+                const envUser = import.meta.env.VITE_FIREBASE_USER_MOCK;
+                if (envUser) customUser = JSON.parse(envUser);
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    if (customUser) {
+        return { ...defaultUser, ...customUser } as unknown as T;
+    }
+
+    return defaultUser as unknown as T;
 };
 
 export const getE2ELocalStorageValue = (key: string): string | null => {

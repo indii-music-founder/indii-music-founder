@@ -293,16 +293,23 @@ if (typeof window !== 'undefined') {
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
-    // Debug token for local development
-    // Set global debug token if provided in env
-    if (env.DEV) {
-        if (env.appCheckDebugToken) {
-            window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-            self.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-        } else {
-            window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        }
+    // Debug token for local development AND headless CI (e2e against deployed staging).
+    //
+    // An explicit debug token (VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN) is a deliberate,
+    // secret-controlled value. When present we apply it regardless of DEV/PROD so that
+    // a deployed staging build can pass App Check from a headless browser (which cannot
+    // solve a reCAPTCHA challenge). This does NOT weaken security: the token only lets
+    // App Check accept the request — Firestore/Storage Security Rules still enforce all
+    // real authorization. Production end-user builds simply won't have this token set.
+    //
+    // The auto-generate fallback (`= true`) stays DEV-only: it prompts the SDK to log a
+    // fresh token to the console for local registration, which must never happen in prod.
+    if (env.appCheckDebugToken) {
+        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+    } else if (env.DEV) {
+        window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }
 
     // SECURITY: Warn in production if App Check is not configured
