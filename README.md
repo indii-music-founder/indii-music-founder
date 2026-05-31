@@ -8,7 +8,7 @@
 
 indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/new-detroit-music-llc/indii-Alpha-Electron)
+[![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/indii-music-founder/indii-music-founder)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -25,8 +25,8 @@ indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenan
 
 ```bash
 # 1. Clone (1 min)
-git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
-cd indii-Alpha-Electron
+git clone https://github.com/indii-music-founder/indii-music-founder.git
+cd indii-music-founder
 
 # 2. Bootstrap environment (5 min)
 make prime                  # installs deps, runs health check
@@ -592,8 +592,8 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ### Installation
 
 ```bash
-git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
-cd indii-Alpha-Electron
+git clone https://github.com/indii-music-founder/indii-music-founder.git
+cd indii-music-founder
 make prime                 # installs deps + runs health check
 ```
 
@@ -745,7 +745,7 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 ## 📂 Project Structure
 
 ```
-indii-Alpha-Electron/
+indii-music-founder/
 ├── src/                    # React application source
 │   ├── core/               # App infrastructure (store, contexts, themes)
 │   ├── modules/            # 36 lazy-loaded feature modules

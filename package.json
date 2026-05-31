@@ -135,10 +135,10 @@
     ],
     "publish": [
       {
-        "owner": "the-walking-agency-det",
+        "owner": "indii-music-founder",
         "private": true,
         "provider": "github",
-        "repo": "indii-music",
+        "repo": "indii-music-founder",
         "releaseType": "release"
       }
     ],
@@ -179,7 +179,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "https://github.com/the-walking-agency-det/indii-Clean.git"
+    "url": "https://github.com/indii-music-founder/indii-music-founder.git"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
