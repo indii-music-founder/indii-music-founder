@@ -190,6 +190,10 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
+          # Debug token lets the deployed staging build pass App Check from headless CI.
+          # Security: only grants App Check passage; Firestore/Storage Rules still enforce
+          # authorization. Set this secret in the repo; absent in real end-user builds.
+          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_USE_FINE_TUNED_AGENTS: "true"
           VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio
@@ -313,10 +317,13 @@ jobs:
         run: rm -f $HOME/gcloud-key.json
 
   # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
+  # NOTE: no continue-on-error. A real e2e failure must set this job's result to
+  # 'failure' so the deploy-production gate (needs.e2e-staging.result == 'success')
+  # actually blocks a bad deploy. With continue-on-error the job result stayed
+  # 'success' even when tests failed, silently letting broken builds reach prod.
   e2e-staging:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    continue-on-error: true
 
     steps:
       - name: Checkout repository
