@@ -276,9 +276,9 @@ export class MemorySearch {
             candidates = candidates.filter(m => m.importance >= filters.minImportance!);
         }
         if (filters.tags?.length) {
-            const tagSet = new Set(filters.tags.map(t => t.toLowerCase()));
-            candidates = candidates.filter(m =>
-                (m.tags || []).some(t => tagSet.has(t.toLowerCase()))
+            const tagSet = new Set(filters.tags.filter(Boolean).map(t => t.toLowerCase()));
+            candidates = candidates.filter(m => 
+                (m.tags || []).some(t => t && tagSet.has(t.toLowerCase()))
             );
         }
         if (filters.dateRange) {

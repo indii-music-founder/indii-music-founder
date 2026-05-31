@@ -1,42 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-31 11:57 EDT
+**Updated:** 2026-05-31 15:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-d7eeedcbf chore: session checkpoint [11:55]
-4272d94e6 chore: session checkpoint [11:53]
-03faebfd1 chore: session checkpoint [11:40]
-7611f12db chore: session checkpoint [11:39]
-af25e689e chore: session checkpoint [11:39]
-7f3c67f4b chore: session checkpoint [11:39]
-855d3f285 chore: session checkpoint [11:39]
-9b61cf830 chore: session checkpoint [11:38]
-0231df23e chore: session checkpoint [11:38]
-9546a1d32 chore: session checkpoint [11:38]
+23c3fe994 chore: session checkpoint [15:41]
+de7b8e814 chore: session checkpoint [15:39]
+39ef19c05 chore: session checkpoint [15:35]
+ba337c86e chore: session checkpoint [15:33]
+b9163872e chore: session checkpoint [15:30]
+b54a3bdce chore: session checkpoint [15:30]
+3dbe5ec3f fix(ci,appcheck): make e2e-staging a real gate + let CI pass App Check
+1f3a0178d chore: add reasoning comment to test.js
+3bcac24ee chore: session checkpoint [15:18]
+3d9924164 chore: session checkpoint [15:16]
 ```
 
 ## Working State
 ```
- M execution/training/trigger_r8_tuning.ts
- M packages/renderer/src/services/firebase.ts
- M packages/renderer/src/utils/e2eMode.ts
-?? boardroom.png
-?? click-agent.js
-?? click-dismiss.js
-?? click-guest.js
-?? click-skip.js
-?? execution/training/check_r8_tuning_status.ts
-?? run-routine-102.cjs
-?? run-test.js
-?? screenshot-test.cjs
-?? set-ls.js
-?? snapshot.txt
-?? snapshot2.txt
-?? test-eval.js
-?? test-mock.js
-?? test-pw.cjs
-?? workspace.html
+?? .agent/AGENT_BRIDGE.md
 ```
 
 ## Decisions
