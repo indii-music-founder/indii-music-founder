@@ -115,6 +115,19 @@ grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '
 - Math.random() in render → Replace with deterministic seeded RNG or frame-based calculation
 - Date.now() in render → Move to useEffect or useMemo
 
+### 1.8 Anti-AI Slop (Clean-Up Scan)
+```bash
+# Lazy AI placeholders
+grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+
+# AI conversational boilerplate
+grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+```
+
+**AUTO-FIX:** For each finding:
+- Boilerplate text → Delete the text from the file completely.
+- Lazy placeholders (`// ... rest of code`) → You MUST read the original file, synthesize the missing logic, and implement it fully. NEVER just delete the placeholder without implementing the code.
+
 ---
 
 ## Phase 2: Small Game (Deep Logic Read)

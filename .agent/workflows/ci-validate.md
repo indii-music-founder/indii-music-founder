@@ -131,6 +131,18 @@ npm run ci
 
 If the script fails, **the agent MUST analyze the output and fix the code** before completing the workflow.
 
+---
+
+## Step 3.5 — Run Local GitHub Actions Validation (Optional)
+
+If you have `act` installed, you can simulate the GitHub Actions CI pipeline locally to catch configuration errors or pipeline failures before pushing:
+
+```bash
+act -W .github/workflows/build.yml
+```
+
+This ensures the CI environment will succeed without needing to push trial commits.
+
 
 ---
 
