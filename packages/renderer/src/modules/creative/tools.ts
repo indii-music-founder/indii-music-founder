@@ -30,7 +30,7 @@ export const CREATIVE_TOOLS = {
                 const q = args.query.toLowerCase();
                 filtered = filtered.filter(item =>
                     item.prompt?.toLowerCase().includes(q) ||
-                    item.tags?.some(t => t.toLowerCase().includes(q))
+                    item.tags?.some(t => t?.toLowerCase().includes(q))
                 );
             }
 
