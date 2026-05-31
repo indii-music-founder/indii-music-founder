@@ -1,3 +1,14 @@
+## 2026-05-31 Repo Migration Left GitHub Integrations Pointing at Dead Repos (Silent — passed CI)
+
+**SEVERITY:** High (broke 5 live features incl. a paid path; invisible to build/typecheck/lint/unit tests)
+
+**MISTAKE:**
+- FILES: `packages/main/src/updater.ts`, `electron-builder.json`, root `package.json` (build.publish + repository.url), `packages/firebase/src/functions/agent/reportBugFn.ts`, `packages/firebase/src/subscription/activateFounderPass.ts`, `packages/renderer/src/modules/settings/components/DownloadHub.tsx`, `FounderBadge.tsx`, `.github/CODEOWNERS`, `.env.example`
+- ERROR: After migrating the app to the isolated org `indii-music-founder/indii-music-founder`, the deploy layer (Firebase project, git remote, CI deploy target, real `.env`) was correctly repointed — but GitHub-integration code still hardcoded the OLD repos (`the-walking-agency-det/indii-Clean`, `.../indii-music`, `new-detroit-music-llc/indii-Alpha-Electron`). Result: desktop auto-update checked a dead feed, in-app bug reports + founder-pass GitHub commits targeted dead repos, download links 404'd, CODEOWNERS named a non-member (`@thewalkeragency`).
+- CAUSE: A migration that fixes runtime/deploy config but misses **external-integration string constants**. `npm run typecheck`, `lint`, and the 3961 unit tests all PASS because these integrations hit GitHub at runtime (or only matter in the desktop build) and are mocked in tests. The web build never exercises them, so CI stayed green while real features were broken.
+- FIX: Repointed all owner/repo constants to `indii-music-founder/indii-music-founder`; CODEOWNERS to a valid org member (`@the-walking-agency-det`); untracked a committed `gh_cookies.json` (17 live GitHub session cookies — credential leak) + 2,402 generated files (graphify-out, scratch, logs).
+- PREVENTION: After ANY repo/org migration, grep the whole tree for every old owner/repo/org string (`git grep -lI -e <old-owner> -e <old-repo>`), not just config files. Green CI does NOT prove external integrations work — auto-update, bug reporting, release downloads, and any GitHub-API-backed paid feature must be manually verified post-migration. Never commit `*cookies*.json`/session files; add to `.gitignore` and revoke sessions if leaked. SSH push identity (`the-walking-agency-det`) and `gh` CLI identity (`thewalkeragency`) can differ — a `gh` 404 may mean wrong account, not a missing repo.
+
 ## 2026-05-31 React 19 Types Bleeding into React 18 Monorepo via ^19.x Constraints
 
 **SEVERITY:** High (breaks CI typechecking globally across all packages)
