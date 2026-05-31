@@ -45,9 +45,25 @@ git add .agent/HANDOFF_STATE.md
 # Only commit if the file actually changed
 if git diff --cached --name-only | grep -q "HANDOFF_STATE.md"; then
   git commit -m "chore: session checkpoint [$(date '+%H:%M')]" .agent/HANDOFF_STATE.md 2>&1
-  # Push so the repo never shows a phantom "unpushed" checkpoint commit.
-  # Safe re: CI — checkpoint commits only touch .agent/HANDOFF_STATE.md, which
-  # deploy.yml excludes via paths-ignore (.agent/** and **.md), so this does NOT
-  # retrigger deploys. Fails quietly when offline / no upstream; never force-pushes.
-  git push origin "$BRANCH" 2>/dev/null || true
+
+  # Push ONLY when the checkpoint commit is the sole unpushed commit.
+  #
+  # Why: `git push` ships the WHOLE branch, not just this commit. If real source
+  # commits are sitting unpushed locally, an automated Stop-hook push would shove
+  # them to origin at an unpredictable moment — triggering deploy.yml and, via
+  # cancel-in-progress, cancelling whatever CI run is live. That's how checkpoint
+  # pushes were silently kicking off / killing deploys.
+  #
+  # So: only auto-push when the single unpushed commit is THIS checkpoint (whose
+  # only path is .agent/HANDOFF_STATE.md, already covered by paths-ignore and thus
+  # CI-inert). If anything else is unpushed, leave the whole branch alone and let
+  # the user push real work deliberately. Fails quietly offline; never force-pushes.
+  UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+  if [ -n "$UPSTREAM" ]; then
+    UNPUSHED=$(git log "$UPSTREAM"..HEAD --name-only --pretty=format: 2>/dev/null | grep -v '^$' | sort -u)
+    # Push only if the sole unpushed path is the checkpoint file.
+    if [ "$UNPUSHED" = ".agent/HANDOFF_STATE.md" ]; then
+      git push origin "$BRANCH" 2>/dev/null || true
+    fi
+  fi
 fi
