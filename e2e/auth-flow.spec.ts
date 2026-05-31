@@ -120,35 +120,7 @@ test.describe('Authentication Flow', () => {
 
     test('Valid credentials authenticate successfully', async ({ page }) => {
         // Mock Firestore to prevent network hangs
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: corsHeaders });
-                return;
-            }
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.fulfill({ status: 403, headers: corsHeaders, contentType: 'application/json', body: '{"error":{"code":403,"message":"Permission Denied"}}' });
-                return;
-            }
-            if (url.includes('/users/test-user-uid-e2e')) {
-                await route.fulfill({
-                    status: 200,
-                    headers: corsHeaders,
-                    contentType: 'application/json',
-                    body: JSON.stringify({
-                        name: 'projects/mock/databases/(default)/documents/users/test-user-uid-e2e',
-                        fields: {
-                            uid: { stringValue: 'test-user-uid-e2e' },
-                            displayName: { stringValue: 'E2E Test User' },
-                            membershipTier: { stringValue: 'pro' },
-                            onboardingCompleted: { booleanValue: true },
-                        },
-                    }),
-                });
-                return;
-            }
-            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
-        });
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
         // Mock Identity Toolkit for successful login
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
@@ -220,14 +192,7 @@ test.describe('Authentication Flow', () => {
 
     test('Logout clears session (mock)', async ({ page }) => {
         // Mock Firestore
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
-                return;
-            }
-            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
-        });
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
         // Mock Identity Toolkit and secure token
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
@@ -322,13 +287,7 @@ test.describe('Authentication Flow', () => {
 
     test('Session persists on page reload (mock)', async ({ page }) => {
         // Mock Firestore
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
-                return;
-            }
-            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
         });
 
         // Mock Identity Toolkit and secure token
