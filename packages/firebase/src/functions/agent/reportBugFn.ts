@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
+import { githubToken, getGithubToken } from "../../config/secrets";
 
 interface ReportBugRequest {
     title: string;
@@ -40,7 +41,9 @@ function generateIdempotencyKey(title: string, module: string, severity: string,
  * - GitHub integration with dedup (search-before-create)
  * - Returns per-channel success status
  */
-export const reportBugFn = functions.https.onCall(
+export const reportBugFn = functions
+    .runWith({ secrets: [githubToken] })
+    .https.onCall(
     async (data: ReportBugRequest, context): Promise<ReportBugResponse> => {
         // Require App Check
         if (context.app == undefined) {
@@ -102,11 +105,11 @@ export const reportBugFn = functions.https.onCall(
             console.warn('[reportBugFn] Failed to persist to Firestore:', e);
         }
 
-        // 2. GitHub integration (server-side token)
-        const githubToken = process.env.GITHUB_TOKEN || '';
+        // 2. GitHub integration (server-side token via centralized secrets)
+        const resolvedGithubToken = getGithubToken();
         const githubRepo = process.env.GITHUB_REPO || 'indii-music-founder/indii-music-founder';
 
-        if (githubToken) {
+        if (resolvedGithubToken) {
             try {
                 const issueTitle = `[${severity.toUpperCase()}] ${title}`;
                 const markdownBody = `## Bug Report
@@ -138,7 +141,7 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
                 const searchResponse = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(searchQuery)}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${githubToken}`,
+                        'Authorization': `Bearer ${resolvedGithubToken}`,
                         'Accept': 'application/vnd.github+json',
                         'X-GitHub-Api-Version': '2022-11-28',
                     },
@@ -153,7 +156,7 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
                         const commentResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${existingIssue.number}/comments`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${githubToken}`,
+                                'Authorization': `Bearer ${resolvedGithubToken}`,
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/vnd.github+json',
                                 'X-GitHub-Api-Version': '2022-11-28',
@@ -174,7 +177,7 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
                         const createResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${githubToken}`,
+                                'Authorization': `Bearer ${resolvedGithubToken}`,
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/vnd.github+json',
                                 'X-GitHub-Api-Version': '2022-11-28',
