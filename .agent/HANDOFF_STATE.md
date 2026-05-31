@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+a541ad0bb chore: session checkpoint [10:38]
 ce5eee48e chore(end): session checkpoint + ERROR_LEDGER entry for migration repoint
 f68113c45 docs(flowcharts): rebuild entire-app architecture + fix stale orchestrator refs
 312b1b956 chore(migration): repoint all GitHub integrations and docs to island repo
@@ -13,7 +14,6 @@ f68113c45 docs(flowcharts): rebuild entire-app architecture + fix stale orchestr
 e9b2a7704 fix(deps): downgrade react in admin-dashboard to v18 to fix CI ReactNode typing conflicts
 22c202b28 fix(landing): augment JSX IntrinsicElements with react-three-fiber to fix CI build
 fd8833171 fix(test): resolve final text matcher failures in AgentDashboard and SettingsPanel
-71acb7dc1 fix(e2e): resolve creative studio and video producer e2e test failures
 ```
 
 ## Working State
