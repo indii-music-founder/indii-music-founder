@@ -1173,11 +1173,13 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Summary:** Triggering the Omni Agent (Direct Mode) directly over the heavy `fabric.js` canvas causes an unhandled fatal exception (`Uncaught TypeError: Cannot read properties of undefined (reading 'toLowerCase')`). This crashes the entire application context and forces a reload/logout.
 
 ### ISSUE-051: Boardroom Maximum Update Depth Exceeded
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 8)
 - **Summary:** Rapidly spam-clicking agent portraits to seat/unseat them triggers a React `Maximum update depth exceeded` error in the `<Boardroom>` component (likely a `setState` inside `useEffect` with missing/changing dependencies), causing the component to crash and unmount.
+- **Root Cause:** The `<TooltipProvider>` from Radix UI was being mapped iteratively over each agent. Spamming clicks caused the internal context states for tooltip delay tracking to infinitely update across the many rapid mount/unmount and layout shift frames, leading to a depth crash. 
+- **Fix:** Extracted the `<TooltipProvider>` outwards so it wraps the entire list once instead of instantiating N independent providers.
 
 ### ISSUE-052: CircuitBreaker Fails Open on Concurrent Mode Execution
 - **Status:** ✅ FIXED (v1.64.0)
@@ -1198,7 +1200,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Updated `MODULE_AGENT_MAP` in `constants.ts` to map those modules correctly to `generalist`. Also replaced hardcoded instances of `conductor` in `CanvasTools.ts`, `ChatMessage.tsx`, and tests.
 
 ### ISSUE-054: E2E Fallback Fails Due to Undefined Process Env in Browser
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Agent Orchestrator / E2E
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 14)
