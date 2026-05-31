@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:30 EDT
+**Updated:** 2026-05-31 11:31 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+93b458bd7 chore: session checkpoint [11:30]
 d5c6ed886 chore: session checkpoint [11:30]
 4c3dd7abe chore: session checkpoint [11:30]
 e5ca21828 chore: session checkpoint [11:30]
@@ -13,7 +14,6 @@ e5ca21828 chore: session checkpoint [11:30]
 0a766a76a chore: Antigravity Phase 2 complete — e2e stability, state sync, architecture map, datasets
 fc12b5265 chore: session checkpoint [11:00]
 77d7dc023 fix(test): re-skip A2A streaming test pending loopback transport implementation
-42008448f chore: session checkpoint [10:54]
 ```
 
 ## Working State
@@ -54,6 +54,7 @@ fc12b5265 chore: session checkpoint [11:00]
 ?? test-login.js
 ?? test-seat-check.js
 ?? test-seat.js
+?? wait-and-snap.js
 ```
 
 ## Decisions
