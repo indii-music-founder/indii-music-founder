@@ -180,6 +180,7 @@ if command -v gcloud &>/dev/null; then
 
   if [ -n "$EMULATORS_NEEDED" ]; then
     log_info "Installing missing emulators:$EMULATORS_NEEDED"
+    # shellcheck disable=SC2086
     gcloud components install $EMULATORS_NEEDED --quiet
     log_ok "Emulators installed"
   fi
@@ -194,7 +195,11 @@ step "Updating gcloud components"
 
 if command -v gcloud &>/dev/null; then
   log_info "Checking for updates..."
-  gcloud components update --quiet 2>/dev/null && log_ok "gcloud updated" || log_warn "Update check failed (may need gcloud init first)"
+  if gcloud components update --quiet 2>/dev/null; then
+    log_ok "gcloud updated"
+  else
+    log_warn "Update check failed (may need gcloud init first)"
+  fi
 else
   log_warn "gcloud not found, skipping update"
 fi
