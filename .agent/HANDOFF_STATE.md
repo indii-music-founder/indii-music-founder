@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:55 EDT
+**Updated:** 2026-05-31 11:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d7eeedcbf chore: session checkpoint [11:55]
 4272d94e6 chore: session checkpoint [11:53]
 03faebfd1 chore: session checkpoint [11:40]
 7611f12db chore: session checkpoint [11:39]
@@ -13,7 +14,6 @@ af25e689e chore: session checkpoint [11:39]
 9b61cf830 chore: session checkpoint [11:38]
 0231df23e chore: session checkpoint [11:38]
 9546a1d32 chore: session checkpoint [11:38]
-72fd40d98 chore: session checkpoint [11:38]
 ```
 
 ## Working State
@@ -26,6 +26,7 @@ af25e689e chore: session checkpoint [11:39]
 ?? click-dismiss.js
 ?? click-guest.js
 ?? click-skip.js
+?? execution/training/check_r8_tuning_status.ts
 ?? run-routine-102.cjs
 ?? run-test.js
 ?? screenshot-test.cjs
