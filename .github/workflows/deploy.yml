@@ -168,6 +168,13 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
+          VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio
+          VITE_INGESTION_ENTITY_NAME: indii Music
+          VITE_INGESTION_TRADING_NAME: indii
+          VITE_INGESTION_CONTACT_NAME: indii Support
+          VITE_INGESTION_CONTACT_EMAIL: support@indii.music
+          VITE_INGESTION_CONTACT_ADDRESS: Detroit, MI
+          VITE_INGESTION_CONTACT_PHONE: +1-844-INDII-01
 
       - name: Build studio app
         run: npm run build:studio
@@ -185,6 +192,13 @@ jobs:
           VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_USE_FINE_TUNED_AGENTS: "true"
+          VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio
+          VITE_INGESTION_ENTITY_NAME: indii Music
+          VITE_INGESTION_TRADING_NAME: indii
+          VITE_INGESTION_CONTACT_NAME: indii Support
+          VITE_INGESTION_CONTACT_EMAIL: support@indii.music
+          VITE_INGESTION_CONTACT_ADDRESS: Detroit, MI
+          VITE_INGESTION_CONTACT_PHONE: +1-844-INDII-01
 
       - name: Verify build outputs
         run: |
@@ -347,7 +361,7 @@ jobs:
   deploy-production:
     runs-on: ubuntu-latest
     needs: [deploy-staging, e2e-staging]
-    if: ${{ always() && needs.deploy-staging.result == 'success' }}
+    if: ${{ always() && needs.deploy-staging.result == 'success' && needs.e2e-staging.result == 'success' }}
 
     steps:
       - name: Checkout repository
