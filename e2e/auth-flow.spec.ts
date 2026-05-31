@@ -288,7 +288,6 @@ test.describe('Authentication Flow', () => {
     test('Session persists on page reload (mock)', async ({ page }) => {
         // Mock Firestore
         await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
-        });
 
         // Mock Identity Toolkit and secure token
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
