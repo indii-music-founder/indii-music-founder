@@ -73,7 +73,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
     ];
 
     const displayItems: Array<{
-        icon: any;
+        icon: React.ElementType;
         title: string;
         prompt: string | null;
         action?: () => void;
