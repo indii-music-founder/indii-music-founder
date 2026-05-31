@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:18 EDT
+**Updated:** 2026-05-31 11:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1196e8376 chore: session checkpoint [11:18]
 1c35bd883 chore: session checkpoint [11:11]
 0a766a76a chore: Antigravity Phase 2 complete — e2e stability, state sync, architecture map, datasets
 fc12b5265 chore: session checkpoint [11:00]
@@ -13,15 +14,40 @@ fc12b5265 chore: session checkpoint [11:00]
 2d39a8a2e docs: update agent training datasets and entire-app architecture
 5d2e0fda2 chore: session checkpoint [10:43]
 409f64917 chore: session checkpoint [10:38]
-a541ad0bb chore: session checkpoint [10:38]
 ```
 
 ## Working State
 ```
  M execution/training/trigger_r8_tuning.ts
  M packages/renderer/src/core/config/rate-limits.ts
+?? catch-errors.js
+?? check-auth.js
+?? check-e2e.js
+?? check-network.js
+?? check-store.js
+?? check-user.js
+?? dump-console.js
+?? dump-errors.js
+?? dump-html.js
+?? dump-loading.js
+?? get-app.js
+?? get-body.js
+?? get-body2.js
+?? get-disabled.js
+?? get-err.js
+?? get-error.js
+?? get-state.js
+?? inject-mock.js
+?? page.html
+?? set-e2e.js
+?? submit.js
+?? test-app-error.js
+?? test-auth-error.js
+?? test-auth-state.js
 ?? test-clear.js
+?? test-console.js
 ?? test-create.js
+?? test-e2e.js
 ?? test-eval102.js
 ?? test-login-real.js
 ?? test-login.js
