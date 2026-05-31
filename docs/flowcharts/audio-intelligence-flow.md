@@ -5,7 +5,7 @@ This flowchart maps the technical execution path for the audio intelligence suit
 ```mermaid
 graph TD
     %% UI Components
-    subgraph UI ["Client UI (packages/renderer/src/modules/music/)"]
+    subgraph UI ["Client UI (packages/renderer/src/modules/tools/)"]
         Dropzone["Audio File Dropzone"]
         Visualizer["Waveform & DNA Dashboard"]
         TTSInput["Text-to-Speech Prompt Input"]

@@ -1,115 +1,120 @@
 # Entire App Architecture Flowchart
 
-This macro flowchart depicts the high-level system architecture of indii. It illustrates the interaction between client interfaces, the frontend orchestration layer, the decentralized A2A (Agent-to-Agent) Swarm of specialist agents, and the backend cloud infrastructure powered by Firebase and Vertex AI.
+This macro flowchart depicts the high-level system architecture of **indii** — the AI-native music business platform. It maps the interaction between client interfaces, the frontend orchestration layer (**indii Conductor** + the decentralized A2A specialist swarm), the Firebase Gen 2 backend, the Genkit/Vertex AI generative stack, and external integrations. Verified against the live codebase (`packages/renderer/src/core/App.tsx`, `constants.ts`, `services/agent/orchestration/AgentGraphService.ts`, `core/config/intelligence-models.ts`).
 
 ```mermaid
 graph TD
-    %% User Action Layer
+    %% ===== Client Interface Layer =====
     subgraph Client ["Client Interfaces"]
-        LP["Landing Page"]
-        SA["Studio Web App (React)"]
-        ES["Electron Desktop Shell"]
+        LP["Landing Page (packages/landing)"]
+        SA["Studio Web App (packages/renderer)"]
+        ED["Electron Desktop Shell (packages/main)"]
+        MR["indiiREMOTE (mobile-remote module)"]
     end
 
-    %% State & Management Layer
-    subgraph State ["State & Orchestration (Frontend)"]
-        ZS["Zustand Global Store"]
-        AS["AgentService (indii Agent Zero)"]
-        AR["Agent Registry"]
+    %% ===== State & Orchestration Layer =====
+    subgraph Orchestration ["State and Agent Orchestration (Frontend)"]
+        ZS["Zustand Global Store (10 domain slices)"]
+        COND["indii Conductor — AgentGraphService (DAG Runner)"]
+        AGS["AgentService (execution engine)"]
+        A2A["A2AClient (peer-to-peer delegation)"]
+        REG["Agent Registry (capability_registry.json)"]
     end
 
-    %% Service & Logic Layer
-    subgraph Specialists ["Decentralized A2A Swarm (Specialist Agents)"]
-        LA["Legal Agent"]
-        MA["Marketing Agent"]
-        BA["Brand Agent"]
-        CA["Creative Agent"]
-        RA["Road Agent"]
-        FA["Finance Agent"]
-        MuA["Music Agent"]
+    %% ===== Specialist Swarm Layer =====
+    subgraph Swarm ["Decentralized A2A Specialist Swarm (agents/)"]
+        LEGAL["Legal"]
+        MKT["Marketing"]
+        BRAND["Brand"]
+        CRE["Creative"]
+        ROAD["Road"]
+        FIN["Finance"]
+        MUS["Music"]
+        DIST["Distribution"]
+        LIC["Licensing"]
+        PUB["Publishing"]
+        PR["Publicist"]
+        SOC["Social"]
+        MERCH["Merchandise"]
+        VID["Video"]
+        ANA["Analytics"]
     end
 
-    %% Backend & Intelligence Layer
-    subgraph Cloud ["Backend & Cloud Infrastructure"]
-        FF["Firebase Functions (Gen 2)"]
-        FS["Firestore Database"]
-        CS["Cloud Storage"]
-        Vertex["Vertex AI (Veo 3.1, Gemini 3.0)"]
-        FileSearch["Gemini File Search API (RAG/Memory)"]
+    %% ===== Backend / Cloud Layer =====
+    subgraph Cloud ["Backend and Cloud Infrastructure (Firebase Gen 2)"]
+        CF["Cloud Functions (Node 22, Gen 2)"]
+        FS["Firestore (security rules)"]
+        CS["Cloud Storage (storage rules)"]
+        BQ["BigQuery (revenue analytics)"]
+        INNG["Inngest (background job orchestration)"]
     end
 
-    %% External Systems
-    subgraph External ["External Services"]
-        Stripe["Stripe Checkout & Webhooks"]
+    %% ===== AI / Generative Layer =====
+    subgraph AI ["Generative AI (Genkit 1.26 + Vertex AI)"]
+        GTEXT["Gemini 3.1 Pro / Flash-Lite (text agents)"]
+        GIMG["Gemini 3 Pro / Flash Image — Nano Banana (image gen)"]
+        GTTS["Gemini 2.5 Pro TTS (speech synthesis)"]
+        VEO["Veo 3.1 (video generation)"]
+        RAG["Gemini File Search API (RAG / memory)"]
     end
 
-    %% Connections
-    LP -->|"CTA/Auth"| SA
-    ES -->|"Wraps"| SA
-    SA -->|"Dispatches Actions"| ZS
-    SA -->|"User Prompts/Tasks"| AS
-    
-    ZS -->|"Provides Context"| AS
-    AS <-->|"Discovers via"| AR
-    AS -->|"Delegates Task"| Specialists
-    
-    Specialists <-->|"A2A Swarm Protocol"| Specialists
-    Specialists <-->|"Queries Knowledge"| FileSearch
-    Specialists -->|"Invokes Heavy Tasks"| FF
-    
-    FF -->|"Video/Image Gen"| Vertex
-    FF <-->|"Reads/Writes User Tier"| FS
-    FF -->|"Stores Assets"| CS
-    
-    SA -->|"Subscription Init"| Stripe
-    Stripe -->|"Async Webhook"| FF
+    %% ===== External Integrations =====
+    subgraph External ["External Integrations"]
+        STRIPE["Stripe (subscriptions, founder pass)"]
+        DSP["DSPs / Distributors (SFTP, DDEX)"]
+        MAPS["Google Maps (tour routing)"]
+        GH["GitHub (auto-update feed, bug reports)"]
+    end
 
-    %% Styling
-    style LP fill:#00D4FF,color:#000
-    style SA fill:#00D4FF,color:#000
-    style ES fill:#00D4FF,color:#000
+    %% ===== Transitions =====
+    LP -->|"auth bridge handoff"| SA
+    ED --> SA
+    MR -->|"WebSocket control plane"| SA
+    SA --> ZS
+    ZS --> COND
+    COND --> AGS
+    COND --> REG
+    AGS --> A2A
+    A2A -->|"consult_specialist (SwarmMessage)"| Swarm
+    AGS --> AI
+    Swarm --> CF
+    CF --> FS
+    CF --> CS
+    CF --> BQ
+    CF --> INNG
+    CF --> AI
+    CF --> External
+    AI --> RAG
+    RAG --> FS
 
-    style ZS fill:#8A2BE2,color:#FFF
-    style AS fill:#8A2BE2,color:#FFF
-    style AR fill:#8A2BE2,color:#FFF
+    %% ===== Styling =====
+    classDef ui fill:#00D4FF,stroke:#0077AA,stroke-width:2px,color:#001018;
+    classDef logic fill:#8A2BE2,stroke:#5500AA,stroke-width:2px,color:#FFFFFF;
+    classDef data fill:#FF8C00,stroke:#AA5500,stroke-width:2px,color:#001018;
+    classDef ai fill:#39FF14,stroke:#1A8800,stroke-width:2px,color:#001018;
+    classDef ext fill:#FF00FF,stroke:#AA00AA,stroke-width:2px,color:#FFFFFF;
 
-    style LA fill:#8A2BE2,color:#FFF
-    style MA fill:#8A2BE2,color:#FFF
-    style BA fill:#8A2BE2,color:#FFF
-    style CA fill:#8A2BE2,color:#FFF
-    style RA fill:#8A2BE2,color:#FFF
-    style FA fill:#8A2BE2,color:#FFF
-    style MuA fill:#8A2BE2,color:#FFF
-
-    style FF fill:#FF8C00,color:#000
-    style FS fill:#FF8C00,color:#000
-    style CS fill:#FF8C00,color:#000
-    
-    style Vertex fill:#39FF14,color:#000
-    style FileSearch fill:#39FF14,color:#000
-
-    style Stripe fill:#FF00FF,color:#FFF
+    class LP,SA,ED,MR ui;
+    class ZS,COND,AGS,A2A,REG,LEGAL,MKT,BRAND,CRE,ROAD,FIN,MUS,DIST,LIC,PUB,PR,SOC,MERCH,VID,ANA logic;
+    class CF,FS,CS,BQ,INNG data;
+    class GTEXT,GIMG,GTTS,VEO,RAG ai;
+    class STRIPE,DSP,MAPS,GH ext;
 ```
 
 ## Transition Breakdown
 
-1. **User Entry & Interaction:**
-   Users enter the platform via the **Landing Page (LP)** and transition to the **Studio Web App (SA)**. Alternatively, they use the **Electron Desktop Shell (ES)**, which wraps the Studio app natively. The Studio dispatches UI events to the **Zustand Global Store (ZS)** and forwards complex AI requests to the **AgentService (AS)**.
+1. **Entry & auth (Client → State).** A user enters through the **Landing Page** (`packages/landing`), the **Studio Web App** (`packages/renderer`), the **Electron Desktop Shell** (`packages/main`), or **indiiREMOTE** (the `mobile-remote` module). The landing page hands a signed session to the studio via the auth bridge; the desktop shell wraps the same renderer; indiiREMOTE drives it over a WebSocket control plane. All client surfaces hydrate the **Zustand Global Store** (10 domain slices: app, auth, agent, creative, distribution, fileSystem, finance, profile, workflow, audioIntelligence).
 
-2. **Context Injection & Orchestration:**
-   The **AgentService (indii Agent Zero)** retrieves the current brand kit, user tier, and project metadata from the **Zustand Global Store (ZS)**. Before delegating tasks, it consults the **Agent Registry (AR)** to discover available specialist capabilities.
+2. **Orchestration dispatch (State → Conductor).** A user request flows from the store into the **indii Conductor** (`AgentGraphService` — the DAG runner that replaced the legacy AgentZeroService). The Conductor reads the **Agent Registry** (`capability_registry.json`) to discover which specialist capabilities are available before planning a graph.
 
-3. **Delegation & Swarm Collaboration:**
-   The Orchestrator delegates the problem to the appropriate **Specialist Agent** (e.g., Creative, Legal, Finance). Once initiated, specialists can communicate directly with each other via the **A2A Swarm Protocol** without returning to the Orchestrator. 
+3. **Execution & delegation (Conductor → AgentService → A2AClient).** The Conductor invokes **AgentService** (the execution engine) to run graph nodes. For cross-domain work, AgentService uses the **A2AClient** to dispatch a `SwarmMessage` via the `consult_specialist` tool, with conversation-mode scope guards (DIRECT_MODE_NO_DELEGATION / DEPARTMENT_SCOPE_VIOLATION) validating whether delegation is permitted.
 
-4. **Knowledge Retrieval:**
-   To inform their decisions and maintain project memory, Specialist Agents query the **Gemini File Search API (FileSearch)** natively, replacing the legacy RAG systems and ensuring long-context persistence.
+4. **Specialist swarm (A2A → Swarm).** The 15 domain specialists (`agents/`) execute autonomously and in parallel — Legal, Marketing, Brand, Creative, Road, Finance, Music, Distribution, Licensing, Publishing, Publicist, Social, Merchandise, Video, Analytics — each emitting a `SwarmResponse` that the Conductor consolidates.
 
-5. **Heavy Task Offloading:**
-   For high-compute operations like video and image generation, agents do not rely on client-side AI. They invoke **Firebase Functions (FF)**. 
+5. **Backend execution (Swarm → Cloud Functions).** Side-effectful work (payments, distribution uploads, persistence, analytics) is delegated to **Firebase Cloud Functions** (Node 22, Gen 2), which read/write **Firestore** and **Cloud Storage** (both gated by security rules), stream revenue events to **BigQuery**, and schedule long-running jobs via **Inngest**.
 
-6. **Cloud Execution & Persistence:**
-   The Cloud Functions act as the secure backend barrier. They verify user quotas via the **Firestore Database (FS)** before triggering generation on **Vertex AI (Vertex)**. Once assets are generated, they are securely saved to **Cloud Storage (CS)** and referenced back in Firestore.
+6. **Generative AI (AgentService/Cloud → AI).** Both the frontend agents and Cloud Functions call the **Genkit + Vertex AI** stack with the only approved models (`intelligence-models.ts`): Gemini 3.1 Pro/Flash-Lite for text, Gemini 3 Pro/Flash Image ("Nano Banana") for images, Gemini 2.5 Pro TTS for speech, and Veo 3.1 for video. The **Gemini File Search API** provides RAG/memory, persisting embeddings back to Firestore.
 
-7. **Billing Lifecycle:**
-   When a user initiates an upgrade from the UI, it routes to **Stripe Checkout (Stripe)**. Stripe processes the payment and fires an async webhook to **Firebase Functions (FF)**, securely updating the user's tier in the **Firestore Database (FS)**, which propagates live to the client state to unlock features immediately.
+7. **External integrations (Cloud → External).** Cloud Functions integrate with **Stripe** (subscription billing + founder-pass activation), **DSPs/distributors** (SFTP + DDEX delivery), **Google Maps** (tour distance/routing), and **GitHub** (desktop auto-update feed + in-app bug reporting) — all now pointed at the `indii-music-founder/indii-music-founder` repository.
+
+**Fallback / gate logic:** If a provider is unconfigured, Cloud Functions surface a `failed-precondition` error rather than a silent fallback. Delegation that violates conversation-mode scope is rejected at the A2AClient boundary before any specialist runs. Security-rule denials short-circuit at the Firestore/Storage layer regardless of frontend state.
