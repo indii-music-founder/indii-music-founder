@@ -5,7 +5,7 @@
 - **App:** indii Alpha (multi-tenant AI creative platform for independent artists)
 - **Stack:** React 18 + Vite + Electron | Firebase | Gemini 3 | Zustand
 - **Dev Server:** `http://localhost:4242` (Vite) | `http://localhost:3000` (Landing)
-- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
+- **Repo:** `indii-music-founder/indii-music-founder`
 - **Firebase Project:** `indii-v-1-1`
 
 ---

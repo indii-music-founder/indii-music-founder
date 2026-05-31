@@ -49,12 +49,12 @@ export function applyUpdaterConfig(source: 'github' | 'firebase', channel: 'stab
     } else {
         autoUpdater.setFeedURL({
             provider: 'github',
-            owner: 'the-walking-agency-det',
-            repo: 'indii-music',
+            owner: 'indii-music-founder',
+            repo: 'indii-music-founder',
             releaseType: 'release',
             channel: autoUpdater.channel
         });
-        log.info(`[Updater] Set feed URL to GitHub: the-walking-agency-det/indii-music (channel: ${autoUpdater.channel})`);
+        log.info(`[Updater] Set feed URL to GitHub: indii-music-founder/indii-music-founder (channel: ${autoUpdater.channel})`);
     }
 }
 

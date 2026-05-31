@@ -70,7 +70,7 @@ bash .claude/scripts/checkpoint.sh
 
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
-- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
+- **Repo:** `indii-music-founder/indii-music-founder`
 - **Node Requirement:** >= 22.0.0
 
 ---
@@ -112,7 +112,7 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 ## Codebase Structure
 
 ```
-indii-Alpha-Electron/
+indii-music-founder/
 ├── packages/
 │   ├── renderer/               # Main React application source (indii studio)
 │   ├── main/                   # Electron desktop wrapper
@@ -536,7 +536,7 @@ The engineering skills (from Matt Pocock's suite) read three config files to und
 
 ### Issue Tracker
 
-**GitHub Issues** — issues live in `indii-music/indiiOS-Clean` GitHub Issues. See `docs/agents/issue-tracker.md`.
+**GitHub Issues** — issues live in `indii-music-founder/indii-music-founder` GitHub Issues. See `docs/agents/issue-tracker.md`.
 
 Skills use the `gh` CLI to create, list, and manage issues. Infer repo from `git remote -v` automatically.
 

@@ -31,7 +31,7 @@ export default function DownloadHub() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                     {/* Mac (Apple Silicon) */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
+                        href="https://github.com/indii-music-founder/indii-music-founder/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
@@ -49,7 +49,7 @@ export default function DownloadHub() {
 
                     {/* Windows */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
+                        href="https://github.com/indii-music-founder/indii-music-founder/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
@@ -67,7 +67,7 @@ export default function DownloadHub() {
 
                     {/* Linux */}
                     <a
-                        href="https://github.com/the-walking-agency-det/indii-Clean/releases/latest"
+                        href="https://github.com/indii-music-founder/indii-music-founder/releases/latest"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"

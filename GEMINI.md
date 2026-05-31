@@ -70,7 +70,7 @@ bash .claude/scripts/checkpoint.sh
 
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
-- **Repo:** `new-detroit-music-llc/indii-Alpha-Electron`
+- **Repo:** `indii-music-founder/indii-music-founder`
 - **Node Requirement:** >= 22.0.0
 
 ---
@@ -112,7 +112,7 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 ## Codebase Structure
 
 ```
-indii-Alpha-Electron/
+indii-music-founder/
 ├── packages/
 │   ├── renderer/               # Main React application source (indii studio)
 │   ├── main/                   # Electron desktop wrapper

@@ -7,8 +7,8 @@ Thank you for your interest in contributing to **indii**! This document explains
 ## ⚡ Quick Setup
 
 ```bash
-git clone https://github.com/new-detroit-music-llc/indii-Alpha-Electron.git
-cd indii-Alpha-Electron
+git clone https://github.com/indii-music-founder/indii-music-founder.git
+cd indii-music-founder
 make prime          # installs deps + runs health check
 cp .env.example .env  # fill in your API keys
 make dev-web        # fastest iteration loop (Vite only, :4243)
