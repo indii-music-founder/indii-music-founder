@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+d342f4a09 chore: session checkpoint [13:56]
 5c166d4ee chore: session checkpoint [13:55]
 b90d02f51 chore: session checkpoint [13:55]
 869eefd5c chore: clean up test artifacts and ephemeral debug scripts
@@ -13,7 +14,6 @@ b90d02f51 chore: session checkpoint [13:55]
 3e9422478 fix: commit orphaned subagent fixes (null-safety, e2e mock, onboarding, profile calc)
 fd58d135c docs: mark issues 51, 54, 55 as FIXED in OPEN_ISSUES.md
 5dac587c6 fix: resolve issues 51, 54, 55 (Maximum update depth, E2E browser env fallback, Vertex AI config)
-472e6d848 fix(agent): align MODULE_AGENT_MAP and ui with correct generalist ID
 ```
 
 ## Working State
