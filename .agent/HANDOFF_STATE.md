@@ -1,42 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-31 11:57 EDT
+**Updated:** 2026-05-31 13:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-d7eeedcbf chore: session checkpoint [11:55]
-4272d94e6 chore: session checkpoint [11:53]
-03faebfd1 chore: session checkpoint [11:40]
-7611f12db chore: session checkpoint [11:39]
-af25e689e chore: session checkpoint [11:39]
-7f3c67f4b chore: session checkpoint [11:39]
-855d3f285 chore: session checkpoint [11:39]
-9b61cf830 chore: session checkpoint [11:38]
-0231df23e chore: session checkpoint [11:38]
-9546a1d32 chore: session checkpoint [11:38]
+869eefd5c chore: clean up test artifacts and ephemeral debug scripts
+2f98439bb fix(e2e): enable Firebase auth mocking in CI and improve E2E mock user implementation
+99d733810 fix(types): replace any casts with proper types in onboarding and e2eMode
+43de7b3ce chore: sync OPEN_ISSUES ledger, checkpoints, and coordination artifacts
+3e9422478 fix: commit orphaned subagent fixes (null-safety, e2e mock, onboarding, profile calc)
+fd58d135c docs: mark issues 51, 54, 55 as FIXED in OPEN_ISSUES.md
+5dac587c6 fix: resolve issues 51, 54, 55 (Maximum update depth, E2E browser env fallback, Vertex AI config)
+472e6d848 fix(agent): align MODULE_AGENT_MAP and ui with correct generalist ID
+a2d054535 fix(resiliency): relax circuit breaker sensitivity to prevent client-side timeout lockouts
+f49ee4599 fix(ci): resolve E2E syntax error and harden types for deployment
 ```
 
 ## Working State
 ```
- M execution/training/trigger_r8_tuning.ts
- M packages/renderer/src/services/firebase.ts
- M packages/renderer/src/utils/e2eMode.ts
-?? boardroom.png
-?? click-agent.js
-?? click-dismiss.js
-?? click-guest.js
-?? click-skip.js
-?? execution/training/check_r8_tuning_status.ts
-?? run-routine-102.cjs
-?? run-test.js
-?? screenshot-test.cjs
-?? set-ls.js
-?? snapshot.txt
-?? snapshot2.txt
-?? test-eval.js
-?? test-mock.js
-?? test-pw.cjs
-?? workspace.html
+clean working tree
 ```
 
 ## Decisions
