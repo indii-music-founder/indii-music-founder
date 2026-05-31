@@ -74,23 +74,22 @@ export default function ParticipantSelector() {
 
     return (
         <div className="absolute inset-0 pointer-events-none">
-            {AVAILABLE_AGENTS.map((agent, index) => {
-                const isActive = activeAgents.includes(agent.id);
-                const isExecuting = isAgentExecuting(agent.id);
-                const total = AVAILABLE_AGENTS.length;
-                const angle = (index / total) * Math.PI * 2;
+            <TooltipProvider delayDuration={50}>
+                {AVAILABLE_AGENTS.map((agent, index) => {
+                    const isActive = activeAgents.includes(agent.id);
+                    const isExecuting = isAgentExecuting(agent.id);
+                    const total = AVAILABLE_AGENTS.length;
+                    const angle = (index / total) * Math.PI * 2;
 
-                // Active agents sit closer to the center of the table
-                const radiusX = isActive ? 35 : 48;
-                const radiusY = isActive ? 25 : 38;
+                    // Active agents sit closer to the center of the table
+                    const radiusX = isActive ? 35 : 48;
+                    const radiusY = isActive ? 25 : 38;
 
-                const left = 50 + radiusX * Math.cos(angle);
-                const top = 50 + radiusY * Math.sin(angle);
+                    const left = 50 + radiusX * Math.cos(angle);
+                    const top = 50 + radiusY * Math.sin(angle);
 
-                return (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    <TooltipProvider {...({ key: agent.id } as any)} delayDuration={50}>
-                        <Tooltip>
+                    return (
+                        <Tooltip key={agent.id}>
                             <TooltipTrigger asChild>
                                 <motion.button
                                     onClick={() => {
@@ -165,9 +164,9 @@ export default function ParticipantSelector() {
                                 </p>
                             </TooltipContent>
                         </Tooltip>
-                    </TooltipProvider>
-                );
-            })}
+                    );
+                })}
+            </TooltipProvider>
 
             {/* Inner Orbit for Workers */}
             <AnimatePresence>
