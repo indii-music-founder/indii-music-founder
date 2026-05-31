@@ -48,7 +48,7 @@ describe('A2A streaming (real crypto loopback)', () => {
   });
 
   // TODO: Enable once loopback transport supports stream.init → streamAgent routing
-  it.skip('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
+  it('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
     const { a2aClient } = await import('./A2AClient');
     resetClient(a2aClient);
 
