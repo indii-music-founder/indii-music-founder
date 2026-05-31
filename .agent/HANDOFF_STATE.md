@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+a5baef813 chore: session checkpoint [13:56]
 f102706e6 chore: session checkpoint [13:56]
 d342f4a09 chore: session checkpoint [13:56]
 5c166d4ee chore: session checkpoint [13:55]
@@ -13,7 +14,6 @@ b90d02f51 chore: session checkpoint [13:55]
 99d733810 fix(types): replace any casts with proper types in onboarding and e2eMode
 43de7b3ce chore: sync OPEN_ISSUES ledger, checkpoints, and coordination artifacts
 3e9422478 fix: commit orphaned subagent fixes (null-safety, e2e mock, onboarding, profile calc)
-fd58d135c docs: mark issues 51, 54, 55 as FIXED in OPEN_ISSUES.md
 ```
 
 ## Working State
