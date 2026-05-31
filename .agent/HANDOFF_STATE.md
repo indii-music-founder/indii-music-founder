@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:36 EDT
+**Updated:** 2026-05-31 11:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4bfaace31 chore: session checkpoint [11:36]
 50a0a9fdc chore: session checkpoint [11:36]
 e907b756a chore: session checkpoint [11:36]
 e90b41972 chore: session checkpoint [11:36]
@@ -13,52 +14,11 @@ c1c065a87 chore: session checkpoint [11:35]
 9985683e7 chore: session checkpoint [11:35]
 ffb2f5d09 chore: session checkpoint [11:34]
 36b76d667 chore: session checkpoint [11:34]
-b91efee48 chore: session checkpoint [11:34]
 ```
 
 ## Working State
 ```
- M execution/training/trigger_r8_tuning.ts
- M packages/renderer/src/core/config/rate-limits.ts
- M packages/renderer/src/utils/e2eMode.ts
-?? body.html
-?? catch-errors.js
-?? check-auth.js
-?? check-e2e.js
-?? check-network.js
-?? check-store.js
-?? check-store2.js
-?? check-user.js
-?? dump-console.js
-?? dump-errors.js
-?? dump-html.js
-?? dump-loading.js
-?? get-app.js
-?? get-body.js
-?? get-body2.js
-?? get-disabled.js
-?? get-err.js
-?? get-error.js
-?? get-state.js
-?? inject-mock.js
-?? page.html
-?? set-e2e.js
-?? submit.js
-?? test-102.js
-?? test-app-error.js
-?? test-auth-error.js
-?? test-auth-state.js
-?? test-clear.js
-?? test-console.js
-?? test-create.js
-?? test-e2e.js
-?? test-eval102.js
-?? test-login-real.js
-?? test-login.js
-?? test-mock.js
-?? test-seat-check.js
-?? test-seat.js
-?? wait-and-snap.js
+clean working tree
 ```
 
 ## Decisions
