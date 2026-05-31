@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+4c542c475 chore: session checkpoint [11:34]
 b22c85459 chore: session checkpoint [11:33]
 3b3f17550 chore: session checkpoint [11:33]
 7a772a879 chore: session checkpoint [11:33]
@@ -13,7 +14,6 @@ acd145b57 chore: session checkpoint [11:32]
 499ea8ca6 chore: session checkpoint [11:32]
 0b096e15b chore: session checkpoint [11:32]
 4434877e2 chore: session checkpoint [11:31]
-722177929 chore: session checkpoint [11:31]
 ```
 
 ## Working State
@@ -54,6 +54,7 @@ acd145b57 chore: session checkpoint [11:32]
 ?? test-eval102.js
 ?? test-login-real.js
 ?? test-login.js
+?? test-mock.js
 ?? test-seat-check.js
 ?? test-seat.js
 ?? wait-and-snap.js
