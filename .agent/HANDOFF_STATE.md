@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-31 10:43 EDT
+**Updated:** 2026-05-31 10:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2d39a8a2e docs: update agent training datasets and entire-app architecture
+5d2e0fda2 chore: session checkpoint [10:43]
 409f64917 chore: session checkpoint [10:38]
 a541ad0bb chore: session checkpoint [10:38]
 ce5eee48e chore(end): session checkpoint + ERROR_LEDGER entry for migration repoint
@@ -12,8 +14,6 @@ f68113c45 docs(flowcharts): rebuild entire-app architecture + fix stale orchestr
 6bb6e9a27 chore: track package-lock.json to ensure dependency consistency and support CI caching
 5af9b7eaf chore(deps): pin react/react-dom in root dependencies to match overrides
 42fc3636b chore: fix flowchart validation heading and update ERROR_LEDGER with React 19 bleed issue
-e9b2a7704 fix(deps): downgrade react in admin-dashboard to v18 to fix CI ReactNode typing conflicts
-22c202b28 fix(landing): augment JSX IntrinsicElements with react-three-fiber to fix CI build
 ```
 
 ## Working State
