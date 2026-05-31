@@ -264,7 +264,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Typography Style</span>
                                     <select
                                         value={studioControls.typographyStyle}
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        
                                         onChange={(e) => setStudioControls({ typographyStyle: e.target.value as any })}
                                         className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
                                     >
@@ -316,23 +316,23 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         onToggle={() => setExpandedSection(expandedSection === 'mixer' ? '' : 'mixer')}
                         title={<div className="flex items-center justify-between w-full">
                             <span>Reference Mixer</span>
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            {((whiskState.subjects?.filter((i: any) => i.checked).length || 0) +
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (whiskState.scenes?.filter((i: any) => i.checked).length || 0) +
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (whiskState.styles?.filter((i: any) => i.checked).length || 0) +
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (whiskState.motion?.filter((i: any) => i.checked).length || 0)) > 0 && (
+                            
+                            {((whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.scenes?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)) > 0 && (
                                     <span className="text-[9px] text-purple-400 normal-case ml-2">
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        {(whiskState.subjects?.filter((i: any) => i.checked).length || 0) +
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            (whiskState.scenes?.filter((i: any) => i.checked).length || 0) +
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            (whiskState.styles?.filter((i: any) => i.checked).length || 0) +
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            (whiskState.motion?.filter((i: any) => i.checked).length || 0)} locked
+                                        
+                                        {(whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.scenes?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)} locked
                                     </span>
                                 )}
                         </div>}
@@ -512,10 +512,10 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             </div>
                             <div className="pt-2 border-t border-white/10">
                                 <WhiskPresetStyles onSelectPreset={(preset) => {
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    
                                     const exists = whiskState.styles.some((s: any) => s.content === preset.prompt);
                                     if (exists) {
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        
                                         const item = whiskState.styles.find((s: any) => s.content === preset.prompt);
                                         if (item) toggleWhiskItem('style', item.id);
                                     } else {

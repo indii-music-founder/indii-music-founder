@@ -72,8 +72,13 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
         },
     ];
 
-    // Combine user workflows with default suggestions
-    const displayItems = [
+    const displayItems: Array<{
+        icon: any;
+        title: string;
+        prompt: string | null;
+        action?: () => void;
+        isWorkflow?: boolean;
+    }> = [
         ...savedWorkflows.map(wf => ({
             icon: Zap,
             title: wf.name,
@@ -131,22 +136,18 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                             }
                         }}
                         className={`group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border hover:bg-white/[0.06] hover:shadow-lg transition-all duration-300 text-left overflow-hidden h-full ${
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            (s as any).isWorkflow 
+                            s.isWorkflow 
                             ? 'border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' 
                             : 'border-white/5 hover:border-emerald-500/40 hover:shadow-emerald-500/5'
                         }`}
                     >
                         <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            <MousePointer2 size={12} className={(s as any).isWorkflow ? "text-amber-400" : "text-emerald-400"} />
+                            <MousePointer2 size={12} className={s.isWorkflow ? "text-amber-400" : "text-emerald-400"} />
                         </div>
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${(s as any).isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
+                        <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${s.isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
                         <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            {(s as any).isWorkflow ? 'Custom User Workflow' : (s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0])}
+                            {s.isWorkflow ? 'Custom User Workflow' : (s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0])}
                         </p>
                     </motion.button>
                 ))}
