@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 14:46 EDT
+**Updated:** 2026-05-31 14:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+41f51624e chore: session checkpoint [14:46]
 1b31863d8 ci: add VITE_INGESTION_* env vars to build jobs
 6d0301bcf chore: session checkpoint [14:43]
 92707dce5 chore: session checkpoint [14:41]
@@ -13,12 +14,11 @@ bb5d35e83 chore: session checkpoint [14:41]
 f27e0b559 chore: session checkpoint [14:40]
 9192db13e chore: session checkpoint [14:38]
 43b14063e docs(flowcharts): phase 2 & 3 comprehensive chart rebuild
-5ec184875 fix(ci): make e2e-staging test failure block production deployment
 ```
 
 ## Working State
 ```
-?? .agent/AGENT_BRIDGE.md
+clean working tree
 ```
 
 ## Decisions
