@@ -69,7 +69,7 @@ echo "🔨 Building Electron application..."
 if [ "$BUILD_MODE" = "debug" ]; then
   # For debugging, use vite dev with electron
   npm run electron:dev &
-  DEV_PID=$!
+  # DEV_PID=$!  # Shellcheck SC2034: unused variable
 else
   # Production build
   # Production build
@@ -82,7 +82,7 @@ else
     npm run build:electron
     
     # 2. Package
-    npx electron-builder --$PLATFORM --publish never
+    npx electron-builder --"$PLATFORM" --publish never
   fi
 fi
 
