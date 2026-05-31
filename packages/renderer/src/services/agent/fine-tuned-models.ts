@@ -104,7 +104,7 @@ export const FINE_TUNED_MODEL_REGISTRY: Record<ValidAgentId, string> = buildReso
 
 
 export function getFineTunedModel(agentId: ValidAgentId): string {
-    const isE2E = typeof window !== 'undefined' && window.location?.search.includes('e2e=true') || (typeof window !== 'undefined' && (window as any).isFirebaseE2EMockEnabled) || (typeof process !== 'undefined' && process.env.VITE_PLAYWRIGHT_E2E === 'true');
+    const isE2E = (typeof window !== 'undefined' && window.location?.search.includes('e2e=true')) || (typeof process !== 'undefined' && process.env.VITE_PLAYWRIGHT_E2E === 'true');
     if (isE2E) {
         return 'gemini-3.1-flash-lite'; // E2E fallback
     }
