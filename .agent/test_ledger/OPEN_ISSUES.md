@@ -1166,7 +1166,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **UX Impact:** Test agents can now natively test the login screen or seamlessly bypass it using the E2E framework without hacking source files.
 
 ### ISSUE-050: Fatal Crash on Canvas Omni-Agent Overlap
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Director
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 7)
@@ -1189,11 +1189,13 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Added `AppErrorCode.TIMEOUT` to `NON_RECOVERABLE_APP_CODES` in `CircuitBreaker.ts` so client-side connection pooling timeouts bypass the breaker and don't lock out the whole app. Additionally increased `failureThreshold` and lowered `resetTimeoutMs` in `breaker-configs.ts` for greater resilience during concurrent stress tests.
 
 ### ISSUE-053: Missing Conductor Agent in Omni Panel
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED (v1.64.0)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Omni Agent / AgentExecutor
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 9)
 - **Summary:** Executing a task via the global Omni Agent panel occasionally throws `Error: [AgentExecutor] Fatal: No agent found for ID 'conductor'`. The Conductor is not being properly registered or injected when the task is routed from the Omni context.
+- **Root Cause:** The `MODULE_AGENT_MAP` mapped the dashboard, workflow, history, memory, and knowledge modules to the agent ID `conductor`. However, the agent's internal registry ID is `generalist`. When operating in Direct Mode from the Omni Panel, AgentService would directly pass `conductor` to the AgentExecutor, which naturally failed because that ID didn't exist in the registry.
+- **Fix:** Updated `MODULE_AGENT_MAP` in `constants.ts` to map those modules correctly to `generalist`. Also replaced hardcoded instances of `conductor` in `CanvasTools.ts`, `ChatMessage.tsx`, and tests.
 
 ### ISSUE-054: E2E Fallback Fails Due to Undefined Process Env in Browser
 - **Status:** 🔵 OPEN
