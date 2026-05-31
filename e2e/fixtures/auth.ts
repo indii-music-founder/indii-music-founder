@@ -817,6 +817,24 @@ export const test = base.extend<AuthFixtures>({
 
     await page.goto("/");
 
+    // If the app stripped the E2E mock (e.g. production staging build), we must manually log in.
+    // The network intercepts for identitytoolkit will handle the API response.
+    const emailInput = page.locator('input[type="email"]').first();
+    if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log("[E2E] App ignored mock (production mode). Performing manual login...");
+      await emailInput.fill('e2e@indii.test');
+      const passwordInput = page.locator('input[type="password"]').first();
+      if (await passwordInput.isVisible().catch(() => false)) {
+          await passwordInput.fill('password123');
+      }
+      await page.locator('form button[type="submit"]').first().click();
+      
+      // Wait for dashboard to be visible to confirm login
+      await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+          console.log("[E2E] Dashboard not found after manual login click!");
+      });
+    }
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
