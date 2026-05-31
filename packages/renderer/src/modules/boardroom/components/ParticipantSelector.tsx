@@ -88,8 +88,11 @@ export default function ParticipantSelector() {
                     const left = 50 + radiusX * Math.cos(angle);
                     const top = 50 + radiusY * Math.sin(angle);
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const fragmentProps = { key: agent.id } as any;
+
                     return (
-                        <React.Fragment key={agent.id}>
+                        <React.Fragment {...fragmentProps}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <motion.button
