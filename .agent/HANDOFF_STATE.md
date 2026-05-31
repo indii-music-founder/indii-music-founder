@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+3b3f17550 chore: session checkpoint [11:33]
 7a772a879 chore: session checkpoint [11:33]
 ffbd7ce80 chore: session checkpoint [11:33]
 5dcab1dd5 chore: session checkpoint [11:32]
@@ -13,13 +14,13 @@ acd145b57 chore: session checkpoint [11:32]
 4434877e2 chore: session checkpoint [11:31]
 722177929 chore: session checkpoint [11:31]
 d50706117 chore: session checkpoint [11:31]
-f7b709a82 chore: session checkpoint [11:31]
 ```
 
 ## Working State
 ```
  M execution/training/trigger_r8_tuning.ts
  M packages/renderer/src/core/config/rate-limits.ts
+ M packages/renderer/src/utils/e2eMode.ts
 ?? body.html
 ?? catch-errors.js
 ?? check-auth.js
