@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-31 10:54 EDT
+**Updated:** 2026-05-31 11:00 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+77d7dc023 fix(test): re-skip A2A streaming test pending loopback transport implementation
+42008448f chore: session checkpoint [10:54]
 3e7ae2a6a chore: session checkpoint [10:53]
 2d39a8a2e docs: update agent training datasets and entire-app architecture
 5d2e0fda2 chore: session checkpoint [10:43]
@@ -12,13 +14,21 @@ a541ad0bb chore: session checkpoint [10:38]
 ce5eee48e chore(end): session checkpoint + ERROR_LEDGER entry for migration repoint
 f68113c45 docs(flowcharts): rebuild entire-app architecture + fix stale orchestrator refs
 312b1b956 chore(migration): repoint all GitHub integrations and docs to island repo
-6bb6e9a27 chore: track package-lock.json to ensure dependency consistency and support CI caching
-5af9b7eaf chore(deps): pin react/react-dom in root dependencies to match overrides
 ```
 
 ## Working State
 ```
-clean working tree
+?? test-clicks.cjs
+?? test-eval.js
+?? test-eval2.js
+?? test-eval3.js
+?? test-eval4.js
+?? test-eval5.js
+?? test-eval6.js
+?? test-eval7.js
+?? test-eval8.js
+?? test-eval9.js
+?? test-rapid-unseat.js
 ```
 
 ## Decisions
