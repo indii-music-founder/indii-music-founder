@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:11 EDT
+**Updated:** 2026-05-31 11:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1c35bd883 chore: session checkpoint [11:11]
 0a766a76a chore: Antigravity Phase 2 complete — e2e stability, state sync, architecture map, datasets
 fc12b5265 chore: session checkpoint [11:00]
 77d7dc023 fix(test): re-skip A2A streaming test pending loopback transport implementation
@@ -13,13 +14,19 @@ fc12b5265 chore: session checkpoint [11:00]
 5d2e0fda2 chore: session checkpoint [10:43]
 409f64917 chore: session checkpoint [10:38]
 a541ad0bb chore: session checkpoint [10:38]
-ce5eee48e chore(end): session checkpoint + ERROR_LEDGER entry for migration repoint
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
  M execution/training/trigger_r8_tuning.ts
+ M packages/renderer/src/core/config/rate-limits.ts
+?? test-clear.js
+?? test-create.js
+?? test-eval102.js
+?? test-login-real.js
+?? test-login.js
+?? test-seat-check.js
+?? test-seat.js
 ```
 
 ## Decisions
