@@ -157,11 +157,11 @@ export default function OnboardingPage() {
                                 <AnimatePresence mode="popLayout">
                                     {history.filter(msg => {
                                         if (msg.role !== 'user' && msg.role !== 'model') return false;
-                                        const hasText = msg.parts.some((p: any) => p.text);
+                                        const hasText = msg.parts.some((p: { text?: string }) => p.text);
                                         const hasUIToolCall = !!msg.toolCall;
                                         return hasText || hasUIToolCall;
                                     }).map((msg, idx, filteredHistory) => {
-                                        const textPart = msg.parts.find((p: any) => p.text)?.text;
+                                        const textPart = msg.parts.find((p: { text?: string }) => p.text)?.text;
                                         return (
                                         <motion.div
                                             key={idx}
