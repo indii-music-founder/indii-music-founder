@@ -3,10 +3,12 @@
  * Source: runtime environment / deployment secrets.
  */
 
+import { isTestHarnessRuntime } from '../../utils/e2eMode';
+
 const requiredEnv = (key: string): string => {
     const value = (import.meta.env as Record<string, string | undefined>)[key]?.trim();
     if (!value) {
-        if (import.meta.env.MODE === 'test' || import.meta.env.VITEST) {
+        if (isTestHarnessRuntime()) {
             return `TEST_${key}`;
         }
         throw new Error(`[IngestionConfig] Missing required environment variable ${key}`);
