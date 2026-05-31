@@ -186,7 +186,7 @@ export class AlwaysOnMemoryEngine {
         source: string = 'user_input',
         category?: AlwaysOnMemoryCategory
     ): Promise<string> {
-        if (this.isE2EMode) return 'Mock Success' as any;
+        if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
         this.isIngesting = true;
@@ -233,7 +233,7 @@ export class AlwaysOnMemoryEngine {
         fileName: string,
         mimeType: string
     ): Promise<string> {
-        if (this.isE2EMode) return 'Mock Success' as any;
+        if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
         this.isIngesting = true;
@@ -265,7 +265,7 @@ export class AlwaysOnMemoryEngine {
         messages: Array<{ role: string; text: string }>,
         sessionId: string
     ): Promise<number> {
-        if (this.isE2EMode) return 'Mock Success' as any;
+        if (this.isE2EMode) return 1;
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
         this.isIngesting = true;
@@ -330,7 +330,7 @@ export class AlwaysOnMemoryEngine {
      * @returns Synthesized answer with [Memory X] citations
      */
     public async query(question: string): Promise<string> {
-        if (this.isE2EMode) return 'Mock Success' as any;
+        if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
         try {

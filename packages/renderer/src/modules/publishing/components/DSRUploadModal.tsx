@@ -166,8 +166,8 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-800/50">
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                {parsedReport.transactions.slice(0, 5).map((row: any, i: number) => (
+                                                
+                                                {parsedReport.transactions.slice(0, 5).map((row: { resourceId: { isrc?: string }; usageCount: number; revenueAmount: number }, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
                                                         <td className="px-4 py-2">{row.usageCount.toLocaleString()}</td>

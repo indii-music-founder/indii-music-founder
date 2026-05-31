@@ -164,8 +164,8 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     >
                                         <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
                                     </button>
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
+                                    
+                                    {(({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'artist' || ({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(true)}
                                             data-testid="social-attach-product-button"

@@ -93,8 +93,6 @@ test.describe('Payment Flow (Item 278)', () => {
         }
     });
 
-});
-
     test.beforeEach(async ({ page }) => {
         // ── Mock createCheckoutSession Cloud Function ────────────────────────
         await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
