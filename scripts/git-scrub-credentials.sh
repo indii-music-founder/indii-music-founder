@@ -42,7 +42,7 @@ PATTERNS_TO_REMOVE=(
 )
 
 # Files to check for accidental secrets
-SENSITIVE_FILE_PATTERNS=(
+# SENSITIVE_FILE_PATTERNS=(
     "*.env"
     "*.env.*"
     "*credentials*"
@@ -86,7 +86,7 @@ echo -e "${GREEN}✓ Pre-flight checks passed${NC}"
 echo ""
 echo -e "${YELLOW}[2/6] Creating backup...${NC}"
 
-BACKUP_DIR="../$(basename $(pwd))_backup_$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="../$(basename "$(pwd)")_backup_$(date +%Y%m%d_%H%M%S)"
 echo "Backup location: $BACKUP_DIR"
 
 cp -r . "$BACKUP_DIR"
@@ -117,7 +117,7 @@ echo ""
 echo -e "${YELLOW}[4/6] Creating patterns file...${NC}"
 
 PATTERNS_FILE="patterns-to-remove.txt"
-> "$PATTERNS_FILE"
+true > "$PATTERNS_FILE"
 
 for pattern in "${PATTERNS_TO_REMOVE[@]}"; do
     echo "$pattern" >> "$PATTERNS_FILE"
@@ -158,7 +158,7 @@ echo -e "${RED}║  • Team members must re-clone after this                   
 echo -e "${RED}║  • You will need to force push                                  ║${NC}"
 echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-read -p "Type 'SCRUB' to proceed, or anything else to abort: " CONFIRM
+read -r -p "Type 'SCRUB' to proceed, or anything else to abort: " CONFIRM
 
 if [ "$CONFIRM" != "SCRUB" ]; then
     echo "Aborted."
