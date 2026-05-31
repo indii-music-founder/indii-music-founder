@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-31 14:26 EDT
+**Updated:** 2026-05-31 14:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43b14063e docs(flowcharts): phase 2 & 3 comprehensive chart rebuild
+5ec184875 fix(ci): make e2e-staging test failure block production deployment
+61d6c234b chore(docs): clarify a2a protocol role relative to Conductor orchestration
+6dbf9aa90 chore: session checkpoint [14:26]
 0ba8bd085 chore(docs): phase 1 stale ref sweep — update AgentService Gateway → indii Conductor
 9fc5b4cc2 chore: session checkpoint [14:23]
 81536830f chore: session checkpoint [14:19]
 81776bfaa chore: session checkpoint [14:16]
 67c2b0579 chore: final /end session checkpoint — 78 issues resolved, CI green
 cb964ac05 chore: session checkpoint [14:08]
-358c041ac chore: session checkpoint [14:06]
-f9ce27dee chore: session checkpoint [14:06]
-57af5f740 fix(ISSUE-004): wire bug reporter to centralized GCP Secret Manager infrastructure
-ce8790bcb chore: session checkpoint [14:05]
 ```
 
 ## Working State
 ```
- M docs/flowcharts/a2a-swarm-communication-protocol.md
+ M packages/renderer/src/core/config/ingestion.ts
 ?? .agent/AGENT_BRIDGE.md
 ```
 
