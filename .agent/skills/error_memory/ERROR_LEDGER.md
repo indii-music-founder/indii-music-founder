@@ -1,3 +1,14 @@
+## 2026-05-31 React 19 Types Bleeding into React 18 Monorepo via ^19.x Constraints
+
+**SEVERITY:** High (breaks CI typechecking globally across all packages)
+
+**MISTAKE:**
+- FILE: `packages/admin-dashboard/package.json`
+- ERROR: `Error TS2322: Type ... is not assignable to type 'SlotProps & RefAttributes<HTMLElement>'` and `ReactNode` / `bigint` mismatches in CI `npm run typecheck`.
+- CAUSE: A subpackage (`admin-dashboard`) had `react: ^19.2.5` and `@types/react: ^19.2.14` specified in its `package.json`. Even though the monorepo root `package.json` had `"overrides": { "@types/react": "18.3.3" }`, running `npm ci` in the CI pipeline prioritized resolving the valid `^19.x` semantic version requirement in the subpackage, installing React 19 types into the global `node_modules`. This leaked into all other packages (like `renderer` and `landing`) that expected React 18 `ReactNode` definitions.
+- FIX: Downgraded `react`, `react-dom`, `@types/react`, and `@types/react-dom` in the subpackage to exactly `18.3.1` and `18.3.3` to match the rest of the monorepo. Purged the lockfile and recreated it with `npm install @types/react@18.3.3 --save-exact` to force eviction of 19.2.15.
+- PREVENTION: When mixing React 18 and React 19 in a monorepo, strict `overrides` or `resolutions` might not fully prevent type bleeding if subpackages demand a higher major version. Pin versions rigidly or use scoped `node_modules` for conflicting packages to prevent global type namespace pollution.
+
 ## 2026-05-26 Vitest / React Router v7 Location Mock Failure (No window.location.origin|href)
 
 **SEVERITY:** Medium (causes React Router v7 mount failures inside Vitest tests)
