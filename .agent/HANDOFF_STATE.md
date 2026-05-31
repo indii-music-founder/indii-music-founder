@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-05-31 14:54 EDT
+**Updated:** 2026-05-31 14:58 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6eeb39723 fix(hooks): auto-push session checkpoints so repo never shows phantom unpushed commits
+169bdeb0b chore: session checkpoint [14:54]
 fd3831d95 chore: session checkpoint [14:52]
 3d54481ce chore: session checkpoint [14:47]
 41f51624e chore: session checkpoint [14:46]
@@ -12,8 +14,6 @@ fd3831d95 chore: session checkpoint [14:52]
 92707dce5 chore: session checkpoint [14:41]
 bb5d35e83 chore: session checkpoint [14:41]
 04b4342b1 chore: session checkpoint [14:41]
-62dd606f4 fix(e2e): resolve test environment initialization and dev server config
-f27e0b559 chore: session checkpoint [14:40]
 ```
 
 ## Working State
