@@ -3,6 +3,13 @@ import { test, expect } from '@playwright/test';
 // Configuration
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+};
+
 test.describe('Authentication Flow', () => {
     test.setTimeout(60000);
 
@@ -14,13 +21,13 @@ test.describe('Authentication Flow', () => {
         // Mock Firebase Installations API to prevent 403 Permission Denied in staging
         await page.route('**/*installations.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                headers: corsHeaders,
                 body: JSON.stringify({
                     name: 'projects/mock-project/installations/mock-installation',
                     fid: 'mock-installation-id',
@@ -33,10 +40,10 @@ test.describe('Authentication Flow', () => {
         // Mock RAG Proxy to prevent CORS errors during background initialization
         await page.route('**/*ragProxy*/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
-            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
     });
 
@@ -113,8 +120,12 @@ test.describe('Authentication Flow', () => {
         // Mock Firestore to prevent network hangs
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
+                await route.fulfill({ status: 403, headers: corsHeaders, contentType: 'application/json', body: '{"error":{"code":403,"message":"Permission Denied"}}' });
                 return;
             }
             if (url.includes('/users/test-user-uid-e2e')) {
@@ -139,14 +150,14 @@ test.describe('Authentication Flow', () => {
         // Mock Identity Toolkit for successful login
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             const url = route.request().url();
             if (url.includes('signInWithPassword') || url.includes('signUp')) {
                 await route.fulfill({
                     status: 200,
-                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         localId: "test-user-uid-e2e",
@@ -159,17 +170,17 @@ test.describe('Authentication Flow', () => {
                 });
                 return;
             }
-            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         await page.route('**/securetoken.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             await route.fulfill({
                 status: 200,
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({
                     access_token: 'mock-access-token',
@@ -218,14 +229,14 @@ test.describe('Authentication Flow', () => {
         // Mock Identity Toolkit and secure token
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             const url = route.request().url();
             if (url.includes('signInWithPassword') || url.includes('signUp')) {
                 await route.fulfill({
                     status: 200,
-                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         localId: "test-user-uid-e2e",
@@ -238,17 +249,17 @@ test.describe('Authentication Flow', () => {
                 });
                 return;
             }
-            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         await page.route('**/securetoken.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             await route.fulfill({
                 status: 200,
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({
                     access_token: 'mock-access-token',
@@ -320,14 +331,14 @@ test.describe('Authentication Flow', () => {
         // Mock Identity Toolkit and secure token
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             const url = route.request().url();
             if (url.includes('signInWithPassword') || url.includes('signUp')) {
                 await route.fulfill({
                     status: 200,
-                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         localId: "test-user-uid-e2e",
@@ -344,7 +355,7 @@ test.describe('Authentication Flow', () => {
             if (url.includes('lookup')) {
                 await route.fulfill({
                     status: 200,
-                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         users: [{
@@ -357,17 +368,17 @@ test.describe('Authentication Flow', () => {
                 });
                 return;
             }
-            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         await page.route('**/securetoken.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             await route.fulfill({
                 status: 200,
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({
                     access_token: 'mock-access-token',
