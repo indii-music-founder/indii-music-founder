@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-05-31 15:18 EDT
+**Updated:** 2026-05-31 15:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3dbe5ec3f fix(ci,appcheck): make e2e-staging a real gate + let CI pass App Check
+1f3a0178d chore: add reasoning comment to test.js
+3bcac24ee chore: session checkpoint [15:18]
 3d9924164 chore: session checkpoint [15:16]
 25d52c6ab chore: session checkpoint [15:14]
 bf0fc1d41 chore: session checkpoint [15:13]
@@ -11,14 +14,11 @@ e71ca5a12 chore: session checkpoint [15:12]
 0f00d2950 chore: session checkpoint [15:10]
 1316c53a6 chore: session checkpoint [15:09]
 56c6dced7 chore: session checkpoint [15:08]
-328a72fe3 chore: session checkpoint [15:08]
-382fce9e0 chore: session checkpoint [15:07]
-8495404a9 chore: session checkpoint [15:05]
 ```
 
 ## Working State
 ```
-clean working tree
+?? .agent/AGENT_BRIDGE.md
 ```
 
 ## Decisions
