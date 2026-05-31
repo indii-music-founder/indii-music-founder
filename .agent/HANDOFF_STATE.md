@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+05ea00f60 chore: session checkpoint [14:58]
 f105776e8 chore: session checkpoint [14:58]
 012048d75 chore: session checkpoint [14:58]
 6eeb39723 fix(hooks): auto-push session checkpoints so repo never shows phantom unpushed commits
@@ -13,7 +14,6 @@ fd3831d95 chore: session checkpoint [14:52]
 41f51624e chore: session checkpoint [14:46]
 1b31863d8 ci: add VITE_INGESTION_* env vars to build jobs
 6d0301bcf chore: session checkpoint [14:43]
-92707dce5 chore: session checkpoint [14:41]
 ```
 
 ## Working State
