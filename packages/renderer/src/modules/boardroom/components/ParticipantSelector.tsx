@@ -89,82 +89,83 @@ export default function ParticipantSelector() {
                     const top = 50 + radiusY * Math.sin(angle);
 
                     return (
+                        // @ts-expect-error - React.Fragment accepts key but this TS version's types are strict
                         <React.Fragment key={agent.id}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <motion.button
-                                        onClick={() => {
-                                            if (isActive) {
-                                                setFocusedHead(prev => prev === agent.id ? null : agent.id);
-                                            } else {
-                                                toggleAgent(agent.id);
-                                            }
-                                        }}
-                                        drag
-                                        dragSnapToOrigin
-                                        onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
-                                        initial={{ left: `${left}%`, top: `${top}%` }}
-                                        animate={{ left: `${left}%`, top: `${top}%` }}
-                                        transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-                                        className={cn(
-                                            "absolute w-14 h-14 -ml-7 -mt-7 rounded-full flex items-center justify-center border transition-all duration-500 pointer-events-auto cursor-grab active:cursor-grabbing",
-                                            isExecuting
-                                                ? "animate-pulse border-emerald-400/80 shadow-[0_0_35px_rgba(52,211,153,0.8)] scale-105 bg-emerald-500/20 z-20"
-                                                : isActive
-                                                    ? `${agent.bg} border-white/30 ${agent.glow} z-20`
-                                                    : "bg-[#161b22] border-white/5 opacity-40 hover:opacity-100 hover:scale-105 z-10"
-                                        )}
-                                        whileHover={{ scale: isExecuting ? 1.05 : isActive ? 1.05 : 1.15 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <agent.icon size={22} className={cn(
-                                            "transition-all duration-500",
-                                            isExecuting
-                                                ? "text-emerald-400"
-                                                : isActive
-                                                    ? agent.color
-                                                    : "text-gray-500"
-                                        )} />
+                                <motion.button
+                                    onClick={() => {
+                                        if (isActive) {
+                                            setFocusedHead(prev => prev === agent.id ? null : agent.id);
+                                        } else {
+                                            toggleAgent(agent.id);
+                                        }
+                                    }}
+                                    drag
+                                    dragSnapToOrigin
+                                    onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
+                                    initial={{ left: `${left}%`, top: `${top}%` }}
+                                    animate={{ left: `${left}%`, top: `${top}%` }}
+                                    transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+                                    className={cn(
+                                        "absolute w-14 h-14 -ml-7 -mt-7 rounded-full flex items-center justify-center border transition-all duration-500 pointer-events-auto cursor-grab active:cursor-grabbing",
+                                        isExecuting
+                                            ? "animate-pulse border-emerald-400/80 shadow-[0_0_35px_rgba(52,211,153,0.8)] scale-105 bg-emerald-500/20 z-20"
+                                            : isActive
+                                                ? `${agent.bg} border-white/30 ${agent.glow} z-20`
+                                                : "bg-[#161b22] border-white/5 opacity-40 hover:opacity-100 hover:scale-105 z-10"
+                                    )}
+                                    whileHover={{ scale: isExecuting ? 1.05 : isActive ? 1.05 : 1.15 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <agent.icon size={22} className={cn(
+                                        "transition-all duration-500",
+                                        isExecuting
+                                            ? "text-emerald-400"
+                                            : isActive
+                                                ? agent.color
+                                                : "text-gray-500"
+                                    )} />
 
-                                        {/* Active "speaking" or "listening" ripple indicator */}
-                                        {isActive && !isExecuting && (
-                                            <div className={cn("absolute inset-0 rounded-full animate-ping opacity-30 pointer-events-none", agent.bg)} />
-                                        )}
-                                        
-                                        {/* Swarm Executing double ripple / ping effects */}
-                                        {isExecuting && (
-                                            <>
-                                                <div className="absolute inset-0 rounded-full animate-ping opacity-50 border border-emerald-400/60 pointer-events-none scale-110" />
-                                                <div className="absolute inset-0 rounded-full animate-ping opacity-25 border border-emerald-400/40 pointer-events-none scale-125 [animation-delay:0.3s]" />
-                                            </>
-                                        )}
+                                    {/* Active "speaking" or "listening" ripple indicator */}
+                                    {isActive && !isExecuting && (
+                                        <div className={cn("absolute inset-0 rounded-full animate-ping opacity-30 pointer-events-none", agent.bg)} />
+                                    )}
+                                    
+                                    {/* Swarm Executing double ripple / ping effects */}
+                                    {isExecuting && (
+                                        <>
+                                            <div className="absolute inset-0 rounded-full animate-ping opacity-50 border border-emerald-400/60 pointer-events-none scale-110" />
+                                            <div className="absolute inset-0 rounded-full animate-ping opacity-25 border border-emerald-400/40 pointer-events-none scale-125 [animation-delay:0.3s]" />
+                                        </>
+                                    )}
 
-                                        {/* Glassmorphic Text Label Underneath */}
-                                        <span className={cn(
-                                            "absolute top-full mt-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold tracking-wider uppercase bg-black/60 backdrop-blur-md px-2 py-0.5 rounded border pointer-events-none transition-all duration-500 shadow-lg",
-                                            isExecuting
-                                                ? "text-emerald-400 border-emerald-400/30 font-extrabold shadow-[0_0_10px_rgba(52,211,153,0.15)]"
-                                                : isActive
-                                                    ? "text-white border-white/10 font-bold"
-                                                    : "text-white/30 border-white/5 opacity-60"
-                                        )}>
-                                            {agent.name.replace(' Dept.', '').replace(' Manager', '').replace(' Producer', '').replace(' Director', '')}
-                                        </span>
-                                    </motion.button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
-                                    <p className="text-white text-xs">
-                                        <span className="font-bold">{agent.name}</span>
-                                        <span className="opacity-70 ml-1">
-                                            {isExecuting
-                                                ? "(Executing workflow...)"
-                                                : isActive
-                                                    ? "(Active)"
-                                                    : "(Drag into table to activate)"}
-                                        </span>
-                                    </p>
-                                </TooltipContent>
-                            </Tooltip>
+                                    {/* Glassmorphic Text Label Underneath */}
+                                    <span className={cn(
+                                        "absolute top-full mt-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold tracking-wider uppercase bg-black/60 backdrop-blur-md px-2 py-0.5 rounded border pointer-events-none transition-all duration-500 shadow-lg",
+                                        isExecuting
+                                            ? "text-emerald-400 border-emerald-400/30 font-extrabold shadow-[0_0_10px_rgba(52,211,153,0.15)]"
+                                            : isActive
+                                                ? "text-white border-white/10 font-bold"
+                                                : "text-white/30 border-white/5 opacity-60"
+                                    )}>
+                                        {agent.name.replace(' Dept.', '').replace(' Manager', '').replace(' Producer', '').replace(' Director', '')}
+                                    </span>
+                                </motion.button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
+                                <p className="text-white text-xs">
+                                    <span className="font-bold">{agent.name}</span>
+                                    <span className="opacity-70 ml-1">
+                                        {isExecuting
+                                            ? "(Executing workflow...)"
+                                            : isActive
+                                                ? "(Active)"
+                                                : "(Drag into table to activate)"}
+                                    </span>
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
                         </React.Fragment>
                     );
                 })}
