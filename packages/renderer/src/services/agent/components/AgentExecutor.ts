@@ -45,7 +45,7 @@ export class AgentExecutor {
     ): Promise<AgentResponse> {
         let agent = await this.registry.getAsync(agentId);
 
-        if (!agent) {
+        if (!agent && agentId) {
             // Try lowercase version first (handle LLM casing hallucinations)
             if (agentId !== agentId.toLowerCase()) {
                 const lowerId = agentId.toLowerCase();
