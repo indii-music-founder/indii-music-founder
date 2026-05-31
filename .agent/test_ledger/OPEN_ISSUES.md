@@ -1180,11 +1180,13 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Summary:** Rapidly spam-clicking agent portraits to seat/unseat them triggers a React `Maximum update depth exceeded` error in the `<Boardroom>` component (likely a `setState` inside `useEffect` with missing/changing dependencies), causing the component to crash and unmount.
 
 ### ISSUE-052: CircuitBreaker Fails Open on Concurrent Mode Execution
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED (v1.64.0)
 - **Severity:** 🔴 HIGH
-- **Module:** Agent Orchestrator
-- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 9)
+- **Module:** Architecture / Resiliency
+- **Found:** 2026-05-31
 - **Summary:** Consecutively initiating tasks across Boardroom, Direct Mode (Omni Agent), and Department Mode triggers the backend `CircuitBreaker: Service is currently unavailable (Circuit OPEN)`. The circuit breaker is too sensitive to rapid concurrent client requests, locking out the user entirely.
+- **Root Cause:** The browser queues concurrent requests (max 6 active sockets per origin). When the user spams messages (e.g. 50+ messages), the queued requests hit the 25-second client-side timeout in `FirebaseIntelligenceService` before they even start executing. `TIMEOUT` errors were inadvertently tripping the global circuit breaker.
+- **Fix:** Added `AppErrorCode.TIMEOUT` to `NON_RECOVERABLE_APP_CODES` in `CircuitBreaker.ts` so client-side connection pooling timeouts bypass the breaker and don't lock out the whole app. Additionally increased `failureThreshold` and lowered `resetTimeoutMs` in `breaker-configs.ts` for greater resilience during concurrent stress tests.
 
 ### ISSUE-053: Missing Conductor Agent in Omni Panel
 - **Status:** 🔵 OPEN
@@ -1192,3 +1194,10 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Module:** Omni Agent / AgentExecutor
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 9)
 - **Summary:** Executing a task via the global Omni Agent panel occasionally throws `Error: [AgentExecutor] Fatal: No agent found for ID 'conductor'`. The Conductor is not being properly registered or injected when the task is routed from the Omni context.
+
+### ISSUE-054: E2E Fallback Fails Due to Undefined Process Env in Browser
+- **Status:** 🔵 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Agent Orchestrator / E2E
+- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 14)
+- **Summary:** The `isE2E` check in `fine-tuned-models.ts` attempts to read `process.env.VITE_PLAYWRIGHT_E2E`. In a pure browser context, `process` is undefined, causing the fallback to fail and route E2E agents to production Vertex endpoints (which fail with `Circuit OPEN`). The check should use `import.meta.env.VITE_PLAYWRIGHT_E2E` alongside the URL param check.
