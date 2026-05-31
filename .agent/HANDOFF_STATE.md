@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+b90250edb chore: session checkpoint [13:56]
 feb36d4e4 chore: session checkpoint [13:56]
 a5baef813 chore: session checkpoint [13:56]
 f102706e6 chore: session checkpoint [13:56]
@@ -13,7 +14,6 @@ b90d02f51 chore: session checkpoint [13:55]
 869eefd5c chore: clean up test artifacts and ephemeral debug scripts
 2f98439bb fix(e2e): enable Firebase auth mocking in CI and improve E2E mock user implementation
 99d733810 fix(types): replace any casts with proper types in onboarding and e2eMode
-43de7b3ce chore: sync OPEN_ISSUES ledger, checkpoints, and coordination artifacts
 ```
 
 ## Working State
