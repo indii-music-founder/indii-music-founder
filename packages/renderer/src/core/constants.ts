@@ -62,11 +62,11 @@ export function isValidModule(module: string): module is ModuleId {
 // ============================================================================
 
 export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
-    'dashboard': 'conductor',
-    'workflow': 'conductor',
-    'history': 'conductor',
-    'memory': 'conductor',
-    'knowledge': 'conductor',
+    'dashboard': 'generalist',
+    'workflow': 'generalist',
+    'history': 'generalist',
+    'memory': 'generalist',
+    'knowledge': 'generalist',
     'creative': 'creative',
     'video-popout': 'video',
     'devops': 'indii_executor',
