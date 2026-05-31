@@ -646,9 +646,9 @@ service cloud.firestore {
       match /releaseHarnessRuns/{runId} {
         allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
           (
-            (request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
             (
-              request.auth != null &&
+              isAuthenticated() &&
               ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
               get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
               isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
@@ -660,9 +660,9 @@ service cloud.firestore {
       match /harnessRuns/{runId} {
         allow read, create, update: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
           (
-            (request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
             (
-              request.auth != null &&
+              isAuthenticated() &&
               ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
               get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
               isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
@@ -733,9 +733,9 @@ service cloud.firestore {
     match /projects/{projectId}/livingPlans/{planId} {
       allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
         (
-          (request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+          (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
           (
-            request.auth != null &&
+            isAuthenticated() &&
             ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
             get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
             isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
