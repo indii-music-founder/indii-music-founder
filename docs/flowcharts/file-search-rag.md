@@ -8,7 +8,7 @@ graph TD
     UserQuery["User Query / Prompt"]
 
     %% Core Orchestration
-    subgraph Orchestration ["Agent Zero / Router"]
+    subgraph Orchestration ["indii Conductor / Router"]
         Router["Determines specialized agent and intent"]
         Dispatch["Dispatches to Knowledge Retrieval Layer"]
     end
@@ -80,7 +80,7 @@ graph TD
 
 ## Transition Breakdown
 
-1. **Routing:** `Agent Zero` receives the user query and determines which specialized agent is needed (e.g., the Publishing Agent). Before the agent acts, it dispatches the query to the Knowledge Retrieval Layer.
+1. **Routing:** `indii Conductor` receives the user query and determines which specialized agent is needed (e.g., the Publishing Agent). Before the agent acts, it dispatches the query to the Knowledge Retrieval Layer.
 2. **Corpora Selection:** The RAG Agent determines which of the 12 knowledge bases (Corpora) to query (e.g., `indii-royalties-v1` and `indii-deals-v1`) by dynamically adding them as `file_search` tools.
 3. **Grounded Retrieval:** The system queries the Gemini File Search API, retrieving grounded facts, templates, and best practices directly from the indexed markdown files.
 4. **Currency Evaluation:** The system evaluates the response. If it detects phrases indicating missing current information (e.g., "as of my last update" or "check current rates"), it triggers the **Live Web Search Tool**.
