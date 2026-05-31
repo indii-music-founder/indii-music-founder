@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 14:41 EDT
+**Updated:** 2026-05-31 14:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+92707dce5 chore: session checkpoint [14:41]
 bb5d35e83 chore: session checkpoint [14:41]
 04b4342b1 chore: session checkpoint [14:41]
 62dd606f4 fix(e2e): resolve test environment initialization and dev server config
@@ -13,7 +14,6 @@ f27e0b559 chore: session checkpoint [14:40]
 5ec184875 fix(ci): make e2e-staging test failure block production deployment
 61d6c234b chore(docs): clarify a2a protocol role relative to Conductor orchestration
 6dbf9aa90 chore: session checkpoint [14:26]
-0ba8bd085 chore(docs): phase 1 stale ref sweep — update AgentService Gateway → indii Conductor
 ```
 
 ## Working State
