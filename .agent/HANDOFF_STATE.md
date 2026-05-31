@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+b90d02f51 chore: session checkpoint [13:55]
 869eefd5c chore: clean up test artifacts and ephemeral debug scripts
 2f98439bb fix(e2e): enable Firebase auth mocking in CI and improve E2E mock user implementation
 99d733810 fix(types): replace any casts with proper types in onboarding and e2eMode
@@ -13,7 +14,6 @@ fd58d135c docs: mark issues 51, 54, 55 as FIXED in OPEN_ISSUES.md
 5dac587c6 fix: resolve issues 51, 54, 55 (Maximum update depth, E2E browser env fallback, Vertex AI config)
 472e6d848 fix(agent): align MODULE_AGENT_MAP and ui with correct generalist ID
 a2d054535 fix(resiliency): relax circuit breaker sensitivity to prevent client-side timeout lockouts
-f49ee4599 fix(ci): resolve E2E syntax error and harden types for deployment
 ```
 
 ## Working State
