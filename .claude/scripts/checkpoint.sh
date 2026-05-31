@@ -45,6 +45,9 @@ git add .agent/HANDOFF_STATE.md
 # Only commit if the file actually changed
 if git diff --cached --name-only | grep -q "HANDOFF_STATE.md"; then
   git commit -m "chore: session checkpoint [$(date '+%H:%M')]" .agent/HANDOFF_STATE.md 2>&1
-  # Disabled: do not push to avoid retriggering CI workflows during development
-  # git push origin "$BRANCH" 2>&1 || true
+  # Push so the repo never shows a phantom "unpushed" checkpoint commit.
+  # Safe re: CI — checkpoint commits only touch .agent/HANDOFF_STATE.md, which
+  # deploy.yml excludes via paths-ignore (.agent/** and **.md), so this does NOT
+  # retrigger deploys. Fails quietly when offline / no upstream; never force-pushes.
+  git push origin "$BRANCH" 2>/dev/null || true
 fi
