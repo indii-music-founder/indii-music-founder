@@ -300,7 +300,7 @@ export const BankPanel: React.FC = () => {
 
                                 <div className="space-y-4">
                                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], i) => (
+                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], _i) => (
                                         <div key={user} className="flex items-center gap-4 group">
                                             <div className="w-1.5 h-1.5 rounded-full bg-dept-creative group-hover:scale-150 transition-all" />
                                             <div className="flex-1 p-4 bg-black/40 border border-white/10 rounded-xl flex items-center justify-between group-hover:border-dept-creative/30 transition-all">

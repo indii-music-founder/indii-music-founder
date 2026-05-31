@@ -1164,3 +1164,31 @@ Caller can decide whether to retry, surface error, or silently log.
   3. Fixed three leftover TS compilation errors in the codebase (`FallbackClient.ts`, `GeminiRetrievalService.ts`, `fine-tuned-models.ts`) that were interfering with build.
 - **Files:** `packages/renderer/src/utils/e2eMode.ts`, `packages/renderer/src/services/firebase.ts`
 - **UX Impact:** Test agents can now natively test the login screen or seamlessly bypass it using the E2E framework without hacking source files.
+
+### ISSUE-050: Fatal Crash on Canvas Omni-Agent Overlap
+- **Status:** 🔵 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Director
+- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 7)
+- **Summary:** Triggering the Omni Agent (Direct Mode) directly over the heavy `fabric.js` canvas causes an unhandled fatal exception (`Uncaught TypeError: Cannot read properties of undefined (reading 'toLowerCase')`). This crashes the entire application context and forces a reload/logout.
+
+### ISSUE-051: Boardroom Maximum Update Depth Exceeded
+- **Status:** 🔵 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Boardroom
+- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 8)
+- **Summary:** Rapidly spam-clicking agent portraits to seat/unseat them triggers a React `Maximum update depth exceeded` error in the `<Boardroom>` component (likely a `setState` inside `useEffect` with missing/changing dependencies), causing the component to crash and unmount.
+
+### ISSUE-052: CircuitBreaker Fails Open on Concurrent Mode Execution
+- **Status:** 🔵 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Agent Orchestrator
+- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 9)
+- **Summary:** Consecutively initiating tasks across Boardroom, Direct Mode (Omni Agent), and Department Mode triggers the backend `CircuitBreaker: Service is currently unavailable (Circuit OPEN)`. The circuit breaker is too sensitive to rapid concurrent client requests, locking out the user entirely.
+
+### ISSUE-053: Missing Conductor Agent in Omni Panel
+- **Status:** 🔵 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Omni Agent / AgentExecutor
+- **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 9)
+- **Summary:** Executing a task via the global Omni Agent panel occasionally throws `Error: [AgentExecutor] Fatal: No agent found for ID 'conductor'`. The Conductor is not being properly registered or injected when the task is routed from the Omni context.

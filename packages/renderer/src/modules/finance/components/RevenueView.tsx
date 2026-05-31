@@ -26,8 +26,8 @@ const StatCard = ({
   title: string; 
   value: string; 
   change: number; 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any; 
+  
+  icon: React.ElementType; 
   color: string;
 }) => (
   <motion.div 
@@ -52,13 +52,13 @@ const StatCard = ({
   </motion.div>
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SourceBreakdown = ({ sources, counts }: { sources: any, counts: any }) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const total = Object.values(sources).reduce((a: any, b: any) => a + b, 0) as number;
+
+const SourceBreakdown = ({ sources, counts }: { sources: Record<string, number>, counts: Record<string, number> }) => {
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sourceIcons: Record<string, any> = {
+  const total = Object.values(sources).reduce((a: number, b: number) => a + b, 0) as number;
+  
+  
+  const sourceIcons: Record<string, React.ElementType> = {
     streaming: Radio,
     merch: ShoppingBag,
     licensing: DollarSign,
@@ -74,8 +74,8 @@ const SourceBreakdown = ({ sources, counts }: { sources: any, counts: any }) => 
 
   return (
     <div className="space-y-4">
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {Object.entries(sources).map(([key, value]: [string, any]) => {
+      
+      {Object.entries(sources).map(([key, value]: [string, number]) => {
         const percentage = total > 0 ? (value / total) * 100 : 0;
         const Icon = sourceIcons[key] || DollarSign;
         const color = sourceColors[key] || 'bg-gray-500';
