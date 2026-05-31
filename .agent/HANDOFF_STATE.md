@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 13:56 EDT
+**Updated:** 2026-05-31 13:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dfd14badf chore: session checkpoint [13:56]
 b90250edb chore: session checkpoint [13:56]
 feb36d4e4 chore: session checkpoint [13:56]
 a5baef813 chore: session checkpoint [13:56]
@@ -13,7 +14,6 @@ d342f4a09 chore: session checkpoint [13:56]
 b90d02f51 chore: session checkpoint [13:55]
 869eefd5c chore: clean up test artifacts and ephemeral debug scripts
 2f98439bb fix(e2e): enable Firebase auth mocking in CI and improve E2E mock user implementation
-99d733810 fix(types): replace any casts with proper types in onboarding and e2eMode
 ```
 
 ## Working State
