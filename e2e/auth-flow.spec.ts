@@ -109,27 +109,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Invalid credentials correctly rejected');
     });
 
-    test('Valid credentials authenticate successfully (mock)', async ({ page }) => {
-        // Uses mock auth injection instead of real Firebase credentials.
-        // Inject the same mock state the auth fixture uses.
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indii.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indii_tour_completed_v1', 'true');
-                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
-
+    test('Valid credentials authenticate successfully', async ({ page }) => {
         // Mock Firestore to prevent network hangs
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
@@ -156,36 +136,76 @@ test.describe('Authentication Flow', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
+        // Mock Identity Toolkit for successful login
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "mock-id-token-e2e",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'mock-id-token-e2e',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
+        });
+
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        // Mock auth should auto-login — verify we reach the dashboard
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
+
+        // Wait for dashboard
         await expect(
             page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()
-        ).toBeVisible({ timeout: 30000 });
-        console.log('[Auth] Mock login successful — dashboard reached');
+        ).toBeVisible({ timeout: 15000 });
+        console.log('[Auth] Login successful — dashboard reached');
     });
 
     test('Logout clears session (mock)', async ({ page }) => {
-        // Inject mock auth state
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indii.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indii_tour_completed_v1', 'true');
-                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
-
+        // Mock Firestore
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
@@ -195,8 +215,66 @@ test.describe('Authentication Flow', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
+        // Mock Identity Toolkit and secure token
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "mock-id-token-e2e",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'mock-id-token-e2e',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
+        });
+
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
+
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
 
         // Wait for dashboard
         await expect(
@@ -229,25 +307,7 @@ test.describe('Authentication Flow', () => {
     });
 
     test('Session persists on page reload (mock)', async ({ page }) => {
-        // Inject mock auth state
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indii.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indii_tour_completed_v1', 'true');
-                localStorage.setItem('indii_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
-
+        // Mock Firestore
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
@@ -257,8 +317,83 @@ test.describe('Authentication Flow', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
+        // Mock Identity Toolkit and secure token
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "mock-id-token-e2e",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            // For page reload, it might verify the token
+            if (url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: { 'Access-Control-Allow-Origin': '*' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                        }]
+                    })
+                });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'mock-id-token-e2e',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
+        });
+
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
+
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
 
         // Wait for dashboard
         await expect(
