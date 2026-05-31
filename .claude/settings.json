@@ -23,7 +23,11 @@
       "Bash(PLAYWRIGHT_BASE_URL= npx playwright test e2e/conductor-consult-streaming.spec.ts --project=chromium --reporter=line)",
       "Bash(nohup npm run dev:web -- --port 4242)",
       "Bash(echo \"started dev:web pid $!\")",
-      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:4242 npx playwright test e2e/conductor-consult-streaming.spec.ts --project=chromium --reporter=line)"
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:4242 npx playwright test e2e/conductor-consult-streaming.spec.ts --project=chromium --reporter=line)",
+      "Bash(perl -i -pe 's{Agent Zero / Router}{indii Conductor / Router}g; s{`Agent Zero`}{`indii Conductor`}g' docs/flowcharts/file-search-rag.md)",
+      "Bash(perl -i -pe 's{packages/renderer/src/modules/music/}{packages/renderer/src/modules/tools/}g' docs/flowcharts/audio-intelligence-flow.md)",
+      "Bash(node scripts/validate-flowcharts.js)",
+      "Bash(echo \"exit: $?\")"
     ],
     "additionalDirectories": [
       "/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans"
