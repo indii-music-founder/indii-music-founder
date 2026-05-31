@@ -21,7 +21,7 @@ graph TD
     subgraph Engine ["Workflow Execution Engine"]
         Runner["Graph Traversal Runner"]
         TaskQueue["Local Task Queue"]
-        AgentGateway["AgentService Gateway"]
+        AgentGateway["indii Conductor (AgentGraphService)"]
     end
 
     %% External & Cloud
@@ -78,6 +78,6 @@ graph TD
 3. **Persistence:** The user can save their automation recipe. The `workflowSlice` serializes the nodes and edges and saves them to the **Firestore** `workflows` collection for later retrieval.
 4. **Execution Trigger:** When the user clicks "Run", the **Graph Traversal Runner** takes over. It performs a topological sort on the edges to determine the exact order of execution, ensuring dependencies (e.g., Node B needs Node A's output) are respected.
 5. **Queue Processing:** The nodes are loaded into the **Local Task Queue**.
-6. **Agent Handoff:** For AI tasks (like "Analyze Contract"), the runner sends the payload to the **AgentService Gateway**, which routes it to the appropriate specialist agent (or backend **Cloud Function** if it's heavy compute).
+6. **Agent Handoff:** For AI tasks (like "Analyze Contract"), the runner sends the payload to the **indii Conductor**, which routes it to the appropriate specialist agent (or backend **Cloud Function** if it's heavy compute).
 7. **Data Pipelining:** When the agent returns a result, the runner injects that output into the input parameters of the *next* node in the queue. 
 8. **Live Feedback:** As each node finishes, the task queue updates the `workflowSlice`, which visually highlights the node on the **Canvas UI** (e.g., turning it green or showing an error icon) so the user can track the automation in real-time.
