@@ -26,7 +26,8 @@ test.describe('Authentication Flow', () => {
             }
             await route.fulfill({
                 status: 200,
-                contentType: 'application/json',
+                    headers: corsHeaders,
+                    contentType: 'application/json',
                 headers: corsHeaders,
                 body: JSON.stringify({
                     name: 'projects/mock-project/installations/mock-installation',
@@ -89,7 +90,8 @@ test.describe('Authentication Flow', () => {
         await page.route('**/securetoken.googleapis.com/**', async route => {
             await route.fulfill({
                 status: 200,
-                contentType: 'application/json',
+                    headers: corsHeaders,
+                    contentType: 'application/json',
                 body: JSON.stringify({ access_token: 'mock', expires_in: '3600', token_type: 'Bearer' })
             });
         });
@@ -131,6 +133,7 @@ test.describe('Authentication Flow', () => {
             if (url.includes('/users/test-user-uid-e2e')) {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         name: 'projects/mock/databases/(default)/documents/users/test-user-uid-e2e',
@@ -144,7 +147,7 @@ test.describe('Authentication Flow', () => {
                 });
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         // Mock Identity Toolkit for successful login
@@ -223,7 +226,7 @@ test.describe('Authentication Flow', () => {
                 await route.abort('failed');
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         // Mock Identity Toolkit and secure token
@@ -325,7 +328,7 @@ test.describe('Authentication Flow', () => {
                 await route.abort('failed');
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         // Mock Identity Toolkit and secure token
