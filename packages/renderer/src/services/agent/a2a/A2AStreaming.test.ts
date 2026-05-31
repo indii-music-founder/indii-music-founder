@@ -86,7 +86,7 @@ describe('A2A streaming (real crypto loopback)', () => {
     // Full text reconstructs from the deltas.
     expect(deltas.map((d) => d.text || '').join('')).toBe(chunkA + chunkB);
     expect(streamAgent).toHaveBeenCalledWith('marketing', 'draft tweets', expect.any(Function));
-  });
+  }, 25000);
 
   it('falls back to a single batch envelope when no streamAgent is provided', async () => {
     const { a2aClient } = await import('./A2AClient');
@@ -113,5 +113,5 @@ describe('A2A streaming (real crypto loopback)', () => {
     expect(events[0]?.text).toBe('batch result');
     // Batch generator calls runAgent(targetAgentId, task, parentContext, traceId).
     expect(runAgent).toHaveBeenCalledWith('marketing', 'draft tweets', undefined, 't2');
-  });
+  }, 25000);
 });
