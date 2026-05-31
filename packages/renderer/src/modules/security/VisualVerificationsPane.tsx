@@ -18,8 +18,8 @@ interface VisualVerificationRecord {
         overallPass: boolean;
         gapsFound: string;
     } | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    createdAt: any;
+    
+    createdAt: { toDate?: () => Date } | string | number | Date;
 }
 
 export function VisualVerificationsPane() {
@@ -88,10 +88,9 @@ export function VisualVerificationsPane() {
                             <span className="text-xs font-medium text-white truncate">
                                 Trace: {record.traceId.slice(0, 8)}...
                             </span>
-                            {record.createdAt?.toDate && (
+                            {(record.createdAt as { toDate?: () => Date })?.toDate && (
                                 <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    {formatDistanceToNow(typeof record.createdAt.toDate === 'function' ? record.createdAt.toDate() : new Date(record.createdAt as any), { addSuffix: true })}
+                                    {formatDistanceToNow(typeof (record.createdAt as { toDate?: () => Date }).toDate === 'function' ? (record.createdAt as { toDate: () => Date }).toDate() : new Date(record.createdAt as string | number), { addSuffix: true })}
                                 </span>
                             )}
                         </div>

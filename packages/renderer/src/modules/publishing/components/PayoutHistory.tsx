@@ -109,8 +109,8 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                     <div className="hidden sm:flex flex-col items-end">
                                         <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Impacted</p>
                                         <div className="flex -space-x-1.5">
-                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                            {payout.releases.slice(0, 3).map((r, i) => (
+                                            
+                                            {payout.releases.slice(0, 3).map((r, _i) => (
                                                 <div key={r.id} className="w-5 h-5 rounded-md bg-gray-800 border border-[#121212] flex items-center justify-center text-[7px] font-black text-gray-500 overflow-hidden">
                                                     {r.title.charAt(0)}
                                                 </div>
