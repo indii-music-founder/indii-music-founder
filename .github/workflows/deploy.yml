@@ -341,6 +341,7 @@ jobs:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: indii-music-founder
+          VITE_FIREBASE_E2E_MOCK: 'true'
 
   # ─── Production Deploy ──────────────────────────────────────────────────────
   deploy-production:
