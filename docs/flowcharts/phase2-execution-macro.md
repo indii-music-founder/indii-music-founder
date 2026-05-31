@@ -29,7 +29,7 @@ graph TD
     style K fill:#FF8C00,stroke:#e65100,stroke-width:2px
 ```
 
-### Transition Breakdown
+## Transition Breakdown
 
 1. **Main Orchestrator (Antigravity):** Reads the overarching `PRODUCTION_WORK_ORDER_PHASE2.md` and divides the 10 work orders into logical groups.
 2. **Specialized Agents Triggered:** Subagents are spawned via the A2A Swarm Protocol to tackle distinct functional areas simultaneously:
