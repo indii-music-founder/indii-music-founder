@@ -61,7 +61,7 @@ export const getE2EMockUser = <T>(): T | null => {
         toJSON: function() { return { uid: this.uid }; }
     };
 
-    let customUser: any = null;
+    let customUser: Record<string, unknown> | null = null;
 
     // 1. Check window object
     if ((window as RuntimeWindow).FIREBASE_USER_MOCK) {

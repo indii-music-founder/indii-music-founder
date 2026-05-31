@@ -217,11 +217,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f0f0f]">
                         {history.filter(msg => {
                             if (msg.role !== 'user' && msg.role !== 'model') return false;
-                            const hasText = msg.parts.some((p: any) => p.text);
+                            const hasText = msg.parts.some((p: { text?: string }) => p.text);
                             // OnboardingModal doesn't seem to render toolCalls, but let's be safe
                             return hasText;
                         }).map((msg, idx) => {
-                            const textPart = msg.parts.find((p: any) => p.text)?.text;
+                            const textPart = msg.parts.find((p: { text?: string }) => p.text)?.text;
                             return (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-xl ${msg.role === 'user'
