@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+f7b709a82 chore: session checkpoint [11:31]
 93b458bd7 chore: session checkpoint [11:30]
 d5c6ed886 chore: session checkpoint [11:30]
 4c3dd7abe chore: session checkpoint [11:30]
@@ -13,7 +14,6 @@ e5ca21828 chore: session checkpoint [11:30]
 1c35bd883 chore: session checkpoint [11:11]
 0a766a76a chore: Antigravity Phase 2 complete — e2e stability, state sync, architecture map, datasets
 fc12b5265 chore: session checkpoint [11:00]
-77d7dc023 fix(test): re-skip A2A streaming test pending loopback transport implementation
 ```
 
 ## Working State
