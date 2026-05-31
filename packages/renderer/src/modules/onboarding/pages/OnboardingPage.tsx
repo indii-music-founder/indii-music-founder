@@ -155,7 +155,14 @@ export default function OnboardingPage() {
 
                             <div className="space-y-8">
                                 <AnimatePresence mode="popLayout">
-                                    {history.map((msg, idx) => (
+                                    {history.filter(msg => {
+                                        if (msg.role !== 'user' && msg.role !== 'model') return false;
+                                        const hasText = msg.parts.some((p: { text?: string }) => p.text);
+                                        const hasUIToolCall = !!msg.toolCall;
+                                        return hasText || hasUIToolCall;
+                                    }).map((msg, idx, filteredHistory) => {
+                                        const textPart = msg.parts.find((p: { text?: string }) => p.text)?.text;
+                                        return (
                                         <motion.div
                                             key={idx}
                                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -171,13 +178,15 @@ export default function OnboardingPage() {
                                                         : 'bg-white/5 border border-white/10 text-gray-200'
                                                     }
                                         `}>
-                                                    <p className="text-sm lg:text-[15px] leading-relaxed whitespace-pre-wrap">{msg.parts[0]!.text}</p>
+                                                    {textPart && (
+                                                        <p className="text-sm lg:text-[15px] leading-relaxed whitespace-pre-wrap">{textPart}</p>
+                                                    )}
 
                                                     {/* Generative UI Components */}
                                                     {msg.toolCall?.name === 'askMultipleChoice' && (
                                                         <MultipleChoiceRenderer
                                                             options={msg.toolCall.args.options}
-                                                            hasBeenAnswered={history.slice(idx + 1).some(m => m.role === 'user')}
+                                                            hasBeenAnswered={filteredHistory.slice(idx + 1).some(m => m.role === 'user')}
                                                             onSelect={(opt) => handleSend(opt)}
                                                         />
                                                     )}
@@ -203,7 +212,7 @@ export default function OnboardingPage() {
                                                 </div>
                                             </div>
                                         </motion.div>
-                                    ))}
+                                    )})}
                                 </AnimatePresence>
                                 {isProcessing && (
                                     <motion.div

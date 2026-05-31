@@ -39,6 +39,33 @@ export function getGithubTokenFounders(): string {
     throw new Error("GitHub Token for Founders Program not found. Please set GITHUB_TOKEN_FOUNDERS secret or environment variable.");
 }
 
+// ---------------------------------------------------------------------------
+// Bug Reporter — GitHub Issues Integration
+// ---------------------------------------------------------------------------
+// Fine-grained GitHub PAT scoped to issues:write on this repo only.
+// Used by reportBugFn to create/update GitHub issues from in-app bug reports.
+// Required secret in GCP Secret Manager: GITHUB_TOKEN
+export const githubToken = defineSecret("GITHUB_TOKEN");
+
+/**
+ * Helper to safely retrieve the GitHub Token for bug reporting.
+ * Returns null (instead of throwing) when the token is not configured,
+ * allowing the bug reporter to gracefully skip GitHub integration.
+ */
+export function getGithubToken(): string | null {
+    const envKey = process.env.GITHUB_TOKEN;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = githubToken.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+    }
+
+    return null; // Graceful — caller decides whether to skip
+}
+
 /**
  * Helper to safely retrieve the Gemini API Key.
  * Handles both production (secrets) and local development (environment variables).
