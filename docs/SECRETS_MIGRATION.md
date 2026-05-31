@@ -4,7 +4,7 @@
 > Navigate to: **Settings → Secrets and variables → Actions → New repository secret**
 > URL: https://github.com/indii-music/indii-Clean/settings/secrets/actions
 
-## Required Secrets (copy from the-walking-agency-det/indii-Clean)
+## Required Secrets (copy from indii-music-founder/indii-music-founder)
 
 | Secret Name | Purpose | Used In |
 |---|---|---|
@@ -30,7 +30,7 @@
 | `E2E_TEST_PASSWORD` | Playwright test account password |
 
 ## Steps
-1. Go to the OLD repo: https://github.com/the-walking-agency-det/indii-Clean/settings/secrets/actions
+1. Go to the OLD repo: https://github.com/indii-music-founder/indii-music-founder/settings/secrets/actions
 2. Note each secret value (you'll need to re-enter them — GitHub doesn't let you view existing values)
 3. Go to the NEW repo: https://github.com/indii-music/indii-Clean/settings/secrets/actions
 4. Add each secret above with the same values

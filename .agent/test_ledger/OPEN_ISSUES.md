@@ -40,8 +40,8 @@
 - **Status:** ✅ FIXED (ad903c25) + ⏳ AWAITING CONFIGURATION
 - **Fix:** `BugReportTools.ts` creates GitHub Issues when `VITE_GITHUB_TOKEN` + `VITE_GITHUB_REPO` are set.
 - **Action Required (founders):**
-  1. Generate a GitHub fine-grained PAT with `Issues: Read & Write` on `new-detroit-music-llc/indii-Alpha-Electron`
-  2. Add to `.env`: `VITE_GITHUB_TOKEN=ghp_...` and `VITE_GITHUB_REPO=new-detroit-music-llc/indii-Alpha-Electron`
+  1. Generate a GitHub fine-grained PAT with `Issues: Read & Write` on `indii-music-founder/indii-music-founder`
+  2. Add to `.env`: `VITE_GITHUB_TOKEN=ghp_...` and `VITE_GITHUB_REPO=indii-music-founder/indii-music-founder`
   3. Create labels in the repo: `bug`, `severity:critical`, `severity:major`, `severity:minor`, `module:boardroom`, `module:creative`, `module:distribution`, etc.
 - **Files:** `BugReportTools.ts`, `.env.example`
 

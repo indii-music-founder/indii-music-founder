@@ -104,7 +104,7 @@ export const reportBugFn = functions.https.onCall(
 
         // 2. GitHub integration (server-side token)
         const githubToken = process.env.GITHUB_TOKEN || '';
-        const githubRepo = process.env.GITHUB_REPO || 'new-detroit-music-llc/indii-Alpha-Electron';
+        const githubRepo = process.env.GITHUB_REPO || 'indii-music-founder/indii-music-founder';
 
         if (githubToken) {
             try {

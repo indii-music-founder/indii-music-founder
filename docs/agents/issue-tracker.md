@@ -1,6 +1,6 @@
 # Issue Tracker: GitHub
 
-Issues and PRDs for indii live as GitHub issues in `indii-music/indiiOS-Clean`. Use the `gh` CLI for all operations.
+Issues and PRDs for indii live as GitHub issues in `indii-music-founder/indii-music-founder`. Use the `gh` CLI for all operations.
 
 ## Conventions
 
