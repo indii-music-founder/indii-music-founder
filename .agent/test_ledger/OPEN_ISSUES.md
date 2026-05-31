@@ -1196,7 +1196,9 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Summary:** Executing a task via the global Omni Agent panel occasionally throws `Error: [AgentExecutor] Fatal: No agent found for ID 'conductor'`. The Conductor is not being properly registered or injected when the task is routed from the Omni context.
 
 ### ISSUE-054: E2E Fallback Fails Due to Undefined Process Env in Browser
-- **Status:** 🔵 OPEN
+- **Status:** ✅ FIXED (commit: pending)
+- **Fix:** Switched process.env access to import.meta.env for VITE_PLAYWRIGHT_E2E in pure browser environments.
+- **Files:** `packages/renderer/src/services/agent/fine-tuned-models.ts`
 - **Severity:** 🔴 HIGH
 - **Module:** Agent Orchestrator / E2E
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 14)
