@@ -5,8 +5,9 @@ import { logger } from '@/utils/logger';
 
 /**
  * Bug and feature reporting tools.
- * Bug reports are saved to Firestore (bug_reports collection) and optionally
- * to GitHub Issues if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env.
+ * Bug reports are saved to Firestore (bug_reports collection) and
+ * forwarded to GitHub Issues via the reportBugFn Cloud Function.
+ * GitHub token is server-side only (GCP Secret Manager) — no client config needed.
  */
 export const BugReportTools: Record<string, AnyToolFunction> = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

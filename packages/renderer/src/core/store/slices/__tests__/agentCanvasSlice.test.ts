@@ -27,7 +27,7 @@ const makePayload = (overrides?: Partial<CanvasPushPayload>): CanvasPushPayload 
     title: 'Test Panel',
     type: 'markdown',
     data: { type: 'markdown', content: '# Hello World' },
-    agentId: 'conductor',
+    agentId: 'generalist',
     createdAt: Date.now(),
     ...overrides,
 });

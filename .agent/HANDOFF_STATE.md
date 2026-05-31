@@ -1,42 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-31 11:57 EDT
+**Updated:** 2026-05-31 15:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-d7eeedcbf chore: session checkpoint [11:55]
-4272d94e6 chore: session checkpoint [11:53]
-03faebfd1 chore: session checkpoint [11:40]
-7611f12db chore: session checkpoint [11:39]
-af25e689e chore: session checkpoint [11:39]
-7f3c67f4b chore: session checkpoint [11:39]
-855d3f285 chore: session checkpoint [11:39]
-9b61cf830 chore: session checkpoint [11:38]
-0231df23e chore: session checkpoint [11:38]
-9546a1d32 chore: session checkpoint [11:38]
+3d9924164 chore: session checkpoint [15:16]
+25d52c6ab chore: session checkpoint [15:14]
+bf0fc1d41 chore: session checkpoint [15:13]
+e71ca5a12 chore: session checkpoint [15:12]
+0f00d2950 chore: session checkpoint [15:10]
+1316c53a6 chore: session checkpoint [15:09]
+56c6dced7 chore: session checkpoint [15:08]
+328a72fe3 chore: session checkpoint [15:08]
+382fce9e0 chore: session checkpoint [15:07]
+8495404a9 chore: session checkpoint [15:05]
 ```
 
 ## Working State
 ```
- M execution/training/trigger_r8_tuning.ts
- M packages/renderer/src/services/firebase.ts
- M packages/renderer/src/utils/e2eMode.ts
-?? boardroom.png
-?? click-agent.js
-?? click-dismiss.js
-?? click-guest.js
-?? click-skip.js
-?? execution/training/check_r8_tuning_status.ts
-?? run-routine-102.cjs
-?? run-test.js
-?? screenshot-test.cjs
-?? set-ls.js
-?? snapshot.txt
-?? snapshot2.txt
-?? test-eval.js
-?? test-mock.js
-?? test-pw.cjs
-?? workspace.html
+clean working tree
 ```
 
 ## Decisions
