@@ -27,6 +27,7 @@ const NON_RECOVERABLE_APP_CODES = new Set<AppErrorCode>([
     AppErrorCode.CONTENT_FILTERED,
     AppErrorCode.QUOTA_EXCEEDED,
     AppErrorCode.RATE_LIMITED,
+    AppErrorCode.TIMEOUT, // Bypass breaker on timeouts caused by browser connection pooling limits
 ]);
 
 /**
