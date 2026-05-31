@@ -121,20 +121,51 @@ import { Auth, User } from 'firebase/auth';
 let rawAuth: Auth;
 if (isFirebaseE2EMockEnabled()) {
     logger.debug('[Firebase] Using E2E Auth Mock');
-    const mockUser = getE2EMockUser<User>();
+    
+    // Stateful mock auth
+    let currentMockUser = getE2EMockUser<User>();
+    const authStateListeners: ((user: User | null) => void)[] = [];
+    
+    const notifyListeners = () => {
+        authStateListeners.forEach(cb => cb(currentMockUser));
+    };
+
     rawAuth = {
         app,
-        currentUser: mockUser,
+        get currentUser() { return currentMockUser; },
         onAuthStateChanged: (cb: (user: User | null) => void) => {
-            setTimeout(() => cb(mockUser), 100);
-            return () => { };
+            authStateListeners.push(cb);
+            setTimeout(() => cb(currentMockUser), 100);
+            return () => { 
+                const idx = authStateListeners.indexOf(cb);
+                if (idx > -1) authStateListeners.splice(idx, 1);
+            };
         },
-        signInAnonymously: () => Promise.resolve({ user: mockUser }),
-        signInWithEmailAndPassword: () => Promise.resolve({ user: mockUser }),
-        createUserWithEmailAndPassword: () => Promise.resolve({ user: mockUser }),
-        sendPasswordResetEmail: () => Promise.resolve(),
-        signInWithPopup: () => Promise.resolve({ user: mockUser }),
-        signOut: () => Promise.resolve(),
+        signInAnonymously: async () => {
+            currentMockUser = getE2EMockUser<User>();
+            notifyListeners();
+            return { user: currentMockUser };
+        },
+        signInWithEmailAndPassword: async () => {
+            currentMockUser = getE2EMockUser<User>();
+            notifyListeners();
+            return { user: currentMockUser };
+        },
+        createUserWithEmailAndPassword: async () => {
+            currentMockUser = getE2EMockUser<User>();
+            notifyListeners();
+            return { user: currentMockUser };
+        },
+        sendPasswordResetEmail: async () => {},
+        signInWithPopup: async () => {
+            currentMockUser = getE2EMockUser<User>();
+            notifyListeners();
+            return { user: currentMockUser };
+        },
+        signOut: async () => {
+            currentMockUser = null;
+            notifyListeners();
+        },
     } as unknown as Auth;
 } else {
     try {
