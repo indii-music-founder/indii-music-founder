@@ -3,8 +3,10 @@ import { test, expect } from '@playwright/test';
 // Configuration
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 
+const origin = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "*",
@@ -16,8 +18,9 @@ const mockFirestoreUserDoc = async (route: any) => {
         await route.fulfill({ status: 204, headers: corsHeaders });
         return;
     }
-    if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-        await route.fulfill({ status: 403, headers: corsHeaders, contentType: 'application/json', body: '{"error":{"code":403,"message":"Permission Denied"}}' });
+    if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?') || url.includes(':write') || url.includes('/Write/')) {
+        await new Promise(r => setTimeout(r, 60000));
+        await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '[]' });
         return;
     }
     const postData = route.request().postData() || '';
@@ -67,6 +70,11 @@ test.describe('Authentication Flow', () => {
     test.setTimeout(60000);
 
     test.beforeEach(async ({ page }) => {
+        // Bypass onboarding screen if Firestore marks client offline and defaults to pending profile
+        await page.addInitScript(() => {
+            window.localStorage.setItem('onboarding_dismissed', 'true');
+        });
+
         // Capture browser logs for debugging
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
@@ -191,9 +199,26 @@ test.describe('Authentication Flow', () => {
                         localId: "test-user-uid-e2e",
                         email: "e2e@indii.test",
                         displayName: "E2E Test User",
-                        idToken: "mock-id-token-e2e",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
                         refreshToken: "mock-refresh-token-e2e",
                         expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
                     })
                 });
                 return;
@@ -215,7 +240,7 @@ test.describe('Authentication Flow', () => {
                     expires_in: '3600',
                     token_type: 'Bearer',
                     refresh_token: 'mock-refresh-token',
-                    id_token: 'mock-id-token-e2e',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature',
                     user_id: 'test-user-uid-e2e',
                     project_id: 'mock-project'
                 })
@@ -263,9 +288,26 @@ test.describe('Authentication Flow', () => {
                         localId: "test-user-uid-e2e",
                         email: "e2e@indii.test",
                         displayName: "E2E Test User",
-                        idToken: "mock-id-token-e2e",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
                         refreshToken: "mock-refresh-token-e2e",
                         expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
                     })
                 });
                 return;
@@ -287,7 +329,7 @@ test.describe('Authentication Flow', () => {
                     expires_in: '3600',
                     token_type: 'Bearer',
                     refresh_token: 'mock-refresh-token',
-                    id_token: 'mock-id-token-e2e',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature',
                     user_id: 'test-user-uid-e2e',
                     project_id: 'mock-project'
                 })
@@ -358,7 +400,7 @@ test.describe('Authentication Flow', () => {
                         localId: "test-user-uid-e2e",
                         email: "e2e@indii.test",
                         displayName: "E2E Test User",
-                        idToken: "mock-id-token-e2e",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkIiwic3ViIjoidGVzdC11c2VyLXVpZCIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoxODAwMDAwMDAwLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0QGV4YW1wbGUuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.signature",
                         refreshToken: "mock-refresh-token-e2e",
                         expiresIn: "3600",
                     })
@@ -382,6 +424,23 @@ test.describe('Authentication Flow', () => {
                 });
                 return;
             }
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
+                    })
+                });
+                return;
+            }
             await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
@@ -399,7 +458,7 @@ test.describe('Authentication Flow', () => {
                     expires_in: '3600',
                     token_type: 'Bearer',
                     refresh_token: 'mock-refresh-token',
-                    id_token: 'mock-id-token-e2e',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QifQ.signature',
                     user_id: 'test-user-uid-e2e',
                     project_id: 'mock-project'
                 })
