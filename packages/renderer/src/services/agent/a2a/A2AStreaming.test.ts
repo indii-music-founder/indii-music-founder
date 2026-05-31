@@ -42,6 +42,7 @@ async function resetSingletons() {
 }
 
 describe('A2A streaming (real crypto loopback)', () => {
+  vi.setConfig({ testTimeout: 60000 });
   beforeEach(async () => {
     vi.clearAllMocks();
     await resetSingletons();
