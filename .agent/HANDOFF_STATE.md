@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-05-31 11:40 EDT
+**Updated:** 2026-05-31 11:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+03faebfd1 chore: session checkpoint [11:40]
 7611f12db chore: session checkpoint [11:39]
 af25e689e chore: session checkpoint [11:39]
 7f3c67f4b chore: session checkpoint [11:39]
@@ -13,14 +14,26 @@ af25e689e chore: session checkpoint [11:39]
 9546a1d32 chore: session checkpoint [11:38]
 72fd40d98 chore: session checkpoint [11:38]
 6009eb82f chore: session checkpoint [11:37]
-df0efce24 chore: session checkpoint [11:37]
 ```
 
 ## Working State
 ```
+ M execution/training/trigger_r8_tuning.ts
+ M packages/renderer/src/services/firebase.ts
+ M packages/renderer/src/utils/e2eMode.ts
+?? click-agent.js
+?? click-dismiss.js
+?? click-guest.js
+?? click-skip.js
+?? run-routine-102.cjs
 ?? run-test.js
 ?? set-ls.js
+?? snapshot.txt
+?? snapshot2.txt
+?? test-eval.js
 ?? test-mock.js
+?? test-pw.cjs
+?? workspace.html
 ```
 
 ## Decisions
