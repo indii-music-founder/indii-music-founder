@@ -247,21 +247,46 @@ export const test = base.extend<AuthFixtures>({
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        // Return 403 Permission Denied to terminate the connection instantly 
-        // and tell the client NOT to retry the stream, avoiding 400 Bad Request noise.
+        // Return 401 to pause stream reconnections without marking the client as offline
         await route.fulfill({
-          status: 403,
+          status: 401,
           headers: corsHeaders,
           contentType: "application/json",
           body: JSON.stringify({
             error: {
-              code: 403,
-              message: "Permission Denied",
-              status: "PERMISSION_DENIED"
+              code: 401,
+              message: "Unauthenticated",
+              status: "UNAUTHENTICATED"
             }
           })
         });
         return;
+      }
+
+      // Handle batchGet for user profile
+      if (url.includes("batchGet") || url.includes("documents:get")) {
+          await route.fulfill({
+            status: 200,
+            headers: corsHeaders,
+            contentType: "application/json",
+            body: JSON.stringify([
+              {
+                found: {
+                  name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
+                  fields: {
+                    uid: { stringValue: "test-user-uid-e2e" },
+                    email: { stringValue: "e2e@indii.test" },
+                    displayName: { stringValue: "E2E Test User" },
+                    onboardingCompleted: { booleanValue: true },
+                  },
+                  createTime: "2024-01-01T00:00:00.000Z",
+                  updateTime: "2024-01-01T00:00:00.000Z",
+                },
+                readTime: "2024-01-01T00:00:00.000Z"
+              }
+            ]),
+          });
+          return;
       }
 
       // Mock User Profile reads
@@ -591,7 +616,7 @@ export const test = base.extend<AuthFixtures>({
             localId: "test-user-uid-e2e",
             email: "e2e@indii.test",
             displayName: "E2E Test User",
-            idToken: "mock-id-token-e2e",
+            idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
             refreshToken: "mock-refresh-token-e2e",
             expiresIn: "3600",
           }),
@@ -612,6 +637,7 @@ export const test = base.extend<AuthFixtures>({
                 email: "e2e@indii.test",
                 displayName: "E2E Test User",
                 emailVerified: true,
+                providerUserInfo: []
               },
             ],
           }),
@@ -646,7 +672,7 @@ export const test = base.extend<AuthFixtures>({
           expires_in: "3600",
           token_type: "Bearer",
           refresh_token: "mock-refresh-token-e2e",
-          id_token: "mock-id-token-e2e",
+          id_token: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
           user_id: "test-user-uid-e2e",
           project_id: "mock-project",
         }),
@@ -781,7 +807,7 @@ export const test = base.extend<AuthFixtures>({
         email: "e2e@indii.test",
         displayName: "E2E Test User",
         isAnonymous: false,
-        getIdToken: () => Promise.resolve("mock-id-token-e2e"),
+        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature"),
       };
 
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
