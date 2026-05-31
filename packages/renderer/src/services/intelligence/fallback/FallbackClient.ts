@@ -393,10 +393,16 @@ export async function streamWithFallback(
             text: () => finalText,
             thoughtSignature,
             functionCalls: () => {
-                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                    typeof p === 'object' && p !== null && 'functionCall' in p
-                );
-                return part ? [part.functionCall] : [];
+                const calls: { name: string; args: Record<string, unknown>; }[] = [];
+                for (const c of chunks) {
+                    const parts = c?.candidates?.[0]?.content?.parts || [];
+                    for (const p of parts) {
+                        if (typeof p === 'object' && p !== null && 'functionCall' in p) {
+                            calls.push((p as FunctionCallPart).functionCall as { name: string; args: Record<string, unknown>; });
+                        }
+                    }
+                }
+                return calls;
             },
             usage: () => lastChunk?.usageMetadata
         };

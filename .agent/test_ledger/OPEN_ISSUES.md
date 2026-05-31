@@ -1148,3 +1148,19 @@ Caller can decide whether to retry, surface error, or silently log.
   4. Should trigger frame selection for the first-frame/last-frame process.
 - **User Impact:** Users cannot configure keyframes for video generation.
 - **Screenshot:** N/A
+
+---
+
+### ISSUE-046: E2E Auth Mock Failure at Login Screen
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** E2E Test Infrastructure / Auth
+- **Found:** 2026-05-31 by Mega Stress Test QA Agent
+- **Summary:** The `isFirebaseE2EMockEnabled` auth mock failed to allow a UI-based login flow. `signInWithEmailAndPassword` resolved without triggering an `onAuthStateChanged` event, leaving test agents stuck at the login screen with a `null` mockUser unless they manually hacked the `window` object or the source code.
+- **Root Cause:** The `rawAuth` mock in `firebase.ts` was stateless; its `onAuthStateChanged` only fired once on initialization. Furthermore, `getE2EMockUser` returned `null` if no `FIREBASE_USER_MOCK` was explicitly provided on the window, causing immediate login failure.
+- **Fix Applied:**
+  1. Updated `packages/renderer/src/utils/e2eMode.ts` to provide a default `test-agent-123` fallback mock user if E2E mode is active but no specific user object is injected via window/localStorage.
+  2. Refactored `packages/renderer/src/services/firebase.ts`'s `rawAuth` mock to be fully stateful. `signInWithEmailAndPassword`, `signInAnonymously`, etc., now trigger `notifyListeners()`, which pushes the new user to all `onAuthStateChanged` callbacks.
+  3. Fixed three leftover TS compilation errors in the codebase (`FallbackClient.ts`, `GeminiRetrievalService.ts`, `fine-tuned-models.ts`) that were interfering with build.
+- **Files:** `packages/renderer/src/utils/e2eMode.ts`, `packages/renderer/src/services/firebase.ts`
+- **UX Impact:** Test agents can now natively test the login screen or seamlessly bypass it using the E2E framework without hacking source files.

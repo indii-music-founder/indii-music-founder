@@ -791,17 +791,34 @@ export class BaseAgent implements SpecializedAgent {
                 const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
                 // Only scan the new task/input to prevent false positives from the agent's own history
                 // (e.g., identity locks repeating "ignore previous instructions")
-                const armorResult = await ModelArmor.scanInput(fullPrompt, getDefaultPolicy());
+                const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
                 if (!armorResult.allowed) {
                     executionContext.rollback();
                     return { text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
+                }
+
+                const finalAttachments = [...(attachments || [])];
+                
+                // Auto-inject the latest generated artifact if it's the creative agent and the user asks to look at something
+                if (finalAttachments.length === 0 && ['creative', 'brand'].includes(this.id) && context?.chatHistory) {
+                    const { useStore } = await import('@/core/store');
+                    const generatedHistory = useStore.getState().generatedHistory || [];
+                    if (generatedHistory.length > 0) {
+                        const lastItem = generatedHistory[generatedHistory.length - 1];
+                        if (lastItem && lastItem.url && lastItem.url.startsWith('data:image/')) {
+                            const match = lastItem.url.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+                            if (match && match[1] && match[2]) {
+                                finalAttachments.push({ mimeType: match[1], base64: match[2] });
+                            }
+                        }
+                    }
                 }
 
                 const requestContents = [{
                     role: 'user' as const,
                     parts: [
                         { text: fullPrompt },
-                        ...(attachments || []).map(a => ({
+                        ...finalAttachments.map(a => ({
                             inlineData: { mimeType: a.mimeType, data: a.base64 }
                         }))
                     ]

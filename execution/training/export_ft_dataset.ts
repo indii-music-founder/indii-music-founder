@@ -163,7 +163,12 @@ async function readJsonl(filePath: string): Promise<GoldenExample[]> {
         const trimmed = line.trim();
         if (!trimmed) continue;
         try {
-            examples.push(JSON.parse(trimmed) as GoldenExample);
+            const parsed = JSON.parse(trimmed) as GoldenExample;
+            if (parsed.expected && parsed.expected.output_sample) {
+                examples.push(parsed);
+            } else {
+                // Silently skip harness or incomplete rows
+            }
         } catch (e) {
             console.warn(`⚠️  Skipping invalid JSON line: ${trimmed.substring(0, 80)}...`);
         }

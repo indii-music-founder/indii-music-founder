@@ -323,7 +323,24 @@ async function generateExamples(
         const batchCount = Math.min(BATCH_SIZE, toGenerateTotal - totalAppended);
         console.log(`  → Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(toGenerateTotal / BATCH_SIZE)} (${batchCount} examples)...`);
 
-        const styleReference = existing.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
+        const conversationalExamples = existing.filter((e: any) => e.expected && e.expected.output_sample);
+        // If no conversational examples exist, use a hardcoded minimal valid structure
+        let styleReference = '';
+        if (conversationalExamples.length > 0) {
+            styleReference = conversationalExamples.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
+        } else {
+            styleReference = JSON.stringify({
+                agent_id: agentId,
+                scenario_id: `${agentId}_example_001`,
+                category: 'general_inquiry',
+                quality_tier: 'gold',
+                source: 'manual',
+                input: { user_message: 'Example user question here', context: {} },
+                expected: { output_sample: 'Example detailed response here in 2-4 paragraphs.' },
+                adversarial: false
+            });
+        }
+        
         const agentTopicList = topics.join('\n- ');
 
         const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indii.
@@ -359,7 +376,7 @@ Requirements:
 Output ONLY the JSON lines, one per line, no other text.`;
 
         const result = await genAI.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-2.5-flash',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { temperature: 0.8 }
         });
