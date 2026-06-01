@@ -7,11 +7,15 @@ graph TD
     %% Landing
     subgraph Entry ["Entry & Onboarding"]
         FoundersLanding["Founders Program Landing"]
-        PricingDisplay["Pricing Tier Display ($299/yr, $49/mo)"]
+        PricingDisplay["Pricing Tier Display ($2,500/yr)"]
         CTAButton["'Activate Founder Pass' CTA"]
     end
 
     %% Checkout
+    subgraph Checkout ["Manual Off-Platform Buy-In"]
+        ManualContact["Contact Sales / Invoice Instructions"]
+        PaymentForm["Off-Platform Payment (Wire/ACH)"]
+        Confirmation["Manual Payment Confirmation"]
     subgraph Checkout ["Manual Activation"]
         WireTransfer["Off-Platform Payment (Wire/Check/Cash App)"]
         AdminApproval["Manual Admin Approval"]
@@ -20,6 +24,7 @@ graph TD
 
     %% Backend Processing
     subgraph Backend ["Backend (Cloud Functions)"]
+        FounderPass["activateFounderPass.ts (Admin/Manual Script)"]
         FounderPass["activateFounderPass.ts (Gen 2 Function)"]
         VerifyPayment["Admin Token Verification"]
         CreateUser["Create/Update Founder User"]
@@ -58,6 +63,12 @@ graph TD
     %% Flow
     FoundersLanding -->|"Browse Tiers"| PricingDisplay
     PricingDisplay -->|"Click Activate"| CTAButton
+    CTAButton -->|"Redirect"| ManualContact
+    ManualContact -->|"Open Instructions"| PaymentForm
+    PaymentForm -->|"Process Payment"| Confirmation
+    
+    Confirmation -->|"Admin Executes"| FounderPass
+    FounderPass -->|"Validate Activation"| CreateUser
     CTAButton -->|"Redirect"| WireTransfer
     WireTransfer -->|"Submit Proof of Payment"| AdminApproval
     AdminApproval -->|"Admin executes activation"| Confirmation
@@ -90,12 +101,13 @@ graph TD
     style PricingDisplay fill:#00D4FF,color:#000
     style CTAButton fill:#00D4FF,color:#000
 
+    style ManualContact fill:#FF8C00,color:#000
+    style PaymentForm fill:#FF8C00,color:#000
     style WireTransfer fill:#FF8C00,color:#000
     style AdminApproval fill:#FF8C00,color:#000
     style Confirmation fill:#00D4FF,color:#000
 
     style FounderPass fill:#8A2BE2,color:#FFF
-    style VerifyPayment fill:#8A2BE2,color:#FFF
     style CreateUser fill:#8A2BE2,color:#FFF
     style SeatAllocation fill:#8A2BE2,color:#FFF
 
@@ -119,15 +131,20 @@ graph TD
 
 ## Transition Breakdown
 
-1. **Discovery:** User lands on the **Founders Program Landing Page** and sees pricing tiers ($299/yr or $49/mo).
+1. **Discovery:** User lands on the **Founders Program Landing Page** and sees pricing tiers (e.g., $2,500/yr).
 
+2. **Checkout Initiation:** User clicks **"Activate Founder Pass"**. System directs them to **Contact Sales / Invoice Instructions** for an off-platform manual buy-in.
+
+3. **Payment:** User completes an **Off-Platform Payment (Wire/ACH)** according to the instructions.
+
+4. **Confirmation & Activation:** Upon manual payment confirmation, an admin executes the **`activateFounderPass.ts`** script.
 2. **Checkout Initiation:** User clicks **"Activate Founder Pass"**. They are instructed to complete an **Off-Platform Payment** (e.g. via Wire or Cash App).
 
 3. **Payment:** User completes payment and requests activation. **Admin** processes the payment.
 
 4. **Confirmation & Activation:** Admin invokes **`activateFounderPass.ts`** (Firebase Cloud Function Gen 2).
 
-5. **Backend Processing:** The function **verifies the payment amount**, creates or updates the user's Firestore document with `founder: true`, and initializes the **Founder Seat Registry** (1 owner + N supporters).
+5. **Backend Processing:** The admin script creates or updates the user's Firestore document with `founder: true`, and initializes the **Founder Seat Registry** (1 owner + N supporters).
 
 6. **Portal Access:** User is redirected to the **Founders Portal Dashboard**, where they see:
    - **Seat Usage:** How many founder seats are in use

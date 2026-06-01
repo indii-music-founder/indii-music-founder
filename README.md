@@ -8,6 +8,8 @@
 
 indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
 
+👉 **New to the platform?** Read the [App Access Points Guide](docs/APP_ACCESS_POINTS_GUIDE.md) to understand how the Web App, Desktop App, and Mobile Remote work together.
+
 [![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/indii-music-founder/indii-music-founder)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
@@ -137,20 +139,21 @@ For more details on the autonomous evolution, see [CAPABILITY_DEPLOYMENT.md](doc
 
 ---
 
-## 📱 indiiREMOTE Edge Infrastructure
+## 📱 indiiREMOTE Hybrid Infrastructure
 
-**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indii desktop mainframe from any mobile device, instantly and securely.
+**indiiREMOTE** is a production-ready mobile companion feature that allows users to control their indii desktop mainframe from any mobile device, instantly and securely.
 
-Instead of routing sensitive, unreleased creative assets through a public cloud server, indiiREMOTE provisions a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process.
+It utilizes a **Hybrid Architecture**:
+1. **Firestore Cloud Relay**: The primary transport layer ensuring robust, atomic command delivery and state persistence across devices, allowing commands (like text generation) to execute seamlessly even if the desktop briefly drops connection.
+2. **Global Edge Connection**: For high-bandwidth tasks, indiiREMOTE can provision a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process, bypassing the cloud for unreleased sensitive audio/video assets.
 
 ### How It Works
 
-1. **Device Pairing:** The Electron app generates a secure 6-digit cryptographic PIN and displays a QR code containing the active Ngrok tunnel URL.
-2. **Thin-Client Dashboard:** Scanning the QR code opens a lightweight React SPA served directly by the user's desktop application.
-3. **End-to-End Encryption:** After entering the PIN, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
-4. **Live Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) without being physically present at their computer.
+1. **Device Pairing:** The user pairs their mobile device to the indii ecosystem.
+2. **Atomic Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) which are routed securely via the Cloud Relay.
+3. **Edge Streaming:** For playback and heavy assets, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
 
-By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indii enables true untethered mobility without compromising data independence or relying on external cloud storage.
+By maintaining both a reliable Cloud Relay and an encrypted Edge Connection, indiiREMOTE guarantees high-availability control alongside maximum privacy for your sensitive assets.
 
 ---
 
@@ -396,13 +399,13 @@ Client secrets are **never exposed to the browser** — all token operations rou
 
 ---
 
-## 🌍 indiiREMOTE: Global Edge Computing
+## 🌍 indiiREMOTE: Edge Computing Layer
 
-indiiREMOTE transforms your desktop into a globally accessible, private edge server. It replaces the legacy Cloud Relay (Firebase) middleman with a true, low-latency, end-to-end encrypted connection between your mobile device and your Mac Studio.
+indiiREMOTE transforms your desktop into a globally accessible, private edge server. As part of its Hybrid Architecture, it maintains a true, low-latency, end-to-end encrypted connection between your mobile device and your Mac Studio for high-bandwidth tasks.
 
 ### How It Works
 
-Instead of relying on cloud databases to relay commands, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+For low-latency asset preview and direct UI serving, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
 
 ```
 📱 Phone (Anywhere on Earth)
@@ -421,19 +424,18 @@ Instead of relying on cloud databases to relay commands, the indii Electron app 
                    │
                    ▼ (IPC Bus)
 ┌───────────────────────────────────────────┐
-│  indii Desktop React App                │
+│  indii Desktop React App                  │
 │  Mainframe Execution                      │
 └───────────────────────────────────────────┘
 ```
 
-### Key Features
+### Edge Layer Features
 
 | Feature | Description |
 |---------|-------------|
-| **Zero-Install Thin Client** | The phone UI is a blazing-fast, standalone React SPA served directly from your Mac. No App Store download required. |
-| **Direct WebSocket Sync** | Sub-millisecond latency. AI generation progress, memory utilization, and desktop state sync directly to your phone. |
+| **Zero-Install Thin Client** | The phone UI can be served as a blazing-fast, standalone React SPA directly from your Mac. No App Store download required. |
+| **Direct WebSocket Sync** | Sub-millisecond latency for audio/video playback and high-bandwidth asset streaming directly to your phone. |
 | **Secure PIN Auth** | The IPC bridge generates a cryptographic, single-use 6-digit Session Passcode unique to each boot. |
-| **No Cloud Database** | No Firebase reads/writes. The pipeline bypasses third-party databases, ensuring total privacy for unreleased assets. |
 | **Instant QR Provisioning** | Navigating to the `Mobile Remote` tab visually generates the Ngrok QR code in real-time, masking complex IP routing from the user. |
 
 ---
