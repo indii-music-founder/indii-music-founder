@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 01:02 EDT
+**Updated:** 2026-06-01 01:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1f0c7682d feat(admin): real Firebase admin sign-in + 11 founder seats
+844814c62 chore: session checkpoint [01:02]
 adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
 855149046 chore: session checkpoint [00:39]
 d29614b63 feat(billing): per-model USD cost attribution for AI spend
@@ -12,8 +14,6 @@ b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 54e7fae3a chore: session checkpoint [00:28]
 2749949fe chore: session checkpoint [00:23]
 0db2563b0 feat(flowcharts): Phase 3 Tier B — 2 infrastructure charts
-6609dee83 chore(flowcharts): Phase 1 stale-ref sweep
-13264c72d chore: session checkpoint [00:20]
 ```
 
 ## Working State
