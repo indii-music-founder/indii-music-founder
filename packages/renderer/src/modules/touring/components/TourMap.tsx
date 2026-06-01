@@ -6,6 +6,8 @@ import { env } from '@/config/env';
 
 import { MapMarker } from '../types';
 
+const MAPS_LIBRARIES: ("places")[] = ["places"];
+
 interface TourMapProps {
     locations?: string[]; // Legacy/Simple mode
     markers?: MapMarker[]; // Rich mode (Performance)
@@ -356,7 +358,7 @@ export const TourMap: React.FC<TourMapProps> = (props) => {
     };
 
     return (
-        <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={["places"]}>
+        <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={MAPS_LIBRARIES}>
             <MapComponent {...props} onAuthFailure={handleAuthFailure} />
         </Wrapper>
     );
