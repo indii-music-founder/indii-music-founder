@@ -267,6 +267,28 @@ export const activateFounderPass = onCall({
                 updatedAt: Date.now(),
             }, { merge: true });
 
+            // Update the public founders_meta/summary counter for the landing page
+            const metaRef = db.collection('founders_meta').doc('summary');
+            const metaSnap = await tx.get(metaRef);
+            
+            let currentMetaCount = 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let currentMetaFounders: any[] = [];
+            
+            if (metaSnap.exists) {
+                const data = metaSnap.data() || {};
+                currentMetaCount = data.count || 0;
+                currentMetaFounders = data.founders || [];
+            }
+            
+            currentMetaFounders.push({ seat: seatNumber, name, joinedAt });
+            
+            tx.set(metaRef, {
+                count: currentMetaCount + 1,
+                founders: currentMetaFounders,
+                updatedAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+
             return seatNumber;
         });
     } catch (err) {

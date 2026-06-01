@@ -18,6 +18,7 @@ graph TD
     FounderRoutes --> FHome["/ (Founder Lander)"]
     FounderRoutes --> FBenefits["/benefits (Program Benefits)"]
     FounderRoutes --> FCheckout["/checkout (Manual Buy-In Info)"]
+    FounderRoutes --> FCheckout["/checkout (Manual Payment)"]
     
     %% General Mode Route Sub-Tree
     GeneralRoutes --> GHome["/ (Public Placeholder)"]
