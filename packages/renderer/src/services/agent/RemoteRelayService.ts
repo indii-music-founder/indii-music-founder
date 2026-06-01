@@ -30,6 +30,7 @@ import {
     query,
     where,
     orderBy,
+    limit,
     serverTimestamp,
     deleteDoc,
     getDocs,
@@ -98,6 +99,39 @@ function getResponsesRef() {
     const uid = getUserId();
     if (!uid) return null;
     return collection(db, 'users', uid, 'remote-relay-responses');
+}
+
+// ---------------------------------------------------------------------------
+// Feed scoping
+// ---------------------------------------------------------------------------
+
+/**
+ * How many of the most-recent docs the conversation feed loads, and how far
+ * back in time it looks. This prevents OLD responses (including stale
+ * rate-limit / error messages) from resurfacing as if they were current every
+ * time the app opens. We query DESC + limit, then re-sort ascending in memory
+ * so the UI still renders oldest → newest.
+ *
+ * NOTE: `where('timestamp', '>=', ...)` combined with `orderBy('timestamp')`
+ * acts on the SAME field, so no new composite index is required.
+ */
+const FEED_PAGE_SIZE = 50;
+const FEED_RECENCY_HOURS = 24;
+
+function getFeedRecencyCutoff(): Timestamp {
+    return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);
+}
+
+/**
+ * Safely convert a relay doc timestamp to epoch millis for in-memory sorting.
+ * Stored docs always carry a resolved Firestore `Timestamp`, but the field type
+ * also permits a `serverTimestamp()` sentinel (pre-write); guard for both.
+ */
+function toMillis(ts: Timestamp | ReturnType<typeof serverTimestamp>): number {
+    if (ts instanceof Timestamp) return ts.toMillis();
+    // Defensive: handle a plain { toMillis } shape or unresolved sentinel.
+    const maybe = ts as { toMillis?: () => number };
+    return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +206,15 @@ class RemoteRelayService {
         const ref = getResponsesRef();
         if (!ref) return () => { };
 
-        const q = query(ref, orderBy('timestamp', 'asc'));
+        // Scope the feed: only the most-recent FEED_PAGE_SIZE docs from the last
+        // FEED_RECENCY_HOURS. Order DESC for the limit to grab the newest, then
+        // re-sort ascending below so the chat still renders oldest → newest.
+        const q = query(
+            ref,
+            where('timestamp', '>=', getFeedRecencyCutoff()),
+            orderBy('timestamp', 'desc'),
+            limit(FEED_PAGE_SIZE)
+        );
 
         return onSnapshot(q, (snapshot) => {
             const responses: RemoteResponse[] = [];
@@ -181,7 +223,11 @@ class RemoteRelayService {
                 data.id = doc.id;
                 responses.push(data);
             });
+            // Re-sort ascending (oldest → newest) for the UI.
+            responses.sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
             callback(responses);
+        }, (error) => {
+            logger.error('[RemoteRelay] onAllResponses listener error:', error);
         });
     }
 
@@ -192,7 +238,15 @@ class RemoteRelayService {
         const ref = getCommandsRef();
         if (!ref) return () => { };
 
-        const q = query(ref, orderBy('timestamp', 'asc'));
+        // Scope the feed: only the most-recent FEED_PAGE_SIZE docs from the last
+        // FEED_RECENCY_HOURS. Order DESC for the limit to grab the newest, then
+        // re-sort ascending below so the chat still renders oldest → newest.
+        const q = query(
+            ref,
+            where('timestamp', '>=', getFeedRecencyCutoff()),
+            orderBy('timestamp', 'desc'),
+            limit(FEED_PAGE_SIZE)
+        );
 
         return onSnapshot(q, (snapshot) => {
             const commands: RemoteCommand[] = [];
@@ -201,7 +255,11 @@ class RemoteRelayService {
                 data.id = doc.id;
                 commands.push(data);
             });
+            // Re-sort ascending (oldest → newest) for the UI.
+            commands.sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
             callback(commands);
+        }, (error) => {
+            logger.error('[RemoteRelay] onAllCommands listener error:', error);
         });
     }
 
