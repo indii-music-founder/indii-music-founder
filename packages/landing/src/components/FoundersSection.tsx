@@ -88,7 +88,7 @@ export default function FoundersSection() {
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
             The first 10 people who believe in what we&apos;re building get in forever.
-            Your name goes into the code. Your deal is encoded as cryptographic proof.
+            Your name is permanently added to the system. Your terms are secured and verifiable.
             No subscriptions. No renewal. Just access — for the life of the software.
           </p>
         </div>
@@ -148,13 +148,13 @@ export default function FoundersSection() {
             },
             {
               icon: '$',
-              title: 'API Costs At Cost',
-              desc: 'Intelligence generation costs (Gemini, Vertex) are passed through at no markup — just what Google charges.',
+              title: 'Infrastructure At Cost',
+              desc: 'Compute and generation costs are passed through at no markup — just what the providers charge.',
             },
             {
               icon: '⌗',
-              title: 'Verification Hash',
-              desc: 'Your payment generates a SHA-256 hash of your deal terms. Verify it any time. The math doesn\'t lie.',
+              title: 'Transparent Terms',
+              desc: 'Your payment generates a secure digital receipt of your deal terms. Verify it any time. The proof is in the system.',
             },
             {
               icon: '10',
