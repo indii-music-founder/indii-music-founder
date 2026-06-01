@@ -24,7 +24,7 @@ export default function FoundersCheckout() {
                 className="z-10 max-w-4xl w-full text-center mt-12"
             >
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
-                    Founders Round — 10 Seats Maximum
+                    Founders Round — 11 Total Seats
                 </div>
                 
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6">
