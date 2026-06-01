@@ -1200,6 +1200,9 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Updated `MODULE_AGENT_MAP` in `constants.ts` to map those modules correctly to `generalist`. Also replaced hardcoded instances of `conductor` in `CanvasTools.ts`, `ChatMessage.tsx`, and tests.
 
 ### ISSUE-054: E2E Fallback Fails Due to Undefined Process Env in Browser
+- **Status:** ✅ FIXED (commit: pending)
+- **Fix:** Switched process.env access to import.meta.env for VITE_PLAYWRIGHT_E2E in pure browser environments.
+- **Files:** `packages/renderer/src/services/agent/fine-tuned-models.ts`
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Agent Orchestrator / E2E
