@@ -171,12 +171,12 @@ const swarmCapabilities = [
   {
     icon: Zap,
     title: 'From Vision to Reality',
-    description: 'Turn your simple ideas into a full career strategy. You set the vision; the Conductor executes the plan across your entire creative ecosystem.',
+    description: 'Turn your simple ideas into a full career strategy. You set the vision; the system executes the plan across your entire creative ecosystem.',
   },
   {
     icon: Globe,
     title: 'Unified Flow',
-    description: 'Autonomous orchestration of your specialist team. The Conductor ensures every move aligns with your brand and protects your identity.',
+    description: 'Seamless coordination of your dedicated team. The system ensures every move aligns with your brand and protects your identity.',
   },
   {
     icon: BrainCircuit,
@@ -216,8 +216,8 @@ export default function ConductorSection() {
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-          The Independent Command is your creative orchestrator for independence. Tell it what you want
-          to achieve, and it coordinates your specialist team to handle the labor—leaving you 
+          Your dashboard is your central hub for independence. Tell it what you want
+          to achieve, and it coordinates your dedicated team to handle the labor—leaving you 
           free to stay focused on the art.
         </p>
       </motion.div>
@@ -285,7 +285,7 @@ export default function ConductorSection() {
           <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              Independent Command routing to 5 agents
+              System routing to 5 specialists
             </span>
             <span className="text-white/10">|</span>
             <span>Distribution → Creative → Publicist → Marketing → Social</span>
