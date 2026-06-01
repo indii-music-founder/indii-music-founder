@@ -62,7 +62,7 @@ export interface FounderRecord {
   /** SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}") — the founder's receipt */
   verificationHash: string;
   /** Firestore UID of the founder's account (for internal verification) */
-  uid: string;
+  uid?: string;
 }
 
 /**
