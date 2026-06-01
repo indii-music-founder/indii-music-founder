@@ -22,6 +22,7 @@ indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenan
 
 > **New contributor?** You should be running the app in under 15 minutes.
 > If it takes longer, run `make doctor` and share the output — something is misconfigured.
+> **Not sure where to log in?** Read the [indii Access Points Guide](docs/indii_access_points.md).
 
 ```bash
 # 1. Clone (1 min)
