@@ -16,14 +16,13 @@ import {
     Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ChevronDown, LayoutGrid, Users, User as UserIcon,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Sparkles, Mic, Image as ImageIcon
+    Sparkles, Mic
 } from 'lucide-react';
-import { 
-    remoteRelayService, 
-    type RemoteResponse, 
+import {
+    remoteRelayService,
+    type RemoteResponse,
     type RemoteCommand,
-    type DesktopState 
+    type DesktopState
 } from '@/services/agent/RemoteRelayService';
 import { AgentModePicker } from '@/components/AgentModePicker';
 import { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
@@ -32,6 +31,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useVoice } from '@/core/context/VoiceContext';
 
 interface ChatMessage {
     id: string;
@@ -74,6 +74,17 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Free, on-device real-time dictation via the app-wide Web Speech context.
+    const { isListening, toggleListening, transcript } = useVoice();
+    // Text already in the box when dictation starts, so we append rather than overwrite.
+    const dictationBaseRef = useRef('');
+    const wasListeningRef = useRef(false);
+    // Only show the mic if this browser actually supports speech recognition.
+    const voiceSupported = useMemo(
+        () => typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
+        []
+    );
+
     // Track the in-flight command's response listener + timeout so we can
     // tear them down on completion or unmount (no leaks, no stale closures).
     const responseUnsubRef = useRef<(() => void) | null>(null);
@@ -97,6 +108,22 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             teardownResponseWatch();
         };
     }, [teardownResponseWatch]);
+
+    // On the rising edge of dictation, remember the text already typed so the
+    // live transcript appends to it instead of overwriting it.
+    useEffect(() => {
+        if (isListening && !wasListeningRef.current) {
+            dictationBaseRef.current = input ? input.trimEnd() + ' ' : '';
+        }
+        wasListeningRef.current = isListening;
+    }, [isListening, input]);
+
+    // Stream the live transcript into the input box while dictating.
+    useEffect(() => {
+        if (isListening) {
+            setInput(dictationBaseRef.current + transcript);
+        }
+    }, [transcript, isListening]);
 
     // Watch auth state
     useEffect(() => {
@@ -186,6 +213,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
 
     const handleSend = useCallback(async () => {
         if (!input.trim() || isWaiting || !isAuthenticated) return;
+        if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         setInput('');
         setIsWaiting(true);
@@ -240,7 +268,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
         }
-    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, teardownResponseWatch]);
+    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -410,6 +438,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                             onKeyDown={handleKeyDown}
                             rows={Math.min(3, input.split('\n').length)}
                             placeholder={
+                                isListening ? "Listening… speak now" :
                                 selectedMode === 'boardroom' ? "Broadcast to Boardroom…" :
                                 selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
                                 `Direct message ${selectedAgent || 'Agent'}…`
@@ -420,13 +449,23 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                     </div>
 
                     <div className="flex items-center gap-2.5 pr-1 pb-1">
-                        <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            className="w-11 h-11 rounded-xl flex items-center justify-center text-[#636366] hover:text-white transition-colors cursor-pointer"
-                            style={{ minWidth: '44px', minHeight: '44px' }}
-                        >
-                            <ImageIcon className="w-5.5 h-5.5" />
-                        </motion.button>
+                        {voiceSupported && (
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.9 }}
+                                onClick={toggleListening}
+                                aria-label={isListening ? 'Stop dictation' : 'Start voice dictation'}
+                                className={cn(
+                                    "w-11 h-11 rounded-xl flex items-center justify-center transition-colors cursor-pointer",
+                                    isListening
+                                        ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                                        : "text-[#636366] hover:text-white"
+                                )}
+                                style={{ minWidth: '44px', minHeight: '44px' }}
+                            >
+                                <Mic className={cn("w-5.5 h-5.5", isListening && "animate-pulse")} />
+                            </motion.button>
+                        )}
                         
                         <motion.button
                             whileTap={{ scale: 0.9 }}
