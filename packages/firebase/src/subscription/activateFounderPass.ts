@@ -267,6 +267,13 @@ export const activateFounderPass = onCall({
                 updatedAt: Date.now(),
             }, { merge: true });
 
+            // Update user profile to ensure UI download gates recognize founder status
+            tx.set(db.collection('users').doc(targetUid), {
+                isFounder: true,
+                subscriptionTier: SubscriptionTier.FOUNDER,
+                tier: SubscriptionTier.FOUNDER,
+            }, { merge: true });
+
             return seatNumber;
         });
     } catch (err) {
