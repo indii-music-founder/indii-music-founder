@@ -8,6 +8,8 @@
 
 indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
 
+👉 **New to the platform?** Read the [App Access Points Guide](docs/APP_ACCESS_POINTS_GUIDE.md) to understand how the Web App, Desktop App, and Mobile Remote work together.
+
 [![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/indii-music-founder/indii-music-founder)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
