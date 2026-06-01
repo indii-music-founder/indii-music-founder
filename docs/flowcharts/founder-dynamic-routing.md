@@ -17,7 +17,8 @@ graph TD
     %% Founder Mode Route Sub-Tree
     FounderRoutes --> FHome["/ (Founder Lander)"]
     FounderRoutes --> FBenefits["/benefits (Program Benefits)"]
-    FounderRoutes --> FCheckout["/checkout (Stripe Checkout)"]
+    FounderRoutes --> FCheckout["/checkout (Manual Buy-In Info)"]
+    FounderRoutes --> FCheckout["/checkout (Manual Payment)"]
     
     %% General Mode Route Sub-Tree
     GeneralRoutes --> GHome["/ (Public Placeholder)"]
@@ -51,7 +52,7 @@ graph TD
 3. **Sub-Route Allocation:**
    - **Founder Mode Active:**
      - The React Router configuration switches to render the `<FounderRoutes />` component.
-     - Contains premium custom styling, detail sheets, checkout integration, and deep benefits explanations.
+     - Contains premium custom styling, detail sheets, checkout instructions (manual buy-in), and deep benefits explanations.
    - **General Mode Active:**
      - The React Router configuration switches to render the `<GeneralRoutes />` component.
      - Serves as a standard, high-converting placeholder landing page with a waitlist or interest-capturing input form.
