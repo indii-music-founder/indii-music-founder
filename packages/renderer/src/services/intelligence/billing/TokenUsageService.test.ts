@@ -39,11 +39,34 @@ describe('TokenUsageService', () => {
             await TokenUsageService.trackUsage(mockUserId, 'gemini-pro', 100, 50);
 
             expect(firestore.doc).toHaveBeenCalledWith(expect.anything(), 'user_usage_stats', docId);
-            expect(firestore.updateDoc).toHaveBeenCalledWith(undefined, {
-                tokensUsed: undefined, // increment mock returns undefined
+            // increment() is mocked to return undefined, so incremented fields read as undefined.
+            // Assert the daily counters AND the new per-model cost-attribution fields are written.
+            expect(firestore.updateDoc).toHaveBeenCalledWith(undefined, expect.objectContaining({
+                tokensUsed: undefined,
+                inputTokens: undefined,
+                outputTokens: undefined,
                 requestCount: undefined,
+                estimatedCostUsd: undefined,
+                'models.gemini-pro.model': 'gemini-pro',
+                'models.gemini-pro.costUsd': undefined,
                 lastUpdated: undefined
-            });
+            }));
+        });
+
+        it('attributes estimated USD cost per model on create path', async () => {
+            vi.mocked(firestore.updateDoc).mockRejectedValueOnce({ code: 'not-found' });
+
+            // gemini-3.1-pro-preview is a known token model: 1000 in @ $1.25/1M + 2000 out @ $10/1M
+            await TokenUsageService.trackUsage(mockUserId, 'gemini-3.1-pro-preview', 1000, 2000);
+
+            const setDocArgs = vi.mocked(firestore.setDoc).mock.calls[0][1] as Record<string, unknown>;
+            const expectedCost = (1000 / 1_000_000) * 1.25 + (2000 / 1_000_000) * 10.0;
+            expect(setDocArgs.estimatedCostUsd as number).toBeCloseTo(expectedCost, 9);
+            expect(setDocArgs.inputTokens).toBe(1000);
+            expect(setDocArgs.outputTokens).toBe(2000);
+            const models = setDocArgs.models as Record<string, { model: string; costUsd: number }>;
+            expect(models['gemini-3_1-pro-preview'].model).toBe('gemini-3.1-pro-preview');
+            expect(models['gemini-3_1-pro-preview'].costUsd).toBeCloseTo(expectedCost, 9);
         });
 
         it('should create new doc if update fails with not-found', async () => {
