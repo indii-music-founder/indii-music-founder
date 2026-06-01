@@ -45,7 +45,7 @@ describe('FoundersCheckout', () => {
 
     it('shows the Founders Round badge', () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText('Founders Round — 10 Seats Maximum')).toBeInTheDocument();
+        expect(screen.getByText('Founders Round — 11 Total Seats')).toBeInTheDocument();
     });
 
     it('renders the return to studio button', () => {

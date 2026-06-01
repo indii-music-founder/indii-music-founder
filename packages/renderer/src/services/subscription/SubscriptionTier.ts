@@ -243,7 +243,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
   [SubscriptionTier.FOUNDER]: {
     name: 'indii Founder',
-    description: 'Lifetime founding access. One-time $2,500. Limited to 10 seats. API costs billed at pass-through cost.',
+    description: 'Lifetime founding access. One-time $2,500. Limited to 11 total seats (10 paid). API costs billed at pass-through cost.',
     price: 2500,
     billingPeriod: 'once',
     imageGenerations: {
