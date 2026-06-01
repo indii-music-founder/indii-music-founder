@@ -29,7 +29,7 @@ graph TD
     subgraph GCP ["Google Cloud Platform"]
         Storage["Firebase Cloud Storage (`gs://`)"]
         Firestore["Firestore Database (`tracks` metadata)"]
-        VertexTTS["Vertex AI (`gemini-2.5-pro-tts-preview`)"]
+        VertexTTS["Vertex AI (`Vertex AI Speech-to-Text API`)"]
     end
 
     %% Transitions - Audio DNA Extraction
@@ -83,5 +83,5 @@ graph TD
 4. **Agentic Handoff:** The structural metadata (e.g., "120 BPM, C Minor, High Energy") is injected into the context of the **MusicAgent**. The agent uses this raw data to generate human-readable insights (e.g., "This track fits well into workout playlists or high-energy sync placements").
 5. **Persistence:** The original audio file is uploaded to **Firebase Cloud Storage**, and its corresponding DNA metadata is saved to the **Firestore** `tracks` collection for future retrieval.
 6. **Text-to-Speech Generation:** If the user wants to generate vocal assets, they use the **Text-to-Speech Prompt Input**. This sends a secure payload to the **`generateSpeech`** Cloud Function.
-7. **Cloud TTS Execution:** The backend runs the **Quota Verification Gate**, ensuring the user hasn't exceeded their limits. It then requests the audio from **Vertex AI (`gemini-2.5-pro-tts-preview`)**.
+7. **Cloud TTS Execution:** The backend runs the **Quota Verification Gate**, ensuring the user hasn't exceeded their limits. It then requests the audio from **Vertex AI (`Vertex AI Speech-to-Text API`)**.
 8. **Fulfillment:** The backend saves the generated audio buffer to **Storage**, returning the URL to the **`audioIntelligenceSlice`**, which loads it directly into **Wavesurfer.js** for the user to hear.

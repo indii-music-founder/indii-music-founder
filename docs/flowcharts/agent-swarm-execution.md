@@ -92,9 +92,9 @@ graph TD
 
 ## Transition Breakdown
 
-1. **User Action:** The user submits a prompt or file in the UI, which updates the `Zustand` store. The store triggers `executeTask` on the `AgentService`.
-2. **Context Injection:** `AgentService` reads the active workspace state (e.g., current Brand Kit, User Tier, Organization) and attaches this system context to the payload.
-3. **Agent Routing:** `AgentService` queries the `AgentRegistry` to discover which specialized agent handles the intent (e.g., legal analysis goes to `LegalAgent`).
+1. **User Action:** The user submits a prompt or file in the UI, which updates the `Zustand` store. The store triggers the orchestration flow via `AgentGraphService` (indii Conductor).
+2. **Context Injection:** The Conductor reads the active workspace state (e.g., current Brand Kit, User Tier, Organization) and attaches this system context to the payload.
+3. **Agent Routing:** The Conductor queries the `AgentRegistry` to discover which specialized agent handles the intent (e.g., legal analysis goes to `LegalAgent`).
 4. **Swarm Handoff:** The task is delegated to the specialist class extending `BaseAgent`. 
 5. **AI Evaluation & RAG:** `BaseAgent` sends the prompt to the `Google Generative AI SDK` (Gemini 3.0 Pro). If context is needed, the model natively queries the `GeminiRetrievalService` (File Search API) or long-term facts from the `MemoryService`.
 6. **Deterministic Tool Execution:** Instead of hallucinating complex math or system actions, Gemini returns a `functionCall`. `BaseAgent` intercepts this, verifies the function exists in its `tools` schema, and natively executes the actual TypeScript/Python logic stored in its `functions` map.
