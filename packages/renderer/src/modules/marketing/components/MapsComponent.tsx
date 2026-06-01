@@ -86,15 +86,13 @@ export default function MapsComponent() {
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={MAPS_LIBRARIES}>
-            <Map
-                center={{ lat: 40.7128, lng: -74.0060 }}
-                zoom={11}
-                markers={[
-                    { position: { lat: 40.7128, lng: -74.0060 }, title: "Campaign HQ" },
-                    { position: { lat: 40.7580, lng: -73.9855 }, title: "Times Square Activation" }
-                ]}
-            />
-        </Wrapper>
+        <Map
+            center={{ lat: 40.7128, lng: -74.0060 }}
+            zoom={11}
+            markers={[
+                { position: { lat: 40.7128, lng: -74.0060 }, title: "Campaign HQ" },
+                { position: { lat: 40.7580, lng: -73.9855 }, title: "Times Square Activation" }
+            ]}
+        />
     );
 }

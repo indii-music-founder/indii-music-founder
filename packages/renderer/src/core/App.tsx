@@ -11,6 +11,7 @@ import RightPanel from './components/RightPanel';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { MapsProvider } from '@/components/providers/MapsProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
 import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
@@ -435,10 +436,6 @@ export default function App() {
         }
     }, [isAnyPhone, currentModule]);
 
-    // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
-    // This prevents the app from flashing <LoginForm/> on page reload before the user's
-    // IndexedDB session is re-hydrated. authLoading starts as `true` and is set to `false`
-    // exactly once by initializeAuthListener's onAuthStateChanged callback.
     return (
         <AppInitializationProvider>
             {authLoading ? (
@@ -451,7 +448,9 @@ export default function App() {
                         <VoiceProvider>
                             <ThemeProvider>
                                 <ToastProvider>
-                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                    <MapsProvider>
+                                        <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                    </MapsProvider>
                                 </ToastProvider>
                             </ThemeProvider>
                         </VoiceProvider>
