@@ -100,6 +100,17 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Upload Installer to Firebase Storage (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Upload AppImage files from dist-electron folder
+          APPIMAGE_FILE=$(find dist-electron -maxdepth 1 -name "*.AppImage" -type f | head -n 1)
+          if [ -n "$APPIMAGE_FILE" ]; then
+            firebase storage:upload "$APPIMAGE_FILE" founders/releases/indii-Installer.AppImage --project indii-music-founder --non-interactive
+          fi
+        continue-on-error: true
+
       - name: Cleanup credentials
         if: always()
         shell: bash
