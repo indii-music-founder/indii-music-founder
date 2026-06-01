@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 00:39 EDT
+**Updated:** 2026-06-01 01:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
+855149046 chore: session checkpoint [00:39]
 d29614b63 feat(billing): per-model USD cost attribution for AI spend
 7c11ef326 chore: session checkpoint [00:32]
 b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
@@ -12,8 +14,6 @@ b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 0db2563b0 feat(flowcharts): Phase 3 Tier B — 2 infrastructure charts
 6609dee83 chore(flowcharts): Phase 1 stale-ref sweep
 13264c72d chore: session checkpoint [00:20]
-934fde7c8 chore: session checkpoint [00:19]
-5e014bfce chore: session checkpoint [00:13]
 ```
 
 ## Working State
