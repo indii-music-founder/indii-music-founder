@@ -324,6 +324,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 };
 
 // ─── TourMap Wrapper ───────────────────────────────────────────────────────────
+
 export const TourMap: React.FC<TourMapProps> = (props) => {
     const apiKey = env.googleMapsApiKey;
     const [authFailed, setAuthFailed] = useState(false);
@@ -346,5 +347,19 @@ export const TourMap: React.FC<TourMapProps> = (props) => {
         return <MapUnavailableFallback reason="auth_failure" />;
     }
 
-    return <MapComponent {...props} onAuthFailure={handleAuthFailure} />;
+    const renderMapStatus = (status: Status) => {
+        if (status === Status.LOADING) {
+            return (
+                <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                </div>
+            );
+        }
+        if (status === Status.FAILURE) {
+            return <MapUnavailableFallback reason="load_failure" />;
+        }
+        return <MapComponent {...props} onAuthFailure={handleAuthFailure} />;
+    };
+
+    return <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={MAPS_LIBRARIES} />;
 };

@@ -11,7 +11,7 @@ import RightPanel from './components/RightPanel';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { MapsProvider } from '@/components/providers/MapsProvider';
+
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
 import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
@@ -448,9 +448,7 @@ export default function App() {
                         <VoiceProvider>
                             <ThemeProvider>
                                 <ToastProvider>
-                                    <MapsProvider>
-                                        <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
-                                    </MapsProvider>
+                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
                                 </ToastProvider>
                             </ThemeProvider>
                         </VoiceProvider>
