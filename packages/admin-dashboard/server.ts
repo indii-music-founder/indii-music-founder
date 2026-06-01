@@ -191,7 +191,7 @@ app.get('/api/founders', requireAdminAuth, async (req, res) => {
       };
     });
 
-    res.json({ maxSeats: 10, count: founders.length, founders });
+    res.json({ maxSeats: 11, count: founders.length, founders });
   } catch (error) {
     console.error('[Founders] Failed to read founders collection:', error);
     res.status(500).json({ error: 'Failed to load founders' });
