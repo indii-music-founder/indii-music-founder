@@ -5,15 +5,15 @@ import { Cpu, ShieldCheck, Zap, Network, Lock, GitBranch } from 'lucide-react';
 
 const specs = [
     {
-        label: 'Cognitive Engine',
-        value: 'Gemini 3 Pro',
-        detail: 'High-reasoning model with 2M token context window.',
+        label: 'Intelligence',
+        value: 'Advanced AI',
+        detail: 'Deep context window for complex decision making.',
         icon: Cpu
     },
     {
-        label: 'Protocol',
-        value: 'Antigravity v4.5',
-        detail: 'Self-correcting autonomous code integrity system.',
+        label: 'Infrastructure',
+        value: 'indii Engine',
+        detail: 'Reliable system architecture built for scale.',
         icon: ShieldCheck
     },
     {
@@ -58,11 +58,11 @@ export default function TechSpecs() {
                         System Architecture
                     </h2>
                     <h3 className="text-3xl md:text-5xl font-bold mb-6">
-                        Built on the <br />
-                        <span className="text-white/40">Antigravity Protocol.</span>
+                        Built on our <br />
+                        <span className="text-white/40">Proprietary Infrastructure.</span>
                     </h3>
                     <p className="text-gray-400 text-lg">
-                        indii isn't just an app; it's a self-maintaining ecosystem powered by autonomous agents that ensure code quality and production parity 24/7.
+                        indii.music isn't just an app; it's a complete ecosystem that works in the background to ensure your music is ready for the world 24/7.
                     </p>
                 </motion.div>
 
@@ -76,7 +76,7 @@ export default function TechSpecs() {
                         <span className="text-gray-500">// System Check</span><br />
                         Running... [OK]<br />
                         Core: Active<br />
-                        Neural: Connected<br />
+                        System: Connected<br />
                         Version: Beta 4.5
                     </code>
                 </motion.div>
