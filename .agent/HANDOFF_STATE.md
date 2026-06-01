@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 01:18 EDT
+**Updated:** 2026-06-01 01:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4d987854e feat(admin): make dashboard runnable — scripts, health check, real README
+a4ea00bf2 chore: session checkpoint [01:18]
 1f0c7682d feat(admin): real Firebase admin sign-in + 11 founder seats
 844814c62 chore: session checkpoint [01:02]
 adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
@@ -12,13 +14,11 @@ d29614b63 feat(billing): per-model USD cost attribution for AI spend
 7c11ef326 chore: session checkpoint [00:32]
 b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 54e7fae3a chore: session checkpoint [00:28]
-2749949fe chore: session checkpoint [00:23]
-0db2563b0 feat(flowcharts): Phase 3 Tier B — 2 infrastructure charts
 ```
 
 ## Working State
 ```
-clean working tree
+?? directives/brand_voice_and_copy.md
 ```
 
 ## Decisions
