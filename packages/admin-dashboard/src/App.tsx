@@ -1,17 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import {
   Users,
-  Settings,
   LayoutDashboard,
   Database,
   BarChart3,
   Bell,
-  ShieldCheck
+  ShieldCheck,
+  Loader2,
+  LogOut
 } from 'lucide-react';
 import { FoundersPortal } from './components/modules/FoundersPortal';
 import { TokenUsage } from './components/modules/TokenUsage';
+import { LoginScreen } from './components/LoginScreen';
+import { auth, ADMIN_TOKEN_KEY } from './firebase';
 
-const AdminDashboard: React.FC = () => {
+const ADMIN_EMAIL_DOMAIN = '@indii.music';
+
+/**
+ * Auth gate. Observes the Firebase session and only renders the dashboard for an
+ * @indii.music admin. Stores a fresh ID token in localStorage so the data
+ * modules can call the (token-gated) backend. No bypass — real session or login.
+ */
+const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, async (u) => {
+      if (u && u.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
+        try {
+          const token = await u.getIdToken();
+          localStorage.setItem(ADMIN_TOKEN_KEY, token);
+        } catch {
+          /* token refresh handled on next call */
+        }
+        setUser(u);
+      } else {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        setUser(u && !u.email?.endsWith(ADMIN_EMAIL_DOMAIN) ? u : null);
+      }
+      setChecking(false);
+    });
+  }, []);
+
+  if (checking) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0A0A0B] text-white">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  // Signed in but NOT an admin domain — honest refusal, with a way out.
+  if (user && !user.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#0A0A0B] text-white">
+        <ShieldCheck className="w-10 h-10 text-red-400" />
+        <p className="text-white/80 font-semibold">This account is not an indii admin.</p>
+        <p className="text-white/40 text-sm">{user.email}</p>
+        <button
+          onClick={() => signOut(auth)}
+          className="mt-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors"
+        >
+          Sign out
+        </button>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  return <AdminDashboard user={user} />;
+};
+
+const AdminDashboard: React.FC<{ user: User }> = ({ user }) => {
   const [activeModule, setActiveModule] = useState('Token Usage');
 
   // Only modules backed by REAL data are exposed. Mock-only modules (Email
@@ -64,11 +129,17 @@ const AdminDashboard: React.FC = () => {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-white/60" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-white/90">System Admin</p>
-              <p className="text-[11px] text-white/40">admin@indii.music</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white/90 truncate">{user.displayName || 'Admin'}</p>
+              <p className="text-[11px] text-white/40 truncate">{user.email}</p>
             </div>
-            <Settings className="ml-auto w-5 h-5 text-white/20 hover:text-white/60 cursor-pointer transition-colors" />
+            <button
+              onClick={() => signOut(auth)}
+              title="Sign out"
+              className="ml-auto text-white/20 hover:text-white/60 cursor-pointer transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </aside>
@@ -120,4 +191,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default AdminDashboard;
+export default App;

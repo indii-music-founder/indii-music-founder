@@ -74,7 +74,7 @@ export const FoundersPortal: React.FC = () => {
     };
   }, []);
 
-  const maxSeats = data?.maxSeats ?? 10;
+  const maxSeats = data?.maxSeats ?? 11;
   const count = data?.count ?? 0;
 
   return (

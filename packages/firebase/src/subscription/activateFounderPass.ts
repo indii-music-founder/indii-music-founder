@@ -30,7 +30,8 @@ import { SubscriptionTier } from '../shared/subscription/types';
 const GITHUB_REPO_OWNER = 'indii-music-founder';
 const GITHUB_REPO_NAME = 'indii-music-founder';
 const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
-const MAX_FOUNDER_SEATS = 10;
+// 11 seats: 10 founding members + the builder's own seat (seat #1).
+const MAX_FOUNDER_SEATS = 11;
 const AGREEMENT_VERSION = '1.0.0';
 
 /** Timeout (ms) for individual GitHub API calls */
