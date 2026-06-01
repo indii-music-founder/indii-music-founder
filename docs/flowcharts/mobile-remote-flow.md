@@ -15,6 +15,8 @@ graph TD
 
     %% Communication
     subgraph Transport ["Real-time Transport Layer"]
+        WebSocket["WebSocket Connection (Electron/Ngrok)"]
+        FirestoreRelay["Firestore Cloud Relay (Fallback/Primary)"]
         CloudRelay["Firestore Cloud Relay (Ubiquitous)"]
         WebSocket["Edge Server (WebSocket / Ngrok)"]
         SessionSync["Session Handoff Protocol"]
@@ -45,6 +47,13 @@ graph TD
     %% Flow
     MobileAuth -->|"Device Pairing Code"| SessionSync
     SessionSync -->|"Establish Secure Channel"| WebSocket
+    SessionSync -->|"Establish Relay"| FirestoreRelay
+    WebSocket <-->|"A2A Encrypted Messages"| Encryption
+    FirestoreRelay <-->|"A2A Encrypted Messages"| Encryption
+    Encryption <-->|"Duplex Communication"| ElectronMainProcess
+    
+    RemoteUI -->|"Send Command"| WebSocket
+    RemoteUI -->|"Send Command"| FirestoreRelay
     SessionSync -->|"Fallback/Primary Channel"| CloudRelay
     WebSocket <-->|"A2A Encrypted Messages"| Encryption
     CloudRelay <-->|"A2A Encrypted Messages"| Encryption
@@ -79,6 +88,7 @@ graph TD
     style TouchTargets fill:#8A2BE2,color:#FFF
 
     style WebSocket fill:#FF00FF,color:#FFF
+    style FirestoreRelay fill:#FF00FF,color:#FFF
     style SessionSync fill:#FF00FF,color:#FFF
     style Encryption fill:#FF8C00,color:#000
 
@@ -99,7 +109,7 @@ graph TD
 
 1. **Device Pairing:** User opens **indiiREMOTE** on mobile and enters a **pairing code** from the desktop app. This initiates the **Session Handoff Protocol**.
 
-2. **Secure Channel:** A **WebSocket connection** is established between mobile and desktop, encrypted using the **A2A Encryption Protocol** (shared keying via AgentCard identity).
+2. **Secure Channel:** A **WebSocket connection** (direct or via Ngrok) or **Firestore Cloud Relay** is established between mobile and desktop, encrypted using the **A2A Encryption Protocol** (shared keying via AgentCard identity).
 
 3. **Command Flow:** User taps a button on **Remote Control UI** (e.g., "Start Recording"). This sends a message via WebSocket to the **Electron Main Process**, which invokes handlers via the **Preload Bridge** (IPC).
 
