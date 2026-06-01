@@ -267,6 +267,11 @@ export const activateFounderPass = onCall({
                 updatedAt: Date.now(),
             }, { merge: true });
 
+            // Update user profile to ensure UI download gates recognize founder status
+            tx.set(db.collection('users').doc(targetUid), {
+                isFounder: true,
+                subscriptionTier: SubscriptionTier.FOUNDER,
+                tier: SubscriptionTier.FOUNDER,
             // Update the public founders_meta/summary counter for the landing page
             const metaRef = db.collection('founders_meta').doc('summary');
             const metaSnap = await tx.get(metaRef);
