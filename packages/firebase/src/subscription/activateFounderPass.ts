@@ -227,21 +227,28 @@ export const activateFounderPass = onCall({
     let seat: number;
     try {
         seat = await db.runTransaction(async (tx) => {
-            // Count existing founders
+            // === ALL READS MUST COME FIRST IN FIRESTORE TRANSACTIONS ===
+            
+            // 1. Count existing founders
             const foundersSnap = await tx.get(db.collection('founders'));
             const currentCount = foundersSnap.size;
 
             if (currentCount >= MAX_FOUNDER_SEATS) {
-                throw new HttpsError('resource-exhausted', 'All 10 founder seats have been claimed.');
+                throw new HttpsError('resource-exhausted', 'All 11 founder seats have been claimed.');
             }
 
-            // Check this user hasn't already activated a founder pass
+            // 2. Check this user hasn't already activated a founder pass
             const existingRef = db.collection('founders').doc(targetUid);
             const existing = await tx.get(existingRef);
             if (existing.exists) {
                 throw new HttpsError('already-exists', 'This user already has a founders pass activated.');
             }
 
+            // 3. Read the public founders_meta/summary counter for the landing page
+            const metaRef = db.collection('founders_meta').doc('summary');
+            const metaSnap = await tx.get(metaRef);
+
+            // === ALL WRITES MUST GO AFTER READS ===
             const seatNumber = currentCount + 1;
 
             // Write founder record to Firestore
@@ -268,17 +275,6 @@ export const activateFounderPass = onCall({
             }, { merge: true });
 
             // Update the founders_meta summary for the landing page
-            tx.set(db.collection('founders_meta').doc('summary'), {
-                count: FieldValue.increment(1),
-                founders: FieldValue.arrayUnion({
-                    seat: seatNumber,
-                    name,
-                    joinedAt,
-                })
-            // Update the public founders_meta/summary counter for the landing page
-            const metaRef = db.collection('founders_meta').doc('summary');
-            const metaSnap = await tx.get(metaRef);
-            
             let currentMetaCount = 0;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let currentMetaFounders: any[] = [];
