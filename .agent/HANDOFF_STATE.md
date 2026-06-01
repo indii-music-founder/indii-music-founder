@@ -1,47 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-01 10:52 EDT
-**Updated:** 2026-06-01 09:03 EDT
-**Updated:** 2026-06-01 08:49 EDT
+**Updated:** 2026-06-01 11:01 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+e4a7386c3 Merge branch 'main' into feat/marketing-copy-rewrites
+98a10e7bd chore: session checkpoint [10:52]
 9714eb559 chore: session checkpoint [10:51]
 aa7832e77 fix(remote): restore desktop text processing with atomic first-wins claim
+296d95721 Feat/marketing copy rewrites (#111)
 3e694c04e chore: session checkpoint [10:47]
 4949b88f8 chore: session checkpoint [10:45]
 7ee1dc938 chore: session checkpoint [10:45]
 db4cb31b9 chore: session checkpoint [10:45]
 9e2eaaa01 chore: session checkpoint [10:43]
-dd483c5ad chore: remove CODEOWNERS to prevent auto-requesting reviews
-4a117ba1e chore: session checkpoint [10:41]
-78ea611b6 feat(remote): free real-time voice dictation in mobile chat
-5b2137dac chore: session checkpoint [08:49]
-ec4beeb4c chore: session checkpoint [08:48]
-0193a97f6 chore: session checkpoint [08:45]
-2da2b5d0d chore: session checkpoint [08:44]
-aff7ba637 feat: marketing copy rewrites and brand voice alignment
-e5b128fde chore: session checkpoint [01:37]
-d323c1eb4 feat(admin): magic link sign-in (no password)
-b6d1bdc2c chore: session checkpoint [01:36]
-1db13f892 chore: session checkpoint [01:33]
-abf715a04 chore: session checkpoint [01:28]
-abe4efcbf chore: session checkpoint [01:27]
 ```
 
 ## Working State
 ```
 clean working tree
- M .agent/HANDOFF_STATE.md
- M packages/firebase/src/functions/billing/enforceOperationCost.ts
- M packages/firebase/src/relay/relayCommandProcessor.ts
- M packages/landing/src/components/ConductorSection.tsx
- M packages/landing/src/components/TechSpecs.tsx
- M packages/landing/src/page.tsx
- M packages/landing/src/pages/Terms.tsx
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.ts
 ```
 
 ## Decisions
