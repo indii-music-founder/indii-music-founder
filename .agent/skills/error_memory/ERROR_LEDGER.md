@@ -1,3 +1,14 @@
+## 2026-06-01 `eslint-disable` Used to Mask a TypeScript Compiler Error (TS6133)
+
+**SEVERITY:** Medium (breaks `packages/firebase` typecheck; CI/deploy blocked, but isolated to one function)
+
+**MISTAKE:**
+- FILE: `packages/firebase/src/stripe/paymentLinks.ts`
+- ERROR: `src/stripe/paymentLinks.ts(16,15): error TS6133: 'paymentLinks' is declared but its value is never read.`
+- CAUSE: Inside the live, exported `createStripePaymentLinks` onCall function (exported at `src/index.ts:1493`, called by the client at `packages/renderer/src/services/agent/tools/CommerceTools.ts:57`), an accumulator `const paymentLinks: string[] = [];` was declared but never populated — the code built `paymentLink` (singular) and returned `paymentLinks: [paymentLink.url]` inline instead. Someone tried to silence it with `// eslint-disable-next-line @typescript-eslint/no-unused-vars`, but ESLint disables do NOT affect the TS compiler. `packages/firebase/tsconfig.json` sets `noUnusedLocals: true`, so `tsc --noEmit` still flagged TS6133. The eslint-disable also created a false impression the variable was intentional.
+- FIX: Used the accumulator for real — `paymentLinks.push(paymentLink.url)` after creating the link, and returned `{ storefrontUrl: paymentLinks[0], paymentLinks }`. Removed the misleading `eslint-disable` comment. Public return contract (`storefrontUrl` + `paymentLinks: string[]`) is unchanged, so the client call site is unaffected. NOT dead code (function is wired end-to-end) and NOT a missing-export bug — purely an orphaned local that was wrongly suppressed.
+- PREVENTION: `eslint-disable-next-line @typescript-eslint/no-unused-vars` does NOT suppress TS6133 from `tsc`'s `noUnusedLocals`/`noUnusedParameters`. To silence an intentional unused local at the compiler level use a leading underscore (`_name`); but prefer actually using or deleting the symbol. For an unused VALUE-bearing accumulator in a real code path, wiring it in (not deleting) usually restores the intended behavior. Always run `npx tsc --noEmit -p packages/firebase/tsconfig.json` after touching this package — ESLint passing is not proof the TS compiler passes.
+
 ## 2026-06-01 E2E Auth Flow: Firestore WebChannel Stream 401s & Onboarding Trap
 
 **SEVERITY:** High (breaks E2E testing pipeline by falsely marking clients offline or redirecting them)

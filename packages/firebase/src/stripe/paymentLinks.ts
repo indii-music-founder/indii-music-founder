@@ -12,10 +12,9 @@ export const createStripePaymentLinks = onCall(async (req) => {
     }
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const paymentLinks: string[] = [];
         const baseIKey = idempotencyKey || `pl_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
-        
+
         const product = await stripe.products.create({
             name: `${campaignName} - Storefront Items`,
             description: `Items: ${items.join(', ')}`
@@ -30,10 +29,11 @@ export const createStripePaymentLinks = onCall(async (req) => {
         const paymentLink = await stripe.paymentLinks.create({
             line_items: [{ price: price.id, quantity: 1 }],
         }, { idempotencyKey: `${baseIKey}_link` });
+        paymentLinks.push(paymentLink.url);
 
         return {
-            storefrontUrl: paymentLink.url,
-            paymentLinks: [paymentLink.url]
+            storefrontUrl: paymentLinks[0],
+            paymentLinks
         };
     } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error(String(err));
