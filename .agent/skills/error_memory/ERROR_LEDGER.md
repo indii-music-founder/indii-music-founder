@@ -1,3 +1,16 @@
+## 2026-06-01 E2E Auth Flow: Firestore WebChannel Stream 401s & Onboarding Trap
+
+**SEVERITY:** High (breaks E2E testing pipeline by falsely marking clients offline or redirecting them)
+
+**MISTAKE:**
+- FILES: `e2e/auth-flow.spec.ts`, `e2e/fixtures/auth.ts`
+- ERROR: Playwright E2E tests for authenticated routes timed out or were redirected to `/onboarding`. The backend returned 401 Unauthorized for `/google.firestore.v1.Firestore/Listen/channel` requests despite mock auth.
+- CAUSE: When Firebase uses the WebChannel protocol in tests with mocked authentication, the underlying streaming HTTP requests for Firestore sometimes reject the mocked tokens and return 401s. This caused the Firebase SDK to mark the client as offline. Because the UI uses Firestore to check for onboarding status, it defaulted to false and kept booting the test into the onboarding screen.
+- FIX:
+  1. Intercepted the WebChannel stream (`**/google.firestore.v1.Firestore/Listen/channel**`) and mocked a healthy 200 stream response to prevent the SDK from treating 401s as an offline state.
+  2. Bootstrapped `localStorage.setItem('onboarding_dismissed', 'true')` inside `page.addInitScript` to guarantee the UI bypasses onboarding logic even if Firestore delays loading.
+- PREVENTION: When mocking auth in Playwright for Firestore-heavy apps, you MUST mock the WebChannel listen stream to prevent 401 cascading failures, AND you must hard-set deterministic local storage flags for critical UI gateways like onboarding to decouple test stability from database load times.
+
 ## 2026-05-31 Repo Migration Left GitHub Integrations Pointing at Dead Repos (Silent — passed CI)
 
 **SEVERITY:** High (broke 5 live features incl. a paid path; invisible to build/typecheck/lint/unit tests)
