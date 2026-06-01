@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 00:28 EDT
+**Updated:** 2026-06-01 00:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
+54e7fae3a chore: session checkpoint [00:28]
 2749949fe chore: session checkpoint [00:23]
 0db2563b0 feat(flowcharts): Phase 3 Tier B — 2 infrastructure charts
 6609dee83 chore(flowcharts): Phase 1 stale-ref sweep
@@ -12,14 +14,11 @@
 5e014bfce chore: session checkpoint [00:13]
 425b883ea chore: session checkpoint [00:12]
 bae609a64 chore: session checkpoint [00:10]
-2605f9448 chore: session checkpoint [00:07]
-a9f1abe1e docs: add E2E auth flow WebChannel 401 error pattern to ledger
 ```
 
 ## Working State
 ```
- M .agent/checkpoints/antigravity.md
-?? .agent/checkpoints/antigravity-session-43bfd181.md
+clean working tree
 ```
 
 ## Decisions
