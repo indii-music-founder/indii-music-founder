@@ -6,11 +6,27 @@ dotenv.config();
 
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin for Identity Platform
+// Initialize Firebase Admin for Identity Platform + Firestore reads.
+//
+// Uses Application Default Credentials. Locally, the simplest path is:
+//   gcloud auth application-default login
+// or point GOOGLE_APPLICATION_CREDENTIALS at a service-account JSON. In a GCP
+// runtime (Cloud Run, etc.) ADC is provided automatically.
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault()
-  });
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: process.env.GOOGLE_CLOUD_PROJECT || 'indii-music-founder',
+    });
+  } catch (err) {
+    console.error(
+      '\n[Admin] Could not initialize Firebase Admin credentials.\n' +
+      'Run one of:\n' +
+      '  • gcloud auth application-default login\n' +
+      '  • export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json\n',
+      err
+    );
+  }
 }
 
 const app = express();
@@ -37,9 +53,21 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
   }
 };
 
-// Basic health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'admin-dashboard-backend' });
+// Health check — also verifies Firestore connectivity so a missing/invalid
+// credential surfaces immediately instead of failing later inside a data route.
+app.get('/api/health', async (req, res) => {
+  try {
+    await admin.firestore().collection('user_usage_stats').limit(1).get();
+    res.json({ status: 'ok', service: 'admin-dashboard-backend', firestore: 'connected' });
+  } catch (error) {
+    res.status(503).json({
+      status: 'degraded',
+      service: 'admin-dashboard-backend',
+      firestore: 'unreachable',
+      hint: 'Run `gcloud auth application-default login` or set GOOGLE_APPLICATION_CREDENTIALS.',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 });
 
 // Protected Route Example
