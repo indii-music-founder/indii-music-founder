@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 01:37 EDT
-**Branch:** `main`
+**Updated:** 2026-06-01 08:44 EDT
+**Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+aff7ba637 feat: marketing copy rewrites and brand voice alignment
+e5b128fde chore: session checkpoint [01:37]
 d323c1eb4 feat(admin): magic link sign-in (no password)
 b6d1bdc2c chore: session checkpoint [01:36]
 1db13f892 chore: session checkpoint [01:33]
@@ -12,20 +14,11 @@ abe4efcbf chore: session checkpoint [01:27]
 4d987854e feat(admin): make dashboard runnable — scripts, health check, real README
 a4ea00bf2 chore: session checkpoint [01:18]
 1f0c7682d feat(admin): real Firebase admin sign-in + 11 founder seats
-844814c62 chore: session checkpoint [01:02]
-adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
- M packages/landing/src/components/AgentGrid.tsx
- M packages/landing/src/components/ConductorSection.tsx
- M packages/landing/src/components/FoundersSection.tsx
  M packages/landing/src/components/TechSpecs.tsx
- M packages/landing/src/page.tsx
- M packages/landing/src/pages/FieldRecorder.tsx
-?? directives/brand_voice_and_copy.md
 ```
 
 ## Decisions
