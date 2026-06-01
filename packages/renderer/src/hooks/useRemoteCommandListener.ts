@@ -282,7 +282,36 @@ function useFirestoreRelay(enabled: boolean) {
         // Safety timeout ref: auto-reset isProcessing after 2 min if agent hangs
         let processingTimeout: ReturnType<typeof setTimeout> | null = null;
 
+        // ─── CAPABILITY PARTITION ─────────────────────────────────────────
+        // Cloud function (processRelayCommand) owns text; desktop only handles
+        // capabilities the cloud can't (image gen + desktop UI control).
+        //
+        // The desktop is a local-only capability provider. It must NOT process
+        // plain TEXT commands — the cloud function is now the SOLE processor for
+        // the standard chat / generalist path. If the desktop also ran them, the
+        // phone would get duplicate (and possibly stale) responses, and a stuck
+        // desktop lock could surface a misleading rate-limit warning from old
+        // history. Desktop-only routes are those that either run native services
+        // (image generation) or mutate the desktop's own UI/Zustand store
+        // (navigation, agent actions).
+        const DESKTOP_ONLY_PREFIXES = ['[GENERATE_IMAGE]', '[NAVIGATE]', '[AGENT_ACTION]'] as const;
+        const isDesktopOnlyCommand = (text: string): boolean =>
+            DESKTOP_ONLY_PREFIXES.some((prefix) => text.startsWith(prefix));
+
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
+            // Partition check FIRST — before touching the processing lock.
+            // Plain text commands belong to the cloud function; skip them here so
+            // we never acquire (and therefore never need to release) the lock for
+            // a command the desktop isn't responsible for.
+            if (!isDesktopOnlyCommand(command.text)) {
+                writeDiagnostic('command_skipped_cloud_owned', {
+                    commandId: command.id,
+                    text: command.text?.substring(0, 50),
+                });
+                logger.info(`[RemoteRelay/Firestore] ☁️ Skipping text command ${command.id} — owned by cloud function`);
+                return;
+            }
+
             if (isProcessing.current) {
                 writeDiagnostic('command_skipped_busy', { commandId: command.id });
                 return;
@@ -297,12 +326,11 @@ function useFirestoreRelay(enabled: boolean) {
                 }
             }, 120_000);
 
-            // When phone sends "auto" (no targetAgentId), route through the generalist orchestrator
-            // NOT whatever agent the desktop session happened to be using last.
-            // When phone explicitly picks an agent (brand, road-manager, etc.), use that directly.
-            const targetAgent = command.targetAgentId || 'generalist';
-            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
-            writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50), agent: targetAgent || 'auto' });
+            // Desktop-only command (image gen / navigation / agent action).
+            // Agent routing (targetAgentId → generalist/specialist) is handled by
+            // the cloud function for text; the desktop routes purely on prefix.
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing desktop-only command: "${command.text?.substring(0, 50)}"`);
+            writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
             try {
                 // Mark as processing
                 await remoteRelayService.markCommandProcessing(command.id);
@@ -408,149 +436,25 @@ function useFirestoreRelay(enabled: boolean) {
                     return;
                 }
 
-                // ─── Standard Agent Chat Route ───────────────────────────
-                // Send "processing" indicator
+                // ─── Standard Agent Chat (TEXT) — NO LONGER HANDLED HERE ──
+                // Plain text commands are owned exclusively by the cloud function
+                // (processRelayCommand). They are filtered out by the capability
+                // partition guard at the top of this handler before the lock is
+                // acquired, so execution never reaches this point for text. If we
+                // somehow get here, the command had a desktop-only prefix that no
+                // route above claimed — surface that explicitly rather than
+                // silently running the (removed) local AI pipeline.
+                logger.warn(`[RemoteRelay/Firestore] ⚠️ Unhandled desktop-only command prefix: ${command.text?.substring(0, 30)}`);
+                writeDiagnostic('command_unhandled_prefix', {
+                    commandId: command.id,
+                    text: command.text?.substring(0, 50),
+                });
                 await remoteRelayService.sendResponse(
                     command.id,
-                    '⏳ Processing...',
+                    '⚠️ This action could not be handled on the desktop. Please try again.',
                     undefined,
-                    true
+                    false
                 );
-                writeDiagnostic('chat_processing_sent', { commandId: command.id });
-
-                // Pre-check: is the agent service available?
-                const agentBusy = (agentService as unknown as { isProcessing: boolean }).isProcessing;
-                if (agentBusy) {
-                    writeDiagnostic('agent_busy_reset', { commandId: command.id });
-                    // Force-reset the agent's processing lock — it may be stale from a previous crash
-                    (agentService as unknown as { isProcessing: boolean }).isProcessing = false;
-                }
-
-                // ─── CRITICAL: Override desktop's conversationMode ────────────
-                // The phone's intent (targetAgentId) must drive routing, NOT
-                // whatever mode the desktop UI happens to be in.
-                // Save and restore the desktop state so the local user is unaffected.
-                const storeSnapshot = useStore.getState();
-                const originalMode = storeSnapshot.conversationMode;
-                const originalDeptId = storeSnapshot.activeDepartmentId;
-                const originalAgentId = storeSnapshot.directTargetAgentId;
-                const originalProvider = storeSnapshot.activeAgentProvider;
-
-                // Force 'direct' mode with 'native' provider for remote commands.
-                // 'native' ensures the standard orchestrator routes via forcedAgentId
-                // instead of hitting handleDirectChatFlow (which ignores forcedAgentId).
-                useStore.setState({
-                    conversationMode: 'direct',
-                    activeAgentProvider: 'native',
-                    directTargetAgentId: targetAgent || null,
-                });
-                writeDiagnostic('mode_override_applied', {
-                    commandId: command.id,
-                    originalMode,
-                    overrideMode: 'direct',
-                    overrideProvider: 'native',
-                    targetAgent,
-                });
-
-                // Run through the FULL agent pipeline with targeted agent
-                const stateBefore = useStore.getState();
-                const historyLengthBefore = stateBefore.agentHistory.length;
-                const boardroomLengthBefore = stateBefore.boardroomMessages?.length || 0;
-                writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, boardroomLengthBefore, agent: targetAgent || 'auto' });
-
-                try {
-                    // Race the agent call against a 45s timeout
-                    // If Gemini API or warmup hangs, we abort and tell the phone
-                    let callTimeoutId: ReturnType<typeof setTimeout>;
-                    const timeoutPromise = new Promise((_, reject) => {
-                        callTimeoutId = setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000);
-                    });
-
-                    await Promise.race([
-                        agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' }),
-                        timeoutPromise
-                    ]);
-                    clearTimeout(callTimeoutId!);
-                } catch (sendErr: unknown) {
-                    writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
-                    // Send error response to phone so user isn't stuck forever
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        `❌ ${sendErr instanceof Error ? sendErr.message : 'Agent call failed'}. Try again.`,
-                        undefined,
-                        false
-                    );
-                    await remoteRelayService.markCommandCompleted(command.id);
-                    return; // Skip the response polling — we already sent an error
-                } finally {
-                    // ─── RESTORE desktop state after agent call ──────────────
-                    useStore.setState({
-                        conversationMode: originalMode,
-                        activeDepartmentId: originalDeptId,
-                        directTargetAgentId: originalAgentId,
-                        activeAgentProvider: originalProvider,
-                    });
-                    writeDiagnostic('mode_override_restored', {
-                        commandId: command.id,
-                        restoredMode: originalMode,
-                    });
-                }
-
-                writeDiagnostic('agent_send_complete', { 
-                    commandId: command.id, 
-                    historyLengthAfter: useStore.getState().agentHistory.length,
-                    boardroomLengthAfter: useStore.getState().boardroomMessages?.length || 0
-                });
-
-                // Wait for a NEW response to appear (only entries AFTER our send)
-                // Increased to 30 attempts × 1s = 30s max wait
-                let lastResponse: { text?: string; agentId?: string } | undefined;
-                for (let attempt = 0; attempt < 30; attempt++) {
-                    const state = useStore.getState();
-                    const newHistoryEntries = state.agentHistory.slice(historyLengthBefore);
-                    const newBoardroomEntries = (state.boardroomMessages || []).slice(boardroomLengthBefore);
-                    
-                    const newEntries = [...newHistoryEntries, ...newBoardroomEntries]
-                        .sort((a, b) => a.timestamp - b.timestamp);
-
-                    const candidate = newEntries
-                        .filter(m => m.role === 'model' && m.text && !m.isStreaming)
-                        .slice(-1)[0];
-                        
-                    if (candidate && candidate.text && candidate.text.length > 5) {
-                        lastResponse = candidate;
-                        break;
-                    }
-                    if (attempt === 10) {
-                        writeDiagnostic('response_wait_slow', {
-                            commandId: command.id,
-                            newEntriesCount: newEntries.length,
-                            totalHistory: state.agentHistory.length,
-                            totalBoardroom: state.boardroomMessages?.length || 0
-                        });
-                    }
-                    await delay(1000);
-                }
-
-                if (lastResponse) {
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        lastResponse.text || 'No response',
-                        lastResponse.agentId,
-                        false
-                    );
-                    logger.info(`[RemoteRelay/Firestore] 🖥️→📱 Response sent (${lastResponse.text?.length} chars)`);
-                } else {
-                    logger.warn('[RemoteRelay/Firestore] No response found in agentHistory after 10s');
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        '⚠️ Agent processed but no response was captured. Please try again.',
-                        undefined,
-                        false
-                    );
-                }
-
-                // Mark command as completed
                 await remoteRelayService.markCommandCompleted(command.id);
             } catch (error: unknown) {
                 logger.error('[RemoteRelay/Firestore] Command failed:', error);

@@ -48,6 +48,11 @@ interface AgentChatProps {
     isPaired: boolean;
 }
 
+// How long the phone waits for the studio before surfacing a clear,
+// user-visible "couldn't reach your studio" message instead of a silent
+// spinner death.
+const RESPONSE_TIMEOUT_MS = 30_000;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: AgentChatProps) {
     const [input, setInput] = useState('');
@@ -63,8 +68,35 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
     
     const [showAgentPicker, setShowAgentPicker] = useState(false);
+    // Locally-generated system notices (e.g. "couldn't reach your studio").
+    // These are NOT persisted to Firestore — they're transient UI feedback.
+    const [systemNotices, setSystemNotices] = useState<ChatMessage[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Track the in-flight command's response listener + timeout so we can
+    // tear them down on completion or unmount (no leaks, no stale closures).
+    const responseUnsubRef = useRef<(() => void) | null>(null);
+    const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Tear down any active response listener + timeout. Safe to call repeatedly.
+    const teardownResponseWatch = useCallback(() => {
+        if (responseUnsubRef.current) {
+            responseUnsubRef.current();
+            responseUnsubRef.current = null;
+        }
+        if (responseTimeoutRef.current) {
+            clearTimeout(responseTimeoutRef.current);
+            responseTimeoutRef.current = null;
+        }
+    }, []);
+
+    // Clean up the listener/timeout when the component unmounts.
+    useEffect(() => {
+        return () => {
+            teardownResponseWatch();
+        };
+    }, [teardownResponseWatch]);
 
     // Watch auth state
     useEffect(() => {
@@ -136,12 +168,15 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             });
         });
 
+        // Fold in any transient, locally-generated system notices.
+        all.push(...systemNotices);
+
         // Sort by timestamp and ensure model responses for a command appear after the command
         return all.sort((a, b) => {
             if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
             return a.role === 'user' ? -1 : 1;
         });
-    }, [rawCommands, rawResponses]);
+    }, [rawCommands, rawResponses, systemNotices]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -165,34 +200,47 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
 
             const commandId = await remoteRelayService.sendCommand(userText, targetAgentId);
             if (!commandId) throw new Error('Failed to send command');
-            
-            logger.info(`[AgentChat] 📱 Sent command ${commandId}`);
-            
-            // We don't need to manually listen for responses here because the global 
-            // subscription in the useEffect will pick it up automatically.
-            
-            // However, we stay in 'isWaiting' state until we see a response for this commandId
-            // or a timeout occurs.
-            const checkInterval = setInterval(() => {
-                const hasResp = rawResponses.some(r => r.commandId === commandId);
-                if (hasResp) {
-                    setIsWaiting(false);
-                    clearInterval(checkInterval);
-                }
-            }, 500);
 
-            // Safety timeout
-            setTimeout(() => {
+            logger.info(`[AgentChat] 📱 Sent command ${commandId}`);
+
+            // Clear any previous in-flight watcher before starting a new one.
+            teardownResponseWatch();
+
+            // Listen for THIS command's response directly (no polling, no stale
+            // closures). The global feed subscription still renders the message;
+            // this listener only governs the spinner + timeout for this send.
+            responseUnsubRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
+                // Ignore the interim "processing" streaming placeholder — wait
+                // for a final (non-streaming) response before clearing the spinner.
+                if (response.isStreaming) return;
+
+                teardownResponseWatch();
                 setIsWaiting(false);
-                clearInterval(checkInterval);
-            }, 15000);
+            });
+
+            // Explicit, user-visible timeout instead of a silent spinner death.
+            responseTimeoutRef.current = setTimeout(() => {
+                teardownResponseWatch();
+                setIsWaiting(false);
+                setSystemNotices(prev => [
+                    ...prev,
+                    {
+                        id: `notice-${commandId}-timeout`,
+                        commandId,
+                        role: 'model',
+                        text: "Couldn't reach your studio. If your computer is off, some actions need it running — try again in a moment.",
+                        timestamp: Date.now(),
+                    },
+                ]);
+            }, RESPONSE_TIMEOUT_MS);
 
         } catch (error: unknown) {
             logger.error('[AgentChat] Failed to send command:', error);
+            teardownResponseWatch();
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
         }
-    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, rawResponses]);
+    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, teardownResponseWatch]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
