@@ -35,8 +35,8 @@ hidden until wired to real sources.
    ```
    Or run them separately: `npm run server` (Express on :3333) and `npm run dev` (Vite).
 
-3. Open the Vite URL printed in the terminal and **sign in with your `@indii.music`
-   account**.
+3. Open the Vite URL printed in the terminal. Enter your `@indii.music` email and
+   we'll email you a sign-in link. **Click the link in the email** — no password needed.
 
 ### Verify the backend can see data
 ```bash
