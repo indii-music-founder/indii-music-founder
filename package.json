@@ -43,7 +43,7 @@
     "test:e2e": "npx playwright test --project=chromium",
     "test:e2e:all": "npx playwright test",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
-    "clean": "rm -rf dist packages/*/dist .firebase .genkit coverage test-results playwright-report",
+    "clean": "rm -rf dist dist-electron packages/*/dist .firebase .genkit coverage test-results playwright-report",
     "validate": "npm run lint && npm run typecheck && npm run test -- --run",
     "nuke": "rm -rf node_modules packages/*/node_modules package-lock.json && npm install",
     "build:desktop": "npm run preflight:prod && electron-vite build && electron-builder --publish never",
@@ -147,6 +147,9 @@
     ],
     "win": {
       "verifyUpdateCodeSignature": true
+    },
+    "directories": {
+      "output": "dist-electron"
     }
   },
   "overrides": {
