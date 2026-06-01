@@ -1,31 +1,25 @@
 import React, { useState } from 'react';
-import { 
-  Activity, 
-  Mail, 
-  ShieldCheck, 
-  Users, 
-  Settings, 
+import {
+  Users,
+  Settings,
   LayoutDashboard,
-  Globe,
   Database,
   BarChart3,
-  Bell
+  Bell,
+  ShieldCheck
 } from 'lucide-react';
-import { NexusMonitor } from './components/modules/NexusMonitor';
-import { EmailManager } from './components/modules/EmailManager';
-import { DDEXTracker } from './components/modules/DDEXTracker';
 import { FoundersPortal } from './components/modules/FoundersPortal';
+import { TokenUsage } from './components/modules/TokenUsage';
 
 const AdminDashboard: React.FC = () => {
-  const [activeModule, setActiveModule] = useState('Nexus Monitor');
+  const [activeModule, setActiveModule] = useState('Token Usage');
 
+  // Only modules backed by REAL data are exposed. Mock-only modules (Email
+  // Manager, DDEX Tracker, Nexus Monitor) are intentionally hidden until they
+  // are wired to real sources — no placeholder/fake data is ever shown.
   const modules = [
-    { name: 'Nexus Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-blue-400' },
-    { name: 'Email Manager', icon: <Mail className="w-5 h-5" />, color: 'text-purple-400' },
-    { name: 'DDEX Tracker', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-green-400' },
+    { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-blue-400' },
     { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-orange-400' },
-    { name: 'DNS Auto-Heal', icon: <Globe className="w-5 h-5" />, color: 'text-cyan-400' },
-    { name: 'Build Monitor', icon: <BarChart3 className="w-5 h-5" />, color: 'text-pink-400' },
   ];
 
   return (
@@ -108,12 +102,8 @@ const AdminDashboard: React.FC = () => {
         {/* Module Content */}
         <div className="flex-1 overflow-y-auto p-10 z-10">
           <div className="max-w-6xl mx-auto space-y-10">
-            {activeModule === 'Nexus Monitor' ? (
-              <NexusMonitor />
-            ) : activeModule === 'Email Manager' ? (
-              <EmailManager />
-            ) : activeModule === 'DDEX Tracker' ? (
-              <DDEXTracker />
+            {activeModule === 'Token Usage' ? (
+              <TokenUsage />
             ) : activeModule === 'Founders Portal' ? (
               <FoundersPortal />
             ) : (
