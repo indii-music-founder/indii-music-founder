@@ -1,33 +1,27 @@
 # Handoff State
-**Updated:** 2026-06-01 09:03 EDT
+**Updated:** 2026-06-01 10:41 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+78ea611b6 feat(remote): free real-time voice dictation in mobile chat
+eed04fc0d fix(stripe): populate paymentLinks accumulator in createStripePaymentLinks
+50dc3bcb5 fix(remote): prevent double-processing + cost spikes in mobile relay
+836227e88 chore: session checkpoint [09:03]
 5b2137dac chore: session checkpoint [08:49]
 ec4beeb4c chore: session checkpoint [08:48]
 0193a97f6 chore: session checkpoint [08:45]
 2da2b5d0d chore: session checkpoint [08:44]
 aff7ba637 feat: marketing copy rewrites and brand voice alignment
 e5b128fde chore: session checkpoint [01:37]
-d323c1eb4 feat(admin): magic link sign-in (no password)
-b6d1bdc2c chore: session checkpoint [01:36]
-1db13f892 chore: session checkpoint [01:33]
-abf715a04 chore: session checkpoint [01:28]
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
- M packages/firebase/src/functions/billing/enforceOperationCost.ts
- M packages/firebase/src/relay/relayCommandProcessor.ts
  M packages/landing/src/components/ConductorSection.tsx
  M packages/landing/src/components/TechSpecs.tsx
  M packages/landing/src/page.tsx
  M packages/landing/src/pages/Terms.tsx
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.ts
 ```
 
 ## Decisions
