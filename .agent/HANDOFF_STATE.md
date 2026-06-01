@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 01:36 EDT
+**Updated:** 2026-06-01 01:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d323c1eb4 feat(admin): magic link sign-in (no password)
+b6d1bdc2c chore: session checkpoint [01:36]
 1db13f892 chore: session checkpoint [01:33]
 abf715a04 chore: session checkpoint [01:28]
 abe4efcbf chore: session checkpoint [01:27]
@@ -12,13 +14,11 @@ a4ea00bf2 chore: session checkpoint [01:18]
 1f0c7682d feat(admin): real Firebase admin sign-in + 11 founder seats
 844814c62 chore: session checkpoint [01:02]
 adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
-855149046 chore: session checkpoint [00:39]
-d29614b63 feat(billing): per-model USD cost attribution for AI spend
 ```
 
 ## Working State
 ```
- M packages/admin-dashboard/src/components/LoginScreen.tsx
+ M .agent/HANDOFF_STATE.md
  M packages/landing/src/components/AgentGrid.tsx
  M packages/landing/src/components/ConductorSection.tsx
  M packages/landing/src/components/FoundersSection.tsx
