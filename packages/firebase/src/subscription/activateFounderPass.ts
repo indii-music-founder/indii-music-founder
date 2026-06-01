@@ -4,7 +4,7 @@
  * Called manually by an Admin after receiving alternative payments (Cash App, Wire).
  * This function:
  *   1. Verifies the caller is an Admin
- *   2. Checks that fewer than 10 founders have been seated
+ *   2. Checks that fewer than 11 founder seats have been occupied
  *   3. Checks if targetUid is already a founder to avoid duplicates
  *   4. Sanitizes displayName input (whitelist characters, enforce length)
  *   5. Generates a SHA-256 agreement hash as the founder's receipt
@@ -30,8 +30,9 @@ import { SubscriptionTier } from '../shared/subscription/types';
 const GITHUB_REPO_OWNER = 'indii-music-founder';
 const GITHUB_REPO_NAME = 'indii-music-founder';
 const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
-// 11 seats: 10 founding members + the builder's own seat (seat #1).
+// 11 seats: the builder's own seat (#1) + 10 paid Founder buy-in seats (#2-#11).
 const MAX_FOUNDER_SEATS = 11;
+const RESERVED_INTERNAL_FOUNDER_SEATS = 1;
 const AGREEMENT_VERSION = '1.0.0';
 
 /** Timeout (ms) for individual GitHub API calls */
@@ -231,9 +232,10 @@ export const activateFounderPass = onCall({
             
             // 1. Count existing founders
             const foundersSnap = await tx.get(db.collection('founders'));
-            const currentCount = foundersSnap.size;
+            const hasInternalSeatInFirestore = foundersSnap.docs.some((doc) => doc.get('seat') === 1);
+            const occupiedSeatCount = foundersSnap.size + (hasInternalSeatInFirestore ? 0 : RESERVED_INTERNAL_FOUNDER_SEATS);
 
-            if (currentCount >= MAX_FOUNDER_SEATS) {
+            if (occupiedSeatCount >= MAX_FOUNDER_SEATS) {
                 throw new HttpsError('resource-exhausted', 'All 11 founder seats have been claimed.');
             }
 
@@ -249,7 +251,7 @@ export const activateFounderPass = onCall({
             const metaSnap = await tx.get(metaRef);
 
             // === ALL WRITES MUST GO AFTER READS ===
-            const seatNumber = currentCount + 1;
+            const seatNumber = occupiedSeatCount + 1;
 
             // Write founder record to Firestore
             tx.set(existingRef, {
@@ -274,32 +276,28 @@ export const activateFounderPass = onCall({
                 updatedAt: Date.now(),
             }, { merge: true });
 
-            // Update the founders_meta summary for the landing page
             // Update user profile to ensure UI download gates recognize founder status
             tx.set(db.collection('users').doc(targetUid), {
                 isFounder: true,
                 subscriptionTier: SubscriptionTier.FOUNDER,
                 tier: SubscriptionTier.FOUNDER,
-            // Update the public founders_meta/summary counter for the landing page
-            const metaRef = db.collection('founders_meta').doc('summary');
-            const metaSnap = await tx.get(metaRef);
-            
+            }, { merge: true });
+
             let currentMetaCount = 0;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let currentMetaFounders: any[] = [];
-            
+            let currentMetaFounders: Array<{ seat: number; name: string; joinedAt: string }> = [];
+
             if (metaSnap.exists) {
                 const data = metaSnap.data() || {};
-                currentMetaCount = data.count || 0;
-                currentMetaFounders = data.founders || [];
+                currentMetaCount = typeof data.count === 'number' ? data.count : 0;
+                currentMetaFounders = Array.isArray(data.founders) ? data.founders : [];
             }
-            
+
             currentMetaFounders.push({ seat: seatNumber, name, joinedAt });
-            
+
             tx.set(metaRef, {
-                count: currentMetaCount + 1,
+                count: Math.max(currentMetaCount + 1, seatNumber),
                 founders: currentMetaFounders,
-                updatedAt: FieldValue.serverTimestamp()
+                updatedAt: FieldValue.serverTimestamp(),
             }, { merge: true });
 
             return seatNumber;
