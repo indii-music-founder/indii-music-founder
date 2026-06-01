@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 10:47 EDT
+**Updated:** 2026-06-01 10:51 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+aa7832e77 fix(remote): restore desktop text processing with atomic first-wins claim
+3e694c04e chore: session checkpoint [10:47]
 4949b88f8 chore: session checkpoint [10:45]
 7ee1dc938 chore: session checkpoint [10:45]
 db4cb31b9 chore: session checkpoint [10:45]
@@ -12,16 +14,11 @@ dd483c5ad chore: remove CODEOWNERS to prevent auto-requesting reviews
 4a117ba1e chore: session checkpoint [10:41]
 78ea611b6 feat(remote): free real-time voice dictation in mobile chat
 eed04fc0d fix(stripe): populate paymentLinks accumulator in createStripePaymentLinks
-50dc3bcb5 fix(remote): prevent double-processing + cost spikes in mobile relay
-836227e88 chore: session checkpoint [09:03]
 ```
 
 ## Working State
 ```
- M packages/landing/src/components/ConductorSection.tsx
- M packages/landing/src/components/TechSpecs.tsx
- M packages/landing/src/page.tsx
- M packages/landing/src/pages/Terms.tsx
+clean working tree
 ```
 
 ## Decisions
