@@ -346,20 +346,5 @@ export const TourMap: React.FC<TourMapProps> = (props) => {
         return <MapUnavailableFallback reason="auth_failure" />;
     }
 
-    const renderMapStatus = (status: Status) => {
-        if (status === Status.FAILURE) {
-            return <MapUnavailableFallback reason="load_failure" />;
-        }
-        return (
-            <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
-                <Loader2 className="animate-spin text-blue-500" size={32} />
-            </div>
-        );
-    };
-
-    return (
-        <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={MAPS_LIBRARIES}>
-            <MapComponent {...props} onAuthFailure={handleAuthFailure} />
-        </Wrapper>
-    );
+    return <MapComponent {...props} onAuthFailure={handleAuthFailure} />;
 };
