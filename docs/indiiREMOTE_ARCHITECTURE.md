@@ -4,9 +4,11 @@ The indiiREMOTE feature transforms your desktop into a globally accessible, priv
 
 ## Architectural Transition
 
-We previously relied on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. Both are slow or restrictive. We have now moved to **Global Edge Computing**.
+We previously relied exclusively on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. We have now moved to a **Hybrid Edge Architecture**.
 
-Instead of relying on cloud databases to relay commands, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+The system now supports two parallel paths:
+1. **Firestore Cloud Relay (Ubiquitous):** Serves as the primary, highly-available transport for text and commands across all network conditions.
+2. **Direct Edge Server (Low-Latency):** The indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**. This direct WebSocket path is utilized for sub-millisecond sync of heavy payloads and real-time state.
 
 ## Core Components
 
