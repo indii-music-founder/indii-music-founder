@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 00:07 EDT
+**Updated:** 2026-06-01 00:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2605f9448 chore: session checkpoint [00:07]
 a9f1abe1e docs: add E2E auth flow WebChannel 401 error pattern to ledger
 4af8baea9 chore: clean up temporary e2e debugging scripts
 6bfabb946 fix: Merge issues 54 and 55 into main
@@ -13,7 +14,6 @@ e21ad446a fix: Merge issues 51, 53, 54, 55 into main
 240f59f1a test: Fix auth-flow E2E tests and WebChannel mocks
 38157630e fix(e2e): actually add the missing mockFirestoreUserDoc helper
 9edcda8f8 fix(e2e): remove stray parenthesis causing syntax error
-6a3eb02f1 fix(e2e): fix Firestore batchGet mocks for auth-flow staging tests
 ```
 
 ## Working State
