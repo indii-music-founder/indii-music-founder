@@ -147,9 +147,6 @@
     ],
     "win": {
       "verifyUpdateCodeSignature": true
-    },
-    "directories": {
-      "output": "dist-electron"
     }
   },
   "overrides": {
