@@ -62,7 +62,6 @@ graph TD
 
     %% ===== External Integrations =====
     subgraph External ["External Integrations"]
-        STRIPE["Stripe (Subscriptions)"]
         DSP["Distributors (SFTP, DDEX)"]
         MAPS["Google Maps (Touring)"]
         GH["GitHub (Bug Reports / CI)"]
@@ -113,7 +112,7 @@ graph TD
     class LEGAL,MKT,BRAND,CRE,FIN,MUS,DIST,PUB,OTHER logic;
     class CF,FS,CS,BQ,INNG data;
     class GTEXT,GIMG,GTTS,VEO,RAG ai;
-    class STRIPE,DSP,MAPS,GH ext;
+    class DSP,MAPS,GH ext;
 ```
 
 ## Transition Breakdown (Updated)
@@ -123,6 +122,6 @@ graph TD
 3. **Delegation (Conductor → Specialist Swarm → A2AClient):** Conductor orchestrates specialist agents via AgentRegistry, utilizing A2AClient to dispatch P2P requests with scope-guards.
 4. **Deterministic Harness Generation (Swarm → Harness Engine):** *[NEW]* Probabilistic Swarm Agents DO NOT invent execution readiness. They invoke the **`indii-harness` MCP Server**, executing deterministic **HarnessCompilers** for their respective domains. This outputs a normalized **HarnessRun** packet with attached, immutable Approval Gates (Draft, User Required, Attorney Required).
 5. **Cross-Domain Reconciliation (HarnessRuns → Boardroom):** *[NEW]* When domains conflict (e.g., Marketing urgency vs Legal blocks), agents utilize the MCP to invoke the **Boardroom Meta-Harness**. This engine ingests all relevant `HarnessRun` packets and resolves priorities (Legal/Security always overrides optimism), emitting a final strategic decision with rigid source citations.
-6. **Backend Execution (Swarm → Cloud Functions):** Only after Harness states are compiled and gated, side-effectful work (DDEX delivery, Stripe, persistence) delegates to **Cloud Functions**, which write to Firestore/Storage.
+6. **Backend Execution (Swarm → Cloud Functions):** Only after Harness states are compiled and gated, side-effectful work (DDEX delivery, Founder checkout, persistence) delegates to **Cloud Functions**, which write to Firestore/Storage.
 7. **Generative AI (Cloud/Orchestration → AI):** Genkit and Vertex AI models handle creative output, audio synthesis, and conversational logic. The Gemini File Search API provides memory via Firestore embeddings.
-8. **External Integrations (Cloud → External):** Cloud Functions handle final hand-offs to Stripe, DDEX Distributors, GitHub, and Maps. Any execution lacking proper Approval Gates is hard-rejected.
+8. **External Integrations (Cloud → External):** Cloud Functions handle final hand-offs to manual payment verification, DDEX Distributors, GitHub, and Maps. Any execution lacking proper Approval Gates is hard-rejected.
