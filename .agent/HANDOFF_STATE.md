@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 08:44 EDT
+**Updated:** 2026-06-01 08:45 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+2da2b5d0d chore: session checkpoint [08:44]
 aff7ba637 feat: marketing copy rewrites and brand voice alignment
 e5b128fde chore: session checkpoint [01:37]
 d323c1eb4 feat(admin): magic link sign-in (no password)
@@ -13,12 +14,14 @@ abf715a04 chore: session checkpoint [01:28]
 abe4efcbf chore: session checkpoint [01:27]
 4d987854e feat(admin): make dashboard runnable — scripts, health check, real README
 a4ea00bf2 chore: session checkpoint [01:18]
-1f0c7682d feat(admin): real Firebase admin sign-in + 11 founder seats
 ```
 
 ## Working State
 ```
+ M packages/landing/src/components/ConductorSection.tsx
  M packages/landing/src/components/TechSpecs.tsx
+ M packages/landing/src/page.tsx
+ M packages/landing/src/pages/Terms.tsx
 ```
 
 ## Decisions
