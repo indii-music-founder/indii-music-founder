@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 10:43 EDT
+**Updated:** 2026-06-01 10:45 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+9e2eaaa01 chore: session checkpoint [10:43]
 dd483c5ad chore: remove CODEOWNERS to prevent auto-requesting reviews
 4a117ba1e chore: session checkpoint [10:41]
 78ea611b6 feat(remote): free real-time voice dictation in mobile chat
@@ -13,7 +14,6 @@ eed04fc0d fix(stripe): populate paymentLinks accumulator in createStripePaymentL
 5b2137dac chore: session checkpoint [08:49]
 ec4beeb4c chore: session checkpoint [08:48]
 0193a97f6 chore: session checkpoint [08:45]
-2da2b5d0d chore: session checkpoint [08:44]
 ```
 
 ## Working State
