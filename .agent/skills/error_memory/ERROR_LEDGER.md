@@ -1,3 +1,14 @@
+## 2026-06-01 Firestore Transaction Read/Write Order Violation
+
+**SEVERITY:** High (causes unhandled `Error: Firestore transactions require all reads to be executed before all writes` at runtime in Cloud Functions)
+
+**MISTAKE:**
+- FILE: `packages/firebase/src/subscription/activateFounderPass.ts`
+- ERROR: `Error: Firestore transactions require all reads to be executed before all writes`
+- CAUSE: A `tx.get()` call was added *after* existing `tx.set()` calls during a code injection by an agent. Firestore requires that all `tx.get()` calls must be fully completed before ANY `tx.set()`, `tx.update()`, or `tx.delete()` operations are executed within the transaction block. 
+- FIX: Restructured the `db.runTransaction` block into two distinct phases: 1. `// === ALL READS MUST COME FIRST ===` (all `tx.get()` calls) and 2. `// === ALL WRITES MUST GO AFTER READS ===` (all `tx.set()` calls). 
+- PREVENTION: When modifying an existing Firestore transaction, you must move any new reads to the top of the transaction block, before any writes occur. You cannot blindly append `tx.get()` calls to the bottom of the function or interleave them with writes.
+
 ## 2026-06-01 `eslint-disable` Used to Mask a TypeScript Compiler Error (TS6133)
 
 **SEVERITY:** Medium (breaks `packages/firebase` typecheck; CI/deploy blocked, but isolated to one function)
