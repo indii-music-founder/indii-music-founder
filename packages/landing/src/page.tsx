@@ -143,7 +143,7 @@ export default function Home() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
-          15 Specialist Agents • Musical Independence • Soul-Certified
+          A Team of 15 Specialists • Musical Independence • Complete Ownership
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl">
@@ -169,7 +169,7 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indii is your personal tech collective. A specialist team of creative minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
+          indii.music is your personal support network. A dedicated team of 15 specialists designed to handle the labor, remove the roadblocks, and let you focus entirely on your music. 
           <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
@@ -211,7 +211,7 @@ export default function Home() {
             </div>
             <div className="mx-auto flex items-center gap-2 bg-[#1A1A1A] border border-white/5 rounded-md px-32 py-1.5 shadow-inner">
               <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/independence-swarm</span>
+              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/your-team</span>
             </div>
           </div>
           <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
@@ -229,9 +229,9 @@ export default function Home() {
       {/* ═══════════════ 5. STATS BAR ═══════════════ */}
       <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
         <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5">
-          <AnimatedStat value="15" suffix=" Minds" label="The Collective" />
-          <AnimatedStat value="100" suffix="%" label="Soul Certified" />
-          <AnimatedStat value="0" suffix="%" label="Extraction Rate" />
+          <AnimatedStat value="15" label="Specialists" />
+          <AnimatedStat value="100" suffix="%" label="Ownership" />
+          <AnimatedStat value="0" suffix="%" label="Royalties Taken" />
           <AnimatedStat value="∞" label="Creative Capacity" />
         </div>
       </section>
@@ -253,16 +253,16 @@ export default function Home() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
-            The Independence{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Swarm</span>
+            Your Dedicated{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Team</span>
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-platform release pipelines. High-fidelity creative synthesis. Total ownership of your masters and your career.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Unlock your sound\'s DNA. Extract the life force of your tracks—tempo, key, and emotional weight—to prime your creative universe.' },
-            { step: '02', icon: BrainCircuit, title: 'Your Team', desc: 'Deploy your specialist team of intelligences. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
+            { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Understand your sound profile. Analyze the core elements of your tracks—tempo, key, and mood—to build out your visual identity.' },
+            { step: '02', icon: BrainCircuit, title: 'Your Team', desc: 'Deploy your dedicated team. From visual design to legal protection, your team builds your vision in parallel.' },
             { step: '03', icon: Globe2, title: 'Global Impact', desc: 'Release your tracks directly to global platforms. No gatekeepers, no noise, just total independence and 100% of the bag.' },
           ].map((s, i) => (
             <motion.div
@@ -313,16 +313,16 @@ export default function Home() {
                 <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. No markup. True creative independence for the artist.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>
-                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indii infrastructure forever. You are part of the engine.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Permanent Record</h4>
+                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indii infrastructure forever. You are part of the system.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Team</h4>
                 <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Disc3 size={16} /> Soul Certified</h4>
-                <p className="text-sm text-gray-400">Every new mind, every model upgrade, every feature we ship — automatically included in your seat. No rent-seeking. Just music.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Disc3 size={16} /> Constantly Evolving</h4>
+                <p className="text-sm text-gray-400">Every new specialist, every feature upgrade, every tool we ship — automatically included in your seat. No rent-seeking. Just music.</p>
               </div>
             </div>
 

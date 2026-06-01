@@ -148,7 +148,7 @@ export default function FieldRecorder() {
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${recordingState === 'recording' ? 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-green-500'}`} />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-            {recordingState === 'recording' ? 'Live Capture' : 'Secure Bridge'}
+            {recordingState === 'recording' ? 'Live Capture' : 'Ready'}
           </span>
         </div>
       </nav>
@@ -275,7 +275,7 @@ export default function FieldRecorder() {
                   {recordingState === 'uploading' && (
                     <div className="w-full py-12 flex flex-col items-center gap-6">
                       <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-                      <p className="text-sm font-black uppercase tracking-widest italic animate-pulse">Establishing Bridge...</p>
+                      <p className="text-sm font-black uppercase tracking-widest italic animate-pulse">Syncing to Cloud...</p>
                     </div>
                   )}
 
@@ -328,7 +328,7 @@ export default function FieldRecorder() {
       <footer className="absolute bottom-0 left-0 w-full p-8 flex items-center justify-between pointer-events-none opacity-40">
         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">ALPHA_V5.0</span>
         <div className="flex items-center gap-4">
-          <span className="text-[9px] font-bold text-gray-700">POWERED BY GEMINI 3 CORTEX</span>
+          <span className="text-[9px] font-bold text-gray-700">POWERED BY INDII.MUSIC</span>
         </div>
       </footer>
     </div>
