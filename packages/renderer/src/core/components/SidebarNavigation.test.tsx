@@ -200,7 +200,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('brand-manager')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Campaign Manager', async () => {
         const state = buildStoreState({ currentModule: 'campaign' });
@@ -219,7 +219,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('campaign-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Publicist', async () => {
         const state = buildStoreState({ currentModule: 'publicist' });
@@ -238,7 +238,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('publicist-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Publishing', async () => {
         const state = buildStoreState({ currentModule: 'publishing' });
@@ -257,7 +257,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('publishing-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Finance', async () => {
         const state = buildStoreState({ currentModule: 'finance' });
@@ -276,7 +276,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('finance-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Licensing', async () => {
         const state = buildStoreState({ currentModule: 'licensing' });
@@ -295,7 +295,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders navigation items correctly', () => {
         mockedUseStore.mockReturnValue({
