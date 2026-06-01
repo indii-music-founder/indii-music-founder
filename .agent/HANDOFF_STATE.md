@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 00:32 EDT
+**Updated:** 2026-06-01 00:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d29614b63 feat(billing): per-model USD cost attribution for AI spend
+7c11ef326 chore: session checkpoint [00:32]
 b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 54e7fae3a chore: session checkpoint [00:28]
 2749949fe chore: session checkpoint [00:23]
@@ -12,8 +14,6 @@ b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 13264c72d chore: session checkpoint [00:20]
 934fde7c8 chore: session checkpoint [00:19]
 5e014bfce chore: session checkpoint [00:13]
-425b883ea chore: session checkpoint [00:12]
-bae609a64 chore: session checkpoint [00:10]
 ```
 
 ## Working State
