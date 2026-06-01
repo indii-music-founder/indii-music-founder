@@ -15,7 +15,8 @@ graph TD
 
     %% Communication
     subgraph Transport ["Real-time Transport Layer"]
-        WebSocket["WebSocket Connection Manager"]
+        CloudRelay["Firestore Cloud Relay (Ubiquitous)"]
+        WebSocket["Edge Server (WebSocket / Ngrok)"]
         SessionSync["Session Handoff Protocol"]
         Encryption["End-to-End Encryption (A2A Protocol)"]
     end
@@ -44,11 +45,15 @@ graph TD
     %% Flow
     MobileAuth -->|"Device Pairing Code"| SessionSync
     SessionSync -->|"Establish Secure Channel"| WebSocket
+    SessionSync -->|"Fallback/Primary Channel"| CloudRelay
     WebSocket <-->|"A2A Encrypted Messages"| Encryption
+    CloudRelay <-->|"A2A Encrypted Messages"| Encryption
     Encryption <-->|"Duplex Communication"| ElectronMainProcess
     
     RemoteUI -->|"Send Command (Start/Stop)"| WebSocket
+    RemoteUI -->|"Send Command"| CloudRelay
     WebSocket -->|"IPC Message"| PreloadBridge
+    CloudRelay -->|"Sync via Firestore"| DesktopApp
     PreloadBridge -->|"Invoke Handler"| DesktopApp
     DesktopApp -->|"Update State"| SharedState
     SharedState -->|"Persist to Firestore"| FSState
