@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 01:33 EDT
+**Updated:** 2026-06-01 01:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1db13f892 chore: session checkpoint [01:33]
 abf715a04 chore: session checkpoint [01:28]
 abe4efcbf chore: session checkpoint [01:27]
 4d987854e feat(admin): make dashboard runnable — scripts, health check, real README
@@ -13,15 +14,17 @@ a4ea00bf2 chore: session checkpoint [01:18]
 adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
 855149046 chore: session checkpoint [00:39]
 d29614b63 feat(billing): per-model USD cost attribution for AI spend
-7c11ef326 chore: session checkpoint [00:32]
 ```
 
 ## Working State
 ```
+ M packages/admin-dashboard/src/components/LoginScreen.tsx
  M packages/landing/src/components/AgentGrid.tsx
  M packages/landing/src/components/ConductorSection.tsx
+ M packages/landing/src/components/FoundersSection.tsx
  M packages/landing/src/components/TechSpecs.tsx
  M packages/landing/src/page.tsx
+ M packages/landing/src/pages/FieldRecorder.tsx
 ?? directives/brand_voice_and_copy.md
 ```
 
