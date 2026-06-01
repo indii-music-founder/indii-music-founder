@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# indii Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A standalone admin console for indii. Shows **real data only** — per-user AI token
+usage / cost and the live founders roster. No mock or placeholder data: empty states
+show real zeros until real activity exists.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend** — Vite + React (`src/`). Auth-gated; only `@indii.music` accounts get in.
+- **Backend** — Express (`server.ts`) using `firebase-admin` to read Firestore.
+- The Vite dev server proxies `/api` → the Express backend (default `:3333`).
 
-## React Compiler
+## Modules (real data)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Module | Source |
+|--------|--------|
+| **Token Usage** | `user_usage_stats` Firestore collection (written by `TokenUsageService.trackUsage`). Cost by model, spend by user, projected economics. |
+| **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`). Live seat count (X of 11) + roster. |
 
-## Expanding the ESLint configuration
+Mock-only modules (Email Manager, DDEX Tracker, Nexus Monitor) are intentionally
+hidden until wired to real sources.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Running it locally
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. **Authenticate to Google** so the backend can read Firestore — pick one:
+   ```bash
+   gcloud auth application-default login          # easiest
+   # or
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+2. **Start both backend + frontend** (one command):
+   ```bash
+   npm run dev:all
+   ```
+   Or run them separately: `npm run server` (Express on :3333) and `npm run dev` (Vite).
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3. Open the Vite URL printed in the terminal and **sign in with your `@indii.music`
+   account**.
+
+### Verify the backend can see data
+```bash
+curl http://localhost:3333/api/health
+# { "status": "ok", "firestore": "connected" }   ← good
+# { "status": "degraded", "firestore": "unreachable", "hint": ... }  ← fix credentials
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Auth & security
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- The backend gates every data route on a Firebase ID token whose email ends in
+  `@indii.music` (`requireAdminAuth`).
+- The frontend signs in via Firebase, stores a fresh ID token in `localStorage`
+  (`indii_admin_token`), and sends it as a Bearer token.
+- Firebase web config values are public identifiers; real authorization is enforced
+  server-side and by Firestore Security Rules.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Scripts
+
+| Script | Does |
+|--------|------|
+| `npm run dev:all` | Backend + frontend together |
+| `npm run server` | Express backend only (`tsx watch`) |
+| `npm run dev` | Vite frontend only |
+| `npm run build` | Typecheck + production build |
+| `npm run lint` | ESLint |
