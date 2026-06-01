@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 01:28 EDT
+**Updated:** 2026-06-01 01:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+abf715a04 chore: session checkpoint [01:28]
 abe4efcbf chore: session checkpoint [01:27]
 4d987854e feat(admin): make dashboard runnable — scripts, health check, real README
 a4ea00bf2 chore: session checkpoint [01:18]
@@ -13,11 +14,14 @@ adbf6cbe9 feat(admin): real Token Usage + Founders modules, remove all mock data
 855149046 chore: session checkpoint [00:39]
 d29614b63 feat(billing): per-model USD cost attribution for AI spend
 7c11ef326 chore: session checkpoint [00:32]
-b2d0d4242 chore(agent): persist antigravity session 43bfd181 checkpoint logs
 ```
 
 ## Working State
 ```
+ M packages/landing/src/components/AgentGrid.tsx
+ M packages/landing/src/components/ConductorSection.tsx
+ M packages/landing/src/components/TechSpecs.tsx
+ M packages/landing/src/page.tsx
 ?? directives/brand_voice_and_copy.md
 ```
 
