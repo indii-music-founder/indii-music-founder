@@ -16,11 +16,17 @@ graph TD
         ManualContact["Contact Sales / Invoice Instructions"]
         PaymentForm["Off-Platform Payment (Wire/ACH)"]
         Confirmation["Manual Payment Confirmation"]
+    subgraph Checkout ["Manual Activation"]
+        WireTransfer["Off-Platform Payment (Wire/Check/Cash App)"]
+        AdminApproval["Manual Admin Approval"]
+        Confirmation["Activation Confirmation"]
     end
 
     %% Backend Processing
     subgraph Backend ["Backend (Cloud Functions)"]
         FounderPass["activateFounderPass.ts (Admin/Manual Script)"]
+        FounderPass["activateFounderPass.ts (Gen 2 Function)"]
+        VerifyPayment["Admin Token Verification"]
         CreateUser["Create/Update Founder User"]
         SeatAllocation["Allocate Founder Seats (1 owner + N supporters)"]
     end
@@ -63,6 +69,12 @@ graph TD
     
     Confirmation -->|"Admin Executes"| FounderPass
     FounderPass -->|"Validate Activation"| CreateUser
+    CTAButton -->|"Redirect"| WireTransfer
+    WireTransfer -->|"Submit Proof of Payment"| AdminApproval
+    AdminApproval -->|"Admin executes activation"| Confirmation
+    
+    Confirmation -->|"RPC: activateFounderPass"| VerifyPayment
+    VerifyPayment -->|"Validate Admin Token"| CreateUser
     CreateUser -->|"Update Firestore"| UserDoc
     CreateUser -->|"Store Metadata"| FoundersCollection
     CreateUser -->|"Initialize Seats"| SeatAllocation
@@ -91,6 +103,8 @@ graph TD
 
     style ManualContact fill:#FF8C00,color:#000
     style PaymentForm fill:#FF8C00,color:#000
+    style WireTransfer fill:#FF8C00,color:#000
+    style AdminApproval fill:#FF8C00,color:#000
     style Confirmation fill:#00D4FF,color:#000
 
     style FounderPass fill:#8A2BE2,color:#FFF
@@ -124,6 +138,11 @@ graph TD
 3. **Payment:** User completes an **Off-Platform Payment (Wire/ACH)** according to the instructions.
 
 4. **Confirmation & Activation:** Upon manual payment confirmation, an admin executes the **`activateFounderPass.ts`** script.
+2. **Checkout Initiation:** User clicks **"Activate Founder Pass"**. They are instructed to complete an **Off-Platform Payment** (e.g. via Wire or Cash App).
+
+3. **Payment:** User completes payment and requests activation. **Admin** processes the payment.
+
+4. **Confirmation & Activation:** Admin invokes **`activateFounderPass.ts`** (Firebase Cloud Function Gen 2).
 
 5. **Backend Processing:** The admin script creates or updates the user's Firestore document with `founder: true`, and initializes the **Founder Seat Registry** (1 owner + N supporters).
 
