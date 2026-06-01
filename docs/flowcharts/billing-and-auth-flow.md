@@ -1,6 +1,6 @@
 # Billing, Auth & Tier Enforcement Flowchart
 
-This flowchart maps the security and subscription lifecycle. It visualizes how new users onboard, how billing upgrades are handled securely via Stripe webhooks (avoiding client-side spoofing), and how the backend enforces tier limits (e.g., Free vs. Pro) on expensive Cloud Functions.
+This flowchart maps the security and subscription lifecycle. It visualizes how new users onboard, how billing upgrades are handled securely via manual off-platform payments (avoiding client-side spoofing), and how the backend enforces tier limits (e.g., Free vs. Founder) on expensive Cloud Functions.
 
 ```mermaid
 graph TD
@@ -23,15 +23,15 @@ graph TD
     end
 
     %% Payment Gateway
-    subgraph PaymentGateway ["Stripe Gateway"]
-        Checkout["Stripe Checkout Session"]
-        WebhookTrigger["Stripe Webhook Emitter"]
+    subgraph PaymentGateway ["Manual Payment"]
+        Checkout["Off-Platform Payment (Wire/ACH)"]
+        WebhookTrigger["Manual Payment Confirmation"]
     end
 
     %% Backend Validation
     subgraph CloudFunctions ["Firebase Cloud Functions"]
         CreateUserHook["`onCreateUser` Trigger"]
-        StripeWebhookFn["`handleStripeWebhook`"]
+        AdminActivationFn["`activateFounderPass` (Admin/Manual Script)"]
         ProtectedAPI["e.g., `generateVideo` (Protected Route)"]
     end
 
@@ -42,10 +42,10 @@ graph TD
     CreateUserHook -->|"Creates default Free tier profile"| UserDoc
 
     %% Transitions - Upgrade Flow
-    UpgradeUI -->|"Selects Pro Tier"| Checkout
-    Checkout -->|"User completes payment"| WebhookTrigger
-    WebhookTrigger -->|"POST signature & payload"| StripeWebhookFn
-    StripeWebhookFn -->|"Verifies Signature"| UserDoc
+        UpgradeUI -->|"Selects Founder Tier"| Checkout
+    Checkout -->|"User completes manual payment"| WebhookTrigger
+    WebhookTrigger -->|"Admin executes activation script"| AdminActivationFn
+    AdminActivationFn -->|"Updates Tier"| UserDoc
     
     %% State Sync
     UserDoc -.->|"onSnapshot real-time listener"| AuthSlice
@@ -64,7 +64,7 @@ graph TD
 
     style AuthSystem fill:#FF00FF,color:#FFF
     style CreateUserHook fill:#FF8C00,color:#000
-    style StripeWebhookFn fill:#FF8C00,color:#000
+    style AdminActivationFn fill:#FF8C00,color:#000
     style ProtectedAPI fill:#FF8C00,color:#000
 
     style UserDoc fill:#39FF14,color:#000
@@ -77,8 +77,8 @@ graph TD
 
 1. **Authentication:** A new user registers via the **Auth UI**. **Firebase Auth** handles the credential exchange and populates the local **Zustand `authSlice`**. 
 2. **Profile Generation:** Simultaneously, the backend listens for the creation event via the **`onCreateUser`** trigger. It initializes a new document in the **Firestore `users/{uid}`** collection, setting the default `tier: 'free'` and establishing rate limits.
-3. **Upgrade Initiation:** When a user hits a paywall or opts into a Pro tier, they interact with the **Pricing / Upgrade UI**, which redirects them out of the application to a secure **Stripe Checkout Session**.
-4. **Webhook Fulfillment:** Upon successful payment, Stripe does not trust the client. Instead, the **Stripe Webhook Emitter** fires a secure POST request to the **`handleStripeWebhook`** Cloud Function.
-5. **Database Update:** The Cloud Function verifies the cryptographic signature of the webhook to prevent spoofing, and then updates the `tier` and `subscriptionId` fields in the **`users/{uid}` Document**.
-6. **Real-time Client Sync:** The frontend **`authSlice`** maintains an active `onSnapshot` listener to the user's Firestore document. When the backend updates the tier to 'pro', the local state updates instantly without a page refresh, prompting the **MembershipService** to unlock the UI features.
+3. **Upgrade Initiation:** When a user hits a paywall or opts into a Founder tier, they interact with the **Pricing / Upgrade UI**, which redirects them out of the application to an **Off-Platform Payment (Wire/ACH)**.
+4. **Payment Fulfillment:** Upon successful manual payment, the payment is manually verified.
+5. **Database Update:** An **Admin/Manual Script (`activateFounderPass`)** is executed, which safely updates the `tier` and `subscriptionId` fields in the **`users/{uid}` Document**.
+6. **Real-time Client Sync:** The frontend **`authSlice`** maintains an active `onSnapshot` listener to the user's Firestore document. When the backend updates the tier to 'founder', the local state updates instantly without a page refresh, prompting the **MembershipService** to unlock the UI features.
 7. **Backend Tier Enforcement:** Even if the UI is tricked, expensive operations like **`generateVideo` (Protected Route)** never trust the client payload. They independently read the `tier` field directly from the **`users/{uid}` Document** on the server before spending Vertex AI compute resources.

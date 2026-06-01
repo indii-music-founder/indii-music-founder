@@ -1261,11 +1261,24 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-082: Founder Payment Flow Still Has Stripe Purchase Remnants
+- **Status:** OPEN
 - **Status:** ✅ FIXED (73dad32caeb29)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Billing / Founders Program
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
 - **Summary:** Stripe is currently test-mode scaffolding and not yet production-live. Normal subscriptions can remain close to Stripe activation, but Founder payments are intentionally off-platform via Cash App, wire, or check. The repo still has older Founder-through-Stripe remnants: `STRIPE_PRICE_FOUNDER_PASS`, a `founder_pass` webhook branch, stale Stripe setup docs, stale E2E expectations, and the Finance subscription tab can still attempt normal checkout for the Founder tier.
+- **Files:**
+  - `packages/firebase/src/stripe/config.ts`
+  - `packages/firebase/src/stripe/webhookHandler.ts`
+  - `packages/firebase/src/subscription/createCheckoutSession.ts`
+  - `packages/renderer/src/modules/finance/components/SubscriptionTab.tsx`
+  - `packages/renderer/src/modules/founders/FoundersCheckout.tsx`
+  - `docs/STRIPE_SETUP_VERIFICATION.md`
+  - `docs/business-decisions/03_REVENUE_AND_PRICING.md`
+  - `docs/flowcharts/founders-checkout-portal.md`
+  - `docs/flowcharts/founder-dynamic-routing.md`
+  - `e2e/founders-program.spec.ts`
+- **Fix Required:** Keep Stripe scaffolding for normal subscriptions in test mode, but remove or hard-disable Founder purchase paths through Stripe. Founder UI should route to off-platform payment instructions and admin activation only. The Finance plan comparison should either exclude Founder from normal checkout or route Founder clicks to `founders-checkout` with clear manual-payment copy. Update docs/tests so `STRIPE_PRICE_FOUNDER_PASS` is not a production prerequisite for Founder launch.
 - **Files:** `packages/firebase/src/stripe/config.ts`, `packages/firebase/src/stripe/webhookHandler.ts`, `packages/firebase/src/__tests__/stripeWebhook.test.ts`
 - **Fix:** Removed Stripe Founder pass configurations (`STRIPE_PRICE_FOUNDER_PASS` and `STRIPE_PRODUCT_FOUNDER`), deleted the `founder_pass` webhook handling block, removed the relevant tests, and disabled Founder writes via webhooks.
 - **UX Impact:** A user or tester can be sent into a broken or legally/business-inconsistent Stripe flow for a Founder buy-in that should be handled manually.
@@ -1297,11 +1310,26 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-085: Remote Architecture Docs Conflict With Current Implementation
+- **Status:** OPEN
 - **Status:** ✅ FIXED (429eb24b598df)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / indiiREMOTE / Documentation
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
 - **Summary:** Current docs say indiiREMOTE replaces Firebase Cloud Relay and uses no Firebase reads/writes, but current renderer code still uses `RemoteRelayService` with Firestore for phone commands/state. Separately, Electron main starts `IndiiRemoteService` on port 3333 with optional Ngrok, and the mobile remote UI labels itself "Powered by indii Cloud Relay." The architecture appears to contain both paths, but the user-facing and engineering docs present them as if one replaced the other.
+- **Files:**
+  - `README.md`
+  - `docs/indiiREMOTE_ARCHITECTURE.md`
+  - `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`
+  - `packages/renderer/src/services/agent/RemoteRelayService.ts`
+  - `packages/renderer/src/hooks/useRemoteCommandListener.ts`
+  - `packages/firebase/src/relay/relayCommandProcessor.ts`
+  - `packages/firebase/firestore.rules`
+  - `packages/main/src/services/IndiiRemoteService.ts`
+  - `packages/main/src/handlers/mobile_remote.ts`
+  - `packages/main/src/main.ts`
+  - `docs/flowcharts/mobile-remote-flow.md`
+  - `docs/flowcharts/entire-app-architecture.md`
+- **Fix Required:** Reconcile the actual runtime model. If Firestore Cloud Relay is still primary, update docs and labels to say so and describe when Electron/ngrok direct remote is used. If direct indiiREMOTE is intended to replace Cloud Relay, update the renderer remote UI and command path to use the Electron-hosted URL/WebSocket path instead of Firestore. Keep cloud text-only relay and desktop-only command partition documented explicitly.
 - **Files:** `README.md`, `docs/indiiREMOTE_ARCHITECTURE.md`, `docs/flowcharts/mobile-remote-flow.md`
 - **Fix:** Updated docs to reflect the hybrid architecture where Firestore Cloud Relay is actively used for state sync, while Ngrok/WebSocket server is maintained alongside for edge computing.
 - **UX Impact:** Support, QA, and beta testers will debug the wrong remote path and misunderstand privacy/network behavior.
@@ -1309,11 +1337,19 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-086: Mermaid Flowcharts Are Product Source-Of-Truth And Must Not Drift
+- **Status:** OPEN
 - **Status:** ✅ FIXED (5c30e989011ce)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Documentation / System Architecture / Agent Handoff
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
 - **Summary:** The repo contains system-level Mermaid flowcharts under `docs/flowcharts/` that are used as wireframes and agent handoff maps. Several discovered issues are not only code/docs problems; they are flowchart drift problems. `founders-checkout-portal.md` still models Founder checkout as Stripe/card/webhook even though Founder payments are off-platform manual buy-ins. `founder-dynamic-routing.md` still references `/checkout (Stripe Checkout)`. `mobile-remote-flow.md` describes a WebSocket desktop/mobile architecture while the current renderer also relies on Firestore Cloud Relay and the Electron/ngrok direct path is only partially represented. Flowchart inaccuracies should be treated as first-class issues because specialized agents may use them to make implementation decisions.
+- **Files:**
+  - `docs/flowcharts/founders-checkout-portal.md`
+  - `docs/flowcharts/founder-dynamic-routing.md`
+  - `docs/flowcharts/mobile-remote-flow.md`
+  - `docs/flowcharts/entire-app-architecture.md`
+  - `docs/flowcharts/billing-and-auth-flow.md`
+- **Fix Required:** During fixes for ISSUE-079 through ISSUE-085, update the affected Mermaid charts in the same patch as the code/docs changes. Each chart should clearly identify whether it is descriptive of current implementation or prescriptive future architecture. If a chart is intentionally future-state, label it as such and link the current-state chart. Do not leave stale Stripe Founder or ambiguous remote architecture paths in diagrams consumed by agents.
 - **Files:** `docs/flowcharts/founders-checkout-portal.md`, `docs/flowcharts/founder-dynamic-routing.md`, `docs/flowcharts/mobile-remote-flow.md`, `docs/flowcharts/entire-app-architecture.md`, `docs/flowcharts/billing-and-auth-flow.md`
 - **Fix:** Updated the Mermaid flowcharts to accurately reflect current source-of-truth architectures (e.g. replacing Stripe checkout with manual Founder buy-in info, updating transport layers).
 - **UX Impact:** Wrong system diagrams cause agents, QA, and beta launch operators to fix toward obsolete architecture, increasing regressions and support confusion.
