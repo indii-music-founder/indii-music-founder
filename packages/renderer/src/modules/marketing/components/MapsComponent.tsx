@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { env } from '@/config/env';
 
+const MAPS_LIBRARIES: ("places")[] = ["places"];
+
 const render = (status: Status) => {
     if (status === Status.LOADING) return <div className="h-full w-full flex items-center justify-center bg-gray-900 text-gray-500">Loading Maps...</div>;
     if (status === Status.FAILURE) return <div className="h-full w-full flex items-center justify-center bg-gray-900 text-red-500">Error Loading Maps</div>;
@@ -84,7 +86,7 @@ export default function MapsComponent() {
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={["places"]}>
+        <Wrapper apiKey={apiKey} render={render} libraries={MAPS_LIBRARIES}>
             <Map
                 center={{ lat: 40.7128, lng: -74.0060 }}
                 zoom={11}
