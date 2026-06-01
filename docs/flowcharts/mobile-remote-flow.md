@@ -17,6 +17,12 @@ graph TD
     subgraph Transport ["Transport Layer (Hybrid)"]
         WebSocket["WebSocket Connection (Ngrok Edge)"]
         CloudRelay["Firestore Cloud Relay (Primary)"]
+    %% Communication
+    subgraph Transport ["Real-time Transport Layer"]
+        WebSocket["WebSocket Connection (Electron/Ngrok)"]
+        FirestoreRelay["Firestore Cloud Relay (Fallback/Primary)"]
+        CloudRelay["Firestore Cloud Relay (Ubiquitous)"]
+        WebSocket["Edge Server (WebSocket / Ngrok)"]
         SessionSync["Session Handoff Protocol"]
     end
 
@@ -39,6 +45,29 @@ graph TD
     MobileAuth -->|"Device Pairing Code"| SessionSync
     SessionSync -->|"Establish Secure Channel"| WebSocket
     WebSocket <-->|"Direct Edge Connection"| ElectronMainProcess
+    SessionSync -->|"Establish Relay"| FirestoreRelay
+    WebSocket <-->|"A2A Encrypted Messages"| Encryption
+    FirestoreRelay <-->|"A2A Encrypted Messages"| Encryption
+    Encryption <-->|"Duplex Communication"| ElectronMainProcess
+    
+    RemoteUI -->|"Send Command"| WebSocket
+    RemoteUI -->|"Send Command"| FirestoreRelay
+    SessionSync -->|"Fallback/Primary Channel"| CloudRelay
+    WebSocket <-->|"A2A Encrypted Messages"| Encryption
+    CloudRelay <-->|"A2A Encrypted Messages"| Encryption
+    Encryption <-->|"Duplex Communication"| ElectronMainProcess
+    
+    RemoteUI -->|"Send Command (Start/Stop)"| WebSocket
+    RemoteUI -->|"Send Command"| CloudRelay
+    WebSocket -->|"IPC Message"| PreloadBridge
+    CloudRelay -->|"Sync via Firestore"| DesktopApp
+    PreloadBridge -->|"Invoke Handler"| DesktopApp
+    DesktopApp -->|"Update State"| SharedState
+    SharedState -->|"Persist to Firestore"| FSState
+    
+    StatusMonitor -->|"Subscribe to updates"| WebSocket
+    ElectronMainProcess -->|"Emit status changes"| WebSocket
+    WebSocket -->|"Push to Mobile"| StatusMonitor
     
     PlaybackControls -->|"Stream audio (headless)"| WebSocket
     DesktopApp -->|"Send audio chunk"| WebSocket
@@ -67,6 +96,7 @@ graph TD
 
     style WebSocket fill:#FF00FF,color:#FFF
     style CloudRelay fill:#FF00FF,color:#FFF
+    style FirestoreRelay fill:#FF00FF,color:#FFF
     style SessionSync fill:#FF00FF,color:#FFF
 
     style DesktopApp fill:#00D4FF,color:#000
@@ -82,6 +112,15 @@ graph TD
 ## Transition Breakdown
 
 1. **Hybrid Path:** The indiiREMOTE architecture uses **Firestore Cloud Relay** as the primary source of truth for command routing and state synchronization, while simultaneously maintaining a direct **WebSocket Edge Connection** (via Ngrok) for low-latency asset streaming.
+1. **Device Pairing:** User opens **indiiREMOTE** on mobile and enters a **pairing code** from the desktop app. This initiates the **Session Handoff Protocol**.
+
+2. **Secure Channel:** A **WebSocket connection** (direct or via Ngrok) or **Firestore Cloud Relay** is established between mobile and desktop, encrypted using the **A2A Encryption Protocol** (shared keying via AgentCard identity).
+
+3. **Command Flow:** User taps a button on **Remote Control UI** (e.g., "Start Recording"). This sends a message via WebSocket to the **Electron Main Process**, which invokes handlers via the **Preload Bridge** (IPC).
+
+4. **State Update:** The command executes in the desktop **Studio App**, updating the **Shared Zustand Store**. This change is automatically synced to **Firestore**.
+
+5. **Live Feedback:** The **Status Monitor** subscribes to real-time updates. As the desktop app processes the command, status changes (e.g., "Recording in progress") are emitted back to the mobile app via WebSocket.
 
 2. **Primary Command Flow:** User taps a button on **Remote Control UI**. This writes a command to the **Firestore Cloud Relay**.
 
