@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-05-31 15:42 EDT
+**Updated:** 2026-06-01 00:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-23c3fe994 chore: session checkpoint [15:41]
-de7b8e814 chore: session checkpoint [15:39]
-39ef19c05 chore: session checkpoint [15:35]
-ba337c86e chore: session checkpoint [15:33]
-b9163872e chore: session checkpoint [15:30]
-b54a3bdce chore: session checkpoint [15:30]
-3dbe5ec3f fix(ci,appcheck): make e2e-staging a real gate + let CI pass App Check
-1f3a0178d chore: add reasoning comment to test.js
-3bcac24ee chore: session checkpoint [15:18]
-3d9924164 chore: session checkpoint [15:16]
+a9f1abe1e docs: add E2E auth flow WebChannel 401 error pattern to ledger
+4af8baea9 chore: clean up temporary e2e debugging scripts
+6bfabb946 fix: Merge issues 54 and 55 into main
+0e746da0d Merge remote-tracking branch 'origin/subagent-Fix-Agent--Issue-54--self-ae99558d' into squash-all-issues
+e21ad446a fix: Merge issues 51, 53, 54, 55 into main
+961fa4870 Merge remote-tracking branch 'origin/subagent-Fix-Agent--Issue-51--self-25fbb255' into squash-all-issues
+240f59f1a test: Fix auth-flow E2E tests and WebChannel mocks
+38157630e fix(e2e): actually add the missing mockFirestoreUserDoc helper
+9edcda8f8 fix(e2e): remove stray parenthesis causing syntax error
+6a3eb02f1 fix(e2e): fix Firestore batchGet mocks for auth-flow staging tests
 ```
 
 ## Working State
 ```
-?? .agent/AGENT_BRIDGE.md
+ M .agent/checkpoints/antigravity.md
 ```
 
 ## Decisions
