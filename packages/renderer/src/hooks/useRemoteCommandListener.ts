@@ -26,7 +26,7 @@ import { agentService } from '@/services/agent/AgentService';
 import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -282,40 +282,49 @@ function useFirestoreRelay(enabled: boolean) {
         // Safety timeout ref: auto-reset isProcessing after 2 min if agent hangs
         let processingTimeout: ReturnType<typeof setTimeout> | null = null;
 
-        // ─── CAPABILITY PARTITION ─────────────────────────────────────────
-        // Cloud function (processRelayCommand) owns text; desktop only handles
-        // capabilities the cloud can't (image gen + desktop UI control).
-        //
-        // The desktop is a local-only capability provider. It must NOT process
-        // plain TEXT commands — the cloud function is now the SOLE processor for
-        // the standard chat / generalist path. If the desktop also ran them, the
-        // phone would get duplicate (and possibly stale) responses, and a stuck
-        // desktop lock could surface a misleading rate-limit warning from old
-        // history. Desktop-only routes are those that either run native services
-        // (image generation) or mutate the desktop's own UI/Zustand store
-        // (navigation, agent actions).
+        // ─── DESKTOP & CLOUD: ATOMIC FIRST-WINS CLAIM ─────────────────────
+        // Both desktop and cloud try to process commands. The first one to flip
+        // pending → processing wins via atomicity. This ensures:
+        // - Desktop claims first if online (fast, free when you're home)
+        // - Cloud claims if desktop doesn't claim fast (needed when away, requires
+        //   Blaze billing)
+        // - No double-spend: exactly one processor per command
         const DESKTOP_ONLY_PREFIXES = ['[GENERATE_IMAGE]', '[NAVIGATE]', '[AGENT_ACTION]'] as const;
         const isDesktopOnlyCommand = (text: string): boolean =>
             DESKTOP_ONLY_PREFIXES.some((prefix) => text.startsWith(prefix));
 
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
-            // Partition check FIRST — before touching the processing lock.
-            // Plain text commands belong to the cloud function; skip them here so
-            // we never acquire (and therefore never need to release) the lock for
-            // a command the desktop isn't responsible for.
-            if (!isDesktopOnlyCommand(command.text)) {
-                writeDiagnostic('command_skipped_cloud_owned', {
-                    commandId: command.id,
-                    text: command.text?.substring(0, 50),
-                });
-                logger.info(`[RemoteRelay/Firestore] ☁️ Skipping text command ${command.id} — owned by cloud function`);
-                return;
-            }
-
             if (isProcessing.current) {
                 writeDiagnostic('command_skipped_busy', { commandId: command.id });
                 return;
             }
+
+            // Atomic claim: try to flip pending → processing. First one wins.
+            const uid = getRealAuthenticatedUserId(auth.currentUser);
+            if (!uid) return;
+
+            let claimed = false;
+            try {
+                claimed = await runTransaction(db, async (tx) => {
+                    const cmdRef = doc(db, 'users', uid, 'remote-relay-commands', command.id);
+                    const cmdSnap = await tx.get(cmdRef);
+                    if (cmdSnap.exists() && cmdSnap.data()?.status === 'pending') {
+                        tx.update(cmdRef, { status: 'processing' });
+                        return true;
+                    }
+                    return false;
+                });
+            } catch (err) {
+                logger.warn('[RemoteRelay] Atomic claim failed:', err);
+                return;
+            }
+
+            if (!claimed) {
+                writeDiagnostic('command_skipped_not_claimed', { commandId: command.id });
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} already claimed`);
+                return;
+            }
+
             isProcessing.current = true;
 
             // Safety: auto-unlock after 2 minutes so one stuck command can't block the relay forever
@@ -326,14 +335,9 @@ function useFirestoreRelay(enabled: boolean) {
                 }
             }, 120_000);
 
-            // Desktop-only command (image gen / navigation / agent action).
-            // Agent routing (targetAgentId → generalist/specialist) is handled by
-            // the cloud function for text; the desktop routes purely on prefix.
-            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing desktop-only command: "${command.text?.substring(0, 50)}"`);
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
             writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
             try {
-                // Mark as processing
-                await remoteRelayService.markCommandProcessing(command.id);
 
                 // ─── Image Generation Route ──────────────────────────────
                 if (command.text.startsWith('[GENERATE_IMAGE]')) {
