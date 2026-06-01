@@ -289,9 +289,7 @@ function useFirestoreRelay(enabled: boolean) {
         // - Cloud claims if desktop doesn't claim fast (needed when away, requires
         //   Blaze billing)
         // - No double-spend: exactly one processor per command
-        const DESKTOP_ONLY_PREFIXES = ['[GENERATE_IMAGE]', '[NAVIGATE]', '[AGENT_ACTION]'] as const;
-        const isDesktopOnlyCommand = (text: string): boolean =>
-            DESKTOP_ONLY_PREFIXES.some((prefix) => text.startsWith(prefix));
+
 
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
             if (isProcessing.current) {
