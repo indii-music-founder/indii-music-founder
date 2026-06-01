@@ -292,6 +292,14 @@ function useFirestoreRelay(enabled: boolean) {
 
 
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
+            // ─── Capability Partition Guard ──────────────────────────────
+            // Desktop only handles UI/local actions like [GENERATE_IMAGE] or [NAVIGATE].
+            // Plain text chat is handled by the cloud function. Do not claim text.
+            if (!command.text || !command.text.startsWith('[')) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring plain text command ${command.id} (cloud handles this)`);
+                return;
+            }
+
             if (isProcessing.current) {
                 writeDiagnostic('command_skipped_busy', { commandId: command.id });
                 return;
