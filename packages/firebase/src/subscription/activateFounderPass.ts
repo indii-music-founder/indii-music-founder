@@ -267,6 +267,16 @@ export const activateFounderPass = onCall({
                 updatedAt: Date.now(),
             }, { merge: true });
 
+            // Update the founders_meta summary for the landing page
+            tx.set(db.collection('founders_meta').doc('summary'), {
+                count: FieldValue.increment(1),
+                founders: FieldValue.arrayUnion({
+                    seat: seatNumber,
+                    name,
+                    joinedAt,
+                })
+            }, { merge: true });
+
             return seatNumber;
         });
     } catch (err) {
