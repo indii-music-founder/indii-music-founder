@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-01 00:23 EDT
+**Updated:** 2026-06-01 00:28 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2749949fe chore: session checkpoint [00:23]
 0db2563b0 feat(flowcharts): Phase 3 Tier B — 2 infrastructure charts
 6609dee83 chore(flowcharts): Phase 1 stale-ref sweep
 13264c72d chore: session checkpoint [00:20]
@@ -13,7 +14,6 @@
 bae609a64 chore: session checkpoint [00:10]
 2605f9448 chore: session checkpoint [00:07]
 a9f1abe1e docs: add E2E auth flow WebChannel 401 error pattern to ledger
-4af8baea9 chore: clean up temporary e2e debugging scripts
 ```
 
 ## Working State
