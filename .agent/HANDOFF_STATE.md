@@ -1,9 +1,11 @@
 # Handoff State
+**Updated:** 2026-06-01 09:03 EDT
 **Updated:** 2026-06-01 08:49 EDT
 **Branch:** `feat/marketing-copy-rewrites`
 
 ## Recent Commits
 ```
+5b2137dac chore: session checkpoint [08:49]
 ec4beeb4c chore: session checkpoint [08:48]
 0193a97f6 chore: session checkpoint [08:45]
 2da2b5d0d chore: session checkpoint [08:44]
@@ -18,10 +20,16 @@ abe4efcbf chore: session checkpoint [01:27]
 
 ## Working State
 ```
+ M .agent/HANDOFF_STATE.md
+ M packages/firebase/src/functions/billing/enforceOperationCost.ts
+ M packages/firebase/src/relay/relayCommandProcessor.ts
  M packages/landing/src/components/ConductorSection.tsx
  M packages/landing/src/components/TechSpecs.tsx
  M packages/landing/src/page.tsx
  M packages/landing/src/pages/Terms.tsx
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx
+ M packages/renderer/src/services/agent/RemoteRelayService.ts
 ```
 
 ## Decisions
