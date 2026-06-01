@@ -1,6 +1,0 @@
-{
-    "type": "routing",
-    "input": "Design a hoodie and set up my print-on-demand storefront",
-    "expected_agent": "merchandise",
-    "description": "Merch/POD request routes to Merchandise"
-}

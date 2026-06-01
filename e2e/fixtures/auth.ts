@@ -247,18 +247,13 @@ export const test = base.extend<AuthFixtures>({
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        // Return 401 to pause stream reconnections without marking the client as offline
+        // Hang the request to keep the WebChannel stream open and prevent 401s / offline state
+        await new Promise(r => setTimeout(r, 60000));
         await route.fulfill({
-          status: 401,
+          status: 200,
           headers: corsHeaders,
           contentType: "application/json",
-          body: JSON.stringify({
-            error: {
-              code: 401,
-              message: "Unauthenticated",
-              status: "UNAUTHENTICATED"
-            }
-          })
+          body: "[]"
         });
         return;
       }
