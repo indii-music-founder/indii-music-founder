@@ -18,6 +18,11 @@ In parallel, the indii Electron app can silently boot a native Node.js Express s
 - **Headless Playback**: Designed for streaming audio/video chunks directly to the mobile device for preview without relying on slow database reads/writes.
 - **Direct Edge Access**: Provides a zero-install Thin Client React SPA served directly from the Mac.
 - **Desktop-Only Commands**: Provides an alternative fast-path for commands that require immediate desktop execution.
+We previously relied exclusively on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. We have now moved to a **Hybrid Edge Architecture**.
+
+The system now supports two parallel paths:
+1. **Firestore Cloud Relay (Ubiquitous):** Serves as the primary, highly-available transport for text and commands across all network conditions.
+2. **Direct Edge Server (Low-Latency):** The indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**. This direct WebSocket path is utilized for sub-millisecond sync of heavy payloads and real-time state.
 
 ## Core Components
 

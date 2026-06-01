@@ -29,6 +29,10 @@ export const createCheckoutSession = onCall({
     throw new HttpsError('invalid-argument', 'Cannot create checkout session for free tier');
   }
 
+  if (tier === SubscriptionTier.FOUNDER) {
+    throw new HttpsError('invalid-argument', 'Founder passes must be activated manually via admin.');
+  }
+
   try {
     const db = getFirestore();
 
