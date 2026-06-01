@@ -64,16 +64,14 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
   },
   [SubscriptionTier.FOUNDER]: {},
 };
-
 /**
  * Get Stripe price ID for a tier and billing period.
- * For FOUNDER tier, returns the oneTime price regardless of isYearly.
+ * Returns the oneTime price if present.
  */
 export function getPriceId(tier: SubscriptionTier, isYearly: boolean): string | null {
   const prices = STRIPE_PRICES[tier];
   if (!prices) return null;
 
-  // Founder pass is a one-time purchase — return oneTime if present
   if (prices.oneTime) return prices.oneTime;
 
   return (isYearly ? prices.yearly : prices.monthly) || null;
@@ -115,8 +113,7 @@ export function mapStripeTierToSubscriptionTier(
   productId: string,
   billingInterval?: 'month' | 'year' | string | null
 ): SubscriptionTier | null {
-  // Founder (one-time — no interval)
-  if (process.env.STRIPE_PRODUCT_FOUNDER && productId === process.env.STRIPE_PRODUCT_FOUNDER) return SubscriptionTier.FOUNDER;
+
 
   // Studio (interval doesn't distinguish tiers here — Studio is Studio)
   if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
