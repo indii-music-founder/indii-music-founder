@@ -62,13 +62,8 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
     monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
     yearly: resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'),
   },
-  [SubscriptionTier.FOUNDER]: {
-    oneTime: resolvePriceId('STRIPE_PRICE_FOUNDER_PASS'),
-  },
+  [SubscriptionTier.FOUNDER]: {},
 };
-
-/** Price ID for the Founders Pass one-time checkout */
-export const STRIPE_FOUNDER_PRICE_ID = resolvePriceId('STRIPE_PRICE_FOUNDER_PASS');
 
 /**
  * Get Stripe price ID for a tier and billing period.

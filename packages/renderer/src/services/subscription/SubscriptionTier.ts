@@ -294,8 +294,7 @@ export function getTierOrder(): SubscriptionTier[] {
   return [
     SubscriptionTier.FREE,
     SubscriptionTier.PRO_MONTHLY,
-    SubscriptionTier.STUDIO,
-    SubscriptionTier.FOUNDER
+    SubscriptionTier.STUDIO
   ];
 }
 
