@@ -1208,3 +1208,159 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Module:** Agent Orchestrator / E2E
 - **Found:** 2026-05-31 by Mega Stress Test V1 (Routine 14)
 - **Summary:** The `isE2E` check in `fine-tuned-models.ts` attempts to read `process.env.VITE_PLAYWRIGHT_E2E`. In a pure browser context, `process` is undefined, causing the fallback to fail and route E2E agents to production Vertex endpoints (which fail with `Circuit OPEN`). The check should use `import.meta.env.VITE_PLAYWRIGHT_E2E` alongside the URL param check.
+
+---
+
+### ISSUE-079: Founder Seat Model Split-Brain Across Product Surfaces
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Founders Program / Landing / Activation
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** The intended Founder model is 11 total seats: Founder #1 is William/the builder, followed by 10 paid Founder buy-in seats. The repo only partially reflects this. `activateFounderPass.ts` uses `MAX_FOUNDER_SEATS = 11`, but `packages/renderer/src/config/founders.ts` still says `seats_total: 10`, its comments say seats 1-10, and the public `FOUNDERS` array is empty in the current worktree. Landing and checkout copy still says "10 Founders", "10 Seats. Final.", "No 11th founder", and "All 10 founding seats have been claimed."
+- **Files:**
+  - `packages/renderer/src/config/founders.ts`
+  - `packages/firebase/src/subscription/activateFounderPass.ts`
+  - `packages/landing/src/components/FoundersSection.tsx`
+  - `packages/landing/src/page.tsx`
+  - `packages/renderer/src/modules/founders/FoundersCheckout.tsx`
+  - `packages/renderer/src/modules/founders/FoundersCheckout.test.tsx`
+  - `packages/renderer/src/services/subscription/SubscriptionTier.ts`
+  - `packages/firebase/src/shared/subscription/SubscriptionTier.ts`
+  - `docs/FOUNDERS_PLAN.md`
+  - `docs/FOUNDERS_PROGRAM.md`
+  - `docs/business-decisions/03_REVENUE_AND_PRICING.md`
+  - `docs/flowcharts/founders-checkout-portal.md`
+  - `docs/flowcharts/founder-dynamic-routing.md`
+- **Fix Required:** Establish one canonical seat model in code and copy: 11 total Founder seats, with Founder #1 reserved/internal and 10 paid seats available. Update all UI copy, constants, tests, and docs to stop saying "10 founders total" or "No 11th founder." If the public Founder #1 covenant entry is not present in this checkout, do not invent personal data; add the structural support and flag the actual Founder #1 record as requiring verified name/UID/hash input.
+- **UX Impact:** Paid beta users may see contradictory scarcity, incorrect seat numbers, or a public promise that conflicts with the admin activation limit.
+
+---
+
+### ISSUE-080: Founder Activation Grants Subscription But Download Gates Check User Profile
+- **Status:** ✅ FIXED (79581f60c)
+- **Severity:** 🔴 HIGH
+- **Module:** Founders Program / Access Control / Releases
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** `activateFounderPass` writes Founder status to `subscriptions/{uid}` and `founders/{uid}`, but Founder-only access surfaces check `users/{uid}` fields instead. `FoundersPortal.tsx`, `generateReleaseDownloadUrl`, and `storage.rules` all look for `subscriptionTier == 'founder'`, `tier == 'founder'`, or `isFounder == true` on the user profile document. A verified Founder can be activated successfully and still be denied desktop installer downloads.
+- **Files:** `packages/firebase/src/subscription/activateFounderPass.ts`
+- **Fix:** Updated `activateFounderPass` to explicitly sync `isFounder: true` and `subscriptionTier: 'founder'` to the main user profile in the `users` collection.
+- **UX Impact:** Founder pays off-platform and is manually activated, but the app can still show "Access Denied" or fail release download authorization.
+
+---
+
+### ISSUE-081: Founder Public Covenant Entry Omits UID While Type Requires UID
+- **Status:** ✅ FIXED (8e994a6c0)
+- **Severity:** 🔴 HIGH
+- **Module:** Founders Program / Type Safety
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** `FounderRecord` in `packages/renderer/src/config/founders.ts` requires `uid: string`, but `injectFounderEntry` in `activateFounderPass.ts` deliberately omits UID from the public GitHub record. The first real activation commit can therefore introduce a TypeScript error if an entry is appended without `uid`.
+- **Files:** `packages/renderer/src/config/founders.ts`
+- **Fix:** Made `uid` optional (`uid?: string;`) in `FounderRecord` to match the public covenant logic.
+- **UX Impact:** Founder activation can break the production build immediately after a successful payment activation.
+
+---
+
+### ISSUE-082: Founder Payment Flow Still Has Stripe Purchase Remnants
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Billing / Founders Program
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** Stripe is currently test-mode scaffolding and not yet production-live. Normal subscriptions can remain close to Stripe activation, but Founder payments are intentionally off-platform via Cash App, wire, or check. The repo still has older Founder-through-Stripe remnants: `STRIPE_PRICE_FOUNDER_PASS`, a `founder_pass` webhook branch, stale Stripe setup docs, stale E2E expectations, and the Finance subscription tab can still attempt normal checkout for the Founder tier.
+- **Files:**
+  - `packages/firebase/src/stripe/config.ts`
+  - `packages/firebase/src/stripe/webhookHandler.ts`
+  - `packages/firebase/src/subscription/createCheckoutSession.ts`
+  - `packages/renderer/src/modules/finance/components/SubscriptionTab.tsx`
+  - `packages/renderer/src/modules/founders/FoundersCheckout.tsx`
+  - `docs/STRIPE_SETUP_VERIFICATION.md`
+  - `docs/business-decisions/03_REVENUE_AND_PRICING.md`
+  - `docs/flowcharts/founders-checkout-portal.md`
+  - `docs/flowcharts/founder-dynamic-routing.md`
+  - `e2e/founders-program.spec.ts`
+- **Fix Required:** Keep Stripe scaffolding for normal subscriptions in test mode, but remove or hard-disable Founder purchase paths through Stripe. Founder UI should route to off-platform payment instructions and admin activation only. The Finance plan comparison should either exclude Founder from normal checkout or route Founder clicks to `founders-checkout` with clear manual-payment copy. Update docs/tests so `STRIPE_PRICE_FOUNDER_PASS` is not a production prerequisite for Founder launch.
+- **UX Impact:** A user or tester can be sent into a broken or legally/business-inconsistent Stripe flow for a Founder buy-in that should be handled manually.
+
+---
+
+### ISSUE-083: Founder Landing Counter Reads founders_meta But Activation Does Not Update It
+- **Status:** ✅ FIXED (c089f9bf55a)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Founders Program / Landing
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** The landing Founder section reads `founders_meta/summary` for count and roster, but `activateFounderPass` writes `founders/{uid}` and `subscriptions/{uid}` only. No maintainer was found that updates `founders_meta/summary`. The public landing page may keep showing zero or stale seats after real Founder activations.
+- **Files:** `packages/firebase/src/subscription/activateFounderPass.ts`
+- **Fix:** Modified the transaction in `activateFounderPass` to also update `founders_meta/summary` with incremented count and array union.
+- **UX Impact:** Scarcity and seat availability shown to prospective paid Founders may be wrong.
+
+---
+
+### ISSUE-084: App Access Points Need A User-Facing Runtime Guide
+- **Status:** ✅ FIXED (a919ad3b3cd)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Documentation / Onboarding / Runtime Architecture
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** The product has three user-visible access points that are currently not explained in one user-facing guide: Electron desktop app, hosted web app, and remote/mobile controller. README and architecture docs mention them separately, but beta users need a simple "which door do I use first?" explanation.
+- **Files:** `docs/APP_ACCESS_POINTS_GUIDE.md`, `README.md`
+- **Fix:** Created a new guide at `docs/APP_ACCESS_POINTS_GUIDE.md` and linked it in `README.md`.
+- **UX Impact:** Beta users may not know whether to start in browser, install desktop, or use remote first, which will create avoidable support load.
+
+---
+
+### ISSUE-085: Remote Architecture Docs Conflict With Current Implementation
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / indiiREMOTE / Documentation
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** Current docs say indiiREMOTE replaces Firebase Cloud Relay and uses no Firebase reads/writes, but current renderer code still uses `RemoteRelayService` with Firestore for phone commands/state. Separately, Electron main starts `IndiiRemoteService` on port 3333 with optional Ngrok, and the mobile remote UI labels itself "Powered by indii Cloud Relay." The architecture appears to contain both paths, but the user-facing and engineering docs present them as if one replaced the other.
+- **Files:**
+  - `README.md`
+  - `docs/indiiREMOTE_ARCHITECTURE.md`
+  - `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`
+  - `packages/renderer/src/services/agent/RemoteRelayService.ts`
+  - `packages/renderer/src/hooks/useRemoteCommandListener.ts`
+  - `packages/firebase/src/relay/relayCommandProcessor.ts`
+  - `packages/firebase/firestore.rules`
+  - `packages/main/src/services/IndiiRemoteService.ts`
+  - `packages/main/src/handlers/mobile_remote.ts`
+  - `packages/main/src/main.ts`
+  - `docs/flowcharts/mobile-remote-flow.md`
+  - `docs/flowcharts/entire-app-architecture.md`
+- **Fix Required:** Reconcile the actual runtime model. If Firestore Cloud Relay is still primary, update docs and labels to say so and describe when Electron/ngrok direct remote is used. If direct indiiREMOTE is intended to replace Cloud Relay, update the renderer remote UI and command path to use the Electron-hosted URL/WebSocket path instead of Firestore. Keep cloud text-only relay and desktop-only command partition documented explicitly.
+- **UX Impact:** Support, QA, and beta testers will debug the wrong remote path and misunderstand privacy/network behavior.
+
+---
+
+### ISSUE-086: Mermaid Flowcharts Are Product Source-Of-Truth And Must Not Drift
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Documentation / System Architecture / Agent Handoff
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** The repo contains system-level Mermaid flowcharts under `docs/flowcharts/` that are used as wireframes and agent handoff maps. Several discovered issues are not only code/docs problems; they are flowchart drift problems. `founders-checkout-portal.md` still models Founder checkout as Stripe/card/webhook even though Founder payments are off-platform manual buy-ins. `founder-dynamic-routing.md` still references `/checkout (Stripe Checkout)`. `mobile-remote-flow.md` describes a WebSocket desktop/mobile architecture while the current renderer also relies on Firestore Cloud Relay and the Electron/ngrok direct path is only partially represented. Flowchart inaccuracies should be treated as first-class issues because specialized agents may use them to make implementation decisions.
+- **Files:**
+  - `docs/flowcharts/founders-checkout-portal.md`
+  - `docs/flowcharts/founder-dynamic-routing.md`
+  - `docs/flowcharts/mobile-remote-flow.md`
+  - `docs/flowcharts/entire-app-architecture.md`
+  - `docs/flowcharts/billing-and-auth-flow.md`
+- **Fix Required:** During fixes for ISSUE-079 through ISSUE-085, update the affected Mermaid charts in the same patch as the code/docs changes. Each chart should clearly identify whether it is descriptive of current implementation or prescriptive future architecture. If a chart is intentionally future-state, label it as such and link the current-state chart. Do not leave stale Stripe Founder or ambiguous remote architecture paths in diagrams consumed by agents.
+- **UX Impact:** Wrong system diagrams cause agents, QA, and beta launch operators to fix toward obsolete architecture, increasing regressions and support confusion.
+
+---
+
+### ISSUE-087: Founder Desktop Installer Release Pipeline Is Not Ready End-To-End
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Desktop Release / Founders Downloads
+- **Found:** 2026-06-01 by Beta Launch Readiness Pass
+- **Summary:** A current macOS artifact exists locally at `dist/indii.music-1.64.0-arm64.dmg` with a matching Mac zip, but no current Windows NSIS installer `.exe` was found for `indii.music`. The only `.exe` artifact in build output is an older unpacked `dist-electron-studio/win-arm64-unpacked/indiiOS Studio.exe`, which is not the Founder-ready installer expected by the download portal. The release workflow also uploads from `dist-electron`, while current local electron-builder output is under `dist`, so the Firebase Storage upload step may find no installers even after a successful build.
+- **Files:**
+  - `package.json`
+  - `electron-builder.json`
+  - `.github/workflows/release.yml`
+  - `.github/workflows/build.yml`
+  - `packages/firebase/src/releases/generateDownloadUrl.ts`
+  - `packages/renderer/src/modules/founders/FoundersPortal.tsx`
+  - `packages/renderer/src/modules/founders/FoundersCheckout.tsx`
+  - `docs/flowcharts/founders-checkout-portal.md`
+- **Fix Required:** Produce and verify both Founder installer artifacts: macOS DMG and Windows NSIS EXE. Align electron-builder output directories with the release workflow upload paths, or update the workflow to upload from the actual output directory. Verify Firebase Storage receives exactly `founders/releases/indii-Installer.dmg` and `founders/releases/indii-Setup.exe`, matching `generateReleaseDownloadUrl`. Add a release checklist that records artifact path, size, platform, signing/notarization status, upload destination, and download smoke test.
+- **UX Impact:** A paid Founder can be activated but receive a broken or missing desktop download, which is a launch-blocking failure for the Founder promise.
