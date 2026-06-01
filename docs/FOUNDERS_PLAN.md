@@ -1,7 +1,7 @@
 # Founders Program — Implementation Plan
 
 **Date:** 2026-03-17 (Updated 2026-04-25)
-**Scope:** Sign-up flow fix + $2,500 Founders Pass (10 seats, lifetime)
+**Scope:** Sign-up flow fix + $2,500 Founders Pass (11 total seats, lifetime)
 
 ---
 
@@ -10,7 +10,7 @@
 Two tightly coupled features:
 
 1. **A working sign-up flow** — prerequisite for everything
-2. **The Founders Pass** — $2,500 one-time, 10 seats, lifetime access, names permanently encoded in the codebase as cryptographic proof, and delivery of standalone desktop applications (DMG for Mac, EXE for Windows).
+2. **The Founders Pass** — $2,500 one-time, 11 total seats (10 paid), lifetime access, names permanently encoded in the codebase as cryptographic proof, and delivery of standalone desktop applications (DMG for Mac, EXE for Windows).
 
 ---
 
@@ -37,7 +37,7 @@ Add a "New to indii? **Create account →**" link that points to `/signup`. Ensu
 
 ---
 
-## Part 2 — Founders Pass ($2,500, 10 seats, Lifetime)
+## Part 2 — Founders Pass ($2,500, 11 seats, Lifetime)
 
 ### The Promise (Agreement Terms)
 
@@ -47,7 +47,7 @@ These terms will be encoded immutably in `src/config/founders.ts` and signed:
 - **Access:** All current and future indii features for the lifetime of the software.
 - **Desktop Application Delivery:** Founders will receive standalone, installable applications (DMG for macOS, EXE for Windows) so they can run the system natively on their computers.
 - **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost.
-- **Seats:** Exactly 10 founders total. No exceptions.
+- **Seats:** 11 total Founder seats (Founder #1 reserved/internal and 10 paid seats available).
 - **Name in code:** Each founder's name (or handle, their choice) is committed to the git repository in `src/config/founders.ts` and remains there for the lifetime of the software. This is their proof.
 - **Agreement hash:** `SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised. The pipe-delimited formula is the canonical recipe — founders can recompute it at any time.
 
@@ -59,7 +59,7 @@ These terms will be encoded immutably in `src/config/founders.ts` and signed:
 Landing page                Admin / Alternative Payment    Cloud Functions
 ────────────                ───────────────────────────    ───────────────
 FoundersSection.tsx         Offline/Alt Payment            activateFounderPass()
- └─ "10 seats" counter        │                              ├─ verify payment (Manual/Alt)
+ └─ "11 seats" counter        │                              ├─ verify payment (Manual/Alt)
  └─ Agreement preview         ▼                              ├─ check seat count
  └─ [Become a Founder]      Manual Verification / Webhook    ├─ write Firestore
                               │                              ├─ return verification hash
@@ -96,7 +96,7 @@ export const AGREEMENT_VERSION = '1.0.0';
 
 export const AGREEMENT_TERMS = {
   price_usd: 2500,
-  seats_total: 10,
+  seats_total: 11,
   access: 'lifetime',
   desktop_delivery: ['macOS DMG', 'Windows EXE'],
   api_costs: 'pass_through_at_cost',
@@ -105,7 +105,7 @@ export const AGREEMENT_TERMS = {
 } as const;
 
 export interface FounderRecord {
-  seat: number;               // 1–10, permanent
+  seat: number;               // 1–11, permanent
   name: string;               // public display name or handle
   joinedAt: string;           // ISO date, UTC
   verificationHash: string;       // SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")
@@ -126,7 +126,7 @@ Cloud Function (`onCall`) that:
 2. Sanitizes `displayName` input (character whitelist, 64-char max length cap).
 3. Short-circuits duplicate activations via idempotency guard (based on transaction ID).
 4. Confirms payment was made via the alternative payment provider.
-5. Checks `founders` collection count < 10 atomically via Firestore transaction.
+5. Checks `founders` collection count < 11 atomically via Firestore transaction.
 6. Generates verification hash: `SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")`.
 7. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`.
 8. Makes a commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts`.
@@ -147,7 +147,7 @@ Add `founder` → `Infinity` (or 10_000 GB as practical limit) to `TIER_LIMITS_G
 #### NEW: `landing-page/src/components/FoundersSection.tsx`
 
 Marketing section for the landing page showing:
-- "10 Founding Seats" with live counter (reads from Firestore `founders_meta/count`).
+- "11 Total Seats" with live counter (reads from Firestore `founders_meta/count`).
 - Agreement terms displayed (price, desktop app access, the "name in code" commitment).
 - A "Become a Founder" CTA that initiates the alternative checkout/onboarding flow.
 - Names of existing founders (publicly visible once they join).
