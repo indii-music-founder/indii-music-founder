@@ -81,13 +81,14 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
         'script-src': isDevelopment
             ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"] // Dev needs eval for HMR
             : [
-                "'self'", 
+                "'self'",
+                "'wasm-unsafe-eval'",
                 ...ALLOWED_ORIGINS.google, 
                 'https://www.google.com/recaptcha/', 
                 'https://www.gstatic.com/recaptcha/',
                 'https://recaptcha.net',
                 'https://*.recaptcha.net'
-              ], // Production: allow Firebase and Google reCAPTCHA scripts
+              ], // Production: allow Firebase, Google reCAPTCHA scripts, and WASM without JS eval
 
         // Styles: self + inline (many UI libs need inline styles)
         'style-src': ["'self'", "'unsafe-inline'", ...ALLOWED_ORIGINS.cdn],
