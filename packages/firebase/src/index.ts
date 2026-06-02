@@ -26,7 +26,7 @@ import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-import { generateThumbnail } from "./lib/image_resizing";
+export { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
@@ -47,6 +47,7 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
+export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
@@ -1035,9 +1036,7 @@ import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
 
-export const imageResizing = {
-    generateThumbnail
-};
+
 
 /**
  * List GKE Clusters
