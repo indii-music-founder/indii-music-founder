@@ -6,17 +6,18 @@ description: Universal drop-anywhere recursive loop for progress review, unstick
 
 **Activates a self-reflective execution loop for progress review, unsticking blocked agents, and driving tasks to completion.**
 
-**Magic Phrase:** When agent says `"I'm done lick my balls, BOSSMAN"` → automatically invoke `/ci-validate`.
+**Completion Signal:** When the agent determines all tracked work is complete and verified, automatically invoke `/ci-validate`.
 
 ## 1. Context & Scan (MANDATORY)
 
 **Execute tools in parallel (// turbo):**
 
 - `git status` — Check repo safety
-- Read `task.md` — Check progress and blockers
-- Read `implementation_plan.md` — Verify strategy
+- Read the active task ledger in this order: current user objective/thread goal, `.agent/artifacts/task.md`, then root `task.md` only if it clearly matches the current goal.
+- Read the active implementation plan in this order: current user objective/thread goal, `.agent/artifacts/implementation_plan.md`, then root `implementation_plan.md` only if it clearly matches the current goal.
 - Read `.agent/skills/error_memory/ERROR_LEDGER.md` — Inject CI-breaking pattern awareness
 - **Audit:** Re-read ALL user prompts. Check: Acknowledged? Implemented? Verified?
+- **Stale Ledger Guard:** If `task.md` or `implementation_plan.md` describes an unrelated old task, do not use it as the source of truth. State that it is stale and proceed from the current user objective plus current worktree evidence.
 
 ## 1.5 Preventative Maintenance (Pattern Detection)
 
@@ -59,7 +60,7 @@ If agent reports being stuck, blocked, or unable to proceed:
 - **Three-Strike Rule:** If fixing the SAME issue fails 3x, **STOP** and request user help.
 - **Max Recursion Depth:** If `/go` called >12x within a session, **STOP** and ask for scope review.
 - **Strategy Failure:** Update `implementation_plan.md` immediately if approach fails.
-- **Magic Phrase Detection:** If agent outputs `"I'm done lick my balls, BOSSMAN"` → invoke `/ci-validate`
+- **Completion Detection:** If the agent says work is done, verify against the active objective and invoke `/ci-validate`.
 
 ## 5. Execution Loop (Single Task Per Iteration)
 
@@ -70,7 +71,7 @@ If agent reports being stuck, blocked, or unable to proceed:
 3. **Execution Integrity Check:** You CANNOT mark a task complete `[x]` if its implementation relies on a hardcoded string, a `TODO`, or a `[MOCK]` comment (unless the task explicitly requested a mock).
 4. **Verify Locally:** Ensure changes don't break adjacent code
 5. **Elevation Pass (via `/better`):** Run the `/better` command on the specific files you just modified to audit for structural integrity, performance, and defensive resilience *before* moving on.
-6. **Mark Complete:** Update `task.md` with `[x]` checkbox
+6. **Mark Complete:** Update the active task ledger with `[x]` checkbox. If no matching ledger exists, summarize completion evidence in the final response instead of editing an unrelated stale file.
 7. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
 8. **Loop or Exit:**
    - If tasks remain: re-invoke `/go`
@@ -100,15 +101,9 @@ If agent reports being stuck, blocked, or unable to proceed:
 
 ## 8. Completion & Auto-Trigger
 
-**When ALL tasks done, ALL user prompts addressed, AND Final Verification passes:**
+**When ALL tasks are done, ALL user prompts are addressed, and Final Verification passes, invoke `/ci-validate` automatically.**
 
-Output the magic phrase:
-
-```text
-I'm done lick my balls, BOSSMAN
-```
-
-**This triggers automatic `/ci-validate` invocation**, which runs:
+`/ci-validate` runs:
 
 - Auto-fix phase (Sentry + CodeRabbit cleanup)
 - Hunter phase (full bug scan)
@@ -122,7 +117,7 @@ I'm done lick my balls, BOSSMAN
 | Scenario | Action |
 | --- | --- |
 | Agent reports being stuck | `/go` (triggers Stuck Agent Detection) |
-| Agent says they're done | `/go` automatically invokes `/ci-validate` on magic phrase |
+| Agent says they're done | `/go` verifies the active objective and invokes `/ci-validate` |
 | You want to verify progress mid-task | `/go` (outputs State Snapshot for inspection) |
 | Need multi-task completion loop | `/go` (one task per invocation, recursive) |
 | Want to unstick and push through blockers | `/go` (Error Ledger + fix protocol) |
