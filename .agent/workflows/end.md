@@ -12,6 +12,8 @@ This command is run when the feature or task is deemed complete. It ensures ever
 - Review the initial user prompt and compare it against the completed work in `task.md`.
 - Verify that *everything* promised has been delivered.
 - Ensure there are no leftover `TODO` or `FIXME` comments related to this session's work.
+- **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
+- **Proof of Verification:** You are forbidden from stating "it works" or "I have verified this" without pasting the raw terminal output, test results, or explicit browser DOM state that proves it. If you cannot provide the raw output, the task is incomplete.
 
 ## 2. Standardized Closing Process
 Execute the formal note-taking and checkpointing process:
