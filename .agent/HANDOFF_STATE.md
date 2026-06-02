@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-01 22:29 EDT
+**Updated:** 2026-06-02 12:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-b28737c8e fix(chore): clean up remaining beta readiness issues and align ledger state
-f4010dce3 chore: session checkpoint [22:15]
-a2549985d Merge pull request #126 from indii-music-founder/codex/remove-dead-noise-texture
-bffe5368c fix(ui): remove dead external noise texture
-878a3825f chore(test): add deep test artifacts and coordination reports
-f25d5a1cb fix(maps): resolve React Wrapper blocking logic and restore rendering
-69b4792d4 fix(remote): race condition in mobile relay chat system, removed obsolete autoagent workflows
-efd08bf3f fix(maps): implement global MapsProvider to prevent race conditions
-0a0f382fe fix(harbor): restore environment dirs to satisfy harbor dataset validation
-0c9becc0e fix: stabilize Google Maps inline array reference
+7de109b5a chore(agent): update checkpoint for session end
+26974d50d Merge pull request #127 from indii-music-founder/fix-issue-084
+97fdcf24f chore(agents): refine slash command workflow loop
+2029dc5db fix(agent): harden workflow state and triad execution
+cd7606d1b chore(agents): integrate /better into /go execution loop and optimize /better workflow
+e814adc29 chore(agents): upgrade slash commands to prevent completion hallucination
+f3d60ad0a feat(workflow): implement persistent workflow state schemas and testing harness
+9a088b0dd refactor(firebase): entirely remove generateThumbnail cloud function
+9a05dc12e test(MobileNav): fix Framer Motion animation exit timeouts
+365ce40f3 fix(firebase): unblock generateThumbnail cloud function deployment
 ```
 
 ## Working State
 ```
-clean working tree
+?? .agent/test_ledger/API_AUDIT_FINDINGS.md
 ```
 
 ## Decisions
