@@ -1216,7 +1216,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** 🔴 HIGH
 - **Module:** Founders Program / Landing / Activation
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
-- **Summary:** The intended Founder model is 11 total seats: the I-I Founder internal seat for William/the builder, followed by 10 paid Founder buy-in seats. The repo only partially reflected this at discovery time. `activateFounderPass.ts` used `MAX_FOUNDER_SEATS = 11`, but `packages/renderer/src/config/founders.ts` still said `seats_total: 10`, its comments said seats 1-10, and the public `FOUNDERS` array was empty in the current worktree. Landing and checkout copy still said "10 Founders", "10 Seats. Final.", "No 11th founder", and "All 10 founding seats have been claimed."
+- **Summary:** The intended Founder model is 11 total seats: the i-i Founder internal seat for William/the builder, followed by 10 paid Founder buy-in seats. The repo only partially reflected this at discovery time. `activateFounderPass.ts` used `MAX_FOUNDER_SEATS = 11`, but `packages/renderer/src/config/founders.ts` still said `seats_total: 10`, its comments said seats 1-10, and the public `FOUNDERS` array was empty in the current worktree. Landing and checkout copy still said "10 Founders", "10 Seats. Final.", "No 11th founder", and "All 10 founding seats have been claimed."
 - **Files:**
   - `packages/renderer/src/config/founders.ts`
   - `packages/firebase/src/subscription/activateFounderPass.ts`
@@ -1231,7 +1231,7 @@ Caller can decide whether to retry, surface error, or silently log.
   - `docs/business-decisions/03_REVENUE_AND_PRICING.md`
   - `docs/flowcharts/founders-checkout-portal.md`
   - `docs/flowcharts/founder-dynamic-routing.md`
-- **Fix Required:** Establish one canonical seat model in code and copy: 11 total Founder seats, with the I-I Founder reserved/internal and 10 paid seats available. Update all UI copy, constants, tests, and docs to stop saying "10 founders total" or "No 11th founder." If the public I-I Founder covenant entry is not present in this checkout, do not invent personal data; add the structural support and flag the actual I-I Founder record as requiring verified name/UID/hash input.
+- **Fix Required:** Establish one canonical seat model in code and copy: 11 total Founder seats, with the i-i Founder reserved/internal and 10 paid seats available. Update all UI copy, constants, tests, and docs to stop saying "10 founders total" or "No 11th founder." If the public i-i Founder covenant entry is not present in this checkout, do not invent personal data; add the structural support and flag the actual i-i Founder record as requiring verified name/UID/hash input.
 - **UX Impact:** Paid beta users may see contradictory scarcity, incorrect seat numbers, or a public promise that conflicts with the admin activation limit.
 
 ---

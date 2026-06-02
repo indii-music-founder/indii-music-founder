@@ -47,7 +47,7 @@ These terms will be encoded immutably in `src/config/founders.ts` and signed:
 - **Access:** All current and future indii features for the lifetime of the software.
 - **Desktop Application Delivery:** Founders will receive standalone, installable applications (DMG for macOS, EXE for Windows) so they can run the system natively on their computers.
 - **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost.
-- **Seats:** 11 total Founder seats (the I-I Founder reserved/internal seat and 10 paid seats available).
+- **Seats:** 11 total Founder seats (the i-i Founder reserved/internal seat and 10 paid seats available).
 - **Name in code:** Each founder's name (or handle, their choice) is committed to the git repository in `src/config/founders.ts` and remains there for the lifetime of the software. This is their proof.
 - **Agreement hash:** `SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised. The pipe-delimited formula is the canonical recipe — founders can recompute it at any time.
 

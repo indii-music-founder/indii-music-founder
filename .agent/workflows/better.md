@@ -90,7 +90,7 @@ Apply lenses based on the scope (see Scope Governor above). Each lens looks at t
 - **Abstraction level** — Is the code at a consistent abstraction level, or does it jump between high-level orchestration and low-level details?
 - **Dead weight** — Are there unused imports, unreachable branches, zombie code, or redundant abstractions?
 - **Naming precision** — Do names tell the truth? A `handleClick` that also validates, transforms, and submits is a lie.
-- **Anti-Hallucination** — Are there `TODO` or `[MOCK]` comments masquerading as production logic? Scaffolding is not an elevated state.
+- **Anti-Hallucination Audit** — You MUST run a `grep` search for `TODO`, `[MOCK]`, and `stub` across the target files. If these exist, the code is NOT elevated and must be explicitly flagged or fixed. Scaffolding is not an elevated state.
 
 **For workflow/doc targets, examine:**
 - **Logical flow** — Do the steps follow a natural progression? Can any step be reordered without confusion?
@@ -211,8 +211,9 @@ npm run typecheck 2>&1 | tail -5
 1. **One change at a time.** Apply, verify, move to next. Never batch multiple risky changes.
 2. **Verify after EACH change.** If typecheck or tests fail, REVERT immediately and try a different approach.
 3. **Preserve behavior.** Refactors must not change external behavior. If a rename changes an API contract, that's a breaking change — flag it, don't do it.
-4. **Preserve comments and docs.** Never delete documentation that isn't directly contradicted by your change.
-5. **Boy Scout exits.** Fix obvious lint issues, unused imports, and formatting in the immediate vicinity. But don't reformulate the entire file.
+4. **Cross-Boundary Verification.** If you change a data shape, you MUST manually verify the consumer of that data expects the new shape. When interacting with external services (Firestore, Cloud Functions), you cannot rely purely on isolated/mocked tests.
+5. **Preserve comments and docs.** Never delete documentation that isn't directly contradicted by your change.
+6. **Boy Scout exits.** Fix obvious lint issues, unused imports, and formatting in the immediate vicinity. But don't reformulate the entire file.
 
 ### 3.3 Verification Gauntlet
 
