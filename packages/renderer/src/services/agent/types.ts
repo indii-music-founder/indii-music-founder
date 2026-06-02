@@ -434,68 +434,24 @@ export interface AgentRegistryProvider {
 // Workflow Execution State Machine (Priority 1: Agentic Harness Primitive #4)
 // ============================================================================
 
-/**
- * Lifecycle status for a workflow execution or individual step.
- * Transitions: planned → executing → step_complete | failed | cancelled
- * Terminal states: completed, failed, cancelled
- */
-export type WorkflowExecutionStatus =
-    | 'planned'
-    | 'executing'
-    | 'step_complete'
-    | 'awaiting_approval'
-    | 'completed'
-    | 'failed'
-    | 'cancelled'
-    | 'skipped';
+import type {
+    WorkflowExecutionStatus,
+    WorkflowStepStatus,
+    WorkflowEdge,
+    WorkflowStep,
+    WorkflowStepExecution,
+    WorkflowExecution
+} from '@indii/shared';
 
-export interface WorkflowEdge {
-    from: string;
-    to: string;
-    condition?: (execution: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
-    label?: string; // Human-readable label for the transition
-    metadata?: Record<string, any>; // Arbitrary metadata for the transition
-}
+export type {
+    WorkflowExecutionStatus,
+    WorkflowStepStatus,
+    WorkflowEdge,
+    WorkflowStep,
+    WorkflowStepExecution,
+    WorkflowExecution
+};
 
-export interface WorkflowStep {
-    id: string; // Unique identifier for the step within the workflow
-    agentId: string;
-    prompt: string;
-    priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
-    timeoutMs?: number; // Optional timeout for this specific step
-    retryCount?: number; // How many times to retry on failure
-}
-
-/**
- * Persisted state for a single step within a workflow execution.
- */
-export interface WorkflowStepExecution {
-    stepId: string;
-    agentId: string;
-    prompt: string;
-    status: WorkflowExecutionStatus;
-    idempotencyKey: string;
-    result?: string;
-    error?: string;
-    startedAt?: number;
-    completedAt?: number;
-}
-
-/**
- * Persisted state for an entire workflow run.
- * Stored in Firestore under `users/{userId}/workflowExecutions/{id}`.
- */
-export interface WorkflowExecution {
-    id: string;
-    workflowId: string;
-    sessionId?: string;
-    userId: string;
-    status: WorkflowExecutionStatus;
-    steps: Record<string, WorkflowStepExecution>;
-    edges: WorkflowEdge[];
-    createdAt: number;
-    updatedAt: number;
-}
 
 /**
  * A single frame in the multi-turn context stack.
