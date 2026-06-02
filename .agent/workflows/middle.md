@@ -9,7 +9,8 @@ description: Mid-session execution and review loop. Leverages the /go command to
 This command is used during the core build phase to manage iterative execution, handle blockers, and map complex state logic dynamically.
 
 ## 1. Smart Execution Analysis
-- Analyze the active `task.md` and `implementation_plan.md` to understand where the execution currently stands.
+- Analyze the active task ledger and implementation plan to understand where execution currently stands. Prefer the current user objective/thread goal first, then `.agent/artifacts/task.md` and `.agent/artifacts/implementation_plan.md`, and use root `task.md` / `implementation_plan.md` only if they clearly match the current goal.
+- **Stale Ledger Guard:** If a task or plan file describes unrelated old work, do not treat it as authoritative. State the mismatch and proceed from current user intent plus current worktree evidence.
 - Dynamically decide which tools, sub-agents, or commands are needed for the current iteration.
 - **Context Drift:** If the conversation has drifted or feels misaligned, invoke **`/review`** to pause, summarize progress, and explicitly realign with the user.
 - **Cross-Boundary Contract Verification:** When connecting two systems (e.g., Renderer writing to Firestore, and Cloud Function reading from Firestore), you MUST manually verify that the write-schema and read-schema are completely identical in casing and type. Do not rely on isolated unit tests; verify the shared contract.
@@ -29,4 +30,4 @@ As complex logic, state transitions, or component architectures are built:
 - Invoke the **`/flowchart`** command to generate micro/technical diagrams (e.g., Zustand state flows, Component renders, Firestore queries).
 - **Save Requirement:** The generated flowchart MUST be saved as a markdown file inside `docs/flowcharts/` (e.g., `docs/flowcharts/feature-name-micro.md`) with a detailed transition breakdown.
 
-**Repeat the `/middle` process until all tasks in `task.md` are marked complete.**
+**Repeat the `/middle` process until all tasks in the active task ledger are marked complete, or until the current user objective is verified complete when no matching ledger exists.**
