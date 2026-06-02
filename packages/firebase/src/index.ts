@@ -26,7 +26,7 @@ import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-export { generateThumbnail } from "./lib/image_resizing";
+
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
