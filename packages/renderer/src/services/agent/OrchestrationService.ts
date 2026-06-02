@@ -4,6 +4,7 @@ import { AgentContext } from './types';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { workflowStateService } from './WorkflowStateService';
+import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
@@ -56,7 +57,7 @@ export class OrchestrationService {
         const execution = await workflowStateService.getExecution(userId, executionId);
         if (!execution) throw new Error(`Execution ${executionId} not found.`);
 
-        if (execution.status === 'completed' || execution.status === 'cancelled') {
+        if (execution.status === WorkflowExecutionStatusEnum.enum.completed || execution.status === WorkflowExecutionStatusEnum.enum.cancelled) {
             return `Workflow ${executionId} is already ${execution.status}. No steps to resume.`;
         }
 
@@ -95,7 +96,7 @@ export class OrchestrationService {
                 if (!stepState) return false;
                 
                 // Only process planned or failed (resumable) steps
-                if (stepState.status !== 'planned' && stepState.status !== 'failed') return false;
+                if (stepState.status !== WorkflowStepStatusEnum.enum.planned && stepState.status !== WorkflowStepStatusEnum.enum.failed) return false;
 
                 // Identify incoming edges
                 const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
@@ -106,7 +107,7 @@ export class OrchestrationService {
                 // For non-roots, check if all upstream dependencies are resolved (complete or skipped)
                 return incomingEdges.every(edge => {
                     const depState = execution.steps[edge.from];
-                    return depState && (depState.status === 'step_complete' || depState.status === 'skipped');
+                    return depState && (depState.status === WorkflowStepStatusEnum.enum.step_complete || depState.status === WorkflowStepStatusEnum.enum.skipped);
                 });
             });
 
@@ -114,7 +115,7 @@ export class OrchestrationService {
                 // Check if we're actually done or just stuck
                 const hasPending = workflow.steps.some(s => {
                     const status = execution.steps[s.id]?.status;
-                    return status === 'planned' || status === 'executing' || status === 'failed';
+                    return status === WorkflowStepStatusEnum.enum.planned || status === WorkflowStepStatusEnum.enum.executing || status === WorkflowStepStatusEnum.enum.failed;
                 });
                 
                 if (!hasPending) {
@@ -228,11 +229,11 @@ export class OrchestrationService {
         }
 
         const finalState = await workflowStateService.getExecution(userId, executionId);
-        const allDone = Object.values(finalState?.steps || {}).every(s => s.status === 'step_complete' || s.status === 'skipped');
+        const allDone = Object.values(finalState?.steps || {}).every(step => step.status === WorkflowStepStatusEnum.enum.step_complete || step.status === WorkflowStepStatusEnum.enum.skipped);
         
         if (allDone) {
             report += `✅ **Graph Orchestration Complete.** All reachable nodes have been processed.`;
-        } else if (finalState?.status === 'cancelled') {
+        } else if (finalState?.status === WorkflowExecutionStatusEnum.enum.cancelled) {
             report += `🛑 **Workflow Cancelled.**`;
         } else {
              report += `⚠️ **Workflow terminated with unresolved nodes.** Check graph connectivity.`;

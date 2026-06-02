@@ -1,4 +1,4 @@
-import type { HarnessDomain, HarnessRun } from './types';
+import type { HarnessDomain, HarnessRun } from './types.js';
 
 export interface HarnessContext {
   userId: string;

@@ -29,7 +29,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | **Free** | `FREE` | $0 | $0 | Basic creative tools, 1 GB storage, watermarked exports |
 | **Pro** | `PRO` | `$____/mo` | `$____/yr` | Full creative suite, 50 GB storage, unwatermarked exports, basic distribution |
 | **Studio** | `STUDIO` | `$____/mo` | `$____/yr` | Everything in Pro + unlimited storage, priority rendering, advanced analytics, multi-distributor support |
-| **Founder** | `FOUNDER` | $2,500 (one-time) | Lifetime | Everything, forever. 11 total Founder seats (Founder #1 reserved/internal and 10 paid seats available). |
+| **Founder** | `FOUNDER` | $2,500 (one-time) | Lifetime | Everything, forever. 11 total Founder seats (the I-I Founder reserved/internal seat and 10 paid seats available). |
 
 ### Pricing Research (Competitor Landscape)
 
@@ -185,4 +185,3 @@ Firebase App Check prevents API abuse by verifying that requests come from your 
 3. Update GitHub Secrets
 4. Deploy Cloud Functions
 5. The Founders Pass, subscription checkout, and tier enforcement all go live
-
