@@ -55,7 +55,7 @@ export const AGREEMENT_TERMS = {
  * All fields are set at the time of joining and never modified.
  */
 export interface FounderRecord {
-  /** Permanent paid seat number. The internal I-I Founder seat is reserved separately. */
+  /** Permanent paid seat number. The internal i-i Founder seat is reserved separately. */
   seat: number;
   /** Public display name or handle chosen by the founder */
   name: string;
@@ -70,7 +70,7 @@ export interface FounderRecord {
 /**
  * THE FOUNDERS
  *
- * The I-I Founder seat is the builder's reserved internal seat; seats #2-#11
+ * The i-i Founder seat is the builder's reserved internal seat; seats #2-#11
  * are the paid Founder buy-in seats. Each entry below represents a permanent covenant between
  * New Detroit Music LLC and the named individual. This array is the on-chain record.
  *

@@ -566,7 +566,7 @@ export interface GraphExecutionState {
     executionId: string;
     /** Map of node ID to its current execution status and output. */
     nodeStates: Record<string, {
-        status: WorkflowExecutionStatus;
+        status: WorkflowStepStatus;
         output?: string;
         error?: string;
         startedAt?: number;

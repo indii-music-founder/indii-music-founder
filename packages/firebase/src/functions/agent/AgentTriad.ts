@@ -1,4 +1,4 @@
-import { logger } from '@/utils/logger';
+import * as logger from 'firebase-functions/logger';
 import { WorkflowStepStatusEnum, type WorkflowStepStatus } from '@indii/shared';
 
 export interface TriadResult {
@@ -61,14 +61,17 @@ export class AgentTriad {
         try {
             logger.info(`[AgentTriad] Starting Triad Loop for step ${context.stepId}`);
 
+            // Step 1: Planning
             const plan = await this.invokePlanner(context, objective);
             logger.debug(`[AgentTriad] Plan created: ${plan.substring(0, 50)}...`);
 
             while (retries < maxRetries) {
+                // Step 2: Generation
                 logger.info(`[AgentTriad] Invoking Generator (Attempt ${retries + 1}/${maxRetries})`);
                 const generationResult = await this.invokeGenerator(context, objective, plan, lastError);
 
-                logger.info('[AgentTriad] Invoking Evaluator');
+                // Step 3: Evaluation
+                logger.info(`[AgentTriad] Invoking Evaluator`);
                 const evaluation = await this.invokeEvaluator(context, objective, plan, generationResult);
 
                 if (evaluation.passed) {
@@ -89,9 +92,10 @@ export class AgentTriad {
                 status: WorkflowStepStatusEnum.enum.FAILED,
                 error: `Failed to pass evaluation after ${maxRetries} retries. Last feedback: ${lastError}`
             };
+
         } catch (err) {
-            const error = err instanceof Error ? err : new Error('Unknown error in Triad');
-            logger.error('[AgentTriad] Fatal error in triad loop', error);
+            const error = err instanceof Error ? err : new Error(String(err));
+            logger.error(`[AgentTriad] Fatal error in triad loop`, error);
             return {
                 status: WorkflowStepStatusEnum.enum.FAILED,
                 error: error.message

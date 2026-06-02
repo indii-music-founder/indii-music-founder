@@ -14,7 +14,7 @@ This root file is a current index for agents. The detailed issue ledger is:
 - **Status:** ✅ FIXED
 - **Severity:** HIGH
 - **Ledger:** `.agent/test_ledger/OPEN_ISSUES.md`
-- **Summary:** Founder copy and code now agree on 11 total Founder seats: 1 reserved I-I Founder seat plus 10 paid Founder buy-in seats.
+- **Summary:** Founder copy and code now agree on 11 total Founder seats: 1 reserved i-i Founder seat plus 10 paid Founder buy-in seats.
 
 ### ISSUE-087: Founder Desktop Installer Release Pipeline Is Not Ready End-To-End
 - **Status:** 🟡 PARTIAL

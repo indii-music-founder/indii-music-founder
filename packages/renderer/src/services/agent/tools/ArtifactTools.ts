@@ -14,16 +14,16 @@ export const ArtifactTools = {
     }) => {
         try {
             const { filename, content, artifactType, requestFeedback } = args;
-            
+
             const result = await window.electronAPI!.agent.createArtifact(filename, content, {
                 artifactType: artifactType || 'other',
                 requestFeedback: !!requestFeedback
             });
-            
+
             if (result.success) {
                 return {
                     ...toolSuccess(result.data, `Artifact ${filename} created successfully.`),
-                    ...(requestFeedback ? { status: 'awaiting_approval' } : {})
+                    ...(requestFeedback ? { status: 'AWAITING_HUMAN' } : {})
                 };
             } else {
                 return toolError(result.error || "Failed to create artifact", "ARTIFACT_CREATE_FAILED");
@@ -51,7 +51,7 @@ export const ArtifactTools = {
     }) => {
         try {
             const result = await window.electronAPI!.agent.multiReplaceFileContent(args);
-            
+
             if (result.success) {
                 return toolSuccess(result.data, `File ${args.targetFile} modified successfully.`);
             } else {

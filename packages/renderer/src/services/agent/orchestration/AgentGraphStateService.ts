@@ -5,6 +5,7 @@ import type {
     GraphExecutionState,
     AgentGraph,
     WorkflowExecutionStatus,
+    WorkflowStepStatus,
 } from '../types';
 
 /**
@@ -33,24 +34,24 @@ class AgentGraphStateServiceImpl {
         const service = this.getService(userId);
         const id = uuidv4();
 
-        const nodeStates: Record<string, { status: WorkflowExecutionStatus }> = {};
+        const nodeStates: Record<string, { status: WorkflowStepStatus }> = {};
         for (const node of graph.nodes) {
             nodeStates[node.id] = {
-                status: 'planned' as WorkflowExecutionStatus,
+                status: 'PLANNED',
             };
         }
 
         const execution: GraphExecutionState = {
             graphId: graph.id,
             executionId: id,
-            nodeStates: nodeStates as Record<string, { 
-                status: WorkflowExecutionStatus; 
-                output?: string; 
-                error?: string; 
-                startedAt?: number; 
-                completedAt?: number 
+            nodeStates: nodeStates as Record<string, {
+                status: WorkflowStepStatus;
+                output?: string;
+                error?: string;
+                startedAt?: number;
+                completedAt?: number
             }>,
-            status: 'planned',
+            status: 'PLANNED',
             graph,
         };
 
@@ -77,7 +78,7 @@ class AgentGraphStateServiceImpl {
         executionId: string,
         nodeId: string,
         updates: {
-            status: WorkflowExecutionStatus;
+            status: WorkflowStepStatus;
             output?: string;
             error?: string;
             startedAt?: number;
@@ -85,7 +86,7 @@ class AgentGraphStateServiceImpl {
         }
     ): Promise<void> {
         const service = this.getService(userId);
-        
+
         // Prepare atomic update object using dot-notation for nested fields
         const fieldUpdates: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(updates)) {
@@ -93,8 +94,8 @@ class AgentGraphStateServiceImpl {
         }
 
         // Also update overall graph status if this node transition implies it
-        if (updates.status === 'executing') {
-            fieldUpdates.status = 'executing';
+        if (updates.status === 'EXECUTING_GENERATION') {
+            fieldUpdates.status = 'EXECUTING';
         }
 
         await service.update(executionId, fieldUpdates as Partial<GraphExecutionState>);
@@ -115,7 +116,7 @@ class AgentGraphStateServiceImpl {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateExecutionMetadata(userId: string, executionId: string, metadata: Record<string, any>): Promise<void> {
         const service = this.getService(userId);
-        
+
         const fieldUpdates: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(metadata)) {
             fieldUpdates[`metadata.${key}`] = value;
