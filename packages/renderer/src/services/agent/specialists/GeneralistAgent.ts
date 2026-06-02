@@ -61,6 +61,23 @@ export class GeneralistAgent extends BaseAgent {
         // Initialization moved to async initialize() to prevent circular execution
     }
 
+    private isHardStopError(message: string): boolean {
+        const lower = message.toLowerCase();
+        return lower.includes('verification failed') ||
+            lower.includes('permission_denied') ||
+            lower.includes('unauthenticated') ||
+            lower.includes('app check') ||
+            lower.includes('missing or insufficient permissions') ||
+            lower.includes('rate limit') ||
+            lower.includes('resource-exhausted') ||
+            lower.includes('resource_exhausted') ||
+            lower.includes('quota') ||
+            lower.includes('cost control') ||
+            lower.includes('cost ledger') ||
+            lower.includes('billing') ||
+            lower.includes('prepayment credits');
+    }
+
     /**
      * Initializes the agent by loading tools dynamically.
      * This must be called after instantiation by the registry.
@@ -830,12 +847,9 @@ CURRENT REQUEST: ${task}
                 logger.error('[indii:Conductor] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
-                // CRITICAL: Break loop immediately on fatal errors to prevent "AI Verification Failed" spam
-                const isFatal = message.includes('Verification Failed') ||
-                    message.includes('PERMISSION_DENIED') ||
-                    message.includes('Unauthenticated') ||
-                    message.includes('App Check') ||
-                    message.includes('Missing or insufficient permissions');
+                // CRITICAL: Break loop immediately on infrastructure, billing, quota,
+                // and auth failures so one visible prompt cannot amplify hidden retries.
+                const isFatal = this.isHardStopError(message);
 
                 if (isFatal || iterations >= MAX_ITERATIONS) {
                     return {

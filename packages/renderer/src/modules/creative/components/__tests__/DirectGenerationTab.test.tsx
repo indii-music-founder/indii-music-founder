@@ -248,4 +248,29 @@ describe('DirectGenerationTab', () => {
             expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Gemini model is not available in this project or region');
         });
     });
+
+    it('surfaces depleted Google AI Studio prepayment credits as a billing blocker', async () => {
+        mockHttpsCallable.mockRejectedValueOnce({
+            code: 'functions/resource-exhausted',
+            message: 'Image generation failed: {"error":{"code":429,"message":"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ","status":"RESOURCE_EXHAUSTED"}}',
+            details: {
+                cause: 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.',
+            },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(
+                'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.'
+            );
+        });
+    });
 });

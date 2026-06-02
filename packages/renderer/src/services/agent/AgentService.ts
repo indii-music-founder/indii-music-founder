@@ -19,7 +19,6 @@ import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
 
-import { CostControlService } from '@/services/billing/CostControlService';
 /**
  * AgentService is the primary entry point for agent-related operations.
  * It manages the lifecycle of user messages, context resolution, orchestration, and execution.
@@ -1152,25 +1151,6 @@ The user will see this plan and can approve it to start execution.`;
         ];
 
         try {
-
-        // Cost Control: Agent streaming is inexpensive but still tracked
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-            const streamCostCheck = await CostControlService.checkAndReserve({
-                operationType: 'agent_stream',
-                estimatedCost: 0.001, // ~$0.001 per request
-                userId: currentUser.uid,
-                metadata: {
-                    model: INTELLIGENCE_MODELS.TEXT.FAST,
-                    messageLength: text.length,
-                    source: 'web',
-                },
-            });
-
-            if (!streamCostCheck.allowed) {
-                throw new Error(`Agent streaming blocked: ${streamCostCheck.reason}`);
-            }
-        }
 
             const { stream } = await AutonomousIntelligence.generateContentStream(
                 contents,
