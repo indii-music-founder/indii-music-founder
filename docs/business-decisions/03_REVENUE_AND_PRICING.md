@@ -102,7 +102,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | # | Item | Current Setting | Confirm? |
 |---|------|----------------|----------|
 | B4a | Price | $2,500 USD one-time | ✅ / Change: `$_____` |
-| B4b | Total seats | 10 | ✅ / Change: `_____` |
+| B4b | Total seats | 11 (1 reserved, 10 paid) | ✅ / Change: `_____` |
 | B4c | Access level | All features, forever | ✅ |
 | B4d | API costs | Founders bring their own key | ✅ |
 | B4e | Name in code | Permanent git entry in `src/config/founders.ts` | ✅ |

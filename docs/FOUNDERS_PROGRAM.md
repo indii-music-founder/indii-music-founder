@@ -24,7 +24,7 @@
 ## Task 2: "Founder" Codebase Integration Protocol (SOP)
 
 ### 1.0 Objective
-Embed the identities of the 10 Founders into the `indii-Alpha-Electron` codebase as a permanent honorific, without granting repository write access, copyright, or intellectual property claims.
+Embed the identities of the 11 Founders into the `indii-Alpha-Electron` codebase as a permanent honorific, without granting repository write access, copyright, or intellectual property claims.
 
 ### 2.0 Implementation Strategy
 *   **2.1 Data Storage:** Founder names will be stored in a strictly read-only, hardcoded array within the shared constants directory: `packages/shared/src/constants/founders.ts`.
@@ -52,12 +52,12 @@ Embed the identities of the 10 Founders into the `indii-Alpha-Electron` codebase
 ## Task 3: Firebase Isolation Requirements
 
 ### 1.0 Environment Segregation
-*   **1.1 Dedicated Production Project:** A specific Firebase project (`indii-founders-prod`) must be provisioned exclusively for the 10 Founders. This project must not share resources, databases, or API keys with internal QA, staging, or generic production environments.
+*   **1.1 Dedicated Production Project:** A specific Firebase project (`indii-founders-prod`) must be provisioned exclusively for the 11 Founders. This project must not share resources, databases, or API keys with internal QA, staging, or generic production environments.
 *   **1.2 Local Sandbox Strictness:** Local development must enforce the use of `firebase emulators:start`. The application must programmatically verify the `process.env.NODE_ENV` or `VITE_APP_ENV` to prevent local builds from accidentally writing to the `indii-founders-prod` database.
 
 ### 2.0 Authentication & Access Control
-*   **2.1 Manual Provisioning:** Firebase Authentication "Sign-up" capabilities must be disabled. The 10 Founder accounts must be manually created by the backend administrator via the Firebase Admin SDK.
-*   **2.2 UID Allowlisting:** The authenticated UIDs of the 10 Founders must be explicitly allowlisted in Firestore Security Rules and Storage Security Rules.
+*   **2.1 Manual Provisioning:** Firebase Authentication "Sign-up" capabilities must be disabled. The 11 Founder accounts must be manually created by the backend administrator via the Firebase Admin SDK.
+*   **2.2 UID Allowlisting:** The authenticated UIDs of the 11 Founders must be explicitly allowlisted in Firestore Security Rules and Storage Security Rules.
 
 ### 3.0 API Key & Security Protocol
 *   **3.1 Key Distribution:** Live API keys for `indii-founders-prod` are to be injected into the Electron build process via secure CI/CD secrets. They must never be committed to repository version control.
@@ -69,7 +69,7 @@ Embed the identities of the 10 Founders into the `indii-Alpha-Electron` codebase
       match /databases/{database}/documents {
         // Only allow hardcoded Founder UIDs to read/write their own data
         function isAuthorizedFounder() {
-          let founders = ['UID1', 'UID2', 'UID3', 'UID4', 'UID5', 'UID6', 'UID7', 'UID8', 'UID9', 'UID10'];
+          let founders = ['UID1', 'UID2', 'UID3', 'UID4', 'UID5', 'UID6', 'UID7', 'UID8', 'UID9', 'UID10', 'UID11'];
           return request.auth != null && request.auth.uid in founders;
         }
 

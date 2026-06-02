@@ -1,39 +1,53 @@
-# Critical Build Failures (Regression Report)
+# Open Issues
 
-This document contains all surfaced issues that are currently causing the `main` branch to fail CI/CD build checks. These are the priority issues for the Fix Agent.
+This root file is a current index for agents. The detailed issue ledger is:
 
-## 1. Global TypeScript Regressions (`@types/react` Conflict)
-**Severity:** CRITICAL (Breaks > 60 files)
-**Symptom:** `error TS2786: 'XYZ' cannot be used as a JSX component... Type 'bigint' is not assignable to type 'ReactNode'`
-**Root Cause:** A newer dependency (likely `@remotion` or `@radix-ui`) has transitively pulled in `@types/react@19` and `@types/react-dom@19`. This conflicts globally with the project's React 18 typings, invalidating `ReactNode` across the entire codebase.
-**Fix required:** Add `"@types/react": "18.3.3"` and `"@types/react-dom": "18.3.0"` to the `"overrides"` (or `"resolutions"`) block in the root `package.json` to lock the types down to version 18.
+- `.agent/test_ledger/OPEN_ISSUES.md`
 
-## 2. Broken Distribution Service Integrations
-**Severity:** HIGH
-**Files:**
-- `packages/renderer/src/services/distribution/__tests__/SFTPDeliveryPipeline.test.ts`
-- `packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts`
-- `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts`
-- `packages/renderer/src/services/distribution/DistributionService.ts`
-**Symptom:** Refactoring regressions. 
-- The tests are trying to import `DistributionService` which doesn't exist (possibly renamed to `distributionService`).
-- Adapters are calling `.listDirectory` and `.readFile` on `ElectronSFTPAPI`, which do not exist on that interface.
-- `DistributionService.ts` is attempting to access `.report` and `.csvData` on objects that don't have those properties.
+**Last updated:** 2026-06-02T01:20Z
+**Current main:** `a2549985d62b97a06c4ee929e7f2b96420842aa8`
+**Main deploy:** Green - GitHub Actions run `26791791086` completed successfully after PR #126.
 
-## 3. Firebase & Core Service Type Errors
-**Severity:** HIGH
-**Files:**
-- `packages/renderer/src/services/firebase.ts`
-- `packages/renderer/src/services/MembershipService.integration.test.ts`
-**Symptom:** 
-- `firebase.ts` throws `Cannot find name 'ReCaptchaEnterpriseProvider'`. A Firebase AppCheck import is missing.
-- The `MembershipService` test tries to use `MembershipService` as a type interface instead of an instantiated value (needs `typeof MembershipService`).
+## Active Beta-Readiness Issues
 
-## 4. Failing Unit Tests
-**Severity:** HIGH
-**Test Outputs:**
-1. **`useReleases.test.ts` & `DesignCanvas.export.test.tsx`**: Both throw `TypeError: Cannot read properties of null (reading 'useState'/'useCallback')`. This is a classic React testing environment mismatch. It usually happens when the test renderer uses a different React instance than the components. This may be solved by fixing the `@types/react` conflict mentioned above.
-2. **`DatasetQuality.validation.test.ts`**: Fails dataset assertions: "every agent dataset should have at least 20 examples (expected 20 <= 5)" and "total example count should be at least 900 (expected 0 >= 900)".
-3. **`QA_Batching.test.ts`**: Throws `AppException: Quota check failed. Operation blocked to prevent untracked spend.` The TokenUsageService is blocking a mocked batch request during testing.
+### ISSUE-079: Founder Seat Model Split-Brain Across Product Surfaces
+- **Status:** ✅ FIXED
+- **Severity:** HIGH
+- **Ledger:** `.agent/test_ledger/OPEN_ISSUES.md`
+- **Summary:** Founder copy and code now perfectly agree on 11 total Founder seats (1 reserved Founder #1 + 10 paid seats).
 
-*Note: Sentry was also checked for the `indiimusic / indii_music_founder` organization, but no new unresolved crashes were found in production/staging. The app's breakages are entirely contained within the build/test pipeline.*
+### ISSUE-087: Founder Desktop Installer Release Pipeline Is Not Ready End-To-End
+- **Status:** 🟡 PARTIAL
+- **Severity:** HIGH
+- **Ledger:** `.agent/test_ledger/OPEN_ISSUES.md`
+- **Summary:** Verify the beta download promise end-to-end: current macOS DMG and Windows EXE exist locally, but the Firebase Storage upload path and Founder-portal authorization logic still need proof.
+
+### ISSUE-088: Dependency Audit Still Reports High/Critical Vulnerabilities
+- **Status:** ✅ FIXED (partially risk-accepted)
+- **Severity:** HIGH
+- **Ledger:** `.agent/test_ledger/OPEN_ISSUES.md`
+- **Summary:** The original audit reported 44 vulnerabilities (6 high, 5 critical). The current verified state is 37 total (4 high, 0 critical). The remaining 4 high vulnerabilities belong to the Mastra/OpenTelemetry chain which was formally risk-accepted prior to beta launch.
+
+### ISSUE-089: Green CI Still Emits Launch-Readiness Warning Noise
+- **Status:** ✅ FIXED
+- **Severity:** MEDIUM
+- **Ledger:** `.agent/test_ledger/OPEN_ISSUES.md`
+- **Summary:** Cleaned up ESLint unused symbols, upgraded getsentry action to v3 (resolving Node 20 deprecation), and explicitly generated production sourcemaps to fix Sentry missing mapping warnings.
+
+## Current Verification Snapshot
+
+- `npm run typecheck`: PASS on current main before PR #126 and in GitHub Actions after merge.
+- Full unit-test shards: PASS in GitHub Actions after merge.
+- Build, staging deploy, staging E2E, and production deploy: PASS in GitHub Actions run `26791791086`.
+- Live browser smoke after production deploy: PASS for `https://indii.music`, `https://indii-music-studio.web.app`, and `https://indii-music-founder.web.app`.
+
+## Recently Fixed
+
+- ISSUE-080 through ISSUE-086 were resolved by the June 1 launch-readiness agents and are recorded in the detailed ledger.
+- PR #126 removed dead external noise texture dependencies that caused the landing page to request `https://grainy-gradients.vercel.app/noise.svg` and fixed a separate unresolved `/noise.png` reference.
+
+## Notes For Agents
+
+- Do not treat the old TypeScript/test regression list as current; main is green as of the run above.
+- Add new product, CI, flowchart, or beta-launch issues to `.agent/test_ledger/OPEN_ISSUES.md` using the next issue number.
+- Keep flowcharts in `docs/flowcharts/` synchronized with any code or runtime-model fixes.

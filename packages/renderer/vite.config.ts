@@ -59,6 +59,7 @@ export default defineConfig({
     },
     build: {
         outDir: resolve(repoRoot, 'dist/renderer'),
+        sourcemap: true,
         chunkSizeWarningLimit: 2500,
         rollupOptions: {
             external: ['@remotion/renderer', '@remotion/cloudrun', '@remotion/cloudrun/client'],
