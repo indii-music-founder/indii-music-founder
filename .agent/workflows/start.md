@@ -14,6 +14,7 @@ Before taking any action, analyze the current workspace:
 - Review any open files or recently modified files.
 - **Clarification Gate:** If the user's prompt is underspecified, ASK clarifying questions right now to determine *exactly what* needs to be built.
 - **Alignment:** If the task requires deep specialization, invoke **`/review`** to explicitly align on persona and constraints before proceeding.
+- **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
 
 ## 2. Environment Bootstrap (via `/opp`)
 Invoke the **Operator Persona Activation**:

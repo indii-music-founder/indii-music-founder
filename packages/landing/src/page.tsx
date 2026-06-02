@@ -298,13 +298,13 @@ export default function Home() {
 
           <div className="relative z-10 flex flex-col items-center text-center">
             <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 font-bold text-[10px] md:text-xs tracking-widest uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-              10 Seats Maximum • Lifetime Access
+              10 Paid Seats Available • Lifetime Access
             </div>
             <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
               The Founders Agreement
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
+              We are opening exactly <strong className="text-white">10 paid lifetime seats (11 total)</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
