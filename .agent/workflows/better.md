@@ -90,6 +90,7 @@ Apply lenses based on the scope (see Scope Governor above). Each lens looks at t
 - **Abstraction level** — Is the code at a consistent abstraction level, or does it jump between high-level orchestration and low-level details?
 - **Dead weight** — Are there unused imports, unreachable branches, zombie code, or redundant abstractions?
 - **Naming precision** — Do names tell the truth? A `handleClick` that also validates, transforms, and submits is a lie.
+- **Anti-Hallucination** — Are there `TODO` or `[MOCK]` comments masquerading as production logic? Scaffolding is not an elevated state.
 
 **For workflow/doc targets, examine:**
 - **Logical flow** — Do the steps follow a natural progression? Can any step be reordered without confusion?
@@ -221,7 +222,8 @@ After ALL changes are applied:
 
 ```bash
 npm run typecheck 2>&1 | tail -10
-npx vitest run --reporter=verbose 2>&1 | tail -20
+# Run tests targeted at the files that were modified to save time and isolate scope
+npm test -- --run --related $(git diff --name-only | grep -E '\.(ts|tsx|js|jsx)$') 2>&1 | tail -20
 ```
 
 If the target was a UI component, use the browser tool to visually verify the component still renders correctly and the improvements are visible.
