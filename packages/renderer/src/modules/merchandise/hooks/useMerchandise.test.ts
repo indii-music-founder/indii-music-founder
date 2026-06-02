@@ -124,4 +124,24 @@ describe('useMerchandise', () => {
         expect(result.current.standardProducts).toHaveLength(2);
         expect(result.current.proProducts).toHaveLength(1);
     });
+
+    it('falls back to zero stats instead of blocking the dashboard when revenue stats fail', async () => {
+        vi.mocked(MerchandiseService.getCatalog).mockResolvedValue([]);
+        vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
+            callback([]);
+            return () => { };
+        });
+        vi.mocked(revenueService.getUserRevenueStats).mockRejectedValueOnce(new Error('Revenue stats unavailable'));
+
+        const { result } = renderHook(() => useMerchandise());
+
+        await waitFor(() => {
+            expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.error).toBeNull();
+        expect(result.current.stats.totalRevenue).toBe(0);
+        expect(result.current.stats.unitsSold).toBe(0);
+        expect(result.current.topSellingProducts).toEqual([]);
+    });
 });
