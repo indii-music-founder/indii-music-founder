@@ -7,7 +7,11 @@ import type {
     WorkflowStep,
     WorkflowEdge,
 } from './types';
-import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shared';
+import {
+    WorkflowExecutionSchema,
+    WorkflowExecutionStatusEnum,
+    WorkflowStepStatusEnum
+} from '@indii/shared';
 
 /**
  * WorkflowStateService — Persistent Workflow State Machine
@@ -23,6 +27,23 @@ import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shar
 class WorkflowStateServiceImpl {
     private getService(userId: string): FirestoreService<WorkflowExecution> {
         return new FirestoreService<WorkflowExecution>(`users/${userId}/workflowExecutions`);
+    }
+
+    private normalizeExecution(execution: WorkflowExecution): WorkflowExecution {
+        return WorkflowExecutionSchema.parse({
+            edges: [],
+            ...execution,
+            steps: execution.steps || {},
+        }) as WorkflowExecution;
+    }
+
+    private serializeEdges(edges: WorkflowEdge[]): WorkflowEdge[] {
+        return edges.map(({ from, to, label, metadata }) => ({
+            from,
+            to,
+            ...(label ? { label } : {}),
+            ...(metadata ? { metadata } : {}),
+        }));
     }
 
     /**
@@ -46,7 +67,7 @@ class WorkflowStateServiceImpl {
                 stepId: step.id,
                 agentId: step.agentId,
                 prompt: step.prompt,
-                status: WorkflowStepStatusEnum.enum.planned,
+                status: WorkflowStepStatusEnum.enum.PLANNED,
                 idempotencyKey: uuidv4(),
             };
         }
@@ -56,9 +77,9 @@ class WorkflowStateServiceImpl {
             workflowId,
             sessionId,
             userId,
-            status: WorkflowExecutionStatusEnum.enum.planned,
+            status: WorkflowExecutionStatusEnum.enum.PLANNED,
             steps: stepExecutions,
-            edges,
+            edges: this.serializeEdges(edges),
             createdAt: now,
             updatedAt: now,
         };
@@ -73,7 +94,8 @@ class WorkflowStateServiceImpl {
      */
     async getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
         const service = this.getService(userId);
-        return await service.list();
+        const executions = await service.list();
+        return executions.map(execution => this.normalizeExecution(execution));
     }
 
     /**
@@ -82,7 +104,7 @@ class WorkflowStateServiceImpl {
     async getExecution(userId: string, executionId: string): Promise<WorkflowExecution | null> {
         const service = this.getService(userId);
         const execution = await service.get(executionId);
-        return execution || null;
+        return execution ? this.normalizeExecution(execution) : null;
     }
 
     /**
@@ -92,10 +114,11 @@ class WorkflowStateServiceImpl {
     async getResumableExecutions(userId: string): Promise<WorkflowExecution[]> {
         const service = this.getService(userId);
         const all = await service.list();
-        return all.filter(e =>
-            e.status === WorkflowExecutionStatusEnum.enum.planned ||
-            e.status === WorkflowExecutionStatusEnum.enum.executing ||
-            e.status === WorkflowExecutionStatusEnum.enum.failed
+        const executions = all.map(execution => this.normalizeExecution(execution));
+        return executions.filter(e =>
+            e.status === WorkflowExecutionStatusEnum.enum.PLANNED ||
+            e.status === WorkflowExecutionStatusEnum.enum.EXECUTING ||
+            e.status === WorkflowExecutionStatusEnum.enum.FAILED
         );
     }
 
@@ -109,17 +132,17 @@ class WorkflowStateServiceImpl {
             throw new Error(`Execution ${executionId} not found`);
         }
 
-        execution.status = WorkflowExecutionStatusEnum.enum.cancelled;
+        execution.status = WorkflowExecutionStatusEnum.enum.CANCELLED;
         execution.updatedAt = Date.now();
 
         // Cancel any planned/executing steps
         Object.values(execution.steps).forEach((step: WorkflowStepExecution) => {
             if (
-                step.status === WorkflowStepStatusEnum.enum.planned || 
-                step.status === WorkflowStepStatusEnum.enum.executing || 
-                step.status === WorkflowStepStatusEnum.enum.awaiting_approval
+                step.status === WorkflowStepStatusEnum.enum.PLANNED ||
+                step.status === WorkflowStepStatusEnum.enum.EXECUTING_GENERATION ||
+                step.status === WorkflowStepStatusEnum.enum.AWAITING_EVALUATION
             ) {
-                step.status = WorkflowStepStatusEnum.enum.cancelled;
+                step.status = WorkflowStepStatusEnum.enum.CANCELLED;
                 step.completedAt = Date.now();
             }
         });
@@ -147,13 +170,13 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        if (step.status !== WorkflowStepStatusEnum.enum.planned && step.status !== WorkflowStepStatusEnum.enum.failed) {
+        if (step.status !== WorkflowStepStatusEnum.enum.PLANNED && step.status !== WorkflowStepStatusEnum.enum.FAILED) {
             throw new Error(`Step ${stepId} cannot be executed - currently ${step.status} (Idempotency Lock)`);
         }
 
-        step.status = WorkflowStepStatusEnum.enum.executing;
+        step.status = WorkflowStepStatusEnum.enum.EXECUTING_GENERATION;
         step.startedAt = Date.now();
-        execution.status = WorkflowExecutionStatusEnum.enum.executing;
+        execution.status = WorkflowExecutionStatusEnum.enum.EXECUTING;
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);
@@ -181,17 +204,17 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = WorkflowStepStatusEnum.enum.step_complete;
+        step.status = WorkflowStepStatusEnum.enum.STEP_COMPLETE;
         step.result = result;
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
         // Check if all steps are complete or skipped
-        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
-            s.status === WorkflowStepStatusEnum.enum.step_complete || s.status === WorkflowStepStatusEnum.enum.skipped
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) =>
+            s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
         );
         if (allDone) {
-            execution.status = WorkflowExecutionStatusEnum.enum.completed;
+            execution.status = WorkflowExecutionStatusEnum.enum.COMPLETED;
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
         }
 
@@ -219,17 +242,17 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = WorkflowStepStatusEnum.enum.skipped;
+        step.status = WorkflowStepStatusEnum.enum.SKIPPED;
         step.result = reason;
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
         // Check if all steps are complete or skipped
-        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
-            s.status === WorkflowStepStatusEnum.enum.step_complete || s.status === WorkflowStepStatusEnum.enum.skipped
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) =>
+            s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
         );
         if (allDone) {
-            execution.status = WorkflowExecutionStatusEnum.enum.completed;
+            execution.status = WorkflowExecutionStatusEnum.enum.COMPLETED;
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
         }
 
@@ -259,10 +282,10 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = WorkflowStepStatusEnum.enum.failed;
+        step.status = WorkflowStepStatusEnum.enum.FAILED;
         step.error = error;
         step.completedAt = Date.now();
-        execution.status = WorkflowExecutionStatusEnum.enum.failed;
+        execution.status = WorkflowExecutionStatusEnum.enum.FAILED;
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);

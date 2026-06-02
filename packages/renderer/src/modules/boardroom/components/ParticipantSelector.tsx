@@ -37,7 +37,7 @@ export default function ParticipantSelector() {
         const graphNodes = activeGraphExecution.graph?.nodes || [];
         
         Object.entries(activeGraphExecution.nodeStates).forEach(([nodeId, state]) => {
-            if (state.status === 'executing') {
+            if (state.status === 'EXECUTING_GENERATION') {
                 const node = graphNodes.find(n => n.id === nodeId);
                 if (node?.agentId) {
                     executingIds.push(node.agentId);

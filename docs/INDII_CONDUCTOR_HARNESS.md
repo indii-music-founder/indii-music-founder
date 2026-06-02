@@ -20,6 +20,12 @@ The `DigitalHandshake` acts as a zero-trust gateway. Agents do not execute tools
 **4. Fully Auditable**
 Every `HANDSHAKE_REQUESTED`, `TOOL_AUTO_APPROVED`, or user-intervened action is written to an immutable `agentAuditTrails` sub-collection in Firestore. You always know exactly what an agent did, why it did it, and who approved it.
 
+## Current Implementation Boundary
+
+The long-running workflow state machine now uses canonical uppercase states such as `PLANNED`, `EXECUTING`, `AWAITING_HUMAN`, `AWAITING_EVALUATION`, `STEP_COMPLETE`, and `FAILED`. Legacy lowercase Firestore records are normalized on read, but new workflow writes must use the canonical enum values so the Cloud Function wake-up path can resume work correctly.
+
+`AgentTriad` is a dependency-injected Planner -> Generator -> Evaluator harness. It intentionally fails closed unless real planner, generator, and evaluator services are provided. Do not mark separated evaluation as complete unless a runtime path proves those three roles execute and persist their decisions end to end.
+
 ---
 
 ## What It Is Not

@@ -159,7 +159,7 @@ export class BaseAgent implements SpecializedAgent {
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
                     const errorMsg = `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`;
-                    
+
                     const { events } = await import('@/core/events');
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.` });
 
@@ -256,7 +256,7 @@ export class BaseAgent implements SpecializedAgent {
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
                     const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
-                    
+
                     const { events } = await import('@/core/events');
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult experts in Direct Mode.` });
 
@@ -419,7 +419,7 @@ export class BaseAgent implements SpecializedAgent {
     /**
      * Common method to execute a task using the agent's capabilities.
      * This method handles the Autonomous interaction loop, tool calls, and progress reporting.
-     * 
+     *
      * @param task The mission or objective to achieve
      * @param context Execution context (org, project, brand, etc.)
      * @param onProgress Callback for granular progress events (thought, tool use, tokens)
@@ -557,7 +557,7 @@ export class BaseAgent implements SpecializedAgent {
             }
             this.identityCard = await BaseAgent.identityMintPromises.get(this)!;
         }
-        
+
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
@@ -610,7 +610,7 @@ export class BaseAgent implements SpecializedAgent {
         let delegationScopeSection = '';
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ctxRecord = context as Record<string, any>;
-        
+
         if (ctxRecord?.conversationMode === 'boardroom') {
             const { agentRegistry } = await import('./registry');
             const seated = ctxRecord.seatedAgents || [];
@@ -753,7 +753,7 @@ export class BaseAgent implements SpecializedAgent {
                 } else {
                     this.llmCallHistory = [now];
                 }
-                
+
                 if (this.llmCallHistory.length > 20) {
                     logger.error(`[BaseAgent] HIGH FREQUENCY DETECTED: ${this.id} attempted > 20 calls in 1 minute. Aborting to prevent burn.`);
                     executionContext.rollback();
@@ -771,10 +771,10 @@ export class BaseAgent implements SpecializedAgent {
                     const tier = await MembershipService.getCurrentTier();
                     executionContext.rollback();
                     return {
-                        text: (budgetCheck.requiresApproval 
+                        text: (budgetCheck.requiresApproval
                             ? 'Task paused: The next step exceeds the $0.50 auto-approval threshold. Please review and authorize the next action in the Ledger.'
                             : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.') +
-                            ' \n\nHint: ' + (budgetCheck.requiresApproval 
+                            ' \n\nHint: ' + (budgetCheck.requiresApproval
                             ? 'Approval Required' :
                               (tier === 'free' ? 'Upgrade to Pro for a $10/day limit.' :
                                tier === 'pro' ? 'Upgrade to Founder for a $500/day limit.' :
@@ -798,7 +798,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 const finalAttachments = [...(attachments || [])];
-                
+
                 // Auto-inject the latest generated artifact if it's the creative agent and the user asks to look at something
                 if (finalAttachments.length === 0 && ['creative', 'brand'].includes(this.id) && context?.chatHistory) {
                     const { useStore } = await import('@/core/store');
@@ -1066,7 +1066,10 @@ export class BaseAgent implements SpecializedAgent {
                     });
 
                     // Phase 2: DNA Infusion - Planning Mode Halting
-                    if (result && typeof result === 'object' && result.status === 'awaiting_approval') {
+                    const resultStatus = result && typeof result === 'object'
+                        ? (result as { status?: unknown }).status
+                        : undefined;
+                    if (resultStatus === 'AWAITING_HUMAN' || resultStatus === 'awaiting_approval') {
                         logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
                         await executionContext.rollback();
                         return {
