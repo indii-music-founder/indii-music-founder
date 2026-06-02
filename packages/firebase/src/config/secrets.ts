@@ -70,7 +70,7 @@ export function getGithubToken(): string | null {
  * Helper to safely retrieve the Gemini API Key.
  * Handles both production (secrets) and local development (environment variables).
  */
-export function getGeminiApiKey(): string {
+export function getGeminiApiKey(): string | null {
     // 1. Try Environment Variable (Local/Dev/Emulator)
     const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
     if (envKey && envKey.trim().length > 0) {
@@ -93,7 +93,7 @@ export function getGeminiApiKey(): string {
         }
     }
 
-    throw new Error("Gemini API Key not found. Please set GEMINI_API_KEY secret or environment variable.");
+    return null;
 }
 
 /**
