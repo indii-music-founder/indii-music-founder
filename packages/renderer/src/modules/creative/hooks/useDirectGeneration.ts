@@ -20,9 +20,34 @@ type CallableGenerationError = {
     details?: unknown;
 };
 
+const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
+    'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+
 function normalizeCallableCode(code: unknown): string | undefined {
     if (typeof code !== 'string') return undefined;
     return code.replace(/^functions\//, '');
+}
+
+function flattenErrorText(value: unknown): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (value instanceof Error) return value.message;
+    if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+    return String(value);
+}
+
+function isGooglePrepaymentExhausted(text: string): boolean {
+    const lower = text.toLowerCase();
+    return lower.includes('prepayment credits are depleted')
+        || lower.includes('billing#prepay')
+        || (lower.includes('ai studio') && lower.includes('billing'))
+        || (lower.includes('resource_exhausted') && lower.includes('prepay'));
 }
 
 function detailsMessage(details: unknown): string | undefined {
@@ -40,8 +65,19 @@ function detailsMessage(details: unknown): string | undefined {
 function generationErrorMessage(error: unknown): { code?: string; message: string } {
     const errObj = error as CallableGenerationError | null;
     const code = normalizeCallableCode(errObj?.code);
-    const rawMessage = error instanceof Error ? error.message : typeof errObj?.message === 'string' ? errObj.message : String(error);
+    const rawMessage = error instanceof Error ? error.message : typeof errObj?.message === 'string' ? errObj.message : flattenErrorText(error);
     const detailMessage = detailsMessage(errObj?.details);
+    const combinedErrorText = [
+        code,
+        rawMessage,
+        detailMessage,
+        flattenErrorText(errObj?.details),
+    ].filter(Boolean).join(' ');
+
+    if (isGooglePrepaymentExhausted(combinedErrorText)) {
+        return { code: 'resource-exhausted', message: GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE };
+    }
+
     const usableRawMessage = rawMessage && rawMessage !== code && rawMessage !== '[object Object]' ? rawMessage : undefined;
     const message = usableRawMessage || detailMessage;
 
