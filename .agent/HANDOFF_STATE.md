@@ -1,24 +1,38 @@
 # Handoff State
-**Updated:** 2026-06-01 11:01 EDT
-**Branch:** `feat/marketing-copy-rewrites`
+**Updated:** 2026-06-01 22:15 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-e4a7386c3 Merge branch 'main' into feat/marketing-copy-rewrites
-98a10e7bd chore: session checkpoint [10:52]
-9714eb559 chore: session checkpoint [10:51]
-aa7832e77 fix(remote): restore desktop text processing with atomic first-wins claim
-296d95721 Feat/marketing copy rewrites (#111)
-3e694c04e chore: session checkpoint [10:47]
-4949b88f8 chore: session checkpoint [10:45]
-7ee1dc938 chore: session checkpoint [10:45]
-db4cb31b9 chore: session checkpoint [10:45]
-9e2eaaa01 chore: session checkpoint [10:43]
+a2549985d Merge pull request #126 from indii-music-founder/codex/remove-dead-noise-texture
+bffe5368c fix(ui): remove dead external noise texture
+878a3825f chore(test): add deep test artifacts and coordination reports
+f25d5a1cb fix(maps): resolve React Wrapper blocking logic and restore rendering
+69b4792d4 fix(remote): race condition in mobile relay chat system, removed obsolete autoagent workflows
+efd08bf3f fix(maps): implement global MapsProvider to prevent race conditions
+0a0f382fe fix(harbor): restore environment dirs to satisfy harbor dataset validation
+0c9becc0e fix: stabilize Google Maps inline array reference
+d3c0f8500 refactor: remove Founder Pass support and related Stripe webhook logic from codebase
+f7dd0ba7c feat: increase total Founder program seats from 10 to 11 and clarify internal seat allocation
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/end.md
+ M .agent/workflows/middle.md
+ M .agent/workflows/start.md
+ M OPEN_ISSUES.md
+ M docs/FOUNDERS_PROGRAM.md
+ M docs/business-decisions/03_REVENUE_AND_PRICING.md
+ M package-lock.json
+ M package.json
+ M packages/firebase/package.json
+ M packages/landing/src/components/FoundersSection.tsx
+ M packages/landing/src/page.tsx
+ M packages/mcp-server-harness/package.json
+ M packages/renderer/package.json
+?? docs/RELEASE_CHECKLIST.md
 ```
 
 ## Decisions
