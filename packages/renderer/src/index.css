@@ -149,6 +149,13 @@
   --radius: 0.5rem;
 }
 
+.indii-noise-overlay {
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px);
+  background-size: 17px 17px, 29px 29px;
+}
+
 .dark {
   --background: 240 10% 2%;
   --foreground: 0 0% 98%;
