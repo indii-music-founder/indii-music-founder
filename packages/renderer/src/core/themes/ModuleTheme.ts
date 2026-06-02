@@ -242,7 +242,13 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         ambientConfig: { type: 'grid', opacity: 0.2 }
     },
     devops: { officeName: 'DevOps', accent: '#9333ea', backgroundGradient: 'linear-gradient(to bottom, #100b1a, #0b0712)', ambientConfig: { type: 'particles', opacity: 0.1 } },
-    screenwriter: { officeName: 'Screenwriter', accent: '#9333ea', backgroundGradient: 'linear-gradient(to bottom, #100b1a, #0b0712)', ambientConfig: { type: 'particles', opacity: 0.1 } }
+    screenwriter: { officeName: 'Screenwriter', accent: '#9333ea', backgroundGradient: 'linear-gradient(to bottom, #100b1a, #0b0712)', ambientConfig: { type: 'particles', opacity: 0.1 } },
+    crm: {
+        officeName: 'Superfan CRM',
+        accent: '#8b5cf6', // violet-500
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(139, 92, 246, 0.08), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 }
+    }
 };
 
 

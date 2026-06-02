@@ -470,17 +470,25 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-default',
     },
     'screenwriter': {
-        text: 'text-purple-500',
-        bg: 'bg-purple-500/10',
-        border: 'border-purple-500',
-        ring: 'focus-within:ring-purple-500/50',
-        hoverText: 'hover:text-purple-400',
-        hoverBg: 'hover:bg-purple-500/5',
-        cssVar: '--color-dept-default',
+        text: 'text-rose-400',
+        bg: 'bg-rose-500/10',
+        border: 'border-rose-500/20',
+        ring: 'ring-rose-500/30',
+        hoverText: 'group-hover:text-rose-300',
+        hoverBg: 'hover:bg-rose-500/20',
+        cssVar: '251 43% 53%' // #df697a
+    },
+    crm: {
+        text: 'text-violet-400',
+        bg: 'bg-violet-500/10',
+        border: 'border-violet-500/20',
+        ring: 'ring-violet-500/30',
+        hoverText: 'group-hover:text-violet-300',
+        hoverBg: 'hover:bg-violet-500/20',
+        cssVar: '262 83% 58%'
     }
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {
     return moduleColors[moduleId] || moduleColors.dashboard;
 };
-
