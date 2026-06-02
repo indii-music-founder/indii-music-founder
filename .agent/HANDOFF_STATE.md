@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-02 12:17 EDT
+**Updated:** 2026-06-02 12:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+34c9788a5 chore: session checkpoint [12:17]
 7454bfa52 chore: session checkpoint [12:15]
 7de109b5a chore(agent): update checkpoint for session end
 26974d50d Merge pull request #127 from indii-music-founder/fix-issue-084
@@ -13,13 +14,18 @@ cd7606d1b chore(agents): integrate /better into /go execution loop and optimize 
 e814adc29 chore(agents): upgrade slash commands to prevent completion hallucination
 f3d60ad0a feat(workflow): implement persistent workflow state schemas and testing harness
 9a088b0dd refactor(firebase): entirely remove generateThumbnail cloud function
-9a05dc12e test(MobileNav): fix Framer Motion animation exit timeouts
 ```
 
 ## Working State
 ```
+ M .agent/workflows/better.md
+ M .agent/workflows/hunter.md
 ?? .agent/test_ledger/API_AUDIT_FINDINGS.md
+?? docs/flowcharts/ai-cfo-micro.md
 ?? docs/flowcharts/superfan-crm-vault-micro.md
+?? docs/flowcharts/sync-tagger-micro.md
+?? docs/flowcharts/tour-router-micro.md
+?? docs/flowcharts/web3-splitter-micro.md
 ```
 
 ## Decisions
