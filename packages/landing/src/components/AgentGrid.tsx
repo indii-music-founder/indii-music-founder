@@ -29,7 +29,7 @@ import {
 
 function NoiseOverlay() {
   return (
-    <div className="absolute inset-0 opacity-[0.04] pointer-events-none z-0 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+    <div className="absolute inset-0 opacity-[0.04] pointer-events-none z-0 mix-blend-overlay indii-noise-overlay" />
   );
 }
 
@@ -666,4 +666,3 @@ export default function AgentGrid() {
     </section>
   );
 }
-
