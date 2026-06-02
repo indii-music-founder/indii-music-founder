@@ -1,71 +1,47 @@
 # Direct Image Generation Vertex AI Architecture
 
-This flowchart maps the dynamic client-to-backend image generation routing introduced to eliminate client-side key exposures and resolve AI Studio free-tier rate limits/quotas.
+This flowchart maps the direct Creative Hub image-generation path. It documents the thin-client payload boundary that prevents raw Base64 and `null` reference fields from reaching the `generateImageV3` Cloud Function.
 
 ```mermaid
 graph TD
-    %% Define Styles
-    classDef client fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
-    classDef backend fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff;
-    classDef external fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    User["User enters prompt in DirectGenerationTab"] --> Hook["useDirectGeneration.handleImageGenerate"]
+    Hook --> RefGate{"Reference ingredient selected?"}
+    RefGate -- "No" --> Compact["compactCallablePayload removes undefined and null keys"]
+    RefGate -- "Yes" --> Upload["CreativeStorageService.uploadReferenceMedia"]
+    Upload --> ExistingGs{"Input already gs://?"}
+    ExistingGs -- "Yes" --> KeepUri["Return existing gs:// URI unchanged"]
+    ExistingGs -- "No" --> UploadStorage["Upload data, Blob, File, or fetched HTTP media to Firebase Storage"]
+    UploadStorage --> NewUri["Return new gs:// URI"]
+    KeepUri --> Compact
+    NewUri --> Compact
+    Compact --> Callable["httpsCallable functions generateImageV3"]
+    Callable --> Zod["GenerateImageSchema validates prompt, aspectRatio, model, imageSize, referenceUri"]
+    Zod --> Reject{"Payload contains null, Base64, or non-gs referenceUri?"}
+    Reject -- "Yes" --> Invalid["invalid-argument: Payload validation failed"]
+    Reject -- "No" --> Gemini["Cloud Function calls Gemini image model through Vertex AI"]
+    Gemini --> OutputStorage["Generated image bytes saved to Cloud Storage"]
+    OutputStorage --> ResultUri["Return jobId and resultUri"]
+    ResultUri --> Listener["DirectGenerationTab Firestore listener resolves resultUri"]
+    Listener --> Gallery["Generated image appears in Creative gallery and editor"]
 
-    %% Client Operations
-    subgraph Client UI [React Creative Studio Client]
-        A["User Inputs Prompt"] --> B["useDirectGeneration Hook"]
-        B --> C["generateImageDirectly Proxy Method"]
-        C --> D["firebase.functions.httpsCallable('generateImageV3')"]
-    end
-    class A,B,C,D client;
+    classDef ui fill:#e0f7fa,stroke:#00acc1,stroke-width:2px,color:#042f2e;
+    classDef logic fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#2e1065;
+    classDef storage fill:#fff7ed,stroke:#ff8f00,stroke-width:2px,color:#431407;
+    classDef cloud fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#052e16;
+    classDef error fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#500724;
 
-    %% Cloud Function Security Proxy
-    subgraph CloudFunction [Firebase Cloud Function v2]
-        D --> E["enforceRateLimit Check"]
-        E --> F["Zod Payload Validation"]
-        F --> G["GeminiImageService.generate()"]
-        G --> H{"Is Local/Test?"}
-    end
-    class E,F,G,H backend;
-
-    %% Local Fallback (Google AI Studio)
-    subgraph AIStudio [Google AI Studio (Local Development/Tests)]
-        H -- Yes --> I["Load API Key via getGeminiApiKey()"]
-        I --> J["new GoogleGenAI({ apiKey }) Client"]
-        J --> K["Call AI Studio API"]
-    end
-    class I,J,K external;
-
-    %% Production Route (GCP Vertex AI)
-    subgraph VertexAI [GCP Vertex AI (Production Cloud Functions)]
-        H -- No --> L["Access Cloud Function ADC credentials"]
-        L --> M["new GoogleGenAI({ vertexai: true, project, location })"]
-        M --> N["Call GCP Vertex AI Endpoint"]
-    end
-    class L,M,N external;
-
-    %% Consolidation
-    K --> O["Parse Multimodal responseModalities: ['IMAGE']"]
-    N --> O
-    O --> P["Extract raw image bytes & Upload to Cloud Storage"]
-    P --> Q["Return lightweight gs:// URI to Client"]
-    Q --> R["Render Canvas Layer in Fabric.js via Signed URL"]
-    class O,P,Q backend;
-    class R client;
+    class User,Gallery ui;
+    class Hook,RefGate,ExistingGs,Compact logic;
+    class Upload,UploadStorage,KeepUri,NewUri,OutputStorage storage;
+    class Callable,Zod,Gemini,ResultUri,Listener cloud;
+    class Reject,Invalid error;
 ```
 
 ## Transition Breakdown
 
-### 1. Client Trigger to Function Proxy
-The React client captures the prompt and optional configurations (like aspect ratio) and packages them into a standard JSON payload. Instead of directly calling Google APIs using raw API keys exposed in client bundles, it utilizes Firebase's secure `httpsCallable` interface to request execution by the authenticated `generateImageV3` Cloud Function.
-
-### 2. Validation & Security Gates
-Upon receiving the call, the Cloud Function runs two deterministic middleware checks:
-- **Rate Limiting:** Enforces a maximum rate of 10 generation calls per user per minute using a transaction-locked Firestore sliding-window registry.
-- **Input Validation:** Parses and filters request parameters against `GenerateImageRequestSchema` using Zod, ensuring safe execution bounds.
-
-### 3. Smart Client Environment Routing
-`GeminiImageService` determines its execution context:
-- If running under `vitest` or the local emulator, it retrieves the developer's `GEMINI_API_KEY` from environment variables and constructs a standard Google AI Studio client.
-- If running in production GCP environments, it dynamically activates the **Vertex AI** integration. By enabling `vertexai: true` and pointing to the active GCP Project, it inherits the Cloud Function's **Application Default Credentials (ADC)**, securely bypassing all external API key allocations, rotations, and free-tier quotas.
-
-### 4. Multimodal Generation & Client Handoff
-Both pipelines resolve calls using the unified `@google/genai` interface. It specifies `responseModalities: ["IMAGE"]` using stable `gemini-3.1-flash-image` and `gemini-3-pro-image-preview` endpoints. In strict adherence to the Thin Client architecture, the raw image bytes are never passed to the client as Base64 strings. Instead, the backend immediately uploads the generated asset to Firebase Cloud Storage. A lightweight `gs://` URI is then returned to the React frontend, where it is converted into a temporary Signed URL for Fabric.js to render the visual assets seamlessly without freezing the main thread.
+1. The user starts direct image generation from `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx`. The component delegates execution to `useDirectGeneration.handleImageGenerate` in `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts`.
+2. The hook checks `videoInputs.ingredients[0]`. If no reference ingredient exists, `referenceUri` remains unset and `compactCallablePayload` removes it before the Firebase callable request is made.
+3. If a reference ingredient exists, `CreativeStorageService.uploadReferenceMedia` enforces the thin-client media boundary. Existing `gs://` strings pass through unchanged. Data URLs, `Blob`, `File`, and HTTP references are uploaded into Firebase Storage and converted to `gs://` before use.
+4. The callable payload sent to `generateImageV3` contains only concrete values. This prevents the strict Zod schema in `packages/firebase/src/functions/creative/gateway.ts` from receiving `referenceUri: null`, raw Base64, or an HTTP URL.
+5. The Cloud Function validates the request. Invalid payloads fail at the Zod gate with `invalid-argument`; valid payloads continue to the Gemini image model via the backend Vertex AI client.
+6. Generated image bytes are saved to Cloud Storage by the Cloud Function. The client receives lightweight job metadata and resolves the final Storage URL through the Firestore job listener before adding the image to the Creative gallery/editor.

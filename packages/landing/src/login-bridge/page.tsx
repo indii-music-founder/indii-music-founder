@@ -84,7 +84,7 @@ export default function LoginBridge() {
     };
 
     const createDesktopHandoffCode = async (idToken: string, accessToken?: string | null): Promise<string | null> => {
-        const endpoint = process.env.NEXT_PUBLIC_AUTH_HANDOFF_URL;
+        const endpoint = import.meta.env.VITE_AUTH_HANDOFF_URL || import.meta.env.NEXT_PUBLIC_AUTH_HANDOFF_URL;
         if (!endpoint) {
             console.warn('Auth handoff service URL is not configured; falling back to legacy callback payload');
             return null;

@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { vi } from 'vitest';
 vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
+
+// Declare React 18 act testing environment globally to suppress environment warnings
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 import React from 'react';
 
 // Only import DOM-specific modules when running in jsdom environment
