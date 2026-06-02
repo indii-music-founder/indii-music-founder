@@ -8,9 +8,24 @@ description: Universal improvement engine — drop anywhere to audit, elevate, a
 
 > **PRIME DIRECTIVE:** Every change MUST leave the system in a working state. If a change would break anything — tests, types, builds, UX flows — you find a **different, safe approach** that achieves the same improvement without breaking anything. Every issue found gets fixed.
 
+## Mode Selection (NEW)
+
+Determine which mode before starting:
+- **ELEVATE** (default): Find + fix + commit all issues in this session.
+- **AUDIT** (find-only): Find + document issues for another agent to fix. Output: findings doc + GitHub issues.
+
+Ask the user or infer from context:
+- Explicit "audit" or "find-only" → AUDIT mode
+- Explicit "fix" or "elevate" → ELEVATE mode
+- `/better` alone, no qualifier → ELEVATE mode (legacy default)
+
+If ambiguous, ask before proceeding.
+
+---
+
 ## Phase 0: Situational Awareness (MANDATORY)
 
-Before touching anything, you must understand **what you're elevating**. This phase determines your entire approach.
+Before touching anything, you must understand **what you're elevating/auditing**. This phase determines your entire approach.
 
 ### 0.1 Omni-Aware Routing (Detecting the Target)
 
@@ -233,7 +248,9 @@ If the target was a UI component, use the browser tool to visually verify the co
 
 ## Phase 4: The Results
 
-**Output a final summary:**
+### ELEVATE Mode (fix + commit)
+
+Output a final summary:
 
 ```markdown
 ### /better Results
@@ -255,6 +272,32 @@ If the target was a UI component, use the browser tool to visually verify the co
 **Unresolved Issues:** None (or explain why a different approach was needed)
 **Breaking Changes:** None (or list if user approved)
 ```
+
+Then commit: `git add -A && git commit -m "refactor(better): [summary of changes]" && git push origin [branch]`
+
+### AUDIT Mode (find-only + handoff)
+
+Output findings to **two targets**:
+
+1. **Consolidated findings doc** (`.agent/test_ledger/AUDIT_FINDINGS_<timestamp>.md`):
+   - Format matches `OPEN_ISSUES.md` house style
+   - Per finding: Status | Severity | Module | Evidence | Files | Fix Direction | Verified?
+   - Include "Corrections" section if you found false leads to warn the fixing agent
+
+2. **GitHub issues for the highest-severity findings** (label `triage/ready-for-agent`):
+   - One issue per critical/high finding
+   - Body = finding block + fix direction + acceptance criteria (checkbox)
+   - Cross-link to the findings doc
+
+Report:
+```
+✅ AUDIT COMPLETE
+- Findings doc: .agent/test_ledger/AUDIT_FINDINGS_<timestamp>.md
+- GitHub issues: #<issue>, #<issue>, ... (highest severity)
+- Hand off to fix agent — do not commit or push from here
+```
+
+Do NOT commit, push, or modify source code in AUDIT mode.
 
 ---
 
