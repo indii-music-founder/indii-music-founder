@@ -28,20 +28,26 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_all': 'ALLOW_ALL',
 };
 
+function compactPayload<T extends Record<string, unknown>>(payload: T): T {
+    return Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+    ) as T;
+}
+
 export async function generateImageDirectly(options: DirectImageOptions): Promise<string[]> {
     logger.info('[DirectImageGenerator] Calling generateImageV3 Cloud Function securely for:', options.prompt);
     
     try {
         const generateImageV3 = httpsCallable(functions, 'generateImageV3');
         
-        const payload = {
+        const payload = compactPayload({
             prompt: options.prompt,
             aspectRatio: options.aspectRatio || '1:1',
             count: options.numberOfImages || 1,
             model: options.model?.includes('pro') ? 'pro' : 'fast',
             personGeneration: options.personGeneration ? PERSON_GEN_API_MAP[options.personGeneration] : undefined,
             negativePrompt: options.negativePrompt
-        };
+        });
 
         const result = await generateImageV3(payload);
         
