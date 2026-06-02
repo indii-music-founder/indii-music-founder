@@ -28,6 +28,7 @@ If any architecture, state flow, or logic shifted during the execution phase:
 
 ## 4. The Gauntlet (via `/ci-validate`)
 Signal "we're done" and leave a perfectly clean repository:
+- **Clean Repository Definition:** In a multi-agent environment, define "clean repository" as either "fully clean" or "clean for this objective." If there are unrelated dirty files in the worktree, you MUST explicitly list them for the user or intentionally stash/commit them before proceeding.
 - **Anti-Hallucination Audit:** Before running the final CI sequence, you MUST run a `grep` scan for `MOCK`, `TODO`, and `stub` across all files you touched during this session. If any mocks or stubs exist in the critical path, you are expressly forbidden from stating the feature is "fully implemented". You must state: "Scaffolding Complete. Mocks remain."
 - Invoke the **`/ci-validate`** command.
 - This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
