@@ -31,6 +31,8 @@ describe('Content Security Policy', () => {
             const policy = getCSPPolicy();
             expect(typeof policy).toBe('string');
             expect(policy).toContain("default-src 'self'");
+            expect(policy).toContain("script-src 'self' 'wasm-unsafe-eval'");
+            expect(policy).not.toContain("'unsafe-eval'");
             expect(policy).toContain("img-src 'self' data: blob:");
             expect(policy).toContain("font-src 'self' data:");
             expect(policy).toContain("media-src 'self' blob:");
