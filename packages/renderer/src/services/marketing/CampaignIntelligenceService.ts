@@ -1,5 +1,8 @@
 import { AutonomousIntelligence as GenAI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { auth, storage } from '@/services/firebase';
+import { getDownloadURL, ref } from 'firebase/storage';
 // useStore removed
 import {
     CampaignBrief,
@@ -314,11 +317,13 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
 
                 const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
 
+                const imageUrl = await this.persistGeneratedImage(base64);
+
                 updatedPosts.set(post.id, {
                     ...post,
                     imageAsset: {
                         ...post.imageAsset,
-                        imageUrl: `data:image/png;base64,${base64}`
+                        imageUrl
                     }
                 } as ScheduledPost);
 
@@ -357,7 +362,19 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
 
         const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
 
-        return `data:image/png;base64,${base64}`;
+        return this.persistGeneratedImage(base64);
+    }
+
+    private async persistGeneratedImage(base64: string): Promise<string> {
+        const dataUrl = `data:image/png;base64,${base64}`;
+
+        try {
+            const userId = auth.currentUser?.uid || 'anonymous';
+            const gsUri = await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image');
+            return await getDownloadURL(ref(storage, gsUri));
+        } catch (_error: unknown) {
+            return dataUrl;
+        }
     }
 
     /**
