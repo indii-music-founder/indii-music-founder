@@ -9,7 +9,8 @@ description: Finalization and verification workflow. Generates closing notes, up
 This command is run when the feature or task is deemed complete. It ensures everything is documented, cleanly tested, and the repository is pristine before ending the session.
 
 ## 1. Smart Finalization
-- Review the initial user prompt and compare it against the completed work in `task.md`.
+- Review the initial user prompt and compare it against the completed work in the active task ledger. Prefer the current user objective/thread goal first, then `.agent/artifacts/task.md`, and use root `task.md` only if it clearly matches the current goal.
+- **Stale Ledger Guard:** If a task file describes unrelated old work, do not use it as completion evidence. State that it is stale and verify against current user intent plus current worktree evidence.
 - Verify that *everything* promised has been delivered.
 - Ensure there are no leftover `TODO` or `FIXME` comments related to this session's work.
 - **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
