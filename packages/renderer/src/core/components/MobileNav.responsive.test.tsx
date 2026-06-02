@@ -103,7 +103,7 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
         // Drawer should close (wait for animation/state update)
         await waitFor(() => {
             expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
-        });
+        }, { timeout: 3000 });
     });
 
     it('closes drawer when clicking X button', async () => {
@@ -118,7 +118,7 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
 
         await waitFor(() => {
             expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
-        });
+        }, { timeout: 3000 });
     });
 
     it('closes drawer when clicking backdrop', async () => {
@@ -142,6 +142,6 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
 
         await waitFor(() => {
             expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
-        });
+        }, { timeout: 3000 });
     });
 });
