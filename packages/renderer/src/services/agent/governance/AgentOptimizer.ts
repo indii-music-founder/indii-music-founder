@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
 import { workflowStateService } from '../WorkflowStateService';
+import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shared';
 import { ArmorViolation } from './ModelArmor';
 
 export interface OptimizationSuggestion {
@@ -37,7 +38,8 @@ export class AgentOptimizer {
             
             // Build metrics per agent
             for (const execution of allExecutions) {
-                for (const step of Object.values(execution.steps)) {
+                const steps = Object.values(execution.steps) as any[];
+                for (const step of steps) {
                     if (!step) continue;
                     let metrics = this.metricsCache[step.agentId];
                     if (!metrics) {
@@ -52,8 +54,8 @@ export class AgentOptimizer {
                     }
                     
                     metrics.totalInvocations++;
-                    if (step.status === 'step_complete') metrics.successCount++;
-                    if (step.status === 'failed') metrics.failureCount++;
+                    if (step.status === 'STEP_COMPLETE' || step.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE) metrics.successCount++;
+                    if (step.status === 'FAILED' || step.status === WorkflowExecutionStatusEnum.enum.FAILED) metrics.failureCount++;
                 }
             }
 

@@ -87,7 +87,7 @@ export default function FoundersSection() {
             <span className="text-amber-400">Lifetime Access.</span>
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            We are opening exactly 10 paid seats to join Founder #1. The first 10 people who believe in what we&apos;re building get in forever.
+            We are opening exactly 10 paid seats to join the I-I Founder. The first 10 people who believe in what we&apos;re building get in forever.
             Your name is permanently added to the system. Your terms are secured and verifiable.
             No subscriptions. No renewal. Just access — for the life of the software.
           </p>
