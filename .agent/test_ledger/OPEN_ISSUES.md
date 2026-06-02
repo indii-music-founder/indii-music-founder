@@ -1216,7 +1216,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** 🔴 HIGH
 - **Module:** Founders Program / Landing / Activation
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
-- **Summary:** The intended Founder model is 11 total seats: Founder #1 is William/the builder, followed by 10 paid Founder buy-in seats. The repo only partially reflects this. `activateFounderPass.ts` uses `MAX_FOUNDER_SEATS = 11`, but `packages/renderer/src/config/founders.ts` still says `seats_total: 10`, its comments say seats 1-10, and the public `FOUNDERS` array is empty in the current worktree. Landing and checkout copy still says "10 Founders", "10 Seats. Final.", "No 11th founder", and "All 10 founding seats have been claimed."
+- **Summary:** The intended Founder model is 11 total seats: the I-I Founder internal seat for William/the builder, followed by 10 paid Founder buy-in seats. The repo only partially reflected this at discovery time. `activateFounderPass.ts` used `MAX_FOUNDER_SEATS = 11`, but `packages/renderer/src/config/founders.ts` still said `seats_total: 10`, its comments said seats 1-10, and the public `FOUNDERS` array was empty in the current worktree. Landing and checkout copy still said "10 Founders", "10 Seats. Final.", "No 11th founder", and "All 10 founding seats have been claimed."
 - **Files:**
   - `packages/renderer/src/config/founders.ts`
   - `packages/firebase/src/subscription/activateFounderPass.ts`
@@ -1231,7 +1231,7 @@ Caller can decide whether to retry, surface error, or silently log.
   - `docs/business-decisions/03_REVENUE_AND_PRICING.md`
   - `docs/flowcharts/founders-checkout-portal.md`
   - `docs/flowcharts/founder-dynamic-routing.md`
-- **Fix Required:** Establish one canonical seat model in code and copy: 11 total Founder seats, with Founder #1 reserved/internal and 10 paid seats available. Update all UI copy, constants, tests, and docs to stop saying "10 founders total" or "No 11th founder." If the public Founder #1 covenant entry is not present in this checkout, do not invent personal data; add the structural support and flag the actual Founder #1 record as requiring verified name/UID/hash input.
+- **Fix Required:** Establish one canonical seat model in code and copy: 11 total Founder seats, with the I-I Founder reserved/internal and 10 paid seats available. Update all UI copy, constants, tests, and docs to stop saying "10 founders total" or "No 11th founder." If the public I-I Founder covenant entry is not present in this checkout, do not invent personal data; add the structural support and flag the actual I-I Founder record as requiring verified name/UID/hash input.
 - **UX Impact:** Paid beta users may see contradictory scarcity, incorrect seat numbers, or a public promise that conflicts with the admin activation limit.
 
 ---
@@ -1361,7 +1361,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** 🔴 HIGH
 - **Module:** Desktop Release / Founders Downloads
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
-- **Summary:** A current macOS artifact exists locally at `dist/indii.music-1.64.0-arm64.dmg` with a matching Mac zip, but no current Windows NSIS installer `.exe` was found for `indii.music`. The only `.exe` artifact in build output is an older unpacked `dist-electron-studio/win-arm64-unpacked/indiiOS Studio.exe`, which is not the Founder-ready installer expected by the download portal. The release workflow also uploads from `dist-electron`, while current local electron-builder output is under `dist`, so the Firebase Storage upload step may find no installers even after a successful build.
+- **Summary:** The local artifact path mismatch is resolved and current macOS/Windows installer artifacts exist under `dist-electron`, but the release upload automation was still broken. The tag release workflow used a nonexistent `firebase storage:upload` command and hid upload failures with `continue-on-error: true`, so a green release run could still leave Founder downloads unavailable. The live bucket initially had no `founders/releases/` objects before manual verification.
 - **Files:**
   - `package.json`
   - `electron-builder.json`
@@ -1372,8 +1372,14 @@ Caller can decide whether to retry, surface error, or silently log.
   - `packages/renderer/src/modules/founders/FoundersCheckout.tsx`
   - `docs/flowcharts/founders-checkout-portal.md`
   - `docs/RELEASE_CHECKLIST.md`
-- **Fix:** Created `docs/RELEASE_CHECKLIST.md` to ensure manual verification. Verified that `electron-builder` successfully outputs the correct `.dmg` and `.exe` files into `dist-electron` upon successful build and clean.
-- **Missing Acceptance Criteria:** Local artifacts are not enough; must prove the upload path works end-to-end and the Founder download authorization succeeds via the actual portal.
+- **Fix:** Created and updated `docs/RELEASE_CHECKLIST.md` with the current beta verification snapshot. Verified local artifacts:
+  - `dist-electron/indii.music-1.64.0-arm64.dmg` (`150016050` bytes)
+  - `dist-electron/indii.music Setup 1.64.0.exe` (`125572607` bytes)
+  Manually uploaded the current artifacts to the exact live Firebase Storage paths:
+  - `founders/releases/indii-Installer.dmg` (`150016050` bytes, MD5 `mgNljF78WeCzox9AD8mDcw==`)
+  - `founders/releases/indii-Setup.exe` (`125572607` bytes, MD5 `eJU79dEgazBfJVK2/hbhvg==`)
+  Patched `.github/workflows/release.yml` to use `gcloud storage cp`, authenticate the Google Cloud SDK with `FIREBASE_SERVICE_ACCOUNT`, fail macOS/Windows uploads when artifacts are missing or upload fails, and stop using `continue-on-error` for those required upload steps. Verified `wiil@indii.music` has Founder download-gate fields (`tier`, `subscriptionTier`, `isFounder`) in `users/g2AcFApNZvQKYlGg0LQuVADCFoO2`. Verified local/remote MD5 matches, `hdiutil verify` passes for the DMG, and the EXE identifies as a Nullsoft installer self-extracting archive.
+- **Missing Acceptance Criteria:** Still needs an interactive Founder portal login/download click using the Founder user's real password/session. Windows installer launch also needs to be checked on a Windows 10/11 machine. A release-tag workflow run must be observed after this workflow patch to confirm CI uploads the artifacts automatically instead of relying on the manual `gcloud storage cp` upload.
 - **UX Impact:** A paid Founder can be activated but receive a broken or missing desktop download, which is a launch-blocking failure for the Founder promise.
 
 ---
