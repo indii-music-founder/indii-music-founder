@@ -127,6 +127,7 @@ const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/R
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
 const DevopsDashboard = lazyWithRetry(() => import('../modules/devops/DevopsDashboard'));
 const ScreenwriterDashboard = lazyWithRetry(() => import('../modules/screenwriter/ScreenwriterDashboard'));
+const CRMDashboard = lazyWithRetry(() => import('../modules/crm/CRMDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
 const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
@@ -182,6 +183,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'security': SecurityDashboard,
     'devops': DevopsDashboard,
     'screenwriter': ScreenwriterDashboard,
+    'crm': CRMDashboard,
 };
 
 // ============================================================================
