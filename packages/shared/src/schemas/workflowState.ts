@@ -12,11 +12,27 @@ export const WorkflowExecutionStatusEnum = z.enum([
     'COMPLETED',            // Workflow finished successfully
     'FAILED',               // Workflow encountered a terminal error
     'CANCELLED',            // Workflow was manually aborted
-    // Backwards compatibility with legacy records and legacy types
-    'planned', 'executing', 'step_complete', 'awaiting_approval', 'completed', 'failed', 'cancelled', 'skipped'
 ]);
 
 export type WorkflowExecutionStatus = z.infer<typeof WorkflowExecutionStatusEnum>;
+
+const EXECUTION_STATUS_ALIASES: Record<string, WorkflowExecutionStatus> = {
+    PLANNED: 'PLANNED',
+    EXECUTING: 'EXECUTING',
+    AWAITING_HUMAN: 'AWAITING_HUMAN',
+    AWAITING_APPROVAL: 'AWAITING_HUMAN',
+    AWAITING_EVALUATION: 'AWAITING_EVALUATION',
+    COMPLETED: 'COMPLETED',
+    STEP_COMPLETE: 'COMPLETED',
+    SKIPPED: 'COMPLETED',
+    FAILED: 'FAILED',
+    CANCELLED: 'CANCELLED',
+};
+
+export function normalizeWorkflowExecutionStatus(value: unknown): unknown {
+    if (typeof value !== 'string') return value;
+    return EXECUTION_STATUS_ALIASES[value.trim().toUpperCase()];
+}
 
 /**
  * Enum for Individual Step Execution State
@@ -24,22 +40,43 @@ export type WorkflowExecutionStatus = z.infer<typeof WorkflowExecutionStatusEnum
 export const WorkflowStepStatusEnum = z.enum([
     'PLANNED',              // Step is queued
     'EXECUTING_GENERATION', // Step is being processed by the Generator agent
+    'AWAITING_HUMAN',       // Step is paused, waiting for human input/approval
     'AWAITING_EVALUATION',  // Step output is being evaluated
     'STEP_COMPLETE',        // Step finished successfully
     'SKIPPED',              // Step was skipped due to conditions
     'FAILED',               // Step encountered an error
     'CANCELLED',            // Step was aborted
-    // Backwards compatibility with legacy records and legacy types
-    'planned', 'executing', 'step_complete', 'awaiting_approval', 'completed', 'failed', 'cancelled', 'skipped'
 ]);
 
 export type WorkflowStepStatus = z.infer<typeof WorkflowStepStatusEnum>;
+
+const STEP_STATUS_ALIASES: Record<string, WorkflowStepStatus> = {
+    PLANNED: 'PLANNED',
+    EXECUTING: 'EXECUTING_GENERATION',
+    EXECUTING_GENERATION: 'EXECUTING_GENERATION',
+    AWAITING_HUMAN: 'AWAITING_HUMAN',
+    AWAITING_APPROVAL: 'AWAITING_HUMAN',
+    AWAITING_EVALUATION: 'AWAITING_EVALUATION',
+    STEP_COMPLETE: 'STEP_COMPLETE',
+    COMPLETED: 'STEP_COMPLETE',
+    SKIPPED: 'SKIPPED',
+    FAILED: 'FAILED',
+    CANCELLED: 'CANCELLED',
+};
+
+export function normalizeWorkflowStepStatus(value: unknown): unknown {
+    if (typeof value !== 'string') return value;
+    return STEP_STATUS_ALIASES[value.trim().toUpperCase()];
+}
 
 export const WorkflowStepExecutionSchema = z.object({
     stepId: z.string(),
     agentId: z.string(),
     prompt: z.string().optional(),
-    status: WorkflowStepStatusEnum,
+    status: z.preprocess(
+        normalizeWorkflowStepStatus,
+        WorkflowStepStatusEnum
+    ),
     idempotencyKey: z.string(),
     startedAt: z.number().optional(),
     completedAt: z.number().optional(),
@@ -49,22 +86,29 @@ export const WorkflowStepExecutionSchema = z.object({
 
 export type WorkflowStepExecution = z.infer<typeof WorkflowStepExecutionSchema>;
 
+export const WorkflowEdgeSchema = z.object({
+    from: z.string(),
+    to: z.string(),
+    label: z.string().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional()
+});
+
 export interface WorkflowEdge {
     from: string;
     to: string;
     // condition is excluded from strict serialization
-    condition?: (execution: WorkflowExecution) => boolean; 
-    label?: string; 
-    metadata?: Record<string, any>; 
+    condition?: (execution: WorkflowExecution) => boolean;
+    label?: string;
+    metadata?: Record<string, unknown>;
 }
 
 export interface WorkflowStep {
-    id: string; 
+    id: string;
     agentId: string;
     prompt: string;
     priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
-    timeoutMs?: number; 
-    retryCount?: number; 
+    timeoutMs?: number;
+    retryCount?: number;
 }
 
 export const WorkflowExecutionSchema = z.object({
@@ -72,8 +116,12 @@ export const WorkflowExecutionSchema = z.object({
     workflowId: z.string(),
     sessionId: z.string().optional(),
     userId: z.string(),
-    status: WorkflowExecutionStatusEnum,
+    status: z.preprocess(
+        normalizeWorkflowExecutionStatus,
+        WorkflowExecutionStatusEnum
+    ),
     steps: z.record(z.string(), WorkflowStepExecutionSchema),
+    edges: z.array(WorkflowEdgeSchema).default([]),
     createdAt: z.number(),
     updatedAt: z.number(),
     error: z.string().optional()

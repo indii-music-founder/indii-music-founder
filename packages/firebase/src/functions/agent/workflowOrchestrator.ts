@@ -1,11 +1,12 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
 import type { WorkflowExecution } from '@indii/shared';
-// Note: We are importing the types from our shared schemas.
+import { AgentTriad } from './AgentTriad';
+import { DefaultPlanner, DefaultGenerator, DefaultEvaluator } from './DefaultAgents';
 
 /**
  * Workflow Orchestrator (Cloud Function)
- * 
+ *
  * Agentic Harness Primitive: Event-Driven Dormancy
  * Listens for state changes to workflow executions and processes them asynchronously.
  * This allows the agent to "sleep" (consume 0 compute) while waiting for events
@@ -46,7 +47,7 @@ export const workflowOrchestrator = onDocumentWritten(
         // 2. Check if we are actively executing
         if (after.status === 'EXECUTING') {
             logger.info(`[WorkflowOrchestrator] Processing EXECUTING workflow ${after.id}`);
-            
+
             // Find the next planned step
             const steps = Object.values(after.steps || {});
             const nextStep = steps.find(s => s.status === 'PLANNED');
@@ -75,20 +76,48 @@ export const workflowOrchestrator = onDocumentWritten(
                 return;
             }
 
-            // Execute the next step using our Triad (or simpler mechanism)
-            // Note: In a real implementation, we would invoke the AgentTriad here.
-            // For now, we mock the transition to AWAITING_EVALUATION or STEP_COMPLETE to demonstrate the state machine.
-            
             logger.info(`[WorkflowOrchestrator] Executing step ${nextStep.stepId} (${nextStep.agentId})`);
-            
+
             // Transition step to EXECUTING_GENERATION
             await snapshot.after.ref.update({
                 [`steps.${nextStep.stepId}.status`]: 'EXECUTING_GENERATION',
                 [`steps.${nextStep.stepId}.startedAt`]: Date.now(),
                 updatedAt: Date.now()
             });
-            
-            // Here you would kick off a Pub/Sub event or Inngest job for the actual generation work to avoid Cloud Function timeouts on long LLM calls.
+
+            // Wire up the Triad with real AI agents
+            const triad = new AgentTriad({
+                planner: new DefaultPlanner(),
+                generator: new DefaultGenerator(),
+                evaluator: new DefaultEvaluator()
+            });
+
+            const context = {
+                workflowId: after.id,
+                stepId: nextStep.stepId,
+                userId: after.userId
+            };
+
+            // Warning: Running this inline might hit Cloud Function timeouts for long tasks.
+            // In a production system, this should be deferred to a background task runner like Inngest.
+            try {
+                const result = await triad.executeTriadLoop(context, nextStep.prompt || 'Execute step');
+
+                await snapshot.after.ref.update({
+                    [`steps.${nextStep.stepId}.status`]: result.status,
+                    [`steps.${nextStep.stepId}.result`]: result.result || null,
+                    [`steps.${nextStep.stepId}.error`]: result.error || null,
+                    updatedAt: Date.now()
+                });
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error(String(err));
+                logger.error(`[WorkflowOrchestrator] Failed to execute Triad Loop`, error);
+                await snapshot.after.ref.update({
+                    [`steps.${nextStep.stepId}.status`]: 'FAILED',
+                    [`steps.${nextStep.stepId}.error`]: error.message,
+                    updatedAt: Date.now()
+                });
+            }
             return;
         }
 

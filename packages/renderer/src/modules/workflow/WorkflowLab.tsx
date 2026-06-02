@@ -215,16 +215,16 @@ export default function WorkflowLab() {
                         const nodeState = state.nodeStates[node.id];
                         if (nodeState) {
                             let status = Status.PENDING;
-                            if (nodeState.status === 'executing') status = Status.WORKING;
-                            if (nodeState.status === 'step_complete') status = Status.DONE;
-                            if (nodeState.status === 'failed') status = Status.ERROR;
-                            
+                            if (nodeState.status === 'EXECUTING_GENERATION') status = Status.WORKING;
+                            if (nodeState.status === 'STEP_COMPLETE') status = Status.DONE;
+                            if (nodeState.status === 'FAILED') status = Status.ERROR;
+
                             return { ...node, data: { ...node.data, status, output: nodeState.output } };
                         }
                         return node;
                     }));
 
-                    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+                    if (state.status === 'COMPLETED' || state.status === 'FAILED' || state.status === 'CANCELLED') {
                         clearInterval(interval);
                         setIsRunning(false);
                     }
@@ -662,4 +662,3 @@ function HelpDocsPanel() {
         </div>
     );
 }
-

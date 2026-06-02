@@ -38,7 +38,7 @@ vi.mock('../../governance/AgentEventBus', () => ({
 describe('AgentGraphService', () => {
     const mockUserId = 'user-123';
     const mockContext: AgentContext = { userId: mockUserId };
-    
+
     const mockGraph: AgentGraph = {
         id: 'graph-1',
         name: 'Test Graph',
@@ -61,14 +61,14 @@ describe('AgentGraphService', () => {
     it('should execute a simple 2-node linear graph', async () => {
         // Setup execution state
         const mockExecutionId = 'exec-123';
-        
+
         // Initial state
         const state1 = {
             executionId: mockExecutionId,
-            status: 'planned',
+            status: 'PLANNED',
             nodeStates: {
-                'node-1': { status: 'planned' },
-                'node-2': { status: 'planned' }
+                'node-1': { status: 'PLANNED' },
+                'node-2': { status: 'PLANNED' }
             }
         };
 
@@ -76,8 +76,8 @@ describe('AgentGraphService', () => {
         const state2 = {
             ...state1,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Output 1' },
-                'node-2': { status: 'planned' }
+                'node-1': { status: 'STEP_COMPLETE', output: 'Output 1' },
+                'node-2': { status: 'PLANNED' }
             }
         };
 
@@ -85,10 +85,10 @@ describe('AgentGraphService', () => {
         const state3 = {
             ...state2,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Output 1' },
-                'node-2': { status: 'step_complete', output: 'Output 2' }
+                'node-1': { status: 'STEP_COMPLETE', output: 'Output 1' },
+                'node-2': { status: 'STEP_COMPLETE', output: 'Output 2' }
             },
-            status: 'completed'
+            status: 'COMPLETED'
         };
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
@@ -105,11 +105,11 @@ describe('AgentGraphService', () => {
 
         expect(result).toContain('Graph execution finished');
         expect(agentService.delegateTask).toHaveBeenCalledTimes(2);
-        
+
         // Check Memory Bank Integration
         expect(memoryBankService.searchMemories).toHaveBeenCalled();
         expect(memoryBankService.addMemory).toHaveBeenCalled();
-        
+
         // Verify node 2 received node 1's output
         const node2TaskCall = (agentService.delegateTask as any).mock.calls[1];
         expect(node2TaskCall[1]).toContain('Output 1');
@@ -133,31 +133,31 @@ describe('AgentGraphService', () => {
         const mockExecutionId = 'exec-parallel';
         const state1 = {
             executionId: mockExecutionId,
-            status: 'planned',
+            status: 'PLANNED',
             nodeStates: {
-                'node-1': { status: 'planned' },
-                'node-2': { status: 'planned' },
-                'node-3': { status: 'planned' },
+                'node-1': { status: 'PLANNED' },
+                'node-2': { status: 'PLANNED' },
+                'node-3': { status: 'PLANNED' },
             }
         };
 
         const state2 = {
             ...state1,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Done 1' },
-                'node-2': { status: 'planned' },
-                'node-3': { status: 'planned' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'Done 1' },
+                'node-2': { status: 'PLANNED' },
+                'node-3': { status: 'PLANNED' },
             }
         };
 
         const state3 = {
             ...state2,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Done 1' },
-                'node-2': { status: 'step_complete', output: 'Done 2' },
-                'node-3': { status: 'step_complete', output: 'Done 3' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'Done 1' },
+                'node-2': { status: 'STEP_COMPLETE', output: 'Done 2' },
+                'node-3': { status: 'STEP_COMPLETE', output: 'Done 3' },
             },
-            status: 'completed'
+            status: 'COMPLETED'
         };
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
@@ -177,10 +177,10 @@ describe('AgentGraphService', () => {
         // Loop 1 called delegateTask for node 1
         // Loop 2 should have called delegateTask for both node 2 and node 3
         expect(agentService.delegateTask).toHaveBeenCalledTimes(3);
-        
+
         // The first call was node 1
         expect((agentService.delegateTask as any).mock.calls[0][1]).toBe('Start');
-        
+
         // The next two calls should be node 2 and 3
         const task2Prompt = (agentService.delegateTask as any).mock.calls[1][1];
         const task3Prompt = (agentService.delegateTask as any).mock.calls[2][1];
@@ -206,11 +206,11 @@ describe('AgentGraphService', () => {
         const mockExecutionId = 'exec-conditional';
         const state1 = {
             executionId: mockExecutionId,
-            status: 'planned',
+            status: 'PLANNED',
             nodeStates: {
-                'node-1': { status: 'planned' },
-                'node-2': { status: 'planned' },
-                'node-3': { status: 'planned' },
+                'node-1': { status: 'PLANNED' },
+                'node-2': { status: 'PLANNED' },
+                'node-3': { status: 'PLANNED' },
             }
         };
 
@@ -218,9 +218,9 @@ describe('AgentGraphService', () => {
         const state2 = {
             ...state1,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'The result is SUCCESS' },
-                'node-2': { status: 'planned' },
-                'node-3': { status: 'planned' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'The result is SUCCESS' },
+                'node-2': { status: 'PLANNED' },
+                'node-3': { status: 'PLANNED' },
             }
         };
 
@@ -228,11 +228,11 @@ describe('AgentGraphService', () => {
         const state3 = {
             ...state2,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'The result is SUCCESS' },
-                'node-2': { status: 'step_complete', output: 'Success Output' },
-                'node-3': { status: 'skipped' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'The result is SUCCESS' },
+                'node-2': { status: 'STEP_COMPLETE', output: 'Success Output' },
+                'node-3': { status: 'SKIPPED' },
             },
-            status: 'completed'
+            status: 'COMPLETED'
         };
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
@@ -249,7 +249,7 @@ describe('AgentGraphService', () => {
 
         expect(agentService.delegateTask).toHaveBeenCalledTimes(2);
         expect(agentGraphStateService.updateNodeStatus).toHaveBeenCalledWith(
-            mockUserId, mockExecutionId, 'node-3', expect.objectContaining({ status: 'skipped' })
+            mockUserId, mockExecutionId, 'node-3', expect.objectContaining({ status: 'SKIPPED' })
         );
     });
 
@@ -263,8 +263,8 @@ describe('AgentGraphService', () => {
         const mockExecutionId = 'exec-fail';
         const state1 = {
             executionId: mockExecutionId,
-            status: 'planned',
-            nodeStates: { 'node-1': { status: 'planned' } }
+            status: 'PLANNED',
+            nodeStates: { 'node-1': { status: 'PLANNED' } }
         };
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
@@ -277,7 +277,7 @@ describe('AgentGraphService', () => {
             .rejects.toThrow('Execution exec-fail lost during run');
 
         expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, mockExecutionId, 'failed'
+            mockUserId, mockExecutionId, 'FAILED'
         );
     });
 
@@ -293,15 +293,15 @@ describe('AgentGraphService', () => {
         };
 
         const mockExecutionId = 'exec-resume';
-        
+
         // Initial state: node-1 complete, node-2 planned
         const state1 = {
             graphId: 'resume-graph',
             executionId: mockExecutionId,
-            status: 'executing',
+            status: 'EXECUTING',
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Output 1' },
-                'node-2': { status: 'planned' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'Output 1' },
+                'node-2': { status: 'PLANNED' },
             }
         };
 
@@ -309,10 +309,10 @@ describe('AgentGraphService', () => {
         const state2 = {
             ...state1,
             nodeStates: {
-                'node-1': { status: 'step_complete', output: 'Output 1' },
-                'node-2': { status: 'step_complete', output: 'Output 2' },
+                'node-1': { status: 'STEP_COMPLETE', output: 'Output 1' },
+                'node-2': { status: 'STEP_COMPLETE', output: 'Output 2' },
             },
-            status: 'executing'
+            status: 'EXECUTING'
         };
 
         (agentGraphStateService.getExecution as any)
@@ -329,7 +329,7 @@ describe('AgentGraphService', () => {
         expect(agentService.delegateTask).toHaveBeenCalledTimes(1);
         expect((agentService.delegateTask as any).mock.calls[0][1]).toBe('Task 2');
         expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, mockExecutionId, 'completed'
+            mockUserId, mockExecutionId, 'COMPLETED'
         );
     });
 });
