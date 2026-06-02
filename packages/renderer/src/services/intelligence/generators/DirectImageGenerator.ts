@@ -28,10 +28,21 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_all': 'ALLOW_ALL',
 };
 
+const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
+    'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+
 function compactPayload<T extends Record<string, unknown>>(payload: T): T {
     return Object.fromEntries(
         Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
     ) as T;
+}
+
+function isGooglePrepaymentExhausted(message: string): boolean {
+    const lower = message.toLowerCase();
+    return lower.includes('prepayment credits are depleted')
+        || lower.includes('billing#prepay')
+        || (lower.includes('ai studio') && lower.includes('billing'))
+        || (lower.includes('resource_exhausted') && lower.includes('prepay'));
 }
 
 export async function generateImageDirectly(options: DirectImageOptions): Promise<string[]> {
@@ -88,7 +99,16 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
             );
         }
         
-        if (msg.includes('resource-exhausted') || msg.toLowerCase().includes('rate limit')) {
+        if (isGooglePrepaymentExhausted(msg)) {
+            throw new AppException(
+                AppErrorCode.QUOTA_EXCEEDED,
+                GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE,
+                { retryable: false }
+            );
+        }
+
+        const lowerMsg = msg.toLowerCase();
+        if (lowerMsg.includes('resource-exhausted') || lowerMsg.includes('resource_exhausted') || lowerMsg.includes('rate limit') || lowerMsg.includes('quota')) {
             throw new AppException(
                 AppErrorCode.RATE_LIMITED,
                 'Image generation quota exceeded or rate limited. Please wait or upgrade your plan.',

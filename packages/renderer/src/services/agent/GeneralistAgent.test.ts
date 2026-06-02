@@ -119,6 +119,17 @@ describe('GeneralistAgent', () => {
         expect(vi!.mocked(TOOL_REGISTRY.test_tool!).mock.calls.length).toBeLessThanOrEqual(2);
     });
 
+    it('hard-stops rate-limit failures without hidden retry amplification', async () => {
+        vi.mocked(AI.generateContentStream)
+            .mockRejectedValueOnce(new Error('Rate limit exceeded (10 requests/minute). Please slow down.'));
+
+        const result = await generalistAgent.execute('hi', {} as unknown as Parameters<typeof generalistAgent.execute>[1]);
+
+        expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
+        expect(result.error).toContain('Rate limit exceeded');
+        expect(result.text).toContain('Fatal Error: Rate limit exceeded');
+    });
+
     it('has proper tool declarations for native function calling', async () => {
         await generalistAgent.initialize();
         expect(generalistAgent.tools).toBeDefined();

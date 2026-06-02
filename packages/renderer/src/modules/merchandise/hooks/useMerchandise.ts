@@ -21,26 +21,28 @@ export interface MerchStats {
     };
 }
 
+const createZeroMerchStats = (): MerchStats => ({
+    totalRevenue: 0,
+    unitsSold: 0,
+    conversionRate: null,
+    revenueChange: 0,
+    unitsChange: 0,
+    trendScore: 0,
+    productionVelocity: 0,
+    funnelData: {
+        pageViews: 0,
+        addToCart: 0,
+        checkout: 0
+    }
+});
+
 export const useMerchandise = () => {
     const { userProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile
     })));
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
-    const [stats, setStats] = useState<MerchStats>({
-        totalRevenue: 0,
-        unitsSold: 0,
-        conversionRate: null,
-        revenueChange: 0,
-        unitsChange: 0,
-        trendScore: 0,
-        productionVelocity: 0,
-        funnelData: {
-            pageViews: 0,
-            addToCart: 0,
-            checkout: 0
-        }
-    });
+    const [stats, setStats] = useState<MerchStats>(() => createZeroMerchStats());
     const [topSellingProducts, setTopSellingProducts] = useState<(MerchProduct & { revenue: number, units: number })[]>([]);
     const [isProductsLoading, setIsProductsLoading] = useState(true);
     const [isCatalogLoading, setIsCatalogLoading] = useState(true);
@@ -182,7 +184,8 @@ export const useMerchandise = () => {
                 }
             } catch (err: unknown) {
                 logger.error("[Merchandise] Failed to load merch stats or timed out:", err);
-                setError("Could not load merchandise revenue stats.");
+                setStats(createZeroMerchStats());
+                setTopSellingProducts([]);
             } finally {
                 setIsStatsLoading(false);
             }

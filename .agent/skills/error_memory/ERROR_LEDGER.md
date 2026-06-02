@@ -1,3 +1,20 @@
+## 2026-06-02 Live Blockers: Gemini Prepay Depleted, Conductor Rate Limit, Cost Ledger Failure, Merch Stats Failure, Audio WASM CSP, Maps Auth Failure
+
+**SEVERITY:** High (blocks live user workflows despite local CI passing)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts`, `packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts`, `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts`, `packages/renderer/src/services/billing/CostControlService.ts`, `packages/renderer/src/services/agent/AgentService.ts`, `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`, `packages/renderer/src/modules/merchandise/hooks/useMerchandise.ts`, `packages/main/src/security/csp.ts`, `packages/renderer/src/modules/touring/components/TourMap.tsx`
+- ERRORS:
+  - Direct image generation: `429 RESOURCE_EXHAUSTED: Your prepayment credits are depleted. Please go to AI Studio... billing#prepay`
+  - Indii Conductor: `Fatal Error: Rate limit exceeded (10 requests/minute). Please slow down.`
+  - Agent side panel: `Error: Cost control system unavailable. Operation blocked for safety.`
+  - Merch dashboard: `Failed to load dashboard data. Could not load merchandise revenue stats.`
+  - Audio analyzer: `Evaluating a string as JavaScript violates CSP because 'unsafe-eval' is not allowed...`
+  - Tour map: `Map Authentication Failed ... missing App Check / reCAPTCHA key in the development environment.`
+- CAUSE: Previous validation proved local payload shape, typecheck, and unit/CI behavior, but did not prove live provider readiness. The Gemini failure is an external project billing/prepay state, not the earlier `referenceUri: null` bug. The conductor failure comes from the per-minute intelligence rate limiter in `TokenUsageService`. Agent chat also had duplicate cost-control reservation: `AgentService.handleDirectChatFlow` reserved cost before calling `AutonomousIntelligence.generateContentStream`, and `FirebaseIntelligenceService` reserved cost again inside the stream call. Merch revenue stats were treated as a module-fatal error instead of a degradable dashboard widget failure. Audio analyzer uses Essentia.js WASM, but the active Electron CSP omitted `wasm-unsafe-eval`. The map failure is a Google Maps/App Check/reCAPTCHA environment configuration blocker surfaced by `TourMap`.
+- FIX: Added explicit frontend detection for the Gemini prepayment-credit failure so the UI reports the real billing blocker instead of a generic generation failure. Removed the duplicate direct-chat cost reservation in `AgentService` and added a hard-stop classifier in `GeneralistAgent` so rate-limit, quota, billing, cost-ledger, and auth failures do not keep looping internally. Merch revenue stats now degrade to a zero state instead of blocking the whole dashboard. Production Electron CSP now allows `wasm-unsafe-eval` without allowing general JavaScript `unsafe-eval`. The Maps auth incident remains a live provider/environment blocker; do not claim it is fixed unless Firebase/Google console configuration is explicitly verified.
+- PREVENTION: Do not call live generation, conductor workflows, dashboard modules, or Maps "fixed" from CI alone. Live-readiness acceptance must include provider account state: Gemini API project has funded prepay/billing, App Check/reCAPTCHA and Maps JavaScript API are configured for the running environment, rate-limit policy is validated against the actual multi-call conductor workflow, one visible chat message must not trigger duplicate cost reservations or hidden retry amplification, non-critical dashboard stats must degrade to zero states, and production CSP must cover required WASM libraries without enabling broad `unsafe-eval`.
+
 ## 2026-06-02 Direct Image Generator `referenceUri: null` Payload Rejection
 
 **SEVERITY:** High (blocks direct image generation before the backend reaches Gemini)
