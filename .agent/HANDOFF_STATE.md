@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-01 22:15 EDT
+**Updated:** 2026-06-01 22:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b28737c8e fix(chore): clean up remaining beta readiness issues and align ledger state
+f4010dce3 chore: session checkpoint [22:15]
 a2549985d Merge pull request #126 from indii-music-founder/codex/remove-dead-noise-texture
 bffe5368c fix(ui): remove dead external noise texture
 878a3825f chore(test): add deep test artifacts and coordination reports
@@ -12,27 +14,11 @@ f25d5a1cb fix(maps): resolve React Wrapper blocking logic and restore rendering
 efd08bf3f fix(maps): implement global MapsProvider to prevent race conditions
 0a0f382fe fix(harbor): restore environment dirs to satisfy harbor dataset validation
 0c9becc0e fix: stabilize Google Maps inline array reference
-d3c0f8500 refactor: remove Founder Pass support and related Stripe webhook logic from codebase
-f7dd0ba7c feat: increase total Founder program seats from 10 to 11 and clarify internal seat allocation
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/workflows/end.md
- M .agent/workflows/middle.md
- M .agent/workflows/start.md
- M OPEN_ISSUES.md
- M docs/FOUNDERS_PROGRAM.md
- M docs/business-decisions/03_REVENUE_AND_PRICING.md
- M package-lock.json
- M package.json
- M packages/firebase/package.json
- M packages/landing/src/components/FoundersSection.tsx
- M packages/landing/src/page.tsx
- M packages/mcp-server-harness/package.json
- M packages/renderer/package.json
-?? docs/RELEASE_CHECKLIST.md
+clean working tree
 ```
 
 ## Decisions
