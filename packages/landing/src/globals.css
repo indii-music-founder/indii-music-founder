@@ -43,9 +43,19 @@ body::after {
   z-index: 9999;
   opacity: 0.05;
   pointer-events: none;
-  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.45) 0 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.25) 0 1px, transparent 1px);
+  background-size: 17px 17px, 29px 29px;
   mix-blend-mode: overlay;
   filter: contrast(150%) brightness(100%);
+}
+
+.indii-noise-overlay {
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px);
+  background-size: 17px 17px, 29px 29px;
 }
 
 /* Glass Panel - The "Wet" Look */

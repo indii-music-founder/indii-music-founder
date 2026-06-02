@@ -46,7 +46,7 @@ export default function SelectOrg() {
             {/* Ambient Background Effects */}
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+            <div className="absolute inset-0 indii-noise-overlay opacity-[0.03] mix-blend-overlay pointer-events-none" />
 
             {/* Left Panel - Branding & Context */}
             <div className="hidden md:flex w-1/3 max-w-md relative flex-col justify-between p-12 border-r border-white/5 bg-black/40 backdrop-blur-xl z-10">
