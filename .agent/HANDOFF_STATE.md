@@ -1,31 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-02 12:21 EDT
+**Updated:** 2026-06-02 12:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8056fe566 docs(agent): complete end workflow cleanup
+3f7877336 fix: resolve 5 P0 issues (128-132) regarding backend keys, omni logic, thin client, and firestore rules
+275f720e2 docs(release): complete founder release checklist
+5aa3e5af9 docs(audit): API & creative-pipeline findings (F1–F21, P0/P1/P2 severity)
+75245dc3d chore: session checkpoint [12:21]
 bf4070f5a chore: session checkpoint [12:19]
 34c9788a5 chore: session checkpoint [12:17]
 7454bfa52 chore: session checkpoint [12:15]
 7de109b5a chore(agent): update checkpoint for session end
 26974d50d Merge pull request #127 from indii-music-founder/fix-issue-084
-97fdcf24f chore(agents): refine slash command workflow loop
-2029dc5db fix(agent): harden workflow state and triad execution
-cd7606d1b chore(agents): integrate /better into /go execution loop and optimize /better workflow
-e814adc29 chore(agents): upgrade slash commands to prevent completion hallucination
-f3d60ad0a feat(workflow): implement persistent workflow state schemas and testing harness
 ```
 
 ## Working State
 ```
- M .agent/workflows/better.md
- M .agent/workflows/hunter.md
-?? .agent/test_ledger/API_AUDIT_FINDINGS.md
-?? docs/flowcharts/ai-cfo-micro.md
-?? docs/flowcharts/superfan-crm-vault-micro.md
-?? docs/flowcharts/sync-tagger-micro.md
-?? docs/flowcharts/tour-router-micro.md
-?? docs/flowcharts/web3-splitter-micro.md
+ M .agent/workflows/end.md
+?? .agent/checkpoints/antigravity-7a591063.md
 ```
 
 ## Decisions
