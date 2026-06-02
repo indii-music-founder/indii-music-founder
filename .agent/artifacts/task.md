@@ -7,4 +7,4 @@
 - [x] Fix React Error #31 (Firestore Timestamp render crash)
 - [x] Enhance Chat/Studio interaction to prevent UI overlap
 - [x] Document Secret Inventory (docs/SECRET_INVENTORY.md)
-- [ ] Deploy Image Resizing Cloud Function (BLOCKED: GCP Billing Disabled)
+- [ ] Deploy Image Resizing Cloud Function (Unblocked - GCP Billing Enabled)
