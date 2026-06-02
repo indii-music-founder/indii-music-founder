@@ -78,7 +78,7 @@ export default function ShowroomStage({
                     </div>
 
                     {/* Scanlines Effect */}
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none mix-blend-overlay" />
+                    <div className="absolute inset-0 indii-noise-overlay opacity-5 pointer-events-none mix-blend-overlay" />
                     <div className="absolute inset-x-0 top-0 h-px bg-white/10 shadow-[0_0_20px_white] animate-scanline pointer-events-none" />
                 </div>
             </div>
