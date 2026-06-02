@@ -28,6 +28,7 @@ Watch for these CI-breaking patterns from ERROR_LEDGER:
 - Missing `.catch()` on async ops causing silent canvas/component failures
 - Agent routing typos in prompts
 - Type errors from incomplete refactors
+- **Self-Fulfilling Tests:** Ensure unit tests assert the *global system contract*, not just the local function's broken output. Do not change a test just to make it pass without verifying the architectural contract.
 
 ## 2. Stuck Agent Detection
 
@@ -66,10 +67,11 @@ If agent reports being stuck, blocked, or unable to proceed:
 
 1. **Select Task Priority:** Blockers > Dependencies > User Priority
 2. **Execute Task:** Write code, update tests, verify (typecheck/build as needed)
-3. **Verify Locally:** Ensure changes don't break adjacent code
-4. **Mark Complete:** Update `task.md` with `[x]` checkbox
-5. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
-6. **Loop or Exit:**
+3. **Execution Integrity Check:** You CANNOT mark a task complete `[x]` if its implementation relies on a hardcoded string, a `TODO`, or a `[MOCK]` comment (unless the task explicitly requested a mock).
+4. **Verify Locally:** Ensure changes don't break adjacent code
+5. **Mark Complete:** Update `task.md` with `[x]` checkbox
+6. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
+7. **Loop or Exit:**
    - If tasks remain: re-invoke `/go`
    - If all tasks done: move to Final Verification
 
