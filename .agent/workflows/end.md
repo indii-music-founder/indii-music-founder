@@ -27,6 +27,7 @@ If any architecture, state flow, or logic shifted during the execution phase:
 
 ## 4. The Gauntlet (via `/ci-validate`)
 Signal "we're done" and leave a perfectly clean repository:
+- **Anti-Hallucination Audit:** Before running the final CI sequence, you MUST run a `grep` scan for `MOCK`, `TODO`, and `stub` across all files you touched during this session. If any mocks or stubs exist in the critical path, you are expressly forbidden from stating the feature is "fully implemented". You must state: "Scaffolding Complete. Mocks remain."
 - Invoke the **`/ci-validate`** command.
 - This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
 - **Do not exit this phase until the CI script passes flawlessly.**
