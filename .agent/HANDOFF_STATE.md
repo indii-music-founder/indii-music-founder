@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-02 12:48 EDT
+**Updated:** 2026-06-02 12:49 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+473298a4b chore: session checkpoint — API audit complete, 21 findings, 5 P0s filed
+6f48ac194 chore: session checkpoint [12:48]
 dab8170c1 chore: session checkpoint [12:43]
 7f9ab6f7c chore: session checkpoint [12:42]
 57a51a374 chore: session end workflows and checkpoint
@@ -12,8 +14,6 @@ d828f24ad chore: session checkpoint [12:39]
 3f7877336 fix: resolve 5 P0 issues (128-132) regarding backend keys, omni logic, thin client, and firestore rules
 275f720e2 docs(release): complete founder release checklist
 5aa3e5af9 docs(audit): API & creative-pipeline findings (F1–F21, P0/P1/P2 severity)
-75245dc3d chore: session checkpoint [12:21]
-bf4070f5a chore: session checkpoint [12:19]
 ```
 
 ## Working State
