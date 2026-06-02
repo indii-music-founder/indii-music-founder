@@ -69,9 +69,10 @@ If agent reports being stuck, blocked, or unable to proceed:
 2. **Execute Task:** Write code, update tests, verify (typecheck/build as needed)
 3. **Execution Integrity Check:** You CANNOT mark a task complete `[x]` if its implementation relies on a hardcoded string, a `TODO`, or a `[MOCK]` comment (unless the task explicitly requested a mock).
 4. **Verify Locally:** Ensure changes don't break adjacent code
-5. **Mark Complete:** Update `task.md` with `[x]` checkbox
-6. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
-7. **Loop or Exit:**
+5. **Elevation Pass (via `/better`):** Run the `/better` command on the specific files you just modified to audit for structural integrity, performance, and defensive resilience *before* moving on.
+6. **Mark Complete:** Update `task.md` with `[x]` checkbox
+7. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
+8. **Loop or Exit:**
    - If tasks remain: re-invoke `/go`
    - If all tasks done: move to Final Verification
 
