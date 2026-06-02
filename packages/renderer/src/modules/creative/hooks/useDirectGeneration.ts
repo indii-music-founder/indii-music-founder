@@ -61,6 +61,12 @@ function generationErrorMessage(error: unknown): { code?: string; message: strin
     return { code, message: 'The Google generation service returned an internal error.' };
 }
 
+function compactCallablePayload<T extends Record<string, unknown>>(payload: T): T {
+    return Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+    ) as T;
+}
+
 export function useDirectGeneration() {
     const {
         studioControls,
@@ -251,7 +257,7 @@ export function useDirectGeneration() {
         }
 
         const generateImageV3 = httpsCallable(functions, 'generateImageV3');
-        const res = await generateImageV3({
+        const res = await generateImageV3(compactCallablePayload({
             prompt: finalPrompt,
             aspectRatio: studioControls.aspectRatio,
             model: studioControls.model,
@@ -259,7 +265,7 @@ export function useDirectGeneration() {
             thinkingLevel: studioControls.thinkingLevel,
             useGoogleSearch: studioControls.useGrounding,
             referenceUri
-        });
+        }));
         
         const data = res.data as { jobId: string };
         setActiveJobs(prev => [
@@ -318,7 +324,7 @@ export function useDirectGeneration() {
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
 
         const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
-        const res = await generateVideoV3({
+        const res = await generateVideoV3(compactCallablePayload({
             prompt: sequencePrompt,
             firstFrameUri,
             lastFrameUri,
@@ -331,7 +337,7 @@ export function useDirectGeneration() {
             negativePrompt: studioControls.negativePrompt || undefined,
             seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
             enhancePrompt: true,
-        });
+        }));
 
         const data = res.data as { jobId: string };
         setActiveJobs(prev => [

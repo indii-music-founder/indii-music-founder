@@ -1,3 +1,14 @@
+## 2026-06-02 Direct Image Generator `referenceUri: null` Payload Rejection
+
+**SEVERITY:** High (blocks direct image generation before the backend reaches Gemini)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts`, `packages/renderer/src/services/creative/CreativeStorageService.ts`, `packages/renderer/src/services/intelligence/generators/DirectImageGenerator.ts`
+- ERROR: `Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used. Details: [{ path: ["referenceUri"], message: "Expected string, received null" }]`
+- CAUSE: The direct Creative Hub image path always built a callable payload containing `referenceUri`, even when no reference image was selected. Firebase callable serialization can preserve a nullish optional field as `null`, but the `generateImageV3` Cloud Function Zod schema accepts only an omitted field or a `gs://` string. Existing generated references could also be HTTP/data values that needed Storage normalization before crossing the thin-client boundary.
+- FIX: Added payload compaction before `generateImageV3` calls so `undefined` and `null` keys are omitted, taught `CreativeStorageService.uploadReferenceMedia` to return existing `gs://` URIs unchanged and upload HTTP/blob/data media to Storage, and added regression coverage for the no-reference image path.
+- PREVENTION: Before sending callable payloads into strict Cloud Function schemas, compact optional fields and enforce the backend media contract at the client boundary. Optional `z.string().startsWith("gs://")` fields must be absent when unset, never `null`, and reference media must be converted to `gs://` before the callable request.
+
 ## 2026-06-01 Firestore Transaction Read/Write Order Violation
 
 **SEVERITY:** High (causes unhandled `Error: Firestore transactions require all reads to be executed before all writes` at runtime in Cloud Functions)
@@ -670,3 +681,28 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: A peer dependency conflict (e.g., `@react-three/fiber` requiring `react@>=19` while the root workspace locks `react@18.3.1`) triggers an `ERESOLVE` error during `npm install`. When `npm install` hits `ERESOLVE`, it often aborts and **skips installing `devDependencies` entirely** without failing the parent shell script if error handling is weak.
 - FIX: Use `npm install --legacy-peer-deps` to bypass the strict peer dependency checks and force the installation of all `devDependencies`.
 - PREVENTION: When encountering sudden missing binary commands (`vitest`) or mass type definition errors in a monorepo, always assume a silent `npm install` failure due to `ERESOLVE` peer dependency conflicts. Never assume the binaries just magically vanished.
+
+## 2026-06-02 Vite Client Environment & React 18 JSDOM Test Environment Warnings
+
+**SEVERITY:** Medium (causes Next.js legacy environment variable resolution failure in Vite build, hides test runs for packages/landing, and generates act() noise)
+
+**MISTAKE:**
+- FILES: `packages/landing/src/login-bridge/page.tsx`, `packages/landing/vite.config.ts`, `packages/renderer/src/test/setup.ts`, `vitest.workspace.ts`
+- ERROR:
+  1. `NEXT_PUBLIC_AUTH_HANDOFF_URL` environment variable read via `process.env` was failing in the client bundle since Vite requires `import.meta.env` and variables prefixed with `VITE_` (or custom `envPrefix`).
+  2. `packages/landing` unit tests were omitted from the monorepo's workspace test runner (`vitest.workspace.ts`).
+  3. `Warning: The current testing environment is not configured to support act(...)` was logged in JSDOM testing environments when rendering or simulating user actions without importing `@testing-library/react`.
+- CAUSE:
+  1. Vite static analysis does not replace `process.env.*` in client-side code, leaving it undefined or raising runtime errors.
+  2. Workspace test discovery lacked the landing package suite.
+  3. React 18 expects `globalThis.IS_REACT_ACT_ENVIRONMENT = true` to be set in JSDOM test setups if testing library is not explicitly loaded to declare the testing flag.
+- FIX:
+  1. Configured `envPrefix: ['VITE_', 'NEXT_PUBLIC_']` in the landing page `vite.config.ts` config.
+  2. Replaced `process.env` with `import.meta.env` in `login-bridge/page.tsx`.
+  3. Added the `landing` project workspace to `vitest.workspace.ts`.
+  4. Defined `globalThis.IS_REACT_ACT_ENVIRONMENT = true` in the global `setup.ts` file to silence act environment warning noise.
+- PREVENTION:
+  - Do not use `process.env` inside Vite packages; always use `import.meta.env`.
+  - Expose non-standard env prefixes using `envPrefix` in `vite.config.ts`.
+  - Always verify that all packages in a monorepo are registered in `vitest.workspace.ts` if they contain tests.
+  - Set `globalThis.IS_REACT_ACT_ENVIRONMENT = true` in testing environment setups.
