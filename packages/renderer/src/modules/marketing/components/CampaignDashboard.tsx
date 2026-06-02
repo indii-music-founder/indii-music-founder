@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
+import GeoBountyDeployerModal from './GeoBountyDeployerModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
 import IntelligenceCampaignModal from './IntelligenceCampaignModal';
@@ -43,6 +44,8 @@ const CampaignDashboard: React.FC = () => {
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isGeoBountyModalOpen, setIsGeoBountyModalOpen] = useState(false);
+    const [deployedBounty, setDeployedBounty] = useState<string | null>(null);
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
 
@@ -80,6 +83,11 @@ const CampaignDashboard: React.FC = () => {
 
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
+    }, []);
+
+    const handleDeployBounty = useCallback((location: string, _desc: string) => {
+        setIsGeoBountyModalOpen(false);
+        setDeployedBounty(location);
     }, []);
 
     const handleAIGenerate = useCallback(() => {
@@ -129,10 +137,16 @@ const CampaignDashboard: React.FC = () => {
                 />
 
                 {/* ── CENTER — Campaign Workspace ────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0 bg-background">
+                <div className="flex-1 flex flex-col min-w-0 bg-background relative">
+                    {deployedBounty && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-blue-500/90 text-white px-4 py-2 rounded-full font-semibold shadow-lg text-sm">
+                            Mission Active: {deployedBounty}
+                        </div>
+                    )}
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
+                        onGeoBounty={() => setIsGeoBountyModalOpen(true)}
                     />
 
                     <div className="flex-1 overflow-hidden relative">
@@ -206,6 +220,13 @@ const CampaignDashboard: React.FC = () => {
                     <IntelligenceCampaignModal
                         onClose={() => setIsAIModalOpen(false)}
                         onSave={handleAISave}
+                    />
+                )}
+
+                {isGeoBountyModalOpen && (
+                    <GeoBountyDeployerModal
+                        onClose={() => setIsGeoBountyModalOpen(false)}
+                        onDeploy={handleDeployBounty}
                     />
                 )}
             </div>

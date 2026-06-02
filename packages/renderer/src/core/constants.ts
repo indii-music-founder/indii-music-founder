@@ -41,7 +41,8 @@ export const MODULE_IDS = [
     'registration',
     'security',
     'devops',
-    'screenwriter'
+    'screenwriter',
+    'crm'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -73,6 +74,7 @@ export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'screenwriter': 'indii_executor',
     'legal': 'legal',
     'marketing': 'marketing',
+    'crm': 'marketing',
     'campaign': 'marketing',
     'road': 'road',
     'social': 'social',

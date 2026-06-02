@@ -387,8 +387,12 @@ function RecentTransactionsPanel({ earningsSummary, expenses, loading }: RecentT
     }, [earningsSummary, expenses]);
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3 ledger-container" data-testid="cfo-ledger">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Recent Transactions</h3>
+            <div className="flex items-center justify-between py-1 px-2 mb-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/5">
+                <span>Source</span>
+                <span>Amount</span>
+            </div>
             {loading ? <LoadingSpinner /> : transactions.length === 0 ? (
                 <EmptyState message="No transactions yet. Earnings and expenses will appear here." />
             ) : (
