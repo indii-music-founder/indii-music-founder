@@ -21,6 +21,8 @@ permissions:
   checks: write
   pull-requests: read
   actions: read
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ─── Setup & Sanity Checks ──────────────────────────────────────────────────
@@ -222,7 +224,7 @@ jobs:
 
       - name: Upload Sentry Sourcemaps
         if: env.SENTRY_ORG != '' && env.SENTRY_AUTH_TOKEN != ''
-        uses: getsentry/action-release@v1
+        uses: getsentry/action-release@v3
         continue-on-error: true
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
