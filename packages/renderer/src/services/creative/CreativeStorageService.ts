@@ -7,12 +7,16 @@ export class CreativeStorageService {
      * and returns the strict 'gs://' URI required by the Thin Client protocol API Gateway.
      */
     static async uploadReferenceMedia(
-        userId: string, 
-        media: File | string, 
+        userId: string,
+        media: File | Blob | string,
         mediaType: 'image' | 'video' | 'audio'
     ): Promise<string> {
         if (!storage) {
             throw new Error('Firebase Storage is not initialized.');
+        }
+
+        if (typeof media === 'string' && media.startsWith('gs://')) {
+            return media;
         }
 
         const bucket = storage.app.options.storageBucket;
@@ -28,6 +32,12 @@ export class CreativeStorageService {
             // Data URL string
             if (media.startsWith('data:')) {
                 await uploadString(storageRef, media, 'data_url');
+            } else if (/^https?:\/\//i.test(media)) {
+                const response = await fetch(media);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch reference media: ${response.status} ${response.statusText}`);
+                }
+                await uploadBytes(storageRef, await response.blob());
             } else {
                 // Raw Base64
                 await uploadString(storageRef, media, 'base64');

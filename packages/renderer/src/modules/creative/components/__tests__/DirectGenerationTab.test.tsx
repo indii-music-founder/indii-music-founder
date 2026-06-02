@@ -163,6 +163,8 @@ describe('DirectGenerationTab', () => {
         });
 
         expect(mockHttpsCallable).toHaveBeenCalled();
+        const imagePayload = mockHttpsCallable.mock.calls[0]?.[0];
+        expect(imagePayload).not.toHaveProperty('referenceUri');
 
         await act(async () => {
             await vi.advanceTimersByTimeAsync(3010);

@@ -13,6 +13,15 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'landing',
+      environment: 'jsdom',
+      include: ['packages/landing/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'main',
       environment: 'node',
       include: ['packages/main/src/**/*.{test,spec}.{ts,tsx}'],
