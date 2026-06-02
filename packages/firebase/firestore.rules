@@ -62,10 +62,10 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isPublicProfile() || (isGuest() && userId == 'founder-demo-uid');
 
       // Users can create their own profile
-      allow create: if isOwnerWrite(userId) || (isGuest() && userId == 'founder-demo-uid');
+      allow create: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
 
       // Users can update their own profile with validation
-      allow update: if isOwnerWrite(userId) &&
+      allow update: if isOwner(userId) &&
         // Prevent changing uid
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']) ||
          (!('uid' in resource.data) && request.resource.data.uid == userId));
@@ -84,8 +84,8 @@ service cloud.firestore {
         // Only the owning user can read their inbox items
         allow read: if isOwner(userId);
         // Agent backend writes new handshake requests; user can update status only
-        allow create: if isOwnerWrite(userId);
-        allow update: if isOwnerWrite(userId) &&
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
         allow delete: if false;
       }
@@ -102,24 +102,24 @@ service cloud.firestore {
       // Layer 1: Session Transcripts — Durable session history for Squeezer search
       match /session_transcripts/{sessionId} {
         allow read: if isOwner(userId);
-        allow create: if isOwnerWrite(userId);
-        allow update: if isOwnerWrite(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
         allow delete: if false;
       }
 
       // Layer 2: Deep Hive — Episodic memory store
       match /memories/{memoryId} {
         allow read: if isOwner(userId);
-        allow create: if isOwnerWrite(userId);
-        allow update: if isOwnerWrite(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
         allow delete: if false;
       }
 
       // Layer 2: Deep Hive — Consolidated insights
       match /insights/{insightId} {
         allow read: if isOwner(userId);
-        allow create: if isOwnerWrite(userId);
-        allow update: if isOwnerWrite(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
         allow delete: if false;
       }
 
@@ -216,9 +216,9 @@ service cloud.firestore {
       // ── Usage Tracking (MembershipService daily quota / budget) ──────
       match /usage/{dateKey} {
         allow read: if isOwner(userId);
-        allow create: if isOwnerWrite(userId);
+        allow create: if isOwner(userId);
         // Allow atomic counter increments (increment() uses updateDoc / setDoc merge)
-        allow update: if isOwnerWrite(userId);
+        allow update: if isOwner(userId);
         // Usage records are retained for billing audit — no client-side deletion
         allow delete: if false;
       }
@@ -226,8 +226,8 @@ service cloud.firestore {
       // ── Visual Autorater Audit Logs (Item 409) ──────────────────────────
       match /visualVerifications/{traceId} {
         allow read: if isOwner(userId);
-        allow create: if isOwnerWrite(userId);
-        allow update: if isOwnerWrite(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
         allow delete: if false; // Audits are permanent records
       }
 
@@ -355,7 +355,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() || isGuest();
       
       // Initial stats can be created by the user
-      allow create: if isOwnerWrite(userId);
+      allow create: if isOwner(userId);
       
       // Counters are READ-ONLY for clients (Item 205 fix)
       // Must be updated via Cloud Functions trigger or internal batch
@@ -431,14 +431,14 @@ service cloud.firestore {
     match /carts/{userId} {
       // Users can only access their own cart
       allow read: if isOwner(userId);
-      allow create: if isOwnerWrite(userId);
-      allow update: if isOwnerWrite(userId);
-      allow delete: if isOwnerWrite(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
       
       // Cart items subcollection
       match /items/{itemId} {
         allow read: if isOwner(userId);
-        allow write: if isOwnerWrite(userId);
+        allow write: if isOwner(userId);
       }
     }
     
@@ -448,11 +448,11 @@ service cloud.firestore {
       allow read: if isAuthenticated() || isGuest();
       
       // Only the seller can initialize
-      allow create: if isOwnerWrite(userId);
+      allow create: if isOwner(userId);
       
       // Stats should be updated via Cloud Functions after transactions
       // Allow limited self-updates for profile info
-      allow update: if isOwnerWrite(userId) &&
+      allow update: if isOwner(userId) &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['storeName', 'storeDescription', 'updatedAt']);
     }
@@ -575,8 +575,8 @@ service cloud.firestore {
     // Layer 3: CORE Vault — Authoritative fact store (supersede-never-delete)
     match /users/{userId}/vault/{category} {
       allow read: if isOwner(userId);
-      allow create: if isOwnerWrite(userId);
-      allow update: if isOwnerWrite(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
       // Facts are superseded, never deleted — enforced at app layer
       allow delete: if false;
     }
@@ -584,9 +584,9 @@ service cloud.firestore {
     // Layer 4: Captain's Logs — Daily append-only operational timeline
     match /users/{userId}/captains_logs/{dateKey} {
       allow read: if isOwner(userId);
-      allow create: if isOwnerWrite(userId);
+      allow create: if isOwner(userId);
       // Entries can only be appended (arrayUnion), never removed
-      allow update: if isOwnerWrite(userId);
+      allow update: if isOwner(userId);
       allow delete: if false;
     }
 

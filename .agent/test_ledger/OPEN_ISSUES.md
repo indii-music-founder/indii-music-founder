@@ -1422,3 +1422,39 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Removed unused `Wrapper`, `MAPS_LIBRARIES`, and `render` symbols in `MapsComponent.tsx`. Updated `getsentry/action-release` to `v3` to address Node 20 deprecation warning. Added `sourcemap: true` to Vite build configurations in both `packages/renderer/vite.config.ts` and `electron.vite.config.ts` to ensure Sentry action properly detects `.map` files without errors.
 - **Verification:** `npm run lint` now passes clean with no ESLint warnings. Sentry action v3 is verified by GitHub release, and Vite builds now natively output source maps to satisfy the Sentry CLI mapping checker.
 - **UX Impact:** This does not currently block deploys, but noisy CI makes real failures easier to miss, and missing sourcemap references reduce production debugging quality during founder beta.
+
+
+---
+
+### ISSUE-090: Clean up keySources in FallbackClient.ts to use only canonical VITE_API_KEY
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Fix:** Removed undefined environment variable lookups and kept only canonical VITE_API_KEY.
+
+---
+
+### ISSUE-091: Replace base64 inlining with Cloud Storage upload in CampaignIntelligenceService.ts
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Fix:** Uploads generated campaign images to Firebase Storage to abide by Thin Client gateway constraints.
+
+---
+
+### ISSUE-092: Add UI gating in OmniWorkflow.tsx for generateOmniRemixV3 when OmniFlash is unconfigured
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Fix:** Catch backend errors containing 'not configured for API use yet' and display an explicit API UNAVAILABLE toast to prevent UI locking.
+
+---
+
+### ISSUE-093: Refactor secrets.ts to gracefully return null instead of throwing an error for missing GEMINI_API_KEY
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Fix:** Changed getGeminiApiKey() to return null instead of throwing an Error, allowing Vertex ADC to fallback properly in production functions.
+
+---
+
+### ISSUE-094: Replace isOwnerWrite with isOwner in firestore.rules
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Fix:** Updated 25+ instances in firestore.rules to use isOwner(userId) as isOwnerWrite was undefined and causing rules to fail compilation.

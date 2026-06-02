@@ -335,7 +335,12 @@ export default function OmniWorkflow() {
 
             toast.success("Omni performance remix completed! Video added to Showroom.");
         } catch (error) {
-            toast.error(`Omni remix failed: ${callableErrorMessage(error)}`);
+            const message = callableErrorMessage(error);
+            if (message.includes('not configured for API use yet')) {
+                toast.error(`API UNAVAILABLE: ${message}`);
+            } else {
+                toast.error(`Omni remix failed: ${message}`);
+            }
         } finally {
             setIsRemixing(false);
         }
