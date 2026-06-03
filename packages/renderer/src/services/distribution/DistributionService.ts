@@ -1,5 +1,5 @@
 import { DDEXReleaseSchema } from './DistributionSchemas';
-import { auth, storage } from '@/services/firebase';
+import { auth, functions, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import {
     DistributionTaskDocument,
@@ -10,9 +10,9 @@ import {
 import { isrcService } from './ISRCService';
 import { upcService } from './UPCService';
 import { taxService } from './TaxService';
-import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { ref, uploadString } from 'firebase/storage';
-import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
@@ -40,11 +40,11 @@ async function writeMetadataSnapshot(releaseId: string, metadata: IngestionMetad
     try {
         if (isFirebaseE2EMockEnabled()) return;
 
-        const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
-        await addDoc(historyCol, {
+        const recordAudit = httpsCallable(functions, 'recordDistributionAuditEvent');
+        await recordAudit({
+            releaseId,
+            kind: 'metadata_snapshot',
             snapshot: JSON.parse(JSON.stringify(metadata)), // deep-clone to detach from mutation
-            timestamp: serverTimestamp(),
-            userId: auth.currentUser?.uid ?? null,
         });
     } catch (err: unknown) {
         logger.error('[DistributionService] Failed to write metadata snapshot:', err);
@@ -59,11 +59,11 @@ async function writeDistributionAuditEvent(
     try {
         if (isFirebaseE2EMockEnabled()) return;
 
-        const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
-        await addDoc(eventsCol, {
-            ...event,
-            timestamp: serverTimestamp(),
-            userId: auth.currentUser?.uid ?? null,
+        const recordAudit = httpsCallable(functions, 'recordDistributionAuditEvent');
+        await recordAudit({
+            releaseId,
+            kind: 'event',
+            event,
         });
     } catch (err: unknown) {
         logger.error('[DistributionService] Failed to write audit event:', err);
@@ -754,18 +754,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
 
-        const takedownCol = collection(db, 'distribution_takedowns', releaseId, 'requests');
-        await addDoc(takedownCol, {
+        const requestTakedown = httpsCallable(functions, 'requestDistributionTakedown');
+        await requestTakedown({
             releaseId,
             distributorId,
             reason: reason ?? 'voluntary_withdrawal',
-            requestedBy: userId,
-            status: 'pending',
-            requestedAt: serverTimestamp(),
         });
-
-        // Update the release document status
-        await this.releasesService.update(releaseId, { status: 'takedown_requested' });
         logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
     }
 

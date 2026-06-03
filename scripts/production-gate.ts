@@ -23,6 +23,8 @@ const rendererProdSchema = z.object({
   VITE_FUNCTIONS_URL: z.string().url("Missing or invalid VITE_FUNCTIONS_URL").optional().refine(val => !isProd || !!val, {
     message: "Missing VITE_FUNCTIONS_URL"
   }),
+  VITE_FUNCTIONS_REGION: z.string().optional().default("us-central1"),
+  VITE_REMOTION_GCP_REGION: z.string().optional().default("us-central1"),
   
   // Firebase
   VITE_FIREBASE_API_KEY: z.string().min(1, "Missing VITE_FIREBASE_API_KEY"),
@@ -41,6 +43,16 @@ const rendererProdSchema = z.object({
   VITE_INGESTION_ENTITY_NAME: z.string().min(1, "Missing VITE_INGESTION_ENTITY_NAME").optional().refine(val => !isProd || !!val, {
     message: "Missing VITE_INGESTION_ENTITY_NAME"
   }),
+}).refine(data => {
+  if (!isProd) return true;
+  const region = data.VITE_FUNCTIONS_REGION || "us-central1";
+  return data.VITE_FUNCTIONS_URL?.startsWith(`https://${region}-`);
+}, {
+  message: "VITE_FUNCTIONS_URL must match VITE_FUNCTIONS_REGION",
+  path: ["VITE_FUNCTIONS_URL"],
+}).refine(data => !isProd || (data.VITE_REMOTION_GCP_REGION || "us-central1") === "us-central1", {
+  message: "VITE_REMOTION_GCP_REGION must be us-central1",
+  path: ["VITE_REMOTION_GCP_REGION"],
 });
 
 // Helper to check Firebase function secrets/env
@@ -68,6 +80,9 @@ const backendSecretsSchema = z.object({
 
   // Fan enrichment
   RESEND_API_KEY: z.string().min(1).optional(),
+
+  // Edge/API request protection
+  ARCJET_KEY: z.string().startsWith("ajkey_", "Missing or invalid ARCJET_KEY").optional(),
 
   // Distributor
   VITE_DDEX_DPID_SPOTIFY: z.string().min(1).optional(),
@@ -108,6 +123,9 @@ const backendSecretsSchema = z.object({
 }).refine(data => !isProd || data.RESEND_API_KEY, {
   message: "Missing RESEND_API_KEY",
   path: ["RESEND_API_KEY"]
+}).refine(data => !isProd || data.ARCJET_KEY, {
+  message: "Missing ARCJET_KEY",
+  path: ["ARCJET_KEY"]
 }).refine(data => !isProd || data.VITE_DDEX_DPID_SPOTIFY, {
   message: "Missing VITE_DDEX_DPID_SPOTIFY",
   path: ["VITE_DDEX_DPID_SPOTIFY"]
