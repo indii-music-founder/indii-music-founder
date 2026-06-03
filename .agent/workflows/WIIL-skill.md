@@ -53,6 +53,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Universal recursive execution loop for task continuation and unsticking blocked agents.
 - **When to use:** Used automatically by `/middle`. Can be invoked directly to force the agent to push through a blocker.
 
+### `/get-git` — Git Repository Sync & Monitor
+- **Purpose:** Checks local repository state, fetches origin, pulls/rebases changes, validates ahead commits using typecheck/Vitest, and manages background scheduling cron.
+- **When to use:** Run at start, middle, or manually to keep commits organized and pushed cleanly.
+
 ### `/ci-validate` — Pre-Push CI Validation
 - **Purpose:** Comprehensive pre-push CI validation with commit consolidation to prevent bloat.
 - **When to use:** Used automatically by `/end`. Must be run before any push to `main`.
