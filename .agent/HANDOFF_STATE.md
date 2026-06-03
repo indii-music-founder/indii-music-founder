@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-03 11:09 EDT
+**Updated:** 2026-06-03 11:11 EDT
 **Branch:** `codex/live-runtime-blockers`
 
 ## Recent Commits
 ```
+87221de76 chore: session checkpoint [11:09]
 fa4923018 chore: session checkpoint [11:09]
 2743e1868 chore: session checkpoint [11:07]
 09f22b1f2 fix(firebase): defer firestore/storage initialization to runtime for test compatibility
@@ -13,21 +14,20 @@ d808cb807 Merge remote-tracking branch 'origin/main' into codex/live-runtime-blo
 0491d3c08 chore: session checkpoint [10:50]
 76e19d503 chore(checkpoint): document git sync monitor session completion
 6b2166282 docs(flowcharts): add git monitor sync architecture diagram
-6e4221409 feat(git): add /get-git command and integrate into start and middle workflows
 ```
 
 ## Working State
 ```
- M packages/firebase/src/functions/api/__tests__/router.integration.test.ts
- M scripts/generate-health-dashboard.ts
-?? .agent/PREEXISTING_ISSUES.md
-?? .github/workflows/health-check.yml
-?? packages/firebase/src/functions/creative/__tests__/
-?? packages/firebase/src/test/integration.setup.ts
-?? packages/renderer/public/health.html
-?? packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts
-?? scripts/fetch-metrics.ts
-?? scripts/log-health-check.ts
+A  .agent/PREEXISTING_ISSUES.md
+A  .github/workflows/health-check.yml
+M  packages/firebase/src/functions/api/__tests__/router.integration.test.ts
+AM packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts
+AM packages/firebase/src/test/integration.setup.ts
+A  packages/renderer/public/health.html
+A  packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts
+A  scripts/fetch-metrics.ts
+M  scripts/generate-health-dashboard.ts
+A  scripts/log-health-check.ts
 ```
 
 ## Decisions
