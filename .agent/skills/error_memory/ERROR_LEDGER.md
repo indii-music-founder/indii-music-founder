@@ -1,3 +1,17 @@
+## 2026-06-03 Pre-existing Integration Test Failures (Firebase Setup)
+
+**SEVERITY:** High (2 integration test suites fail before reaching the code under test)
+
+**MISTAKE:**
+- FILES: `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts`, `packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts`
+- ERRORS:
+  1. Gateway: `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.` (line 32)
+  2. Gateway: `Cannot read properties of undefined (reading 'on')` in Firebase Functions setup (line 72)
+  3. AgentExecutor: `Cannot read properties of undefined (reading 'filter')` in GeneralistAgent.execute (line 642)
+- CAUSE: The gateway test setup does not initialize Firebase Storage with a bucket name. The AgentExecutor test failure is in the GeneralistAgent specialist code, not in the router/gateway functions being fixed on this branch.
+- STATUS: Documented but not fixed on this branch. The router.integration.test.ts lazy Firebase initialization fix works correctly; these are separate pre-existing test-infrastructure issues that should be addressed in a follow-up branch.
+- PREVENTION: When adding integration tests for Firebase Services (Firestore, Storage, Functions), ensure the test setup initializes both Firestore AND Storage with valid bucket names via `admin.initializeApp({ ... storageBucket: ... })` in the beforeAll hook. The `integration.setup.ts` file must provide both `db` and a bucket reference.
+
 ## 2026-06-03 Missing CI/CD Secrets Cause Production Validation Gate to Fail
 
 **SEVERITY:** High (blocks PR #134; tests pass but build fails in CI)
