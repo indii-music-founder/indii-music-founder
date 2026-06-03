@@ -13,6 +13,42 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import admin from 'firebase-admin';
 
+vi.mock('firebase-admin', () => {
+  const mockDoc = {
+    get: vi.fn(),
+    set: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+
+  const mockCollection = {
+    doc: vi.fn(() => mockDoc),
+    get: vi.fn(),
+    add: vi.fn(),
+  };
+
+  const mockFirestore = {
+    collection: vi.fn(() => mockCollection),
+    doc: vi.fn(() => mockDoc),
+  };
+
+  const mockAuth = {
+    verifyIdToken: vi.fn(),
+    getUser: vi.fn(),
+  };
+
+  const mockAdmin = {
+    initializeApp: vi.fn(),
+    auth: vi.fn(() => mockAuth),
+    firestore: vi.fn(() => mockFirestore),
+  };
+
+  return {
+    default: mockAdmin,
+    ...mockAdmin
+  };
+});
+
 // Create real express request/response for testing
 function createMockRequest(overrides?: Partial<express.Request>): express.Request {
   const req = {
@@ -142,7 +178,7 @@ describe('API Router Integration Tests', () => {
       const response = {
         success: true,
         meta: {
-          requestId: expect.stringMatching(/^req-/),
+          requestId: 'req-123',
         },
       };
 
