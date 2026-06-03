@@ -138,6 +138,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
     res.status(201).json(respond(track, requestId));
   } catch (err) {
+    console.error("Router error:", err);
     if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
