@@ -4,9 +4,11 @@ description: Universal drop-anywhere recursive loop for progress review, unstick
 
 # /go - Recursive Execution Loop (Enhanced)
 
+**Integration:** See `.agent/TESTING_INTEGRATION_GUIDE.md` for how testing, Rabbit, and Sentry integrate into this loop.
+
 **Activates a self-reflective execution loop for progress review, unsticking blocked agents, and driving tasks to completion.**
 
-**Completion Signal:** When the agent determines all tracked work is complete and verified, automatically invoke `/ci-validate`.
+**Completion Signal:** When the agent determines all tracked work is complete, verified (including integration tests), and all GitHub Issues closed, automatically invoke `/ci-validate`.
 
 ## 1. Context & Scan (MANDATORY)
 
