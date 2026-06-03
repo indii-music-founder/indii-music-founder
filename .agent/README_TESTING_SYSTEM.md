@@ -40,10 +40,9 @@
 | Thing | Location |
 |-------|----------|
 | Full guide | `.agent/TESTING_INTEGRATION_GUIDE.md` |
-| Health dashboard | `/health.html` (Firebase Hosting, Firebase Auth protected) |
-| Integration tests | `packages/firebase/src/functions/**/*.integration.test.ts` |
+| Integration tests | `packages/renderer/src/services/**/*.integration.test.ts` (~20+ files) |
 | Sentry service | `packages/renderer/src/services/observability/SentryService.ts` |
-| Test setup | `packages/firebase/src/test/integration.setup.ts` |
+| Health dashboard | Planned (see `.claude/plans/encapsulated-riding-spark.md`) |
 
 ---
 
@@ -70,15 +69,21 @@ gh api repos/OWNER/REPO/pulls/NUMBER/comments --jq '.[] | select(.user.login | c
 
 ## Integration Tests: What They Test
 
-✓ Real Google GenAI API calls (image/video generation)  
-✓ Real Firebase Auth & Firestore (routing, data access)  
-✓ Real swarm orchestration (multi-agent delegation)  
-✓ Real performance metrics (latency, SLA compliance)  
+✓ Service orchestration and routing logic  
+✓ API handler code paths (with mocked Firebase boundaries)  
+✓ Multi-service delegation and error handling  
+✓ Response format, status codes, timing  
+
+**Current Design (Mocked):**
+External dependencies (Google APIs, Firebase Admin) are mocked to avoid credential requirements in CI. Tests exercise real internal code paths but assume stable mocked boundaries.
+
+**Future Enhancement:**
+Real Google API integration tests when credentials/infrastructure available.
 
 **NOT tested by integration tests:**
 - Code style (Rabbit does this)
-- Error handling (Sentry + integration tests do this)
-- Unit logic (unit tests do this)
+- Production errors (Sentry tracks these)
+- Unit-level logic (unit tests do this)
 
 ---
 
