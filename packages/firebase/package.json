@@ -43,7 +43,6 @@
         "@firebase/rules-unit-testing": "^5.0.0",
         "@types/cors": "2.8.17",
         "@types/node-fetch": "^2.6.13",
-        "@types/sharp": "0.31.1",
         "firebase-functions-test": "^3.5.0",
         "typescript": "5.8.2",
         "vitest": "^4.1.8"
