@@ -2,6 +2,18 @@
 
 All notable changes to indii are documented in this file.
 
+## [1.64.1](https://github.com/indii-music/indiiOS-Clean/compare/v1.64.0...v1.64.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* **firebase:** defer firestore/storage initialization to runtime for test compatibility ([codex/live-runtime-blockers](https://github.com/indii-music-founder/indii-music-founder/tree/codex/live-runtime-blockers))
+  - Fixed module-level Firebase initialization in `packages/firebase/src/functions/api/router.ts` and `packages/firebase/src/functions/creative/gateway.ts`
+  - Converted `const db = admin.firestore()` to lazy `getDb()` function to prevent initialization errors in test suites
+  - Applied same pattern to `admin.storage()` for consistency
+  - Resolves "The default Firebase app does not exist" errors in integration tests
+
+
 ## [1.64.0](https://github.com/indii-music/indiiOS-Clean/compare/v1.63.0...v1.64.0) (2026-05-14)
 
 
