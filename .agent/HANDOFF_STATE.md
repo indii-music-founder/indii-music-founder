@@ -1,33 +1,38 @@
 # Handoff State
-**Updated:** 2026-06-03 11:11 EDT
-**Branch:** `codex/live-runtime-blockers`
+**Updated:** 2026-06-03 17:07 EDT
+**Branch:** `fix/open-issues-sweep`
 
 ## Recent Commits
 ```
-87221de76 chore: session checkpoint [11:09]
-fa4923018 chore: session checkpoint [11:09]
-2743e1868 chore: session checkpoint [11:07]
-09f22b1f2 fix(firebase): defer firestore/storage initialization to runtime for test compatibility
-e9172b0d5 chore: session checkpoint [11:00]
-f5afa7b4a chore: session checkpoint [10:53]
-d808cb807 Merge remote-tracking branch 'origin/main' into codex/live-runtime-blockers
-0491d3c08 chore: session checkpoint [10:50]
-76e19d503 chore(checkpoint): document git sync monitor session completion
-6b2166282 docs(flowcharts): add git monitor sync architecture diagram
+9aeb13a67 chore: mark ISSUE-096, 097, and 099 as unblocked
+593addd9c fix(billing): allow cost ledger bypass in local dev when VITE_API_KEY is present
+4f897d41d docs(issues): update OPEN_ISSUES ledger after issue sweep
+cb8b24e87 docs(test): add Mega Stress Test v10.0 — API and Security Hardening Regression (Routines 5-9)
+977ada3cd fix(sweep): resolve lint warnings
+facb17598 Merge branch 'main' into fix/open-issues-sweep
+8fed78a4e docs: update ERROR_LEDGER.md with integration test credential issues
+31686fac6 fix(test): skip router integration tests gracefully on missing credentials
+55b1364ae test(gateway): improve integration test error handling
+df8f4b960 chore(checkpoint): antigravity session end [11:53]
 ```
 
 ## Working State
 ```
-A  .agent/PREEXISTING_ISSUES.md
-A  .github/workflows/health-check.yml
-M  packages/firebase/src/functions/api/__tests__/router.integration.test.ts
-AM packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts
-AM packages/firebase/src/test/integration.setup.ts
-A  packages/renderer/public/health.html
-A  packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts
-A  scripts/fetch-metrics.ts
-M  scripts/generate-health-dashboard.ts
-A  scripts/log-health-check.ts
+ M .agent/artifacts/task.md
+ M .agent/test_ledger/REAL_TEST_HISTORY.md
+ M package-lock.json
+ M packages/firebase/package.json
+ M packages/firebase/src/__tests__/triggerLongFormVideoJob.quota.test.ts
+ M packages/firebase/src/__tests__/video.test.ts
+ M packages/firebase/src/test/integration.setup.ts
+ M packages/firebase/src/test/setup.ts
+ M packages/renderer/src/services/billing/CostControlService.test.ts
+ M packages/renderer/src/services/business-harness/HarnessStorage.ts
+ M packages/renderer/src/services/image/ImageGenerationService.ts
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+?? .agent/checkpoints/antigravity-9067a181.md
+?? .agent/checkpoints/session-23bfc5f9.md
+?? scratch.js
 ```
 
 ## Decisions
