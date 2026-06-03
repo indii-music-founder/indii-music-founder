@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isrcService } from '../ISRCService';
-import { getDocs, addDoc, Timestamp } from 'firebase/firestore';
+import { getDocs, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
 describe('ISRCService', () => {
     beforeEach(() => {
@@ -67,11 +68,19 @@ describe('ISRCService', () => {
         };
         const mockId = 'new-record-id';
 
-        vi.mocked(addDoc).mockResolvedValueOnce({ id: mockId } as unknown as Awaited<ReturnType<typeof addDoc>>);
+        const mockCallable = vi.fn().mockResolvedValueOnce({ data: { id: mockId } });
+        vi.mocked(httpsCallable).mockReturnValueOnce(mockCallable as any);
 
         const result = await isrcService.recordAssignment(mockData);
 
         expect(result).toBe(mockId);
-        expect(addDoc).toHaveBeenCalledWith(expect.anything(), mockData);
+        expect(mockCallable).toHaveBeenCalledWith({
+            type: 'isrc',
+            isrc: mockData.isrc,
+            releaseId: mockData.releaseId,
+            trackTitle: mockData.trackTitle,
+            artistName: mockData.artistName,
+            metadataSnapshot: mockData.metadataSnapshot,
+        });
     });
 });

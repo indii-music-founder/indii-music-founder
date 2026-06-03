@@ -51,6 +51,22 @@ export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
+export { logAuditEvent } from './functions/security/logAuditEvent';
+
+// REST API Router
+export {
+    getTrack,
+    createTrack,
+    queryAnalytics,
+    updateTrack,
+    deleteTrack,
+    listTracks,
+    createDistribution,
+    getDistribution,
+    submitDistribution,
+    getProfile,
+    health,
+} from './functions/api/router';
 
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
@@ -66,6 +82,14 @@ export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
 export { processDDEXAck } from './distribution/processDDEXAck';
+export {
+    assignDistributionIdentifier,
+    recordDistributionIdentifier,
+    recordDistributionAuditEvent,
+    requestDistributionTakedown,
+    createSftpIngestionRecord,
+    updateSftpIngestionRecord,
+} from './functions/distribution/distributionRecords';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
@@ -113,6 +137,9 @@ export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
+
+// Billing / Cost Control
+export { enforceOperationCost } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';
@@ -756,9 +783,7 @@ export const inngestApi = functions
 // ----------------------------------------------------------------------------
 
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
-// Deployed to us-west1 for Model Availability
-// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
-// Deployed to us-west1 for Model Availability
+// Deployed to us-central1 with the rest of the Firebase Functions fleet.
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
@@ -886,7 +911,12 @@ export const generateContentStream = functions
 
                 // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
                 const { GoogleGenAI } = await import("@google/genai");
-                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+                const apiKey = getGeminiApiKey();
+                if (!apiKey) {
+                    res.status(500).send('Gemini API key is not configured.');
+                    return;
+                }
+                const client = new GoogleGenAI({ apiKey });
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
@@ -1425,8 +1455,8 @@ export const healthCheck = functions
     });
 
 /**
- * Health Check (Secondary Region: us-west1)
- * Part of PRODUCTION_100 Item 12 (Multi-region Deployment)
+ * Health Check (legacy export name).
+ * Deployed to us-central1 with the primary Firebase Functions fleet.
  */
 export const healthCheckWest1 = functions
     .region("us-central1")
@@ -1435,8 +1465,8 @@ export const healthCheckWest1 = functions
         res.status(200).json({
             status: "ok",
             timestamp: new Date().toISOString(),
-            region: "us-west1",
-            purpose: "Multi-region Failover Check"
+            region: "us-central1",
+            purpose: "Primary region health check"
         });
     });
 

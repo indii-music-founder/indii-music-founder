@@ -7,6 +7,11 @@ const mockDownload = vi.fn();
 const mockSet = vi.fn();
 const mockUpdate = vi.fn();
 const mockSave = vi.fn();
+const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
+const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
+  mockOnCallOptions.push(options);
+  return handler;
+}));
 
 vi.mock('@google/genai', () => ({
   GoogleGenAI: vi.fn(function GoogleGenAI() {
@@ -30,7 +35,7 @@ vi.mock('@google/genai', () => ({
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
-  onCall: vi.fn((_options, handler) => handler),
+  onCall: mockOnCall,
   HttpsError: class HttpsError extends Error {
     code: string;
     details?: unknown;
@@ -88,6 +93,16 @@ const callGenerateOmniRemix = generateOmniRemixV3 as unknown as (request: {
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('allocates enough memory for the Gemini image SDK path', () => {
+    expect(mockOnCallOptions).toContainEqual(
+      expect.objectContaining({
+        timeoutSeconds: 120,
+        memory: '1GiB',
+        enforceAppCheck: true,
+      }),
+    );
   });
 
   it('honors fast model settings and extracts image data after text parts', async () => {

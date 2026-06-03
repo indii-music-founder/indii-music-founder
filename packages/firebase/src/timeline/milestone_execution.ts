@@ -178,6 +178,9 @@ export const executeMilestoneFn = (inngestClient: Inngest) =>
                 // --------------------------------------------------------
                 const agentResult = await step.run('call-gemini-agent', async () => {
                     const apiKey = getGeminiApiKey();
+                    if (!apiKey) {
+                        throw new Error('Gemini API key is not configured.');
+                    }
                     const client = new GoogleGenAI({ apiKey });
 
                     const systemPrompt = getSystemPromptForAgent(agentId);
