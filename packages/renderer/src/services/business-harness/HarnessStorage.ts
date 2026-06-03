@@ -2,7 +2,7 @@ import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, server
 import { db } from '@/services/firebase';
 import type { BusinessActivityEvent, HarnessCostLine, HarnessRun } from './types';
 
-function stripUndefined<T extends Record<string, any>>(obj: T): T {
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as T;
 }
 
