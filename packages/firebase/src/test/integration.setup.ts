@@ -2,8 +2,6 @@ import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 
 // Ensure we don't mock firebase-admin for integration tests
-const _isRealEnv = process.env.NODE_ENV === 'integration' || process.env.VITE_FIREBASE_PROJECT_ID;
-
 /**
  * Initializes REAL Firebase Admin services for integration tests.
  * This expects standard application default credentials or a service account key in the environment.
