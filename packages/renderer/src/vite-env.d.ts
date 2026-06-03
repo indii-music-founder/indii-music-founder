@@ -24,6 +24,7 @@ interface ImportMetaEnv {
     readonly VITE_FCM_VAPID_KEY?: string
 
     // Functions / Backend
+    readonly VITE_FUNCTIONS_REGION?: string
     readonly VITE_FUNCTIONS_URL?: string
     readonly VITE_RAG_PROXY_URL?: string
     readonly VITE_USE_FUNCTIONS_EMULATOR?: string
