@@ -23,6 +23,7 @@ This command is used during the core build phase to manage iterative execution, 
 Invoke the **Recursive Execution Loop**:
 - Read and execute the `/go` command instructions.
 - Work through the tasks one by one, verifying locally after each change.
+- Run **`/get-git`** periodically to ensure local commits are validated and pushed, and remote changes are integrated.
 - Unstick blockers using the Error Ledger as defined in `/go`.
 
 ## 3. Dynamic Technical Diagramming (via `/flowchart`)
