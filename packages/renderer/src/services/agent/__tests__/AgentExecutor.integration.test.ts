@@ -1,4 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+
+vi.unmock('firebase/ai');
+vi.unmock('@/services/firebase');
+
 import { AgentExecutor } from '../components/AgentExecutor';
 import { agentRegistry } from '../registry';
 
@@ -9,12 +13,16 @@ import { agentRegistry } from '../registry';
 describe('AgentExecutor (Integration)', () => {
     let executor: AgentExecutor;
 
+    let originalE2E: string | undefined;
+
     beforeAll(() => {
+        originalE2E = process.env.VITE_PLAYWRIGHT_E2E;
+        process.env.VITE_PLAYWRIGHT_E2E = 'true';
         executor = new AgentExecutor(agentRegistry);
     });
 
     afterAll(() => {
-        // Cleanup if necessary
+        process.env.VITE_PLAYWRIGHT_E2E = originalE2E;
     });
 
     it('should successfully load an existing agent from the real registry', async () => {
