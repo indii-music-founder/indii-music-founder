@@ -637,7 +637,7 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
 `;
 
         // Build conversation history
-        const history = context?.chatHistory || useStore.getState().agentHistory;
+        const history = context?.chatHistory || useStore.getState().agentHistory || [];
         const historyText = history
             .filter(msg => msg.role !== 'system')
             .slice(-10) // Last 10 messages
