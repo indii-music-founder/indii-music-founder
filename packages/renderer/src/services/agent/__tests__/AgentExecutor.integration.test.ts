@@ -60,7 +60,7 @@ describe('AgentExecutor (Integration)', () => {
             projectHandle: { name: 'IntegrationTestProject' }
         };
 
-        const onProgress = (event: any) => {
+        const onProgress = (_event: any) => {
             // Optional: log or assert on streaming progress
         };
 
