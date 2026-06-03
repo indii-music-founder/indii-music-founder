@@ -1261,7 +1261,6 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-082: Founder Payment Flow Still Has Stripe Purchase Remnants
-- **Status:** OPEN
 - **Status:** ✅ FIXED (73dad32caeb29)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Billing / Founders Program
@@ -1310,7 +1309,6 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-085: Remote Architecture Docs Conflict With Current Implementation
-- **Status:** OPEN
 - **Status:** ✅ FIXED (429eb24b598df)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / indiiREMOTE / Documentation
@@ -1337,7 +1335,6 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-086: Mermaid Flowcharts Are Product Source-Of-Truth And Must Not Drift
-- **Status:** OPEN
 - **Status:** ✅ FIXED (5c30e989011ce)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Documentation / System Architecture / Agent Handoff
