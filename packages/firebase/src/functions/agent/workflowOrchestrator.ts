@@ -1,8 +1,23 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
-import type { WorkflowExecution } from '@indii/shared';
 import { AgentTriad } from './AgentTriad';
 import { DefaultPlanner, DefaultGenerator, DefaultEvaluator } from './DefaultAgents';
+
+interface WorkflowStepExecution {
+    stepId: string;
+    agentId: string;
+    prompt?: string;
+    status: 'PLANNED' | 'EXECUTING_GENERATION' | 'AWAITING_HUMAN' | 'AWAITING_EVALUATION' | 'STEP_COMPLETE' | 'SKIPPED' | 'FAILED' | 'CANCELLED';
+    result?: string;
+    error?: string;
+}
+
+interface WorkflowExecution {
+    id: string;
+    userId: string;
+    status: 'PLANNED' | 'EXECUTING' | 'AWAITING_HUMAN' | 'AWAITING_EVALUATION' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+    steps: Record<string, WorkflowStepExecution>;
+}
 
 /**
  * Workflow Orchestrator (Cloud Function)

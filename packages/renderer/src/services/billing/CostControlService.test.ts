@@ -1,94 +1,149 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CostControlService } from './CostControlService';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock Firestore
+const mocks = vi.hoisted(() => ({
+  callable: vi.fn(),
+  httpsCallable: vi.fn(),
+  isAnonymousOrDemoUser: vi.fn(),
+  isDemoUserId: vi.fn(),
+}));
+
 vi.mock('@/services/firebase', () => ({
-  db: {
-    doc: vi.fn(),
+  auth: {
+    currentUser: {
+      uid: 'auth-user-1',
+      isAnonymous: false,
+      providerData: [{ providerId: 'google.com' }],
+    },
+  },
+  db: {},
+  functions: { region: 'us-central1' },
+}));
+
+vi.mock('firebase/functions', () => ({
+  httpsCallable: mocks.httpsCallable,
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+}));
+
+vi.mock('@/utils/e2eMode', () => ({
+  isFirebaseE2EMockEnabled: () => false,
+}));
+
+vi.mock('@/utils/authGuards', () => ({
+  isAnonymousOrDemoUser: mocks.isAnonymousOrDemoUser,
+  isDemoUserId: mocks.isDemoUserId,
+}));
+
+vi.mock('@/utils/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
+
+vi.unmock('@/services/billing/CostControlService');
+
+import { CostControlService } from './CostControlService';
 
 describe('CostControlService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  describe('checkAndReserve', () => {
-    it('should allow operation within daily budget', async () => {
-      // This test requires Firestore mocking setup
-      // Implementation depends on test environment configuration
-      expect(true).toBe(true);
-    });
-
-    it('should block operation exceeding daily budget', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should block operation exceeding monthly budget', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should block operation exceeding runaway limit', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should fail securely when Firestore unavailable', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should return correct remaining budget', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should generate unique operationId', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should track hourly operations correctly', async () => {
-      expect(true).toBe(true);
+    localStorage.setItem('FIREBASE_E2E_MOCK', 'false');
+    (window as Window & { FIREBASE_E2E_MOCK?: unknown }).FIREBASE_E2E_MOCK = false;
+    mocks.isAnonymousOrDemoUser.mockReturnValue(false);
+    mocks.isDemoUserId.mockReturnValue(false);
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({
+      data: {
+        allowed: true,
+        remainingBudget: 4.99,
+        dailyUsed: 0.01,
+        monthlyUsed: 0.01,
+        operationId: 'op-server-1',
+      },
     });
   });
 
-  describe('getStatus', () => {
-    it('should return current budget status for user', async () => {
-      expect(true).toBe(true);
+  it('reserves cost through the us-central1 server callable', async () => {
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'agent_stream',
+      estimatedCost: 0.001,
+      userId: 'stale-client-user',
+      metadata: { commandId: 'cmd-1' },
     });
 
-    it('should default to free tier if user not found', async () => {
-      expect(true).toBe(true);
-    });
-
-    it('should return zero values on error', async () => {
-      expect(true).toBe(true);
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'enforceOperationCost',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({
+      operationType: 'agent_stream',
+      estimatedCost: 0.001,
+      userId: 'auth-user-1',
+      metadata: expect.objectContaining({ commandId: 'cmd-1' }),
+    }));
+    expect(result).toEqual({
+      allowed: true,
+      requiresConfirmation: undefined,
+      reason: undefined,
+      remainingBudget: 4.99,
+      dailyUsed: 0.01,
+      monthlyUsed: 0.01,
+      operationId: 'op-server-1',
     });
   });
 
-  describe('budget tiers', () => {
-    it('free tier should have $5 daily limit', async () => {
-      expect(true).toBe(true);
+  it('preserves server confirmation responses', async () => {
+    mocks.callable.mockResolvedValue({
+      data: {
+        allowed: false,
+        requiresConfirmation: true,
+        reason: 'This operation will cost $25.00.',
+        remainingBudget: 25,
+        dailyUsed: 0,
+        monthlyUsed: 0,
+      },
     });
 
-    it('pro tier should have $25 daily limit', async () => {
-      expect(true).toBe(true);
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'image',
+      estimatedCost: 25,
+      userId: 'auth-user-1',
     });
 
-    it('enterprise tier should have $100 daily limit', async () => {
-      expect(true).toBe(true);
-    });
+    expect(result.allowed).toBe(false);
+    expect(result.requiresConfirmation).toBe(true);
+    expect(result.reason).toBe('This operation will cost $25.00.');
   });
 
-  describe('runaway protection', () => {
-    it('should block any operation exceeding $500 monthly', async () => {
-      expect(true).toBe(true);
+  it('blocks guest sessions before calling the server', async () => {
+    mocks.isAnonymousOrDemoUser.mockReturnValue(true);
+
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'agent_stream',
+      estimatedCost: 0.001,
+      userId: 'guest-user',
     });
 
-    it('should log runaway incident to Firestore', async () => {
-      expect(true).toBe(true);
+    expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toBe('Authenticated user is required for cost-controlled operations.');
+  });
+
+  it('fails closed when the server reservation is unavailable', async () => {
+    mocks.callable.mockRejectedValue(new Error('network unavailable'));
+
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'agent_stream',
+      estimatedCost: 0.001,
+      userId: 'auth-user-1',
     });
+
+    expect(result.allowed).toBe(false);
+    expect(result.remainingBudget).toBe(0);
   });
 });
