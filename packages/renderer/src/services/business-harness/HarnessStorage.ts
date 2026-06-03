@@ -2,15 +2,19 @@ import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, server
 import { db } from '@/services/firebase';
 import type { BusinessActivityEvent, HarnessCostLine, HarnessRun } from './types';
 
+function stripUndefined<T extends Record<string, any>>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as T;
+}
+
 export async function saveHarnessRun<TOutput>(run: HarnessRun<TOutput>): Promise<string> {
   const target = run.projectId
     ? collection(db, 'projects', run.projectId, 'harnessRuns')
     : collection(db, 'users', run.userId, 'harnessRuns');
 
-  const ref = await addDoc(target, {
+  const ref = await addDoc(target, stripUndefined({
     ...run,
     createdAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 
@@ -40,18 +44,18 @@ export async function listRecentHarnessRuns(params: {
 }
 
 export async function saveBusinessActivityEvent(event: BusinessActivityEvent): Promise<string> {
-  const ref = await addDoc(collection(db, 'users', event.userId, 'businessActivityEvents'), {
+  const ref = await addDoc(collection(db, 'users', event.userId, 'businessActivityEvents'), stripUndefined({
     ...event,
     createdAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 
 export async function saveBusinessCostLine(costLine: HarnessCostLine): Promise<string> {
-  const ref = await addDoc(collection(db, 'users', costLine.userId, 'businessCostLines'), {
+  const ref = await addDoc(collection(db, 'users', costLine.userId, 'businessCostLines'), stripUndefined({
     ...costLine,
     createdAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 

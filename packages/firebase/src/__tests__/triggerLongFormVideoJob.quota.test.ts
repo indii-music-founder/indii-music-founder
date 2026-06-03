@@ -172,14 +172,7 @@ vi.mock('../orchestration', () => ({
     orchestrationListener: vi.fn()
 }));
 
-// ─── Native & Third-Party Module Mocks (CI linux-x64 safety) ─────────────────
-// The barrel file (index.ts) transitively imports sharp via lib/image_resizing.ts.
-// On CI (ubuntu-latest) the sharp native binary for linux-x64 may not be installed.
 
-// Mock image_resizing to cut the sharp dependency chain entirely
-vi.mock('../lib/image_resizing', () => ({
-    generateThumbnail: vi.fn().mockResolvedValue('https://mock-thumbnail.com/thumb.jpg'),
-}));
 
 // Mock cors (imported at top of index.ts)
 vi.mock('cors', () => ({
