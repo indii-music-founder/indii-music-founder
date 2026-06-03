@@ -72,9 +72,10 @@ describe('Creative Gateway (Integration)', () => {
             result = await generateImageV3.run(request);
         } catch (e: any) {
             const errorStr = String(e.message || e);
-            // If local credentials expired (invalid_rapt/invalid_grant) or quota exhausted, gracefully skip
-            if (errorStr.includes('invalid_grant') || errorStr.includes('invalid_rapt') || errorStr.includes('resource-exhausted') || errorStr.includes('permission-denied')) {
-                console.warn('Skipping test gracefully due to local credential expiration or quota limit:', errorStr);
+            const errorCode = e?.code || e?.status || '';
+            // If local credentials expired (invalid_rapt/invalid_grant), quota exhausted, or credentials missing, gracefully skip
+            if (errorStr.includes('invalid_grant') || errorStr.includes('invalid_rapt') || errorStr.includes('resource-exhausted') || errorStr.includes('permission-denied') || errorStr.includes('Could not load the default credentials') || String(errorCode).toLowerCase() === 'permission-denied') {
+                console.warn('Skipping test gracefully due to local credential expiration, missing credentials, or quota limit:', errorStr);
                 return;
             }
             // If we get an auth/quota error from Google, fail the test but log it nicely
