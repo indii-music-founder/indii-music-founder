@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-03 11:00 EDT
+**Updated:** 2026-06-03 11:07 EDT
 **Branch:** `codex/live-runtime-blockers`
 
 ## Recent Commits
 ```
+09f22b1f2 fix(firebase): defer firestore/storage initialization to runtime for test compatibility
+e9172b0d5 chore: session checkpoint [11:00]
 f5afa7b4a chore: session checkpoint [10:53]
 d808cb807 Merge remote-tracking branch 'origin/main' into codex/live-runtime-blockers
 0491d3c08 chore: session checkpoint [10:50]
@@ -12,14 +14,11 @@ d808cb807 Merge remote-tracking branch 'origin/main' into codex/live-runtime-blo
 6e4221409 feat(git): add /get-git command and integrate into start and middle workflows
 5e09da39e chore: session checkpoint [10:40]
 c5d32b1c5 docs(testing): add implementation roadmap and fix checkpoint
-a51b355aa fix(testing-docs): correct factual inaccuracies and add missing infrastructure
-c27348c14 Merge pull request #135 from indii-music-founder/codex/live-runtime-blockers
 ```
 
 ## Working State
 ```
  M packages/firebase/src/functions/api/__tests__/router.integration.test.ts
- M packages/firebase/src/functions/api/router.ts
  M scripts/generate-health-dashboard.ts
 ?? .github/workflows/health-check.yml
 ?? packages/firebase/src/functions/creative/__tests__/
