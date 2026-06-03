@@ -28,7 +28,7 @@ export async function teardownServices() {
 export function createTestRequest(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     path: string,
-    body?: any,
+    body?: unknown,
     headers: Record<string, string> = {}
 ): Partial<Request> {
     return {
@@ -44,20 +44,23 @@ export function createTestRequest(
 /**
  * Creates a mock express response object.
  */
-export function createTestResponse(): Partial<Response> & { _getData: () => any, _getStatusCode: () => number, _getHeaders: () => Record<string, string> } {
+export function createTestResponse(): Partial<Response> & { _getData: () => unknown, _getStatusCode: () => number, _getHeaders: () => Record<string, string> } {
     let statusCode = 200;
-    let data: any = null;
+    let data: unknown = null;
     const headers: Record<string, string> = {};
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: any = {
         status: (code: number) => {
             statusCode = code;
             return res;
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         json: (body: any) => {
             data = body;
             return res;
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         send: (body: any) => {
             data = body;
             return res;
@@ -98,7 +101,7 @@ export function createTestFirebaseToken(uid: string = 'test-user-id', email: str
 /**
  * Asserts that the response is successful.
  */
-export function assertSuccess(response: any, expectedStatus = 200) {
+export function assertSuccess(response: Partial<Response> & { _getData: () => unknown, _getStatusCode: () => number }, expectedStatus = 200) {
     if (response._getStatusCode() !== expectedStatus) {
         throw new Error(`Expected status ${expectedStatus}, but got ${response._getStatusCode()}: ${JSON.stringify(response._getData())}`);
     }
