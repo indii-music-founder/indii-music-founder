@@ -1,24 +1,26 @@
 # Handoff State
-**Updated:** 2026-06-03 10:40 EDT
+**Updated:** 2026-06-03 10:50 EDT
 **Branch:** `codex/live-runtime-blockers`
 
 ## Recent Commits
 ```
+76e19d503 chore(checkpoint): document git sync monitor session completion
+6b2166282 docs(flowcharts): add git monitor sync architecture diagram
+6e4221409 feat(git): add /get-git command and integrate into start and middle workflows
+5e09da39e chore: session checkpoint [10:40]
 c5d32b1c5 docs(testing): add implementation roadmap and fix checkpoint
 a51b355aa fix(testing-docs): correct factual inaccuracies and add missing infrastructure
 f14f8d2a4 chore: session checkpoint [10:15]
 6b1d0e23f chore: session checkpoint [10:09]
 c5d5659ea docs(error-ledger): document ARCJET_KEY production validation blocker
 edc35a275 fix(production-gate): remove ARCJET_KEY production requirement, allow provisioning separately
-af5d4802b chore: session checkpoint [10:07]
-17f45824d chore: session checkpoint [10:05]
-5e4ef750d chore(task): update project task list
-e71c75824 feat(git): add background git repository monitor and sync script
 ```
 
 ## Working State
 ```
-clean working tree
+ M scripts/generate-health-dashboard.ts
+?? packages/renderer/public/health.html
+?? scripts/fetch-metrics.ts
 ```
 
 ## Decisions
