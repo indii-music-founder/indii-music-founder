@@ -1,5 +1,6 @@
-import { getFirestore, collection, addDoc, getDocs, query, where, limit, runTransaction, Timestamp } from 'firebase/firestore';
-import { app, auth } from '@/services/firebase';
+import { getFirestore, collection, getDocs, query, where, limit, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { app, auth, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import type { ISRCRecordDocument } from '@/types/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -14,7 +15,6 @@ export interface ISRCRecord {
 
 export class ISRCService {
     private db = getFirestore(app);
-    private poolRef = collection(this.db, 'isrc_pool');
     private registryRef = collection(this.db, 'isrc_registry');
 
     /**
@@ -27,26 +27,18 @@ export class ISRCService {
         }
 
         try {
-            return await runTransaction(this.db, async (transaction) => {
-                const q = query(this.poolRef, where('status', '==', 'available'), limit(1));
-                const snapshot = await getDocs(q);
-
-                if (snapshot.empty) {
-                    throw new Error('ISRC pool is exhausted. Please ingestion more codes.');
-                }
-
-                const isrcDoc = snapshot.docs[0]!;
-                const isrcData = isrcDoc.data() as ISRCRecord;
-
-                transaction.update(isrcDoc.ref, {
-                    status: 'assigned',
-                    assignedTo: trackId,
-                    assignedAt: new Date()
-                });
-
-                logger.info(`[ISRC] Assigned ${isrcData.isrc} to track ${trackId}`);
-                return isrcData.isrc;
+            const assign = httpsCallable(functions, 'assignDistributionIdentifier');
+            const result = await assign({
+                type: 'isrc',
+                assignedTo: trackId,
             });
+            const data = result.data as { isrc?: string };
+            if (!data.isrc) {
+                throw new Error('ISRC assignment did not return a code.');
+            }
+
+            logger.info(`[ISRC] Assigned ${data.isrc} to track ${trackId}`);
+            return data.isrc;
         } catch (error: unknown) {
             logger.error('[ISRC] Assignment failed:', error);
             throw error;
@@ -58,25 +50,29 @@ export class ISRCService {
      * Format: US-AAA-26-00001
      */
     async seedPool(registrantCode: string, startNumber: number, count: number): Promise<void> {
-        const year = new Date().getFullYear().toString().slice(-2);
-
-        for (let i = 0; i < count; i++) {
-            const sequence = (startNumber + i).toString().padStart(5, '0');
-            const isrc = `US-${registrantCode}-${year}-${sequence}`;
-
-            await addDoc(this.poolRef, {
-                isrc,
-                status: 'available'
-            });
-        }
-        logger.info(`[ISRC] Seeded ${count} ISRCs into the pool.`);
+        void registrantCode;
+        void startNumber;
+        void count;
+        throw new Error('ISRC pool seeding is a backend/admin operation.');
     }
 
     /** Record a new ISRC assignment in the registry. Returns the new document ID. */
     async recordAssignment(data: Omit<ISRCRecordDocument, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        const docRef = await addDoc(this.registryRef, data);
+        const record = httpsCallable(functions, 'recordDistributionIdentifier');
+        const result = await record({
+            type: 'isrc',
+            isrc: data.isrc,
+            releaseId: data.releaseId,
+            trackTitle: data.trackTitle,
+            artistName: data.artistName,
+            metadataSnapshot: data.metadataSnapshot,
+        });
+        const response = result.data as { id?: string };
+        if (!response.id) {
+            throw new Error('ISRC registry write did not return a document id.');
+        }
         logger.info(`[ISRC] Recorded assignment for ${data.isrc}`);
-        return docRef.id;
+        return response.id;
     }
 
     /** Look up a single registry record by ISRC string. Returns null if not found. */

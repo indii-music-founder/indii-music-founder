@@ -167,7 +167,7 @@ export default function MultimodalGauntlet() {
             </div>
 
             <footer className="pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                <div>Environment: Local Dev (us-west1)</div>
+                <div>Environment: Local Dev (us-central1)</div>
                 <div>Logic: Multimodal Chain Verification</div>
                 <div className="text-purple-500 font-bold">Protocol: IS IT SPELLED IN CAPITAL LETTERS BOTH TIMES</div>
             </footer>

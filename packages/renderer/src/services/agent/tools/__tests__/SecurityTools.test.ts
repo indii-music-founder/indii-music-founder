@@ -6,9 +6,15 @@ import {
     verify_zero_touch_prod,
     check_core_dump_policy,
     audit_workload_isolation,
-    audit_permissions
+    audit_permissions,
+    log_audit_event
 } from '../SecurityTools';
-import { getDoc } from 'firebase/firestore';
+import { collection, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+
+const mocks = vi.hoisted(() => ({
+    logAuditEventCallable: vi.fn()
+}));
 
 // Mock dependencies
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
@@ -42,6 +48,10 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     };
 });
 
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn(() => mocks.logAuditEventCallable)
+}));
+
 // Mock the local firebase service to prevent real initialization
 vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
@@ -50,7 +60,7 @@ vi.mock('@/services/firebase', () => ({
     remoteConfig: {}, // Mock remote config
     ai: {}, // Mock ai service
     storage: {},
-    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functions: { region: 'us-central1' },
     functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
@@ -85,6 +95,14 @@ if (typeof window !== 'undefined') {
 describe('SecurityTools (Mocked)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.logAuditEventCallable.mockResolvedValue({
+            data: {
+                logId: 'audit-1',
+                action: 'credential.rotate',
+                resourceId: 'service/database',
+                severity: 'high'
+            }
+        });
     });
 
     describe('audit_permissions', () => {
@@ -213,6 +231,26 @@ describe('SecurityTools (Mocked)', () => {
             });
             expect(result.success).toBe(false);
             expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
+        });
+    });
+
+    describe('log_audit_event', () => {
+        it('writes global audit events through the backend callable', async () => {
+            const result = await log_audit_event({
+                action: 'credential.rotate',
+                resourceId: 'service/database',
+                severity: 'high',
+            });
+
+            expect(httpsCallable).toHaveBeenCalledWith({ region: 'us-central1' }, 'logAuditEvent');
+            expect(mocks.logAuditEventCallable).toHaveBeenCalledWith({
+                action: 'credential.rotate',
+                resourceId: 'service/database',
+                severity: 'high',
+            });
+            expect(collection).not.toHaveBeenCalledWith(expect.anything(), 'audit_logs');
+            expect(result.success).toBe(true);
+            expect(result.data.logId).toBe('audit-1');
         });
     });
 });

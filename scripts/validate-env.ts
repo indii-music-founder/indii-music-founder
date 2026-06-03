@@ -17,6 +17,7 @@ const envSchema = z.object({
   VITE_USE_VERTEX: z.enum(["true", "false"]).default("false"),
   GCLOUD_PROJECT: z.string().optional(),
 
+  VITE_FUNCTIONS_REGION: z.string().default("us-central1"),
   VITE_FUNCTIONS_URL: z.string().url().optional(),
   VITE_RAG_PROXY_URL: z.string().url().optional(),
 
@@ -67,6 +68,7 @@ const processEnv = {
   VITE_USE_VERTEX: process.env.VITE_USE_VERTEX,
   GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
 
+  VITE_FUNCTIONS_REGION: process.env.VITE_FUNCTIONS_REGION,
   VITE_FUNCTIONS_URL: process.env.VITE_FUNCTIONS_URL,
   VITE_RAG_PROXY_URL: process.env.VITE_RAG_PROXY_URL,
 

@@ -198,7 +198,11 @@ export const processRelayCommand = functions
 
             // Lazy import to reduce cold start
             const { GoogleGenAI } = await import("@google/genai");
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+            const apiKey = getGeminiApiKey();
+            if (!apiKey) {
+                throw new Error('Gemini API key is not configured.');
+            }
+            const client = new GoogleGenAI({ apiKey });
 
             const modelId = FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 

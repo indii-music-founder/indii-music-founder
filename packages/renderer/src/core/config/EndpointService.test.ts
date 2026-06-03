@@ -9,9 +9,11 @@ vi.mock('@/config/env', () => {
         env: {
             DEV: false,
             projectId: 'test-project',
-            location: 'test-region',
+            location: 'global',
+            functionsRegion: 'us-central1',
             VITE_VERTEX_PROJECT_ID: 'test-project',
-            VITE_VERTEX_LOCATION: 'test-region'
+            VITE_VERTEX_LOCATION: 'global',
+            VITE_FUNCTIONS_REGION: 'us-central1',
         }
     };
 });
@@ -26,7 +28,7 @@ describe('EndpointService', () => {
 
     it('generates Production URL by default', () => {
         const url = endpointService.getFunctionUrl('myFunction');
-        expect(url).toBe('https://test-region-test-project.cloudfunctions.net/myFunction');
+        expect(url).toBe('https://us-central1-test-project.cloudfunctions.net/myFunction');
     });
 
     it('always generates Production URL (emulator support disabled)', () => {
@@ -37,6 +39,6 @@ describe('EndpointService', () => {
 
         const url = endpointService.getFunctionUrl('myFunction');
         // Still returns production URL since emulator support is disabled
-        expect(url).toBe('https://test-region-test-project.cloudfunctions.net/myFunction');
+        expect(url).toBe('https://us-central1-test-project.cloudfunctions.net/myFunction');
     });
 });
