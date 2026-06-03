@@ -142,6 +142,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
+      console.error('CREATE TRACK ERROR:', err);
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
     }
   }

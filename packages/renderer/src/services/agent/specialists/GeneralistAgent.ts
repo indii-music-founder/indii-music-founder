@@ -638,10 +638,11 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
 
         // Build conversation history
         const history = context?.chatHistory || useStore.getState().agentHistory || [];
-        const historyText = history
-            .filter(msg => msg.role !== 'system')
+        const historyArray = Array.isArray(history) ? history : [];
+        const historyText = historyArray
+            .filter((msg: any) => msg && msg.role !== 'system')
             .slice(-10) // Last 10 messages
-            .map(msg => `${msg.role.toUpperCase()}: ${msg.text}`)
+            .map((msg: any) => `${msg.role.toUpperCase()}: ${msg.text}`)
             .join('\n');
 
         const fullPrompt = `${fullSystemPrompt}
