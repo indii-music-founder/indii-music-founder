@@ -1,316 +1,129 @@
-/**
- * API Router Integration Tests
- *
- * Tests the ACTUAL router functions with real routing logic (not mocked routers).
- * Firebase Admin is still mocked to avoid requiring real credentials, but the
- * router functions themselves execute their real code paths.
- *
- * This complements router.test.ts (unit tests of mock setup) by testing
- * what actually happens when real HTTP requests hit the router.
- */
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import * as admin from 'firebase-admin';
+import { getTrack, createTrack, updateTrack, deleteTrack } from '../router';
+import {
+    initializeRealServices,
+    teardownServices,
+    createTestRequest,
+    createTestResponse,
+    createTestFirebaseToken,
+    assertSuccess,
+    assertApiLatency
+} from '../../../test/integration.setup';
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import express from 'express';
-import admin from 'firebase-admin';
+// Integration Tests for API Router
+// These tests execute against REAL Firebase services (Firestore).
 
-vi.mock('firebase-admin', () => {
-  const mockDoc = {
-    get: vi.fn(),
-    set: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  };
+describe('API Router (Integration)', () => {
+    let db: admin.firestore.Firestore;
+    const testUserId = 'integration-test-user';
+    let testTrackId: string;
 
-  const mockCollection = {
-    doc: vi.fn(() => mockDoc),
-    get: vi.fn(),
-    add: vi.fn(),
-  };
+    beforeAll(() => {
+        initializeRealServices();
+        db = admin.firestore();
 
-  const mockFirestore = {
-    collection: vi.fn(() => mockCollection),
-    doc: vi.fn(() => mockDoc),
-  };
-
-  const mockAuth = {
-    verifyIdToken: vi.fn(),
-    getUser: vi.fn(),
-  };
-
-  const mockAdmin = {
-    initializeApp: vi.fn(),
-    auth: vi.fn(() => mockAuth),
-    firestore: vi.fn(() => mockFirestore),
-  };
-
-  return {
-    default: mockAdmin,
-    ...mockAdmin
-  };
-});
-
-// Create real express request/response for testing
-function createMockRequest(overrides?: Partial<express.Request>): express.Request {
-  const req = {
-    method: 'GET',
-    path: '/api/tracks/track123',
-    headers: {
-      authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJ1c2VyMTIzIn0.mock',
-      'content-type': 'application/json',
-    },
-    query: {},
-    body: {},
-    params: {},
-    get: function (key: string) {
-      return (this.headers as Record<string, unknown>)[key.toLowerCase()];
-    },
-  } as unknown as express.Request;
-  return Object.assign(req, overrides);
-}
-
-function createMockResponse(): express.Response {
-  let statusCode = 200;
-  let responseBody: unknown;
-  const responseHeaders: Record<string, string> = {};
-
-  const res = {
-    status: vi.fn(function (code: number) {
-      statusCode = code;
-      return this;
-    }),
-    json: vi.fn(function (data: unknown) {
-      responseBody = data;
-      return this;
-    }),
-    send: vi.fn(function (data: unknown) {
-      responseBody = data;
-      return this;
-    }),
-    header: vi.fn(function (key: string, value: string) {
-      responseHeaders[key] = value;
-      return this;
-    }),
-    set: vi.fn(function (key: string, value: string) {
-      responseHeaders[key] = value;
-      return this;
-    }),
-    end: vi.fn(function (data?: unknown) {
-      if (data) responseBody = data;
-      return this;
-    }),
-    // Helper methods for testing
-    getStatus: () => statusCode,
-    getBody: () => responseBody,
-    getHeaders: () => responseHeaders,
-  } as unknown as express.Response;
-
-  return res;
-}
-
-describe('API Router Integration Tests', () => {
-  let req: express.Request;
-  let res: express.Response;
-
-  beforeEach(() => {
-    req = createMockRequest();
-    res = createMockResponse();
-    vi.clearAllMocks();
-  });
-
-  describe('Authentication & Authorization', () => {
-    it('should reject requests missing authorization header', async () => {
-      const reqNoAuth = createMockRequest({ headers: {} });
-
-      // In a real request handler, missing auth should either:
-      // 1. Call middleware that rejects, or
-      // 2. Check headers and return 401
-      expect(reqNoAuth.get('authorization')).toBeUndefined();
+        // Mock admin.auth().verifyIdToken to bypass actual JWT validation for integration tests
+        // since we can't easily mint real valid Google Identity JWTs in CI.
+        // The tests will still hit the real Firestore database.
+        admin.auth().verifyIdToken = async (token: string) => {
+            if (token === 'valid-integration-token') {
+                return createTestFirebaseToken(testUserId);
+            }
+            throw new Error('Invalid token');
+        };
     });
 
-    it('should accept requests with valid Bearer token', () => {
-      const token = req.get('authorization');
-      expect(token).toMatch(/^Bearer /);
+    afterAll(async () => {
+        // Clean up any stray documents created during the test
+        if (testTrackId) {
+            await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).delete();
+        }
+        await teardownServices();
     });
 
-    it('should handle token verification failures gracefully', () => {
-      // Mock Firebase auth to reject
-      vi.mocked(admin.auth().verifyIdToken).mockRejectedValueOnce(
-        new Error('Invalid token'),
-      );
+    it('should create and store track in Firestore', async () => {
+        const start = Date.now();
+        const req = createTestRequest('POST', '/api/tracks', { title: 'Integration Test Track', metadata: { genre: 'electronic' } }, { authorization: 'Bearer valid-integration-token' });
+        const res = createTestResponse();
 
-      // Route handler should catch this and return 401
-      expect(() => {
-        throw new Error('Invalid token');
-      }).toThrow('Invalid token');
-    });
-  });
+        await (createTrack as any)(req, res);
 
-  describe('Response Format', () => {
-    it('should return standard ApiResponse format', () => {
-      const mockResponse = {
-        success: true,
-        data: { id: 'track1', title: 'Test Track' },
-        meta: {
-          timestamp: new Date().toISOString(),
-          requestId: 'req-123',
-        },
-      };
+        const latency = Date.now() - start;
+        assertApiLatency(latency, 2000); // Expect Firestore write < 2s
+        assertSuccess(res, 201);
 
-      // Simulate what a route handler should do
-      const statusFn = res.status as ReturnType<typeof vi.fn>;
-      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+        const data = res._getData();
+        expect(data.success).toBe(true);
+        expect(data.data).toHaveProperty('id');
+        expect(data.data.title).toBe('Integration Test Track');
 
-      statusFn.mockReturnValue(res);
-      res.status(200);
-      res.json(mockResponse);
+        testTrackId = data.data.id;
 
-      expect(statusFn).toHaveBeenCalledWith(200);
-      expect(jsonFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.any(Object),
-          meta: expect.any(Object),
-        }),
-      );
+        // Verify the document actually exists in the real Firestore
+        const doc = await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).get();
+        expect(doc.exists).toBe(true);
+        expect(doc.data()?.title).toBe('Integration Test Track');
     });
 
-    it('should include request ID in response metadata', () => {
-      const response = {
-        success: true,
-        meta: {
-          requestId: 'req-123',
-        },
-      };
+    it('should fetch track from Firestore', async () => {
+        expect(testTrackId).toBeDefined();
 
-      expect(response.meta.requestId).toMatch(/^req-/);
-    });
-  });
+        const start = Date.now();
+        const req = createTestRequest('GET', `/api/tracks/${testTrackId}`, undefined, { authorization: 'Bearer valid-integration-token' });
+        const res = createTestResponse();
 
-  describe('Error Handling', () => {
-    it('should return 400 for invalid request body', () => {
-      const invalidReq = createMockRequest({ body: null });
+        await (getTrack as any)(req, res);
 
-      // Route handler should validate and return 400
-      expect(invalidReq.body).toBeNull();
+        const latency = Date.now() - start;
+        assertApiLatency(latency, 1500); // Expect Firestore read < 1.5s
+        assertSuccess(res, 200);
+
+        const data = res._getData();
+        expect(data.success).toBe(true);
+        expect(data.data.id).toBe(testTrackId);
     });
 
-    it('should return 404 for non-existent resource', () => {
-      const statusFn = res.status as ReturnType<typeof vi.fn>;
-      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+    it('should update track in Firestore', async () => {
+        expect(testTrackId).toBeDefined();
 
-      statusFn.mockReturnValue(res);
-      res.status(404);
-      res.json({
-        success: false,
-        error: 'Not found',
-      });
+        const start = Date.now();
+        const req = createTestRequest('PUT', `/api/tracks/${testTrackId}`, { title: 'Updated Title' }, { authorization: 'Bearer valid-integration-token' });
+        const res = createTestResponse();
 
-      expect(statusFn).toHaveBeenCalledWith(404);
-      expect(jsonFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-        }),
-      );
+        await (updateTrack as any)(req, res);
+
+        const latency = Date.now() - start;
+        assertApiLatency(latency, 2000);
+        assertSuccess(res, 200);
+
+        const data = res._getData();
+        expect(data.success).toBe(true);
+        expect(data.data.title).toBe('Updated Title');
+
+        // Verify the update in real Firestore
+        const doc = await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).get();
+        expect(doc.data()?.title).toBe('Updated Title');
     });
 
-    it('should return 500 for unexpected server errors', () => {
-      const statusFn = res.status as ReturnType<typeof vi.fn>;
+    it('should delete track from Firestore', async () => {
+        expect(testTrackId).toBeDefined();
 
-      statusFn.mockReturnValue(res);
-      res.status(500);
-      res.json({
-        success: false,
-        error: 'Internal server error',
-      });
+        const start = Date.now();
+        const req = createTestRequest('DELETE', `/api/tracks/${testTrackId}`, undefined, { authorization: 'Bearer valid-integration-token' });
+        const res = createTestResponse();
 
-      expect(statusFn).toHaveBeenCalledWith(500);
+        await (deleteTrack as any)(req, res);
+
+        const latency = Date.now() - start;
+        assertApiLatency(latency, 2000);
+        assertSuccess(res, 204);
+
+        // Verify the document was deleted from real Firestore
+        const doc = await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).get();
+        expect(doc.exists).toBe(false);
+
+        // Clear testTrackId so afterAll doesn't try to delete it again unnecessarily
+        testTrackId = '';
     });
-  });
-
-  describe('Request Routing', () => {
-    it('should route GET /api/tracks/:id to getTrack handler', () => {
-      const trackReq = createMockRequest({
-        method: 'GET',
-        path: '/api/tracks/track-abc123',
-        params: { id: 'track-abc123' },
-      });
-
-      expect(trackReq.method).toBe('GET');
-      expect(trackReq.path).toMatch(/^\/api\/tracks\//);
-    });
-
-    it('should route POST /api/tracks to createTrack handler', () => {
-      const createReq = createMockRequest({
-        method: 'POST',
-        path: '/api/tracks',
-        body: { title: 'New Track', artistId: 'artist1' },
-      });
-
-      expect(createReq.method).toBe('POST');
-      expect(createReq.body).toHaveProperty('title');
-    });
-
-    it('should route DELETE /api/tracks/:id to deleteTrack handler', () => {
-      const deleteReq = createMockRequest({
-        method: 'DELETE',
-        path: '/api/tracks/track-abc123',
-        params: { id: 'track-abc123' },
-      });
-
-      expect(deleteReq.method).toBe('DELETE');
-      expect(deleteReq.params).toHaveProperty('id');
-    });
-  });
-
-  describe('Firestore Integration', () => {
-    it('should query Firestore for track data', () => {
-      // Simulate what the handler does
-      const mockFirestore = admin.firestore();
-      const mockCollection = mockFirestore.collection('tracks');
-
-      // Handler would do something like:
-      // const doc = await firestore.collection('tracks').doc(trackId).get();
-
-      expect(mockCollection).toBeDefined();
-      expect(mockCollection.doc).toBeDefined();
-    });
-
-    it('should handle Firestore read errors gracefully', () => {
-      const mockFirestore = admin.firestore();
-      vi.mocked(mockFirestore.collection('tracks').doc('123').get).mockRejectedValueOnce(
-        new Error('Permission denied'),
-      );
-
-      // Route handler should catch and return appropriate error
-      expect(() => {
-        throw new Error('Permission denied');
-      }).toThrow('Permission denied');
-    });
-  });
-
-  describe('Request Validation', () => {
-    it('should validate required fields in POST requests', () => {
-      const incompleteReq = createMockRequest({
-        method: 'POST',
-        body: {
-          // Missing required 'title' field
-          artistId: 'artist1',
-        },
-      });
-
-      // Route handler should validate schema
-      expect(incompleteReq.body).not.toHaveProperty('title');
-    });
-
-    it('should reject malformed query parameters', () => {
-      const badQueryReq = createMockRequest({
-        query: {
-          limit: 'not-a-number', // Should be numeric
-        },
-      });
-
-      expect(typeof badQueryReq.query.limit).toBe('string');
-      // Route handler would validate and reject
-    });
-  });
 });
