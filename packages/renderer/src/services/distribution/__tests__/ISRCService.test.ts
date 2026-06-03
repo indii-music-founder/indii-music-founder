@@ -69,7 +69,7 @@ describe('ISRCService', () => {
         const mockId = 'new-record-id';
 
         const mockCallable = vi.fn().mockResolvedValueOnce({ data: { id: mockId } });
-        vi.mocked(httpsCallable).mockReturnValueOnce(mockCallable);
+        vi.mocked(httpsCallable).mockReturnValueOnce(mockCallable as any);
 
         const result = await isrcService.recordAssignment(mockData);
 
