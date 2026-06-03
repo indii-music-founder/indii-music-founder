@@ -4,7 +4,9 @@ description: Automatically fetch and fix Sentry issues and CodeRabbit PR comment
 
 # Auto Fix Workflow
 
-When the `/auto-fix` workflow is triggered, Antigravity should autonomously find and resolve active Sentry issues and open CodeRabbit PR comments.
+**See:** `.agent/TESTING_INTEGRATION_GUIDE.md` for how this integrates with Rabbit, Sentry, and integration tests.
+
+When the `/auto-fix` workflow is triggered, Antigravity should autonomously find and resolve active Sentry issues and open CodeRabbit PR comments. All fixes must pass integration tests before committing.
 
 ## Steps
 
@@ -22,16 +24,19 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
    ```
    For each PR, fetch the comments. If CodeRabbit has left actionable feedback, read the files and apply the requested changes.
 
-3. **Verify Fixes**
-   Run local validation to ensure the codebase remains stable:
+3. **Verify Fixes with Integration Tests**
+   **CRITICAL:** Always run integration tests (not just lint/typecheck). See TESTING_INTEGRATION_GUIDE.md.
    ```bash
    npm run typecheck && npm run lint
+   npm run test:integration:ci     # Real API validation (mandatory)
    ```
+   If integration tests fail, revert changes and create GitHub Issue with error details.
+   If pass, proceed to commit.
 
 4. **Commit and Push**
    Automatically commit the changes with a descriptive message referencing the Sentry issue ID or CodeRabbit review.
    ```bash
-   git commit -am "fix(auto): resolve Sentry/CodeRabbit issues"
+   git commit -am "fix(auto): resolve Sentry/CodeRabbit issues - integration tests passing"
    git push
    ```
 
