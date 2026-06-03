@@ -77,6 +77,7 @@ describe('Creative Gateway (Integration)', () => {
                 console.warn('Skipping test gracefully due to local credential expiration or quota limit:', errorStr);
                 return;
             }
+            // If we get an auth/quota error from Google, fail the test but log it nicely
             console.error('Real generation failed:', e);
             throw e;
         }
