@@ -30,6 +30,7 @@ vi.mock('firebase/firestore', () => ({
 
 vi.mock('@/utils/e2eMode', () => ({
   isFirebaseE2EMockEnabled: () => false,
+  isTestHarnessRuntime: () => false,
 }));
 
 vi.mock('@/utils/authGuards', () => ({
