@@ -10,6 +10,7 @@ This command must be run at the beginning of any new feature, prompt, or session
 
 ## 1. Smart Context Assessment
 Before taking any action, analyze the current workspace:
+- Invoke **`/get-git`** to fetch origin, rebase remote changes, and check if our branch is ahead/behind.
 - Check `git branch` and `git status`. Are we on a clean slate?
 - Review any open files or recently modified files.
 - **Clarification Gate:** If the user's prompt is underspecified, ASK clarifying questions right now to determine *exactly what* needs to be built.
