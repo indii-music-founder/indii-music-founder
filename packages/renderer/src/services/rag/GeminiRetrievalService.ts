@@ -33,9 +33,9 @@ export class GeminiRetrievalService {
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
-        const projectId = env.projectId || env.firebaseProjectId || 'indii-v-1-1';
-        const location = env.location || 'us-central1';
-        const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net`;
+        const projectId = env.firebaseProjectId || env.projectId || '';
+        const functionsRegion = env.functionsRegion || 'us-central1';
+        const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${functionsRegion}-${projectId}.cloudfunctions.net`;
 
         // ISSUE-039 Fix: Detect stale localhost URL and fallback to Cloud Functions
         let configuredUrl = env.VITE_RAG_PROXY_URL;

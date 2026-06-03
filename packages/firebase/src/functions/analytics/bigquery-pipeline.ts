@@ -11,12 +11,19 @@ import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'fireba
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
-import type { AnalyticsEvent } from '@indii/shared';
 
 const db = admin.firestore();
 const bigquery = new BigQuery({
   projectId: process.env.GCLOUD_PROJECT,
 });
+
+interface AnalyticsEvent {
+  eventId: string;
+  eventType: string;
+  userId: string;
+  timestamp: string | number;
+  data: Record<string, unknown>;
+}
 
 interface BigQueryRow extends AnalyticsEvent {
   _idempotencyKey?: string;

@@ -9,6 +9,7 @@ const toBoolean = (value: string | boolean | undefined): boolean => {
 
 const FrontendEnvSchema = CommonEnvSchema.extend({
     // Frontend specific
+    VITE_FUNCTIONS_REGION: z.string().optional(),
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.union([z.string().url(), z.literal('')]).optional(),
     VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
@@ -81,6 +82,7 @@ const processEnv = {
     apiKey: import.meta.env.VITE_API_KEY || getProcessEnv('VITE_API_KEY'),
     projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || getProcessEnv('VITE_VERTEX_PROJECT_ID'),
     location: import.meta.env.VITE_VERTEX_LOCATION || getProcessEnv('VITE_VERTEX_LOCATION') || "global",
+    functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION || getProcessEnv('VITE_FUNCTIONS_REGION') || 'us-central1',
     useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || getProcessEnv('VITE_USE_VERTEX')),
     googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
     VITE_GOOGLE_MAPS_API_KEY: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
@@ -90,6 +92,7 @@ const processEnv = {
         return raw === undefined ? true : toBoolean(raw);
     })(),
 
+    VITE_FUNCTIONS_REGION: import.meta.env.VITE_FUNCTIONS_REGION || getProcessEnv('VITE_FUNCTIONS_REGION'),
     VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL || getProcessEnv('VITE_FUNCTIONS_URL'),
     VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || getProcessEnv('VITE_RAG_PROXY_URL'),
     DEV: import.meta.env.DEV ?? getProcessEnv('NODE_ENV') !== 'production',
@@ -161,6 +164,7 @@ export const env = {
     VITE_API_KEY: runtimeEnv.apiKey,
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
+    VITE_FUNCTIONS_REGION: runtimeEnv.functionsRegion,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
     VITE_GOOGLE_MAPS_API_KEY: runtimeEnv.googleMapsApiKey || runtimeEnv.VITE_GOOGLE_MAPS_API_KEY,
     enableGoogleMaps: runtimeEnv.enableGoogleMaps,
