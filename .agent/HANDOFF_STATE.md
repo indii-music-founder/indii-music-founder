@@ -1,38 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-03 17:07 EDT
-**Branch:** `fix/open-issues-sweep`
+**Updated:** 2026-06-03 17:46 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+9dfec91f4 fix: resolve typescript-eslint/no-explicit-any warnings causing CI build failures
+d90e8f69b fix(deps): remove leftover @types/sharp and sync package-lock to fix CI install stall
+17a64c73e fix(test): stub env variables for CostControlService fail-closed test
+e9f94152f Merge pull request #151 from indii-music-founder/fix/open-issues-sweep
+8df1844fc chore: capture uncommitted work before issue sweep
+e239af099 Merge pull request #150 from indii-music-founder/fix/open-issues-sweep
+09978724d chore: session checkpoint [17:07]
 9aeb13a67 chore: mark ISSUE-096, 097, and 099 as unblocked
 593addd9c fix(billing): allow cost ledger bypass in local dev when VITE_API_KEY is present
-4f897d41d docs(issues): update OPEN_ISSUES ledger after issue sweep
-cb8b24e87 docs(test): add Mega Stress Test v10.0 — API and Security Hardening Regression (Routines 5-9)
-977ada3cd fix(sweep): resolve lint warnings
-facb17598 Merge branch 'main' into fix/open-issues-sweep
-8fed78a4e docs: update ERROR_LEDGER.md with integration test credential issues
-31686fac6 fix(test): skip router integration tests gracefully on missing credentials
-55b1364ae test(gateway): improve integration test error handling
-df8f4b960 chore(checkpoint): antigravity session end [11:53]
+4100bdb57 Merge pull request #144 from indii-music-founder/fix/open-issues-sweep
 ```
 
 ## Working State
 ```
- M .agent/artifacts/task.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
- M package-lock.json
- M packages/firebase/package.json
- M packages/firebase/src/__tests__/triggerLongFormVideoJob.quota.test.ts
- M packages/firebase/src/__tests__/video.test.ts
- M packages/firebase/src/test/integration.setup.ts
- M packages/firebase/src/test/setup.ts
- M packages/renderer/src/services/billing/CostControlService.test.ts
- M packages/renderer/src/services/business-harness/HarnessStorage.ts
- M packages/renderer/src/services/image/ImageGenerationService.ts
- M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
-?? .agent/checkpoints/antigravity-9067a181.md
-?? .agent/checkpoints/session-23bfc5f9.md
-?? scratch.js
+clean working tree
 ```
 
 ## Decisions
