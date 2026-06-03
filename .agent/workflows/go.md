@@ -98,8 +98,9 @@ If agent reports being stuck, blocked, or unable to proceed:
 1. `npm run typecheck` — 0 errors
 2. `npm run build:studio` — Success
 3. Test suite — All pass (`npm test -- --run`)
-4. Code audit — No orphaned `TODO`/`FIXME` comments
-5. Git state — Clean (`git status`)
+4. Integration tests — All pass (`npm run test:integration:ci`)
+5. Code audit — No orphaned `TODO`/`FIXME` comments
+6. Git state — Clean (`git status`)
 
 ## 8. Completion & Auto-Trigger
 
