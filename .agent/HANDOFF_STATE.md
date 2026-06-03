@@ -1,28 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-03 10:07 EDT
+**Updated:** 2026-06-03 10:15 EDT
 **Branch:** `codex/live-runtime-blockers`
 
 ## Recent Commits
 ```
+6b1d0e23f chore: session checkpoint [10:09]
+c5d5659ea docs(error-ledger): document ARCJET_KEY production validation blocker
+edc35a275 fix(production-gate): remove ARCJET_KEY production requirement, allow provisioning separately
+af5d4802b chore: session checkpoint [10:07]
 17f45824d chore: session checkpoint [10:05]
 5e4ef750d chore(task): update project task list
 e71c75824 feat(git): add background git repository monitor and sync script
 5aa7ddec3 test(distribution): cast mockCallable to any in ISRCService test
 a2b284e62 test(core): fix firebase-admin mock and ISRCService test assertion
 fc17ab11b chore(core): consolidate local changes, environment schemas, and endpoint configurations
-d4cadbea6 chore(checkpoint): document billing and Maps key resolution
-9cd82246a chore(task): update billing blocker status in task list
-f50f3cf33 docs(agent): checkpoint live blocker closure
-352601d62 fix(runtime): address live provider blocker handling
 ```
 
 ## Working State
 ```
- M .agent/workflows/auto-fix.md
- M .agent/workflows/go.md
- M scripts/production-gate.ts
-?? .agent/README_TESTING_SYSTEM.md
-?? .agent/TESTING_INTEGRATION_GUIDE.md
+?? .agent/TESTING_SYSTEM_INDEX.md
+?? .agent/checkpoints/fix-pr134-arcjet-blocker-2026-06-03.md
 ```
 
 ## Decisions
