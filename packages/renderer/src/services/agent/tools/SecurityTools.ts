@@ -1,5 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -208,21 +209,14 @@ export const SecurityTools = {
             if (isFirebaseE2EMockEnabled()) {
                 return toolSuccess({ logId: 'mock-e2e-log-id', ...args });
             }
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-            const { auth } = await import('@/services/firebase');
-
-            // Writing to a global or org-level audit_logs collection
-            // In a real app this might use a secure backend function to prevent client tampering
-            const docRef = await addDoc(collection(db, 'audit_logs'), {
-                ...args,
-                userId: auth.currentUser?.uid || 'anonymous',
-                timestamp: serverTimestamp(),
-                source: 'Agent_SecurityTools'
-            });
+            const writeAuditLog = httpsCallable<
+                { action: string; resourceId: string; severity: 'low' | 'medium' | 'high' | 'critical'; details?: string },
+                { logId: string; action: string; resourceId: string; severity: 'low' | 'medium' | 'high' | 'critical'; details?: string }
+            >(functions, 'logAuditEvent');
+            const result = await writeAuditLog(args);
 
             return toolSuccess({
-                logId: docRef.id,
-                ...args
+                ...result.data
             }, `Secure audit log event recorded. Action: "${args.action}" on resource: "${args.resourceId}".`);
         } catch (e: unknown) {
             const error = e as Error;

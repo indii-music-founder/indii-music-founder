@@ -9,6 +9,7 @@ describe('CommonEnvSchema', () => {
         };
         const result = CommonEnvSchema.parse(data);
         expect(result.location).toBe('us-central1');
+        expect(result.functionsRegion).toBe('us-central1');
         expect(result.useVertex).toBe(false);
     });
 

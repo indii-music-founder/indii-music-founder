@@ -15,7 +15,7 @@ import {
 } from "@google/genai";
 
 type MediaKind = 'image' | 'video' | 'audio';
-type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'internal';
+type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
 
 interface GeminiInlineData {
   data?: string;
@@ -334,6 +334,16 @@ function extensionForMime(mimeType: string, fallback: string): string {
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const candidate = record.message || record.error || record.details || record.cause;
+    if (typeof candidate === 'string') return candidate;
+    try {
+      return JSON.stringify(record);
+    } catch {
+      return String(error);
+    }
+  }
   return 'Unknown Google generation error';
 }
 
@@ -344,20 +354,45 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   const status = typeof (error as { status?: unknown })?.status === 'number'
     ? (error as { status: number }).status
     : undefined;
-  const lower = message.toLowerCase();
+  const errorRecord = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+  const errorCode = typeof errorRecord.code === 'string' ? errorRecord.code : undefined;
+  const errorStatus = typeof errorRecord.status === 'string' ? errorRecord.status : undefined;
+  const combined = [
+    message,
+    errorCode,
+    errorStatus,
+    typeof errorRecord.reason === 'string' ? errorRecord.reason : undefined,
+  ].filter(Boolean).join(' ');
+  const lower = combined.toLowerCase();
 
   let code: GatewayErrorCode = 'internal';
-  if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked')) code = 'invalid-argument';
+  let publicMessage = message;
+
+  if (
+    lower.includes('prepayment credits are depleted') ||
+    lower.includes('billing#prepay') ||
+    (lower.includes('ai studio') && lower.includes('billing'))
+  ) {
+    code = 'resource-exhausted';
+    publicMessage = 'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+  } else if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked') || lower.includes('unsupported') || lower.includes('not supported')) {
+    code = 'invalid-argument';
+    publicMessage = `Google rejected the image generation settings: ${message}`;
+  }
   else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) code = 'permission-denied';
-  else if (status === 404 || lower.includes('not found')) code = 'failed-precondition';
+  else if (status === 404 || lower.includes('not found') || lower.includes('not available')) code = 'failed-precondition';
   else if (status === 429 || lower.includes('quota') || lower.includes('rate limit')) code = 'resource-exhausted';
   else if (status === 503 || status === 504 || lower.includes('timeout') || lower.includes('deadline') || lower.includes('overloaded')) code = 'deadline-exceeded';
+  else if (status === 500 || lower.includes('internal error') || lower.includes('internal server error')) {
+    code = 'unavailable';
+    publicMessage = 'Google Gemini returned a temporary internal error while generating the image. Try again; if it repeats, switch image model/settings or check Google AI Studio status for this project.';
+  }
 
-  if (lower.includes('is not configured') || lower.includes('api key unavailable') || lower.includes('model not found')) {
+  if (lower.includes('is not configured') || lower.includes('api key unavailable') || lower.includes('model not found') || lower.includes('model is not available')) {
       code = 'failed-precondition';
   }
 
-  return new HttpsError(code, `${context}: ${message}`, { status, cause: message });
+  return new HttpsError(code, `${context}: ${publicMessage}`, { status, cause: message, providerCode: errorCode, providerStatus: errorStatus });
 }
 
 async function pollVideoOperation(ai: GoogleGenAI, operation: GenerateVideosOperation, jobId: string): Promise<GenerateVideosOperation> {
@@ -444,7 +479,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
 /**
  * generateImageV3 - Routes to gemini-3-pro-image-preview
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: true }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);

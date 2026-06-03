@@ -8,7 +8,7 @@
  *
  * Required environment variables:
  *   VITE_REMOTION_GCP_PROJECT_ID  – GCP project ID (defaults to Firebase project)
- *   VITE_REMOTION_GCP_REGION      – Cloud Run region (defaults to us-east1)
+ *   VITE_REMOTION_GCP_REGION      – Cloud Run region (defaults to us-central1)
  *   VITE_REMOTION_SERVICE_NAME    – Deployed Cloud Run service name
  *   VITE_REMOTION_SITE_NAME       – GCS site name (from `npx remotion cloudrun sites create`)
  *
@@ -23,7 +23,7 @@ export const RemotionCloudRunConfig = {
      * GCP region where the Cloud Run rendering service is deployed.
      * Must match the region used during `npx remotion cloudrun services deploy`.
      */
-    region: import.meta.env.VITE_REMOTION_GCP_REGION || 'us-east1',
+    region: import.meta.env.VITE_REMOTION_GCP_REGION || 'us-central1',
 
     /**
      * Name of the deployed Cloud Run rendering service.
