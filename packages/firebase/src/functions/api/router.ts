@@ -14,7 +14,10 @@ import {
   type ArcjetProtectionResult,
 } from '../security/arcjet';
 
-const db = admin.firestore();
+// Defer firestore initialization until first use (for test compatibility)
+function getDb() {
+  return admin.firestore();
+}
 
 type CreateTrack = Record<string, unknown>;
 type CreateDistribution = Record<string, unknown>;
@@ -95,7 +98,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
       return;
     }
 
-    const doc = await db.collection('users').doc(userId).collection('tracks').doc(trackId).get();
+    const doc = await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).get();
     if (!doc.exists) {
       res.status(404).json(errorResponse('NOT_FOUND', 'Track not found', requestId));
       return;
@@ -124,7 +127,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackData = req.body as CreateTrack;
 
-    const trackId = db.collection('_').doc().id;
+    const trackId = getDb().collection('_').doc().id;
     const track = {
       id: trackId,
       ...trackData,
@@ -132,7 +135,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
       updatedAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
     res.status(201).json(respond(track, requestId));
   } catch (err) {
     if (err instanceof HttpsError) {
@@ -159,7 +162,7 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
     const limit = Math.min(Number(query.limit) || 100, 1000);
     const offset = Number(query.offset) || 0;
 
-    const snapshot = await db
+    const snapshot = await getDb()
       .collection('users')
       .doc(userId)
       .collection('events')
@@ -198,8 +201,8 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
     const updateData = req.body;
     const updateWithTimestamp = { ...updateData, updatedAt: new Date().toISOString() };
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).update(updateWithTimestamp);
-    const updated = await db.collection('users').doc(userId).collection('tracks').doc(trackId).get();
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).update(updateWithTimestamp);
+    const updated = await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).get();
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
@@ -228,7 +231,7 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
       return;
     }
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).delete();
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).delete();
     res.status(204).send();
   } catch (err) {
     if (err instanceof HttpsError) {
@@ -254,7 +257,7 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
     const limit = Math.min(Number(query.limit) || 50, 1000);
     const offset = Number(query.offset) || 0;
 
-    const snapshot = await db
+    const snapshot = await getDb()
       .collection('users').doc(userId).collection('tracks')
       .orderBy('createdAt', 'desc')
       .limit(limit + offset)
@@ -284,7 +287,7 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
     if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distData = req.body as CreateDistribution;
 
-    const distId = db.collection('_').doc().id;
+    const distId = getDb().collection('_').doc().id;
     const distribution = {
       id: distId,
       ...distData,
@@ -293,10 +296,10 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
       updatedAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(userId).collection('distributions').doc(distId).set(distribution);
+    await getDb().collection('users').doc(userId).collection('distributions').doc(distId).set(distribution);
 
     // Publish analytics event
-    await db.collection('events').add({
+    await getDb().collection('events').add({
       userId,
       eventType: 'distribution_started',
       distributionId: distId,
@@ -330,7 +333,7 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
       return;
     }
 
-    const doc = await db.collection('users').doc(userId).collection('distributions').doc(distId).get();
+    const doc = await getDb().collection('users').doc(userId).collection('distributions').doc(distId).get();
     if (!doc.exists) {
       res.status(404).json(errorResponse('NOT_FOUND', 'Distribution not found', requestId));
       return;
@@ -363,7 +366,7 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
       return;
     }
 
-    const ref = db.collection('users').doc(userId).collection('distributions').doc(distId);
+    const ref = getDb().collection('users').doc(userId).collection('distributions').doc(distId);
     await ref.update({ status: 'submitted', updatedAt: new Date().toISOString() });
     const updated = await ref.get();
 

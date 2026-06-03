@@ -84,8 +84,14 @@ function getAiClient(forceVertex = false): GoogleGenAI {
   });
 }
 
-const db = admin.firestore();
-const storage = admin.storage();
+// Defer firestore and storage initialization until first use (for test compatibility)
+function getDb() {
+  return admin.firestore();
+}
+
+function getStorage() {
+  return admin.storage();
+}
 
 // --- ZOD SCHEMAS ENFORCING THIN CLIENT PROTOCOL ---
 // We explicitly forbid raw base64 strings from being sent over the wire.
@@ -145,7 +151,7 @@ const GenerateAudioSchema = BaseMediaRequest.extend({
  * Helper: Upload a raw buffer to Cloud Storage and return the gs:// URI
  */
 async function uploadToStorage(userId: string, buffer: Buffer, extension: string, contentType?: string): Promise<string> {
-  const bucket = storage.bucket();
+  const bucket = getStorage().bucket();
   const filename = `creative/${userId}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
   const file = bucket.file(filename);
   await file.save(buffer, {
@@ -157,7 +163,7 @@ async function uploadToStorage(userId: string, buffer: Buffer, extension: string
 
 async function safeDbSet(jobId: string, data: Record<string, unknown>) {
   try {
-    await db.collection('creative_jobs').doc(jobId).set(data);
+    await getDb().collection('creative_jobs').doc(jobId).set(data);
   } catch (e) {
     console.warn(`[creativeGateway] Firestore set failed (non-blocking):`, e);
   }
@@ -165,7 +171,7 @@ async function safeDbSet(jobId: string, data: Record<string, unknown>) {
 
 async function safeDbUpdate(jobId: string, data: Record<string, unknown>) {
   try {
-    await db.collection('creative_jobs').doc(jobId).update(data);
+    await getDb().collection('creative_jobs').doc(jobId).update(data);
   } catch (e) {
     console.warn(`[creativeGateway] Firestore update failed (non-blocking):`, e);
   }
@@ -489,7 +495,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
 
   const { prompt, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding } = parsed.data;
   const userId = request.auth.uid;
-  const jobId = db.collection('creative_jobs').doc().id;
+  const jobId = getDb().collection('creative_jobs').doc().id;
   
   await safeDbSet(jobId, {
     id: jobId,
@@ -576,7 +582,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     enhancePrompt,
   } = parsed.data;
   const userId = request.auth.uid;
-  const jobId = db.collection('creative_jobs').doc().id;
+  const jobId = getDb().collection('creative_jobs').doc().id;
   const normalizedResolution = normalizeVideoResolution(resolution, model);
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
   const normalizedDuration = normalizeVideoDuration(durationSeconds, normalizedResolution, hasFrameInput);
@@ -667,7 +673,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 
   const data = parsed.data;
   const userId = request.auth.uid;
-  const jobId = db.collection('creative_jobs').doc().id;
+  const jobId = getDb().collection('creative_jobs').doc().id;
   const modelId = resolveOmniFlashModel();
 
   await safeDbSet(jobId, {
@@ -751,8 +757,8 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApi
 
   const { prompt } = parsed.data;
   const userId = request.auth.uid;
-  const jobId = db.collection('creative_jobs').doc().id;
-  
+  const jobId = getDb().collection('creative_jobs').doc().id;
+
   await safeDbSet(jobId, {
     id: jobId,
     userId,
