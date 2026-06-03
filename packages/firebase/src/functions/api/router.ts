@@ -7,10 +7,17 @@
 
 import { onRequest, Request, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import type { CreateTrack, CreateDistribution } from '@indii/shared';
 import type * as express from 'express';
+import {
+  protectAuthenticatedApiRequest,
+  protectPublicApiRequest,
+  type ArcjetProtectionResult,
+} from '../security/arcjet';
 
 const db = admin.firestore();
+
+type CreateTrack = Record<string, unknown>;
+type CreateDistribution = Record<string, unknown>;
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -58,6 +65,18 @@ function errorResponse(code: string, message: string, requestId: string): ApiRes
   };
 }
 
+async function rejectIfArcjetDenied(
+  resultPromise: Promise<ArcjetProtectionResult>,
+  res: express.Response,
+  requestId: string,
+): Promise<boolean> {
+  const result = await resultPromise;
+  if (result.allowed) return false;
+
+  res.status(result.status).json(errorResponse(result.code, result.message, requestId));
+  return true;
+}
+
 // GET /api/tracks/:id - Get track details
 export const getTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
@@ -68,6 +87,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
 
     if (!trackId) {
@@ -101,6 +121,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackData = req.body as CreateTrack;
 
     const trackId = db.collection('_').doc().id;
@@ -132,6 +153,7 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const query = req.query as Record<string, unknown>;
 
     const limit = Math.min(Number(query.limit) || 100, 1000);
@@ -166,6 +188,7 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -198,6 +221,7 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -225,6 +249,7 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const query = req.query as Record<string, unknown>;
     const limit = Math.min(Number(query.limit) || 50, 1000);
     const offset = Number(query.offset) || 0;
@@ -256,6 +281,7 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distData = req.body as CreateDistribution;
 
     const distId = db.collection('_').doc().id;
@@ -297,6 +323,7 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distId = req.path.split('/').pop();
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
@@ -329,6 +356,7 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distId = req.path.split('/')[req.path.split('/').length - 2];
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
@@ -359,6 +387,7 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const userRecord = await admin.auth().getUser(userId);
 
     const profile = {
@@ -379,8 +408,10 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
 });
 
 // Health check endpoint (no auth required)
-export const health = onRequest((_req: Request, res: express.Response) => {
+export const health = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
+  if (await rejectIfArcjetDenied(protectPublicApiRequest(req), res, requestId)) return;
+
   res.status(200).json({
     status: 'ok',
     version: '1.0.0',

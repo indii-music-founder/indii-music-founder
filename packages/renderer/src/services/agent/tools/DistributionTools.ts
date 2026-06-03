@@ -8,8 +8,9 @@
 
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { ingestionNotificationService, IngestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
-import { db, auth } from '@/services/firebase';
+import { db, auth, functions } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -196,9 +197,14 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
 
         const userId = auth.currentUser?.uid;
         if (userId) {
-            await setDoc(doc(collection(db, 'isrc_registry')), {
-                isrc, trackTitle, artist, year, userId,
-                orgId: 'personal', status: 'REGISTERED', createdAt: serverTimestamp()
+            const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+            await recordIdentifier({
+                type: 'isrc',
+                isrc,
+                releaseId: `generated-${isrc}`,
+                trackTitle,
+                artistName: artist,
+                metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
             });
         }
 
@@ -587,13 +593,16 @@ export const DistributionTools = {
             // Persist to Firestore registry
             const uid = auth.currentUser?.uid;
             if (uid) {
-                await addDoc(collection(db, 'upc_registry'), {
+                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                await recordIdentifier({
+                    type: 'upc',
                     upc,
+                    releaseId: `generated-${upc}`,
                     releaseTitle: args.releaseTitle,
-                    recordLabel: args.recordLabel,
-                    userId: uid,
-                    status: 'REGISTERED',
-                    createdAt: serverTimestamp(),
+                    metadataSnapshot: {
+                        recordLabel: args.recordLabel,
+                        source: 'DistributionTools.generate_upc',
+                    },
                 });
             }
 
@@ -613,14 +622,17 @@ export const DistributionTools = {
         const uid = auth.currentUser?.uid;
         if (!uid) return toolError('User not authenticated');
 
-        // 1. Log the ingestion attempt to Firestore
-        const ingestionRef = await addDoc(collection(db, 'sftp_ingestions'), {
-            userId: uid,
+        const createSftpIngestion = httpsCallable(functions, 'createSftpIngestionRecord');
+        const updateSftpIngestion = httpsCallable(functions, 'updateSftpIngestionRecord');
+        const ingestionResult = await createSftpIngestion({
             targetDSP: args.targetDSP,
             releaseFolder: args.releaseFolder,
-            status: 'INITIATED',
-            createdAt: serverTimestamp(),
         });
+        const ingestionData = ingestionResult.data as { ingestionId?: string };
+        const ingestionId = ingestionData.ingestionId;
+        if (!ingestionId) {
+            return toolError('SFTP ingestion did not return a server id.', 'SFTP_RECORD_ERROR');
+        }
 
         // 2. Try Electron IPC for actual SFTP transfer
         if (typeof window !== 'undefined' && window.electronAPI) {
@@ -635,18 +647,17 @@ export const DistributionTools = {
                     throw new Error(result.error || 'SFTP upload failed');
                 }
 
-                // Update status on success
-                await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+                await updateSftpIngestion({
+                    ingestionId,
                     status: 'TRANSFERRED',
                     filesTransferred: result.files?.length || 0,
-                    completedAt: serverTimestamp(),
-                }, { merge: true });
+                });
 
                 return toolSuccess({
                     dsp: args.targetDSP,
                     folderPath: args.releaseFolder,
                     sftpStatus: 'Transferred Successfully',
-                    ingestionId: ingestionRef.id,
+                    ingestionId,
                     timestamp: new Date().toISOString(),
                     engine: 'Electron SFTP',
                 }, `Direct SFTP pipeline successfully delivered "${args.releaseFolder}" to ${args.targetDSP} via Electron IPC.`);
@@ -661,37 +672,38 @@ export const DistributionTools = {
             const { functions } = await import('@/services/firebase');
             const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
             const result = await sftpDeliver({
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 targetDSP: args.targetDSP,
                 releaseFolder: args.releaseFolder,
             });
             const data = result.data as Record<string, unknown>;
 
-            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+            await updateSftpIngestion({
+                ingestionId,
                 status: data.status || 'TRANSFERRED',
-                completedAt: serverTimestamp(),
-            }, { merge: true });
+            });
 
             return toolSuccess({
                 dsp: args.targetDSP,
                 folderPath: args.releaseFolder,
                 sftpStatus: data.status || 'Transferred',
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 timestamp: new Date().toISOString(),
                 engine: 'Cloud Function',
             }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
         } catch (cfError: unknown) {
             logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
             // Mark as pending for manual processing
-            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+            await updateSftpIngestion({
+                ingestionId,
                 status: 'PENDING_MANUAL',
-            }, { merge: true });
+            });
 
             return toolSuccess({
                 dsp: args.targetDSP,
                 folderPath: args.releaseFolder,
                 sftpStatus: 'PENDING_MANUAL',
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 note: 'SFTP engine unavailable. Ingestion saved — will be processed when SFTP credentials are configured.',
             }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP credentials to enable automated delivery.`);
         }
@@ -737,7 +749,6 @@ export const DistributionTools = {
         const uid = auth.currentUser?.uid;
         if (!uid) return toolError('User not authenticated');
 
-        // 1. Update release status in Firestore
         const releaseRef = doc(db, 'releases', args.releaseId);
         const releaseSnap = await getDoc(releaseRef);
 
@@ -745,30 +756,22 @@ export const DistributionTools = {
             return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
         }
 
-        // Mark release as takedown-in-progress
-        await setDoc(releaseRef, {
-            status: 'TAKEDOWN_REQUESTED',
-            takedownReason: args.reason,
-            takedownRequestedAt: serverTimestamp(),
-            takedownRequestedBy: uid,
-        }, { merge: true });
-
-        // 2. Create takedown audit record
-        const takedownRef = await addDoc(collection(db, 'takedown_requests'), {
+        const requestTakedown = httpsCallable(functions, 'requestDistributionTakedown');
+        const takedownResult = await requestTakedown({
             releaseId: args.releaseId,
             reason: args.reason,
-            requestedBy: uid,
-            status: 'INITIATED',
-            createdAt: serverTimestamp(),
         });
+        const takedownData = takedownResult.data as { takedownId?: string };
+        const takedownId = takedownData.takedownId;
+        if (!takedownId) {
+            return toolError('Takedown request did not return a server id.', 'TAKEDOWN_ERROR');
+        }
 
-        // 3. Notify distributors via Cloud Function
+        // 2. Notify distributors via Cloud Function
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
             const processTakedown = httpsCallable(functions, 'processReleaseTakedown');
             const result = await processTakedown({
-                takedownId: takedownRef.id,
+                takedownId,
                 releaseId: args.releaseId,
                 reason: args.reason,
             });
@@ -777,7 +780,7 @@ export const DistributionTools = {
             return toolSuccess({
                 releaseId: args.releaseId,
                 reason: args.reason,
-                takedownId: takedownRef.id,
+                takedownId,
                 status: data.status || 'PROCESSING',
                 distributorsNotified: data.distributorsNotified || 0,
                 estimatedRemovalTime: '24-48 hours',
@@ -788,7 +791,7 @@ export const DistributionTools = {
             return toolSuccess({
                 releaseId: args.releaseId,
                 reason: args.reason,
-                takedownId: takedownRef.id,
+                takedownId,
                 status: 'RECORDED_PENDING_NOTIFICATION',
                 note: 'Takedown recorded in system. Distributor notifications will be sent when Cloud Function is deployed.',
                 estimatedRemovalTime: '24-48 hours after notification',

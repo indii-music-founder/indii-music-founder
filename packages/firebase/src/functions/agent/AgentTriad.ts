@@ -1,5 +1,11 @@
 import * as logger from 'firebase-functions/logger';
-import { WorkflowStepStatusEnum, type WorkflowStepStatus } from '@indii/shared';
+
+type WorkflowStepStatus = 'STEP_COMPLETE' | 'FAILED';
+
+const WORKFLOW_STEP_STATUS = {
+    STEP_COMPLETE: 'STEP_COMPLETE',
+    FAILED: 'FAILED',
+} as const;
 
 export interface TriadResult {
     status: WorkflowStepStatus;
@@ -77,7 +83,7 @@ export class AgentTriad {
                 if (evaluation.passed) {
                     logger.info(`[AgentTriad] Evaluation passed for step ${context.stepId}`);
                     return {
-                        status: WorkflowStepStatusEnum.enum.STEP_COMPLETE,
+                        status: WORKFLOW_STEP_STATUS.STEP_COMPLETE,
                         result: generationResult
                     };
                 }
@@ -89,7 +95,7 @@ export class AgentTriad {
 
             logger.error(`[AgentTriad] Triad loop failed after ${maxRetries} retries`);
             return {
-                status: WorkflowStepStatusEnum.enum.FAILED,
+                status: WORKFLOW_STEP_STATUS.FAILED,
                 error: `Failed to pass evaluation after ${maxRetries} retries. Last feedback: ${lastError}`
             };
 
@@ -97,7 +103,7 @@ export class AgentTriad {
             const error = err instanceof Error ? err : new Error(String(err));
             logger.error(`[AgentTriad] Fatal error in triad loop`, error);
             return {
-                status: WorkflowStepStatusEnum.enum.FAILED,
+                status: WORKFLOW_STEP_STATUS.FAILED,
                 error: error.message
             };
         }

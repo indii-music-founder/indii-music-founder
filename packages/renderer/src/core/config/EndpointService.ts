@@ -6,7 +6,7 @@ export class EndpointService {
 
     constructor() {
         this.projectId = env.projectId || '';
-        this.region = env.location || 'us-central1';
+        this.region = env.functionsRegion || 'us-central1';
     }
 
     /**

@@ -97,7 +97,9 @@ try {
     });
     storage = getStorage(app);
     functions = getFunctions(app); // Default (us-central1)
-    functionsWest1 = getFunctions(app); // Migrated to us-central1
+    // Legacy aliases kept for existing imports. They intentionally point to the
+    // primary us-central1 client so region drift cannot reappear through aliases.
+    functionsWest1 = functions;
 
     const isDev = env.DEV;
     const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
@@ -105,7 +107,6 @@ try {
     if (isDev && useEmulator && typeof window !== 'undefined') {
         try {
             connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-            connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
             logger.debug('[Firebase] Connected to Functions emulator on port 5001');
         } catch (e: unknown) {
             logger.warn('[Firebase] Functions emulator connection skipped:', e);

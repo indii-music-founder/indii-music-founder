@@ -49,6 +49,27 @@ service cloud.firestore {
         get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid;
     }
 
+    function canReadReleaseCollection(collectionName, releaseId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/$(collectionName)/$(releaseId)) &&
+        (
+          get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data.ownerId == request.auth.uid ||
+          get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data.createdBy == request.auth.uid ||
+          (
+            ('orgId' in get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data) &&
+            get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data.orgId != null &&
+            isOrgMember(get(/databases/$(database)/documents/$(collectionName)/$(releaseId)).data.orgId)
+          )
+        );
+    }
+
+    function canReadDistributionRelease(releaseId) {
+      return canReadReleaseCollection('proprietaryIngestionReleases', releaseId) ||
+        canReadReleaseCollection('ddexReleases', releaseId) ||
+        canReadReleaseCollection('releases', releaseId);
+    }
+
     // Validate string field
     function isValidString(field, minLen, maxLen) {
       return field is string && field.size() >= minLen && field.size() <= maxLen;
@@ -557,7 +578,7 @@ service cloud.firestore {
     // System Audit logs: Only readable by Admins
     match /audit_logs/{id} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid && request.resource.data.source == 'Agent_SecurityTools';
+      allow create, update, delete: if false;
     }
 
     // =========================================================================
@@ -685,8 +706,8 @@ service cloud.firestore {
       allow delete: if (isVerifiedUser() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /distribution_audit/{releaseId}/{allPaths=**} {
-      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == 'founder-demo-uid');
-      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow read: if canReadDistributionRelease(releaseId);
+      allow create: if false;
       allow update, delete: if false; // immutable audit logs
     }
     match /distribution_tasks/{taskId} {
@@ -695,9 +716,8 @@ service cloud.firestore {
       allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /distribution_takedowns/{releaseId}/{allPaths=**} {
-      allow read: if (isAuthenticated() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/ddexReleases/$(releaseId)).data.userId == 'founder-demo-uid');
-      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow read: if canReadDistributionRelease(releaseId);
+      allow create, update, delete: if false;
     }
     match /isrc_pool/{docId} {
       allow read: if isAuthenticated() || isGuest();
@@ -705,7 +725,7 @@ service cloud.firestore {
     }
     match /isrc_registry/{docId} {
       allow read: if isAuthenticated() || isGuest();
-      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow create: if false;
       allow update, delete: if false;
     }
     match /upc_pool/{docId} {
@@ -714,7 +734,7 @@ service cloud.firestore {
     }
     match /upc_registry/{docId} {
       allow read: if isAuthenticated() || isGuest();
-      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow create: if false;
       allow update, delete: if false;
     }
     match /campaigns/{campaignId} {
@@ -827,13 +847,14 @@ service cloud.firestore {
     // =========================================================================
     match /costLedger/{ledgerId} {
       allow read: if isAuthenticated() || isGuest();
-      // Allow atomic updates/increments for global and user ledgers
-      allow create, update: if isVerifiedUser() || isGuest();
+      // Server-owned ledger. Reservations are written by enforceOperationCost.
+      allow create, update: if false;
       allow delete: if false;
     }
 
     match /incidents/{incidentId} {
-      allow create: if isVerifiedUser();
+      // Server-owned safety incidents. Written by cost-control functions.
+      allow create: if false;
       allow read, update, delete: if false;
     }
 
@@ -906,7 +927,7 @@ service cloud.firestore {
     }
     match /sftp_ingestions/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
     match /video_releases/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
@@ -916,7 +937,7 @@ service cloud.firestore {
     // Owner-by-field (requestedBy).
     match /takedown_requests/{docId} {
       allow read: if isAuthenticated() && resource.data.requestedBy == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.requestedBy == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     // Owner-by-path segment (uid).

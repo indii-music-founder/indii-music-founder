@@ -1,24 +1,28 @@
 # Handoff State
-**Updated:** 2026-06-02 12:49 EDT
-**Branch:** `main`
+**Updated:** 2026-06-03 10:07 EDT
+**Branch:** `codex/live-runtime-blockers`
 
 ## Recent Commits
 ```
-473298a4b chore: session checkpoint — API audit complete, 21 findings, 5 P0s filed
-6f48ac194 chore: session checkpoint [12:48]
-dab8170c1 chore: session checkpoint [12:43]
-7f9ab6f7c chore: session checkpoint [12:42]
-57a51a374 chore: session end workflows and checkpoint
-d828f24ad chore: session checkpoint [12:39]
-8056fe566 docs(agent): complete end workflow cleanup
-3f7877336 fix: resolve 5 P0 issues (128-132) regarding backend keys, omni logic, thin client, and firestore rules
-275f720e2 docs(release): complete founder release checklist
-5aa3e5af9 docs(audit): API & creative-pipeline findings (F1–F21, P0/P1/P2 severity)
+17f45824d chore: session checkpoint [10:05]
+5e4ef750d chore(task): update project task list
+e71c75824 feat(git): add background git repository monitor and sync script
+5aa7ddec3 test(distribution): cast mockCallable to any in ISRCService test
+a2b284e62 test(core): fix firebase-admin mock and ISRCService test assertion
+fc17ab11b chore(core): consolidate local changes, environment schemas, and endpoint configurations
+d4cadbea6 chore(checkpoint): document billing and Maps key resolution
+9cd82246a chore(task): update billing blocker status in task list
+f50f3cf33 docs(agent): checkpoint live blocker closure
+352601d62 fix(runtime): address live provider blocker handling
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/workflows/auto-fix.md
+ M .agent/workflows/go.md
+ M scripts/production-gate.ts
+?? .agent/README_TESTING_SYSTEM.md
+?? .agent/TESTING_INTEGRATION_GUIDE.md
 ```
 
 ## Decisions
