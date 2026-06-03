@@ -123,9 +123,6 @@ const backendSecretsSchema = z.object({
 }).refine(data => !isProd || data.RESEND_API_KEY, {
   message: "Missing RESEND_API_KEY",
   path: ["RESEND_API_KEY"]
-}).refine(data => !isProd || data.ARCJET_KEY, {
-  message: "Missing ARCJET_KEY",
-  path: ["ARCJET_KEY"]
 }).refine(data => !isProd || data.VITE_DDEX_DPID_SPOTIFY, {
   message: "Missing VITE_DDEX_DPID_SPOTIFY",
   path: ["VITE_DDEX_DPID_SPOTIFY"]
