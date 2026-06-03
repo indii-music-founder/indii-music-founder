@@ -107,6 +107,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+      - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+
       - name: Run unit tests (shard ${{ matrix.shard }}/4)
         timeout-minutes: 15
         run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/4
@@ -117,6 +128,10 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: indii-music-founder
           VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f $HOME/gcloud-key.json
 
   # ─── Build & Static Analysis ────────────────────────────────────────────────
   build:
