@@ -175,10 +175,7 @@ vi.mock('../orchestration', () => ({
     orchestrationListener: vi.fn()
 }));
 
-// Mock image_resizing to cut the sharp dependency chain entirely
-vi.mock('../lib/image_resizing', () => ({
-    generateThumbnail: vi.fn().mockResolvedValue('https://mock-thumbnail.com/thumb.jpg'),
-}));
+
 
 // Mock cors (imported at top of index.ts)
 vi.mock('cors', () => ({

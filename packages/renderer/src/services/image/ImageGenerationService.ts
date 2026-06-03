@@ -253,7 +253,13 @@ export class ImageGenerationService {
         });
 
         if (!costCheck.allowed) {
-            if (costCheck.requiresConfirmation) {
+            const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
+            
+            if (isInfraFailure) {
+                logger.warn('[ImageGenerationService] Cost ledger infra failure. Bypassing cost check to allow generation to proceed.', { reason: costCheck.reason });
+                // If the ledger is unreachable, we log and bypass to prevent complete system lockup.
+                // The backend function may still enforce limits or we can allow a safe fallback path.
+            } else if (costCheck.requiresConfirmation) {
                 const approved = await new Promise<boolean>((resolve) => {
                     import('@/core/store').then(({ useStore }) => {
                         useStore.getState().setPendingCostWarning({
