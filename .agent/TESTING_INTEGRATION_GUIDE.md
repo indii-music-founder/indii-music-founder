@@ -19,10 +19,11 @@
 - **Health metric:** % of PRs passing both Rabbit + integration tests
 
 ### 2. **Integration Tests** — Real Validation
-- **What it does:** Calls real Google APIs, Firebase, route handlers (not mocks)
-- **Where to find:** `packages/firebase/src/functions/**/*.integration.test.ts`
+- **What it does:** Tests internal code paths with mocked boundaries; validates routing, orchestration, service integration
+- **Where to find:** `packages/renderer/src/services/**/*.integration.test.ts` (20+ files)
 - **Runs:** After staging deploy (smoke tests), daily (health checks)
-- **Health metric:** Integration test pass rate, API latency, feature validation
+- **Health metric:** Integration test pass rate, latency, feature validation
+- **Note:** Currently mocked at external boundaries; future: real Google API integration when credentials available
 
 ### 3. **Sentry** — Real-World Monitoring
 - **What it does:** Tracks errors, APM, user sessions, performance
@@ -78,11 +79,11 @@ Loop until all green
 
 ---
 
-## The Health Dashboard (Unified View)
+## The Health Dashboard (Unified View - Planned)
 
-**Location:** `/health.html` (static, Firebase Hosting, protected by Firebase Auth)
+**Planned Location:** `/health.html` (static, Firebase Hosting, protected by Firebase Auth)
 
-**Shows:**
+**Will Show (When Implemented):**
 ```
 BUILD STATUS (GitHub)          RABBIT QUALITY              SENTRY METRICS
 ↓ CI pass rate                 ↓ PR review velocity        ↓ Error rate
@@ -90,18 +91,23 @@ BUILD STATUS (GitHub)          RABBIT QUALITY              SENTRY METRICS
                                ↓ Auto-fix success rate     ↓ Uptime %
 
 INTEGRATION HEALTH (Daily)     FEATURE VALIDATION          SLA COMPLIANCE
-↓ Google API alive             ↓ API routing: 100%         ↓ API <300ms p50 ✓
-↓ Firebase auth alive          ↓ Image gen: 98.3% pass     ↓ Gen <3s p50 ✓
-↓ Firestore alive              ↓ Video gen: 94.1% pass     ↓ Uptime 99.97% ✓
-↓ Test latencies               ↓ Swarm orchestration       ↓ All SLAs met ✓
+↓ Test results                 ↓ API routing: 100%         ↓ Tests <500ms p50 ✓
+↓ Service status               ↓ Distribution: 98.3% pass  ↓ Coverage 70%+ ✓
+↓ Test latencies               ↓ Video: 94.1% pass         ↓ Uptime 99.97% ✓
+↓ Overall health               ↓ Orchestration working     ↓ All SLAs met ✓
 ```
 
-**Updated by:**
+**Current Status:**
+- Basic dashboard stub created: `packages/renderer/public/health.html`
+- Generate command available: `npm run health:generate-dashboard`
+- Full metrics integration coming (GitHub, Sentry, Firebase)
+
+**Will Be Updated By (When Complete):**
 - GitHub Actions (daily health check workflow)
 - Sentry API (error/perf metrics)
 - Integration test results
 
-**Accessed by:**
+**Accessed By (When Complete):**
 - All agents (via API, for decision-making)
 - Executives (via dashboard link)
 
