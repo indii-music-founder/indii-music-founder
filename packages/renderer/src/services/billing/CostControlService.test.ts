@@ -28,10 +28,14 @@ vi.mock('firebase/firestore', () => ({
   getDoc: vi.fn(),
 }));
 
-vi.mock('@/utils/e2eMode', () => ({
-  isFirebaseE2EMockEnabled: () => false,
-  isTestHarnessRuntime: () => false,
-}));
+vi.mock('@/utils/e2eMode', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/e2eMode')>();
+  return {
+    ...actual,
+    isFirebaseE2EMockEnabled: () => false,
+    isTestHarnessRuntime: () => false,
+  };
+});
 
 vi.mock('@/utils/authGuards', () => ({
   isAnonymousOrDemoUser: mocks.isAnonymousOrDemoUser,
@@ -55,6 +59,9 @@ describe('CostControlService', () => {
     vi.clearAllMocks();
     localStorage.setItem('FIREBASE_E2E_MOCK', 'false');
     (window as Window & { FIREBASE_E2E_MOCK?: unknown }).FIREBASE_E2E_MOCK = false;
+    vi.stubEnv('VITE_API_KEY', '');
+    vi.stubEnv('VITE_E2E_MOCK', '');
+    vi.stubEnv('VITE_PLAYWRIGHT_E2E', '');
     mocks.isAnonymousOrDemoUser.mockReturnValue(false);
     mocks.isDemoUserId.mockReturnValue(false);
     mocks.httpsCallable.mockReturnValue(mocks.callable);
