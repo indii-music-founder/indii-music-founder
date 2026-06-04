@@ -100,7 +100,7 @@ describe('DistributionTools', () => {
             expect(parsed.data.isrc).toMatch(/^USIND26\d{5}$/);
             expect(parsed.data.track_title).toBe('Test Track');
             expect(parsed.data.registry_status).toBe('REGISTERED');
-        }, 10000); // 10s timeout to avoid flaky cold-start failures
+        });
     });
 
     describe('certify_tax_profile', () => {
