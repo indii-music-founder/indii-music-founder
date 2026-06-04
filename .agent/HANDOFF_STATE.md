@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-04 09:11 EDT
+**Updated:** 2026-06-04 09:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8cd16885d fix(finance): prevent subscribing to earnings/expenses when userProfile.id is pending
+dbd9a8a41 chore: session checkpoint [09:11]
 a7209591b fix(e2e): skip flaky agents and ignore firestore warnings in live test runner
 83d53775b fix(creative): make CreativeNavbar and DaisyChainControls responsive to fix pointer-events click blocking
 351332904 fix(a11y): update ledger for ISSUE-106 E2E A11y and Color Contrast Violations
@@ -12,13 +14,11 @@ f71cdfc45 docs: add E2E onboarding and HMR reload safeguard flowchart
 218c5b52e feat: fix onboarding test race conditions and support 5 detroit techno personas loop
 fb4de1a9b fix(creative): resolve ISSUE-104 Video Producer View Mode Toggle pointer-events block
 3c153cbb2 test(creative): skip gateway integration test if Gemini API key is missing to prevent hanging ADC fallback
-9d5fd580d test: adjust timeouts for integration and a11y tests to fix flaky CI failures
-d24d740a2 test(distribution): remove hardcoded timeout to fix flaky CI
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/finance/hooks/useFinance.ts
+clean working tree
 ```
 
 ## Decisions
