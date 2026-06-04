@@ -1,3 +1,17 @@
+## 2026-06-04 Google Maps Component Unmount Race Condition (IntersectionObserver Crash)
+
+**SEVERITY:** High (causes unhandled TypeError crashes in Sentry on map component unmount, e.g., `INDII-MUSIC-FOUNDER-3`)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/modules/touring/components/TourMap.tsx`
+- ERROR: `TypeError: Argument 1 ('target') to IntersectionObserver.observe must be an instance of Element`
+- CAUSE: When `MapComponent` was quickly unmounted (e.g. during rapid UI tab switching or React 18 StrictMode mount/unmount cycles), the Google Maps API constructor `new google.maps.Map(ref.current, ...)` ran, but its internal asynchronous initialization resolved *after* the container element was unmounted. Google Maps then attempted to call `IntersectionObserver.observe()` on its internal container div, which had become `null` or disconnected, throwing an unhandled TypeError.
+- FIX: 
+  1. Added an `active` mounting guard flag inside `MapComponent`'s map initialization and marker geocoding effects.
+  2. Declared `circlesRef` to track Google Maps `Circle` overlays.
+  3. Returned a proper cleanup function that sets the `active` flag to `false` and clears all map, marker, and circle listeners via `google.maps.event.clearInstanceListeners` while detaching overlays via `.setMap(null)`.
+- PREVENTION: When wrapping third-party libraries (like Google Maps) that load or initialize asynchronously and attach event listeners/overlays, always provide a cleanup function in `useEffect` to clear listeners and detach objects. Use an `active` state flag to prevent setting component state or triggering API calls on a map instance after the component has unmounted.
+
 ## 2026-06-03 Integration Test Missing Environment Overrides (Firebase & Agent Setup)
 
 **SEVERITY:** High (causes integration test suite to fail due to provider environment restrictions)
