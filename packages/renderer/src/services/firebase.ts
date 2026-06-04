@@ -201,27 +201,27 @@ if (isFirebaseE2EMockEnabled()) {
 const auth = new Proxy(rawAuth, {
     get(target, prop, receiver) {
         if (prop === 'currentUser') {
-            console.log('[AuthProxy] currentUser getter accessed.', {
+            logger.debug('[AuthProxy] currentUser getter accessed.', {
                 _signedOut: (target as any)._signedOut,
                 targetCurrentUser: target.currentUser ? target.currentUser.uid : 'null',
                 isE2EMockEnabled: isFirebaseE2EMockEnabled()
             });
             if ((target as any)._signedOut) {
-                console.log('[AuthProxy] _signedOut is true, returning null');
+                logger.debug('[AuthProxy] _signedOut is true, returning null');
                 return null;
             }
             const realUser = target.currentUser;
             if (realUser) {
-                console.log('[AuthProxy] realUser is found, returning:', realUser.uid);
+                logger.debug('[AuthProxy] realUser is found, returning:', realUser.uid);
                 return realUser;
             }
 
             const mockUser = getE2EMockUser<User>();
             if (mockUser) {
-                console.log('[AuthProxy] mockUser is found, returning:', mockUser.uid);
+                logger.debug('[AuthProxy] mockUser is found, returning:', mockUser.uid);
                 return mockUser;
             }
-            console.log('[AuthProxy] returning null');
+            logger.debug('[AuthProxy] returning null');
             return null;
         }
         const value = Reflect.get(target, prop, receiver);
