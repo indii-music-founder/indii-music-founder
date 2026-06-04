@@ -1583,7 +1583,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-106: E2E A11y and Color Contrast Violations
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Accessibility (General)
 - **UX Dimension:** Action Discoverability
@@ -1594,6 +1594,7 @@ Caller can decide whether to retry, surface error, or silently log.
   2. Review the failed axe/accessibility assertions.
   3. Observe WCAG AA color contrast failures and missing keyboard/focus targets on interactive elements.
 - **Expected:** All audited screens should satisfy WCAG AA contrast requirements and expose keyboard-reachable, focus-visible interactive controls.
+- **Fix:** Fixed color contrast in `ProjectList.tsx` by upgrading text from `gray-500` to `gray-400`. Added missing `aria-label` attributes to interactive buttons in `EntryOverlay.tsx`.
 - **UX Impact:** Poor screen reader and keyboard-only navigation accessibility.
 
 ---
