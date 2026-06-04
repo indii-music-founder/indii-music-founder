@@ -167,7 +167,7 @@ export class FinanceService {
    * Subscribe to expenses for real-time updates.
    */
   subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void): () => void {
-    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to expenses');
       return () => { };
     }
@@ -199,7 +199,7 @@ export class FinanceService {
    * Subscribe to earnings reports for real-time updates.
    */
   subscribeToEarnings(userId: string, callback: (earnings: EarningsSummary | null) => void): () => void {
-    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to earnings');
       return () => { };
     }

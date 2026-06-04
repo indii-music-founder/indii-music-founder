@@ -101,6 +101,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                 <button 
                     onClick={handleDismiss}
                     className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/20 hover:text-white/60 hover:bg-white/10 transition-all opacity-0 group-hover/overlay:opacity-100 z-50"
+                    aria-label="Dismiss Entry Assistant"
                 >
                     <X size={14} />
                 </button>
@@ -139,6 +140,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                         <button 
                             onClick={() => setIsCollapsed(!isCollapsed)}
                             className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all sm:hidden"
+                            aria-label={isCollapsed ? "Expand Entry Assistant" : "Collapse Entry Assistant"}
                         >
                             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                         </button>
@@ -172,6 +174,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                                 ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" 
                                                 : "bg-white/5 text-white/20 opacity-50"
                                         )}
+                                        aria-label="Send message"
                                     >
                                         <Send size={18} />
                                     </button>
