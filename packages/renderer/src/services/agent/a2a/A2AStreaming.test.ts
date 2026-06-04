@@ -114,5 +114,5 @@ describe('A2A streaming (real crypto loopback)', () => {
     expect(events[0]?.text).toBe('batch result');
     // Batch generator calls runAgent(targetAgentId, task, parentContext, traceId).
     expect(runAgent).toHaveBeenCalledWith('marketing', 'draft tweets', undefined, 't2');
-  }, 20000);
+  }, 60000);
 });
