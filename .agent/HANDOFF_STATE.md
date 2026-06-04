@@ -1,29 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-04 10:24 EDT
+**Updated:** 2026-06-04 11:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-bd95e16cf chore: session checkpoint [10:20]
-881b52be3 docs(workflows): refine mega stress test and test validation instructions
-6145f15eb chore: session checkpoint [09:16]
-fca7e6ee3 fix(test): resolve E2E live tests subscription warnings and fix Vitest AgentExecutor integration test timeout
-a367c687e chore: session checkpoint [09:13]
-5eb435992 chore: session checkpoint [09:13]
-ea7bc12bc chore: session checkpoint [09:12]
-8cd16885d fix(finance): prevent subscribing to earnings/expenses when userProfile.id is pending
-dbd9a8a41 chore: session checkpoint [09:11]
-a7209591b fix(e2e): skip flaky agents and ignore firestore warnings in live test runner
+5e52eee5f chore: save session checkpoints for recent E2E runs
+36d2756d7 docs: add learnings to primary error ledger for 2026-06-04
+4de546dfb chore: clean up untracked temporary output files
+3e108b098 fix(a2a): resolve streaming race condition in a2a router under load
+b489aa67e docs: update open issues ledger with fixed issues index
+c0912b19b fix: align Gemini API keys and add model fallbacks for deployment stability
+8ef2e235b chore: fix dangling alwaysOnMemoryEngine intervals and update test configs
+6f8e6f1e1 fix: resolve E2E live test failures for Firebase auth permissions and Stripe connections
+cb9d3eae8 fix(tests): revert e2eMode patch to resolve test pollution in CI validation
+09532aef3 refactor(better): elevate issue sync workflow with defensive boundaries and explicit idempotency
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
-M  .agent/test_ledger/REAL_TEST_HISTORY.md
-M  .agent/workflows/issue.md
-A  docs/flowcharts/finance-subscription-guard-micro.md
-M  e2e/founders-program.spec.ts
-M  packages/renderer/src/modules/founders/FoundersPortal.tsx
+clean working tree
 ```
 
 ## Decisions
