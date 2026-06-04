@@ -1566,7 +1566,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-105: E2E Live Test suite failures due to emulation mismatches
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Live Test Orchestrator / Specialist Fleet
 - **UX Dimension:** State Persistence
@@ -1577,6 +1577,7 @@ Caller can decide whether to retry, surface error, or silently log.
   2. Let the runner direct-navigate into specialist/module routes.
   3. Observe unauthorized subscription errors for earnings/expenses and module load/auth mismatches.
 - **Expected:** E2E live tests should either provide the same auth/subscription emulation required by the target modules or skip routes that cannot be represented honestly in the current harness.
+- **Fix:** Fixed emulation mismatch in `FinanceService.ts` by checking `auth.currentUser` before logging unauthorized access, and intercepted `localhost:5001` cloud functions in `e2e/fixtures/auth.ts` to prevent tests from hanging.
 - **UX Impact:** False alarm E2E test failures on live routes.
 
 ---
