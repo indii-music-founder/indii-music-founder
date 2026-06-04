@@ -58,6 +58,7 @@ vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window"
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
 vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
+vi.mock('./sidebar/ProjectList', () => ({ ProjectList: () => <div data-testid="project-list">Project List</div> }));
 vi.mock('@/modules/finance/hooks/useSubscription', () => ({
     useSubscription: vi.fn(() => ({
         subscription: { tier: 'pro', status: 'active' },

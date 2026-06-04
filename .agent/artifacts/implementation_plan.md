@@ -1,21 +1,25 @@
-# Implementation Plan - Image Resizing Pipeline
+# Implementation Plan - Proceed Audit Cleanup
 
 ## Context
+The `/proceed` audit found stale task ledgers, an A2A streaming test skipped behind
+an obsolete skip note, and V10 Mega Test ledger/report entries that overclaimed full
+acceptance coverage from a focused E2E smoke suite.
 
-The user requested an automated image resizing solution using Cloud Functions. We chose the "Custom Cloud Function" approach using `sharp` on Cloud Functions 2nd Gen for performance.
+## Strategy
+Keep edits narrow because multiple agents are active in the same worktree. Fix
+only the files needed to make the audit trail accurate and the A2A regression
+test executable.
 
-## Blockers
+## Implementation Steps
+1. Convert the A2A streaming skip into an active regression test.
+2. Run focused Vitest against the A2A streaming file.
+3. Normalize dirty issue ledger entries without renumbering or deleting another
+   agent's issue records.
+4. Correct V10 history/report language to distinguish smoke coverage from full
+   Mega Stress Test acceptance criteria.
+5. Preserve unrelated concurrent-agent files.
 
-- None currently. Dependencies installed.
-
-## Tasks
-
-- [x] **Install Dependencies**: `sharp` and `@types/sharp`.
-- [x] **Implement Function**: Create `functions/src/lib/image_resizing.ts` with `onObjectFinalized` trigger.
-- [x] **Export Function**: Update `functions/src/index.ts` to export `imageResizing`.
-- [x] **Build**: Verify `npm run build` succeeds (Done).
-- [ ] **Deploy**: `firebase deploy --only functions:imageResizing-generateThumbnail` (BLOCKED: GCP Billing Disabled)
-
-## Goal
-
-Automated generation of 200x200 thumbnails for all images uploaded to Cloud Storage.
+## Non-Goals
+- Do not claim Routine 6 passes without Firebase deploy/emulator proof.
+- Do not run broad destructive cleanup of untracked files.
+- Do not edit unrelated active work from other agents.

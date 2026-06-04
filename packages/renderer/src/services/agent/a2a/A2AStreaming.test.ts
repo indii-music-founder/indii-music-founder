@@ -48,8 +48,7 @@ describe('A2A streaming (real crypto loopback)', () => {
     await resetSingletons();
   });
 
-  // TODO: Enable once loopback transport supports stream.init → streamAgent routing
-  it.skip('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
+  it('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
     const { a2aClient } = await import('./A2AClient');
     resetClient(a2aClient);
 
@@ -60,7 +59,6 @@ describe('A2A streaming (real crypto loopback)', () => {
     const streamAgent = vi.fn(async (_agentId: string, _task: string, onToken: (c: string) => void) => {
       onToken(chunkA);
       onToken(chunkB);
-      return { text: chunkA + chunkB };
     });
 
     const directive = {
@@ -74,7 +72,7 @@ describe('A2A streaming (real crypto loopback)', () => {
       'agent.execute',
       { task: 'draft tweets', sourceAgentId: 'generalist' },
       directive,
-      { runAgent: vi.fn(), streamAgent: streamAgent as any, traceId: 't1' }
+      { runAgent: vi.fn(), streamAgent, traceId: 't1' }
     )) {
       events.push(ev as { type?: string; text?: string; done?: boolean });
     }
