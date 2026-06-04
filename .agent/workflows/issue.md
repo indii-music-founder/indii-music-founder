@@ -55,7 +55,10 @@ description: >
 
 If invoked as `/issue sync`:
 1. Use the `call_mcp_tool` tool with `ServerName: github` and `ToolName: list_issues` for `owner: "indii-music-founder"` and `repo: "indii-music-founder"`, `state: "open"`.
-2. Parse the output. For each issue not already present in `.agent/test_ledger/OPEN_ISSUES.md`, append it to the bottom of the file in the following format:
+   - *Fallback:* If the tool fails or the API is unreachable, log the error and proceed to Step 2. Do not crash the workflow.
+2. Read the current contents of `.agent/test_ledger/OPEN_ISSUES.md`.
+3. For each GitHub issue returned, check if its HTML URL or Issue Number already exists in the file (idempotency check).
+4. For each NEW issue, append it to the bottom of `OPEN_ISSUES.md` in this format:
    ```markdown
    ### GH-ISSUE-<number>: <title>
    - **Status:** OPEN
@@ -63,7 +66,7 @@ If invoked as `/issue sync`:
    - **Link:** <html_url>
    - **Summary:** <brief excerpt of body>
    ```
-3. Once appended, proceed to Step 2.
+5. Once appended, proceed to Step 2.
 
 ### Step 2 — Read the full OPEN_ISSUES.md
 
