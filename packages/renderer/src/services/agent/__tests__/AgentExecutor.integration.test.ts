@@ -54,6 +54,20 @@ describe('AgentExecutor (Integration)', () => {
             return;
         }
 
+        // Skip if API endpoint is unreachable (offline/sandboxed environment)
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            await fetch('https://generativelanguage.googleapis.com/', {
+                method: 'HEAD',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+        } catch (e) {
+            console.warn('Skipping AgentExecutor real execution test: API endpoint unreachable.');
+            return;
+        }
+
         const agentId = 'generalist';
         const context: any = {
             activeModule: 'test',
