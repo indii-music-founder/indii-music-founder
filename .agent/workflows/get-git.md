@@ -30,7 +30,7 @@ If the dynamic polling interval has doubled (idle runs) or reset to 15 minutes (
    - TaskId: `<currentTaskId>`
 3. Register the new Cron sequence using the `schedule` tool:
    - CronExpression: `<cronExpression>`
-   - Prompt: `Verify git repository status, fetch origin, rebase local branch, and clean up workspace conflicts.`
+   - Prompt: `Verify git repository status, fetch origin, rebase local branch, clean up workspace conflicts, and run /issue sync to fix open issues.`
 4. Update `currentTaskId` in [polling_state.json](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/.agent/checkpoints/polling_state.json) with the new Task ID returned by the scheduler.
 
 ## 3. Pre-Push Validation details
@@ -41,4 +41,12 @@ If there are commits ahead, `/get-git` automatically executes:
 
 If validation fails, the push is blocked to protect the remote build.
 
-**Output the sync status (performed/idle) and the next scheduled cron interval to complete.**
+## 4. Issue Sync & Fix
+**Safety Check:** Only proceed with Issue Sync if the git cycle completed successfully (no unresolved rebase/merge conflicts). Do not fix issues on top of a broken tree.
+
+If safe to proceed, execute `/issue sync` to:
+1. Fetch the latest open issues from GitHub.
+2. Append them to `OPEN_ISSUES.md` (idempotently).
+3. Automatically attempt to fix them.
+
+**Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues.**
