@@ -120,6 +120,7 @@ function getResponsesRef() {
  */
 const FEED_PAGE_SIZE = 50;
 const FEED_RECENCY_HOURS = 24;
+export const DESKTOP_HEARTBEAT_STALE_MS = 30_000;
 
 function getFeedRecencyCutoff(): Timestamp {
     return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);
@@ -130,11 +131,23 @@ function getFeedRecencyCutoff(): Timestamp {
  * Stored docs always carry a resolved Firestore `Timestamp`, but the field type
  * also permits a `serverTimestamp()` sentinel (pre-write); guard for both.
  */
-function toMillis(ts: Timestamp | ReturnType<typeof serverTimestamp>): number {
+export function relayTimestampToMillis(ts: Timestamp | ReturnType<typeof serverTimestamp> | number | undefined): number {
+    if (typeof ts === 'number') return ts;
+    if (!ts) return 0;
     if (ts instanceof Timestamp) return ts.toMillis();
     // Defensive: handle a plain { toMillis } shape or unresolved sentinel.
     const maybe = ts as { toMillis?: () => number };
     return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
+}
+
+export function isFreshDesktopState(
+    state: DesktopState | null | undefined,
+    now = Date.now(),
+    staleMs = DESKTOP_HEARTBEAT_STALE_MS
+): boolean {
+    if (!state?.online) return false;
+    const timestamp = relayTimestampToMillis(state.timestamp);
+    return timestamp > 0 && now - timestamp <= staleMs;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,7 +240,7 @@ class RemoteRelayService {
                 responses.push(data);
             });
             // Re-sort ascending (oldest → newest) for the UI.
-            responses.sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
+            responses.sort((a, b) => relayTimestampToMillis(a.timestamp) - relayTimestampToMillis(b.timestamp));
             callback(responses);
         }, (error) => {
             logger.error('[RemoteRelay] onAllResponses listener error:', error);
@@ -259,7 +272,7 @@ class RemoteRelayService {
                 commands.push(data);
             });
             // Re-sort ascending (oldest → newest) for the UI.
-            commands.sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
+            commands.sort((a, b) => relayTimestampToMillis(a.timestamp) - relayTimestampToMillis(b.timestamp));
             callback(commands);
         }, (error) => {
             logger.error('[RemoteRelay] onAllCommands listener error:', error);
