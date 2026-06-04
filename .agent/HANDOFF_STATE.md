@@ -1,29 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-04 03:53 EDT
+**Updated:** 2026-06-04 09:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-796712281 chore: session checkpoint [03:52]
-79c12fba7 docs(checkpoint): update error ledger and document session checkpoint antigravity-8dd9fea7
-457a66660 chore: session checkpoint [03:47]
-8681d197b fix(touring): resolve google maps unmount race condition and configure npm packagemanager
-08fd747ab chore: session checkpoint [17:46]
-9dfec91f4 fix: resolve typescript-eslint/no-explicit-any warnings causing CI build failures
-d90e8f69b fix(deps): remove leftover @types/sharp and sync package-lock to fix CI install stall
-17a64c73e fix(test): stub env variables for CostControlService fail-closed test
-e9f94152f Merge pull request #151 from indii-music-founder/fix/open-issues-sweep
-8df1844fc chore: capture uncommitted work before issue sweep
+a7209591b fix(e2e): skip flaky agents and ignore firestore warnings in live test runner
+83d53775b fix(creative): make CreativeNavbar and DaisyChainControls responsive to fix pointer-events click blocking
+351332904 fix(a11y): update ledger for ISSUE-106 E2E A11y and Color Contrast Violations
+f71cdfc45 docs: add E2E onboarding and HMR reload safeguard flowchart
+3901507ad fix(e2e): resolve ISSUE-105 E2E Live Test suite failures due to emulation mismatches
+218c5b52e feat: fix onboarding test race conditions and support 5 detroit techno personas loop
+fb4de1a9b fix(creative): resolve ISSUE-104 Video Producer View Mode Toggle pointer-events block
+3c153cbb2 test(creative): skip gateway integration test if Gemini API key is missing to prevent hanging ADC fallback
+9d5fd580d test: adjust timeouts for integration and a11y tests to fix flaky CI failures
+d24d740a2 test(distribution): remove hardcoded timeout to fix flaky CI
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
- M packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
-?? artifacts/mega_v10_2026-06-04/
-?? artifacts/mega_v10_2026-06-04_results.md
-?? e2e/mega-stress-test-v10.spec.ts
+ M packages/renderer/src/modules/finance/hooks/useFinance.ts
 ```
 
 ## Decisions
