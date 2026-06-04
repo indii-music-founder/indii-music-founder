@@ -59,10 +59,10 @@ else
 fi
 
 echo "--> Step 5: Running Sharded Tests (Sequentially to prevent CPU starvation)"
-if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4; then fail=1; fi
-if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4; then fail=1; fi
-if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=3/4; then fail=1; fi
-if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=4/4; then fail=1; fi
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=1/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=2/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=3/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=4/4 || fail=1
 
 if [ $fail -ne 0 ]; then
   echo "❌ CI Validation FAILED."

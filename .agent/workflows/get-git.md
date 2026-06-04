@@ -49,4 +49,10 @@ If safe to proceed, execute `/issue sync` to:
 2. Append them to `OPEN_ISSUES.md` (idempotently).
 3. Automatically attempt to fix them.
 
+## 5. Polish and Elevate (The `/better` Audit)
+Once any issues are fixed (or before the final commit of the cycle), execute the `/better` workflow:
+1. Audit the current changes and fixes from every angle (Performance, DevEx, Architecture).
+2. Elevate the codebase to Platinum Quality Standards.
+3. Apply any necessary micro-refactors or polish before the cycle concludes.
+
 **Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues.**

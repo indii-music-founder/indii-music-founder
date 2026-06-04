@@ -124,3 +124,10 @@ If agent reports being stuck, blocked, or unable to proceed:
 | You want to verify progress mid-task | `/go` (outputs State Snapshot for inspection) |
 | Need multi-task completion loop | `/go` (one task per invocation, recursive) |
 | Want to unstick and push through blockers | `/go` (Error Ledger + fix protocol) |
+
+
+## Elevate and Polish (The `/better` Audit)
+At the conclusion of this workflow, automatically execute the `/better` workflow to:
+1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
+2. Elevate the codebase to Platinum Quality Standards.
+3. Apply any necessary micro-refactors or polish before proceeding.

@@ -34,3 +34,10 @@ Determine if any additional workflows are needed for this specific feature:
 - If the plan needs to be broken into Github issues, queue up `/to-issues`.
 
 **When complete, output a summary of the initialized state and proceed to the first task or request user confirmation to begin execution.**
+
+
+## Elevate and Polish (The `/better` Audit)
+At the conclusion of this workflow, automatically execute the `/better` workflow to:
+1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
+2. Elevate the codebase to Platinum Quality Standards.
+3. Apply any necessary micro-refactors or polish before proceeding.
