@@ -1516,7 +1516,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-100: Intermittent Vitest Timeouts in High-Concurrency Environments
-- **Status:** OPEN
+- **Status:** 🟢 FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Test Infrastructure / CI
 - **Found:** 2026-06-04 by Antigravity (Local Monorepo Test Run)
@@ -1532,7 +1532,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-103: CI Validation Fails Due to ProjectList Unwrapped act(...) Warning
-- **Status:** OPEN
+- **Status:** 🟢 FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Test Infrastructure / CI
 - **Found:** 2026-06-04 by CI Validation Task
