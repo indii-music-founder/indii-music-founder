@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-04 09:13 EDT
+**Updated:** 2026-06-04 09:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+fca7e6ee3 fix(test): resolve E2E live tests subscription warnings and fix Vitest AgentExecutor integration test timeout
+a367c687e chore: session checkpoint [09:13]
 5eb435992 chore: session checkpoint [09:13]
 ea7bc12bc chore: session checkpoint [09:12]
 8cd16885d fix(finance): prevent subscribing to earnings/expenses when userProfile.id is pending
@@ -12,13 +14,11 @@ a7209591b fix(e2e): skip flaky agents and ignore firestore warnings in live test
 83d53775b fix(creative): make CreativeNavbar and DaisyChainControls responsive to fix pointer-events click blocking
 351332904 fix(a11y): update ledger for ISSUE-106 E2E A11y and Color Contrast Violations
 f71cdfc45 docs: add E2E onboarding and HMR reload safeguard flowchart
-3901507ad fix(e2e): resolve ISSUE-105 E2E Live Test suite failures due to emulation mismatches
-218c5b52e feat: fix onboarding test race conditions and support 5 detroit techno personas loop
 ```
 
 ## Working State
 ```
-M  packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts
+clean working tree
 ```
 
 ## Decisions
