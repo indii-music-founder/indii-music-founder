@@ -20,6 +20,7 @@ This command is run when the feature or task is deemed complete. It ensures ever
 Execute the formal note-taking and checkpointing process:
 - **Documentation:** Generate a summary of the session's learnings, key decisions made, and bugs fixed. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
 - **Checkpoints:** Update the agent's distributed checkpoint in `.agent/checkpoints/` with the final state of the work so the next session can pick up cleanly.
+- **Session Checkpoint Script:** Always execute `bash .claude/scripts/checkpoint.sh` before ending the session to commit the final state and ensure the next session picks up cleanly.
 
 ## 3. Final Architecture Update (via `/flowchart`)
 If any architecture, state flow, or logic shifted during the execution phase:
