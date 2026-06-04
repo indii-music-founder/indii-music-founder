@@ -1354,7 +1354,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-087: Founder Desktop Installer Release Pipeline Is Not Ready End-To-End
-- **Status:** 🟡 PARTIAL
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Desktop Release / Founders Downloads
 - **Found:** 2026-06-01 by Beta Launch Readiness Pass
@@ -1613,3 +1613,22 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Added `await page.waitForFunction(() => (window as any).useStore !== undefined && (window as any).useStore.getState !== undefined, { timeout: 20000 });` prior to retrieving final Zustand store values.
 - **UX Impact:** False alarm E2E test failures on local runs when background HMR watcher events trigger.
 
+
+### ISSUE-108: Login flow is blocking test execution (Create Account broken)
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Architecture
+- **Module:** Auth / Onboarding
+- **Flowchart:** N/A
+- **Tech Stack:** React 18.3.1 | Vite 6.4.2
+- **Found:** 2026-06-04 by Mega Stress Test V10
+- **Summary:** The "Create Account" flow on the landing page does not submit or process authentication. Clicking the submit button after filling email and password does nothing and logs no errors, blocking all downstream testing.
+- **Steps to Reproduce:**
+  1. Navigate to http://localhost:4242
+  2. Click "Create Account"
+  3. Fill in email, password, and DOB.
+  4. Click "Create Account".
+  5. Observe that nothing happens and the user remains unauthenticated.
+- **Expected:** Account should be created and the user should be routed to the dashboard.
+- **UX Impact:** Users cannot sign up for the platform.
+- **Dimensional Data:** N/A (Blocked)
