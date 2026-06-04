@@ -784,3 +784,23 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
   - Expose non-standard env prefixes using `envPrefix` in `vite.config.ts`.
   - Always verify that all packages in a monorepo are registered in `vitest.workspace.ts` if they contain tests.
   - Set `globalThis.IS_REACT_ACT_ENVIRONMENT = true` in testing environment setups.
+
+## 2026-06-04 A2A Client Stream Chunk Race Condition & Vitest Worker CPU Starvation
+
+**SEVERITY:** High (Causes parallel sharded tests to fail randomly due to stream delta order mismatches, and worker timeouts under heavy concurrency load)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/agent/a2a/A2ARouter.ts`, `scripts/ci.sh`
+- ERROR:
+  1. `A2AStreaming.test.ts` failed during concurrent CI validation with mismatched expected/received order: `Expected: "AAAA...BBBB...", Received: "BBBB...AAAA..."`.
+  2. Vitest runner exited with: `Error: [vitest-pool-runner]: Timeout waiting for worker to respond` and failed to start workers.
+- CAUSE:
+  1. In `A2ARouter.ts`'s `createStreamingGenerator`, chunk deltas are encrypted asynchronously using `e2eEncryptionService.encryptMessage` before being pushed to the queue. Since `encryptMessage` uses WebCrypto and is not serialized, back-to-back synchronous tokens generate concurrent encryption calls, leading to a race condition where the second chunk completes encryption first and gets enqueued out of order.
+  2. Running test shards under `--pool=forks` starts a separate process for each test. On resource-constrained environments, this overwhelms the OS/CPU scheduling capacity, resulting in timeouts starting forks.
+- FIX:
+  1. Serialized the `enqueue` calls in `createStreamingGenerator` using a promise chain (`enqueueChain = enqueueChain.then(...)`) to guarantee envelopes are pushed in the exact order they were enqueued.
+  2. Modified test scripts in `scripts/ci.sh` to run sequentially with `--maxWorkers=2`.
+- PREVENTION:
+  - Always serialize asynchronous queue pushes when dealing with real-time stream encryption or ordering-sensitive events.
+  - Limit Vitest workers using `--maxWorkers=N` when executing tests under the `forks` pool on resource-constrained development hosts.
+
