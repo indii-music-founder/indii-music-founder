@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-04 12:07 EDT
+**Updated:** 2026-06-04 15:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f8ab4d296 docs: fix flowchart mermaid quotes syntax and step-by-step transition breakdown header
+7d39bbe48 chore: save desktop dependency packaging session checkpoint
+f51941ebc refactor(better): add main process externalized dependencies to root package.json to fix packaged desktop launch
+547944a35 chore: checkpoint desktop release and quota relay fixes
+8fb3c9219 fix(firebase): fail honestly in generateOmniRemixV3 when model is not configured
+c8f9885f0 test: mock CreativeStorageService and storage in CampaignIntelligence tests
+f1a44c672 fix(test): gracefully skip integration test on 429 quota exhaustion
+045e397c2 chore: session checkpoint [12:07]
 98d6aa5f7 chore: session checkpoint [12:04]
 d43f6e06e docs(workflows): integrate post-push CI health checks into get-git workflow
-a59c4dce9 chore: session checkpoint [12:04]
-c252e15a8 refactor(better): elevate auth logging and remove credential logs
-d16a037bf chore: session checkpoint [12:01]
-309c8f2c5 chore: session checkpoint [11:59]
-5e52eee5f chore: save session checkpoints for recent E2E runs
-36d2756d7 docs: add learnings to primary error ledger for 2026-06-04
-4de546dfb chore: clean up untracked temporary output files
-3e108b098 fix(a2a): resolve streaming race condition in a2a router under load
 ```
 
 ## Working State
