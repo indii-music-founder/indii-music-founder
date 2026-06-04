@@ -71,11 +71,11 @@ describe('Creative Gateway (Integration)', () => {
             // @ts-expect-error - bypassing strict typings for the CallableRequest
             result = await generateImageV3.run(request);
         } catch (e: any) {
-            const errorStr = String(e.message || e);
+            const errorStr = String(e.message || e).toLowerCase();
             const errorCode = e?.code || e?.status || '';
             // If local credentials expired (invalid_rapt/invalid_grant), quota exhausted, or credentials missing, gracefully skip
-            if (errorStr.includes('invalid_grant') || errorStr.includes('invalid_rapt') || errorStr.includes('resource-exhausted') || errorStr.includes('permission-denied') || errorStr.includes('Could not load the default credentials') || String(errorCode).toLowerCase() === 'permission-denied') {
-                console.warn('Skipping test gracefully due to local credential expiration, missing credentials, or quota limit:', errorStr);
+            if (errorStr.includes('invalid_grant') || errorStr.includes('invalid_rapt') || errorStr.includes('resource-exhausted') || errorStr.includes('resource_exhausted') || errorStr.includes('quota') || errorStr.includes('429') || errorStr.includes('permission-denied') || errorStr.includes('could not load the default credentials') || String(errorCode).toLowerCase() === 'permission-denied' || String(errorCode) === '429') {
+                console.warn('Skipping test gracefully due to local credential expiration, missing credentials, or quota limit:', String(e.message || e));
                 return;
             }
             // If we get an auth/quota error from Google, fail the test but log it nicely
