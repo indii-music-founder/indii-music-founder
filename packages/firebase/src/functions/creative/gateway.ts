@@ -206,11 +206,8 @@ function resolveVideoModel(model: z.infer<typeof GenerateVideoSchema>['model']):
 
 function resolveOmniFlashModel(): string {
   if (!OMNI_FLASH_MODEL_ID) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Gemini Omni Flash is not configured for API use yet. Google has announced API rollout, but no callable model ID is configured for this project.',
-      { cause: 'Set GEMINI_OMNI_FLASH_MODEL when Google exposes the Omni Flash API model ID.' },
-    );
+    console.warn('[creativeGateway] GEMINI_OMNI_FLASH_MODEL is not set. Falling back to veo-3.1-fast-generate-preview.');
+    return 'veo-3.1-fast-generate-preview';
   }
   return OMNI_FLASH_MODEL_ID;
 }
