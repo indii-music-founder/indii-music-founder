@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-04 09:16 EDT
+**Updated:** 2026-06-04 10:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+881b52be3 docs(workflows): refine mega stress test and test validation instructions
+6145f15eb chore: session checkpoint [09:16]
 fca7e6ee3 fix(test): resolve E2E live tests subscription warnings and fix Vitest AgentExecutor integration test timeout
 a367c687e chore: session checkpoint [09:13]
 5eb435992 chore: session checkpoint [09:13]
@@ -12,13 +14,13 @@ ea7bc12bc chore: session checkpoint [09:12]
 dbd9a8a41 chore: session checkpoint [09:11]
 a7209591b fix(e2e): skip flaky agents and ignore firestore warnings in live test runner
 83d53775b fix(creative): make CreativeNavbar and DaisyChainControls responsive to fix pointer-events click blocking
-351332904 fix(a11y): update ledger for ISSUE-106 E2E A11y and Color Contrast Violations
-f71cdfc45 docs: add E2E onboarding and HMR reload safeguard flowchart
 ```
 
 ## Working State
 ```
-clean working tree
+ M e2e/founders-program.spec.ts
+ M packages/renderer/src/modules/founders/FoundersPortal.tsx
+?? docs/flowcharts/finance-subscription-guard-micro.md
 ```
 
 ## Decisions
