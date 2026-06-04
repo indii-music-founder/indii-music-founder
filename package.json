@@ -109,6 +109,8 @@
     "node": ">=22.0.0"
   },
   "build": {
+    "appId": "com.indii.music",
+    "productName": "indii.music",
     "directories": {
       "output": "dist-electron"
     },
@@ -123,8 +125,14 @@
       "!node_modules/@esbuild"
     ],
     "mac": {
+      "icon": "build/icon.icns",
       "gatekeeperAssess": true,
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "notarize": true,
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "linux": {
       "target": [
@@ -150,7 +158,16 @@
       }
     ],
     "win": {
+      "artifactName": "${productName} Setup ${version}-${arch}.${ext}",
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ],
       "verifyUpdateCodeSignature": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   },
   "overrides": {

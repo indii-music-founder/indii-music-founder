@@ -26,10 +26,10 @@ vi.mock("firebase/functions", () => ({
 
 vi.mock("firebase/storage", () => ({
     getStorage: vi.fn(),
-    ref: vi.fn(),
+    ref: vi.fn((_storage, url) => ({ fullPath: url })),
     uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
     uploadBytes: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
-    getDownloadURL: vi.fn().mockResolvedValue('gs://mock-bucket/mock-file')
+    getDownloadURL: vi.fn().mockResolvedValue('https://storage.mock/mock-file.png')
 }));
 
 vi.mock("@/services/intelligence/AutonomousIntelligence", () => ({
@@ -207,6 +207,29 @@ describe("ImageGenerationService", () => {
       });
 
       expect(results).toHaveLength(0);
+    });
+
+    it("should handle stored resultUri responses from the creative gateway", async () => {
+      const mockResponse = {
+        data: {
+          jobId: 'job-123',
+          resultUri: 'gs://mock-bucket/creative/test-user/image.png',
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const results = await ImageGeneration.generateImages({
+        prompt: "A stored image",
+      });
+
+      expect(results).toEqual([
+        expect.objectContaining({
+          id: 'job-123',
+          prompt: 'A stored image',
+          url: 'https://storage.mock/mock-file.png',
+        }),
+      ]);
     });
 
     it("should return fallback or empty on generation failure", async () => {

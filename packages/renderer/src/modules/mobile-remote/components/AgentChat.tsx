@@ -19,6 +19,8 @@ import {
     Sparkles, Mic
 } from 'lucide-react';
 import {
+    DESKTOP_HEARTBEAT_STALE_MS,
+    isFreshDesktopState,
     remoteRelayService,
     type RemoteResponse,
     type RemoteCommand,
@@ -38,6 +40,7 @@ interface ChatMessage {
     commandId?: string;
     role: 'user' | 'model';
     text: string;
+    imageUrls?: string[];
     timestamp: number;
     agentId?: string;
     isStreaming?: boolean;
@@ -51,7 +54,7 @@ interface AgentChatProps {
 // How long the phone waits for the studio before surfacing a clear,
 // user-visible "couldn't reach your studio" message instead of a silent
 // spinner death.
-const RESPONSE_TIMEOUT_MS = 30_000;
+const RESPONSE_TIMEOUT_MS = 120_000;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: AgentChatProps) {
@@ -89,6 +92,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     // tear them down on completion or unmount (no leaks, no stale closures).
     const responseUnsubRef = useRef<(() => void) | null>(null);
     const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Tear down any active response listener + timeout. Safe to call repeatedly.
     const teardownResponseWatch = useCallback(() => {
@@ -147,13 +151,30 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         });
 
         const unsubState = remoteRelayService.onDesktopState((state) => {
-            setDesktopState(state);
+            if (stalePresenceTimeoutRef.current) {
+                clearTimeout(stalePresenceTimeoutRef.current);
+                stalePresenceTimeoutRef.current = null;
+            }
+
+            if (isFreshDesktopState(state)) {
+                setDesktopState(state);
+                stalePresenceTimeoutRef.current = setTimeout(() => {
+                    setDesktopState(null);
+                    stalePresenceTimeoutRef.current = null;
+                }, DESKTOP_HEARTBEAT_STALE_MS);
+            } else {
+                setDesktopState(null);
+            }
         });
 
         return () => {
             unsubCmds();
             unsubResps();
             unsubState();
+            if (stalePresenceTimeoutRef.current) {
+                clearTimeout(stalePresenceTimeoutRef.current);
+                stalePresenceTimeoutRef.current = null;
+            }
         };
     }, [isAuthenticated]);
 
@@ -189,6 +210,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 commandId: res.commandId,
                 role: 'model',
                 text: res.text,
+                imageUrls: res.imageUrls,
                 timestamp: ts,
                 agentId: res.agentId,
                 isStreaming: res.isStreaming,
@@ -256,7 +278,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         id: `notice-${commandId}-timeout`,
                         commandId,
                         role: 'model',
-                        text: "Couldn't reach your studio. If your computer is off, some actions need it running — try again in a moment.",
+                        text: "Couldn't reach your studio. Open the desktop app, make sure you're signed in, then try again.",
                         timestamp: Date.now(),
                     },
                 ]);
@@ -291,7 +313,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         );
     }
 
-    const isDesktopOnline = desktopState?.online ?? false;
+    const isDesktopOnline = isFreshDesktopState(desktopState);
 
     return (
         <div className="flex flex-col h-full relative">
@@ -306,7 +328,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                     "w-2 h-2 rounded-full",
                     isDesktopOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
                 )} />
-                {isDesktopOnline ? "Cloud Pipeline Active" : "Desktop Offline — Queuing Mode"}
+                {isDesktopOnline ? "Studio Connected" : "Desktop App Offline"}
             </div>
 
             {/* Messages Area */}
@@ -351,6 +373,29 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                         : "bg-white/[0.05] border border-white/5 text-[#d1d1d6] rounded-tl-none"
                                 )}>
                                     {msg.text}
+                                    {msg.imageUrls && msg.imageUrls.length > 0 && (
+                                        <div className={cn(
+                                            "mt-3 grid gap-2",
+                                            msg.imageUrls.length > 1 ? "grid-cols-2" : "grid-cols-1"
+                                        )}>
+                                            {msg.imageUrls.map((url, imageIdx) => (
+                                                <a
+                                                    key={`${msg.id}-image-${imageIdx}`}
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="block overflow-hidden rounded-2xl border border-white/10 bg-black/30"
+                                                >
+                                                    <img
+                                                        src={url}
+                                                        alt={`Generated result ${imageIdx + 1}`}
+                                                        className="aspect-square w-full object-cover"
+                                                        loading="lazy"
+                                                    />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
                                     {msg.isStreaming && (
                                         <span className="inline-block w-1.5 h-3 bg-blue-400/60 animate-pulse ml-1 align-middle" />
                                     )}

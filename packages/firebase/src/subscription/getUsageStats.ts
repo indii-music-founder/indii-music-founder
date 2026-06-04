@@ -9,6 +9,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
+import { getOrCreateSubscription } from './subscriptionDefaults';
 
 export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async (request) => {
   const { userId } = request.data;
@@ -20,20 +21,13 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
   try {
     const db = getFirestore();
 
-    // Get subscription
-    const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
-    if (!subscriptionDoc.exists) {
-      throw new HttpsError('not-found', 'Subscription not found');
-    }
-
-    const subscription = subscriptionDoc.data();
-
-    if (!subscription) {
-      throw new HttpsError('not-found', 'Subscription data not found');
-    }
+    const subscription = await getOrCreateSubscription(db, userId);
 
     const tier = subscription.tier as SubscriptionTier;
     const tierConfig = TIER_CONFIGS[tier];
+    if (!tierConfig) {
+      throw new HttpsError('failed-precondition', `Unsupported subscription tier: ${tier}`);
+    }
 
     // Get usage records for current billing period
     const now = Date.now();
@@ -124,6 +118,9 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
 
     return stats;
   } catch (error: any) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[getUsageStats] Error:', error);
     throw new HttpsError('internal', error.message || 'Failed to retrieve usage statistics');
   }
