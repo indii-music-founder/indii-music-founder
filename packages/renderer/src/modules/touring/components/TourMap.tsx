@@ -70,6 +70,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
     const markersRef = useRef<google.maps.Marker[]>([]);
+    const circlesRef = useRef<google.maps.Circle[]>([]);
 
     // Detect Google Maps auth failure via global callback + MutationObserver
     useEffect(() => {
@@ -108,9 +109,12 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
     // Initialize Map
     useEffect(() => {
+        let active = true;
+        let initialMap: google.maps.Map | undefined;
+
         if (ref.current && ref.current.isConnected && !map) {
             try {
-                const initialMap = new google.maps.Map(ref.current, {
+                initialMap = new google.maps.Map(ref.current, {
                     center: center || { lat: 39.8283, lng: -98.5795 },
                     zoom: 4,
                     styles: [
@@ -197,7 +201,11 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                     zoomControl: true,
                     backgroundColor: '#0d1117'
                 });
-                setMap(initialMap);
+                if (active) {
+                    setMap(initialMap);
+                } else {
+                    google.maps.event.clearInstanceListeners(initialMap);
+                }
             } catch (err: unknown) {
                 logger.error('[TourMap] Failed to initialize Google Maps:', err);
                 onAuthFailure();
@@ -206,15 +214,36 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
             map.panTo(center);
             map.setZoom(14);
         }
+
+        return () => {
+            active = false;
+            if (initialMap) {
+                google.maps.event.clearInstanceListeners(initialMap);
+            }
+            if (map) {
+                google.maps.event.clearInstanceListeners(map);
+            }
+        };
     }, [ref, map, center, onAuthFailure]);
 
     // Update Markers and Range Ring
     useEffect(() => {
         if (!map) return;
+        let active = true;
 
         // Clear existing markers
-        markersRef.current.forEach(marker => marker.setMap(null));
+        markersRef.current.forEach(marker => {
+            google.maps.event.clearInstanceListeners(marker);
+            marker.setMap(null);
+        });
         markersRef.current = [];
+
+        // Clear existing circles
+        circlesRef.current.forEach(circle => {
+            google.maps.event.clearInstanceListeners(circle);
+            circle.setMap(null);
+        });
+        circlesRef.current = [];
 
         const bounds = new google.maps.LatLngBounds();
 
@@ -246,7 +275,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
                 // Range Ring Logic
                 if (m.type === 'current' && rangeRadiusMiles) {
-                    new google.maps.Circle({
+                    const circle = new google.maps.Circle({
                         strokeColor: "#F59E0B",
                         strokeOpacity: 0.8,
                         strokeWeight: 2,
@@ -256,6 +285,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                         center: m.position,
                         radius: rangeRadiusMiles * 1609.34
                     });
+                    circlesRef.current.push(circle);
                 }
 
                 const infoWindow = new google.maps.InfoWindow({
@@ -278,7 +308,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
             const geocodeProms = locations.map((location, index) => {
                 return new Promise<void>((resolve) => {
                     geocoder.geocode({ address: location }, (results, status) => {
-                        if (status === 'OK' && results && results[0]) {
+                        if (active && status === 'OK' && results && results[0]) {
                             const position = results[0].geometry.location;
                             const marker = new google.maps.Marker({
                                 position,
@@ -300,7 +330,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
             if (markers.length === 0) {
                 Promise.all(geocodeProms).then(() => {
-                    if (!bounds.isEmpty()) {
+                    if (active && !bounds.isEmpty()) {
                         map.fitBounds(bounds);
                         if (locations.length === 1) map.setZoom(10);
                     }
@@ -309,7 +339,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
         }
 
         // Immediate FitBounds for Markers
-        if (markers.length > 0 && !bounds.isEmpty()) {
+        if (active && markers.length > 0 && !bounds.isEmpty()) {
             map.fitBounds(bounds);
             if (markers.length === 1 && markers[0]!.type === 'current') {
                 map.setZoom(15);
@@ -318,6 +348,19 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
             }
         }
 
+        return () => {
+            active = false;
+            markersRef.current.forEach(marker => {
+                google.maps.event.clearInstanceListeners(marker);
+                marker.setMap(null);
+            });
+            markersRef.current = [];
+            circlesRef.current.forEach(circle => {
+                google.maps.event.clearInstanceListeners(circle);
+                circle.setMap(null);
+            });
+            circlesRef.current = [];
+        };
     }, [map, locations, markers, rangeRadiusMiles]);
 
     return <div ref={ref} className="w-full h-full rounded-xl overflow-hidden" />;
