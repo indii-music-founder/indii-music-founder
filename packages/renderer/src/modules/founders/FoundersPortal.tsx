@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Logger } from '@/core/logger/Logger';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 
 export default function FoundersPortal() {
-    const { userProfile, setModule } = useStore(state => ({
-        userProfile: state.userProfile,
-        setModule: state.setModule
-    }));
+    const { userProfile, setModule } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            setModule: state.setModule
+        }))
+    );
 
     const [isMacLoading, setIsMacLoading] = useState(false);
     const [isWinLoading, setIsWinLoading] = useState(false);

@@ -1,96 +1,109 @@
 import { test, expect } from './fixtures/auth';
 
-// Use same setup as other tests
 test.describe('Founders Program Flow', () => {
 
-    test.beforeEach(async ({ authedPage: page, context }) => {
-        // 1. Mock the auth/onboarding states to prevent blocking overlays
+    test.beforeEach(async ({ context }) => {
+        // Mock onboarding states to prevent blocking overlays
         await context.addInitScript(() => {
             window.localStorage.setItem('TOUR_COMPLETED_dashboard', 'true');
             window.localStorage.setItem('INDII_ONBOARDING_COMPLETE', 'true');
             window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
         });
-
-        // 2. Intercept and mock Stripe Checkout redirect
-        await page.route('**/createOneTimeCheckout', async (route) => {
-            // Fake a successful checkout initiation and simulate redirecting back with session_id
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({
-                    data: {
-                        checkoutUrl: 'http://localhost:4242/founders-checkout?payment=success&session_id=cs_test_mock123'
-                    }
-                }),
-            });
-        });
-
-        // 3. Intercept getLatestInvoice/stripe endpoints used across the app to prevent hangs
-        await page.route('**/generateInvoice', route => route.fulfill({ status: 200, body: JSON.stringify({ data: {} }) }));
     });
 
-    test('should complete the founders checkout flow from the landing page', async ({ authedPage: page }) => {
-        // Navigate to the dashboard
-        await page.goto('/dashboard');
-
-        // Ensure the page has loaded before attempting to navigate
-        await expect(page).toHaveURL(/\/dashboard/);
-
-        // Simulate user navigating to the founders checkout page
-        // Normally they would arrive here from the landing page link
+    test('should render the manual payment instructions on founders-checkout', async ({ authedPage: page }) => {
         await page.goto('/founders-checkout');
 
-        // Assert we're on the pre-checkout screen
-        const checkoutHeading = page.locator('h1:has-text("Back The Vision")');
+        // Verify the heading is visible
+        const checkoutHeading = page.locator('h1:has-text("Back The")');
         await expect(checkoutHeading).toBeVisible();
 
-        // Assert the checkout button is visible
-        const checkoutButton = page.locator('button:has-text("Support The Vision ($2,500)")');
-        await expect(checkoutButton).toBeVisible();
+        // Check for direct funding sections
+        await expect(page.locator('h3:has-text("Cash App")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Wire Transfer")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Physical Check")')).toBeVisible();
 
-        // Click checkout
-        await checkoutButton.click();
+        // Check for the investment price info
+        await expect(page.locator('text=Investment Price: $2,500.00 USD')).toBeVisible();
+    });
 
-        // The route mock for 'createOneTimeCheckout' will redirect the page to the success URL
-        await page.waitForURL('**/founders-checkout?payment=success*');
+    test('should show Access Denied in the Founders Portal for non-founders', async ({ authedPage: page }) => {
+        // Try navigating to the portal
+        await page.goto('/dashboard');
 
-        // Assert we are on the 'Sign the Founders Agreement' step
-        const signHeading = page.locator('h1:has-text("Cement Your Legacy")');
-        await expect(signHeading).toBeVisible();
+        // Wait for store initialization
+        await page.waitForFunction(() => (window as any).useStore !== undefined);
 
-        // Fill out the display name
-        const nameInput = page.getByPlaceholder('e.g. Satoshi Nakamoto');
-        await nameInput.fill('Playwright Tester');
-
-        // Intercept the activateFounderPass function
-        await page.route('**/activateFounderPass', async (route) => {
-            const requestData = route.request().postDataJSON();
-
-            // Verify payload
-            expect(requestData.data.sessionId).toBe('cs_test_mock123');
-            expect(requestData.data.displayName).toBe('Playwright Tester');
-
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({
-                    data: {
-                        seat: 7,
-                        message: 'Your Founder #7 pass was already activated.',
-                        verificationHash: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-                        joinedAt: new Date().toISOString(),
-                        githubCommitPending: true
+        // Set user to regular tier
+        await page.evaluate(() => {
+            if ((window as any).useStore) {
+                (window as any).useStore.setState({
+                    userProfile: {
+                        id: 'test-user',
+                        email: 'test@example.com',
+                        subscriptionTier: 'free',
+                        tier: 'free',
+                        isFounder: false,
+                        updatedAt: new Date(Date.now() + 10000000).toISOString()
                     }
-                }),
-            });
+                });
+            }
         });
 
-        // Click Complete
-        const encodeButton = page.locator('button:has-text("Generate Verification Hash")');
-        await encodeButton.click();
+        // Emulate changing module to founders portal
+        await page.evaluate(() => {
+            if ((window as any).useStore) {
+                (window as any).useStore.getState().setModule('founders-portal' as any);
+            }
+        });
 
-        // Verify success screen
-        await expect(page.locator('h2:has-text("Welcome to the Inner Circle, Founder")')).toBeVisible();
-        await expect(page.locator('text=abcdef1234567890')).toBeVisible();
+        // Verify Access Denied is shown
+        const deniedHeading = page.locator('h2:has-text("Access Denied")');
+        await expect(deniedHeading).toBeVisible();
+
+        // Verify "Become a Founder" button is present
+        const becomeFounderButton = page.locator('button:has-text("Become a Founder")');
+        await expect(becomeFounderButton).toBeVisible();
+    });
+
+    test('should render platform download options for verified founders', async ({ authedPage: page }) => {
+        await page.goto('/dashboard');
+
+        // Wait for store initialization
+        await page.waitForFunction(() => (window as any).useStore !== undefined);
+
+        // Set user to founder tier
+        await page.evaluate(() => {
+            if ((window as any).useStore) {
+                (window as any).useStore.setState({
+                    userProfile: {
+                        id: 'test-founder',
+                        email: 'founder@example.com',
+                        subscriptionTier: 'founder',
+                        tier: 'founder',
+                        isFounder: true,
+                        updatedAt: new Date(Date.now() + 10000000).toISOString()
+                    }
+                });
+            }
+        });
+
+        // Navigate to the portal module
+        await page.evaluate(() => {
+            if ((window as any).useStore) {
+                (window as any).useStore.getState().setModule('founders-portal' as any);
+            }
+        });
+
+        // Verify headings
+        await expect(page.locator('h1:has-text("Download")')).toBeVisible();
+
+        // Verify platform download panels
+        await expect(page.locator('h3:has-text("macOS")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Windows")')).toBeVisible();
+
+        // Verify download buttons
+        await expect(page.locator('button:has-text("Download .dmg")')).toBeVisible();
+        await expect(page.locator('button:has-text("Download .exe")')).toBeVisible();
     });
 });
