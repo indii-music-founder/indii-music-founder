@@ -89,6 +89,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             return (
                                 <button
                                     key={tab.id}
+                                    title={tab.label}
                                     onClick={() => {
                                         setViewMode(tab.id as typeof viewMode);
                                         if (tab.id === 'video_production' || tab.id === 'omni') {
@@ -102,9 +103,9 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
                                         }`}
-                                >
+                                  >
                                     <Icon size={11} className={isActive ? 'text-purple-400' : ''} />
-                                    <span className="hidden sm:inline">{tab.label}</span>
+                                    <span className="hidden xl:inline">{tab.label}</span>
                                 </button>
                             );
                         })}

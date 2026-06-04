@@ -17,11 +17,11 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
     const _toast = useToast();
 
     return (
-        <div className="flex items-center gap-3.5 border-l border-r border-white/6 px-4 mx-2 h-9 bg-white/[0.01] backdrop-blur-md rounded-lg">
+        <div className="flex items-center gap-2 md:gap-3.5 border-l border-r border-white/6 px-2 md:px-4 mx-1 md:mx-2 h-9 bg-white/[0.01] backdrop-blur-md rounded-lg">
             {/* Group Label */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 hidden xl:flex">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold font-mono hidden lg:inline">Composition</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold font-mono">Composition</span>
             </div>
 
             {/* First Frame Slot */}
@@ -107,7 +107,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
             </button>
 
             {/* Time Offset Slider */}
-            <div className="flex items-center gap-2.5 ml-2 border-l border-white/8 pl-4 h-5">
+            <div className="flex items-center gap-2.5 ml-2 border-l border-white/8 pl-4 h-5 hidden xl:flex">
                 <span className="text-[9px] text-gray-500 uppercase font-extrabold font-mono tracking-widest">Time</span>
                 <input
                     type="range"
