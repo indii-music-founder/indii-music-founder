@@ -1681,3 +1681,30 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/139
 - **Summary:** defined functions include isOwner, but not isOwnerWrite. It is referenced 25x in rules. This causes a compile error, either breaking deploys or denying all writes across ~25 collections.
 - **Fix:** Fixed missing `isOwnerWrite` function in `firestore.rules` in commit 3f7877336.
+
+---
+
+### GH-ISSUE-149: [P0] Frontend Gemini key referenced under names that aren't defined
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/149
+- **Summary:** Frontend uses various undefined permutations for the Gemini API key.
+- **Fix:** Standardized the FallbackClient and other frontend intelligence services to solely use `VITE_API_KEY`.
+
+---
+
+### GH-ISSUE-148: [P0] Campaign images stored as base64 data-URIs → escalation breaks
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/148
+- **Summary:** Campaign intelligence stores large base64 data URIs into the database if GCS upload fails, breaking downstream services due to size.
+- **Fix:** Refactored `persistGeneratedImage` to throw a hard error instead of catching and silently returning the base64 fallback.
+
+---
+
+### GH-ISSUE-147: [P0] GEMINI_OMNI_FLASH_MODEL unset → omni-remix generation always throws
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/147
+- **Summary:** Omni Flash model is unset causing the video remix function to throw an unhandled `HttpsError`.
+- **Fix:** Replaced hard throw in `resolveOmniFlashModel` with a graceful fallback to `veo-3.1-fast-generate-preview` and a console warning.
