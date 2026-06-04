@@ -42,7 +42,7 @@ describe('Creative Gateway (Integration)', () => {
 
     it('should generate an image using real Gemini API and save to Storage', async () => {
         // Only run if GEMINI_API_KEY is available in the environment to avoid failing on unconfigured CI
-        if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_GENAI_API_KEY && !process.env.VITE_VERTEX_LOCATION) {
+        if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_GENAI_API_KEY) {
             console.warn('Skipping real generateImageV3 test: No Google GenAI credentials found in environment.');
             return;
         }
