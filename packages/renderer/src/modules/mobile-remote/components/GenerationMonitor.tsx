@@ -11,7 +11,7 @@
  * Polished to guarantee >= 44x44px touch targets for all interactive presets and buttons.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -21,7 +21,7 @@ import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Layers, Cpu, Activity
 } from 'lucide-react';
-import { remoteRelayService, type RemoteResponse } from '@/services/agent/RemoteRelayService';
+import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/services/agent/RemoteRelayService';
 import type { Unsubscribe } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,22 @@ const STYLE_PRESETS = [
 interface GeneratedImage {
     url: string;
     prompt: string;
+    timestamp?: number;
+}
+
+function timestampToMillis(timestamp: unknown): number {
+    if (typeof timestamp === 'number') return timestamp;
+    if (timestamp && typeof timestamp === 'object' && 'toMillis' in timestamp) {
+        const toMillis = (timestamp as { toMillis?: () => number }).toMillis;
+        if (typeof toMillis === 'function') return toMillis();
+    }
+    return Date.now();
+}
+
+function cleanPrompt(commandText?: string): string {
+    return (commandText || 'Remote image generation')
+        .replace(/^\[GENERATE_IMAGE\]\s*/, '')
+        .trim() || 'Remote image generation';
 }
 
 export default function GenerationMonitor() {
@@ -67,7 +83,9 @@ export default function GenerationMonitor() {
     const [inputPrompt, setInputPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState('1:1');
     const [isSending, setIsSending] = useState(false);
-    const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [localGeneratedImages, setLocalGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [relayCommands, setRelayCommands] = useState<RemoteCommand[]>([]);
+    const [relayResponses, setRelayResponses] = useState<RemoteResponse[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [activeStylePreset, setActiveStylePreset] = useState<string | null>(null);
     const activeListenerRef = useRef<Unsubscribe | null>(null);
@@ -129,8 +147,9 @@ export default function GenerationMonitor() {
                         const newImages = response.imageUrls.map((url: string) => ({
                             url,
                             prompt: inputPrompt.trim(),
+                            timestamp: Date.now(),
                         }));
-                        setGeneratedImages(prev => [...newImages, ...prev]);
+                        setLocalGeneratedImages(prev => [...newImages, ...prev]);
                         setInputPrompt('');
                         setActiveStylePreset(null);
                     } else if (response.text.startsWith('ERROR:')) {
@@ -145,6 +164,43 @@ export default function GenerationMonitor() {
             setIsSending(false);
         }
     }, [inputPrompt, aspectRatio, isSending]);
+
+    useEffect(() => {
+        const unsubCommands = remoteRelayService.onAllCommands(setRelayCommands);
+        const unsubResponses = remoteRelayService.onAllResponses(setRelayResponses);
+
+        return () => {
+            unsubCommands();
+            unsubResponses();
+        };
+    }, []);
+
+    const generatedImages = useMemo(() => {
+        const commandPromptById = new Map<string, string>();
+        relayCommands.forEach(command => {
+            if (command.id) {
+                commandPromptById.set(command.id, cleanPrompt(command.text));
+            }
+        });
+
+        const relayImages = relayResponses.flatMap(response => {
+            if (!response.imageUrls || response.imageUrls.length === 0) return [];
+            const timestamp = timestampToMillis(response.timestamp);
+            const prompt = commandPromptById.get(response.commandId) || 'Remote image generation';
+            return response.imageUrls.map(url => ({ url, prompt, timestamp }));
+        });
+
+        const byUrl = new Map<string, GeneratedImage>();
+        [...relayImages, ...localGeneratedImages].forEach(image => {
+            if (!byUrl.has(image.url)) {
+                byUrl.set(image.url, image);
+            }
+        });
+
+        return Array.from(byUrl.values())
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 24);
+    }, [localGeneratedImages, relayCommands, relayResponses]);
 
     useEffect(() => {
         return () => {

@@ -34,6 +34,37 @@ export class SubscriptionService {
   private inFlightUsage: Map<string, Promise<UsageStats>> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+  private formatQuotaCheckError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : '';
+
+    return code ? `${code}: ${message}` : message;
+  }
+
+  private isAuthQuotaCheckError(reason: string): boolean {
+    const lower = reason.toLowerCase();
+    return lower.includes('unauthenticated')
+      || lower.includes('permission-denied')
+      || lower.includes('unauthorized');
+  }
+
+  private isQuotaServiceInfrastructureError(reason: string): boolean {
+    const lower = reason.toLowerCase();
+    return lower.includes('internal')
+      || lower.includes('not-found')
+      || lower.includes('failed-precondition')
+      || lower.includes('unavailable')
+      || lower.includes('deadline-exceeded')
+      || lower.includes('timeout')
+      || lower.includes('network-request-failed')
+      || lower.includes('failed to fetch')
+      || lower.includes('invalid subscription data')
+      || lower.includes('invalid usage stats')
+      || lower.includes('subscription not found');
+  }
+
   /**
    * Get current user's subscription
    */
@@ -345,8 +376,14 @@ export class SubscriptionService {
       // If either call failed (auth error, network, etc.), block instead of granting unmetered access.
       if (subscriptionResult.status === 'rejected' || usageResult.status === 'rejected') {
         const reason = subscriptionResult.status === 'rejected'
-          ? (subscriptionResult.reason instanceof Error ? subscriptionResult.reason.message : String(subscriptionResult.reason))
-          : (usageResult.status === 'rejected' ? (usageResult.reason instanceof Error ? usageResult.reason.message : String(usageResult.reason)) : 'unknown');
+          ? this.formatQuotaCheckError(subscriptionResult.reason)
+          : (usageResult.status === 'rejected' ? this.formatQuotaCheckError(usageResult.reason) : 'unknown');
+
+        if (this.isQuotaServiceInfrastructureError(reason) && !this.isAuthQuotaCheckError(reason)) {
+          logger.warn(`[SubscriptionService] Quota service unavailable (${reason}); allowing action and relying on backend usage tracking.`);
+          return { allowed: true };
+        }
+
         logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action.`);
         return { allowed: false, reason: `Subscription quota check failed: ${reason}` };
       }
