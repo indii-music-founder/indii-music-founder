@@ -1615,10 +1615,11 @@ Caller can decide whether to retry, surface error, or silently log.
 
 
 ### ISSUE-108: Login flow is blocking test execution (Create Account broken)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
 - **Module:** Auth / Onboarding
+- **Fix:** Fixed `isFirebaseE2EMockEnabled` in `packages/renderer/src/utils/e2eMode.ts` to properly check `import.meta.env.VITE_FIREBASE_E2E_MOCK`. The test runner UI bypass mechanism was previously broken because the environment variable check was dropped in favor of checking `window` and `localStorage`, which prevented the E2E bypass mock from working unless manually injected.
 - **Flowchart:** N/A
 - **Tech Stack:** React 18.3.1 | Vite 6.4.2
 - **Found:** 2026-06-04 by Mega Stress Test V10
