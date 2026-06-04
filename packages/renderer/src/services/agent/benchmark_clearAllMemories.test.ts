@@ -37,6 +37,10 @@ describe('AlwaysOnMemoryEngine Benchmark', () => {
         vi.clearAllMocks();
     });
 
+    afterAll(() => {
+        alwaysOnMemoryEngine.stop();
+    });
+
     it('measures performance of clearAll', async () => {
         // Start engine
         await alwaysOnMemoryEngine.start('test_user');

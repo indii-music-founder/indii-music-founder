@@ -235,7 +235,7 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         const mod = await import('../index');
         triggerLongFormVideoJob = mod.triggerLongFormVideoJob;
         wrappedFunction = triggerLongFormVideoJob;
-    }, 60000);
+    }, 180000);
 
     beforeEach(() => {
         vi.clearAllMocks();

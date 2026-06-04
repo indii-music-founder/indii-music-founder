@@ -20,7 +20,7 @@ describe('AgentFirebaseConnector Integration Tests', () => {
         vi.clearAllMocks();
         // Clear mock flags
         if (typeof window !== 'undefined') {
-            (window as any).FIREBASE_E2E_MOCK = false;
+            delete (window as any).FIREBASE_E2E_MOCK;
         }
         localStorage.removeItem('FIREBASE_E2E_MOCK');
     });
