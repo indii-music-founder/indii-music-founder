@@ -292,11 +292,15 @@ class A2ARouter {
     let lastFlush = Date.now();
     let finished = false;
 
+    let enqueueChain = Promise.resolve();
     const enqueue = async (text: string, type: 'delta' | 'error', done: boolean) => {
-      const payload = { type, text, agentId: targetAgentId, done };
-      queue.push(await e2eEncryptionService.encryptMessage(payload, recipientId, MY_AGENT_ID));
-      wake?.();
-      wake = null;
+      enqueueChain = enqueueChain.then(async () => {
+        const payload = { type, text, agentId: targetAgentId, done };
+        queue.push(await e2eEncryptionService.encryptMessage(payload, recipientId, MY_AGENT_ID));
+        wake?.();
+        wake = null;
+      });
+      await enqueueChain;
     };
 
     const flush = async (done: boolean) => {
