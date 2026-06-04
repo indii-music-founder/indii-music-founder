@@ -32,3 +32,10 @@ As complex logic, state transitions, or component architectures are built:
 - **Save Requirement:** The generated flowchart MUST be saved as a markdown file inside `docs/flowcharts/` (e.g., `docs/flowcharts/feature-name-micro.md`) with a detailed transition breakdown.
 
 **Repeat the `/middle` process until all tasks in the active task ledger are marked complete, or until the current user objective is verified complete when no matching ledger exists.**
+
+
+## Elevate and Polish (The `/better` Audit)
+At the conclusion of this workflow, automatically execute the `/better` workflow to:
+1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
+2. Elevate the codebase to Platinum Quality Standards.
+3. Apply any necessary micro-refactors or polish before proceeding.
