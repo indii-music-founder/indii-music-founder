@@ -17,13 +17,10 @@ describe('AgentExecutor (Integration)', () => {
     let originalE2E: string | undefined;
 
     beforeAll(() => {
-        originalE2E = process.env.VITE_PLAYWRIGHT_E2E;
-        process.env.VITE_PLAYWRIGHT_E2E = 'true';
         executor = new AgentExecutor(agentRegistry);
     });
 
     afterAll(() => {
-        process.env.VITE_PLAYWRIGHT_E2E = originalE2E;
     });
 
     it('should successfully load an existing agent from the real registry', async () => {

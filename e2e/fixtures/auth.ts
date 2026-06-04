@@ -244,21 +244,13 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
-      // Handle Listen/WebChannel streams (long-polling)
       if (
         url.includes(":listen") ||
         url.includes("/Listen/") ||
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        // Hang the request to keep the WebChannel stream open and prevent 401s / offline state
-        await new Promise(r => setTimeout(r, 60000));
-        await route.fulfill({
-          status: 200,
-          headers: corsHeaders,
-          contentType: "application/json",
-          body: "[]"
-        });
+        await route.abort('failed');
         return;
       }
 
