@@ -123,7 +123,6 @@ let rawAuth: Auth;
 if (isFirebaseE2EMockEnabled()) {
     logger.debug('[Firebase] Using E2E Auth Mock');
     
-    // Stateful mock auth
     let currentMockUser = getE2EMockUser<User>();
     const authStateListeners: ((user: User | null) => void)[] = [];
     
@@ -133,6 +132,7 @@ if (isFirebaseE2EMockEnabled()) {
 
     rawAuth = {
         app,
+        _signedOut: false,
         get currentUser() { return currentMockUser; },
         onAuthStateChanged: (cb: (user: User | null) => void) => {
             authStateListeners.push(cb);
@@ -144,27 +144,32 @@ if (isFirebaseE2EMockEnabled()) {
         },
         signInAnonymously: async () => {
             currentMockUser = getE2EMockUser<User>();
+            (rawAuth as any)._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signInWithEmailAndPassword: async () => {
             currentMockUser = getE2EMockUser<User>();
+            (rawAuth as any)._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         createUserWithEmailAndPassword: async () => {
             currentMockUser = getE2EMockUser<User>();
+            (rawAuth as any)._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         sendPasswordResetEmail: async () => {},
         signInWithPopup: async () => {
             currentMockUser = getE2EMockUser<User>();
+            (rawAuth as any)._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signOut: async () => {
             currentMockUser = null;
+            (rawAuth as any)._signedOut = true;
             notifyListeners();
         },
     } as unknown as Auth;
@@ -196,11 +201,27 @@ if (isFirebaseE2EMockEnabled()) {
 const auth = new Proxy(rawAuth, {
     get(target, prop, receiver) {
         if (prop === 'currentUser') {
+            console.log('[AuthProxy] currentUser getter accessed.', {
+                _signedOut: (target as any)._signedOut,
+                targetCurrentUser: target.currentUser ? target.currentUser.uid : 'null',
+                isE2EMockEnabled: isFirebaseE2EMockEnabled()
+            });
+            if ((target as any)._signedOut) {
+                console.log('[AuthProxy] _signedOut is true, returning null');
+                return null;
+            }
             const realUser = target.currentUser;
-            if (realUser) return realUser;
+            if (realUser) {
+                console.log('[AuthProxy] realUser is found, returning:', realUser.uid);
+                return realUser;
+            }
 
             const mockUser = getE2EMockUser<User>();
-            if (mockUser) return mockUser;
+            if (mockUser) {
+                console.log('[AuthProxy] mockUser is found, returning:', mockUser.uid);
+                return mockUser;
+            }
+            console.log('[AuthProxy] returning null');
             return null;
         }
         const value = Reflect.get(target, prop, receiver);

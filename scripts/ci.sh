@@ -58,20 +58,11 @@ else
   echo "✅ Flowchart validation passed."
 fi
 
-echo "--> Step 5: Running Sharded Tests"
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4 &
-PID1=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4 &
-PID2=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=3/4 &
-PID3=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=4/4 &
-PID4=$!
-
-wait $PID1 || fail=1
-wait $PID2 || fail=1
-wait $PID3 || fail=1
-wait $PID4 || fail=1
+echo "--> Step 5: Running Sharded Tests (Sequentially to prevent CPU starvation)"
+if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4; then fail=1; fi
+if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4; then fail=1; fi
+if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=3/4; then fail=1; fi
+if ! npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=4/4; then fail=1; fi
 
 if [ $fail -ne 0 ]; then
   echo "❌ CI Validation FAILED."

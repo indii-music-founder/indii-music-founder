@@ -461,6 +461,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
             // Intercept Firestore user doc reads for test-user-uid-e2e and return the active persona
             await page.route("**/firestore.googleapis.com/**/users/test-user-uid-e2e", async (route) => {
+                const activePersona = personas[pIdx]!;
                 const req = route.request();
                 const headers = req.headers();
                 const origin = headers['origin'] || headers['Origin'] || 'http://localhost:4242';
@@ -474,7 +475,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                     await route.fulfill({ status: 204, headers: corsHeaders });
                     return;
                 }
-                console.log(`[Techno E2E] Intercepted user doc GET request for ${currentPersona.displayName}`);
+                console.log(`[Techno E2E] Intercepted user doc GET request for ${activePersona.displayName}`);
                 await route.fulfill({
                     status: 200,
                     headers: corsHeaders,
@@ -483,8 +484,8 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                         name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
                         fields: {
                             uid: { stringValue: "test-user-uid-e2e" },
-                            email: { stringValue: currentPersona.email },
-                            displayName: { stringValue: currentPersona.displayName },
+                            email: { stringValue: activePersona.email },
+                            displayName: { stringValue: activePersona.displayName },
                             membershipTier: { stringValue: "pro" },
                             onboardingCompleted: { booleanValue: false },
                         },
@@ -493,6 +494,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             });
 
             await page.route(url => url.pathname.includes("batchGet") || url.pathname.includes("documents:get"), async (route) => {
+                const activePersona = personas[pIdx]!;
                 const req = route.request();
                 const headers = req.headers();
                 const origin = headers['origin'] || headers['Origin'] || 'http://localhost:4242';
@@ -506,7 +508,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                     await route.fulfill({ status: 204, headers: corsHeaders });
                     return;
                 }
-                console.log(`[Techno E2E] Intercepted batchGet/documents:get for ${currentPersona.displayName}`);
+                console.log(`[Techno E2E] Intercepted batchGet/documents:get for ${activePersona.displayName}`);
                 await route.fulfill({
                     status: 200,
                     headers: corsHeaders,
@@ -517,8 +519,8 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                                 name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
                                 fields: {
                                     uid: { stringValue: "test-user-uid-e2e" },
-                                    email: { stringValue: currentPersona.email },
-                                    displayName: { stringValue: currentPersona.displayName },
+                                    email: { stringValue: activePersona.email },
+                                    displayName: { stringValue: activePersona.displayName },
                                     membershipTier: { stringValue: "pro" },
                                     onboardingCompleted: { booleanValue: false },
                                 },

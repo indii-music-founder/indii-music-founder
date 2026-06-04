@@ -78,7 +78,7 @@ export default function LoginForm() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault(); console.log("SUBMIT", {email, password, dateOfBirth});
 
         // ── Forgot Password view ──────────────────────────────────────
         if (view === 'forgot-password') {
