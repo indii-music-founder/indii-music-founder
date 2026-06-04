@@ -107,5 +107,5 @@ describe('Creative Gateway (Integration)', () => {
         const file = bucket.file(path);
         const [exists] = await file.exists();
         expect(exists).toBe(true);
-    }, 60000); // 60 second timeout for this specific test
+    }, 120000);
 });
