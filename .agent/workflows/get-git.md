@@ -49,10 +49,17 @@ If safe to proceed, execute `/issue sync` to:
 2. Append them to `OPEN_ISSUES.md` (idempotently).
 3. Automatically attempt to fix them.
 
-## 5. Polish and Elevate (The `/better` Audit)
+## 5. Post-Push CI Health Check
+**Safety Check:** After pushing code or verifying repo status, you MUST check the health of the GitHub Actions CI pipeline. We do not tolerate red 'X' marks on `main`.
+
+1. Use the GitHub CLI (`gh run list --status failure --branch main`) or MCP tools to check for any recent failed CI workflow runs.
+2. If a failed run is detected, fetch the logs to diagnose the failure.
+3. Automatically initiate a fix cycle to resolve the CI failure, verify locally, and push the fix to restore the green checkmark.
+
+## 6. Polish and Elevate (The `/better` Audit)
 Once any issues are fixed (or before the final commit of the cycle), execute the `/better` workflow:
 1. Audit the current changes and fixes from every angle (Performance, DevEx, Architecture).
 2. Elevate the codebase to Platinum Quality Standards.
 3. Apply any necessary micro-refactors or polish before the cycle concludes.
 
-**Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues.**
+**Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues or CI pipelines.**
