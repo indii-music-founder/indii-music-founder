@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-04 12:01 EDT
+**Updated:** 2026-06-04 12:04 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c252e15a8 refactor(better): elevate auth logging and remove credential logs
+d16a037bf chore: session checkpoint [12:01]
 309c8f2c5 chore: session checkpoint [11:59]
 5e52eee5f chore: save session checkpoints for recent E2E runs
 36d2756d7 docs: add learnings to primary error ledger for 2026-06-04
@@ -12,13 +14,11 @@
 b489aa67e docs: update open issues ledger with fixed issues index
 c0912b19b fix: align Gemini API keys and add model fallbacks for deployment stability
 8ef2e235b chore: fix dangling alwaysOnMemoryEngine intervals and update test configs
-6f8e6f1e1 fix: resolve E2E live test failures for Firebase auth permissions and Stripe connections
-cb9d3eae8 fix(tests): revert e2eMode patch to resolve test pollution in CI validation
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/workflows/get-git.md
 ```
 
 ## Decisions
