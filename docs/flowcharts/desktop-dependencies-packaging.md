@@ -4,21 +4,21 @@ This flowchart outlines the dependency resolution process during the build and p
 
 ```mermaid
 graph TD
-    A[Main Process Source Packages] --> B(Vite Compilation: electron-vite build)
-    B --> C{Is Package External?}
-    C -- No --> D[Bundled into dist/main/index.js]
-    C -- Yes --> E[Declared as import/require in index.js]
+    A["Main Process Source Packages"] --> B["Vite Compilation (electron-vite build)"]
+    B --> C{"Is Package External?"}
+    C -- No --> D["Bundled into dist/main/index.js"]
+    C -- Yes --> E["Declared as import/require in index.js"]
     
-    E --> F[Packaging: electron-builder]
-    F --> G{Is Dependency in Root package.json?}
-    G -- No --> H[Omitted from app.asar/node_modules]
-    G -- Yes --> I[Included in app.asar/node_modules]
+    E --> F["Packaging (electron-builder)"]
+    F --> G{"Is Dependency in Root package.json?"}
+    G -- No --> H["Omitted from app.asar/node_modules"]
+    G -- Yes --> I["Included in app.asar/node_modules"]
     
-    H --> J[Launch App: Uncaught Exception ERR_MODULE_NOT_FOUND]
-    I --> K[Launch App: Successful Dependency Resolution]
+    H --> J["Launch App: Uncaught Exception ERR_MODULE_NOT_FOUND"]
+    I --> K["Launch App: Successful Dependency Resolution"]
 ```
 
-## Detailed Explanation
+## Step-by-Step Transition Breakdown
 
 1. **Source Code Analysis**: The Main Process source code (`packages/main/src/`) relies on various packages such as `electron-log`, `electron-store`, `chokidar`, etc.
 2. **Vite Compilation**: During `electron-vite build`, the configuration file `electron.vite.config.ts` designates these packages as `external`. They are not bundled into the compilation output `dist/main/index.js`.
