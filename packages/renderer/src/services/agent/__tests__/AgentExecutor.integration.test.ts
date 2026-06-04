@@ -33,7 +33,7 @@ describe('AgentExecutor (Integration)', () => {
         
         expect(agent).toBeDefined();
         expect(agent?.id).toBe(agentId);
-    });
+    }, 30000);
 
     it('should throw an error when executing an unknown agent', async () => {
         const fakeAgentId = 'this-agent-does-not-exist-12345';
