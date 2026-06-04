@@ -1637,7 +1637,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-109: Mega Stress Test V11 - Firebase Missing or insufficient permissions
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Auth / RemoteRelay
 - **Found:** 2026-06-04 by Mega Stress Test V11
@@ -1652,7 +1652,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-110: Mega Stress Test V11 - Connection Refused & SubscriptionService internal errors
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Subscription / Billing
 - **Found:** 2026-06-04 by Mega Stress Test V11
@@ -1663,3 +1663,21 @@ Caller can decide whether to retry, surface error, or silently log.
   3. Observe `ERR_CONNECTION_REFUSED` and `SubscriptionService` failures in the console.
 - **Expected:** The app should handle missing emulators gracefully or the test should mock these endpoints properly.
 - **UX Impact:** Features dependent on subscription validation and usage stats will crash or fail to load.
+
+---
+
+### GH-ISSUE-140: F2: Server-side Gemini key parity: `GEMINI_API_KEY` not provisioned in CI/deploy
+- **Status:** ✅ FIXED (3f7877336)
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/140
+- **Summary:** GEMINI_API_KEY appears in neither .github/workflows/deploy.yml, the local .env, nor .env.example. The local .env only has VITE_API_KEY. There is ambiguity with GOOGLE_GENAI_API_KEY and Vertex paths.
+- **Fix:** Verified `GEMINI_API_KEY` is properly handled via GCP Secret Manager (`geminiApiKey = defineSecret("GEMINI_API_KEY")`) and `getGeminiApiKey()` helper. Fixed in commit 3f7877336.
+
+---
+
+### GH-ISSUE-139: F1: `isOwnerWrite()` is undefined in Firestore rules
+- **Status:** ✅ FIXED (3f7877336)
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/139
+- **Summary:** defined functions include isOwner, but not isOwnerWrite. It is referenced 25x in rules. This causes a compile error, either breaking deploys or denying all writes across ~25 collections.
+- **Fix:** Fixed missing `isOwnerWrite` function in `firestore.rules` in commit 3f7877336.
