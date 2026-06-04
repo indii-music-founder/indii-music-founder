@@ -1,3 +1,14 @@
+## 2026-06-04 Packaged Electron Desktop Application Fails on Startup due to Missing Dependencies
+
+**SEVERITY:** High (causes immediate application crash on startup for packaged production builds)
+
+**MISTAKE:**
+- FILES: `package.json`, `packages/main/package.json`, `electron.vite.config.ts`
+- ERROR: `Uncaught Exception: Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'electron-log' imported from .../app.asar/dist/main/index.js`
+- CAUSE: In a monorepo setup, Vite compiles the main process and designates specific packages (like `electron-log`, `electron-store`, `chokidar`, etc.) as `external` to keep them unbundled. However, when packaging with `electron-builder`, it only automatically resolves and bundles production dependencies defined in the root `package.json`. Because these dependencies were only listed in `packages/main/package.json` and omitted from the root `package.json`, they were not copied into the packaged application's `app.asar/node_modules/` folder.
+- FIX: Duplicate all externalized main-process runtime dependencies into the root `package.json`'s `dependencies` section, run `npm install` to update the workspace lockfile, and verify the resulting package by inspecting the inside of the generated `app.asar`.
+- PREVENTION: Whenever adding a new runtime dependency to the main process or updating the list of externalized modules in `electron.vite.config.ts`, always ensure the package is also declared in the root `package.json`'s `dependencies`. Before publishing any desktop build, verify the `app.asar` contents (`npx asar list <path-to-app.asar>`) to confirm all external modules are present.
+
 ## 2026-06-04 Electron Builder v26 Desktop Signing Schema and Distribution Cert Mismatch
 
 **SEVERITY:** High (local installers build, but public macOS/Windows distribution remains untrusted)
