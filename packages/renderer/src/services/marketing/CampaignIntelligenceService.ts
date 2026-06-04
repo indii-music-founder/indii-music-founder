@@ -372,8 +372,9 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
             const userId = auth.currentUser?.uid || 'anonymous';
             const gsUri = await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image');
             return await getDownloadURL(ref(storage, gsUri));
-        } catch (_error: unknown) {
-            return dataUrl;
+        } catch (error: unknown) {
+            console.error('[CampaignIntelligence] Failed to upload generated image:', error);
+            throw new Error('Failed to persist generated image to Cloud Storage.');
         }
     }
 
