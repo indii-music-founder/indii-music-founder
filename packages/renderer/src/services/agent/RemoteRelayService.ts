@@ -84,18 +84,21 @@ function getUserId(): string | null {
 }
 
 function getRelayRef() {
+    if (isFirebaseE2EMockEnabled()) return null;
     const uid = getUserId();
     if (!uid) return null;
     return doc(db, 'users', uid, 'remote-relay', 'state');
 }
 
 function getCommandsRef() {
+    if (isFirebaseE2EMockEnabled()) return null;
     const uid = getUserId();
     if (!uid) return null;
     return collection(db, 'users', uid, 'remote-relay-commands');
 }
 
 function getResponsesRef() {
+    if (isFirebaseE2EMockEnabled()) return null;
     const uid = getUserId();
     if (!uid) return null;
     return collection(db, 'users', uid, 'remote-relay-responses');

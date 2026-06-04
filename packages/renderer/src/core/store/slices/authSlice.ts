@@ -417,8 +417,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         lastKnownUser = currentUser;
                         set({ user: currentUser, authLoading: false });
 
-                        if (isAnonymousOrDemoUser(currentUser)) {
-                            logger.warn('[Auth] Anonymous/demo user detected — skipping Firestore user sync.');
+                        if (isFirebaseE2EMockEnabled() || isAnonymousOrDemoUser(currentUser)) {
+                            logger.warn('[Auth] Mock/Anonymous user detected — skipping Firestore user sync.');
                             return;
                         }
 
@@ -463,7 +463,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             lastKnownUser = user;
             set({ user, authLoading: false });
 
-            if (user && !isAnonymousOrDemoUser(user)) {
+            if (user && !isFirebaseE2EMockEnabled() && !isAnonymousOrDemoUser(user)) {
                 // Optional: Ensure user document exists in Firestore
                 try {
                     const userRef = doc(db, 'users', user.uid);
