@@ -34,3 +34,10 @@ Signal "we're done" and leave a perfectly clean repository:
 - Invoke the **`/ci-validate`** command.
 - This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
 - **Do not exit this phase until the CI script passes flawlessly.**
+
+
+## Elevate and Polish (The `/better` Audit)
+At the conclusion of this workflow, automatically execute the `/better` workflow to:
+1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
+2. Elevate the codebase to Platinum Quality Standards.
+3. Apply any necessary micro-refactors or polish before proceeding.

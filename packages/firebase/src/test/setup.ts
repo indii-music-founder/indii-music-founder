@@ -14,7 +14,11 @@
  * a fatal crash at require-time. We place this mock first and use vi.hoisted()
  * to guarantee it registers before any transitive imports.
  */
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
+
+beforeEach(() => {
+    vi.useRealTimers();
+});
 
 
 

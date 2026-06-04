@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
 vi.stubEnv('VITE_FIREBASE_E2E_MOCK', 'false');
 vi.stubEnv('VITE_E2E', 'false');
+
+beforeEach(() => {
+    vi.useRealTimers();
+});
 
 // Declare React 18 act testing environment globally to suppress environment warnings
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
