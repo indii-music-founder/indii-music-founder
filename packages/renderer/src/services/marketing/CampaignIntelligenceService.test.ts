@@ -12,6 +12,23 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     }
 }));
 
+// Mock CreativeStorageService and storage
+let lastUploadedUrl = '';
+
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn(async (_userId, media, _mediaType) => {
+            lastUploadedUrl = media;
+            return media;
+        })
+    }
+}));
+
+vi.mock('firebase/storage', () => ({
+    ref: vi.fn((_storage, path) => ({ fullPath: path })),
+    getDownloadURL: vi.fn(async (_ref) => lastUploadedUrl || 'https://mock-url.com')
+}));
+
 // Mock store
 vi.mock('@/core/store', () => ({
     useStore: {
