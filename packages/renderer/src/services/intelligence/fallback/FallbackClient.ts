@@ -91,7 +91,7 @@ import type { GenerateContentResult } from 'firebase/ai';
  * Returns the initialized client.
  */
 export async function initializeFallbackClient(): Promise<GoogleGenAI> {
-    // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
+    // Try multiple key locations to find VITE_API_KEY
     // Explicitly check sources to log which one is used
     const keySources = {
         'env.VITE_API_KEY': env.VITE_API_KEY,
@@ -111,7 +111,7 @@ export async function initializeFallbackClient(): Promise<GoogleGenAI> {
     if (!apiKey) {
         throw new AppException(
             AppErrorCode.INTERNAL_ERROR,
-            'No API key found. Please set VITE_API_KEY or GOOGLE_API_KEY in your .env file.'
+            'No API key found. Please set VITE_API_KEY in your .env file.'
         );
     }
 
