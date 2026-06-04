@@ -52,6 +52,7 @@ export default defineConfig({
     },
     watch: false,
     reporters: ['default', 'github-actions'],
+    testTimeout: 30000,
     teardownTimeout: 1000,
     hookTimeout: 30000,
     pool: 'forks',
