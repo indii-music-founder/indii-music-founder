@@ -35,7 +35,13 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
     }
 
     try {
-        return trueLike(localStorage.getItem('FIREBASE_E2E_MOCK'));
+        if (trueLike(localStorage.getItem('FIREBASE_E2E_MOCK'))) return true;
+    } catch {
+        // ignore
+    }
+
+    try {
+        return trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK);
     } catch {
         return false;
     }
