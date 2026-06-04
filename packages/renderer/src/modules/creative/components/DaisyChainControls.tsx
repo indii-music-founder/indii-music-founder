@@ -21,7 +21,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
             {/* Group Label */}
             <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold font-mono">Composition</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold font-mono hidden lg:inline">Composition</span>
             </div>
 
             {/* First Frame Slot */}
@@ -103,7 +103,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                         : 'bg-white/3 border-white/6 text-gray-400 hover:text-gray-200 hover:bg-white/6 hover:border-white/10'}`}
             >
                 <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-400 animate-pulse' : 'bg-gray-600'}`} />
-                Daisy Chain
+                <span className="hidden lg:inline">Daisy Chain</span>
             </button>
 
             {/* Time Offset Slider */}

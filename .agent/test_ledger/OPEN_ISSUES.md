@@ -1547,7 +1547,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-104: Video Producer View Mode Toggle pointer-events block
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Studio (Video Producer)
 - **UX Dimension:** Navigation Clarity / Click Efficiency
@@ -1560,6 +1560,7 @@ Caller can decide whether to retry, surface error, or silently log.
   4. Attempt to click back to the Generate image tab (`direct-view-btn`).
   5. The click is intercepted by an overlay from the `DaisyChainControls` wrapper (specifically the `Composition` label or `Start` / `End` frame button subtrees).
 - **Expected:** The user should be able to click tabs on the CreativeNavbar freely without pointer-events being blocked by DaisyChainControls.
+- **Fix:** Wrapped DaisyChainControls in overflow-hidden max-w-[40%] justify-end container and hid the Composition label on small screens to prevent pointer events from leaking into the navbar.
 - **UX Impact:** User is locked in the Video view.
 
 ---
@@ -1593,3 +1594,20 @@ Caller can decide whether to retry, surface error, or silently log.
   3. Observe WCAG AA color contrast failures and missing keyboard/focus targets on interactive elements.
 - **Expected:** All audited screens should satisfy WCAG AA contrast requirements and expose keyboard-reachable, focus-visible interactive controls.
 - **UX Impact:** Poor screen reader and keyboard-only navigation accessibility.
+
+---
+
+### ISSUE-107: E2E Onboarding verification crash on Vite HMR page reloads
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Module:** Test Infrastructure / E2E
+- **Found:** 2026-06-04 by E2E Rerun (task-671)
+- **Summary:** The Detroit Techno onboarding E2E test failed during Phase 7 state verification because Vite HMR page reloads or ThemeContext invalidation temporarily cleared `window.useStore` on the page. Since the test accessed the store immediately without a check, it crashed with `TypeError: Cannot read properties of undefined (reading 'getState')`.
+- **Steps to Reproduce:**
+  1. Run `npx playwright test e2e/detroit-techno-onboarding.spec.ts`.
+  2. Cause an HMR update or page reload to occur right as Phase 7 starts.
+  3. Observe the test runner crash while trying to access `window.useStore.getState().userProfile`.
+- **Expected:** The E2E test should wait for `window.useStore` and its `.getState()` method to be defined before evaluating the final Zustand state.
+- **Fix:** Added `await page.waitForFunction(() => (window as any).useStore !== undefined && (window as any).useStore.getState !== undefined, { timeout: 20000 });` prior to retrieving final Zustand store values.
+- **UX Impact:** False alarm E2E test failures on local runs when background HMR watcher events trigger.
+
