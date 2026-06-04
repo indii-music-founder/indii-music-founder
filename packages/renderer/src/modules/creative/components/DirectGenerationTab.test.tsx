@@ -91,6 +91,7 @@ describe('DirectGenerationTab', () => {
     };
 
     beforeEach(() => {
+        vi.useRealTimers();
         vi.clearAllMocks();
         (useStore as unknown as import("vitest").Mock).mockReturnValue(mockStore);
     });

@@ -1633,3 +1633,33 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Expected:** Account should be created and the user should be routed to the dashboard.
 - **UX Impact:** Users cannot sign up for the platform.
 - **Dimensional Data:** N/A (Blocked)
+
+---
+
+### ISSUE-109: Mega Stress Test V11 - Firebase Missing or insufficient permissions
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Auth / RemoteRelay
+- **Found:** 2026-06-04 by Mega Stress Test V11
+- **Summary:** During the exhaustive interface check, the console logs multiple `FirebaseError: Missing or insufficient permissions` errors from `[Auth] Failed to sync user to Firestore` and `[RemoteRelay] Command listener error`.
+- **Steps to Reproduce:**
+  1. Start the app locally.
+  2. Load the home route or creative/merch routes.
+  3. Observe console errors for Firebase permissions.
+- **Expected:** Firebase rules and mock environment should allow successful sync without permission errors.
+- **UX Impact:** Users cannot sync auth data or receive RemoteRelay commands.
+
+---
+
+### ISSUE-110: Mega Stress Test V11 - Connection Refused & SubscriptionService internal errors
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Subscription / Billing
+- **Found:** 2026-06-04 by Mega Stress Test V11
+- **Summary:** The console logs `net::ERR_CONNECTION_REFUSED` and `SubscriptionService.getSubscription failed after retries: internal` errors. This indicates that either local emulators are missing or an API call to a local function is failing to connect.
+- **Steps to Reproduce:**
+  1. Start the app locally without local emulators running.
+  2. Navigate to the dashboard or finance modules.
+  3. Observe `ERR_CONNECTION_REFUSED` and `SubscriptionService` failures in the console.
+- **Expected:** The app should handle missing emulators gracefully or the test should mock these endpoints properly.
+- **UX Impact:** Features dependent on subscription validation and usage stats will crash or fail to load.
