@@ -671,6 +671,11 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const data = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
+
+  if (!process.env.GEMINI_OMNI_FLASH_MODEL && !process.env.VITE_GEMINI_OMNI_FLASH_MODEL) {
+    throw new HttpsError('failed-precondition', 'Omni remix failed: Gemini Omni Flash is not configured.');
+  }
+
   const modelId = resolveOmniFlashModel();
 
   await safeDbSet(jobId, {
