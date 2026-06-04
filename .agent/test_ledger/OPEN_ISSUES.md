@@ -1708,3 +1708,14 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/147
 - **Summary:** Omni Flash model is unset causing the video remix function to throw an unhandled `HttpsError`.
 - **Fix:** Replaced hard throw in `resolveOmniFlashModel` with a graceful fallback to `veo-3.1-fast-generate-preview` and a console warning.
+
+---
+
+### GH-ISSUE-152: Mobile remote image generation false quota failure and missing phone-side result display
+- **Status:** ✅ FIXED (547944a35)
+- **Severity:** 🔴 HIGH
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/152
+- **Summary:** Mobile remote image generation failed with a false quota error due to getUsageStats failing internally. Also, phone-side chat and Create tab did not display the generated images or support atomic claim cleanly, and presence/timeouts were stale/short.
+- **Fix:** Added subscription defaulting/tier normalization to prevent internal failures on missing documents, distinguished real quota exhaustion from infrastructure errors in SubscriptionService, resolved creative gateway resultUri/resultUrl in ImageGenerationService, preserved and rendered imageUrls in mobile chat/Create tab, added desktop-side atomic command handling for plain chat, added fresh heartbeat checks, and increased mobile chat timeout to 120s with explicit instructions.
+- **Files:** `packages/firebase/src/subscription/subscriptionDefaults.ts`, `packages/firebase/src/subscription/getSubscription.ts`, `packages/firebase/src/subscription/getUsageStats.ts`, `packages/renderer/src/services/subscription/SubscriptionService.ts`, `packages/renderer/src/services/image/ImageGenerationService.ts`, `packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx`, `packages/renderer/src/modules/mobile-remote/components/GenerationMonitor.tsx`, `packages/renderer/src/hooks/useRemoteCommandListener.ts`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`, `packages/renderer/src/services/agent/RemoteRelayService.ts`, `packages/firebase/src/subscription/subscriptionDefaults.test.ts`, `packages/renderer/src/services/image/__tests__/ImageGenerationService.test.ts`
+
