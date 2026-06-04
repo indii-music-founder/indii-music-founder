@@ -10,6 +10,7 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
   UsageWarningLevel
 } from './types';
@@ -39,6 +40,21 @@ export class SubscriptionService {
   async getSubscription(userId: string, forceRefresh = false): Promise<Subscription> {
     if (!userId) {
       throw new Error('User ID is required');
+    }
+
+    if (isFirebaseE2EMockEnabled()) {
+      const now = Date.now();
+      return {
+        id: 'mock-subscription-123',
+        userId,
+        tier: SubscriptionTier.STUDIO,
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: now + 30 * 24 * 60 * 60 * 1000,
+        cancelAtPeriodEnd: false,
+        createdAt: now,
+        updatedAt: now
+      };
     }
 
     // Check cache
@@ -136,6 +152,35 @@ export class SubscriptionService {
    * Get usage statistics for a user
    */
   async getUsageStats(userId: string, forceRefresh = false): Promise<UsageStats> {
+    if (isFirebaseE2EMockEnabled()) {
+      const tierConfig = getTierConfig(SubscriptionTier.STUDIO);
+      return {
+        userId,
+        tier: SubscriptionTier.STUDIO,
+        resetDate: Date.now() + (7 * 24 * 60 * 60 * 1000),
+        imagesGenerated: 0,
+        imagesRemaining: tierConfig.imageGenerations.monthly,
+        imagesPerMonth: tierConfig.imageGenerations.monthly,
+        videoDurationSeconds: 0,
+        videoDurationMinutes: 0,
+        videoRemainingMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        videoTotalMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        aiChatTokensUsed: 0,
+        aiChatTokensRemaining: tierConfig.aiChat.tokensPerMonth,
+        aiChatTokensPerMonth: tierConfig.aiChat.tokensPerMonth,
+        storageUsedGB: 0,
+        storageRemainingGB: tierConfig.storage.totalGB,
+        storageTotalGB: tierConfig.storage.totalGB,
+        projectsCreated: 0,
+        projectsRemaining: tierConfig.maxProjects,
+        maxProjects: tierConfig.maxProjects,
+        teamMembersUsed: 0,
+        teamMembersRemaining: tierConfig.maxTeamMembers,
+        maxTeamMembers: tierConfig.maxTeamMembers,
+        isFallback: true
+      };
+    }
+
     // Check cache
     if (!forceRefresh && this.usageCache.has(userId)) {
       const cached = this.usageCache.get(userId)!;
