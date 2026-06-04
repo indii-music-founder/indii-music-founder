@@ -80,6 +80,10 @@ test.describe('Distribution Module Hardened Suite', () => {
         await page.locator('[data-testid="distro-tab-brain"]').click();
         await expect(page.locator('[data-testid="distro-content-brain"]')).toBeVisible({ timeout: 10_000 });
 
+        console.log('[E2E] Pre-filling QC metadata...');
+        await page.locator('[data-testid="qc-input-title"]').fill('E2E Test Track');
+        await page.locator('[data-testid="qc-input-artist"]').fill('E2E Test Artist');
+
         console.log('[E2E] Starting QC analysis...');
         const runBtn = page.locator('[data-testid="qc-run-analysis"]').first();
         await expect(runBtn).toBeVisible({ timeout: 10_000 });
