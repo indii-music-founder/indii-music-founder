@@ -1,7 +1,8 @@
 import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
-import { functionsWest1 as functions, auth } from '@/services/firebase';
+import { functionsWest1 as functions, auth, storage } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { getDownloadURL, ref as storageRef } from 'firebase/storage';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
@@ -195,6 +196,19 @@ export class ImageGenerationService {
         return mapped;
     }
 
+    private async resolveGeneratedAssetUrl(uri: string): Promise<string> {
+        if (!uri.startsWith('gs://')) {
+            return uri;
+        }
+
+        try {
+            return await getDownloadURL(storageRef(storage, uri));
+        } catch (error: unknown) {
+            logger.warn('[ImageGen] Failed to resolve Storage URI to download URL:', error);
+            return uri;
+        }
+    }
+
     /**
      * Triggers the image generation pipeline via Cloud Functions.
      * Performs authentication pre-flights and quota checks.
@@ -383,19 +397,35 @@ export class ImageGenerationService {
             logger.debug('[ImageGen DEBUG] generateImageV3 returned:', result);
 
             interface GenerateImageResponse {
-                images: Array<{
+                images?: Array<{
                     bytesBase64Encoded?: string;
                     mimeType?: string;
                 }>;
+                jobId?: string;
+                resultUri?: string;
+                resultUrl?: string;
                 textNarration?: string;
                 thoughtSignature?: string;
                 groundingMetadata?: Record<string, unknown>;
             }
             const data = result.data as GenerateImageResponse;
 
+            // New gateway contract: image is already saved in Cloud Storage.
+            const generatedUri = data.resultUrl || data.resultUri;
+            if (generatedUri) {
+                results.push({
+                    id: data.jobId || crypto.randomUUID(),
+                    url: await this.resolveGeneratedAssetUrl(generatedUri),
+                    prompt: options.prompt,
+                    textNarration: data.textNarration,
+                    thoughtSignature: data.thoughtSignature,
+                    groundingMetadata: data.groundingMetadata,
+                });
+            }
+
             // Cloud Function returns { images: [...], textNarration?, thoughtSignature?, groundingMetadata? }
             if (!data.images || data.images.length === 0) {
-                return [];
+                return results;
             }
 
             // Parallelize image processing and uploading

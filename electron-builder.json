@@ -36,14 +36,13 @@
     "entitlementsInherit": "build/entitlements.mac.plist",
     "gatekeeperAssess": false,
     "hardenedRuntime": true,
+    "icon": "build/icon.icns",
     "target": [
       "dmg",
       "zip"
     ],
 
-    "notarize": {
-      "teamId": "${APPLE_TEAM_ID}"
-    }
+    "notarize": true
   },
   "productName": "indii.music",
   "protocols": [
@@ -61,14 +60,15 @@
     "releaseType": "release"
   },
   "win": {
+    "artifactName": "${productName} Setup ${version}-${arch}.${ext}",
+    "icon": "build/icon.ico",
     "target": [
       "nsis"
     ],
 
     "signingHashAlgorithms": [
       "sha256"
-    ],
-    "sign": "build/sign.js"
+    ]
   },
   "nsis": {
     "oneClick": false,

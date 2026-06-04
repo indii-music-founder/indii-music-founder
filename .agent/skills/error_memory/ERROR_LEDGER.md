@@ -1,3 +1,21 @@
+## 2026-06-04 Electron Builder v26 Desktop Signing Schema and Distribution Cert Mismatch
+
+**SEVERITY:** High (local installers build, but public macOS/Windows distribution remains untrusted)
+
+**MISTAKE:**
+- FILES: `package.json`, `electron-builder.json`, `docs/RELEASE_CHECKLIST.md`
+- ERRORS:
+  1. Electron Builder v26 rejected older signing config shapes, including `mac.notarize` as an object and `win.sign` pointing at `build/sign.js`.
+  2. macOS app/DMG built and installed locally with an `Apple Development` identity, but Gatekeeper assessment rejected the app and DMG for public distribution.
+  3. Windows EXE artifacts built successfully, but Authenticode trust could not be proven without a real Windows code-signing certificate and Windows-side signature verification.
+- CAUSE: The packaging config had drifted from the installed Electron Builder schema, and local development signing was being conflated with public distribution signing. Apple notarization for outside-the-App-Store distribution requires a `Developer ID Application` certificate plus App Store Connect notarization credentials; `Apple Development` is not enough. Windows public trust requires Authenticode signing with an OV/EV certificate or supported cloud signing provider.
+- FIX: Use `mac.notarize: true`, configure `mac.icon` and `win.icon` to real brand icon assets, remove unsupported `win.sign` config, and add Windows `artifactName` with `${arch}` so x64 and ARM64 installers do not overwrite each other. Document the human prerequisites in `docs/RELEASE_CHECKLIST.md` instead of claiming notarization/signing is complete.
+- PREVENTION: After any Electron Builder upgrade or release-packaging change, validate config with a real package command and verify distribution trust separately from local build success. Required checks:
+  - `security find-identity -v -p codesigning` must show `Developer ID Application: ...` for macOS release builds.
+  - `spctl -a -t open --context context:primary-signature -vv <dmg>` and `xcrun stapler validate <dmg>` must pass before calling a DMG notarized.
+  - Windows installers must be checked on Windows with `Get-AuthenticodeSignature`.
+  - Local artifacts are not release-complete until upload path and Founder download authorization are proven.
+
 ## 2026-06-04 Vitest Project Filter Requires Workspace-Aware Invocation
 
 **SEVERITY:** Medium (causes focused renderer test runs to fail before executing tests)
@@ -803,4 +821,3 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - PREVENTION:
   - Always serialize asynchronous queue pushes when dealing with real-time stream encryption or ordering-sensitive events.
   - Limit Vitest workers using `--maxWorkers=N` when executing tests under the `forks` pool on resource-constrained development hosts.
-

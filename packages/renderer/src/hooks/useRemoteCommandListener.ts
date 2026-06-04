@@ -31,6 +31,7 @@ import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
+import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
@@ -53,6 +54,22 @@ async function writeDiagnostic(stage: string, details?: Record<string, unknown>)
     } catch {
         // Silent — diagnostics should never crash the app
     }
+}
+
+function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
+    const state = useStore.getState();
+    const messages = state.conversationMode === 'boardroom'
+        ? state.boardroomMessages
+        : state.agentHistory;
+
+    return [...messages]
+        .reverse()
+        .find(message =>
+            message.role === 'model' &&
+            Boolean(message.text?.trim()) &&
+            message.timestamp >= startedAt &&
+            !message.isStreaming
+        );
 }
 
 // ---------------------------------------------------------------------------
@@ -292,11 +309,8 @@ function useFirestoreRelay(enabled: boolean) {
 
 
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
-            // ─── Capability Partition Guard ──────────────────────────────
-            // Desktop only handles UI/local actions like [GENERATE_IMAGE] or [NAVIGATE].
-            // Plain text chat is handled by the cloud function. Do not claim text.
-            if (!command.text || !command.text.startsWith('[')) {
-                logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring plain text command ${command.id} (cloud handles this)`);
+            if (!command.text) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring empty command ${command.id}`);
                 return;
             }
 
@@ -344,6 +358,41 @@ function useFirestoreRelay(enabled: boolean) {
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
             writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
             try {
+                // ─── Standard Agent Chat Route ───────────────────────────
+                if (!command.text.startsWith('[')) {
+                    const startedAt = Date.now();
+                    logger.info(`[RemoteRelay/Firestore] 💬 Agent chat: "${command.text.substring(0, 50)}"`);
+                    writeDiagnostic('agent_chat_started', {
+                        commandId: command.id,
+                        targetAgentId: command.targetAgentId || 'auto',
+                    });
+
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        'Processing in desktop studio…',
+                        command.targetAgentId,
+                        true
+                    );
+
+                    await agentService.sendMessage(
+                        command.text,
+                        undefined,
+                        command.targetAgentId,
+                        { source: 'mobile-remote' }
+                    );
+
+                    const response = findLatestRemoteAgentResponse(startedAt);
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        response?.text?.trim() || 'Done.',
+                        response?.agentId || command.targetAgentId || 'generalist',
+                        false
+                    );
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    writeDiagnostic('agent_chat_done', { commandId: command.id });
+                    isProcessing.current = false;
+                    return;
+                }
 
                 // ─── Image Generation Route ──────────────────────────────
                 if (command.text.startsWith('[GENERATE_IMAGE]')) {
@@ -446,14 +495,6 @@ function useFirestoreRelay(enabled: boolean) {
                     return;
                 }
 
-                // ─── Standard Agent Chat (TEXT) — NO LONGER HANDLED HERE ──
-                // Plain text commands are owned exclusively by the cloud function
-                // (processRelayCommand). They are filtered out by the capability
-                // partition guard at the top of this handler before the lock is
-                // acquired, so execution never reaches this point for text. If we
-                // somehow get here, the command had a desktop-only prefix that no
-                // route above claimed — surface that explicitly rather than
-                // silently running the (removed) local AI pipeline.
                 logger.warn(`[RemoteRelay/Firestore] ⚠️ Unhandled desktop-only command prefix: ${command.text?.substring(0, 30)}`);
                 writeDiagnostic('command_unhandled_prefix', {
                     commandId: command.id,

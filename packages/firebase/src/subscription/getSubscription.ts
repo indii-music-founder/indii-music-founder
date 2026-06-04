@@ -1,7 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
-import { Subscription, SubscriptionTier } from '../shared/subscription/types';
-import * as crypto from 'crypto';
+import { getOrCreateSubscription } from './subscriptionDefaults';
 
 export const getSubscription = onCall({ cors: true, enforceAppCheck: false /* true */ }, async (request) => {
   const { userId } = request.data;
@@ -16,29 +15,11 @@ export const getSubscription = onCall({ cors: true, enforceAppCheck: false /* tr
 
   try {
     const db = getFirestore();
-    const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
-
-    if (!subscriptionDoc.exists) {
-      // Create free tier subscription for new users
-      const now = Date.now();
-      const freeSubscription: Subscription = {
-        id: crypto.randomUUID(),
-        userId,
-        tier: SubscriptionTier.FREE,
-        status: 'active',
-        currentPeriodStart: now,
-        currentPeriodEnd: now + 30 * 24 * 60 * 60 * 1000, // 30 days from now
-        cancelAtPeriodEnd: false,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      await db.collection('subscriptions').doc(userId).set(freeSubscription);
-      return freeSubscription;
-    }
-
-    return subscriptionDoc.data() as Subscription;
+    return await getOrCreateSubscription(db, userId);
   } catch (error) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[getSubscription] Error:', error);
     throw new HttpsError('internal', 'Failed to retrieve subscription');
   }

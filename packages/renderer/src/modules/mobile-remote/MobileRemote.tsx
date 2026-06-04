@@ -19,7 +19,12 @@
  */
 
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
-import { remoteRelayService, type DesktopState } from '@/services/agent/RemoteRelayService';
+import {
+  DESKTOP_HEARTBEAT_STALE_MS,
+  isFreshDesktopState,
+  remoteRelayService,
+  type DesktopState,
+} from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, Grip, MessageSquare, Image, Music2,
@@ -154,6 +159,7 @@ export default function MobileRemote() {
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track auth readiness to re-subscribe when auth becomes available
   const isAuth = remoteRelayService.isAuthenticated();
@@ -164,30 +170,47 @@ export default function MobileRemote() {
     if (!isAuth) return;
 
     logger.info('[MobileRemote] Subscribing to desktop state updates…');
+
+    const markDesktopOffline = () => {
+      if (isPaired || connectionStatus === 'connected') {
+        logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
+        setIsPaired(false);
+        setIsReconnecting(true);
+        setConnectionStatus('pairing');
+        setReconnectAttempts(1);
+      } else {
+        setIsPaired(false);
+        setConnectionStatus('idle');
+        setIsReconnecting(false);
+      }
+    };
+
     const unsub = remoteRelayService.onDesktopState((state) => {
       setDesktopState(state);
-      if (state && state.online) {
+      if (stalePresenceTimeoutRef.current) {
+        clearTimeout(stalePresenceTimeoutRef.current);
+        stalePresenceTimeoutRef.current = null;
+      }
+
+      if (isFreshDesktopState(state)) {
         setIsPaired(true);
         setConnectionStatus('connected');
         setIsReconnecting(false);
         setReconnectAttempts(0);
+        stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
       } else {
         // If we were previously connected, trigger automatic reconnection sequence
-        if (isPaired || connectionStatus === 'connected') {
-          logger.warn('[MobileRemote] Desktop went offline unexpectedly. Initiating auto-reconnect sequence…');
-          setIsPaired(false);
-          setIsReconnecting(true);
-          setConnectionStatus('pairing');
-          setReconnectAttempts(1);
-        } else {
-          setIsPaired(false);
-          setConnectionStatus('idle');
-          setIsReconnecting(false);
-        }
+        markDesktopOffline();
       }
     });
 
-    return () => unsub();
+    return () => {
+      unsub();
+      if (stalePresenceTimeoutRef.current) {
+        clearTimeout(stalePresenceTimeoutRef.current);
+        stalePresenceTimeoutRef.current = null;
+      }
+    };
   }, [isAuth, isPaired, connectionStatus]);
 
   // Handle active retry polling for reconnects
