@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-03 17:46 EDT
+**Updated:** 2026-06-04 03:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8681d197b fix(touring): resolve google maps unmount race condition and configure npm packagemanager
+08fd747ab chore: session checkpoint [17:46]
 9dfec91f4 fix: resolve typescript-eslint/no-explicit-any warnings causing CI build failures
 d90e8f69b fix(deps): remove leftover @types/sharp and sync package-lock to fix CI install stall
 17a64c73e fix(test): stub env variables for CostControlService fail-closed test
@@ -12,13 +14,14 @@ e9f94152f Merge pull request #151 from indii-music-founder/fix/open-issues-sweep
 e239af099 Merge pull request #150 from indii-music-founder/fix/open-issues-sweep
 09978724d chore: session checkpoint [17:07]
 9aeb13a67 chore: mark ISSUE-096, 097, and 099 as unblocked
-593addd9c fix(billing): allow cost ledger bypass in local dev when VITE_API_KEY is present
-4100bdb57 Merge pull request #144 from indii-music-founder/fix/open-issues-sweep
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/REAL_TEST_HISTORY.md
+?? artifacts/mega_v10_2026-06-04/
+?? artifacts/mega_v10_2026-06-04_results.md
+?? e2e/mega-stress-test-v10.spec.ts
 ```
 
 ## Decisions
