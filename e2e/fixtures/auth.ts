@@ -142,7 +142,7 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
-    await page.route("**/*.cloudfunctions.net/**", async (route) => {
+    const handleCloudFunction = async (route: any) => {
       const url = route.request().url();
       console.log(
         `[E2E] CATCH-ALL intercepted (cloudfunctions): ${route.request().method()} ${url}`,
@@ -227,7 +227,11 @@ export const test = base.extend<AuthFixtures>({
         contentType: "application/json",
         body: JSON.stringify({ data: {} }),
       });
-    });
+    };
+
+    await page.route("**/*.cloudfunctions.net/**", handleCloudFunction);
+    await page.route("**/127.0.0.1:5001/**", handleCloudFunction);
+    await page.route("**/localhost:5001/**", handleCloudFunction);
 
     // Intercept ALL Firestore traffic to prevent offline hangs.
     // This covers addDoc/updateDoc writes that block the submission pipeline.

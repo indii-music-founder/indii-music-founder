@@ -183,9 +183,9 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
             className="space-y-0.5 overflow-hidden"
           >
             {isLoading && projectArray.length === 0 ? (
-              <div className="px-4 py-2 text-xs text-gray-500">Loading...</div>
+              <div className="px-4 py-2 text-xs text-gray-400">Loading...</div>
             ) : projectArray.length === 0 ? (
-              <div className="px-4 py-2 text-xs text-gray-500">No projects</div>
+              <div className="px-4 py-2 text-xs text-gray-400">No projects</div>
             ) : (
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               projectArray.map((project: any) => {

@@ -1,3 +1,14 @@
+## 2026-06-04 Vitest Project Filter Requires Workspace-Aware Invocation
+
+**SEVERITY:** Medium (causes focused renderer test runs to fail before executing tests)
+
+**MISTAKE:**
+- FILES: `package.json`, `vitest.workspace.ts`, `vitest.config.ts`
+- ERROR: `npm run test:renderer -- --run <file>` expanded to `vitest --project renderer ...` and failed with `No projects matched the filter "renderer"` in this environment.
+- CAUSE: The root `vitest` invocation loaded `vitest.config.ts`, not the array-export workspace file. Passing `--project renderer` only works when Vitest has actually loaded workspace project definitions.
+- FIX: For a focused renderer file in this environment, run with the base config and explicit file path: `npx vitest run packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts --config vitest.config.ts`. This avoids the broken project filter and still uses the renderer aliases/setup.
+- PREVENTION: If `--project renderer` reports no matching project, do not keep retrying the same command. Confirm which config was loaded, then either fix the package script to load the workspace correctly or use an explicit `--config vitest.config.ts` focused run for single-file verification.
+
 ## 2026-06-04 Google Maps Component Unmount Race Condition (IntersectionObserver Crash)
 
 **SEVERITY:** High (causes unhandled TypeError crashes in Sentry on map component unmount, e.g., `INDII-MUSIC-FOUNDER-3`)

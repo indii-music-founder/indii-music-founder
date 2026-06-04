@@ -788,6 +788,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
             // Phase 7: State Verification
             console.log('[Techno E2E] Phase 7: Verifying final Zustand store state...');
+            await page.waitForFunction(() => (window as any).useStore !== undefined && (window as any).useStore.getState !== undefined, { timeout: 20000 });
             const finalProfile = await page.evaluate(() => {
                 const store = (window as any).useStore;
                 return store.getState().userProfile;
