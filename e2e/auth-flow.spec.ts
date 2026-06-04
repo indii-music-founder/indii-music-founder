@@ -19,8 +19,7 @@ const mockFirestoreUserDoc = async (route: any) => {
         return;
     }
     if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?') || url.includes(':write') || url.includes('/Write/')) {
-        await new Promise(r => setTimeout(r, 60000));
-        await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '[]' });
+        await route.abort('failed');
         return;
     }
     const postData = route.request().postData() || '';
@@ -73,6 +72,7 @@ test.describe('Authentication Flow', () => {
         // Bypass onboarding screen if Firestore marks client offline and defaults to pending profile
         await page.addInitScript(() => {
             window.localStorage.setItem('onboarding_dismissed', 'true');
+            (window as any).FIREBASE_E2E_MOCK = false;
         });
 
         // Capture browser logs for debugging
