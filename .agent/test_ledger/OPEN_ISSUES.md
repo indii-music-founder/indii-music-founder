@@ -1512,3 +1512,84 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Expected:** The application should load, and attempting to write a document should succeed without rules compilation errors.
 - **Fix:** Addressed the root cause blocker in ISSUE-095, allowing the application to load and enabling verification of Firestore rules.
 - **UX Impact:** Complete blockage of testing and usage due to the overarching crash.
+
+---
+
+### ISSUE-100: Intermittent Vitest Timeouts in High-Concurrency Environments
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Test Infrastructure / CI
+- **Found:** 2026-06-04 by Antigravity (Local Monorepo Test Run)
+- **Summary:** Running the full unit test suite `npm run test:ci` alongside Vite dev servers (`localhost:4242`) results in several tests timing out. These tests span `AutonomousGenerationDialog`, `AgentExecutor.integration`, `GeneralistAgent`, `Specialist Agent Fleet Verification`, `AgentTools.integration`, `DistributionTools`, `router.integration`, `gateway.integration`, and `InfiniteCanvas`.
+- **Steps to Reproduce:**
+  1. Start or leave active Vite/dev-server processes on `localhost:4242`.
+  2. Run `npm run test:ci`.
+  3. Observe timeout failures across unrelated renderer and Firebase test suites.
+- **Expected:** All unit tests should complete successfully within their allotted timeout limits, even under resource contention, or have their timeouts configured/scaled appropriately.
+- **UX Impact:** CI pipeline flakiness and developer experience deterioration.
+
+
+---
+
+### ISSUE-103: CI Validation Fails Due to ProjectList Unwrapped act(...) Warning
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Test Infrastructure / CI
+- **Found:** 2026-06-04 by CI Validation Task
+- **Summary:** `npm run ci` test suite execution exits with code 1 despite 947/947 tests passing. The logs indicate a React testing library warning: `Warning: An update to ProjectList inside a test was not wrapped in act(...)`. This requires fixing the test rendering wrapper or fixing the component state update in tests.
+- **Steps to Reproduce:**
+  1. Run `npm run ci`.
+  2. Allow the test suite to complete.
+  3. Observe the process exit with code 1 while reporting 947 passing tests and a ProjectList `act(...)` warning.
+- **Expected:** CI should exit 0 when tests pass, or the ProjectList test/component should wrap asynchronous updates so React Testing Library emits no unhandled `act(...)` warning.
+- **UX Impact:** Developers cannot trust a passing test count because CI still fails after completion, blocking validation and merge confidence.
+
+---
+
+### ISSUE-104: Video Producer View Mode Toggle pointer-events block
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Studio (Video Producer)
+- **UX Dimension:** Navigation Clarity / Click Efficiency
+- **Found:** 2026-06-04 by E2E Run (task-211)
+- **Summary:** After entering the Video Producer view, the DaisyChainControls overlay intercepts clicks meant for the CreativeNavbar tab controls. This prevents the user from switching back to the Generate image tab.
+- **Steps to Reproduce:**
+  1. Navigate to `/creative`.
+  2. Click the Video tab (`director-view-btn`).
+  3. Type a prompt into `direct-prompt-input`.
+  4. Attempt to click back to the Generate image tab (`direct-view-btn`).
+  5. The click is intercepted by an overlay from the `DaisyChainControls` wrapper (specifically the `Composition` label or `Start` / `End` frame button subtrees).
+- **Expected:** The user should be able to click tabs on the CreativeNavbar freely without pointer-events being blocked by DaisyChainControls.
+- **UX Impact:** User is locked in the Video view.
+
+---
+
+### ISSUE-105: E2E Live Test suite failures due to emulation mismatches
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Live Test Orchestrator / Specialist Fleet
+- **UX Dimension:** State Persistence
+- **Found:** 2026-06-04 by E2E Run (task-211)
+- **Summary:** Specialist Agent live tests fail inside E2E runners (e.g. `e2e/live_tests_runner.spec.ts`) because specific modules fail to load or authenticate correctly on direct navigation, throwing "Unauthorized subscribe to earnings/expenses" errors.
+- **Steps to Reproduce:**
+  1. Run the E2E live test suite, including `e2e/live_tests_runner.spec.ts`.
+  2. Let the runner direct-navigate into specialist/module routes.
+  3. Observe unauthorized subscription errors for earnings/expenses and module load/auth mismatches.
+- **Expected:** E2E live tests should either provide the same auth/subscription emulation required by the target modules or skip routes that cannot be represented honestly in the current harness.
+- **UX Impact:** False alarm E2E test failures on live routes.
+
+---
+
+### ISSUE-106: E2E A11y and Color Contrast Violations
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Accessibility (General)
+- **UX Dimension:** Action Discoverability
+- **Found:** 2026-06-04 by E2E Run (task-211)
+- **Summary:** Multiple tests in `e2e/a11y.spec.ts` failed due to WCAG AA color contrast violations on button texts and inputs, and interactive elements missing keyboard/focus targets.
+- **Steps to Reproduce:**
+  1. Run `npx playwright test e2e/a11y.spec.ts --project=chromium`.
+  2. Review the failed axe/accessibility assertions.
+  3. Observe WCAG AA color contrast failures and missing keyboard/focus targets on interactive elements.
+- **Expected:** All audited screens should satisfy WCAG AA contrast requirements and expose keyboard-reachable, focus-visible interactive controls.
+- **UX Impact:** Poor screen reader and keyboard-only navigation accessibility.
