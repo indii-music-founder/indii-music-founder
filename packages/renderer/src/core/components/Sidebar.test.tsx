@@ -8,6 +8,10 @@ vi.mock('../store', () => ({
     useStore: vi.fn(),
 }));
 
+vi.mock('./sidebar/ProjectList', () => ({
+    ProjectList: () => <div data-testid="project-list">Project List</div>,
+}));
+
 vi.mock('../theme/moduleColors', () => ({
     getColorForModule: () => ({
         cssVar: '--color-test',

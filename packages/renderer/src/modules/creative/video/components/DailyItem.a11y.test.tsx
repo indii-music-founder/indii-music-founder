@@ -33,7 +33,7 @@ describe('Access: DailyItem Accessibility', () => {
             }
         });
         expect(results).toHaveNoViolations();
-    }, 15000);
+    });
 
     it('has logical focus state and keyboard operability', () => {
         const onSelectMock = vi.fn();
