@@ -1,3 +1,14 @@
+## 2026-06-04 Electron macOS Hidden Window Reactivation Hang
+
+**SEVERITY:** High (causes application to become completely unresponsive to launcher clicks or new instance launches, appearing "hung" in background)
+
+**MISTAKE:**
+- FILES: `packages/main/src/main.ts`
+- ERROR: Clicking the app icon in Dock/Applications or launching a secondary instance does not bring the window back or show the dock icon after the window was closed/hidden.
+- CAUSE: To minimize to tray on close, `win.hide()` and `app.dock?.hide()` are used. However, the `second-instance` and `activate` listeners in the main process did not call `show()` or `app.dock?.show()`. The single-instance lock quitted secondary instances, leaving the primary instance permanently running but completely hidden.
+- FIX: Updated the `activate` and `second-instance` handlers in `packages/main/src/main.ts` to call `mainWindow.show()` and `app.dock?.show()` when the window is hidden.
+- PREVENTION: When intercepting the window close event to hide it instead of quitting, always ensure that all reactivation pathways (like `activate` and `second-instance` events) restore both the window visibility via `.show()` and the macOS Dock presence via `app.dock?.show()`.
+
 ## 2026-06-04 Packaged Electron Desktop Application Fails on Startup due to Missing Dependencies
 
 **SEVERITY:** High (causes immediate application crash on startup for packaged production builds)
