@@ -443,3 +443,16 @@
 - **New Issues:** ISSUE-108
 - **Duration:** 0:10
 - **Verdict:** 🔴 NOT READY (Auth flow broken)
+
+## 2026-06-05 — Mega Test V11 — Audio-Focused Routine 113
+- **Modules Tested:** Audio Analyzer, Audio Intelligence profile generation, MusicLibrary persistence, Audio → Creative prompt handoff
+- **Duration:** ~50s per upload run
+- **Findings:** 3 new issues filed (1 HIGH, 2 MEDIUM). CSP `unsafe-eval` regression did not recur, but Gemini Files CORS fallback, Firestore persistence, and downstream handoff remain degraded.
+- **Issues Filed:** ISSUE-153 through ISSUE-155
+
+## 2026-06-05 — MegaTestAudioLoop Scoped Audio Follow-up
+- **Modules Tested:** Audio Analyzer MP3 rejection, WAV profile generation, CSP safety, push-to-agents persistence, mobile render, scoped test registry
+- **Duration:** ~65s WAV run plus dry-run registry verification
+- **Findings:** MP3 rejection, WAV profile generation, CSP safety, and mobile render passed. `Push Verified Data to Agents` still failed with Firestore permission errors under web mock auth.
+- **Issues Filed:** ISSUE-158
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_results.md`, `artifacts/audio-mega-loop-mp3-rejection.png`, `artifacts/audio-mega-loop-wav-profile.png`, `artifacts/audio-mega-loop-mobile.png`

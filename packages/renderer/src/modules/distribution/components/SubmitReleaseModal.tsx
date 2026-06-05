@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Send, CheckCircle2, Loader2, XCircle, ChevronRight } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { IngestionMetadata } from '@/types/distribution';
 
@@ -27,6 +29,9 @@ interface Props {
 
 export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted }) => {
     const { success: toastSuccess, error: toastError } = useToast();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
 
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
@@ -38,6 +43,16 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [genre, setGenre] = useState('Electronic');
 
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (open && userProfile) {
+            const release = userProfile.brandKit?.releaseDetails;
+            setTitle(prev => prev || release?.title || '');
+            setArtist(prev => prev || userProfile.displayName || release?.artists || '');
+            setTrkTitle(prev => prev || release?.title || '');
+            setGenre(prev => prev || release?.genre || 'Electronic');
+        }
+    }, [open, userProfile]);
     const [done, setDone] = useState(false);
     const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
     const [overallProgress, setOverallProgress] = useState(0);
