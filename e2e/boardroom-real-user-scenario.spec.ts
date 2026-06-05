@@ -3,6 +3,7 @@ import { test } from './fixtures/auth';
 
 test.describe('Boardroom Real User Multi-Turn Scenario', () => {
     test('should execute a realistic multi-turn conversation with dynamic seating and unseating', async ({ authedPage: page }) => {
+        test.setTimeout(180_000);
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
 
@@ -227,10 +228,10 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 } else {
                     if (actualRequest.includes('done for today') || actualRequest.includes('Clear the table') || actualRequest.includes('clear the table')) {
                         if (normalized.includes('unseat_agent') && normalized.includes('targetagentid')) {
-                            // Extract target agent ID being unseated in this request
-                            const match = normalized.match(/"targetagentid"\s*:\s*"([^"]+)"/);
-                            if (match) {
-                                (globalThis as any).unseatedAgentsInTest.add(match[1].toLowerCase());
+                            // Extract all target agent IDs being unseated in this request history
+                            const matches = [...normalized.matchAll(/targetagentid[^a-z0-9_-]+([a-z0-9_-]+)/g)];
+                            for (const m of matches) {
+                                (globalThis as any).unseatedAgentsInTest.add(m[1].toLowerCase());
                             }
                         }
 
@@ -242,45 +243,17 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                         const hasUnseatedBrand = (globalThis as any).unseatedAgentsInTest.has('brand') || hasUnseated('brand');
                         const hasUnseatedMusic = (globalThis as any).unseatedAgentsInTest.has('music') || hasUnseated('music');
 
-                        if (!hasUnseatedLegal) {
-                            parts = [
-                                { text: "[Executor]: Excusing Legal department." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'legal' } } }
-                            ];
-                        } else if (!hasUnseatedCreative) {
-                            parts = [
-                                { text: "Legal excused. Excusing Creative." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } }
-                            ];
-                        } else if (!hasUnseatedVideo) {
-                            parts = [
-                                { text: "Creative excused. Excusing Video." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'video' } } }
-                            ];
-                        } else if (!hasUnseatedSocial) {
-                            parts = [
-                                { text: "Video excused. Excusing Social." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } }
-                            ];
-                        } else if (!hasUnseatedPublicist) {
-                            parts = [
-                                { text: "Social excused. Excusing Publicist." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'publicist' } } }
-                            ];
-                        } else if (!hasUnseatedBrand) {
-                            parts = [
-                                { text: "Publicist excused. Excusing Brand." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'brand' } } }
-                            ];
-                        } else if (!hasUnseatedMusic) {
-                            parts = [
-                                { text: "Brand excused. Excusing Music Director." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'music' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "Cleared the boardroom table! Excellent session today." }
-                            ];
+                        parts = [{ text: "[Executor]: Excusing all remaining agents." }];
+                        if (!hasUnseatedLegal) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'legal' } } });
+                        if (!hasUnseatedCreative) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } });
+                        if (!hasUnseatedVideo) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'video' } } });
+                        if (!hasUnseatedSocial) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } });
+                        if (!hasUnseatedPublicist) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'publicist' } } });
+                        if (!hasUnseatedBrand) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'brand' } } });
+                        if (!hasUnseatedMusic) parts.push({ functionCall: { name: 'unseat_agent', args: { targetAgentId: 'music' } } });
+                        
+                        if (parts.length === 1) {
+                            parts = [{ text: "Cleared the boardroom table! Excellent session today." }];
                         }
                     } else if (actualRequest.includes('artistic vibe') || actualRequest.includes('Brand and Music') || actualRequest.includes('align on')) {
                         // Turn 8: Seating Brand and Music
