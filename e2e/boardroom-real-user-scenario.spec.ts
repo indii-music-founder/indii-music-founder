@@ -150,7 +150,12 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 let executingAgentId = 'generalist';
                 const first1500 = userMessage.substring(0, 1500);
 
-                if (userMessage.includes('Continue. Previous output:') || userMessage.includes('Continue.') || postData.includes('functionCall') || postData.includes('function_call') || postData.includes('functionResponse') || postData.includes('function_response')) {
+                const isUnseatCommand = actualRequest.toLowerCase().includes('done for today') || actualRequest.toLowerCase().includes('clear the table');
+
+                if (isUnseatCommand) {
+                    executingAgentId = 'generalist';
+                }
+                else if (userMessage.includes('Continue. Previous output:') || userMessage.includes('Continue.') || postData.includes('functionCall') || postData.includes('function_call') || postData.includes('functionResponse') || postData.includes('function_response')) {
                     executingAgentId = 'generalist';
                 }
                 // 2. Check if the prompt belongs to the Conductor first to prevent spoke agent name match hijackings
@@ -182,7 +187,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 }
 
                 // Fallback: Extract executing agent ID from agentIdentity card by finding the LAST match in the payload
-                if (executingAgentId === 'generalist' && !userMessage.includes('Continue. Previous output:') && !userMessage.includes('Continue.')) {
+                if (!isUnseatCommand && executingAgentId === 'generalist' && !userMessage.includes('Continue. Previous output:') && !userMessage.includes('Continue.')) {
                     const identityMatches = [...postData.matchAll(/agentIdentity\\*"\s*:\s*\{\s*[^}]+?agentId\\*"\s*:\s*\\*"([^"\\]+)/gi)];
                     if (identityMatches.length > 0) {
                         const lastMatch = identityMatches[identityMatches.length - 1];

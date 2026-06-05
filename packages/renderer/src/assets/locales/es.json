@@ -108,6 +108,18 @@
         "sidecarOffline": "Servicio de IA sin conexión",
         "sidecarChecking": "Verificando servicio de IA…",
         "restart": "Reiniciar servicio de IA",
+        "scout": {
+            "title": "El Explorador",
+            "description": "Búsqueda de lugares e inteligencia de reservas impulsada por IA.",
+            "ready": "Listo para escanear",
+            "initializing": "Inicializando escaneo...",
+            "scanCompleteNoNew": "Escaneo completo. No se encontraron nuevos lugares.",
+            "missionComplete": "¡Escaneo completo. Se encontraron {{count}} nuevos lugares!",
+            "missionFailed": "Escaneo fallido. Por favor, verifique los parámetros.",
+            "scoutedVenues": "Lugares Explorados ({{count}})",
+            "noVenues": "No se encontraron lugares",
+            "configureParams": "Ajuste los parámetros de búsqueda y escanee de nuevo."
+        },
         "tabs": {
             "scout": "El Explorador",
             "browser": "Agente de Navegador",

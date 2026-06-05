@@ -78,6 +78,10 @@ test.describe('Creative Studio - Character Library', () => {
         // Wait for generation to complete (mock takes ~2s)
         await page.waitForTimeout(3000);
 
+        // Select Video target media to reveal the Character Library panel
+        const videoBtn = page.getByRole('button', { name: 'Video', exact: true });
+        await videoBtn.click();
+
         // Click Add Person in CharacterLibrary
         const addPersonBtn = page.locator('button:has-text("Add Person")');
         await expect(addPersonBtn).toBeVisible({ timeout: 10_000 });
