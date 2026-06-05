@@ -25,7 +25,13 @@ import { db } from './firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class FirestoreService<T extends DocumentData = DocumentData> {
+    private static e2eCache: Record<string, any> = {};
+
     constructor(protected collectionPath: string) { }
+
+    private getCacheKey(id: string): string {
+        return `${this.collectionPath}/${id}`;
+    }
 
     protected get collection() {
         return collection(db, this.collectionPath);
@@ -47,7 +53,17 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        if (this.isE2EMode) return `mock-doc-${Date.now()}`;
+        const id = `mock-doc-${Date.now()}`;
+        if (this.isE2EMode) {
+            const mockDoc = {
+                ...data,
+                id,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            } as any;
+            FirestoreService.e2eCache[this.getCacheKey(id)] = mockDoc;
+            return id;
+        }
         const docRef = await addDoc(this.collection, this.pruneUndefined({
             ...data,
             createdAt: Timestamp.now(),
@@ -57,7 +73,13 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async set(id: string, data: T): Promise<void> {
-        if (this.isE2EMode) return;
+        if (this.isE2EMode) {
+            FirestoreService.e2eCache[this.getCacheKey(id)] = {
+                ...data,
+                updatedAt: Date.now()
+            };
+            return;
+        }
         const docRef = doc(db, this.collectionPath, id);
         await setDoc(docRef, this.pruneUndefined({
             ...data,
@@ -66,7 +88,16 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
-        if (this.isE2EMode) return;
+        if (this.isE2EMode) {
+            const key = this.getCacheKey(id);
+            const existing = FirestoreService.e2eCache[key] || {};
+            FirestoreService.e2eCache[key] = {
+                ...existing,
+                ...data,
+                updatedAt: Date.now()
+            };
+            return;
+        }
         const docRef = doc(db, this.collectionPath, id);
         await updateDoc(docRef, this.pruneUndefined({
             ...data,
@@ -88,6 +119,10 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async delete(id: string): Promise<void> {
+        if (this.isE2EMode) {
+            delete FirestoreService.e2eCache[this.getCacheKey(id)];
+            return;
+        }
         const docRef = doc(db, this.collectionPath, id);
         await deleteDoc(docRef);
     }
@@ -98,7 +133,12 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
      */
     async deleteMany(ids: string[]): Promise<void> {
         if (ids.length === 0) return;
-        if (this.isE2EMode) return;
+        if (this.isE2EMode) {
+            ids.forEach(id => {
+                delete FirestoreService.e2eCache[this.getCacheKey(id)];
+            });
+            return;
+        }
 
         const CHUNK_SIZE = 500;
         for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
@@ -118,7 +158,19 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
      */
     async updateMany(updates: { id: string; data: Partial<T> }[]): Promise<void> {
         if (updates.length === 0) return;
-        if (this.isE2EMode) return;
+        if (this.isE2EMode) {
+            const now = Date.now();
+            updates.forEach(({ id, data }) => {
+                const key = this.getCacheKey(id);
+                const existing = FirestoreService.e2eCache[key] || {};
+                FirestoreService.e2eCache[key] = {
+                    ...existing,
+                    ...data,
+                    updatedAt: now
+                };
+            });
+            return;
+        }
 
         const CHUNK_SIZE = 500;
         for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
@@ -138,6 +190,11 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async get(id: string): Promise<T | null> {
+        if (this.isE2EMode) {
+            const cached = FirestoreService.e2eCache[this.getCacheKey(id)];
+            if (cached) return cached as T;
+            return null;
+        }
         const docRef = doc(db, this.collectionPath, id);
         const snapshot = await getDoc(docRef);
         if (snapshot.exists()) {
@@ -147,6 +204,16 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async list(constraints: QueryConstraint[] = []): Promise<T[]> {
+        if (this.isE2EMode) {
+            const prefix = `${this.collectionPath}/`;
+            const results: T[] = [];
+            for (const [key, value] of Object.entries(FirestoreService.e2eCache)) {
+                if (key.startsWith(prefix)) {
+                    results.push(value as T);
+                }
+            }
+            return results;
+        }
         const q = query(this.collection, ...constraints);
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({
@@ -168,6 +235,20 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
      * Subscribes to real-time updates for a query.
      */
     subscribe(constraints: QueryConstraint[], callback: (data: T[]) => void, onError?: (error: Error) => void): Unsubscribe {
+        if (this.isE2EMode) {
+            const prefix = `${this.collectionPath}/`;
+            const getResults = () => {
+                const results: T[] = [];
+                for (const [key, value] of Object.entries(FirestoreService.e2eCache)) {
+                    if (key.startsWith(prefix)) {
+                        results.push(value as T);
+                    }
+                }
+                return results;
+            };
+            setTimeout(() => callback(getResults()), 0);
+            return () => {};
+        }
         const q = query(this.collection, ...constraints);
         return onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({
@@ -184,6 +265,13 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
      * Subscribes to real-time updates for a single document.
      */
     subscribeDoc(id: string, callback: (data: T | null) => void, onError?: (error: Error) => void): Unsubscribe {
+        if (this.isE2EMode) {
+            setTimeout(() => {
+                const cached = FirestoreService.e2eCache[this.getCacheKey(id)];
+                callback(cached ? cached as T : null);
+            }, 0);
+            return () => {};
+        }
         const docRef = doc(db, this.collectionPath, id);
         return onSnapshot(docRef, (snapshot) => {
             if (snapshot.exists()) {
