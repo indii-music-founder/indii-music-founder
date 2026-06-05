@@ -485,3 +485,17 @@
   - Reconfirmed the active audio regression baseline remains `ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`.
   - Confirmed this environment still cannot host a fresh local web runtime for new audio observations.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_18-58-08_env_blocked.md`
+
+## 2026-06-05 — MegaTestAudioLoop Scoped Audio Harness Verification
+- **Modules Targeted:** Audio Analyzer ingestion, semantic Audio DNA, MusicLibrary persistence, Distribution metadata services, Creative/Marketing/Distribution agent audio connections
+- **Duration:** ~6 minutes
+- **Findings:** 0 new product issues filed. The scoped audio harness passed all unit/integration checks, then the E2E/live-app phase failed because the sandbox could not bind the local Playwright web server.
+- **Blockers:**
+  - `npm run dev:web` failed in preflight with `listen EPERM` while `tsx` attempted to create its IPC pipe.
+  - Direct `npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` passed 21 test files / 135 tests, but its Playwright phase failed because `config.webServer` could not start on `127.0.0.1:4242`.
+- **Coverage Delta:**
+  - Revalidated the audio scoped harness breadth across renderer audio services, distribution ingestion/DDEX mapping, MusicLibrary persistence, agent audio tools, Firebase audio helpers, and main-process audio security tests.
+  - Confirmed no net-new audio regressions beyond the already logged live-browser baseline (`ISSUE-153`, `ISSUE-154`, `ISSUE-155`, `ISSUE-158`).
+  - Isolated the current run blocker to host sandbox port-binding rather than an observed product failure.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_20-00-12_harness_blocked.md`
