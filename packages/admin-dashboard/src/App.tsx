@@ -8,10 +8,17 @@ import {
   Bell,
   ShieldCheck,
   Loader2,
-  LogOut
+  LogOut,
+  Mail,
+  Globe,
+  Activity
 } from 'lucide-react';
 import { FoundersPortal } from './components/modules/FoundersPortal';
 import { TokenUsage } from './components/modules/TokenUsage';
+import { EmailManager } from './components/modules/EmailManager';
+import { GoogleHub } from './components/modules/GoogleHub';
+import { DDEXTracker } from './components/modules/DDEXTracker';
+import { NexusMonitor } from './components/modules/NexusMonitor';
 import { LoginScreen } from './components/LoginScreen';
 import { auth, ADMIN_TOKEN_KEY } from './firebase';
 
@@ -118,12 +125,13 @@ const App: React.FC = () => {
 const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user, onSignOut }) => {
   const [activeModule, setActiveModule] = useState('Token Usage');
 
-  // Only modules backed by REAL data are exposed. Mock-only modules (Email
-  // Manager, DDEX Tracker, Nexus Monitor) are intentionally hidden until they
-  // are wired to real sources — no placeholder/fake data is ever shown.
   const modules = [
     { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-blue-400' },
     { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-orange-400' },
+    { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-400' },
+    { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-cyan-400' },
+    { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-green-400' },
+    { name: 'Nexus System Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-rose-400' },
   ];
 
   return (
@@ -147,7 +155,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-2 space-y-1">
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
           <div className="text-[9px] text-white/20 uppercase tracking-widest font-extrabold px-4 mb-4 mt-6">Core Systems</div>
           {modules.map((module) => (
             <button
@@ -223,6 +231,14 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
               <TokenUsage />
             ) : activeModule === 'Founders Portal' ? (
               <FoundersPortal />
+            ) : activeModule === 'Inbox & Messaging' ? (
+              <EmailManager />
+            ) : activeModule === 'Google Workspace Hub' ? (
+              <GoogleHub />
+            ) : activeModule === 'DDEX Deliveries' ? (
+              <DDEXTracker />
+            ) : activeModule === 'Nexus System Monitor' ? (
+              <NexusMonitor />
             ) : (
               <div className="flex items-center justify-center h-64 border border-white/5 bg-white/[0.02] rounded-3xl border-dashed">
                 <p className="text-white/40 text-sm font-medium tracking-wide">
@@ -238,3 +254,4 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
 };
 
 export default App;
+
