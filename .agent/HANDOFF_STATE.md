@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-04 19:59 EDT
+**Updated:** 2026-06-04 20:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6cb569348 docs: fix Mermaid syntax in mobile remote flowchart
+ba61530da chore: session checkpoint [19:59]
 4912cae17 docs: document GH-ISSUE-152 fix and closure in ledger
 6d8c200a1 docs: add checkpoint.sh execution instruction to /end workflow
 beb849e88 chore: session checkpoint [15:48]
@@ -12,13 +14,11 @@ f8ab4d296 docs: fix flowchart mermaid quotes syntax and step-by-step transition 
 f51941ebc refactor(better): add main process externalized dependencies to root package.json to fix packaged desktop launch
 547944a35 chore: checkpoint desktop release and quota relay fixes
 8fb3c9219 fix(firebase): fail honestly in generateOmniRemixV3 when model is not configured
-c8f9885f0 test: mock CreativeStorageService and storage in CampaignIntelligence tests
-f1a44c672 fix(test): gracefully skip integration test on 429 quota exhaustion
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/workflows/end.md
 ```
 
 ## Decisions
