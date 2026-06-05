@@ -165,4 +165,154 @@ test.describe('Right Panel & Swarm Tabs', () => {
             )
         ).toBeVisible({ timeout: 10_000 });
     });
+
+    test('should interact with filters and search in Project Assets tab', async ({ authedPage: page }) => {
+        // Open panel to Assets tab
+        const assetsTab = page.locator('[aria-label="Project Assets"]').first();
+        await assetsTab.click();
+        await page.waitForTimeout(500);
+
+        // Seed mock assets of different types
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            store.setState({
+                generatedHistory: [
+                    {
+                        id: 'mock-img-1',
+                        type: 'image',
+                        url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                        prompt: 'Cyberpunk landscape image',
+                        timestamp: Date.now() - 1000,
+                        projectId: 'mock-project-id',
+                        origin: 'generation'
+                    },
+                    {
+                        id: 'mock-vid-1',
+                        type: 'video',
+                        url: 'https://mock-video.com/v1.mp4',
+                        prompt: 'Synthwave music video',
+                        timestamp: Date.now(),
+                        projectId: 'mock-project-id',
+                        origin: 'generation'
+                    }
+                ]
+            });
+        });
+
+        // Verify both assets are initially visible
+        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible();
+        await expect(page.locator('text=Synthwave music video').first()).toBeVisible();
+
+        // Click on IMAGES filter
+        const imagesFilter = page.locator('button:has-text("Images")').first();
+        await imagesFilter.click();
+        await page.waitForTimeout(500);
+
+        // Image should be visible, video should NOT be visible
+        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible();
+        await expect(page.locator('text=Synthwave music video').first()).not.toBeVisible();
+
+        // Click on VIDEOS filter
+        const videosFilter = page.locator('button:has-text("Videos")').first();
+        await videosFilter.click();
+        await page.waitForTimeout(500);
+
+        // Video should be visible, image should NOT be visible
+        await expect(page.locator('text=Synthwave music video').first()).toBeVisible();
+        await expect(page.locator('text=Cyberpunk landscape image').first()).not.toBeVisible();
+
+        // Test search input
+        const allFilter = page.locator('button:has-text("All")').first();
+        await allFilter.click();
+        await page.waitForTimeout(500);
+
+        const searchInput = page.locator('[placeholder="Search assets..."]').first();
+        await searchInput.fill('Cyberpunk');
+        await page.waitForTimeout(500);
+
+        // Only search matching item should show
+        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible();
+        await expect(page.locator('text=Synthwave music video').first()).not.toBeVisible();
+    });
+
+    test('should dynamically render Context Controls panel for Workflow Builder and execute workflow', async ({ authedPage: page }) => {
+        // Navigate directly to Workflow
+        await page.goto('/workflow');
+        await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
+
+        // Open panel to Context Controls tab
+        const contextTab = page.locator('[aria-label="Context Controls"]').first();
+        await contextTab.click();
+        await page.waitForTimeout(1000);
+
+        // Verify Workflow panel title
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+        await expect(rightPanel.locator('text=Workflow Builder').first()).toBeVisible();
+
+        // Click "Run Workflow" button
+        const runBtn = rightPanel.locator('button:has-text("Run Workflow")').first();
+        await expect(runBtn).toBeVisible();
+        await runBtn.click();
+
+        // Verify toast message "Workflow execution started"
+        await expect(page.locator('text=Workflow execution started').first()).toBeVisible();
+    });
+
+    test('should dynamically render Context Controls panel for Knowledge Base and open ingest dialog', async ({ authedPage: page }) => {
+        // Navigate directly to Knowledge
+        await page.goto('/knowledge');
+        await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
+
+        // Open panel to Context Controls tab
+        const contextTab = page.locator('[aria-label="Context Controls"]').first();
+        await contextTab.click();
+        await page.waitForTimeout(1000);
+
+        // Verify Knowledge panel title
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+        await expect(rightPanel.locator('text=Knowledge Base').first()).toBeVisible();
+
+        // Click "Ingest Document" button
+        const ingestBtn = rightPanel.locator('button:has-text("Ingest Document")').first();
+        await expect(ingestBtn).toBeVisible();
+        await ingestBtn.click();
+
+        // Verify toast message "Opening upload dialog"
+        await expect(page.locator('text=Opening upload dialog').first()).toBeVisible();
+    });
+
+    test('should dynamically render Context Controls panel for Marketing and deploy protocol', async ({ authedPage: page }) => {
+        // Navigate directly to Marketing
+        await page.goto('/marketing');
+        await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
+
+        // Setup userProfile in store so deployment doesn't fail due to auth check
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            store.setState({
+                userProfile: { id: 'test-user-uid-e2e', email: 'test@example.com' }
+            });
+        });
+
+        // Open panel to Context Controls tab
+        const contextTab = page.locator('[aria-label="Context Controls"]').first();
+        await contextTab.click();
+        await page.waitForTimeout(1000);
+
+        // Verify Marketing panel title
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+        await expect(rightPanel.locator('text=Marketing & Growth').first()).toBeVisible();
+
+        // Change select options
+        const select = rightPanel.locator('select').first();
+        await select.selectOption('INDII_GROWTH_PROTOCOL');
+
+        // Click "Deploy Protocol" button
+        const deployBtn = rightPanel.locator('button:has-text("Deploy Protocol")').first();
+        await expect(deployBtn).toBeVisible();
+        await deployBtn.click();
+
+        // Verify toast message "indii Growth Protocol deployed."
+        await expect(page.locator('text=indii Growth Protocol deployed.').first()).toBeVisible();
+    });
 });
