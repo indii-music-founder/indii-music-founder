@@ -69,7 +69,7 @@ export default function RightPanel() {
     }, [agentHistory.length, view]);
 
     React.useEffect(() => {
-        const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge'];
+        const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge', 'marketing'];
         if (isRightPanelOpen && rightPanelTab === 'context' && !MODULES_WITH_CONTEXT.includes(currentModule)) {
             setRightPanelTab('agent');
         }

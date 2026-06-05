@@ -69,6 +69,21 @@ export function normalizeWorkflowStepStatus(value: unknown): unknown {
     return STEP_STATUS_ALIASES[value.trim().toUpperCase()];
 }
 
+export function normalizeTimestamp(value: unknown): unknown {
+    if (value && typeof value === 'object') {
+        if ('toMillis' in value && typeof (value as any).toMillis === 'function') {
+            return (value as any).toMillis();
+        }
+        if (value instanceof Date) {
+            return value.getTime();
+        }
+        if ('seconds' in value && typeof (value as any).seconds === 'number') {
+            return (value as any).seconds * 1000;
+        }
+    }
+    return value;
+}
+
 export const WorkflowStepExecutionSchema = z.object({
     stepId: z.string(),
     agentId: z.string(),
@@ -78,8 +93,8 @@ export const WorkflowStepExecutionSchema = z.object({
         WorkflowStepStatusEnum
     ),
     idempotencyKey: z.string(),
-    startedAt: z.number().optional(),
-    completedAt: z.number().optional(),
+    startedAt: z.preprocess(normalizeTimestamp, z.number().optional()).optional(),
+    completedAt: z.preprocess(normalizeTimestamp, z.number().optional()).optional(),
     result: z.string().optional(),
     error: z.string().optional()
 });
@@ -122,11 +137,12 @@ export const WorkflowExecutionSchema = z.object({
     ),
     steps: z.record(z.string(), WorkflowStepExecutionSchema),
     edges: z.array(WorkflowEdgeSchema).default([]),
-    createdAt: z.number(),
-    updatedAt: z.number(),
+    createdAt: z.preprocess(normalizeTimestamp, z.number()),
+    updatedAt: z.preprocess(normalizeTimestamp, z.number()),
     error: z.string().optional()
 });
 
 export interface WorkflowExecution extends z.infer<typeof WorkflowExecutionSchema> {
     edges: WorkflowEdge[];
 }
+
