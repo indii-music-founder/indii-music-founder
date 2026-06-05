@@ -1,6 +1,6 @@
 import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, FieldValue } from 'firebase/firestore';
-import { RATE_LIMITS, TIER_CONFIG } from '@/core/config/rate-limits';
+import { RATE_LIMITS } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
