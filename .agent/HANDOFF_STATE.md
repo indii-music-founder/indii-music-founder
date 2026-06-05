@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+ea958e534 chore: session checkpoint [20:03]
 6cb569348 docs: fix Mermaid syntax in mobile remote flowchart
 ba61530da chore: session checkpoint [19:59]
 4912cae17 docs: document GH-ISSUE-152 fix and closure in ledger
@@ -13,7 +14,6 @@ f8ab4d296 docs: fix flowchart mermaid quotes syntax and step-by-step transition 
 7d39bbe48 chore: save desktop dependency packaging session checkpoint
 f51941ebc refactor(better): add main process externalized dependencies to root package.json to fix packaged desktop launch
 547944a35 chore: checkpoint desktop release and quota relay fixes
-8fb3c9219 fix(firebase): fail honestly in generateOmniRemixV3 when model is not configured
 ```
 
 ## Working State
