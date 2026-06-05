@@ -499,3 +499,17 @@
   - Confirmed no net-new audio regressions beyond the already logged live-browser baseline (`ISSUE-153`, `ISSUE-154`, `ISSUE-155`, `ISSUE-158`).
   - Isolated the current run blocker to host sandbox port-binding rather than an observed product failure.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_20-00-12_harness_blocked.md`
+
+## 2026-06-05 — MegaTestAudioLoop Scoped Audio Browser-Policy Follow-up
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, Creative/Video prompt handoff
+- **Duration:** ~8 minutes
+- **Findings:** 0 new product issues filed. Audio scoped harness still passes 21 test files / 135 tests plus Python checks, but fresh live-app observation was blocked before any page rendered.
+- **Blockers:**
+  - `npm run dev:web` failed before Vite startup because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM`).
+  - `python3 execution/run_department_test.py audio-analyzer` again failed only in its Playwright phase because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The in-app browser policy rejected both `http://127.0.0.1:4243/audio-analyzer` and `https://indii-music-founder.web.app/audio-analyzer` before navigation, so no fresh screenshotable UI state was reachable from this session.
+- **Coverage Delta:**
+  - Re-ran the scoped audio harness and reconfirmed renderer audio services, MusicLibrary persistence, distribution ingestion/DDEX mapping, Firebase audio helpers, agent audio tools, and main-process audio security coverage remain green outside the browser layer.
+  - Reconfirmed the live-browser regression baseline remains `ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158` with no net-new product failures observed.
+  - Recorded a second independent live-validation blocker: browser security policy denial in addition to the existing local port-binding failure.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_21-02-04_policy_blocked.md`
