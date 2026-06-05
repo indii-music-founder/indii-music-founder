@@ -456,3 +456,18 @@
 - **Findings:** MP3 rejection, WAV profile generation, CSP safety, and mobile render passed. `Push Verified Data to Agents` still failed with Firestore permission errors under web mock auth.
 - **Issues Filed:** ISSUE-158
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_results.md`, `artifacts/audio-mega-loop-mp3-rejection.png`, `artifacts/audio-mega-loop-wav-profile.png`, `artifacts/audio-mega-loop-mobile.png`
+
+## 2026-06-05 — MegaTestAudioLoop Scoped Audio Follow-up (Environment-Blocked Verification)
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, Creative/Video prompt handoff
+- **Duration:** ~10 minutes of runtime bootstrap and browser fallback attempts
+- **Findings:** 0 new product issues filed. This run was blocked before live interaction by environment policy and sandbox limits.
+- **Blockers:**
+  - `npm run dev:web` failed before startup because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM`) on 2026-06-05.
+  - Direct Vite fallback also failed to bind `127.0.0.1:4243` with `listen EPERM`.
+  - In-app Browser policy blocked both `https://indii-music-founder.web.app`, `https://indii-music-studio.web.app`, and local `file://` navigation to the built renderer.
+  - Standalone Playwright Chromium launch crashed with macOS sandbox `bootstrap_check_in ... Permission denied (1100)`.
+- **Coverage Delta:**
+  - Attempted fresh local web bootstrap for audio surfaces.
+  - Built the renderer bundle successfully to `dist/renderer` as a non-runtime fallback artifact.
+  - Confirmed no net-new product findings could be observed under the current sandbox.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_env_blocked.md`

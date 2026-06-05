@@ -91,7 +91,10 @@ export const TokenUsage: React.FC = () => {
   };
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // ── Auth required (honest — the API gates on an @indii.music admin token) ──
