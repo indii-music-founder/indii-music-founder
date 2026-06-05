@@ -153,7 +153,7 @@ export const FoundersPortal: React.FC = () => {
                       <tr key={f.uid} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4">
                           <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-[10px] font-bold border border-orange-500/20">
-                            #{f.seat ?? '—'}
+                            #{f.seat === 11 ? 'ii' : f.seat ?? '—'}
                           </span>
                         </td>
                         <td className="px-6 py-4 font-semibold text-sm text-white/90">{f.name}</td>
