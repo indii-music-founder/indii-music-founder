@@ -1940,3 +1940,18 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Steps to Reproduce:** Run `npm run lint`.
 - **Expected:** The codebase should ideally have strict typing without fallback to `any` unless explicitly disabled or required by an external loosely-typed library.
 - **UX Impact:** None. Internal technical debt.
+
+---
+
+### ISSUE-160: Courtroom unseating failure ('publicist') in boardroom-real-user-scenario.spec.ts
+- **Status:** ⏳ OPEN
+- **Fix:** Pending fixing agent resolution
+- **Severity:** 🔴 HIGH
+- **Dimension:** State | DataFlow | Console
+- **Module:** Boardroom HQ
+- **Found:** 2026-06-05 by Menu Gauntlet Stress Test
+- **Summary:** The E2E multi-turn courtroom scenario expects all agents to be unseated when the user submits "Clear the table." During execution, the mock AI response contains the `unseat_agent` functionCall. However, the regex parser in the mock route interceptor: `const match = normalized.match(/"targetagentid"\s*:\s*"([^"]+)"/);` fails to match the unseated agent's ID because of backslashes (e.g. `\"targetagentid\":\"publicist\"` or `\\"`), causing the unseated set to miss key agents like `publicist`. This results in the test failing unseating checks with: `expect(finalSeated).not.toContain('publicist')`.
+- **Steps to Reproduce:** Run `npx playwright test e2e/boardroom-real-user-scenario.spec.ts`.
+- **Expected:** All seated agents must be unseated successfully, and the regex matching should support escaped/backslashed JSON args.
+- **UX Impact:** The boardroom zen mode retains "ghost" seated agents after unseating command execution.
+
