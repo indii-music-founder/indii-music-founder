@@ -71,14 +71,15 @@ export function normalizeWorkflowStepStatus(value: unknown): unknown {
 
 export function normalizeTimestamp(value: unknown): unknown {
     if (value && typeof value === 'object') {
-        if ('toMillis' in value && typeof (value as any).toMillis === 'function') {
-            return (value as any).toMillis();
+        const obj = value as Record<string, unknown>;
+        if ('toMillis' in obj && typeof obj.toMillis === 'function') {
+            return (obj.toMillis as () => number)();
         }
         if (value instanceof Date) {
             return value.getTime();
         }
-        if ('seconds' in value && typeof (value as any).seconds === 'number') {
-            return (value as any).seconds * 1000;
+        if ('seconds' in obj && typeof obj.seconds === 'number') {
+            return obj.seconds * 1000;
         }
     }
     return value;
