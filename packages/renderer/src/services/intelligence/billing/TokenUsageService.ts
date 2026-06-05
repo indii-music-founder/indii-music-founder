@@ -5,6 +5,9 @@ import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { estimateCostUsd, sanitizeModelKey } from './ModelPricing';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+
 
 /** Per-model cost breakdown stored inside each daily usage doc. */
 export interface ModelCostBreakdown {
@@ -177,6 +180,29 @@ export class TokenUsageService {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for quota checks.');
         }
 
+        // Get user's subscription tier
+        let tier: SubscriptionTier = SubscriptionTier.FREE;
+        try {
+            const sub = await subscriptionService.getSubscription(userId);
+            if (sub && sub.tier) {
+                tier = sub.tier;
+            }
+        } catch (error: unknown) {
+            logger.warn('[TokenUsageService] Failed to fetch subscription tier for quota check, defaulting to FREE:', error);
+        }
+
+        // Studio and Founder tiers have unlimited tokens (bypass daily check)
+        if (tier === SubscriptionTier.STUDIO || tier === SubscriptionTier.FOUNDER) {
+            return true;
+        }
+
+        // Determine rate limit config key
+        const limitKey = (tier === SubscriptionTier.PRO_MONTHLY || tier === SubscriptionTier.PRO_YEARLY)
+            ? 'PRO_TIER'
+            : 'FREE_TIER';
+
+        const limit = RATE_LIMITS[limitKey].MAX_TOKENS_PER_DAY;
+
         const today = new Date().toISOString().split('T')[0];
         const docId = `${userId}_${today}`;
         const ref = doc(db, this.USAGE_COLLECTION, docId);
@@ -189,8 +215,6 @@ export class TokenUsageService {
             if (!snap.exists()) return true; // No usage yet today
 
             const data = snap.data() as UsageStats;
-            // For now, use default tier limit. Tier-aware quota checking can be added when subscription system is fully integrated
-            const limit = RATE_LIMITS[TIER_CONFIG.DEFAULT_TIER].MAX_TOKENS_PER_DAY;
 
             if (data.tokensUsed >= limit) {
                 throw new AppException(
@@ -226,6 +250,29 @@ export class TokenUsageService {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for rate-limit checks.');
         }
 
+        // Get user's subscription tier
+        let tier: SubscriptionTier = SubscriptionTier.FREE;
+        try {
+            const sub = await subscriptionService.getSubscription(userId);
+            if (sub && sub.tier) {
+                tier = sub.tier;
+            }
+        } catch (error: unknown) {
+            logger.warn('[TokenUsageService] Failed to fetch subscription tier for rate limit check, defaulting to FREE:', error);
+        }
+
+        // Studio and Founder tiers have unlimited/no rate limit in TokenUsageService (bypass check)
+        if (tier === SubscriptionTier.STUDIO || tier === SubscriptionTier.FOUNDER) {
+            return;
+        }
+
+        // Determine rate limit config key
+        const limitKey = (tier === SubscriptionTier.PRO_MONTHLY || tier === SubscriptionTier.PRO_YEARLY)
+            ? 'PRO_TIER'
+            : 'FREE_TIER';
+
+        const limit = RATE_LIMITS[limitKey].MAX_REQUESTS_PER_MINUTE;
+
         // Current minute bucket ID: e.g. "user123_28475920"
         const currentMinute = Math.floor(Date.now() / 60000);
         const docId = `${userId}_${currentMinute}`;
@@ -235,8 +282,6 @@ export class TokenUsageService {
             // Optimistic check: Read before Write to save write costs if blocked
             // Note: This introduces a tiny race condition but is acceptable for rate limiting
             const snap = await getDoc(ref);
-
-            const limit = RATE_LIMITS[TIER_CONFIG.DEFAULT_TIER].MAX_REQUESTS_PER_MINUTE;
 
             if (snap.exists()) {
                 const data = snap.data() as RateLimitStats;
