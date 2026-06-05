@@ -106,6 +106,10 @@ test.describe('Distribution Module', () => {
         await page.locator('[data-testid="distro-tab-brain"]').click();
         await expect(page.locator('[data-testid="distro-content-brain"]')).toBeVisible({ timeout: 10_000 });
 
+        console.log('[DISTRO TEST] Filling QC inputs...');
+        await page.locator('[data-testid="qc-input-title"]').fill('E2E Test Track');
+        await page.locator('[data-testid="qc-input-artist"]').fill('E2E Artist');
+
         console.log('[DISTRO TEST] Running QC analysis...');
         const runBtn = page.locator('[data-testid="qc-run-analysis"]');
         await expect(runBtn).toBeVisible({ timeout: 15_000 });
