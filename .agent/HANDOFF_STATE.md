@@ -4,6 +4,8 @@
 
 ## Recent Commits
 ```
+356dda328 fix(main): fix macOS hidden window reactivation, update end workflow resource cleanup and error ledger
+257d22888 chore: session checkpoint [21:29]
 1fc1a8650 chore: session checkpoint [20:18]
 62c2ce867 chore: session checkpoint [20:12]
 a62402767 chore: session checkpoint [20:03]
@@ -12,15 +14,11 @@ ea958e534 chore: session checkpoint [20:03]
 ba61530da chore: session checkpoint [19:59]
 4912cae17 docs: document GH-ISSUE-152 fix and closure in ledger
 6d8c200a1 docs: add checkpoint.sh execution instruction to /end workflow
-beb849e88 chore: session checkpoint [15:48]
-f8ab4d296 docs: fix flowchart mermaid quotes syntax and step-by-step transition breakdown header
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
- M .agent/workflows/end.md
- M packages/main/src/main.ts
+clean working tree
 ```
 
 ## Decisions
