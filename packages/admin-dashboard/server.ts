@@ -98,8 +98,11 @@ app.post('/api/auth/login-passcode', async (req, res) => {
       res.status(401).json({ error: 'Invalid passcode' });
     }
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     console.error('[Auth] Failed to generate custom token:', error);
-    res.status(500).json({ error: 'Internal auth generation failed' });
+    res.status(500).json({ 
+      error: `Internal auth generation failed: ${msg}` 
+    });
   }
 });
 
