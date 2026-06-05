@@ -243,6 +243,17 @@ function useFirestoreRelay(enabled: boolean) {
     );
 
     // Push desktop state to Firestore
+    const currentModuleRef = useRef(currentModule);
+    const isAgentProcessingRef = useRef(isAgentProcessing);
+    const activeSessionIdRef = useRef(activeSessionId);
+
+    useEffect(() => {
+        currentModuleRef.current = currentModule;
+        isAgentProcessingRef.current = isAgentProcessing;
+        activeSessionIdRef.current = activeSessionId;
+    }, [currentModule, isAgentProcessing, activeSessionId]);
+
+    // 1. Loop effect - runs every 5 seconds while enabled
     useEffect(() => {
         if (!enabled) return;
         let active = true;
@@ -250,13 +261,13 @@ function useFirestoreRelay(enabled: boolean) {
         const pushState = async () => {
             try {
                 await remoteRelayService.pushDesktopState({
-                    currentModule: currentModule || 'dashboard',
-                    isAgentProcessing,
-                    activeSessionId: activeSessionId || '',
+                    currentModule: currentModuleRef.current || 'dashboard',
+                    isAgentProcessing: isAgentProcessingRef.current,
+                    activeSessionId: activeSessionIdRef.current || '',
                     online: true,
                 });
             } catch (error: unknown) {
-                logger.warn('[RemoteRelay/Firestore] State push failed:', error);
+                logger.warn('[RemoteRelay/Firestore] Loop state push failed:', error);
             }
         };
 
@@ -269,16 +280,35 @@ function useFirestoreRelay(enabled: boolean) {
         };
         loop();
 
-        // Mark offline on unmount
         return () => {
             active = false;
             remoteRelayService.pushDesktopState({
-                currentModule: currentModule || 'dashboard',
+                currentModule: currentModuleRef.current || 'dashboard',
                 isAgentProcessing: false,
-                activeSessionId: activeSessionId || '',
+                activeSessionId: activeSessionIdRef.current || '',
                 online: false,
             }).catch(() => { });
         };
+    }, [enabled]);
+
+    // 2. Immediate push effect - pushes immediately on state change, but never writes online: false
+    useEffect(() => {
+        if (!enabled) return;
+
+        const pushStateImmediate = async () => {
+            try {
+                await remoteRelayService.pushDesktopState({
+                    currentModule: currentModule || 'dashboard',
+                    isAgentProcessing,
+                    activeSessionId: activeSessionId || '',
+                    online: true,
+                });
+            } catch (error: unknown) {
+                logger.warn('[RemoteRelay/Firestore] Immediate state push failed:', error);
+            }
+        };
+
+        pushStateImmediate();
     }, [enabled, currentModule, isAgentProcessing, activeSessionId]);
 
     // Listen for commands from phone
