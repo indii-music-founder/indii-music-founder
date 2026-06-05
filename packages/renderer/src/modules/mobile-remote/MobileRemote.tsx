@@ -164,6 +164,14 @@ export default function MobileRemote() {
   // Track auth readiness to re-subscribe when auth becomes available
   const isAuth = remoteRelayService.isAuthenticated();
 
+  // Keep refs of connection status to avoid tearing down subscription in useEffect
+  const isPairedRef = useRef(isPaired);
+  const connectionStatusRef = useRef(connectionStatus);
+  useEffect(() => {
+    isPairedRef.current = isPaired;
+    connectionStatusRef.current = connectionStatus;
+  }, [isPaired, connectionStatus]);
+
   // Subscribe to Cloud Relay State
   useEffect(() => {
     // Wait for auth to be fully realized
@@ -172,7 +180,9 @@ export default function MobileRemote() {
     logger.info('[MobileRemote] Subscribing to desktop state updates…');
 
     const markDesktopOffline = () => {
-      if (isPaired || connectionStatus === 'connected') {
+      const currentIsPaired = isPairedRef.current;
+      const currentStatus = connectionStatusRef.current;
+      if (currentIsPaired || currentStatus === 'connected') {
         logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
         setIsPaired(false);
         setIsReconnecting(true);
@@ -211,7 +221,7 @@ export default function MobileRemote() {
         stalePresenceTimeoutRef.current = null;
       }
     };
-  }, [isAuth, isPaired, connectionStatus]);
+  }, [isAuth]);
 
   // Handle active retry polling for reconnects
   useEffect(() => {

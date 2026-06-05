@@ -55,7 +55,7 @@ Verify current system matches the expected tech stack:
 npm ls react zustand vite
 ```
 
-### Step 1 — Determine which test plan to run
+### Step 1 — Determine which test plan or department to run
 Read the user's input:
 | Input | Behavior |
 |-------|---------|
@@ -64,6 +64,9 @@ Read the user's input:
 | `/mega-test v4 section 3` | Run only Section 3 of V4 |
 | `/mega-test v4 101-110` | Run only routines 101–110 of V4 |
 | `/mega-test regression` | Run all routines tagged `[REGRESSION]` across all plans |
+| `/mega-test marketing` | Run the scoped department tests (unit, integration, E2E, and connections) for the Marketing department using `python3 execution/run_department_test.py marketing` |
+| `/mega-test-audio`, `/mega-test audio`, `/mega-test MegaTestAudioLoop` | Run the scoped audio system gauntlet using `python3 execution/run_department_test.py audio-analyzer`, including Audio Analyzer UI, audio services, Firebase audio API tests, agent audio tools, distribution/DDEX audio paths, Python audio forensics checks, fixtures, and connected Creative/Marketing/Distribution coverage |
+| `/mega-test <department>` | Run tests scoped by department name or alias (e.g., creative, finance, distribution, legal, publishing) |
 
 ### Step 2 — Read the target test plan in full
 ```bash

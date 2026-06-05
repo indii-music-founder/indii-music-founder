@@ -33,6 +33,12 @@ export function FirstRunTour() {
         // Don't show during onboarding flow or if onboarding is bypassed via env
         if (env.skipOnboarding || window.location.hash.includes('onboarding')) return;
 
+        const handleDismiss = () => {
+            localStorage.setItem(TOUR_KEY, 'true');
+            driverRef.current?.destroy();
+        };
+        window.addEventListener('indii:dismiss_tour', handleDismiss);
+
         const timeout = setTimeout(() => {
             const d = driver({
                 showProgress: true,
@@ -113,6 +119,7 @@ export function FirstRunTour() {
 
         return () => {
             clearTimeout(timeout);
+            window.removeEventListener('indii:dismiss_tour', handleDismiss);
             driverRef.current?.destroy();
         };
     }, []);

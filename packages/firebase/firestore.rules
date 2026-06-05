@@ -215,6 +215,7 @@ service cloud.firestore {
       // DEPRECATED: Dual project paths. Use root /projects collection instead.
       // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
+      match /tracks/{trackId} { allow read, write: if isOwner(userId); }
 
       // ── Owner-scoped subcollections (2026-05-28: latent 403 fixes — see docs/architecture/FIRESTORE_RULES_403_AUDIT.md) ──
       match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
@@ -554,6 +555,13 @@ service cloud.firestore {
       allow read: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
       allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow delete: if false;
+    }
+
+    // Registration Center stores per-user, per-track org status under:
+    // /registrations/{userId}/tracks/{trackId}/orgs/{orgId}
+    match /registrations/{userId}/tracks/{trackId}/orgs/{orgId} {
+      allow read, create, update: if isOwner(userId);
       allow delete: if false;
     }
 

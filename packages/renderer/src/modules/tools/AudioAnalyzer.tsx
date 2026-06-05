@@ -306,6 +306,7 @@ const AudioAnalyzer: React.FC = () => {
                                                 data-testid="send-to-video-studio-btn"
                                                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
+                                                    window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);
                                                     setModule('creative');
                                                     toast.success('Video prompt loaded into Creative Studio');
@@ -320,6 +321,7 @@ const AudioAnalyzer: React.FC = () => {
                                                 variant="outline"
                                                 className="border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-400/50 font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
+                                                    window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.image);
                                                     setModule('creative');
                                                     toast.success('Image prompt loaded into Creative Studio');

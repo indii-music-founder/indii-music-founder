@@ -12,6 +12,8 @@ import { creatorProtectionHarnessService } from '@/services/creator-protection';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 /* ================================================================== */
 /*  Legal Dashboard — Three-Panel Layout                                */
@@ -27,6 +29,9 @@ import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 
 export default function LegalDashboard() {
     const { t } = useTranslation();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [isDragging, setIsDragging] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<null | {
@@ -153,7 +158,8 @@ Only return valid JSON.
     const handleGenerateNDA = async () => {
         setIsGenerating('NDA');
         try {
-            const parties = ['[ARTIST NAME]', '[COMPANY/INDIVIDUAL NAME]'];
+            const artistName = userProfile?.displayName || '[ARTIST NAME]';
+            const parties = [artistName, '[COMPANY/INDIVIDUAL NAME]'];
             const purpose = 'general business discussion and project collaboration';
 
             await LegalService.generateNDA(parties, purpose);
@@ -170,7 +176,8 @@ Only return valid JSON.
         setIsGenerating('IP');
         try {
             const type = 'Intellectual Property Assignment';
-            const parties = ['[ASSIGNOR NAME]', '[ASSIGNEE NAME]'];
+            const assignorName = userProfile?.displayName || '[ASSIGNOR NAME]';
+            const parties = [assignorName, '[ASSIGNEE NAME]'];
             const terms = 'Transfer of all rights, title, and interest in and to the specified creative works.';
 
             await LegalService.draftContract(type, parties, terms);

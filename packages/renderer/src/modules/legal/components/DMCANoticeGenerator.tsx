@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Copy, Download, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 /* ================================================================== */
 /*  DMCA / Takedown Notice Generator                                    */
@@ -107,9 +109,24 @@ p{margin:8px 0}.highlight{background:#fff3cd;padding:2px 6px;border-radius:3px;f
 }
 
 export function DMCANoticeGenerator() {
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [form, setForm] = useState<DMCAForm>(INITIAL_FORM);
     const [noticeHTML, setNoticeHTML] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (userProfile) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setForm(prev => ({
+                ...prev,
+                copyrightOwner: prev.copyrightOwner || userProfile.displayName || '',
+                contactEmail: prev.contactEmail || userProfile.email || '',
+                originalTitle: prev.originalTitle || userProfile.brandKit?.releaseDetails?.title || '',
+            }));
+        }
+    }, [userProfile]);
 
     const update = <K extends keyof DMCAForm>(key: K, value: DMCAForm[K]) =>
         setForm(prev => ({ ...prev, [key]: value }));

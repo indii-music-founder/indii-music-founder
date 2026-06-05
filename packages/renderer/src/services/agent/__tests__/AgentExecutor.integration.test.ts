@@ -14,7 +14,6 @@ import { agentRegistry } from '../registry';
 describe('AgentExecutor (Integration)', () => {
     let executor: AgentExecutor;
 
-    let originalE2E: string | undefined;
 
     beforeAll(() => {
         executor = new AgentExecutor(agentRegistry);
@@ -60,7 +59,7 @@ describe('AgentExecutor (Integration)', () => {
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
-        } catch (e) {
+        } catch (_e) {
             console.warn('Skipping AgentExecutor real execution test: API endpoint unreachable.');
             return;
         }
