@@ -471,3 +471,17 @@
   - Built the renderer bundle successfully to `dist/renderer` as a non-runtime fallback artifact.
   - Confirmed no net-new product findings could be observed under the current sandbox.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_env_blocked.md`
+
+## 2026-06-05 — MegaTestAudioLoop Scoped Audio Follow-up (Second Environment Block)
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, Creative/Video prompt handoff
+- **Duration:** ~9 minutes of workflow, ledger, runtime, and browser-tool bootstrap attempts
+- **Findings:** 0 new product issues filed. Live validation remained blocked before any fresh browser interaction.
+- **Blockers:**
+  - `npm run dev:web` failed in preflight with `listen EPERM` while `tsx` attempted to create its IPC pipe.
+  - Direct `npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - No in-app browser tool was available after tool discovery, so there was no second local-browser fallback path to exercise the built renderer.
+- **Coverage Delta:**
+  - Re-read the audio mega-test workflow, audio flowcharts, open issue baseline, and earlier same-day audio reports to avoid duplicate issue logging.
+  - Reconfirmed the active audio regression baseline remains `ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`.
+  - Confirmed this environment still cannot host a fresh local web runtime for new audio observations.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_18-58-08_env_blocked.md`
