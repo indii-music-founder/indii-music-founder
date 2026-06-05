@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-05 13:54 EDT
+**Updated:** 2026-06-05 13:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b3073d03d refactor(better): fix E2E Right Panel timestamp validation throw and add marketing to MODULES_WITH_CONTEXT
+43f437ede chore: session checkpoint [13:54]
 715adc8cf test(e2e): Consolidate right-panel test updates
 74a40a539 chore: session checkpoint [13:19]
 05631c4ad test(e2e): Consolidate creative-character test updates
@@ -12,15 +14,10 @@ f00509959 chore(ci): Consolidate uncommitted work (i18n locales, profileSlice, a
 5b18ea5bd chore: session checkpoint [11:16]
 35f7620fa feat: add sync and refresh buttons to admin dashboard and client settings
 28e3bb715 feat(admin): add passcode login bypass (0707) and desktop shortcut
-11c29759c chore: consolidate multi-agent work and tests
-ee47663b3 chore: consolidate multi-agent work and test updates
 ```
 
 ## Working State
 ```
- M packages/renderer/src/core/components/RightPanel.tsx
- M packages/renderer/src/services/FirestoreService.ts
- M packages/shared/src/schemas/workflowState.ts
 ?? artifacts/menu_gauntlet_report_2026-06-05_10-41-44.md
 ?? artifacts/menu_gauntlet_report_2026-06-05_11-53-13.md
 ?? artifacts/menu_gauntlet_report_2026-06-05_12-41-06.md
