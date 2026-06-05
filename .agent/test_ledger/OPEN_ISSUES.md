@@ -1944,8 +1944,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-160: Courtroom unseating failure ('publicist') in boardroom-real-user-scenario.spec.ts
-- **Status:** ⏳ OPEN
-- **Fix:** Pending fixing agent resolution
+- **Status:** ✅ FIXED
+- **Fix:** Updated regex parsing for targetagentid to `/targetagentid[^a-z0-9_-]+([a-z0-9_-]+)/` to robustly match agent IDs despite stringified JSON escaping logic.
 - **Severity:** 🔴 HIGH
 - **Dimension:** State | DataFlow | Console
 - **Module:** Boardroom HQ
