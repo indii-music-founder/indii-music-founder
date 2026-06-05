@@ -26,6 +26,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
 import { Database } from 'lucide-react';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
 
 const AuditLogDashboard = React.lazy(() =>
     import('@/modules/settings/components/AuditLogDashboard').then(m => ({ default: m.AuditLogDashboard }))
@@ -41,7 +42,29 @@ const SecuritySection: React.FC = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showAuditLog, setShowAuditLog] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
+
+    const handleSyncBilling = async () => {
+        if (!userProfile?.id || userProfile.id === 'pending') {
+            showToast('User profile not fully loaded yet', 'error');
+            return;
+        }
+        setSyncing(true);
+        try {
+            subscriptionService.clearCache(userProfile.id);
+            await Promise.all([
+                subscriptionService.getSubscription(userProfile.id, true),
+                subscriptionService.getUsageStats(userProfile.id, true)
+            ]);
+            showToast('Subscription and token usage quotas synchronized', 'success');
+        } catch (err: unknown) {
+            logger.error('[Settings] Sync billing failed:', err);
+            showToast(err instanceof Error ? err.message : 'Sync failed', 'error');
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -119,6 +142,24 @@ const SecuritySection: React.FC = () => {
                     >
                         <LogOut size={14} />
                         Sign Out
+                    </button>
+                </div>
+
+                {/* Sync Billing & Quotas Card */}
+                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-semibold text-white">Billing &amp; Quotas</h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                            Manually sync your subscription tier and daily AI token usage limits.
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleSyncBilling}
+                        disabled={syncing}
+                        className="flex items-center gap-2 text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-2 rounded-lg transition-colors border border-cyan-500/20 disabled:opacity-50 cursor-pointer"
+                    >
+                        <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+                        {syncing ? 'Syncing...' : 'Sync Limits'}
                     </button>
                 </div>
 

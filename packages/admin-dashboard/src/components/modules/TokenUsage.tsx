@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, Cpu, Users, DollarSign, Activity, AlertTriangle } from 'lucide-react';
+import { BarChart3, Cpu, Users, DollarSign, Activity, AlertTriangle, RefreshCw } from 'lucide-react';
 
 /**
  * Token Usage / AI Cost module.
@@ -53,44 +53,45 @@ const getAdminToken = (): string | null => {
 
 export const TokenUsage: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [data, setData] = useState<UsageSummary | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
+  const load = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
       setLoading(true);
-      setError(null);
-      setAuthRequired(false);
-      try {
-        const token = getAdminToken();
-        const res = await fetch('/api/usage/summary', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+    }
+    setError(null);
+    setAuthRequired(false);
+    try {
+      const token = getAdminToken();
+      const res = await fetch('/api/usage/summary', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
-        if (res.status === 401 || res.status === 403) {
-          if (!cancelled) setAuthRequired(true);
-          return;
-        }
-        if (!res.ok) {
-          throw new Error(`Server returned ${res.status}`);
-        }
-
-        const json = (await res.json()) as UsageSummary;
-        if (!cancelled) setData(json);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load usage data');
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (res.status === 401 || res.status === 403) {
+        setAuthRequired(true);
+        return;
       }
-    };
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
 
+      const json = (await res.json()) as UsageSummary;
+      setData(json);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load usage data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     load();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   // ── Auth required (honest — the API gates on an @indii.music admin token) ──
@@ -100,6 +101,15 @@ export const TokenUsage: React.FC = () => {
         icon={<AlertTriangle className="w-6 h-6 text-orange-400" />}
         title="Admin authentication required"
         subtitle="The usage API requires an @indii.music admin token. Store a valid Firebase ID token under localStorage key 'indii_admin_token' to view real spend."
+        action={
+          <button
+            onClick={() => load(false)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-sm font-medium cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Check again
+          </button>
+        }
       />
     );
   }
@@ -111,6 +121,15 @@ export const TokenUsage: React.FC = () => {
         icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
         title="Couldn't load usage data"
         subtitle={error}
+        action={
+          <button
+            onClick={() => load(false)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-sm font-medium cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        }
       />
     );
   }
@@ -143,6 +162,15 @@ export const TokenUsage: React.FC = () => {
             ? `No activity between ${data.start} and ${data.end}. Numbers will appear here as soon as users start running AI tasks.`
             : 'Usage will appear here as soon as users start running AI tasks.'
         }
+        action={
+          <button
+            onClick={() => load(false)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-sm font-medium cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        }
       />
     );
   }
@@ -162,6 +190,14 @@ export const TokenUsage: React.FC = () => {
             Real spend from {data.start} to {data.end}. Estimated from token counts — reconcile against GCP Billing for ground truth.
           </p>
         </div>
+        <button
+          onClick={() => load(true)}
+          disabled={loading || refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 active:bg-white/15 disabled:opacity-50 text-white rounded-xl transition-all border border-white/10 text-sm font-medium cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
       {/* Summary stats */}
@@ -241,12 +277,18 @@ const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string; acce
   </div>
 );
 
-const Panel: React.FC<{ icon: React.ReactNode; title: string; subtitle: string }> = ({ icon, title, subtitle }) => (
+const Panel: React.FC<{ icon: React.ReactNode; title: string; subtitle: string; action?: React.ReactNode }> = ({
+  icon,
+  title,
+  subtitle,
+  action,
+}) => (
   <div className="flex flex-col items-center justify-center text-center h-64 border border-white/5 bg-white/[0.02] rounded-3xl border-dashed p-8">
     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 mb-4">
       {icon}
     </div>
     <p className="text-white/80 font-semibold">{title}</p>
     <p className="text-white/40 text-sm mt-2 max-w-md">{subtitle}</p>
+    {action && <div className="mt-4">{action}</div>}
   </div>
 );
