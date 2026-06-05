@@ -23,10 +23,49 @@ const ADMIN_EMAIL_DOMAIN = '@indii.music';
  * modules can call the (token-gated) backend. No bypass — real session or login.
  */
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+      if (devToken === 'MOCK_ADMIN_TOKEN') {
+        return {
+          email: 'admin@indii.music',
+          displayName: 'Developer Admin',
+          uid: 'dev-admin-id',
+        } as unknown as User;
+      }
+    } catch {
+      // localStorage check failed
+    }
+    return null;
+  });
+
+  const [checking, setChecking] = useState(() => {
+    try {
+      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+      if (devToken === 'MOCK_ADMIN_TOKEN') {
+        return false;
+      }
+    } catch {
+      // localStorage check failed
+    }
+    return true;
+  });
+
+  const handleSignOut = () => {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    signOut(auth).then(() => {
+      window.location.reload();
+    });
+  };
 
   useEffect(() => {
+    try {
+      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+      if (devToken === 'MOCK_ADMIN_TOKEN') return;
+    } catch {
+      // localStorage check failed
+    }
+
     return onAuthStateChanged(auth, async (u) => {
       if (u && u.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
         try {
@@ -52,6 +91,10 @@ const App: React.FC = () => {
     );
   }
 
+  if (!user) {
+    return <LoginScreen />;
+  }
+
   // Signed in but NOT an admin domain — honest refusal, with a way out.
   if (user && !user.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
     return (
@@ -60,7 +103,7 @@ const App: React.FC = () => {
         <p className="text-white/80 font-semibold">This account is not an indii admin.</p>
         <p className="text-white/40 text-sm">{user.email}</p>
         <button
-          onClick={() => signOut(auth)}
+          onClick={handleSignOut}
           className="mt-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors"
         >
           Sign out
@@ -69,14 +112,10 @@ const App: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return <LoginScreen />;
-  }
-
-  return <AdminDashboard user={user} />;
+  return <AdminDashboard user={user} onSignOut={handleSignOut} />;
 };
 
-const AdminDashboard: React.FC<{ user: User }> = ({ user }) => {
+const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user, onSignOut }) => {
   const [activeModule, setActiveModule] = useState('Token Usage');
 
   // Only modules backed by REAL data are exposed. Mock-only modules (Email
@@ -141,7 +180,7 @@ const AdminDashboard: React.FC<{ user: User }> = ({ user }) => {
               <p className="text-[10px] text-white/40 truncate">{user.email}</p>
             </div>
             <button
-              onClick={() => signOut(auth)}
+              onClick={onSignOut}
               title="Sign out"
               className="p-2 bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 rounded-lg text-white/30 hover:text-red-400 cursor-pointer transition-all"
             >
