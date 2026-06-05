@@ -27,8 +27,9 @@ If any architecture, state flow, or logic shifted during the execution phase:
 - Invoke the **`/flowchart`** command for a final pass to update or generate the definitive diagrams for what was built.
 - **Save Requirement:** Update the relevant markdown files inside `docs/flowcharts/` as part of the formal closing notes.
 
-## 4. The Gauntlet (via `/ci-validate`)
-Signal "we're done" and leave a perfectly clean repository:
+## 4. Resource Cleanup & The Gauntlet (via `/ci-validate`)
+Signal "we're done" and leave a perfectly clean repository and environment:
+- **Resource Cleanup (MANDATORY):** Before finalizing the session, list all background tasks and subagents. You MUST explicitly terminate any running background tasks (using `manage_task` with action `kill`) and all active subagents (using `manage_subagents` with action `kill_all`) to prevent leaking processes or orphaned CPU/memory resource usage.
 - **Uncommitted Workspace Changes Alert (MANDATORY):** You must run a `git status` check at the start of `/end`. If any dirty or untracked files remain in the workspace, you MUST list them prominently in your final session report under a dedicated `### ⚠️ Uncommitted Workspace Changes / Pre-existing Dirty Files` header, explaining which session they belong to and prompting the user for instructions.
 - **Clean Repository Definition:** In a multi-agent environment, define "clean repository" as either "fully clean" or "clean for this objective." If there are unrelated dirty files in the worktree, you MUST explicitly list them for the user or intentionally stash/commit them before proceeding.
 - **Anti-Hallucination Audit:** Before running the final CI sequence, you MUST run a `grep` scan for `MOCK`, `TODO`, and `stub` across all files you touched during this session. If any mocks or stubs exist in the critical path, you are expressly forbidden from stating the feature is "fully implemented". You must state: "Scaffolding Complete. Mocks remain."
