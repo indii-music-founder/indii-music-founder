@@ -78,12 +78,20 @@ test.describe('Creative Studio - Character Library', () => {
         // Wait for generation to complete (mock takes ~2s)
         await page.waitForTimeout(3000);
 
+        // Expand the right panel if it is collapsed
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+        const expandBtn = rightPanel.getByRole('button', { name: 'Expand Panel' });
+        if (await expandBtn.isVisible()) {
+            await expandBtn.click();
+            await page.waitForTimeout(1000);
+        }
+
         // Select Video target media to reveal the Character Library panel
-        const videoBtn = page.getByRole('button', { name: 'Video', exact: true });
+        const videoBtn = rightPanel.getByRole('button', { name: 'Video', exact: true });
         await videoBtn.click();
 
         // Click Add Person in CharacterLibrary
-        const addPersonBtn = page.locator('button:has-text("Add Person")');
+        const addPersonBtn = rightPanel.locator('button:has-text("Add Person")');
         await expect(addPersonBtn).toBeVisible({ timeout: 10_000 });
         await addPersonBtn.click();
 
@@ -104,11 +112,11 @@ test.describe('Creative Studio - Character Library', () => {
         
         // Check if the reference was added to the Character Library UI
         // It renders with the name "Character 1"
-        const characterLabel = page.getByText('Character 1');
+        const characterLabel = rightPanel.getByText('Character 1');
         await expect(characterLabel).toBeVisible({ timeout: 5000 });
 
         // The default reference type should be 'subject' (Face)
-        const faceToggle = page.locator('[data-testid="ref-type-face-0"]');
+        const faceToggle = rightPanel.locator('[data-testid="ref-type-face-0"]');
         await expect(faceToggle).toBeVisible();
         await expect(faceToggle).toHaveClass(/bg-blue-500/);
 
