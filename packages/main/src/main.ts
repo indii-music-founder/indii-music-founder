@@ -355,13 +355,18 @@ if (!gotTheLock) {
     log.info('Failed to acquire lock, quitting secondary instance...');
     app.quit();
 } else {
-    // Protocol handle for secondary instances (Windows/Linux)
+    // Protocol handle for secondary instances (Windows/Linux/macOS)
     app.on('second-instance', (_event, commandLine) => {
         log.info(`second-instance event: ${JSON.stringify(commandLine)}`);
-        if (BrowserWindow.getAllWindows().length > 0) {
-            const win = BrowserWindow.getAllWindows()[0];
-            if (win.isMinimized()) win.restore();
-            win.focus();
+        if (mainWindow) {
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+                if (process.platform === 'darwin') {
+                    app.dock?.show();
+                }
+            }
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
         }
         const url = commandLine.find(arg => arg.startsWith('indii://'));
         if (url) {
@@ -560,7 +565,12 @@ app.on('child-process-gone', (_event, details) => {
 });
 
 app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        if (app.isReady()) createWindow();
+    if (mainWindow === null) {
+        createWindow();
+    } else {
+        mainWindow.show();
+        if (process.platform === 'darwin') {
+            app.dock?.show();
+        }
     }
 });
