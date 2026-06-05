@@ -142,6 +142,18 @@
         "sidecarOffline": "AI Service Offline",
         "sidecarChecking": "Checking AI Service…",
         "restart": "Restart AI Service",
+        "scout": {
+            "title": "The Scout",
+            "description": "AI-powered venue scouting and booking intelligence.",
+            "ready": "Ready to scan",
+            "initializing": "Initializing scan...",
+            "scanCompleteNoNew": "Scan complete. No new venues found.",
+            "missionComplete": "Scan complete. Found {{count}} new venues!",
+            "missionFailed": "Scan failed. Please check parameters.",
+            "scoutedVenues": "Scouted Venues ({{count}})",
+            "noVenues": "No venues found",
+            "configureParams": "Adjust search parameters and scan again."
+        },
         "tabs": {
             "scout": "The Scout",
             "browser": "Browser Agent",

@@ -114,6 +114,15 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             return;
         }
 
+        // Guard: In E2E tests, if a user profile is already seeded with matching uid,
+        // do not load/overwrite it to avoid race conditions with offline/mock fallback loading.
+        const currentProfile = get().userProfile;
+        const { isTestHarnessRuntime } = await import('@/utils/e2eMode');
+        if (currentProfile && currentProfile.uid === uid && currentProfile.displayName && isTestHarnessRuntime()) {
+            logger.info('[Profile] Skipping loadUserProfile — profile already seeded in E2E runtime.');
+            return;
+        }
+
         const currentUser = auth.currentUser;
         const isCurrentAnonymousUser = currentUser?.uid === uid && isAnonymousOrDemoUser(currentUser);
         if (isDemoUserId(uid) || isCurrentAnonymousUser) {
