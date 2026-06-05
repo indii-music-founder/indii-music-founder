@@ -1,24 +1,26 @@
 # Handoff State
-**Updated:** 2026-06-05 11:16 EDT
+**Updated:** 2026-06-05 13:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+05631c4ad test(e2e): Consolidate creative-character test updates
+f00509959 chore(ci): Consolidate uncommitted work (i18n locales, profileSlice, and e2e tests)
+02ba45d19 test(e2e): Fix ISSUE-160 courtroom unseating mock parallel limit
+5b18ea5bd chore: session checkpoint [11:16]
 35f7620fa feat: add sync and refresh buttons to admin dashboard and client settings
 28e3bb715 feat(admin): add passcode login bypass (0707) and desktop shortcut
 11c29759c chore: consolidate multi-agent work and tests
 ee47663b3 chore: consolidate multi-agent work and test updates
 11bf7e6f5 chore: consolidate outstanding work, tests, and ledger updates
 132e278fb chore: session checkpoint [09:15]
-4d3a00d18 chore: session checkpoint [21:29]
-356dda328 fix(main): fix macOS hidden window reactivation, update end workflow resource cleanup and error ledger
-257d22888 chore: session checkpoint [21:29]
-1fc1a8650 chore: session checkpoint [20:18]
 ```
 
 ## Working State
 ```
-clean working tree
+?? artifacts/menu_gauntlet_report_2026-06-05_10-41-44.md
+?? artifacts/menu_gauntlet_report_2026-06-05_11-53-13.md
+?? artifacts/menu_gauntlet_report_2026-06-05_12-41-06.md
 ```
 
 ## Decisions
