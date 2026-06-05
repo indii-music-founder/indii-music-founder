@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-05 13:19 EDT
+**Updated:** 2026-06-05 13:54 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+715adc8cf test(e2e): Consolidate right-panel test updates
+74a40a539 chore: session checkpoint [13:19]
 05631c4ad test(e2e): Consolidate creative-character test updates
 f00509959 chore(ci): Consolidate uncommitted work (i18n locales, profileSlice, and e2e tests)
 02ba45d19 test(e2e): Fix ISSUE-160 courtroom unseating mock parallel limit
@@ -12,12 +14,13 @@ f00509959 chore(ci): Consolidate uncommitted work (i18n locales, profileSlice, a
 28e3bb715 feat(admin): add passcode login bypass (0707) and desktop shortcut
 11c29759c chore: consolidate multi-agent work and tests
 ee47663b3 chore: consolidate multi-agent work and test updates
-11bf7e6f5 chore: consolidate outstanding work, tests, and ledger updates
-132e278fb chore: session checkpoint [09:15]
 ```
 
 ## Working State
 ```
+ M packages/renderer/src/core/components/RightPanel.tsx
+ M packages/renderer/src/services/FirestoreService.ts
+ M packages/shared/src/schemas/workflowState.ts
 ?? artifacts/menu_gauntlet_report_2026-06-05_10-41-44.md
 ?? artifacts/menu_gauntlet_report_2026-06-05_11-53-13.md
 ?? artifacts/menu_gauntlet_report_2026-06-05_12-41-06.md
