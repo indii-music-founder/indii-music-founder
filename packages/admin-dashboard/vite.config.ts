@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    open: true,
     // Route API calls to the Express backend (server.ts) running on :3333,
     // so the dashboard fetches real data from the same origin in dev.
     proxy: {
