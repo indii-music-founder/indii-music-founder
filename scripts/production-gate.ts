@@ -1,5 +1,7 @@
 import { z } from "zod";
 import * as dotenv from "dotenv";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 // Load env vars from .env file
 dotenv.config();
@@ -137,8 +139,98 @@ console.log(`${cyan}======================================${reset}`);
 
 const processEnv = process.env;
 let hasErrors = false;
+let hasFatalErrors = false;
+const repoRoot = process.cwd();
 
-console.log(`\n${cyan}[1/2] Validating Renderer Config (Firebase, App Check, Tuned Agents, Functions)...${reset}`);
+function readJsonFile(path: string): Record<string, any> | null {
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as Record<string, any>;
+  } catch {
+    return null;
+  }
+}
+
+function validateReact18Lock(): boolean {
+  const expected: Record<string, string> = {
+    react: "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+  };
+  const packageFiles = [
+    "package.json",
+    "packages/renderer/package.json",
+    "packages/landing/package.json",
+    "packages/admin-dashboard/package.json",
+  ];
+  const errors: string[] = [];
+
+  for (const relativePath of packageFiles) {
+    const json = readJsonFile(join(repoRoot, relativePath));
+    if (!json) {
+      errors.push(`${relativePath}: unreadable package manifest`);
+      continue;
+    }
+
+    for (const [pkg, version] of Object.entries(expected)) {
+      const actual = json.dependencies?.[pkg] ?? json.devDependencies?.[pkg] ?? json.overrides?.[pkg];
+      if (actual && actual !== version) {
+        errors.push(`${relativePath}: ${pkg} is ${actual}, expected ${version}`);
+      }
+    }
+  }
+
+  const packageLock = readJsonFile(join(repoRoot, "package-lock.json"));
+  const lockPackages = packageLock?.packages as Record<string, Record<string, unknown>> | undefined;
+  if (lockPackages) {
+    for (const [lockPath, meta] of Object.entries(lockPackages)) {
+      const name = meta.name ?? lockPath.split("node_modules/").pop();
+      const version = meta.version;
+      if (typeof name === "string" && name in expected && version !== expected[name]) {
+        errors.push(`package-lock.json:${lockPath || "."}: ${name} is ${String(version)}, expected ${expected[name]}`);
+      }
+    }
+  }
+
+  const installedPackageJsons = [
+    "node_modules/react/package.json",
+    "node_modules/react-dom/package.json",
+    "packages/admin-dashboard/node_modules/react/package.json",
+    "packages/admin-dashboard/node_modules/react-dom/package.json",
+    "packages/renderer/node_modules/react/package.json",
+    "packages/renderer/node_modules/react-dom/package.json",
+    "packages/landing/node_modules/react/package.json",
+    "packages/landing/node_modules/react-dom/package.json",
+  ];
+
+  for (const relativePath of installedPackageJsons) {
+    const absolutePath = join(repoRoot, relativePath);
+    if (!existsSync(absolutePath)) continue;
+
+    const json = readJsonFile(absolutePath);
+    const name = json?.name;
+    const version = json?.version;
+    if (typeof name === "string" && name in expected && version !== expected[name]) {
+      errors.push(`${relativePath}: ${name} is ${String(version)}, expected ${expected[name]}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    errors.forEach(error => console.log(`${red}  ❌ ${error}${reset}`));
+    return false;
+  }
+
+  console.log(`${green}  ✅ React runtime locked to 18.3.1.${reset}`);
+  return true;
+}
+
+console.log(`\n${cyan}[1/3] Validating React Runtime Lock (React 18.3.1 only)...${reset}`);
+if (!validateReact18Lock()) {
+  hasErrors = true;
+  hasFatalErrors = true;
+}
+
+console.log(`\n${cyan}[2/3] Validating Renderer Config (Firebase, App Check, Tuned Agents, Functions)...${reset}`);
 const rendererResult = rendererProdSchema.safeParse(processEnv);
 if (!rendererResult.success) {
   rendererResult.error.errors.forEach(err => {
@@ -149,7 +241,7 @@ if (!rendererResult.success) {
   console.log(`${green}  ✅ Renderer config validated.${reset}`);
 }
 
-console.log(`\n${cyan}[2/2] Validating Function Secrets (Social, Legal, Tax, Fan Enrichment, Distributor, POD)...${reset}`);
+console.log(`\n${cyan}[3/3] Validating Function Secrets (Social, Legal, Tax, Fan Enrichment, Distributor, POD)...${reset}`);
 const backendResult = backendSecretsSchema.safeParse(processEnv);
 if (!backendResult.success) {
   backendResult.error.errors.forEach(err => {
@@ -162,8 +254,8 @@ if (!backendResult.success) {
 
 console.log("\n--------------------------------------");
 if (hasErrors) {
-  if (isProd) {
-    console.error(`${red}🚨 FAILED: Missing required production configuration. Fails closed.${reset}`);
+  if (isProd || hasFatalErrors) {
+    console.error(`${red}🚨 FAILED: Required preflight checks failed. Fails closed.${reset}`);
     process.exit(1);
   } else {
     console.warn(`${yellow}⚠️ WARNING: Missing required config. Allowed in Local/Dev mode.${reset}`);

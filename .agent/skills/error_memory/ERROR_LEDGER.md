@@ -843,3 +843,26 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - PREVENTION:
   - Always serialize asynchronous queue pushes when dealing with real-time stream encryption or ordering-sensitive events.
   - Limit Vitest workers using `--maxWorkers=N` when executing tests under the `forks` pool on resource-constrained development hosts.
+
+## 2026-06-05 Browser Audio Analysis CSP and Scoped Test Coverage Gaps
+
+**SEVERITY:** High for runtime CSP failures; Medium for incomplete test scoping
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/audio/AudioAnalysisService.ts`, `.agent/test_ledger/departments_test_config.json`, `execution/run_department_test.py`
+- ERROR:
+  1. Audio Analyzer crashed or degraded under the app CSP because an audio-analysis dependency path evaluated JavaScript strings in the browser where `unsafe-eval` is forbidden.
+  2. The scoped department test registry originally treated Audio Analyzer as only `packages/renderer/src/services/audio`, missing the UI, Firebase audio API, MusicLibrary persistence, agent tools, Distribution/DDEX audio metadata, main-process audio security, Python forensic tools, and real audio fixtures.
+  3. After WAV analysis rendered successfully, `Push Verified Data to Agents` still failed in web mock auth due Firestore permission errors, proving that visible profile generation is not enough to claim downstream audio context works.
+- CAUSE:
+  1. Some browser audio packages, especially Emscripten/WASM wrappers, can require `eval`/`new Function` even when the app CSP allows `wasm-unsafe-eval`.
+  2. Department-scoped tests can under-cover cross-cutting tools if the registry only points to the closest service directory.
+  3. Audio analysis is a multi-hop flow: upload validation, browser decoding, AI/deep-analysis fallback, persistence/cache, agent handoff, and Distribution metadata must each be tested explicitly.
+- FIX:
+  1. Removed the CSP-incompatible Essentia runtime path from browser analysis and verified no `unsafe-eval` CSP violations during WAV upload.
+  2. Registered `audio-analyzer` as a first-class scoped testing target with aliases including `mega-test-audio` and `MegaTestAudioLoop`, fixtures, Python checks, manual browser routes, and broad cross-module test coverage.
+  3. Logged the remaining persistence regression as `ISSUE-158` instead of closing the audio path based only on visible profile generation.
+- PREVENTION:
+  - When adding browser-side audio dependencies, test under the app's real CSP before accepting the dependency. `wasm-unsafe-eval` does not permit general string evaluation.
+  - Scoped test registries for cross-cutting tools must include UI, service, API, agent, persistence, downstream, security, fixture, and dependency checks, not just the nearest source directory.
+  - For audio workflows, acceptance requires proof at every hop: rejected lossy input, accepted lossless input, CSP-clean analysis, valid technical metadata, persistence/cache behavior, and downstream agent/Distribution consumption.
