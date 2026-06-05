@@ -126,7 +126,7 @@ export default function FoundersSection() {
                 key={f.seat}
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-medium"
               >
-                <span className="text-amber-500 font-mono text-xs">#{f.seat}</span>
+                <span className="text-amber-500 font-mono text-xs">#{f.seat === 11 ? 'ii' : f.seat}</span>
                 {f.name}
               </div>
             ))}
