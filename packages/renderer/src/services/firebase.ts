@@ -144,32 +144,32 @@ if (isFirebaseE2EMockEnabled()) {
         },
         signInAnonymously: async () => {
             currentMockUser = getE2EMockUser<User>();
-            (rawAuth as any)._signedOut = false;
+            (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signInWithEmailAndPassword: async () => {
             currentMockUser = getE2EMockUser<User>();
-            (rawAuth as any)._signedOut = false;
+            (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         createUserWithEmailAndPassword: async () => {
             currentMockUser = getE2EMockUser<User>();
-            (rawAuth as any)._signedOut = false;
+            (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         sendPasswordResetEmail: async () => {},
         signInWithPopup: async () => {
             currentMockUser = getE2EMockUser<User>();
-            (rawAuth as any)._signedOut = false;
+            (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signOut: async () => {
             currentMockUser = null;
-            (rawAuth as any)._signedOut = true;
+            (rawAuth as Auth & { _signedOut?: boolean })._signedOut = true;
             notifyListeners();
         },
     } as unknown as Auth;
@@ -202,11 +202,11 @@ const auth = new Proxy(rawAuth, {
     get(target, prop, receiver) {
         if (prop === 'currentUser') {
             logger.debug('[AuthProxy] currentUser getter accessed.', {
-                _signedOut: (target as any)._signedOut,
+                _signedOut: (target as Auth & { _signedOut?: boolean })._signedOut,
                 targetCurrentUser: target.currentUser ? target.currentUser.uid : 'null',
                 isE2EMockEnabled: isFirebaseE2EMockEnabled()
             });
-            if ((target as any)._signedOut) {
+            if ((target as Auth & { _signedOut?: boolean })._signedOut) {
                 logger.debug('[AuthProxy] _signedOut is true, returning null');
                 return null;
             }

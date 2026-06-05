@@ -68,7 +68,6 @@ describe('Creative Gateway (Integration)', () => {
         // Usually `generateImageV3(request)` works if it's the v2 wrapped function.
         let result: any;
         try {
-            // @ts-expect-error - bypassing strict typings for the CallableRequest
             result = await generateImageV3.run(request);
         } catch (e: any) {
             const errorStr = String(e.message || e).toLowerCase();
