@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Road Manager (Touring) Module E2E Tests
@@ -6,33 +6,24 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Road Manager Module', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
-
-        // Click guest explore button to bypass login screen
-        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
-        if (await guestBtn.isVisible().catch(() => false)) {
-            await guestBtn.click();
-            await page.waitForSelector('[data-testid="nav-item-road"]', { timeout: 20_000 });
-        }
     });
 
-    test('navigates to road manager module without crash', async ({ page }) => {
+    test('navigates to road manager module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-road"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        await nav.waitFor({ state: 'visible', timeout: 15_000 });
 
         await nav.click();
         await page.waitForTimeout(1_500);
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('road manager renders venue or tour content', async ({ page }) => {
+    test('road manager renders venue or tour content', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-road"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        await nav.waitFor({ state: 'visible', timeout: 15_000 });
 
         await nav.click();
         await page.waitForTimeout(2_000);
@@ -41,3 +32,4 @@ test.describe('Road Manager Module', () => {
         expect(await buttons.count()).toBeGreaterThan(0);
     });
 });
+
