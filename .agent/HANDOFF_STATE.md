@@ -1,60 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-05 09:15 EDT
+**Updated:** 2026-06-05 11:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+35f7620fa feat: add sync and refresh buttons to admin dashboard and client settings
+28e3bb715 feat(admin): add passcode login bypass (0707) and desktop shortcut
+11c29759c chore: consolidate multi-agent work and tests
+ee47663b3 chore: consolidate multi-agent work and test updates
+11bf7e6f5 chore: consolidate outstanding work, tests, and ledger updates
+132e278fb chore: session checkpoint [09:15]
 4d3a00d18 chore: session checkpoint [21:29]
 356dda328 fix(main): fix macOS hidden window reactivation, update end workflow resource cleanup and error ledger
 257d22888 chore: session checkpoint [21:29]
 1fc1a8650 chore: session checkpoint [20:18]
-62c2ce867 chore: session checkpoint [20:12]
-a62402767 chore: session checkpoint [20:03]
-ea958e534 chore: session checkpoint [20:03]
-6cb569348 docs: fix Mermaid syntax in mobile remote flowchart
-ba61530da chore: session checkpoint [19:59]
-4912cae17 docs: document GH-ISSUE-152 fix and closure in ledger
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
-MM .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
-AM .agent/test_ledger/departments_test_config.json
-MM .agent/workflows/mega-test.md
-MM .agent/workflows/test.md
-AM docs/flowcharts/scoped-testing-architecture.md
-AM execution/run_department_test.py
-AM execution/run_full_menu_gauntlet.py
- M package-lock.json
- M packages/admin-dashboard/package.json
- M packages/firebase/firestore.rules
- M packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts
- M packages/renderer/src/components/shared/FirstRunTour.tsx
-M  packages/renderer/src/modules/distribution/components/SubmitReleaseModal.tsx
-M  packages/renderer/src/modules/legal/LegalDashboard.tsx
-MM packages/renderer/src/modules/legal/components/DMCANoticeGenerator.tsx
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/modules/tools/AudioAnalyzer.tsx
- M packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts
- M packages/renderer/src/services/audio/AudioAnalysisService.test.ts
- M packages/renderer/src/services/audio/AudioAnalysisService.ts
- M packages/renderer/src/services/music/MusicLibraryService.ts
- M scripts/production-gate.ts
- M vitest.config.ts
-?? .agent/checkpoints/codex-megatest-audio-2026-06-05.md
-?? artifacts/audio-mega-loop-mobile.png
-?? artifacts/audio-mega-loop-mp3-rejection.png
-?? artifacts/audio-mega-loop-wav-profile.png
-?? artifacts/audio-mega-test-playwright-render.png
-?? artifacts/audio-mega-test-routine-113.png
-?? artifacts/audio-mega-test-send-to-creative.png
-?? artifacts/mega_test_audio_loop_2026-06-05_results.md
-?? artifacts/mega_v11_2026-06-05_audio_results.md
-?? artifacts/menu_gauntlet_report_2026-06-05_08-53-25.md
-?? artifacts/menu_gauntlet_report_2026-06-05_08-55-00.md
-?? e2e/mobile-remote.spec.ts
+clean working tree
 ```
 
 ## Decisions
