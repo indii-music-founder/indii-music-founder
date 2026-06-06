@@ -90,8 +90,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-[#060608]">
-                    <div className="absolute inset-0 grid grid-cols-[72px_minmax(0,1fr)_72px] gap-0">
-                        <aside className="z-30 flex min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl">
+                    <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 md:grid-cols-[72px_minmax(0,1fr)_72px]">
+                        <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
                             <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                 <CanvasToolbar
                                     addRectangle={handleAddRectangle}
@@ -136,7 +136,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             }}
                         />
 
-                        <div className="z-30 flex min-h-0 flex-col items-center justify-center border-l border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl">
+                        <div className="z-30 hidden min-h-0 flex-col items-center justify-center border-l border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
                             <CanvasActionRail
                                 item={item}
                                 endFrameItem={endFrameItem}
@@ -155,8 +155,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         </div>
                     </div>
 
-                    <div className="pointer-events-none absolute inset-x-[72px] top-0 h-24 bg-linear-to-b from-black/35 to-transparent" />
-                    <div className="pointer-events-none absolute inset-x-[72px] bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/35 to-transparent md:inset-x-[72px]" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent md:inset-x-[72px]" />
 
                     <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
                         <CanvasToolbar
