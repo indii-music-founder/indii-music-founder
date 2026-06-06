@@ -2802,3 +2802,786 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/web3/PinataService.ts:4`
 - **Details:** Found during `/finish` sweep (17:45). Bailout logic checking for mock key prevents proper functionality.
+
+---
+
+### ISSUE-265: Fix useRemoteCommandListener.ts (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
+- **Details:** Found during `/finish` sweep (18:00). Swallowed promise rejection `.catch(() => { })`.
+
+---
+
+### ISSUE-266: Fix main.tsx (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/main.tsx:100`
+- **Details:** Found during `/finish` sweep (18:00). Swallowed promise rejection `.catch(() => { })`.
+
+---
+
+### ISSUE-267: Fix EditorAssetLibrary.tsx (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
+- **Details:** Found during `/finish` sweep (18:00). Swallowed promise rejection `.catch(() => { })`.
+
+---
+
+### ISSUE-268: Fix AssetSpotlight.tsx (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
+- **Details:** Found during `/finish` sweep (18:00). Swallowed promise rejection `.catch(() => { })`.
+
+---
+
+### ISSUE-269: Fix firebase.ts (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/firebase.ts:163`
+- **Details:** Found during `/finish` sweep (18:00). Empty implementation for `sendPasswordResetEmail`.
+
+---
+
+### ISSUE-270: Fix file-upload.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/kokonutui/file-upload.tsx:244`
+- **Details:** Found during `/finish` sweep (18:00). Empty fallback functions like `onUploadSuccess = () => { }`.
+
+---
+
+### ISSUE-271: Fix CookieConsentBanner.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:248`
+- **Details:** Found during `/finish` sweep (18:00). Empty fallback function for `onChange`.
+
+---
+
+### ISSUE-272: Fix prompt-input.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/ui/prompt-input.tsx:46`
+- **Details:** Found during `/finish` sweep (18:00). Empty fallback function for `setValue`.
+
+---
+
+### ISSUE-273: Fix StudioControlsPanel.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:442`
+- **Details:** Found during `/finish` sweep (18:00). Empty fallback functions for `onToggle` and `onUpdate`.
+
+---
+
+### ISSUE-274: Fix resilience.ts (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/utils/resilience.ts:25`
+- **Details:** Found during `/finish` sweep (18:00). Empty fallback function for `onRetry`.
+
+---
+
+### ISSUE-275: Fix ChatMessage.tsx (Swallowed Error Blocks)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:189`
+- **Details:** Found during `/finish` sweep (18:00). Explicit `/* ignore */` catch blocks mask real errors.
+
+---
+
+### ISSUE-276: Fix MobileHeader.tsx (Placeholder UI)
+- **Status:** ✅ FIXED
+- **Fix:** Removed placeholder UI comments and added rightAction prop support to avoid placeholder code
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/MobileHeader.tsx:16`
+- **Details:** Found during `/finish` sweep (18:00). `{/* Right: placeholder for module-specific action */}`.
+
+---
+
+### ISSUE-277: Fix ThreeDCard.tsx (Placeholder UI)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/ui/ThreeDCard.tsx:163`
+- **Details:** Found during `/finish` sweep (18:00). `{/* Shadow/Depth layer placeholder if needed */}`.
+
+---
+
+### ISSUE-278: Fix VideoPreview.tsx (Ignored TypeScript Rules)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/VideoPreview.tsx:26`
+- **Details:** Found during `/finish` sweep (18:00). Explicitly bypasses TypeScript via `// @ts-ignore`.
+
+---
+
+### ISSUE-279: Fix AnomalyDetector.tsx (Ignored TypeScript Rules)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/finance/components/AnomalyDetector.tsx:227`
+- **Details:** Found during `/finish` sweep (18:00). Explicitly bypasses TypeScript via `// @ts-ignore`.
+
+---
+
+### ISSUE-280: Fix Keeper_ContextIntegrity.repro.test.ts (Ignored TypeScript Rules)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/intelligence/context/Keeper_ContextIntegrity.repro.test.ts:124`
+- **Details:** Found during `/finish` sweep (18:00). Explicitly bypasses TypeScript via `// @ts-ignore`.
+
+---
+
+### ISSUE-281: Fix index.ts (Mock Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/index.ts:1515`
+- **Details:** Found during `/finish` sweep (18:00). Re-flagged: `enrichFanData` mock MVP implementation.
+
+---
+
+### ISSUE-282: Fix gateway.ts (Incomplete Audio Generation Routing)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/creative/gateway.ts:776`
+- **Details:** Found during `/finish` sweep (18:00). `generateAudioV3` uses `gemini-3-pro-preview` for audio generation instead of Nano Banana 2 as specified in comments.
+
+---
+
+### ISSUE-283: Fix pinata.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/pinata.ts:5`
+- **Details:** Found during `/finish` sweep (18:00). Re-flagged: `web3:pinata-upload` is a hardcoded placeholder.
+
+---
+
+### ISSUE-284: Fix web3.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/web3.ts:5`
+- **Details:** Found during `/finish` sweep (18:00). Re-flagged: `web3:execute-transaction` is a hardcoded placeholder.
+
+---
+
+### ISSUE-285: Fix pinata.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/pinata.ts:5`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: `web3:pinata-upload` is a hardcoded placeholder.
+
+---
+
+### ISSUE-286: Fix web3.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/web3.ts:5`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: `web3:execute-transaction` is a hardcoded placeholder.
+
+---
+
+### ISSUE-287: Fix security.ts (Incomplete Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/security.ts:107`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: Key rotation logic falls into a generic unsupported block for most services.
+
+---
+
+### ISSUE-288: Fix useRemoteCommandListener.ts (Unhandled Promise Rejection)
+- **Status:** ✅ WONTFIX — Intentional
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
+- **Details:** The `.catch(() => { })` is on a fire-and-forget offline state push during cleanup (effect teardown). Rethrowing would crash the component unmount path. The error is non-recoverable and expected in offline scenarios. Intentional pattern per lint-disable comment.
+
+---
+
+### ISSUE-289: Fix main.tsx (Unhandled Promise Rejection)
+- **Status:** ✅ FIXED (2026-06-06)
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/main.tsx:100`
+- **Fix:** Replaced `.catch(() => { })` with `.catch((err: unknown) => { logger.warn('[Startup] Web Vitals init failed...', err); })`. Failures now visible in dev console.
+
+---
+
+### ISSUE-290: Fix FirebaseIntelligenceService.ts (Unhandled Promise Rejection)
+- **Status:** ✅ FIXED (2026-06-06)
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts:537`
+- **Fix:** Replaced `.catch(() => { })` with `.catch((err: unknown) => { logger.debug('[FirebaseIntelligenceService] Suppressed duplicate rejection...', err); })`. Error is already propagated to callers; secondary catch now logs at debug level so it's traceable.
+
+---
+
+### ISSUE-291: Fix EditorAssetLibrary.tsx (Unhandled Promise Rejection)
+- **Status:** ✅ WONTFIX — Correct Pattern
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
+- **Details:** `video.play().catch(() => { })` on `onMouseEnter` hover. `HTMLMediaElement.play()` always returns a promise that rejects when autoplay is blocked by browser policy. The empty catch is the canonical browser-safe pattern for optional hover-play. Not a bug.
+
+---
+
+### ISSUE-292: Fix AssetSpotlight.tsx (Unhandled Promise Rejection)
+- **Status:** ✅ WONTFIX — Correct Pattern
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
+- **Details:** `video.play().catch(() => { })` on hover thumbnail preview. Same browser autoplay pattern as ISSUE-291. The empty catch is correct; MDN recommends this exact pattern for optional autoplay on hover.
+
+---
+
+### ISSUE-293: Fix ChaosVerification.test.ts (Unhandled Promise Rejection in tests)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/intelligence/__tests__/ChaosVerification.test.ts:109`
+- **Details:** Found during `/finish` sweep (18:15). Empty catch block used to lazily bypass unhandled promise rejection warnings in tests.
+
+---
+
+### ISSUE-294: Fix VeoPayloadValidation.test.ts (Unhandled Promise Rejection in tests)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/video/VeoPayloadValidation.test.ts:182`
+- **Details:** Found during `/finish` sweep (18:15). Empty catch block used to lazily bypass unhandled promise rejection warnings in tests.
+
+---
+
+### ISSUE-295: Fix VeoTimeout.test.ts (Unhandled Promise Rejection in tests)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/video/VeoTimeout.test.ts:110`
+- **Details:** Found during `/finish` sweep (18:15). Empty catch block used to lazily bypass unhandled promise rejection warnings in tests.
+
+---
+
+### ISSUE-296: Fix file-upload.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/kokonutui/file-upload.tsx:244`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: Empty fallback functions like `onUploadSuccess = () => { }`.
+
+---
+
+### ISSUE-297: Fix prompt-input.tsx (Empty Stub Implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/ui/prompt-input.tsx:46`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: Empty fallback function for `setValue: () => { }`.
+
+---
+
+### ISSUE-298: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: Unimplemented placeholder forcefully sets status to failed and throws a hardcoded error.
+
+---
+
+### ISSUE-299: Fix taxForms.ts (requestTaxForms is a placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/stripe/taxForms.ts:1`
+- **Details:** Found during `/finish` sweep (18:15). Re-flagged: Placeholder cloud function intentionally fails closed until a real provider is wired.
+
+---
+
+### ISSUE-300: Fix mechanicalLicense.ts (Hallucinated API integration)
+- **Status:** ✅ FIXED (2026-06-06)
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/legal/mechanicalLicense.ts`
+- **Fix:** Replaced hallucinated `https://api.harryfox.com/v1/licenses/verify` (HFA was acquired by MusicMark in 2021, endpoint doesn't exist) with an explicit `unimplemented` error. Integration path documented in JSDoc. No more silent 404s when HFA credentials are configured.
+
+---
+
+### ISSUE-301: Fix platformTokenExchange.ts (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/analytics/platformTokenExchange.ts:190`
+- **Details:** Found during `/finish` sweep (18:15). Unhandled promise rejections wrapped in an empty `.catch` block.
+
+---
+
+### ISSUE-302: Fix creativeHistorySlice.ts (Missing Eviction Policy)
+- **Status:** ✅ FIXED (2026-06-06)
+- **Severity:** High
+- **Location:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts`
+- **Fix:** Added canvas image cap at 20 items (`[...state.canvasImages, img].slice(-20)`) to prevent unbounded base64 accumulation. Also fixed `removeUploadedAudio` silent catch to use `logger.error`. The `generatedHistory` cap of 50 was already in place.
+
+---
+
+### ISSUE-303: Fix GeminiRetrievalService.ts (AI Slop/Placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/GeminiRetrievalService.ts:448`
+- **Details:** Found during `/finish` sweep (18:30). AI slop comment indicating production file re-fetching logic is missing.
+
+---
+
+### ISSUE-304: Fix ProjectList.tsx (Placeholder UI)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/sidebar/ProjectList.tsx:80`
+- **Details:** Found during `/finish` sweep (18:30). Lazy UI stub left instead of implementing actual modal.
+
+---
+
+### ISSUE-305: Fix ShareTargetReceiver.tsx (Placeholder Service Worker Logic)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/tools/ShareTargetReceiver.tsx:21`
+- **Details:** Found during `/finish` sweep (18:30). Placeholder comment indicating Service Worker integration is incomplete.
+
+---
+
+### ISSUE-306: Fix AgentExecutionContext.ts (Incomplete Logic)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/agent/context/AgentExecutionContext.ts:194`
+- **Details:** Found during `/finish` sweep (18:30). Execution context logic missing; merge strategies deferred to the future.
+
+---
+
+### ISSUE-307: Fix distributionSlice.test.ts (TDD Stubs)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/renderer/src/core/store/slices/distributionSlice.test.ts:58`
+- **Details:** Found during `/finish` sweep (18:30). Tests written as TDD stubs, but feature remains unimplemented in actual store.
+
+---
+
+### ISSUE-308: Fix FoundationalSkillService.ts (Lazy Types / Bypassing TS)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/FoundationalSkillService.ts:15`
+- **Details:** Found during `/finish` sweep (18:30). Explicit bypassing of TypeScript safety returning generic Promise<any>.
+
+---
+
+### ISSUE-309: Fix HarnessCompiler.ts (Lazy Types / Bypassing TS)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
+- **Details:** Found during `/finish` sweep (18:30). Interface generics default to any and ignore TS linting.
+
+---
+
+### ISSUE-310: Fix daw-server.ts (Empty Catch Block)
+- **Status:** ✅ FIXED (2026-06-06)
+- **Severity:** Medium
+- **Location:** `packages/main/src/daw-server.ts:45`
+- **Fix:** After logging the parse error, now sends a `parse_error` frame back to the WebSocket client (`{ type: 'parse_error', error: '...' }`) so the DAW plugin is not left in a silent unknown state.
+
+---
+
+### ISSUE-311: Fix MCPClientService.ts (Unhandled Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/mcp/MCPClientService.ts:62`
+- **Details:** Found during `/finish` sweep (18:30). connectHarness().catch(...) logs error and continues silently.
+
+---
+
+### ISSUE-312: Fix daw-server.ts (Extraneous AI Slop)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/main/src/daw-server.ts:3`
+- **Details:** Found during `/finish` sweep (18:30). Leftover no-unused-vars lint bypass above widely used log import.
+
+---
+
+### ISSUE-313: Fix pollDeliveryStatus.ts (Swallowed Errors)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/distribution/pollDeliveryStatus.ts:98`
+- **Details:** Found during `/finish` sweep (18:30). Empty catch block swallows distributor API errors making them impossible to debug.
+
+---
+
+### ISSUE-314: Fix deliverScheduledPosts.ts (Swallowed Errors)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:55`
+- **Details:** Found during `/finish` sweep (18:30). Empty catch block swallows Firestore read errors.
+
+---
+
+### ISSUE-315: Fix video_generation_security.test.ts (Swallowed Assertions)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/__tests__/video_generation_security.test.ts:114`
+- **Details:** Found during `/finish` sweep (18:30). Empty catch block swallows errors without performing assertions.
+
+---
+
+### ISSUE-316: Fix webhookHandler.ts (Generic Switch Case)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/stripe/webhookHandler.ts:370`
+- **Details:** Found during `/finish` sweep (18:30). Default switch case simply logs and succeeds instead of rejecting unhandled Stripe events.
+
+---
+
+### ISSUE-317: Fix storageMaintenance.ts (Log Slop)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/firebase/src/devops/storageMaintenance.ts:65`
+- **Details:** Found during `/finish` sweep (18:30). Background task relies on unstructured console.logs instead of structured logger.
+
+---
+
+### ISSUE-318: Fix bigquery-pipeline.ts (Log Slop)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/firebase/src/functions/analytics/bigquery-pipeline.ts:96`
+- **Details:** Found during `/finish` sweep (18:30). Excessive debugging console.logs left behind, causing log noise.
+
+---
+
+### ISSUE-319: Python audio forensics audit reports PASS when all checks are skipped
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** TestInfra | AudioForensics | Fidelity
+- **Module:** Audio Analyzer / Python Forensics
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md
+- **Tech Stack:** Python | numpy | librosa
+- **Found:** 2026-06-06 by MegaTestAudioLoop
+- **Summary:** `execution/audio/audio_forensics.py` returns `summary_status: "PASS"` even when `librosa` is not installed and every substantive forensic check (`spectral`, `clipping`, `silence`) is marked `SKIPPED`. The scoped audio workflow can therefore record Python audio forensics as passing even though no real analysis ran.
+- **Steps to Reproduce:**
+  1. Run `python3 execution/audio/audio_forensics.py assets/audio/soul_test.wav` in an environment without `librosa`.
+  2. Observe the warning `librosa not installed. Spectral analysis will be disabled.`
+  3. Observe `spectral`, `clipping`, and `silence` all return `status: "SKIPPED"`.
+  4. Observe the final report still returns `summary_status: "PASS"`.
+- **Expected:** Missing required forensic dependencies should produce a non-pass result (`SKIPPED`, `ERROR`, or `FAIL`) so the MegaTest audio loop does not treat absent analysis as a successful quality audit.
+- **UX Impact:** Audio quality verification can be falsely reported as healthy, masking missing spectral/clipping/silence analysis in the automation path before downstream Distribution or Creative/Video handoff decisions are made.
+
+---
+
+### ISSUE-320: Fix pinata.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/pinata.ts:5`
+- **Details:** Found during `/finish` sweep (18:45). web3:pinata-upload IPC handler is a placeholder returning a hardcoded unsupported error instead of actual logic.
+
+---
+
+### ISSUE-321: Fix web3.ts (Placeholder Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/web3.ts:5`
+- **Details:** Found during `/finish` sweep (18:45). web3:execute-transaction IPC handler is completely unhandled and returns a placeholder response.
+
+---
+
+### ISSUE-322: Fix BrowserAgentService.ts (Lazy Logic Assumptions)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
+- **Details:** Found during `/finish` sweep (18:45). Contains sloppy, uncertain agent comments guessing at implementation details rather than finalizing the behavior.
+
+---
+
+### ISSUE-323: Fix FoundationalSkillService.ts (Path Assumption)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/FoundationalSkillService.ts:9`
+- **Details:** Found during `/finish` sweep (18:45). Hardcoded development path and left a lazy assumption comment for production.
+
+---
+
+### ISSUE-324: Fix BrowserAgentService.ts (Swallowed Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/BrowserAgentService.ts:58`
+- **Details:** Found during `/finish` sweep (18:45). Promise rejection on cleanup lazily swallowed with just a console warn instead of properly resolving or handling the cleanup state.
+
+---
+
+### ISSUE-325: Fix BrowserAgentService.ts (Swallowed JS Execution Error)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/BrowserAgentService.ts:112`
+- **Details:** Found during `/finish` sweep (18:45). JS execution error is swallowed and returns an empty string instead of properly surfacing the extraction failure.
+
+---
+
+### ISSUE-326: Fix EarningsReportService.ts (PlatformFees Placeholder)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/renderer/src/services/distribution/proprietary-ingestion/EarningsReportService.ts:79`
+- **Details:** Found during `/finish` sweep (18:45). Critical financial logic left unimplemented during DSR processing.
+
+---
+
+### ISSUE-327: Fix UniversalNode.tsx (Empty Edit Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/workflow/components/UniversalNode.tsx:165`
+- **Details:** Found during `/finish` sweep (18:45). Empty edit handler; the edit button for nodes does nothing.
+
+---
+
+### ISSUE-328: Fix PublicistDashboard.tsx (Empty Click Handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/publicist/PublicistDashboard.tsx:129`
+- **Details:** Found during `/finish` sweep (18:45). The Analytics tab is stubbed out with an empty click handler.
+
+---
+
+### ISSUE-329: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
+- **Details:** Found during `/finish` sweep (18:45). Silent failure suppression via .catch(() => { }) on component unmount and cleanup.
+
+---
+
+### ISSUE-330: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:585`
+- **Details:** Found during `/finish` sweep (18:45). Silent failure suppression via .catch(() => { }) on cleanup interval.
+
+---
+
+### ISSUE-331: Fix main.tsx (Swallowed Web Vitals Lazy Loading Errors)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/renderer/src/main.tsx:100`
+- **Details:** Found during `/finish` sweep (18:45). Swallowing lazy-loading errors for web vitals.
+
+---
+
+### ISSUE-332: Fix AssetSpotlight.tsx (Global Video Autoplay Rejection Suppression)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
+- **Details:** Found during `/finish` sweep (18:45). Global suppression of video autoplay rejections.
+
+---
+
+### ISSUE-333: Fix EditorAssetLibrary.tsx (Global Video Autoplay Rejection Suppression)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
+- **Details:** Found during `/finish` sweep (18:45). Global suppression of video autoplay rejections.
+
+---
+
+### ISSUE-334: Fix inngest.ts (submitToDistributor Placeholder)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
+- **Details:** Found during `/finish` sweep (18:45). The submitToDistributor helper function is a complete placeholder, unconditionally throwing an error and breaking the processDistribution job.
+
+---
+
+### ISSUE-335: Fix inngest.ts (retryWebhookDelivery Empty Job)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:161`
+- **Details:** Found during `/finish` sweep (18:45). The retryWebhookDelivery Inngest job fetches a document but then does nothing with it.
+
+---
+
+### ISSUE-336: Fix getUsageStats.ts (Unhandled Switch Case)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/subscription/getUsageStats.ts:52`
+- **Details:** Found during `/finish` sweep (18:45). No default case in the switch statement; unexpected usage records will fall through silently.
+
+---
+
+### ISSUE-337: Fix index.ts (Stubbed MVP logic)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/firebase/src/index.ts:1486`
+- **Details:** Found during `/finish` sweep (19:00). The enrichFanData Cloud Function is entirely stubbed out with a mock implementation.
+
+---
+
+### ISSUE-338: Fix mcp/index.ts (Fake MCP Output)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/firebase/src/mcp/index.ts:88`
+- **Details:** Found during `/finish` sweep (19:00). The format_dsp_metadata MCP tool returns a lazy, incomplete DDEX XML payload, skipping the core generation.
+
+---
+
+### ISSUE-339: Fix audio.ts (Lazy token-passing comment)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/main/src/handlers/audio.ts:107`
+- **Details:** Found during `/finish` sweep (19:15). Contains a lazy comment (`// In a real app, you might pass the user's auth token here if needed`) indicating incomplete implementation for token handling.
+
+---
+
+### ISSUE-340: Fix audio.ts (MasteringService Bypassed)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/main/src/handlers/audio.ts:163`
+- **Details:** Found during `/finish` sweep (19:15). A major architectural bypass where logic was re-introduced locally instead of relying on a missing `MasteringService`.
+
+---
+
+### ISSUE-341: Fix mobile_remote.ts (Temporary Ngrok logic)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/mobile_remote.ts:29`
+- **Details:** Found during `/finish` sweep (19:15). Temporary implementation comment indicating incomplete handling for Ngrok loading.
+
+---
+
+### ISSUE-342: Fix video.ts (Temporary file collision handling)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/video.ts:73`
+- **Details:** Found during `/finish` sweep (19:15). Lazy file collision handling (`// For now, we overwrite or rely on unique filenames`).
+
+---
+
+### ISSUE-343: Fix BrowserAgentService.ts (Tutorial comment in prod)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/main/src/services/BrowserAgentService.ts:242`
+- **Details:** Found during `/finish` sweep (19:15). AI-style tutorial comment (`// In Electron sendInputEvent, we usually pass the key code directly`) inside production code.
+
+---
+
+### ISSUE-344: Fix ElectronRenderService.ts (Bypass Remotion Types)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/ElectronRenderService.ts:21`
+- **Details:** Found during `/finish` sweep (19:15). AI slop to force TypeScript to compile a Remotion config rather than properly typing it (`// eslint-disable-next-line @typescript-eslint/no-explicit-any`).
+
+---
+
+### ISSUE-345: Fix HarnessCompiler.ts (Widespread 'any' usage)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
+- **Details:** Found during `/finish` sweep (19:15). Widespread usage of `@typescript-eslint/no-explicit-any` disables. Strict compiler interfaces are ignored in favor of `any`.
+
+---
+
+### ISSUE-346: Fix main.ts & preload.ts (Lazy type bypasses)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/main.ts`
+- **Details:** Found during `/finish` sweep (19:15). Both entry points contain multiple instances of `eslint-disable-next-line @typescript-eslint/no-explicit-any` or `no-require-imports`, indicating lazy type bypasses.
+
+---
+
+### ISSUE-347: Fix daw-server.ts (Placeholder logic)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/main/src/daw-server.ts:17`
+- **Details:** Found during `/finish` sweep (19:30). DawServer state initialized with placeholders and websocket handler is a stub that just echoes data.
+
+---
+
+### ISSUE-348: Fix BrowserAgentService.ts (Hesitant AI comments)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
+- **Details:** Found during `/finish` sweep (19:30). Contains generic hesitant AI comments instead of deterministic logic.
+
+---
+
+### ISSUE-349: Fix auth.ts (Abandoned login handler)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/main/src/handlers/auth.ts:164`
+- **Details:** Found during `/finish` sweep (19:30). The auth:login-google IPC handler is abandoned and returns a placeholder.
+
+---
+
+### ISSUE-350: Fix main.ts (Swallowed exception catches)
+- **Status:** OPEN
+- **Severity:** High
+- **Location:** `packages/main/src/main.ts:49`
+- **Details:** Found during `/finish` sweep (19:30). Global uncaughtException and unhandledRejection catches are completely empty.
+
+---
+
+### ISSUE-351: Fix main.ts (Swallowed loadURL promise)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/main.ts:262`
+- **Details:** Found during `/finish` sweep (19:30). win.loadURL and win.loadFile promises are caught and logged but not handled.
+
+---
+
+### ISSUE-352: Fix updater.ts (Swallowed autoUpdater promise)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/updater.ts:101`
+- **Details:** Found during `/finish` sweep (19:30). autoUpdater.checkForUpdatesAndNotify() catches errors via generic log.warn, swallowing rejection.
+
+---
+
+### ISSUE-353: Fix webhookHandler.ts (Unhandled switch case fallthrough)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/firebase/src/stripe/webhookHandler.ts:371`
+- **Details:** Found during `/finish` sweep (19:30). default case just logs unhandled event type instead of exhaustive switch or throwing error.
+
+---
+
+### ISSUE-354: Fix deliverScheduledPosts.ts (Generic unsupported error)
+- **Status:** OPEN
+- **Severity:** Low
+- **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:258`
+- **Details:** Found during `/finish` sweep (19:30). default case returns a generic unsupported error.
+
+---
+
+### ISSUE-355: Fix webhookHandler.ts (Swallowed best-effort update)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/stripe/webhookHandler.ts:376`
+- **Details:** Found during `/finish` sweep (19:30). Best-effort updates swallow errors silently.
+
+---
+
+### ISSUE-356: Fix RegistrationChecklistPanel.tsx (Swallowed Promise Rejection)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/distribution/components/RegistrationChecklistPanel.tsx:45`
+- **Details:** Found during `/finish` sweep (19:30). selectFile promise catches and swallows rejection silently, potentially masking IPC errors.
+
+---
+
+### ISSUE-357: Fix DistributionPersistenceService.ts (Dummy Response Data)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/distribution/DistributionPersistenceService.ts:49`
+- **Details:** Found during `/finish` sweep (19:30). Fabricates timestamps with Timestamp.now() using a dummy timestamp comment instead of retrieving actual data.
+
+---
+
+### ISSUE-358: Fix KnowledgeTools.ts (Empty Callback Placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/agent/tools/KnowledgeTools.ts:27`
+- **Details:** Found during `/finish` sweep (19:30). Passes empty callback ("Update Doc Status dummy") to runAgenticWorkflow.
+
+---
+
+### ISSUE-359: AudioWaveform emits React act warning during resize-driven redraw
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** TestInfra | React18 | AudioToVideo
+- **Module:** Creative Video Editor / AudioWaveform
+- **Flowchart:** docs/flowcharts/video-studio-pipeline.md
+- **Tech Stack:** React 18.3.1 | Vitest | Remotion
+- **Found:** 2026-06-06 by MegaTestAudioLoop
+- **Summary:** `packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx` schedules state updates with `Promise.resolve().then(...)` on both source reset and waveform recompute paths. The targeted regression test passes, but React still emits `Warning: An update to AudioWaveform inside a test was not wrapped in act(...)` when width changes. That points to async state churn in the downstream audio-to-video handoff surface and adds noisy concurrency warnings around waveform rendering.
+- **Steps to Reproduce:**
+  1. Run `npm run test -- --run packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.test.tsx`.
+  2. Observe the test pass.
+  3. Observe React emit `Warning: An update to AudioWaveform inside a test was not wrapped in act(...)`.
+  4. Inspect the async reset/recompute paths in [`packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx`](/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx:21) and [`packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx`](/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx:53).
+- **Expected:** Audio waveform resize and source-change updates should settle without React `act(...)` warnings so the audio-to-video editor path stays concurrency-clean and test output remains actionable.
+- **UX Impact:** This does not block the current workflow, but it weakens confidence in the AudioWaveform editor path by masking real React 18 update issues behind persistent warning noise.
