@@ -22,15 +22,17 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
             }
         };
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - The remotion typings might complain but this is the valid API
-        current.addEventListener('frameupdate', callback);
+        interface RemotionPlayerElement {
+            addEventListener(event: 'frameupdate', callback: (e: CustomEvent<{ frame: number }>) => void): void;
+            removeEventListener(event: 'frameupdate', callback: (e: CustomEvent<{ frame: number }>) => void): void;
+        }
+
+        const playerElement = current as unknown as RemotionPlayerElement;
+        playerElement.addEventListener('frameupdate', callback);
 
         return () => {
             if (typeof current.removeEventListener === 'function') {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                current.removeEventListener('frameupdate', callback);
+                playerElement.removeEventListener('frameupdate', callback);
             }
         };
     }, [playerRef, onFrameUpdate]);

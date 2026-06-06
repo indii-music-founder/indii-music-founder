@@ -2,6 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -773,7 +774,7 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApi
   try {
     const ai = getAiClient();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // or audio equivalent model
+      model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST, // Nano Banana 2
       contents: prompt,
       config: {
         responseModalities: ["AUDIO"]

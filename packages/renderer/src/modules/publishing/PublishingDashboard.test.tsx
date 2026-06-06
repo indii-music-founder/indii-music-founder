@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
 import { useReleases } from './hooks/useReleases';
@@ -32,6 +32,8 @@ const mockStore = {
     setModule: mockSetModule
 };
 
+import { useReleaseList } from './hooks/useReleaseList';
+
 // Mock the store implementation directly here to ensure consistent behavior
 vi.mock('@/core/store', () => ({
     useStore: vi.fn((selector) => {
@@ -47,6 +49,21 @@ vi.mock('./hooks/useReleases', () => ({
         releases: [],
         loading: false,
         error: null,
+        hasPendingSync: false,
+        deleteRelease: mockDeleteRelease,
+        archiveRelease: mockArchiveRelease
+    }))
+}));
+
+vi.mock('./hooks/useReleaseList', () => ({
+    useReleaseList: vi.fn(() => ({
+        releases: [],
+        allReleases: [],
+        loading: false,
+        searchQuery: '',
+        setSearchQuery: vi.fn(),
+        statusFilter: 'all',
+        setStatusFilter: vi.fn(),
         hasPendingSync: false,
         deleteRelease: mockDeleteRelease,
         archiveRelease: mockArchiveRelease
@@ -113,6 +130,28 @@ describe('PublishingDashboard', () => {
             }
             return state;
         }) as any);
+
+        vi.mocked(useReleases).mockReturnValue({
+            releases: [],
+            loading: false,
+            error: null,
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
+        vi.mocked(useReleaseList).mockReturnValue({
+            releases: [],
+            allReleases: [],
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
     });
 
     it('renders the dashboard title and stats', () => {
@@ -182,6 +221,19 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
+        vi.mocked(useReleaseList).mockReturnValue({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
         render(<PublishingDashboard />);
 
         // Verify releases are rendered
@@ -218,6 +270,19 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
+        vi.mocked(useReleaseList).mockReturnValue({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
         render(<PublishingDashboard />);
 
         // Search
@@ -235,9 +300,6 @@ describe('PublishingDashboard', () => {
     });
 
     it('executes bulk delete with toast promise', async () => {
-        // Mock global confirm
-        global.confirm = vi.fn(() => true);
-
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
         ] as any[];
@@ -246,6 +308,19 @@ describe('PublishingDashboard', () => {
             releases: mockReleases,
             loading: false,
             error: null,
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
+        vi.mocked(useReleaseList).mockReturnValue({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
             hasPendingSync: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
@@ -265,15 +340,19 @@ describe('PublishingDashboard', () => {
             fireEvent.click(deleteBtn);
         });
 
-        expect(global.confirm).toHaveBeenCalled();
-        expect(mockToastPromise).toHaveBeenCalled();
-        expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+        // Click confirm in the bulk action modal
+        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
+        await act(async () => {
+            fireEvent.click(confirmBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockToastPromise).toHaveBeenCalled();
+            expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+        });
     });
 
     it('executes bulk archive with toast promise', async () => {
-        // Mock global confirm
-        global.confirm = vi.fn(() => true);
-
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Test Track' }, status: 'live', assets: {} }
         ] as any[];
@@ -285,6 +364,19 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease,
             hasPendingSync: false,
             error: null
+        });
+
+        vi.mocked(useReleaseList).mockReturnValue({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
@@ -301,9 +393,16 @@ describe('PublishingDashboard', () => {
             fireEvent.click(archiveBtn);
         });
 
-        expect(global.confirm).toHaveBeenCalled();
-        expect(mockToastPromise).toHaveBeenCalled();
-        expect(mockArchiveRelease).toHaveBeenCalledWith('1');
+        // Click confirm in the bulk action modal
+        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
+        await act(async () => {
+            fireEvent.click(confirmBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockToastPromise).toHaveBeenCalled();
+            expect(mockArchiveRelease).toHaveBeenCalledWith('1');
+        });
     });
 
     it('navigates to distribution module via Manage Distributors', () => {

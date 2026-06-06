@@ -20,6 +20,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 
 type FileStatus = "idle" | "dragging" | "uploading" | "error";
 
@@ -241,13 +242,13 @@ const UploadingAnimation = ({ progress }: { progress: number }) => (
 );
 
 export default function FileUpload({
-  onUploadSuccess = () => { },
-  onUploadError = () => { },
-  onFilesSelected = () => { },
+  onUploadSuccess = (file: File) => { logger.debug(`[FileUpload] Default onUploadSuccess called for file: ${file.name}`); },
+  onUploadError = (err: FileError) => { logger.warn(`[FileUpload] Default onUploadError called:`, err); },
+  onFilesSelected = (files: File[]) => { logger.debug(`[FileUpload] Default onFilesSelected called with ${files.length} files`); },
   acceptedFileTypes = [],
   maxFileSize = DEFAULT_MAX_FILE_SIZE,
   currentFile: initialFile = null,
-  onFileRemove = () => { },
+  onFileRemove = () => { logger.debug('[FileUpload] Default onFileRemove called'); },
   uploadDelay = 2000,
   validateFile = () => null,
   className,

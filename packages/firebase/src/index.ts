@@ -24,6 +24,7 @@ import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
+import { clearbitApiKey, apolloApiKey } from "./config/secrets";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
