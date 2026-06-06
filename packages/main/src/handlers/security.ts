@@ -97,7 +97,7 @@ export function registerSecurityHandlers() {
                 newKey = `[github-secret-updated:${secret_name}]`; // Not returned — stays in GitHub
 
             } else {
-                return { success: false, error: `Key rotation not implemented for service: ${serviceName}` };
+                return { success: false, error: `Key rotation unsupported for service: ${serviceName}` };
             }
 
             if (!newKey) {
