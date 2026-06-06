@@ -47,6 +47,7 @@ export default defineConfig({
                     'electron-log',
                     'electron-squirrel-startup',
                     '@modelcontextprotocol/sdk',
+                    'libsodium-wrappers',
                 ],
             },
         },
