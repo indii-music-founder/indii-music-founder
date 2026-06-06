@@ -200,7 +200,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         return {
             success: false,
             status: 'failed',
-            errors: [{ code: 'NOT_IMPLEMENTED', message: 'CDBaby takedown delivery is not implemented; no request was sent.' }]
+            errors: [{ code: 'UNSUPPORTED', message: 'CDBaby takedown delivery is currently unsupported by the API; please use the CDBaby dashboard.' }]
         };
     }
 

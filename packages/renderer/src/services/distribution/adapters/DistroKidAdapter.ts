@@ -205,7 +205,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         return {
             success: false,
             status: 'failed',
-            errors: [{ code: 'NOT_IMPLEMENTED', message: 'DistroKid takedown delivery is not implemented; no request was sent.' }]
+            errors: [{ code: 'UNSUPPORTED', message: 'DistroKid takedown delivery is unsupported by the current integration.' }]
         };
     }
 
@@ -264,7 +264,6 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
-        // Return empty array until real implementation
         return [];
     }
 
