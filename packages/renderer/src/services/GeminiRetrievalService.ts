@@ -444,9 +444,7 @@ Only return the JSON array, no other text.`;
 
         for (const docSnap of snapshot.docs) {
             const data = docSnap.data() as KnowledgeDocument;
-            logger.info(`[RAG] File expiring soon: ${data.fileName}`);
-            // In a real implementation, you'd re-fetch and re-upload the file
-            // This requires storing the original file or having a backup
+            logger.warn(`[RAG] Document '${data.fileName}' is nearing expiration. Automatic re-upload from source requires a user upload session.`);
             refreshedCount++;
         }
 

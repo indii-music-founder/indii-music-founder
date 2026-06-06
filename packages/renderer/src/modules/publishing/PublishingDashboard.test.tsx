@@ -11,6 +11,8 @@ const mockToastPromise = vi.fn();
 const mockSetModule = vi.fn();
 const mockFetchDistributors = vi.fn();
 const mockFetchEarnings = vi.fn();
+const mockUseReleases = vi.fn();
+const mockUseReleaseList = vi.fn();
 
 const mockStore = {
     currentOrganizationId: 'test-org-id',
@@ -33,6 +35,7 @@ const mockStore = {
 };
 
 import { useReleaseList } from './hooks/useReleaseList';
+import { useState, useMemo } from 'react';
 
 // Mock the store implementation directly here to ensure consistent behavior
 vi.mock('@/core/store', () => ({
@@ -45,29 +48,11 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('./hooks/useReleases', () => ({
-    useReleases: vi.fn(() => ({
-        releases: [],
-        loading: false,
-        error: null,
-        hasPendingSync: false,
-        deleteRelease: mockDeleteRelease,
-        archiveRelease: mockArchiveRelease
-    }))
+    useReleases: (...args: any[]) => mockUseReleases(...args)
 }));
 
 vi.mock('./hooks/useReleaseList', () => ({
-    useReleaseList: vi.fn(() => ({
-        releases: [],
-        allReleases: [],
-        loading: false,
-        searchQuery: '',
-        setSearchQuery: vi.fn(),
-        statusFilter: 'all',
-        setStatusFilter: vi.fn(),
-        hasPendingSync: false,
-        deleteRelease: mockDeleteRelease,
-        archiveRelease: mockArchiveRelease
-    }))
+    useReleaseList: (...args: any[]) => mockUseReleaseList(...args)
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -131,7 +116,7 @@ describe('PublishingDashboard', () => {
             return state;
         }) as any);
 
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
             error: null,
@@ -140,7 +125,7 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
-        vi.mocked(useReleaseList).mockReturnValue({
+        mockUseReleaseList.mockImplementation(() => ({
             releases: [],
             allReleases: [],
             loading: false,
@@ -151,7 +136,7 @@ describe('PublishingDashboard', () => {
             hasPendingSync: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
-        });
+        }));
     });
 
     it('renders the dashboard title and stats', () => {
@@ -163,7 +148,7 @@ describe('PublishingDashboard', () => {
     });
 
     it('shows skeleton loading state', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: true,
             deleteRelease: mockDeleteRelease,
@@ -179,7 +164,7 @@ describe('PublishingDashboard', () => {
     });
 
     it('renders empty state when no releases exist', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -212,7 +197,7 @@ describe('PublishingDashboard', () => {
             }
         ] as any[];
 
-        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,
@@ -221,7 +206,7 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
-        vi.mocked(useReleaseList).mockReturnValue({
+        mockUseReleaseList.mockImplementation(() => ({
             releases: mockReleases,
             allReleases: mockReleases,
             loading: false,
@@ -232,7 +217,7 @@ describe('PublishingDashboard', () => {
             hasPendingSync: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
-        });
+        }));
 
         render(<PublishingDashboard />);
 
@@ -261,7 +246,7 @@ describe('PublishingDashboard', () => {
             { id: '2', metadata: { trackTitle: 'Berry', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
         ] as any[];
 
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -270,17 +255,28 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
-        vi.mocked(useReleaseList).mockReturnValue({
-            releases: mockReleases,
-            allReleases: mockReleases,
-            loading: false,
-            searchQuery: '',
-            setSearchQuery: vi.fn(),
-            statusFilter: 'all',
-            setStatusFilter: vi.fn(),
-            hasPendingSync: false,
-            deleteRelease: mockDeleteRelease,
-            archiveRelease: mockArchiveRelease
+        mockUseReleaseList.mockImplementation(() => {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [statusFilter, setStatusFilter] = useState('all');
+            const filtered = mockReleases.filter(release => {
+                const matchesSearch =
+                    release.metadata.trackTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    release.metadata.artistName?.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesFilter = statusFilter === 'all' || release.status === statusFilter;
+                return matchesSearch && matchesFilter;
+            });
+            return {
+                releases: filtered,
+                allReleases: mockReleases,
+                loading: false,
+                searchQuery,
+                setSearchQuery,
+                statusFilter,
+                setStatusFilter,
+                hasPendingSync: false,
+                deleteRelease: mockDeleteRelease,
+                archiveRelease: mockArchiveRelease
+            };
         });
 
         render(<PublishingDashboard />);
@@ -304,7 +300,7 @@ describe('PublishingDashboard', () => {
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
         ] as any[];
 
-        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,
@@ -313,7 +309,7 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
-        vi.mocked(useReleaseList).mockReturnValue({
+        mockUseReleaseList.mockImplementation(() => ({
             releases: mockReleases,
             allReleases: mockReleases,
             loading: false,
@@ -324,7 +320,7 @@ describe('PublishingDashboard', () => {
             hasPendingSync: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
-        });
+        }));
 
         render(<PublishingDashboard />);
 
@@ -357,7 +353,7 @@ describe('PublishingDashboard', () => {
             { id: '1', metadata: { trackTitle: 'Test Track' }, status: 'live', assets: {} }
         ] as any[];
 
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -366,7 +362,7 @@ describe('PublishingDashboard', () => {
             error: null
         });
 
-        vi.mocked(useReleaseList).mockReturnValue({
+        mockUseReleaseList.mockImplementation(() => ({
             releases: mockReleases,
             allReleases: mockReleases,
             loading: false,
@@ -377,7 +373,7 @@ describe('PublishingDashboard', () => {
             hasPendingSync: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
-        });
+        }));
 
         render(<PublishingDashboard />);
 
@@ -406,7 +402,7 @@ describe('PublishingDashboard', () => {
     });
 
     it('navigates to distribution module via Manage Distributors', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
             deleteRelease: mockDeleteRelease,
