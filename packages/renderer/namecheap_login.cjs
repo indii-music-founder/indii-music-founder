@@ -18,12 +18,12 @@ const { chromium } = require('playwright');
     
     // Try to find login fields
     console.log("Entering credentials...");
-    await page.waitForSelector('input[id="nc_username"]', { timeout: 10000 }).catch(() => console.log("nc_username not found"));
-    await page.fill('input[id="nc_username"]', 'williamthewalker').catch(() => {});
-    await page.fill('input[id="nc_password"]', 'a47./g97eXF..gt').catch(() => {});
+    await page.waitForSelector('input[id="nc_username"]', { timeout: 10000 });
+    await page.fill('input[id="nc_username"]', 'williamthewalker');
+    await page.fill('input[id="nc_password"]', 'a47./g97eXF..gt');
     
     console.log("Submitting login...");
-    await page.click('button[type="submit"], input[type="submit"], button.nc_login_submit').catch(() => {});
+    await page.click('button[type="submit"], input[type="submit"], button.nc_login_submit');
     
     // Wait for the result of the login attempt
     console.log("Waiting for navigation/challenge...");
