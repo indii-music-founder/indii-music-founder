@@ -11,6 +11,7 @@ import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'fireba
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
+import * as crypto from 'crypto';
 
 const db = admin.firestore();
 const bigquery = new BigQuery({
@@ -41,8 +42,9 @@ const BATCH_SIZE = 100;
  * Format: userId-eventType-timestamp-hash
  */
 function generateIdempotencyKey(event: AnalyticsEvent): string {
-  const hash = crypto.randomUUID().split('-')[0];
-  return `${event.userId}-${event.eventType}-${event.timestamp}-${hash}`;
+  const dataString = JSON.stringify(event.data || {});
+  const hash = crypto.createHash('sha256').update(dataString).digest('hex').substring(0, 8);
+  return event.eventId || `${event.userId}-${event.eventType}-${event.timestamp}-${hash}`;
 }
 
 /**
