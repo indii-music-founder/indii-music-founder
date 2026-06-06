@@ -1,26 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-05 13:56 EDT
+**Updated:** 2026-06-05 21:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-b3073d03d refactor(better): fix E2E Right Panel timestamp validation throw and add marketing to MODULES_WITH_CONTEXT
-43f437ede chore: session checkpoint [13:54]
-715adc8cf test(e2e): Consolidate right-panel test updates
-74a40a539 chore: session checkpoint [13:19]
-05631c4ad test(e2e): Consolidate creative-character test updates
-f00509959 chore(ci): Consolidate uncommitted work (i18n locales, profileSlice, and e2e tests)
-02ba45d19 test(e2e): Fix ISSUE-160 courtroom unseating mock parallel limit
-5b18ea5bd chore: session checkpoint [11:16]
-35f7620fa feat: add sync and refresh buttons to admin dashboard and client settings
-28e3bb715 feat(admin): add passcode login bypass (0707) and desktop shortcut
+c25cd5131 refactor(better): resolve set-state-in-effect and type safety issues in Business Center Hub
+b744a9b78 feat(admin): Consolidate admin-dashboard and test history updates
+5912e752d docs(test): Consolidate latest test history updates
+e999867ce feat: Consolidate admin-dashboard, landing, and renderer updates
+315a9c23c refactor(better): elevate login screen and admin auth flow
+9f25a05eb feat(admin): Consolidate server.ts updates
+c85938323 docs(test): Consolidate latest test history updates
+fa5a1ce85 docs(test): Consolidate additional test history updates
+c32bcb9c8 docs(test): Consolidate test history updates
+dd644f0c9 feat(admin): Consolidate admin-dashboard and shared workflow schema updates
 ```
 
 ## Working State
 ```
-?? artifacts/menu_gauntlet_report_2026-06-05_10-41-44.md
-?? artifacts/menu_gauntlet_report_2026-06-05_11-53-13.md
-?? artifacts/menu_gauntlet_report_2026-06-05_12-41-06.md
+clean working tree
 ```
 
 ## Decisions
