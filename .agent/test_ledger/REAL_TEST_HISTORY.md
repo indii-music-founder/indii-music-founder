@@ -258,6 +258,25 @@
 - **Coverage Delta:**
   - Settings module: 0 → 13 tests ✅
   - Distribution Dashboard: 0 main dashboard tests → 14 tests ✅
+
+---
+
+## 2026-06-06 - MegaTestAudioLoop - Audio Scoped Harness Reconfirmation
+- **Modules Tested:** Audio Analyzer, audio services, MusicLibrary persistence, proprietary ingestion/DDEX mapping, distribution audio QC/compliance, connected director/marketing/distribution agents
+- **Duration:** ~6 minutes
+- **Findings:** 0 new product issues. Existing infrastructure blocker `ISSUE-187` reconfirmed.
+- **Key Results:**
+  - ✅ Scoped audio harness unit/integration coverage passed: 21 files, 135 tests
+  - ✅ Python audio checks passed: `execution/audio/audio_forensics.py`, `execution/audio/audio_fidelity_audit.py`
+  - ❌ Browser E2E phase still blocked because the configured web server could not bind `127.0.0.1:4242`
+  - ❌ Manual `npm run dev:web` remained blocked in automation due `tsx` IPC `listen EPERM`; direct Vite fallback also could not bind
+- **Coverage Delta:**
+  - ✅ Regression confirmation: local technical audio analysis path remains green in harness
+  - ✅ Regression confirmation: MusicLibrary persistence tests remain green in harness
+  - ✅ Regression confirmation: semantic/DDEX mapping tests remain green in harness
+  - ⚠️ Live browser verification still not possible in this environment
+- **UX Score:** N/A (Environment-blocked observational run)
+- **Issues Filed:** None
   - Boardroom conversation: 0 dedicated panel tests → 17 tests ✅
   - Image Styles (Whisk presets): 0 → 10 tests ✅
   - 20 of 27 original untested areas now have unit test coverage
@@ -570,3 +589,48 @@
   - Reconfirmed the recurring `--localstorage-file` warning remains pre-existing test-environment noise already documented in `.agent/workflows/ci-validate.md`, not a new audio defect.
   - Reconfirmed the live-browser baseline remains `ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_21-05-56_runtime_reconfirm.md`
+
+## 2026-06-06 — MegaTestAudioLoop Audio Harness + Browser Policy Block
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~4 minutes
+- **Findings:** 0 new product issues filed. The scoped audio harness again passed end-to-end outside the browser layer, and one new test-infrastructure issue was filed for the combined runtime/browser validation block (`ISSUE-187`).
+- **Blockers:**
+  - `npm run dev:web` failed in preflight because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM`).
+  - Direct `npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` passed 21 test files / 135 tests plus Python checks, but its Playwright phase failed because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The Codex in-app browser security policy rejected both `http://127.0.0.1:4242/audio-analyzer` and `https://indii-music-founder.web.app/audio-analyzer` before navigation, so no fresh UI state or screenshotable page could be reached.
+- **Coverage Delta:**
+  - Reconfirmed the scoped audio harness still covers Audio Analyzer UI logic, audio services, semantic fingerprinting, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security.
+  - Reconfirmed no net-new audio product regressions beyond the previously fixed browser-visible issues (`ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`).
+  - Logged `ISSUE-187` to track the now-recurring live-browser validation block in sandbox automation.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_08-34-42_env_and_harness.md`
+
+## 2026-06-06 — MegaTestAudioLoop ISSUE-187 Regression Reconfirm
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~5 minutes
+- **Findings:** 1 new regression issue filed (`ISSUE-188`). The scoped audio harness again passed outside the browser layer, but the live-browser validation blocker reproduced exactly despite `ISSUE-187` being marked fixed.
+- **Blockers:**
+  - `npm run dev:web` failed in preflight because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM` on `/var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/tsx-502/41896.pipe`).
+  - Direct `npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21 test files / 135 tests plus Python checks, but its Playwright phase failed because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The Codex in-app browser again rejected both `http://127.0.0.1:4242/audio-analyzer` and `https://indii-music-founder.web.app/audio-analyzer` before navigation, so no fresh UI state or screenshotable page could be reached.
+- **Coverage Delta:**
+  - Reconfirmed the scoped audio harness still covers Audio Analyzer UI logic, audio services, semantic fingerprinting, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security.
+  - Reconfirmed no new product-level audio failures were observable because the live app could not be rendered in-browser.
+  - Logged `ISSUE-188` as a regression because the previously fixed live-browser validation block remains reproducible in sandbox automation.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_14-36-22_issue-187-regression.md`
+
+## 2026-06-06 — MegaTestAudioLoop Harness Reconfirm
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~7 minutes
+- **Findings:** 0 new product issues filed. The scoped audio harness stayed green outside the browser layer, and the live-browser blocker remained the already-open regression (`ISSUE-188`).
+- **Blockers:**
+  - `npm run dev:web` failed in preflight because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe, even when retried with `TMPDIR=/private/tmp`.
+  - The scoped audio harness passed 21 test files / 135 tests and Python checks, but its Playwright phase failed because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The same run also reproduced the repo's existing port mismatch across live startup paths: `dev:web` targets Vite on `4243`, while Playwright still attempted to start its own web server on `4242`.
+  - No fresh browser-rendered page was reachable from this automation, so no new UI screenshot could be captured in this run.
+- **Coverage Delta:**
+  - Reconfirmed audio analyzer UI tests, local technical analysis services, semantic Audio DNA support, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security in one scoped run.
+  - Reconfirmed the repeated `--localstorage-file` worker warning is still pre-existing test-environment noise rather than a newly logged audio defect.
+  - Reconfirmed no net-new audio product failures were observable beyond the existing live-browser regression path already tracked by `ISSUE-188`.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_15-37-17_harness_reconfirm.md`
