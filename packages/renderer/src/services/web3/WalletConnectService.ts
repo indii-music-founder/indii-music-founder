@@ -157,9 +157,8 @@ export class WalletConnectService {
         // For the MVP phase, we guide users to install MetaMask
         // The full WalletConnect QR integration requires the Reown AppKit React SDK
         throw new Error(
-            'WalletConnect QR modal requires @reown/appkit. ' +
-            'For now, install MetaMask or another browser wallet. ' +
-            'WalletConnect Cloud integration coming in v0.2.0.'
+            'WalletConnect QR modal requires @reown/appkit, which is currently unsupported in this runtime. ' +
+            'Please install MetaMask or an injected browser wallet.'
         );
     }
 
