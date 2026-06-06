@@ -18,16 +18,35 @@ export const ShareTargetReceiver: React.FC = () => {
     useEffect(() => {
         const handleSharedContent = async () => {
             try {
-                // In a true Service Worker implementation, the SW intercepts the POST
-                // and caches the files in IndexedDB, then redirects here.
-                // We read from the known DB cache or URL params.
+                // Check if IndexedDB has any cached shared files from the service worker
+                let hasFiles = false;
+                try {
+                    const dbRequest = window.indexedDB.open('keyval-store');
+                    dbRequest.onsuccess = () => {
+                        const db = dbRequest.result;
+                        if (db.objectStoreNames.contains('keyval')) {
+                            const transaction = db.transaction('keyval', 'readonly');
+                            const store = transaction.objectStore('keyval');
+                            const getRequest = store.get('shared-files');
+                            getRequest.onsuccess = () => {
+                                if (getRequest.result) {
+                                    hasFiles = true;
+                                    setMessage('Processing shared media files from device...');
+                                    setTimeout(() => {
+                                        navigate('/?module=tools&shared=true');
+                                    }, 1500);
+                                }
+                            };
+                        }
+                    };
+                } catch (e) {
+                    logger.debug('[ShareTarget] IndexedDB check bypassed', e);
+                }
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const title = urlParams.get('title');
                 const text = urlParams.get('text');
                 const url = urlParams.get('url');
-
-                const hasFiles = false; // File handoff requires the service worker IndexedDB bridge.
 
                 if (!title && !text && !url && !hasFiles) {
                     setStatus('error');
@@ -41,11 +60,6 @@ export const ShareTargetReceiver: React.FC = () => {
                     setTimeout(() => {
                         // Pass the shared link directly into the chat input via query param
                         navigate(`/?initialPrompt=${encodeURIComponent(`Analyze this shared content: ${title || ''} ${text || ''} ${url || ''}`)}`);
-                    }, 1500);
-                } else if (hasFiles) {
-                    setMessage('Processing shared media files...');
-                    setTimeout(() => {
-                        navigate('/?module=tools');
                     }, 1500);
                 }
 

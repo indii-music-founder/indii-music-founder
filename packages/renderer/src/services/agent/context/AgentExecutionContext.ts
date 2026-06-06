@@ -189,21 +189,26 @@ export class AgentExecutionContext {
         // Check for conflicts (state changed since snapshot)
         const conflicts = this.detectConflicts(globalState);
         if (conflicts.length > 0) {
-            logger.warn(`[ExecutionContext] Conflicts detected: ${conflicts.join(', ')}`);
-            // For now, log but proceed (last-write-wins)
-            // Future: implement merge strategies
+            logger.warn(`[ExecutionContext] Conflicts detected: ${conflicts.join(', ')}. Resolving using conflict merge strategy.`);
         }
 
-        // Apply all modifications atomically
+        // Apply all modifications atomically, resolving conflicts where needed
         const updates: Partial<StoreState> = {};
         this.modifications.forEach((value, key) => {
-            updates[key] = value as never;
+            const snapshotValue = this.snapshot[key];
+            const currentValue = globalState[key];
+
+            if (conflicts.includes(key as string)) {
+                updates[key] = this.resolveConflict(key, snapshotValue, currentValue, value) as never;
+            } else {
+                updates[key] = value as never;
+            }
         });
 
         if (Object.keys(updates).length > 0) {
             const { useStore } = await import('@/core/store');
             useStore.setState(updates);
-            logger.debug(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications for agent ${this.options.agentId}`);
+            logger.debug(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications (resolved conflicts: ${conflicts.length}) for agent ${this.options.agentId}`);
         }
 
         this.isCommitted = true;
@@ -226,6 +231,29 @@ export class AgentExecutionContext {
         this.modifications.clear();
         this.changeHistory = [];
         this.isRolledBack = true;
+    }
+
+    /**
+     * Resolve conflict between snapshot value, current global value, and modified value.
+     */
+    private resolveConflict(key: keyof StoreState, snapshotValue: unknown, currentValue: unknown, modifiedValue: unknown): unknown {
+        logger.info(`[ExecutionContext] Resolving conflict for key '${String(key)}' using safe merge.`);
+
+        // If they are plain objects, do a shallow merge of the keys
+        if (
+            snapshotValue && typeof snapshotValue === 'object' &&
+            currentValue && typeof currentValue === 'object' &&
+            modifiedValue && typeof modifiedValue === 'object' &&
+            !Array.isArray(snapshotValue) && !Array.isArray(currentValue) && !Array.isArray(modifiedValue)
+        ) {
+            return {
+                ...currentValue as Record<string, unknown>,
+                ...modifiedValue as Record<string, unknown>
+            };
+        }
+
+        // Fallback: Last-write-wins (the modified value overwrites)
+        return modifiedValue;
     }
 
     /**
