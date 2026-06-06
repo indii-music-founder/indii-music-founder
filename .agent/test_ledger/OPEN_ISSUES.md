@@ -2038,7 +2038,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-171: Finish CDBabyAdapter.ts (CDBaby takedown delivery explicitly not implemented)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts:203`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2046,7 +2046,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-172: Finish DistroKidAdapter.ts (DistroKid takedown delivery explicitly not implemented)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:208`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2134,7 +2134,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-183: Finish DistroKidAdapter.ts (getAllEarnings returns empty array stub)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
