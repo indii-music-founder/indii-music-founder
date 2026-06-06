@@ -132,8 +132,6 @@ export function registerAgentHandlers() {
             }
 
             let content = await fs.readFile(targetFile, 'utf-8');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const lines = content.split('\n');
 
             for (const chunk of replacementChunks) {
                 const { targetContent, replacementContent } = chunk;

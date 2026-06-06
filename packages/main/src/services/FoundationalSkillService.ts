@@ -1,8 +1,6 @@
 import log from 'electron-log';
 import { spawn } from 'child_process';
 import path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { app } from 'electron';
 
 export class FoundationalSkillService {
     private agentsRoot: string;
@@ -56,8 +54,8 @@ export class FoundationalSkillService {
                         } else {
                             resolve({ success: true, message: stdout.trim() });
                         }
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     } catch (e) {
+                        log.warn(`[FoundationalService] JSON parse failed, returning raw string. Error:`, e);
                         resolve({ success: true, message: stdout.trim() });
                     }
                 } else {
