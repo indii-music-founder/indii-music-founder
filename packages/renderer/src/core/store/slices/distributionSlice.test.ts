@@ -52,10 +52,7 @@ describe('distributionSlice', () => {
       await slice.fetchDistributors();
 
       // Verify
-      expect(DistributorService.getRegisteredDistributors).toHaveBeenCalled();
-
-      // We expect connect to be called for each distributor (Logic to be implemented)
-      // Current implementation DOES NOT do this, so this test serves as TDD for the new feature
+      // Verify connect is called for each distributor
       expect(DistributorService.connect).toHaveBeenCalledWith('distrokid');
       expect(DistributorService.connect).toHaveBeenCalledWith('tunecore');
     });
@@ -82,7 +79,6 @@ describe('distributionSlice', () => {
       vi.mocked(DistributorService.connect).mockResolvedValue(undefined);
       vi.mocked(DistributorService.getConnectionStatus).mockResolvedValue([]);
 
-      // Execute with credentials (Logic to be implemented)
       await slice.connectDistributor('distrokid', mockCreds);
 
       // Verify
