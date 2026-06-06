@@ -677,3 +677,54 @@
   - Reconfirmed the `--localstorage-file` warnings and `electron-log` EPERM writes remain pre-existing environment noise rather than new product defects.
   - Added `ISSUE-250` to separate the new direct Playwright runtime failure from the already-tracked app bind and in-app browser access regressions.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_13-40-01_playwright_runtime_blocked.md`
+
+## 2026-06-06 — MegaTestAudioLoop Python Forensics False-Pass Audit
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~6 minutes
+- **Findings:** 1 new issue filed (`ISSUE-319`). No new live product regressions were observable because browser validation remained blocked before page render.
+- **Blockers:**
+  - `npm run dev:web` passed preflight checks but Vite failed to bind `::1:4243` with `listen EPERM`.
+  - Retrying `npm run dev:web -- --host 127.0.0.1` also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - No fresh browser-rendered audio UI state or meaningful failure screenshot could be captured in this run.
+- **Coverage Delta:**
+  - Re-ran 14 scoped audio-related Vitest files covering Audio Analyzer UI/accessibility, MusicLibrary persistence, DSP/audio QC, DDEX ingestion, Distribution agent handoff, Firebase audio helpers, marketing audio tools, and main-process audio security; all 14 files and 49 tests passed.
+  - Re-ran Python audio audits on `assets/audio/soul_test.wav` and `assets/audio/sample-6s.mp3`.
+  - Confirmed `execution/audio/audio_fidelity_audit.py` reports expected CD/Hi-Res compliance outcomes for the WAV/MP3 fixtures.
+  - Filed `ISSUE-319` because `execution/audio/audio_forensics.py` reports `summary_status: PASS` when `librosa` is missing and every forensic check is skipped.
+  - Reconfirmed the existing live-browser startup/access failures are still environmental and already covered by `ISSUE-188` and `ISSUE-250`.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_14-40-53_forensics_false_pass.md`
+
+## 2026-06-06 — MegaTestAudioLoop AudioWaveform Warning Sweep
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~7 minutes
+- **Findings:** 1 new issue filed (`ISSUE-359`). No fresh browser-rendered product failures were observable because live app startup remained blocked before page render.
+- **Blockers:**
+  - `npm run dev:web` passed preflight checks but Vite again failed to bind `::1:4243` with `listen EPERM`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21/21 audio-scoped test files and 135/135 tests, but its Playwright phase failed because `config.webServer` could not bind `::1:4242`.
+  - No browser-rendered audio route became reachable in this sandbox, so no fresh UI screenshot could be captured in this run.
+- **Coverage Delta:**
+  - Reconfirmed the repo's expected React/Vite/Zustand stack via `npm ls react zustand vite`.
+  - Re-ran the full scoped audio department harness and reconfirmed Audio Analyzer, local technical analysis, MusicLibrary persistence, DDEX/distribution mapping, marketing/distribution agent handoff, and audio IPC security remained green outside the browser layer.
+  - Re-ran `execution/audio/audio_forensics.py` on `test-fixtures/audio/What To Come.wav` and `test-fixtures/audio/Fading Echoes ext v2.2.mp3`, which reconfirmed the already-open false-PASS dependency gap tracked by `ISSUE-319`.
+  - Added downstream audio-to-video coverage with `AudioWaveform.test.tsx`, `VideoDistributorIntegration.test.ts`, `WhiskService.video.test.ts`, and `VideoWorkflow.test.tsx`; all 4 files and 18 tests passed.
+  - Filed `ISSUE-359` because `AudioWaveform.test.tsx` emits a React `act(...)` warning on resize-driven updates even though the assertions pass.
+  - Reconfirmed the existing live-browser startup/runtime failures remain environmental and already covered by `ISSUE-188` and `ISSUE-250`.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_19-42-54_audiowaveform_warning.md`
+
+## 2026-06-06 — MegaTestAudioLoop Bind Reconfirm Sweep
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~9 minutes
+- **Findings:** 0 new issues filed. No fresh browser-rendered product failures were observable because live app startup remained blocked before page render.
+- **Blockers:**
+  - `npm run dev:web` passed preflight checks but Vite failed again with `listen EPERM` on `::1:4243`.
+  - Direct Vite fallback with `VITE_RENDERER_ONLY=true npx vite --config packages/renderer/vite.config.ts --host 127.0.0.1 --port 4243` also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21/21 audio-scoped test files and 135/135 tests, but its Playwright phase failed because `config.webServer` could not bind `::1:4242`.
+  - No browser-rendered audio route became reachable in this sandbox, so no fresh UI screenshot could be captured in this run.
+- **Coverage Delta:**
+  - Reconfirmed the repo's expected React/Vite/Zustand stack via `npm ls react zustand vite`.
+  - Re-ran the full scoped audio department harness and reconfirmed Audio Analyzer, local technical analysis, semantic Audio DNA support, MusicLibrary persistence, DDEX/distribution mapping, marketing/distribution agent handoff, and audio IPC security remained green outside the browser layer.
+  - Re-ran downstream handoff coverage with `AudioAnalyzer.test.tsx`, `AudioAnalyzer.interaction.test.tsx`, `AudioAnalyzer.a11y.test.tsx`, `VideoDistributorIntegration.test.ts`, `WhiskService.video.test.ts`, and `VideoWorkflow.test.tsx`; all 6 files and 33 tests passed.
+  - Re-ran `execution/audio/audio_forensics.py` on `test-fixtures/audio/What To Come.wav` and `test-fixtures/audio/Fading Echoes ext v2.2.mp3`, which reconfirmed the already-open false-PASS dependency gap tracked by `ISSUE-319`.
+  - Reconfirmed the repeated `--localstorage-file` warnings and `electron-log` EPERM writes remain pre-existing environment/test noise rather than new audio product issues.
+  - No net-new audio product or test-infrastructure issue was identified beyond the already-open live-browser/access blockers.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_20-42-43_bind_reconfirm.md`
