@@ -187,12 +187,21 @@ def audit_audio(file_path: str) -> Dict[str, Any]:
     forensics["silence"] = detect_silence(file_path)
 
     # Determine summary status
-    summary_status = "PASS"
-    forensic_results = forensics.values()
-    if any("FAIL" in str(r.get("status", "")) for r in forensic_results):
+    # CRITICAL: If ALL checks were skipped (e.g. librosa not installed), do NOT
+    # report PASS — that is a false positive. Report SKIPPED to signal that no
+    # real forensic analysis ran and the workflow should not treat this as clean audio.
+    forensic_results = list(forensics.values())
+    all_skipped = all(
+        str(r.get("status", "")).startswith("SKIPPED") for r in forensic_results
+    )
+    if all_skipped:
+        summary_status = "SKIPPED (librosa not installed — no forensic checks ran)"
+    elif any("FAIL" in str(r.get("status", "")) for r in forensic_results):
         summary_status = "FAIL (Audio Quality Fraud Detected)"
     elif any("WARNING" in str(r.get("status", "")) for r in forensic_results):
         summary_status = "WARNING (Quality Issues Detected)"
+    else:
+        summary_status = "PASS"
 
     report = {
         "file": os.path.basename(file_path),

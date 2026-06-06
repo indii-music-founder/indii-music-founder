@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useProjectSlice } from '@/core/store/slices/projectSlice';
 import { ProjectService } from '@/services/project/ProjectService';
+import type { Project } from '@/services/project/ProjectService';
 import { FolderGit2, Plus, ChevronDown, Pencil, Trash2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -53,9 +54,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         // Ensure inbox project exists and list all active projects
         try {
           await ProjectService.ensureInbox(user.uid);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-          if (e.message.includes('A real authenticated user ID is required')) {
+        } catch (e: unknown) {
+          if (e instanceof Error && e.message.includes('A real authenticated user ID is required')) {
             Logger.warn('ProjectList', 'Skipping inbox creation for unauthenticated user');
           } else {
             throw e;
@@ -96,8 +96,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRenameProject = (e: React.MouseEvent, project: any) => {
+  const handleRenameProject = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
     setPendingRename({ id: project.id, name: project.name });
     setRenameValue(project.name);
@@ -123,14 +122,13 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDeleteProject = (e: React.MouseEvent, project: any) => {
+  const handleDeleteProject = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
     if (project.name === 'Inbox') return; // Inbox cannot be deleted — silently ignore
     setPendingDelete(project.id);
   };
 
-  const commitDelete = async (project: any) => {
+  const commitDelete = async (project: Project) => {
     try {
       await ProjectService.setStatus(project.id, 'archived');
       const auth = getAuth();
@@ -138,7 +136,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         const updatedProjects = await ProjectService.listByUser(auth.currentUser.uid);
         setProjects(updatedProjects);
         if (selectedProjectId === project.id) {
-          const defaultProj = updatedProjects.find((p: any) => p.name === 'Inbox') || updatedProjects[0];
+          const defaultProj = updatedProjects.find((p: Project) => p.name === 'Inbox') || updatedProjects[0];
           if (defaultProj) {
             setSelectedProject(defaultProj);
             syncProject(defaultProj.id);
@@ -153,9 +151,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   };
 
   // Filter out duplicate Inbox entries if the backend hasn't cleaned them up yet
-  const uniqueProjects = new Map();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  projects.forEach((p: any) => {
+  const uniqueProjects = new Map<string, Project>();
+  projects.forEach((p: Project) => {
     if (p.name === 'Inbox' && uniqueProjects.has('Inbox')) return;
     uniqueProjects.set(p.name === 'Inbox' ? 'Inbox' : p.id, p);
   });

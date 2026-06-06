@@ -97,7 +97,9 @@ Promise.all([
 });
 
 // Item 260: Core Web Vitals reporting
-import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch(() => { });
+import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch((err: unknown) => {
+    logger.warn('[Startup] Web Vitals init failed (non-blocking):', err);
+});
 
 // Disable Default Drag-and-Drop (HEY Audit Hardening)
 // Prevents the app from navigating to dropped files (potential RCE)

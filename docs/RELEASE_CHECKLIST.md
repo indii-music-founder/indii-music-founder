@@ -38,6 +38,19 @@ without the founder's Apple/Microsoft accounts and private signing material.
 - [ ] Smoke test the x64 installer on Windows 10/11 and confirm the app launches as `indii.music` with the `ii` icon.
 - [ ] Smoke test the ARM64 installer on a Windows ARM device or VM before publishing it as a supported artifact.
 
+## Current Release Target
+
+Public release identity: **Founders Version One**.
+
+Technical updater version: **1.64.2**. Do not reset `package.json` to `1.0.0` for this launch, because installed `v1.50.0` builds would treat that as a downgrade and skip the update while `allowDowngrade` remains false.
+
+- [ ] Push a `v1.64.2` release tag after local validation is complete.
+- [ ] Verify GitHub Release `v1.64.2` includes platform installers and updater manifests:
+  - `latest-mac.yml`
+  - `latest.yml`
+  - `latest-linux.yml`
+- [ ] Confirm each manifest URL returns `200` before calling Founders Version One live.
+
 ## Current Local Verification Snapshot
 
 Last verified: 2026-06-04 EDT.
@@ -54,7 +67,7 @@ Last verified: 2026-06-04 EDT.
 - [x] Windows unpacked payloads identify as x86-64 and Aarch64 executables.
 - [ ] macOS DMG is notarized and stapled. Blocked until Developer ID Application certificate and notarization credentials are available.
 - [ ] Windows installers are verified with Authenticode on Windows. Blocked until Windows code-signing certificate is available.
-- [ ] `1.64.1` artifacts are uploaded to Firebase Storage / GitHub release and verified from the Founder portal.
+- [ ] Founders Version One / `1.64.2` artifacts are uploaded to Firebase Storage / GitHub release and verified from the Founder portal.
 
 ## Prior 1.64.0 Live Beta Verification Snapshot
 

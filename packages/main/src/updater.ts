@@ -18,6 +18,9 @@ interface IUpdaterStore {
 }
 const store = new Store() as unknown as IUpdaterStore;
 
+export const RELEASE_DISPLAY_NAME = 'Founders Version One';
+export const RELEASE_DISPLAY_NUMBER = 1;
+
 // electron-updater is an optional dependency - gracefully handle if missing
 let autoUpdater: typeof import('electron-updater').autoUpdater | null = null;
 
@@ -27,6 +30,24 @@ try {
     autoUpdater = updaterModule.autoUpdater;
 } catch {
     log.info('[Updater] electron-updater not available - auto-updates disabled');
+}
+
+export function formatUpdaterErrorMessage(err: unknown): string {
+    const message = err instanceof Error ? err.message : String(err);
+    const lowerMessage = message.toLowerCase();
+    const isMissingManifest =
+        lowerMessage.includes('404') &&
+        (
+            lowerMessage.includes('latest-mac.yml') ||
+            lowerMessage.includes('latest.yml') ||
+            lowerMessage.includes('latest-linux.yml')
+        );
+
+    if (isMissingManifest) {
+        return `${RELEASE_DISPLAY_NAME} cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again.`;
+    }
+
+    return message;
 }
 
 /**
@@ -99,12 +120,12 @@ export function setupAutoUpdater(): void {
     const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
     autoUpdater.checkForUpdatesAndNotify().catch((err: Error) => {
-        log.warn('[Updater] Initial update check failed:', err.message);
+        log.warn('[Updater] Initial update check failed:', formatUpdaterErrorMessage(err));
     });
 
     setInterval(() => {
         autoUpdater!.checkForUpdatesAndNotify().catch((err: Error) => {
-            log.warn('[Updater] Periodic update check failed:', err.message);
+            log.warn('[Updater] Periodic update check failed:', formatUpdaterErrorMessage(err));
         });
     }, CHECK_INTERVAL_MS);
 
@@ -159,9 +180,10 @@ export function setupAutoUpdater(): void {
     });
 
     autoUpdater.on('error', (err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        log.error('[Updater] Error:', message);
-        sendToRenderer('updater:error', { message });
+        const userMessage = formatUpdaterErrorMessage(err);
+        const rawMessage = err instanceof Error ? err.message : String(err);
+        log.error('[Updater] Error:', rawMessage);
+        sendToRenderer('updater:error', { message: userMessage });
     });
 }
 
@@ -178,7 +200,7 @@ export function registerUpdaterHandlers(): void {
             const result = await autoUpdater.checkForUpdates();
             return { available: !!result?.updateInfo, version: result?.updateInfo?.version };
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
+            const message = formatUpdaterErrorMessage(err);
             return { available: false, error: message };
         }
     });
@@ -215,7 +237,10 @@ export function registerUpdaterHandlers(): void {
         return {
             channel: currentChannel,
             source: currentSource,
-            isAvailable: !!autoUpdater
+            isAvailable: !!autoUpdater,
+            releaseName: RELEASE_DISPLAY_NAME,
+            releaseNumber: RELEASE_DISPLAY_NUMBER,
+            technicalVersion: app.getVersion()
         };
     });
 }

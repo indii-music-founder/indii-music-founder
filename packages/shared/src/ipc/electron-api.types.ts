@@ -151,6 +151,15 @@ export interface ElectronUpdaterAPI {
     check: () => Promise<{ available: boolean; version?: string; error?: string }>;
     install: () => Promise<void>;
     setChannel: (channel: 'stable' | 'beta') => Promise<void>;
+    setSource: (source: 'github' | 'firebase') => Promise<void>;
+    getConfig: () => Promise<{
+        channel: 'stable' | 'beta';
+        source: 'github' | 'firebase';
+        isAvailable: boolean;
+        releaseName?: string;
+        releaseNumber?: number;
+        technicalVersion?: string;
+    }>;
     onChecking: (callback: () => void) => () => void;
     onAvailable: (callback: (info: unknown) => void) => () => void;
     onNotAvailable: (callback: () => void) => () => void;

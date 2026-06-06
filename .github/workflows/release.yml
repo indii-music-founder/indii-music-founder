@@ -71,6 +71,41 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
+      - name: Verify updater manifest was published
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          case "$RUNNER_OS" in
+            macOS)
+              MANIFEST="latest-mac.yml"
+              ;;
+            Windows)
+              MANIFEST="latest.yml"
+              ;;
+            Linux)
+              MANIFEST="latest-linux.yml"
+              ;;
+            *)
+              echo "Unsupported runner OS for updater manifest verification: $RUNNER_OS"
+              exit 1
+              ;;
+          esac
+
+          if [ ! -f "dist-electron/$MANIFEST" ]; then
+            echo "Missing local updater manifest: dist-electron/$MANIFEST"
+            echo "dist-electron contents:"
+            find dist-electron -maxdepth 1 -type f -print | sort
+            exit 1
+          fi
+
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fx "$MANIFEST"; then
+            echo "GitHub release $GITHUB_REF_NAME is missing updater manifest asset: $MANIFEST"
+            echo "Release assets currently published:"
+            gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
@@ -100,10 +135,12 @@ jobs:
             --content-type=application/x-apple-diskimage
           
           YML_FILE=$(find dist-electron -maxdepth 1 -name "latest-mac.yml" -type f | head -n 1)
-          if [ -n "$YML_FILE" ]; then
-            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
-              --content-type=text/yaml
+          if [ -z "$YML_FILE" ]; then
+            echo "No latest-mac.yml artifact found in dist-electron"
+            exit 1
           fi
+          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
+            --content-type=text/yaml
 
       - name: Upload Installer to Firebase Storage (Windows)
         if: runner.os == 'Windows'
@@ -118,10 +155,12 @@ jobs:
             --content-type=application/vnd.microsoft.portable-executable
 
           YML_FILE=$(find dist-electron -maxdepth 1 -name "latest.yml" -type f | head -n 1)
-          if [ -n "$YML_FILE" ]; then
-            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
-              --content-type=text/yaml
+          if [ -z "$YML_FILE" ]; then
+            echo "No latest.yml artifact found in dist-electron"
+            exit 1
           fi
+          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
+            --content-type=text/yaml
 
       - name: Upload Installer to Firebase Storage (Linux)
         if: runner.os == 'Linux'
