@@ -21,6 +21,8 @@ export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
 // Used by activateFounderPass to commit new founder entries to src/config/founders.ts.
 // Required secret in GCP Secret Manager: GITHUB_TOKEN_FOUNDERS
 export const githubTokenFounders = defineSecret("GITHUB_TOKEN_FOUNDERS");
+export const clearbitApiKey = defineSecret("CLEARBIT_API_KEY");
+export const apolloApiKey = defineSecret("APOLLO_API_KEY");
 
 /**
  * Helper to safely retrieve the GitHub Token for the Founders Program.
@@ -111,6 +113,36 @@ export function getStripeSecretKey(): string {
     }
 
     throw new Error("Stripe Secret Key not found.");
+}
+
+/**
+ * Helper to safely retrieve the Clearbit API Key.
+ */
+export function getClearbitApiKey(): string | null {
+    const envKey = process.env.CLEARBIT_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+    try {
+        const secret = clearbitApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        // Fallback
+    }
+    return null;
+}
+
+/**
+ * Helper to safely retrieve the Apollo API Key.
+ */
+export function getApolloApiKey(): string | null {
+    const envKey = process.env.APOLLO_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+    try {
+        const secret = apolloApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        // Fallback
+    }
+    return null;
 }
 
 /**

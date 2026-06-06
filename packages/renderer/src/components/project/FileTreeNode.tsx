@@ -296,8 +296,7 @@ export const FileTreeNode = memo(({
                     {children.length > 0 ? (
                         children.map((child: FileNode) => (
                             <FileTreeNode
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                {...({ key: child.id } as any)}
+                                key={child.id}
                                 node={child}
                                 depth={depth + 1}
                                 nodeChildrenMap={nodeChildrenMap}

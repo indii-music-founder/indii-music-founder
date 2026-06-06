@@ -39,6 +39,13 @@ interface VoiceSpeechRecognitionInstance {
     stop: () => void;
 }
 
+declare global {
+    interface Window {
+        SpeechRecognition?: new () => VoiceSpeechRecognitionInstance;
+        webkitSpeechRecognition?: new () => VoiceSpeechRecognitionInstance;
+    }
+}
+
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,10 +72,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognitionCtor) {
-                const recognitionInstance = new SpeechRecognitionCtor() as unknown as VoiceSpeechRecognitionInstance;
+                const recognitionInstance = new SpeechRecognitionCtor();
                 recognitionInstance.continuous = true;
                 recognitionInstance.interimResults = true;
                 recognitionInstance.lang = 'en-US';
