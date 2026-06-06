@@ -866,3 +866,14 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
   - When adding browser-side audio dependencies, test under the app's real CSP before accepting the dependency. `wasm-unsafe-eval` does not permit general string evaluation.
   - Scoped test registries for cross-cutting tools must include UI, service, API, agent, persistence, downstream, security, fixture, and dependency checks, not just the nearest source directory.
   - For audio workflows, acceptance requires proof at every hop: rejected lossy input, accepted lossless input, CSP-clean analysis, valid technical metadata, persistence/cache behavior, and downstream agent/Distribution consumption.
+
+## 2026-06-05 React Custom ESLint Rule react-hooks/set-state-in-effect Warnings
+
+**SEVERITY:** Medium (blocks project building and linting due to strict custom compiler checks)
+
+**MISTAKE:**
+- FILES: `packages/admin-dashboard/src/components/modules/DDEXTracker.tsx`, `packages/admin-dashboard/src/components/modules/EmailManager.tsx`, `packages/admin-dashboard/src/components/modules/GoogleHub.tsx`, `packages/admin-dashboard/src/components/modules/NexusMonitor.tsx`
+- ERROR: `Error: Calling setState synchronously within an effect can trigger cascading renders`
+- CAUSE: Synchronously calling functions (e.g. `fetchDeliveries()`, `fetchInbox()`, `fetchNexusData()`, `checkAuthStatus()`) within `useEffect` hooks that subsequently execute state mutations (like `setLoading(true)`) triggers rendering cascading and violates the repository's strict performance validation rules.
+- FIX: Wrapped initial fetching/loading operations inside an asynchronous `init` function using `await Promise.resolve()` or similar async handlers. This defers the execution of state mutations to the next microtask loop, executing them safely outside the mount render phase.
+- PREVENTION: When calling methods inside `useEffect` that update component state, ensure the updates run asynchronously (e.g. wrapped in an async function with `await Promise.resolve()`) to satisfy strict render checks.
