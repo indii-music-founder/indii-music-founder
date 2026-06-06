@@ -373,14 +373,14 @@ export const stripeWebhook = onRequest({
 
     // Mark delivery complete (best-effort)
     deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
-      .catch(() => { /* best-effort */ });
+      .catch((err: unknown) => { console.warn('[stripeWebhook] Best-effort status update failed (processed):', err); });
 
     res.json({ received: true });
   } catch (error) {
     console.error('[stripeWebhook] Handler error:', error);
     // Mark failed so the next retry is not skipped
     deliveryRef.update({ status: 'failed', error: String(error) })
-      .catch(() => { /* best-effort */ });
+      .catch((err: unknown) => { console.warn('[stripeWebhook] Best-effort status update failed (failed):', err); });
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });

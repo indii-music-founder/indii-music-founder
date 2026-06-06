@@ -2419,6 +2419,23 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ---
 
+### ISSUE-360: GitHub Release v1.50.0 Missing Electron Updater Manifests
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Desktop Auto-Update / GitHub Releases
+- **Location:** `https://github.com/indii-music-founder/indii-music-founder/releases/download/v1.50.0/latest-mac.yml`
+- **Found:** 2026-06-06 from packaged app updater error
+- **Details:** Installed macOS builds are checking GitHub Releases and receive `404` for `latest-mac.yml` on the latest release tag `v1.50.0`. Direct checks also return `404` for `latest.yml`, so updater manifests were not published with that release. Electron updater cannot evaluate or download updates without these manifest assets.
+- **Fix Applied In Repo:** `.github/workflows/release.yml` now fails release jobs if the expected updater manifest is missing locally or missing from the GitHub Release after `electron-builder --publish always`. macOS requires `latest-mac.yml`, Windows requires `latest.yml`, and Linux requires `latest-linux.yml`.
+- **Release-Side Fix Required:** Publish a new Founders Version One release tag, or repair `v1.50.0`, with the correct platform artifacts and updater manifests. For the current package version, create/push a `v1.64.2` tag after CI is clean so the release workflow publishes `latest-mac.yml` and marks the newer release latest.
+- **Verification Required:** Confirm these URLs return `200` after release repair:
+  - `https://github.com/indii-music-founder/indii-music-founder/releases/download/<tag>/latest-mac.yml`
+  - `https://github.com/indii-music-founder/indii-music-founder/releases/download/<tag>/latest.yml`
+  - `https://github.com/indii-music-founder/indii-music-founder/releases/download/<tag>/latest-linux.yml`
+- **Files:** `.github/workflows/release.yml`, GitHub Release assets for the repaired/new tag.
+
+---
+
 ### ISSUE-215: Fix namecheap_login.cjs (Unhandled promise rejections swallowing errors)
 - **Status:** ✅ FIXED
 - **Severity:** Medium
@@ -3239,21 +3256,10 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-319: Python audio forensics audit reports PASS when all checks are skipped
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** 🟡 MEDIUM
-- **Dimension:** TestInfra | AudioForensics | Fidelity
 - **Module:** Audio Analyzer / Python Forensics
-- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md
-- **Tech Stack:** Python | numpy | librosa
-- **Found:** 2026-06-06 by MegaTestAudioLoop
-- **Summary:** `execution/audio/audio_forensics.py` returns `summary_status: "PASS"` even when `librosa` is not installed and every substantive forensic check (`spectral`, `clipping`, `silence`) is marked `SKIPPED`. The scoped audio workflow can therefore record Python audio forensics as passing even though no real analysis ran.
-- **Steps to Reproduce:**
-  1. Run `python3 execution/audio/audio_forensics.py assets/audio/soul_test.wav` in an environment without `librosa`.
-  2. Observe the warning `librosa not installed. Spectral analysis will be disabled.`
-  3. Observe `spectral`, `clipping`, and `silence` all return `status: "SKIPPED"`.
-  4. Observe the final report still returns `summary_status: "PASS"`.
-- **Expected:** Missing required forensic dependencies should produce a non-pass result (`SKIPPED`, `ERROR`, or `FAIL`) so the MegaTest audio loop does not treat absent analysis as a successful quality audit.
-- **UX Impact:** Audio quality verification can be falsely reported as healthy, masking missing spectral/clipping/silence analysis in the automation path before downstream Distribution or Creative/Video handoff decisions are made.
+- **Fix:** Added `all_skipped` detection in `audit_audio()` in `execution/audio/audio_forensics.py`. When all three checks (`spectral`, `clipping`, `silence`) return `SKIPPED`, `summary_status` is now set to `"SKIPPED (librosa not installed — no forensic checks ran)"` instead of `"PASS"`. The `else: summary_status = "PASS"` branch now only executes when at least one check ran without a FAIL/WARNING result.
 
 ---
 
@@ -3538,10 +3544,10 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-355: Fix webhookHandler.ts (Swallowed best-effort update)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
-- **Location:** `packages/firebase/src/stripe/webhookHandler.ts:376`
-- **Details:** Found during `/finish` sweep (19:30). Best-effort updates swallow errors silently.
+- **Location:** `packages/firebase/src/stripe/webhookHandler.ts:375,382`
+- **Fix:** Replaced both `.catch(() => { /* best-effort */ })` with `.catch((err: unknown) => { console.warn('[stripeWebhook] Best-effort status update failed:', err); })`. Failures now visible in Cloud Logging.
 
 ---
 
@@ -3554,34 +3560,23 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-357: Fix DistributionPersistenceService.ts (Dummy Response Data)
-- **Status:** OPEN
+- **Status:** ✅ WONTFIX — Correct Firestore Pattern
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/DistributionPersistenceService.ts:49`
-- **Details:** Found during `/finish` sweep (19:30). Fabricates timestamps with Timestamp.now() using a dummy timestamp comment instead of retrieving actual data.
+- **Details:** `Timestamp.now()` is returned as `createdAt`/`updatedAt` immediately after `this.set()` because Firestore server timestamps are not available client-side until a subsequent read. This is the documented Firestore optimistic pattern. The comment "dummy timestamps for immediate UI use" is honest — the caller is expected to re-fetch from Firestore for the authoritative value.
 
 ---
 
 ### ISSUE-358: Fix KnowledgeTools.ts (Empty Callback Placeholder)
-- **Status:** OPEN
+- **Status:** ✅ WONTFIX — Intentional Unused Callback
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/agent/tools/KnowledgeTools.ts:27`
-- **Details:** Found during `/finish` sweep (19:30). Passes empty callback ("Update Doc Status dummy") to runAgenticWorkflow.
+- **Details:** The 5th argument to `runAgenticWorkflow` is `_updateDocStatus` (prefixed with `_`, intentionally unused). The RAG service never calls this callback internally — it's a future extension point. The `() => { }` no-op is correct. Confirmed by reading `ragService.ts` signature.
 
 ---
 
 ### ISSUE-359: AudioWaveform emits React act warning during resize-driven redraw
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** 🟡 MEDIUM
-- **Dimension:** TestInfra | React18 | AudioToVideo
 - **Module:** Creative Video Editor / AudioWaveform
-- **Flowchart:** docs/flowcharts/video-studio-pipeline.md
-- **Tech Stack:** React 18.3.1 | Vitest | Remotion
-- **Found:** 2026-06-06 by MegaTestAudioLoop
-- **Summary:** `packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx` schedules state updates with `Promise.resolve().then(...)` on both source reset and waveform recompute paths. The targeted regression test passes, but React still emits `Warning: An update to AudioWaveform inside a test was not wrapped in act(...)` when width changes. That points to async state churn in the downstream audio-to-video handoff surface and adds noisy concurrency warnings around waveform rendering.
-- **Steps to Reproduce:**
-  1. Run `npm run test -- --run packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.test.tsx`.
-  2. Observe the test pass.
-  3. Observe React emit `Warning: An update to AudioWaveform inside a test was not wrapped in act(...)`.
-  4. Inspect the async reset/recompute paths in [`packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx`](/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx:21) and [`packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx`](/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/modules/creative/video/editor/components/AudioWaveform.tsx:53).
-- **Expected:** Audio waveform resize and source-change updates should settle without React `act(...)` warnings so the audio-to-video editor path stays concurrency-clean and test output remains actionable.
-- **UX Impact:** This does not block the current workflow, but it weakens confidence in the AudioWaveform editor path by masking real React 18 update issues behind persistent warning noise.
+- **Fix:** Removed the `Promise.resolve().then(...)` async micro-task patterns and refactored `AudioWaveform` so source resets are derived from `{ src, data }` state while waveform samples are derived with `useMemo`. The component no longer schedules extra micro-task state updates, and it also avoids synchronous state setters inside effect bodies so React hook lint stays clean.

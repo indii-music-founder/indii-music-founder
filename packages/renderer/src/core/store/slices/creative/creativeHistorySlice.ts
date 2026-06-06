@@ -216,7 +216,11 @@ export function buildCreativeHistoryState(
 
         canvasImages: [],
         selectedCanvasImageId: null,
-        addCanvasImage: (img: CanvasImage) => set((state) => ({ canvasImages: [...state.canvasImages, img] })),
+        addCanvasImage: (img: CanvasImage) => set((state) => ({
+            // Cap at 20 canvas images to prevent unbounded base64 memory accumulation.
+            // Evict the oldest entries (at the end of the array) when the limit is reached.
+            canvasImages: [...state.canvasImages, img].slice(-20)
+        })),
         updateCanvasImage: (id: string, updates: Partial<CanvasImage>) => set((state) => ({
             canvasImages: state.canvasImages.map(img => img.id === id ? { ...img, ...updates } : img)
         })),
@@ -283,7 +287,7 @@ export function buildCreativeHistoryState(
         removeUploadedAudio: (id: string) => {
             set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+                StorageService.removeItem(id).catch((e: unknown) => { logger.error('[Store] Failed to remove audio item:', e); });
             });
         },
         removeUploadedImageFromProject: (id: string) => {

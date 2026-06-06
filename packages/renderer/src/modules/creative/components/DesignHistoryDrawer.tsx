@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { X, RotateCw, Trash2, Save, Layers } from 'lucide-react';
+import { X, RotateCw, Trash2, Save, Layers, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { DesignVersion } from '@/core/store';
 
@@ -14,6 +14,7 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
     })));
     
     const [isSaving, setIsSaving] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const toast = useToast();
 
     const handleSave = async () => {
@@ -35,12 +36,21 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
         onClose();
     };
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
+    const handleDeleteRequest = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm("Are you sure you want to delete this version?")) {
-            await deleteDesignVersion(id);
-            toast.success("Version deleted");
-        }
+        setDeletingId(id);
+    };
+
+    const confirmDelete = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        await deleteDesignVersion(id);
+        toast.success('Version deleted');
+        setDeletingId(null);
+    };
+
+    const cancelDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDeletingId(null);
     };
 
     return (
@@ -80,13 +90,32 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
                             className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-emerald-500/30 transition-all group relative cursor-pointer"
                         >
                             <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={(e) => handleDelete(v.id, e)}
-                                    className="p-1.5 bg-black/40 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
-                                    title="Delete Version"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
+                                {deletingId === v.id ? (
+                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={(e) => confirmDelete(v.id, e)}
+                                            className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded text-red-400 hover:text-red-300 transition-colors"
+                                            title="Confirm delete"
+                                        >
+                                            <Check size={12} />
+                                        </button>
+                                        <button
+                                            onClick={cancelDelete}
+                                            className="p-1.5 bg-black/40 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                                            title="Cancel"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={(e) => handleDeleteRequest(v.id, e)}
+                                        className="p-1.5 bg-black/40 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
+                                        title="Delete Version"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                )}
                             </div>
 
                             <h4 className="text-xs font-bold text-gray-200 mb-1 line-clamp-1">{v.name}</h4>
