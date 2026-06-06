@@ -85,5 +85,3 @@ export function PropertyRow({ label, children, className = "" }: PropertyRowProp
         </div>
     );
 }
-
-// ... other inputs can be added here as needed (Input, Select, Slider)

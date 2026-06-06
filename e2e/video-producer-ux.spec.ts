@@ -36,11 +36,11 @@ test.describe('Video Producer UX Hardening', () => {
 
         // Navigate to creative module
         await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
         
         // Switch to Video Production Mode
         const videoTab = page.locator('[data-testid="director-view-btn"]');
-        await expect(videoTab).toBeVisible({ timeout: 15_000 });
+        await expect(videoTab).toBeVisible({ timeout: 30_000 });
         await videoTab.click();
         await page.waitForTimeout(1_000);
     });

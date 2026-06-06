@@ -248,6 +248,9 @@
     "settings": {
         "title": "Settings",
         "sections": {
+            "desktop": {
+                "label": "Desktop & Updates"
+            },
             "profile": {
                 "label": "Profile",
                 "title": "Profile",
@@ -299,6 +302,13 @@
             "pushDesc": "Browser/native push via Firebase Cloud Messaging",
             "enable": "Enable",
             "securityNote": "Connected accounts are secured via OAuth 2.0. Refresh tokens are stored server-side and never exposed to the browser."
+        }
+    },
+    "touring": {
+        "hints": {
+            "current_location": "Current City, State or coordinates (e.g. Austin, TX)",
+            "city_state_example": "City, State or coordinates (e.g. Austin, TX)",
+            "agent_request": "Ask road agent (e.g. Find gas station)..."
         }
     }
 }

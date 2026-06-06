@@ -111,7 +111,6 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
 
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
-    // ... existing components ...
     const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
         const text = msg.text || '';
         const tools: Array<{name: string, json: any}> = [];
@@ -197,7 +196,6 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             </div>
         ),
         code({ inline, className, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) {
-            // ... existing logic ...
             const match = /language-(\w+)/.exec(className || '')
             const isJson = match && match[1] === 'json';
             const childrenStr = String(children);

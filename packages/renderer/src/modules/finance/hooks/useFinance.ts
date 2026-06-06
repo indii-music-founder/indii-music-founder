@@ -95,13 +95,6 @@ export function useFinance() {
         }
     }, [toast]);
 
-    // Initial load (Current Month) - Removed undefined loadEarnings call
-    /*
-    useEffect(() => {
-        // ... Logic relying on undefined loadEarnings removed
-    }, [userProfile?.id, earningsSummary, earningsLoading]);
-    */
-
     return {
         // Earnings
         earningsSummary,

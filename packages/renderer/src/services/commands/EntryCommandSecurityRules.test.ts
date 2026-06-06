@@ -10,6 +10,7 @@ describe('Entry command Firestore rules', () => {
     expect(rules).toContain('data.slash.matches("^/[a-z][a-z0-9-]{1,31}$")');
     expect(rules).toContain("data.isCustom == true");
     expect(rules).toContain("data.launchMode in ['guided-chat', 'navigate', 'workflow']");
+    expect(rules).toContain("data.surfaces.hasOnly(['dashboard', 'command-bar', 'mobile', 'capture', 'voice'])");
   });
 
   it('protects user-scoped and team-scoped entry command collections', () => {
