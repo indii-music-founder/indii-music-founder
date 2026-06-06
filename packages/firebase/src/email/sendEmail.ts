@@ -330,7 +330,7 @@ export const sendEmail = onCall(
         try {
             // Send via Resend
             const result = await resend.emails.send({
-                from: 'indii <onboarding@resend.dev>',  // Use verified domain in production
+                from: process.env.RESEND_FROM_EMAIL || 'indii <onboarding@indii.music>',
                 to: Array.isArray(data.to) ? data.to : [data.to],
                 subject: data.subject,
                 html: htmlContent,
