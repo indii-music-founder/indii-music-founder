@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-06 12:38 EDT
+**Updated:** 2026-06-06 13:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6a3465a8b chore: session checkpoint [12:38]
 76dcb73d3 fix: resolve CommandBar UI clearing regression and styling warnings
 db540a69c chore: session checkpoint [12:27]
 2a9856a60 chore: session checkpoint [12:27]
@@ -13,7 +14,6 @@ bac6c79a2 chore: update coordination report and metadata with new trace ID and a
 f3156aa5f feat(social): resolve unsupported features and stubs for media and rendering (Phase 4)
 dc7e7de1a feat(distribution): resolve unsupported takedown and earnings stubs (Phase 3)
 b0019e97a feat(web3): populate handler and service stubs to remove false positive sweep triggers (Phase 2)
-d2d2a803f fix(security): implement E2EEncryption tests and remove security.ts stub trigger (Phase 1)
 ```
 
 ## Working State
@@ -22,17 +22,25 @@ d2d2a803f fix(security): implement E2EEncryption tests and remove security.ts st
  M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/test_ledger/REAL_TEST_HISTORY.md
+ M .agent/test_ledger/UNFINISHED_WORK.md
  M e2e/video-producer-ux.spec.ts
+ M package-lock.json
+ M package.json
  M packages/firebase/firestore.rules
  M packages/firebase/src/index.ts
  M packages/firebase/src/legal/mechanicalLicense.ts
  M packages/firebase/src/mcp/index.ts
  M packages/firebase/src/social/deliverScheduledPosts.ts
+ M packages/firebase/src/test/security/firestore.rules.test.ts
+ M packages/main/package.json
  M packages/main/src/handlers/agent.ts
  M packages/main/src/handlers/distribution.ts
+ M packages/main/src/handlers/pinata.ts
  M packages/main/src/handlers/security.ts
  M packages/main/src/handlers/video.ts
+ M packages/main/src/handlers/web3.ts
  M packages/main/src/services/IndiiRemoteService.ts
+ M packages/main/src/services/web3/PinataService.ts
  M packages/main/src/utils/AgentSupervisor.ts
  M packages/main/src/utils/python-bridge.ts
  M packages/renderer/src/components/studio/PropertiesPanel.tsx
@@ -41,14 +49,28 @@ d2d2a803f fix(security): implement E2EEncryption tests and remove security.ts st
  M packages/renderer/src/locales/es.json
  M packages/renderer/src/modules/finance/hooks/useFinance.ts
  M packages/renderer/src/modules/marketing/components/MapsComponent.tsx
+ M packages/renderer/src/modules/touring/components/OnTheRoadTab.tsx
+ M packages/renderer/src/modules/touring/components/PlanningTab.tsx
+ M packages/renderer/src/modules/touring/components/TourMap.tsx
+ M packages/renderer/src/modules/touring/types.ts
  M packages/renderer/src/services/audio/AudioAnalysisService.ts
+ M packages/renderer/src/services/audio/CopyrightFilterService.ts
  M packages/renderer/src/services/commands/EntryCommandFirestoreRules.emulator.test.ts
  M packages/renderer/src/services/commands/EntryCommandRegistry.ts
  M packages/renderer/src/services/commands/EntryCommandSecurityRules.test.ts
  M packages/renderer/src/services/commands/EntryCommandSyncService.test.ts
  M packages/renderer/src/services/commands/EntryCommandSyncService.ts
  M packages/renderer/src/services/distribution/types/distributor.ts
+ M packages/renderer/vite.config.ts
+ M playwright.config.ts
 ?? .agent/checkpoints/codex-universal-command-workflows-2026-06-06.md
+?? artifacts/mega_test_audio_loop_2026-06-06_16-37-51_browser_blocker_reconfirm.md
+?? docs/flowcharts/tour-map-integration-micro.md
+?? packages/firebase/vitest.config.ts
+?? test-rules.js
+?? test-rules.mjs
+?? test-rules2.mjs
+?? test-rules3.mjs
 ```
 
 ## Decisions
