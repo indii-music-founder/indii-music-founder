@@ -26,6 +26,7 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
                         elementType: "labels.text.fill",
                         stylers: [{ color: "#d59563" }],
                     },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
                 ]
             }));
         }
