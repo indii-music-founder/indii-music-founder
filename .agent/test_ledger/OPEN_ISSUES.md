@@ -2462,7 +2462,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-217: Fix DeliveryServiceIntegration.test.ts (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/DeliveryServiceIntegration.test.ts:111`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2470,7 +2471,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-218: Fix PublicistTools.test.ts (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/agent/tools/__tests__/PublicistTools.test.ts:48`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2478,7 +2480,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-219: Fix CostCircuitBreaker.test.ts (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/CostCircuitBreaker.test.ts:143`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2486,7 +2489,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-220: Fix ReleaseWizard.test.tsx (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseWizard.test.tsx:32`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2494,7 +2498,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-221: Fix CommandBar.test.tsx (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/CommandBar.test.tsx:233`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2502,7 +2507,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-222: Fix A2A.integration.test.ts (Placeholder comments implying missing logic)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/agent/a2a/A2A.integration.test.ts:60`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
