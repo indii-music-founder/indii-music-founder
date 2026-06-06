@@ -78,16 +78,16 @@ test.describe('Creative Studio - Character Library', () => {
         // Wait for generation to complete (mock takes ~2s)
         await page.waitForTimeout(3000);
 
-        // Expand the right panel if it is collapsed
+        // Ensure right panel is set to context controls and is open
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setRightPanelTab('context');
+        });
+        await page.waitForTimeout(1000);
+
         const rightPanel = page.locator('[aria-label="Context panel"]');
-        const expandBtn = rightPanel.getByRole('button', { name: 'Expand Panel' });
-        if (await expandBtn.isVisible()) {
-            await expandBtn.click();
-            await page.waitForTimeout(1000);
-        }
 
         // Select Video target media to reveal the Character Library panel
-        const videoBtn = rightPanel.getByRole('button', { name: 'Video', exact: true });
+        const videoBtn = rightPanel.locator('button:has-text("Video")').first();
         await videoBtn.click();
 
         // Click Add Person in CharacterLibrary

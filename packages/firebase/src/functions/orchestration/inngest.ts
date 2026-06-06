@@ -17,10 +17,10 @@ const resendApiKey = defineSecret('RESEND_API_KEY');
 function getResendApiKey() {
   const envKey = process.env.RESEND_API_KEY;
   if (envKey) return envKey;
-  try { return resendApiKey.value(); } catch (e) { return ''; }
+  try { return resendApiKey.value(); } catch (_e) { return ''; }
 }
 
-async function sendEmail(email, subject, html) {
+async function sendEmail(email: string, subject: string, html: string): Promise<void> {
   const apiKey = getResendApiKey();
   if (!apiKey) {
     console.warn('[Inngest] RESEND_API_KEY not found. Skipping email send.');
