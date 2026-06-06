@@ -230,8 +230,6 @@ describe('CommandBar', () => {
         expect(toggleRightPanelSpy).not.toHaveBeenCalled();
     });
 
-    // ... existing metadata tests ...
-
     it('renders active Indii state and allows submitting', async () => {
         // Start in Indii mode
         useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii', canvasItems: [{ id: 'test' } as any] });

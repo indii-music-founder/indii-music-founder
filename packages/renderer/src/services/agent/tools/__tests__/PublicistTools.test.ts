@@ -43,9 +43,21 @@ describe('PublicistTools', () => {
         expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
     });
 
-    it('generate_social_post calls database', async () => {
-        const _mockCampaign = { id: 'camp-1', platforms: ['twitter'] };
-        // ...
+    it('draft_pitch_email returns valid schema', async () => {
+        const mockResponse = {
+            subject_line: 'Playlist Pitch',
+            hook: 'Hook',
+            body: 'Body',
+            call_to_action: 'CTA',
+            angle: 'Angle',
+            target_outlets: ['Spotify Playlist']
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+
+        const result = await PublicistTools.draft_pitch_email({ playlistName: 'RapCaviar', genre: 'Hip Hop', trackTitle: 'Hot Track' });
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockResponse);
     });
 
     it('generate_crisis_response returns valid schema', async () => {
