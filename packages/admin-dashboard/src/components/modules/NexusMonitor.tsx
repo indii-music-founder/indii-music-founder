@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Activity, Globe, ShieldCheck, RefreshCw } from 'lucide-react';
 
 interface DNSStatus {
@@ -28,7 +28,7 @@ export const NexusMonitor: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchNexusData = async () => {
+  const fetchNexusData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -51,11 +51,15 @@ export const NexusMonitor: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchNexusData();
-  }, []);
+    const init = async () => {
+      await Promise.resolve();
+      fetchNexusData();
+    };
+    init();
+  }, [fetchNexusData]);
 
   return (
     <div className="space-y-6">

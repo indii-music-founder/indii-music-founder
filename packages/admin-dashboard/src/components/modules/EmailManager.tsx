@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Mail, Plus, Trash2, Edit2, ShieldAlert, ArrowLeft, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 
 interface Message {
@@ -34,7 +34,7 @@ export const EmailManager: React.FC = () => {
     { email: 'agent@indii.music', destination: 'Webhook (server.ts)', status: 'Active', type: 'System' },
   ];
 
-  const fetchInbox = async () => {
+  const fetchInbox = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,11 +50,15 @@ export const EmailManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchInbox();
-  }, []);
+    const init = async () => {
+      await Promise.resolve();
+      fetchInbox();
+    };
+    init();
+  }, [fetchInbox]);
 
   const handleApproveDraft = async (id: string) => {
     setApproving(id);
@@ -77,7 +81,7 @@ export const EmailManager: React.FC = () => {
         const data = await res.json();
         alert(data.error || 'Failed to approve draft');
       }
-    } catch (err) {
+    } catch {
       alert('Network request failed');
     } finally {
       setApproving(null);
@@ -126,7 +130,7 @@ export const EmailManager: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => {
-              setActiveTab(tab.id as any);
+              setActiveTab(tab.id as 'inbox' | 'drafts' | 'aliases');
               setSelectedMsg(null);
             }}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer relative z-10 ${

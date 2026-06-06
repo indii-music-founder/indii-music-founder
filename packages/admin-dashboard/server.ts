@@ -304,7 +304,7 @@ async function getGoogleAuthClient() {
     if (!doc.exists) {
       return null;
     }
-    const { tokens } = doc.data() as { tokens: any };
+    const { tokens } = doc.data() as { tokens: Record<string, unknown> };
     const auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID || 'MOCK_GOOGLE_CLIENT_ID',
       process.env.GOOGLE_CLIENT_SECRET || 'MOCK_GOOGLE_CLIENT_SECRET',
@@ -602,12 +602,12 @@ app.get('/api/dns/status', requireAdminAuth, (req, res) => {
 app.get('/api/messaging/inbox', requireAdminAuth, async (req, res) => {
   try {
     const snapshot = await admin.firestore().collection('messages').orderBy('date', 'desc').limit(20).get();
-    const emails: any[] = [];
+    const emails: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
       emails.push({ id: doc.id, ...doc.data() });
     });
     res.json({ messages: emails.length > 0 ? emails : mockEmails });
-  } catch (error) {
+  } catch {
     res.json({ messages: mockEmails });
   }
 });
@@ -641,7 +641,7 @@ app.post('/api/messaging/approve-draft', requireAdminAuth, async (req, res) => {
 app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
   try {
     const snapshot = await admin.firestore().collection('deliveries').orderBy('time', 'desc').limit(20).get();
-    const deliveries: any[] = [];
+    const deliveries: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
       deliveries.push({ id: doc.id, ...doc.data() });
     });
@@ -651,7 +651,7 @@ app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
       { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'TIDAL', status: 'Failed', time: '12 mins ago', type: 'ERN 4.2' },
       { releaseId: 'REL-8909', title: 'Summer Anthem', dst: 'Amazon Music', status: 'Processing', time: '1 hour ago', type: 'ERN 4.1' },
     ] });
-  } catch (error) {
+  } catch {
     res.json({ deliveries: [
       { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Spotify', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
       { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Apple Music', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
@@ -665,7 +665,7 @@ app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
 app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
   try {
     const snapshot = await admin.firestore().collection('system_events').orderBy('time', 'desc').limit(25).get();
-    const logs: any[] = [];
+    const logs: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
       logs.push({ id: doc.id, ...doc.data() });
     });
@@ -674,7 +674,7 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
       { time: '2 hours ago', msg: 'MX records updated to Google Workspace aliases.', status: 'Pending' },
       { time: '5 hours ago', msg: 'DMARC quarantine policy applied.', status: 'Success' },
     ] });
-  } catch (error) {
+  } catch {
     res.json({ logs: [
       { time: '10 mins ago', msg: 'TXT record verified for indii.music propagation check.', status: 'Success' },
       { time: '2 hours ago', msg: 'MX records updated to Google Workspace aliases.', status: 'Pending' },
