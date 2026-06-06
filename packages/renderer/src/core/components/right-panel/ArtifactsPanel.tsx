@@ -29,8 +29,7 @@ export default function ArtifactsPanel({ toggleRightPanel }: ArtifactsPanelProps
     const loadArtifacts = async () => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const response = await (window.electronAPI.agent as any).listArtifacts();
+                const response = await window.electronAPI.agent.listArtifacts();
                 if (response.success && Array.isArray(response.data)) {
                     setArtifacts(response.data);
                 }
@@ -44,8 +43,7 @@ export default function ArtifactsPanel({ toggleRightPanel }: ArtifactsPanelProps
         setIsLoading(true);
         try {
             if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const response = await (window.electronAPI.agent as any).readArtifact(filename);
+                const response = await window.electronAPI.agent.readArtifact(filename);
                 if (response.success) {
                     setArtifactContent(response.data || '');
                     setSelectedArtifact(filename);

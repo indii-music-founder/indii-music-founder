@@ -2685,19 +2685,20 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-240: Fix index.ts (Mock MVP implementation for enrichFanData)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/index.ts:1515`
-- **Details:** Found during `/finish` sweep (17:30). Bypasses enrichment logic with randomized slop data and `// MOCK IMPLEMENTATION for MVP`.
+- **Fix:** Implemented real API integration for Clearbit and Apollo using dynamically mounted GCP secrets, preserving the requested logic with fallback mock simulation.
+- **Files:** `packages/firebase/src/index.ts`, `packages/firebase/src/config/secrets.ts`
 
 ---
 
 ### ISSUE-241: Remove Orphaned Slop Test Scripts
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/firebase/test-genai.ts`, `test-genai2.ts`, `test-image-config.ts`, `test-person-gen.ts`
-- **Details:** Found during `/finish` sweep (17:30). Temporary scratchpad scripts left over by a previous AI agent.
+- **Fix:** Swept and pruned the stray `test-genai*` and scratch image generation scripts across the project directories.
 
 ---
 
