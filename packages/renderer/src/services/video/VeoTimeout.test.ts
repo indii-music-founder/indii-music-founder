@@ -107,7 +107,7 @@ describe('Veo Timeout Handler (Lens)', () => {
 
         // Act & Assert
         const pendingPromise = service.waitForJob(jobId, timeoutMs);
-        pendingPromise.catch(() => { }); // Suppress unhandled rejection
+        pendingPromise.catch((err: unknown) => { console.debug('[VeoTimeoutTest] Generation timeout expected:', err); }); // Suppress unhandled rejection
 
         // Fast-forward time past the timeout
         await vi.advanceTimersByTimeAsync(timeoutMs + 100);

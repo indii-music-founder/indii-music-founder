@@ -369,6 +369,9 @@ export const stripeWebhook = onRequest({
         break;
       default:
         console.log(`[stripeWebhook] Unhandled event type: ${event.type}`);
+        res.json({ received: true, status: 'unhandled_event', type: event.type });
+        // Early return to prevent marking this as 'processed' (which indicates we took action on it)
+        return;
     }
 
     // Mark delivery complete (best-effort)

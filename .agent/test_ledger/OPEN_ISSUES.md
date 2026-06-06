@@ -3488,10 +3488,11 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-348: Fix BrowserAgentService.ts (Hesitant AI comments)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
-- **Details:** Found during `/finish` sweep (19:30). Contains generic hesitant AI comments instead of deterministic logic.
+- **Fix:** Refactored action === 'press' to simulate key press and deterministic input handling cleanly without hesitant code annotations.
+- **Files:** `packages/main/src/services/BrowserAgentService.ts`
 
 ---
 
@@ -3504,42 +3505,47 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-350: Fix main.ts (Swallowed exception catches)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** High
 - **Location:** `packages/main/src/main.ts:49`
-- **Details:** Found during `/finish` sweep (19:30). Global uncaughtException and unhandledRejection catches are completely empty.
+- **Fix:** Replaced empty catch blocks in global process handlers with fallback stderr output to prevent silently swallowed exception failures during startup/shutdown.
+- **Files:** `packages/main/src/main.ts`
 
 ---
 
 ### ISSUE-351: Fix main.ts (Swallowed loadURL promise)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/main.ts:262`
-- **Details:** Found during `/finish` sweep (19:30). win.loadURL and win.loadFile promises are caught and logged but not handled.
+- **Fix:** Structured loadURL and loadFile catches to call handleLoadFailure, loading a dynamic, user-friendly HTML error page with a retry trigger.
+- **Files:** `packages/main/src/main.ts`
 
 ---
 
 ### ISSUE-352: Fix updater.ts (Swallowed autoUpdater promise)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/updater.ts:101`
-- **Details:** Found during `/finish` sweep (19:30). autoUpdater.checkForUpdatesAndNotify() catches errors via generic log.warn, swallowing rejection.
+- **Fix:** Ensured all checkForUpdatesAndNotify() catch paths invoke sendToRenderer('updater:error') to surface download / configuration failures directly to the UI.
+- **Files:** `packages/main/src/updater.ts`
 
 ---
 
 ### ISSUE-353: Fix webhookHandler.ts (Unhandled switch case fallthrough)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/firebase/src/stripe/webhookHandler.ts:371`
-- **Details:** Found during `/finish` sweep (19:30). default case just logs unhandled event type instead of exhaustive switch or throwing error.
+- **Fix:** Updated the default case in the Stripe webhook function to respond with a clean JSON structure (status: unhandled_event) and exit early.
+- **Files:** `packages/firebase/src/stripe/webhookHandler.ts`
 
 ---
 
 ### ISSUE-354: Fix deliverScheduledPosts.ts (Generic unsupported error)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:258`
-- **Details:** Found during `/finish` sweep (19:30). default case returns a generic unsupported error.
+- **Fix:** Log explicit warnings and assign clear platform error results for unsupported social delivery attempts.
+- **Files:** `packages/firebase/src/social/deliverScheduledPosts.ts`
 
 ---
 
@@ -3552,10 +3558,11 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-356: Fix RegistrationChecklistPanel.tsx (Swallowed Promise Rejection)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/distribution/components/RegistrationChecklistPanel.tsx:45`
-- **Details:** Found during `/finish` sweep (19:30). selectFile promise catches and swallows rejection silently, potentially masking IPC errors.
+- **Fix:** Display selection rejection messages in a toast and reset item status back to 'missing' rather than exiting silently.
+- **Files:** `packages/renderer/src/modules/distribution/components/RegistrationChecklistPanel.tsx`
 
 ---
 

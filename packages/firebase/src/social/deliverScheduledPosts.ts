@@ -52,7 +52,8 @@ async function getTokenForUser(
     try {
         const snap = await db.collection('users').doc(userId).collection('socialTokens').doc(platform).get();
         return snap.exists ? (snap.data() as PlatformToken) : null;
-    } catch {
+    } catch (err) {
+        logger.warn(`[getTokenForUser] Failed to fetch social token for user ${userId} on ${platform}:`, err);
         return null;
     }
 }
@@ -255,8 +256,11 @@ export const deliverScheduledPosts = onSchedule({
                 case 'youtube':
                     result = await deliverToYouTube(token, post);
                     break;
-                default:
-                    result = { success: false, error: `Unsupported platform: ${post.platform}` };
+                default: {
+                    const unsupportedPlatform = (post as { platform: string }).platform;
+                    logger.warn(`[deliverScheduledPosts] Unsupported platform encountered: ${unsupportedPlatform} for post ${docSnap.id}`);
+                    result = { success: false, error: `Unsupported social platform: ${unsupportedPlatform}` };
+                }
             }
 
             if (result.success) {
