@@ -153,11 +153,7 @@ export function registerVideoHandlers() {
                 // ignore
             }
 
-            // Invoke Service
-            // We need to dynamic import or use the global service if available?
-            // Since we created ElectronRenderService, let's use it.
-            // But we need to import it at top of file.
-            // For now, I'll assume we can import it.
+            // Invoke ElectronRenderService dynamically
             const { electronRenderService } = await import('../services/ElectronRenderService');
             return await electronRenderService.render(config);
 

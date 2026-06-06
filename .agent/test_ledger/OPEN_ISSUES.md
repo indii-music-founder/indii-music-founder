@@ -2667,3 +2667,138 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx:46`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for bulk delete/archive actions.
+
+---
+
+### ISSUE-250: Audio mega-test direct Playwright runtime is blocked by sandbox browser permissions
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** TestInfra | BrowserRuntime | E2E
+- **Module:** Audio Analyzer / Live Browser Validation
+- **Flowchart:** docs/flowcharts/scoped-testing-architecture.md
+- **Tech Stack:** React 18.3.1 | Zustand 5.0.8 | Vite 6.4.2 | Playwright Chromium 1223 | Codex Sandbox
+- **Found:** 2026-06-06 by MegaTestAudioLoop
+- **Summary:** This run reconfirmed the existing live app bind failures on `::1:4243` and `::1:4242`, but it also surfaced a separate lower-level blocker: a direct Playwright Chromium launch outside the repo harness aborts before navigation with `bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer... Permission denied (1100)`. Alternate Playwright engines could not be used because Firefox and WebKit binaries are not installed in this environment. That prevents independent browser probing and screenshot capture even when bypassing the repo's webServer wrapper.
+- **Steps to Reproduce:**
+  1. Run `npm run dev:web`.
+  2. Observe `Error: listen EPERM: operation not permitted ::1:4243`.
+  3. Run `python3 execution/run_department_test.py audio-analyzer`.
+  4. Observe the harness pass 21/21 audio test files and 135/135 tests, then fail its Playwright phase because `config.webServer` cannot bind `::1:4242`.
+  5. Launch Playwright Chromium directly outside the repo harness and attempt to open an audio route.
+  6. Observe Chromium abort before navigation with `bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer... Permission denied (1100)`.
+  7. Attempt Playwright `firefox` or `webkit` launch.
+  8. Observe both fail immediately because their browser executables are not installed.
+- **Expected:** At least one Playwright browser engine should launch in this automation environment so live audio pages can be probed and meaningful failure screenshots can be captured independently of the repo's webServer wrapper.
+- **UX Impact:** Audio mega-test automation cannot produce fresh live-browser evidence once the app startup path fails, which increases the risk of missing UI-only regressions in Audio Analyzer, Distribution metadata views, and Creative/Video handoff surfaces.
+
+---
+
+### ISSUE-251: Fix dynamicImport.ts (Hanging promise)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/utils/dynamicImport.ts:29`
+- **Details:** Found during `/finish` sweep (17:45). Incomplete Logic: `return new Promise(() => {}) as Promise<T>;` returns an empty promise that hangs indefinitely.
+
+---
+
+### ISSUE-252: Fix AgentCanvasPanel.tsx (Lazy unverified cast)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/AgentCanvasPanel.tsx:244`
+- **Details:** Found during `/finish` sweep (17:45). Overly Generic Code: Unverified data shape cast `(panel.data as any).content` instead of defining a strict interface.
+
+---
+
+### ISSUE-253: Fix ChatMessage.tsx (Repeated inline casting)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:177`
+- **Details:** Found during `/finish` sweep (17:45). Overly Generic Code: Repeated inline casting `(msg as any).agentId` instead of properly extending the base message interface.
+
+---
+
+### ISSUE-254: Fix ArtifactsPanel.tsx (Lazy IPC interface declaration)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/right-panel/ArtifactsPanel.tsx:33`
+- **Details:** Found during `/finish` sweep (17:45). Lazy Implementation: `await (window.electronAPI.agent as any).listArtifacts();` bypasses proper global type registry bindings.
+
+---
+
+### ISSUE-255: Fix FileTreeNode.tsx & ResourceTree.tsx (Bypassing React key constraints)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/project/FileTreeNode.tsx:300`
+- **Details:** Found during `/finish` sweep (17:45). Overly Generic Code: Bypassing React key propagation constraints with an `any` cast.
+
+---
+
+### ISSUE-256: Fix VoiceContext.tsx (Lazy global window extending)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/context/VoiceContext.tsx:69`
+- **Details:** Found during `/finish` sweep (17:45). Lazy Implementation: Lazy `(window as any).SpeechRecognition` cast rather than declaring a global types extension block.
+
+---
+
+### ISSUE-257: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
+- **Details:** Found during `/finish` sweep (17:45). Unimplemented placeholder forcefully sets status to failed and throws a hardcoded error.
+
+---
+
+### ISSUE-258: Fix inngest.ts (sendEmail lacks type definitions)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:23`
+- **Details:** Found during `/finish` sweep (17:45). The `sendEmail` function parameters are implicitly typed as `any`, a sign of lazy implementation.
+
+---
+
+### ISSUE-259: Fix taxForms.ts (requestTaxForms is a placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/stripe/taxForms.ts:8`
+- **Details:** Found during `/finish` sweep (17:45). Placeholder cloud function intentionally fails closed until a real provider is wired.
+
+---
+
+### ISSUE-260: Fix gateway.integration.test.ts (Swallowing promise rejections in cleanup)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts:29`
+- **Details:** Found during `/finish` sweep (17:45). Uses `catch(() => {})` for cleanup tasks, masking potential teardown errors.
+
+---
+
+### ISSUE-261: Fix pinata.ts (web3:pinata-upload is a placeholder handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/pinata.ts:5`
+- **Details:** Found during `/finish` sweep (17:45). The handler does not use `PinataService` and lazily returns a hardcoded placeholder.
+
+---
+
+### ISSUE-262: Fix web3.ts (web3:execute-transaction is a placeholder handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/web3.ts:5`
+- **Details:** Found during `/finish` sweep (17:45). The handler unconditionally skips implementation and returns an error.
+
+---
+
+### ISSUE-263: Fix security.ts (Incomplete implementation for credential rotation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/security.ts:107`
+- **Details:** Found during `/finish` sweep (17:45). Key rotation logic falls into a generic unsupported block for services other than Stripe and GitHub.
+
+---
+
+### ISSUE-264: Fix PinataService.ts (Bailout code prevents full functionality)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/web3/PinataService.ts:4`
+- **Details:** Found during `/finish` sweep (17:45). Bailout logic checking for mock key prevents proper functionality.
