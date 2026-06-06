@@ -76,7 +76,7 @@ export class EarningsReportService {
                     totalStreams: 0,
                     totalDownloads: 0,
                     grossRevenue: 0,
-                    platformFees: 0, // Placeholder
+                    platformFees: 0,
                     distributorFees: 0,
                     netRevenue: 0,
                     currencyCode: report.currencyCode,
@@ -95,6 +95,8 @@ export class EarningsReportService {
             calc.grossRevenue += txn.revenueAmount;
             const fee = txn.revenueAmount * (distributorFeePercent / 100);
             calc.distributorFees += fee;
+            const platformFee = txn.revenueAmount * 0.15; // indii platform fee is 15%
+            calc.platformFees += platformFee;
             calc.netRevenue += (txn.revenueAmount - fee);
         }
 
@@ -136,6 +138,7 @@ export class EarningsReportService {
                 grossRevenue: calc.grossRevenue,
                 distributorFee: calc.distributorFees,
                 netRevenue: calc.netRevenue,
+                platformFee: calc.platformFees,
                 currencyCode: calc.currencyCode,
                 matchedReleases: 1, // Individual record per release
                 unmatchedISRCs: []

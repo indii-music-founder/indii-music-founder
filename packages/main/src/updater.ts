@@ -120,12 +120,16 @@ export function setupAutoUpdater(): void {
     const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
     autoUpdater.checkForUpdatesAndNotify().catch((err: Error) => {
-        log.warn('[Updater] Initial update check failed:', formatUpdaterErrorMessage(err));
+        const message = formatUpdaterErrorMessage(err);
+        log.warn('[Updater] Initial update check failed:', message);
+        sendToRenderer('updater:error', { message });
     });
 
     setInterval(() => {
         autoUpdater!.checkForUpdatesAndNotify().catch((err: Error) => {
-            log.warn('[Updater] Periodic update check failed:', formatUpdaterErrorMessage(err));
+            const message = formatUpdaterErrorMessage(err);
+            log.warn('[Updater] Periodic update check failed:', message);
+            sendToRenderer('updater:error', { message });
         });
     }, CHECK_INTERVAL_MS);
 

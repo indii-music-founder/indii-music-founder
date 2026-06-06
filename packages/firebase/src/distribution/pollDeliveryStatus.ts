@@ -95,7 +95,8 @@ async function checkDistributorStatus(
         };
 
         return rawStatus ? (statusMap[rawStatus.toLowerCase()] ?? null) : null;
-    } catch {
+    } catch (err) {
+        logger.error(`[checkDistributorStatus] API call failed for ${distributorId} / ${distributorReleaseId}:`, err);
         return null;
     }
 }

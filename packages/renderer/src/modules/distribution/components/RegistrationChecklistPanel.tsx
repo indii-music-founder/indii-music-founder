@@ -38,13 +38,19 @@ export function RegistrationChecklistPanel() {
             toastError('Audio verification requires the desktop app.');
             return;
         }
-        // Prompt the user to select an audio file via native dialog
         const filePath = await window.electronAPI.selectFile({
             title: 'Select Audio Master',
             filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac', 'mp3', 'aac', 'm4a'] }]
-        }).catch(() => null);
+        }).catch((err: unknown) => {
+            console.error('[RegistrationChecklistPanel] Select file dialog failed:', err);
+            toastError(`Failed to open file selection dialog: ${err instanceof Error ? err.message : String(err)}`);
+            return null;
+        });
 
-        if (!filePath) return;
+        if (!filePath) {
+            setItemStatus('audio', 'missing');
+            return;
+        }
 
         setItemStatus('audio', 'checking');
         try {
