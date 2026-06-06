@@ -254,13 +254,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
+            // Synchronously clear the inputs optimistically
+            setCommandBarInput('');
+            setCommandBarAttachments([]);
+
             if (currentInput.trim() === '/deploy-andromeda') {
                 const state = useStore.getState();
                 state.setModule('creative');
                 state.enableAndromedaMode();
                 toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
-                setCommandBarInput('');
-                setCommandBarAttachments([]);
                 setIsLocalProcessing(false);
                 return;
             }
@@ -269,8 +271,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const state = useStore.getState();
                 state.setModule('dashboard');
                 toast.success('System Status: Viral Velocity Active, CPS Kill-switches Armed.');
-                setCommandBarInput('');
-                setCommandBarAttachments([]);
                 setIsLocalProcessing(false);
                 return;
             }
@@ -280,8 +280,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 includeUserMessage: true,
             });
             if (entryCommandResult.handled) {
-                setCommandBarInput('');
-                setCommandBarAttachments([]);
                 setIsLocalProcessing(false);
                 return;
             }
@@ -294,9 +292,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 // Wrap the user's input with a system directive forcing the agent into the skill
                 currentInput = `[SYSTEM INTERCEPT: User executed slash command /${command}. Please immediately load the skill from \`.agent/skills/${command}/SKILL.md\` and follow its protocol strictly without deviating.]\n\n${currentInput}`;
             }
-
-            setCommandBarInput('');
-            setCommandBarAttachments([]);
 
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
             // In Boardroom mode, messages route to boardroomMessages — DON'T open the right panel
@@ -334,6 +329,16 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const submitButtonSize = (!isMobile && !isDocked) 
         ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" 
         : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0");
+
+    const kbButtonClasses = isKnowledgeBaseEnabled
+        ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
+        : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300";
+
+    const modePickerButtonClasses = isBoardroom
+        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+        : conversationMode === 'department'
+            ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
+            : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50";
 
     return (
         <div
@@ -448,10 +453,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     "flex items-center justify-center gap-1 transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isMobile
                                         ? "px-2.5 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide"
-                                        : isDocked ? "w-7 h-7 rounded-full" : "w-8 h-8 rounded-full",
-                                    isKnowledgeBaseEnabled
-                                        ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
-                                        : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
+                                        : isDocked ? "size-7 rounded-full" : "size-8 rounded-full",
+                                    kbButtonClasses
                                 )}
                                 aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
                                 aria-pressed={isKnowledgeBaseEnabled}
@@ -472,12 +475,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 onClick={handleToggleModePicker}
                                 className={cn(
                                     "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                                    isDocked ? "w-7 h-7" : "w-8 h-8",
-                                    isBoardroom
-                                        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                                        : conversationMode === 'department'
-                                            ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
-                                            : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50"
+                                    isDocked ? "size-7" : "size-8",
+                                    modePickerButtonClasses
                                 )}
                                 aria-label="Change Agent Mode"
                                 title={`Mode: ${conversationMode}`}
@@ -487,7 +486,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                             <AnimatePresence>
                                 {showModePicker && modeButtonRect && typeof document !== 'undefined' && createPortal(
-                                    <div className="fixed inset-0 z-[9999]">
+                                    <div className="fixed inset-0 z-9999">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
