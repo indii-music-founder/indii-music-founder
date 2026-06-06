@@ -124,6 +124,10 @@ async function deliverToTikTok(token: PlatformToken, post: ScheduledPostDoc): Pr
     }
 }
 
+async function deliverToYouTube(token: PlatformToken, post: ScheduledPostDoc): Promise<{ success: boolean; postId?: string; error?: string }> {
+    return { success: false, error: 'YouTube delivery is currently unsupported.' };
+}
+
 /**
  * Scheduled Cloud Function — runs every 5 minutes.
  * Delivers pending social posts whose scheduledAt time has passed.
@@ -202,6 +206,9 @@ export const deliverScheduledPosts = onSchedule({
                     break;
                 case 'tiktok':
                     result = await deliverToTikTok(token, post);
+                    break;
+                case 'youtube':
+                    result = await deliverToYouTube(token, post);
                     break;
                 default:
                     result = { success: false, error: `Unsupported platform: ${post.platform}` };
