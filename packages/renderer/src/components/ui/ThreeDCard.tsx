@@ -158,10 +158,8 @@ export const ThreeDCard = ({
                         transform: "translateZ(75px)",
                         transformStyle: "preserve-3d",
                     }}
-                    className="absolute inset-4 grid place-content-center rounded-xl bg-white shadow-lg"
-                >
-                    {/* Shadow/Depth layer placeholder if needed */}
-                </div>
+                    className="absolute inset-4 rounded-xl bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 opacity-50 shadow-inner pointer-events-none"
+                />
 
                 {children}
             </motion.div>

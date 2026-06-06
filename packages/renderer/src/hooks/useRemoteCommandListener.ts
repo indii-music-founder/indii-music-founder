@@ -288,7 +288,9 @@ function useFirestoreRelay(enabled: boolean) {
                 isAgentProcessing: false,
                 activeSessionId: activeSessionIdRef.current || '',
                 online: false,
-            }).catch(() => { });
+            }).catch((err: unknown) => {
+                logger.warn('[RemoteRelay] Failed to push offline status during cleanup:', err);
+            });
         };
     }, [enabled]);
 
@@ -582,7 +584,9 @@ function useFirestoreRelay(enabled: boolean) {
         if (!enabled) return;
         let active = true;
 
-        const cleanup = () => remoteRelayService.cleanupOld(24).catch(() => { });
+        const cleanup = () => remoteRelayService.cleanupOld(24).catch((err: unknown) => {
+            logger.warn('[RemoteRelay] Periodic old command cleanup failed:', err);
+        });
 
         const loop = async () => {
             cleanup();

@@ -68,7 +68,14 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                             muted
                                             loop
                                             playsInline
-                                            onMouseEnter={(e) => e.currentTarget.play().catch(() => { })}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.play().catch((err: unknown) => {
+                                                    // Browser aborted play (usually due to autoplay restrictions or navigation transitions)
+                                                    if (err instanceof Error && err.name !== 'AbortError') {
+                                                        console.warn('[EditorAssetLibrary] Video play failed:', err);
+                                                    }
+                                                });
+                                            }}
                                             onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                                         />
                                     ) : item.type === 'image' ? (

@@ -160,7 +160,10 @@ if (isFirebaseE2EMockEnabled()) {
             notifyListeners();
             return { user: currentMockUser };
         },
-        sendPasswordResetEmail: async () => {},
+        sendPasswordResetEmail: async (email: string) => {
+            logger.debug(`[AuthMock] sendPasswordResetEmail requested for ${email}`);
+            return Promise.resolve();
+        },
         signInWithPopup: async () => {
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;

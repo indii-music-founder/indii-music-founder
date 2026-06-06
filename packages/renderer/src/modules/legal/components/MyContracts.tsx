@@ -8,6 +8,7 @@ import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
+import { Modal } from '@/components/ui/Modal';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */
@@ -27,6 +28,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const [sendingId, setSendingId] = useState<string | null>(null);
     const [emailDialog, setEmailDialog] = useState<{ contract: LegalContract; recipientEmail: string; message: string } | null>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
+    const [deletingContract, setDeletingContract] = useState<LegalContract | null>(null);
 
     // Load contracts on mount
     const loadContracts = useCallback(async () => {
@@ -77,16 +79,8 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         }
     };
 
-    const handleDelete = async (contract: LegalContract) => {
-        if (!confirm(`Delete "${contract.title}"? This cannot be undone.`)) return;
-        try {
-            await LegalService.updateContract(contract.id, { status: ContractStatus.DRAFT });
-            setContracts(prev => prev.filter(c => c.id !== contract.id));
-            toast.success(`Deleted: ${contract.title}`);
-        } catch (err) {
-            logger.error('[MyContracts] Delete failed:', err);
-            toast.error('Failed to delete contract.');
-        }
+    const handleDelete = (contract: LegalContract) => {
+        setDeletingContract(contract);
     };
 
     const openSendDialog = (contract: LegalContract) => {
@@ -430,6 +424,47 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                     </div>
                 </div>
             )}
+
+            <Modal
+                isOpen={deletingContract !== null}
+                onClose={() => setDeletingContract(null)}
+                titleId="delete-contract-title"
+                maxWidth="max-w-md"
+            >
+                <div className="p-6">
+                    <h2 id="delete-contract-title" className="text-lg font-bold text-white mb-2">Delete Contract</h2>
+                    <p className="text-sm text-gray-400 mb-6">
+                        Are you sure you want to delete "{deletingContract?.title}"? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setDeletingContract(null)}
+                            className="px-4 py-2 rounded-lg bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors text-xs font-semibold"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (deletingContract) {
+                                    try {
+                                        await LegalService.updateContract(deletingContract.id, { status: ContractStatus.DRAFT });
+                                        setContracts(prev => prev.filter(c => c.id !== deletingContract.id));
+                                        toast.success(`Deleted: ${deletingContract.title}`);
+                                    } catch (err) {
+                                        logger.error('[MyContracts] Delete failed:', err);
+                                        toast.error('Failed to delete contract.');
+                                    } finally {
+                                        setDeletingContract(null);
+                                    }
+                                }
+                            }}
+                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
