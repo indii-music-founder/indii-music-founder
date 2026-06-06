@@ -1512,24 +1512,11 @@ export const enrichFanData = functions
         const normalizedProvider = String(provider || '').toLowerCase();
         functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
-        // Perform mock enrichment based on provided fans array
-        const enriched = fans.map(fan => {
-            return {
-                ...fan,
-                enrichedAt: new Date().toISOString(),
-                lifetimeValueScore: Math.floor(Math.random() * 100),
-                socialReach: 'unknown'
-            };
-        });
-
-        return {
-             results: enriched,
-             metadata: {
-                 provider: normalizedProvider,
-                 count: enriched.length,
-                 timestamp: new Date().toISOString()
-             }
-        };
+        // TODO: Implement actual fan data enrichment with third-party providers (e.g. Chartmetric, SpotOn).
+        throw new functions.https.HttpsError(
+            "unimplemented",
+            `Enrichment provider '${normalizedProvider}' is not configured or implemented yet.`
+        );
     });
 
 // MCP SSE Server

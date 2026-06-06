@@ -139,17 +139,30 @@ async function deliverToYouTube(token: PlatformToken, post: ScheduledPostDoc): P
             }
         };
 
+        let videoBuffer = null;
+        if (post.mediaUrl) {
+            const mediaRes = await fetch(post.mediaUrl);
+            if (!mediaRes.ok) throw new Error(`Failed to fetch media from ${post.mediaUrl}`);
+            videoBuffer = await mediaRes.arrayBuffer();
+        }
+
         const boundary = 'foo_bar_baz';
-        const bodyStart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/*\r\n\r\n`;
-        const bodyEnd = `\r\n--${boundary}--`;
+        const bodyStart = Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/*\r\n\r\n`);
+        const bodyEnd = Buffer.from(`\r\n--${boundary}--`);
         
+        const body = Buffer.concat([
+            bodyStart,
+            videoBuffer ? Buffer.from(videoBuffer) : Buffer.alloc(0),
+            bodyEnd
+        ]);
+
         const res = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token.accessToken}`,
                 'Content-Type': `multipart/related; boundary=${boundary}`
             },
-            body: bodyStart + (post.mediaUrl || '') + bodyEnd
+            body: body
         });
 
         if (!res.ok) return { success: false, error: `YouTube API returned ${res.status}` };

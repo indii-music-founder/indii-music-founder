@@ -9,6 +9,32 @@
  */
 
 import { Inngest } from 'inngest';
+import { Resend } from 'resend';
+import { defineSecret } from 'firebase-functions/params';
+
+const resendApiKey = defineSecret('RESEND_API_KEY');
+
+function getResendApiKey() {
+  const envKey = process.env.RESEND_API_KEY;
+  if (envKey) return envKey;
+  try { return resendApiKey.value(); } catch (e) { return ''; }
+}
+
+async function sendEmail(email, subject, html) {
+  const apiKey = getResendApiKey();
+  if (!apiKey) {
+    console.warn('[Inngest] RESEND_API_KEY not found. Skipping email send.');
+    return;
+  }
+  const resend = new Resend(apiKey);
+  await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL || 'indii <hello@indii.music>',
+    to: email,
+    subject,
+    html
+  });
+}
+
 import * as admin from 'firebase-admin';
 
 const db = admin.firestore();
@@ -221,13 +247,14 @@ export const sendOnboardingWorkflow = inngest.createFunction(
     // Step 1: Send welcome email
     await step.run('send-welcome', async () => {
       console.log(`[Inngest] Sending welcome email to ${email}`);
-      // Integration with email service (SendGrid, etc.)
+      await sendEmail(email, 'Welcome to indii!', '<p>Welcome to indii. Let us make some music!</p>');
     });
 
     // Step 2: Wait 3 days, then send resources email
     await step.sleep('wait-3-days', '3 days');
     await step.run('send-resources', async () => {
       console.log(`[Inngest] Sending resources email to ${email}`);
+      await sendEmail(email, 'Resources for getting started', '<p>Here are some resources to get you started.</p>');
     });
 
     // Step 3: Wait 1 week, then check engagement
@@ -239,7 +266,7 @@ export const sendOnboardingWorkflow = inngest.createFunction(
 
       if (createdTracks === 0) {
         console.log(`[Inngest] Sending re-engagement email to ${email}`);
-        // Send re-engagement email
+        await sendEmail(email, 'We miss you at indii', '<p>Come back and make some tracks!</p>');
       }
     });
 
