@@ -92,10 +92,11 @@ export class SocialPostingService {
         }
     }
 
-    private toDispatchPlatform(platform: ShortFormPlatform): 'tiktok' | 'meta_reels' {
+    private toDispatchPlatform(platform: ShortFormPlatform): 'tiktok' | 'meta_reels' | 'youtube' {
         if (platform === 'TikTok') return 'tiktok';
         if (platform === 'IG Reels') return 'meta_reels';
-        throw new Error('YouTube Shorts delivery is not wired. Deploy a YouTube Data API delivery worker before enabling this platform.');
+        if (platform === 'YouTube Shorts') return 'youtube';
+        throw new Error('Unsupported platform');
     }
 }
 
