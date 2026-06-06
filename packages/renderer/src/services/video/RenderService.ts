@@ -98,8 +98,6 @@ export class RenderService {
         try {
             logger.info(`[RenderService] Starting local render for ${config.compositionId}...`);
 
-            // In a real implementation, we would bundle the composition first
-            // or point to a pre-bundled serve URL.
             // The bundle location is configured via environment variable.
             const bundleLocation = import.meta.env.VITE_REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
 
