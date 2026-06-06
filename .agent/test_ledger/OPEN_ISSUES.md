@@ -3319,19 +3319,19 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-308: Fix FoundationalSkillService.ts (Lazy Types / Bypassing TS)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/FoundationalSkillService.ts:15`
-- **Details:** Found during `/finish` sweep (18:30). Explicit bypassing of TypeScript safety returning generic `Promise<any>`.
+- **Fix:** Fully typed scanDirectory and updateKnowledge methods to remove generic any returns.
 
 ---
 
 ### ISSUE-309: Fix HarnessCompiler.ts (Lazy Types / Bypassing TS)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
-- **Details:** Found during `/finish` sweep (18:30). Interface generics default to any and ignore TS linting.
+- **Fix:** Typed the default input/output types on the HarnessCompiler interface and registers, avoiding type bypasses.
 
 ---
 
@@ -3346,10 +3346,10 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-311: Fix MCPClientService.ts (Unhandled Promise Rejection)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/mcp/MCPClientService.ts:62`
-- **Details:** Found during `/finish` sweep (18:30). connectHarness().catch(...) logs error and continues silently.
+- **Fix:** Catch harness connection errors, clear client reference, and safely propagate connection failures.
 
 ---
 
@@ -3391,10 +3391,10 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-316: Fix webhookHandler.ts (Generic Switch Case)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/webhookHandler.ts:370`
-- **Details:** Found during `/finish` sweep (18:30). Default switch case simply logs and succeeds instead of rejecting unhandled Stripe events.
+- **Fix:** Duplicate of ISSUE-353. Default switch case now warns properly with metadata, returning a clean status: unhandled_event JSON early response.
 
 ---
 
@@ -3652,10 +3652,10 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-345: Fix HarnessCompiler.ts (Widespread 'any' usage)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** High
 - **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
-- **Details:** Found during `/finish` sweep (19:15). Widespread usage of `@typescript-eslint/no-explicit-any` disables. Strict compiler interfaces are ignored in favor of `any`.
+- **Fix:** Duplicate/extension of ISSUE-309. Cleaned up HarnessCompiler, HarnessRegistry, and compileHarness generics to remove generic any default parameters.
 
 ---
 
