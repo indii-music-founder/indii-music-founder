@@ -72,6 +72,11 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
     const [map, setMap] = useState<google.maps.Map>();
     const markersRef = useRef<google.maps.Marker[]>([]);
     const circlesRef = useRef<google.maps.Circle[]>([]);
+    const prevCenterRef = useRef<string | { lat: number; lng: number }>();
+    const prevMarkersJsonRef = useRef<string>('');
+    const prevLocationsJsonRef = useRef<string>('');
+    const prevCurrentLocationJsonRef = useRef<string>('');
+    const prevRangeRadiusRef = useRef<number>();
 
     // Detect Google Maps auth failure via global callback + MutationObserver
     useEffect(() => {
@@ -241,6 +246,19 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
     // Center and Zoom Updates
     useEffect(() => {
         if (!map || !center) return;
+
+        // Check if center has changed to avoid overriding user's manual dragging/zooming on unrelated renders
+        const isSame = (
+            typeof center === 'string' && typeof prevCenterRef.current === 'string' && center === prevCenterRef.current
+        ) || (
+            typeof center === 'object' && typeof prevCenterRef.current === 'object' &&
+            center !== null && prevCenterRef.current !== null &&
+            center.lat === prevCenterRef.current.lat && center.lng === prevCenterRef.current.lng
+        );
+
+        if (isSame) return;
+        prevCenterRef.current = center;
+
         let active = true;
 
         if (typeof center === 'string') {
