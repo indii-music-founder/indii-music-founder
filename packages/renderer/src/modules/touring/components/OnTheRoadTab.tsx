@@ -74,7 +74,6 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
 
     return (
         <div className="flex flex-col gap-6 h-full">
-            {/* ... rest of existing imports and logic ... */}
             {/* Top Row: Command Center & Map */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
                 {/* Main Telemetry / Command Center */}
