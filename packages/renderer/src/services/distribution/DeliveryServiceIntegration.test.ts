@@ -108,7 +108,21 @@ describe('DeliveryService Integration with Assets', () => {
 
     it('should handle multi-track assets', async () => {
         const mockMetadata: ExtendedGoldenMetadata = {
-            // ...
+            upc: '1234567890124',
+            trackTitle: 'Album Track',
+            releaseTitle: 'Test Album',
+            artistName: 'Test Artist',
+            isrc: 'US12346',
+            catalogNumber: 'CAT124',
+            genre: 'Pop',
+            subGenre: 'Synth Pop',
+            explicit: false,
+            releaseDate: '2023-01-01',
+            originalReleaseDate: '2023-01-01',
+            labelName: 'Test Label',
+            territories: ['Worldwide'],
+            distributionChannels: ['streaming'],
+            splits: [],
             tracks: [
                 { trackTitle: 'T1', isrc: 'US1' },
                 { trackTitle: 'T2', isrc: 'US2' }
