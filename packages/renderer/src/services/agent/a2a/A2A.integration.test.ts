@@ -57,7 +57,7 @@ describe('A2A loopback integration (real crypto + real router)', () => {
 
     // The router actually ran the target agent...
     expect(runAgent).toHaveBeenCalledWith('marketing', 'draft a launch tweet', undefined, 't1');
-    // ...and the encrypted response decrypted back to the real result (proves C1+C2).
+    // Then the encrypted response decrypted back to the real result (proves C1+C2).
     expect(result).toEqual({ text: 'Here is your launch tweet 🚀', agentId: 'marketing' });
   });
 
