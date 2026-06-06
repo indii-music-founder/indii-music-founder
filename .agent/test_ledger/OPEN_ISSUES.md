@@ -2070,7 +2070,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-175: Finish pinata.ts (Stubbed IPC handler for Pinata/IPFS operations)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:1`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2078,7 +2078,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-176: Finish web3.ts (Stubbed IPC handler for Web3 operations)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:1`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2086,7 +2086,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-177: Finish PinataService.ts (Stubbed underlying service class for Pinata)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/web3/PinataService.ts:1`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2142,7 +2142,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-184: Finish WalletConnectService.ts (connectViaWalletConnect throws error instead of modal)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
