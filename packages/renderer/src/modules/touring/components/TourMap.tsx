@@ -288,6 +288,25 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
     // Update Markers and Range Ring
     useEffect(() => {
         if (!map) return;
+
+        const markersJson = JSON.stringify(markers);
+        const locationsJson = JSON.stringify(locations);
+        const currentLocationJson = JSON.stringify(currentLocation);
+
+        if (
+            markersJson === prevMarkersJsonRef.current &&
+            locationsJson === prevLocationsJsonRef.current &&
+            currentLocationJson === prevCurrentLocationJsonRef.current &&
+            rangeRadiusMiles === prevRangeRadiusRef.current
+        ) {
+            return;
+        }
+
+        prevMarkersJsonRef.current = markersJson;
+        prevLocationsJsonRef.current = locationsJson;
+        prevCurrentLocationJsonRef.current = currentLocationJson;
+        prevRangeRadiusRef.current = rangeRadiusMiles;
+
         let active = true;
 
         // Clear existing markers
@@ -317,6 +336,11 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                     map,
                     title: m.title,
                     animation: google.maps.Animation.DROP,
+                    label: m.label ? {
+                        text: m.label,
+                        color: "white",
+                        fontWeight: "bold"
+                    } : undefined,
                     icon: m.type === 'current' ? {
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 8,
