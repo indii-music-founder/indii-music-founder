@@ -65,6 +65,9 @@ describe('EarningsReportService Fee Calculation', () => {
         // Fee should be 15% of 100 = 15
         expect(royalty!.distributorFees).toBe(15);
 
+        // Platform fee should be 15% of 100 = 15
+        expect(royalty!.platformFees).toBe(15);
+
         // Net Revenue should be 100 - 15 = 85
         expect(royalty!.netRevenue).toBe(85);
     });

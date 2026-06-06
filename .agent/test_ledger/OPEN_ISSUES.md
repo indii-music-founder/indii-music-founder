@@ -1069,8 +1069,6 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Expected:** Routes to CanvasTools.draw_shape.
 - **UX Impact:** Complete application crash.
 
-
-
 ### ISSUE-071: [REGRESSION] Boardroom UI Interaction Blocked
 
 - **Status:** ✅ FIXED
@@ -1847,6 +1845,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Dimensional Data:** Playwright normal click timed out because `.driver-overlay` intercepted pointer events. Forced retry retained `http://127.0.0.1:4243/audio-analyzer` despite generated prompt text being present.
 
 ### ISSUE-157: Markdown Formatting Errors in Agent Checkpoints and Ledger
+
 - **Status:** ✅ FIXED
 - **Fix:** Ran `markdownlint-cli2 --fix` to resolve MD001, MD009, MD012, MD022, MD024, MD032, MD034, and MD052 in `.agent/checkpoints/antigravity.md` and `.agent/test_ledger/OPEN_ISSUES.md`. MD013 remains as accepted line-length noise.
 - **Severity:** 🟢 LOW
@@ -1875,6 +1874,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-158: Audio Analyzer Push Verified Data still fails under web mock auth
+
 - **Status:** ✅ FIXED
 - **Fix:** Updated `MusicLibraryService.ts` and `MetadataPersistenceService.ts` to fully intercept `isFirebaseE2EMockEnabled()`. They now bypass Firestore calls and save mock metadata directly into `localStorage` instead, preventing 'Missing or insufficient permissions' errors while ensuring downstream agents can still inherit the Audio DNA profile during tests.
 - **Severity:** 🟡 MEDIUM
@@ -1892,6 +1892,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-159: Unexpected 'any' types in firebase.ts
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced loosely typed `any` casts with proper type intersections (`Auth & { _signedOut?: boolean }`) in `packages/renderer/src/services/firebase.ts` for the E2E Auth Mock implementation.
 - **Severity:** 🟢 LOW
@@ -1906,6 +1907,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-160: Courtroom unseating failure ('publicist') in boardroom-real-user-scenario.spec.ts
+
 - **Status:** ✅ FIXED
 - **Fix:** Verified that the regex parsing for `targetagentid` was already successfully updated to `/targetagentid[^a-z0-9_-]+([a-z0-9_-]+)/g` in the test file, which natively supports escaped strings. Ran `npx playwright test e2e/boardroom-real-user-scenario.spec.ts` locally and confirmed 100% pass rate.
 - **Severity:** 🔴 HIGH
@@ -1920,6 +1922,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-161: Finish E2EEncryption.interop.test.ts (TS→Py: encrypts a payload)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:23`
@@ -1928,6 +1931,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-162: Finish E2EEncryption.interop.test.ts (TS→Py: writes recipient_private_key.pem)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:24`
@@ -1936,6 +1940,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-163: Finish E2EEncryption.interop.test.ts (TS→Py: writes expected_plaintext.txt)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:25`
@@ -1944,6 +1949,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-164: Finish E2EEncryption.interop.test.ts (Py→TS: reads py_to_ts/envelope.json)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:27`
@@ -1952,6 +1958,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-165: Finish E2EEncryption.interop.test.ts (Py→TS: imports recipient_public_jwk.json)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:28`
@@ -1960,6 +1967,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-166: Finish E2EEncryption.interop.test.ts (Py→TS: decrypted plaintext matches expected)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:29`
@@ -1968,6 +1976,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-167: Finish E2EEncryption.interop.test.ts (Algorithm parity: RSA-OAEP / SHA-256)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:31`
@@ -1976,6 +1985,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-168: Finish E2EEncryption.interop.test.ts (Algorithm parity: AES-GCM / 12-byte IV)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:32`
@@ -1983,7 +1993,8 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ---
 
-### ISSUE-169: Finish E2EEncryption.interop.test.ts (Wire format: [4-byte BE length][wrapped_key])
+### ISSUE-169: Finish E2EEncryption.interop.test.ts (Wire format: `[4-byte BE length][wrapped_key]`)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:33`
@@ -1992,6 +2003,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-170: Finish security.ts (Key rotation not implemented for service)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/security.ts:100`
@@ -2000,6 +2012,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-171: Finish CDBabyAdapter.ts (CDBaby takedown delivery explicitly not implemented)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts:203`
@@ -2008,6 +2021,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-172: Finish DistroKidAdapter.ts (DistroKid takedown delivery explicitly not implemented)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:208`
@@ -2016,6 +2030,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-173: Finish FieldRecorder.tsx (Missing robust retry logic for cloud sync failures)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/landing/src/pages/FieldRecorder.tsx:118`
@@ -2024,6 +2039,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-174: Finish mega-stress-test-v4.spec.ts (30+ tests marked as skipped without clear reasons)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `e2e/mega-stress-test-v4.spec.ts:89`
@@ -2032,6 +2048,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-175: Finish pinata.ts (Stubbed IPC handler for Pinata/IPFS operations)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:1`
@@ -2040,6 +2057,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-176: Finish web3.ts (Stubbed IPC handler for Web3 operations)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:1`
@@ -2048,6 +2066,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-177: Finish PinataService.ts (Stubbed underlying service class for Pinata)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/web3/PinataService.ts:1`
@@ -2056,6 +2075,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-178: Finish deliverScheduledPosts.ts (Switch block missing 'youtube' platform handler)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:200`
@@ -2064,6 +2084,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-179: Finish sendEmail.ts (Switch block missing 'dmca' template handler)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/email/sendEmail.ts:230`
@@ -2072,6 +2093,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-180: Finish MarketingService.ts (updateMarketingStats method is an empty stub)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/marketing/MarketingService.ts:220`
@@ -2080,6 +2102,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-181: Finish CopyrightFilterService.ts (queryRegistry missing ACRCloud authentication/signature)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/audio/CopyrightFilterService.ts:58`
@@ -2088,6 +2111,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-182: Finish AgentCanvasPanel.tsx (HTML rendering returns 'coming soon' placeholder)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/AgentCanvasPanel.tsx:241`
@@ -2096,6 +2120,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-183: Finish DistroKidAdapter.ts (getAllEarnings returns empty array stub)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266`
@@ -2104,6 +2129,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-184: Finish WalletConnectService.ts (connectViaWalletConnect throws error instead of modal)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
@@ -2112,6 +2138,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-185: Finish SocialPostingService.ts (YouTube Shorts missing delivery mechanism)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/social/SocialPostingService.ts:98`
@@ -2120,6 +2147,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-186: Finish RenderService.ts (renderComposition bypasses dynamic bundling)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/video/RenderService.ts:101`
@@ -2128,6 +2156,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-187: Audio mega-test live browser validation is blocked in sandbox automation
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** TestInfra | Browser | E2E
@@ -2150,6 +2179,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-188: Audio mega-test live browser validation blocker regressed after ISSUE-187
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** TestInfra | Browser | E2E
@@ -2164,6 +2194,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-189: Finish mcp/index.ts (format_dsp_metadata MCP tool is a dummy implementation)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/mcp/index.ts:95`
@@ -2173,6 +2204,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-190: Finish mechanicalLicense.ts (verifyMechanicalLicense skips validation)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/legal/mechanicalLicense.ts:37`
@@ -2182,6 +2214,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-191: Finish deliverScheduledPosts.ts (deliverToYouTube is an empty placeholder)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented full YouTube Data API v3 integration with multipart video upload.
 - **Severity:** Medium
@@ -2191,6 +2224,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-192: Fix index.ts (Lazy MVP implementation inside stitchVideoFn)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented full Inngest task invocation for video stitching using Google Cloud Transcoder API logic.
 - **Severity:** Medium
@@ -2200,6 +2234,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-193: Finish index.ts (executeBigQueryQuery has no actual execution logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented actual BigQuery job execution using @google-cloud/bigquery SDK.
 - **Severity:** Medium
@@ -2209,6 +2244,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-194: Finish index.ts (enrichFanData throws unconditionally)
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced unimplemented throw with mock provider integration for MVP.
 - **Severity:** Medium
@@ -2218,6 +2254,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-195: Finish security.ts (Proper encryption with libsodium is missing)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented libsodium-wrappers encryption (crypto_box_seal) for GitHub secret upload.
 - **Severity:** Medium
@@ -2227,6 +2264,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-196: Fix agent.ts (Simplistic multi-replace implementation)
+
 - **Status:** ✅ FIXED
 - **Fix:** Handled occurences count precisely to prevent unintended replacements and ensure determinism.
 - **Severity:** Medium
@@ -2236,6 +2274,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-197: Fix video.ts (Agent left internal monologue in comments)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed internal monologue and AI slop comments.
 - **Severity:** Medium
@@ -2245,6 +2284,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-198: Fix AgentSupervisor.ts (Timeout leaves Python process orphaned)
+
 - **Status:** ✅ FIXED
 - **Fix:** Set up an AbortController with process.kill() (SIGKILL) on abort to prevent orphaned processes.
 - **Severity:** Medium
@@ -2254,6 +2294,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-199: Fix python-bridge.ts (Hardcoded assumptions about python3)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented dynamic Python path resolution using where/which system commands.
 - **Severity:** Medium
@@ -2263,6 +2304,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-200: Fix IndiiRemoteService.ts (Empty constructor)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed empty constructor from IndiiRemoteService since it had no logic.
 - **Severity:** Medium
@@ -2272,6 +2314,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-201: Fix distribution.ts (Lazy fallback for parsing CSV data)
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced manual string joining with proper CSV escaping in DistroKidPackageBuilder.
 - **Severity:** Medium
@@ -2281,6 +2324,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-202: Fix PropertiesPanel.tsx (Missing generic components implementations)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented missing PropertyInput, PropertySelect, and PropertySlider components.
 - **Severity:** Medium
@@ -2290,6 +2334,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-203: Fix ChatMessage.tsx (Code block replaced with existing components comment)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed placeholder and restored custom markdown component logic.
 - **Severity:** Medium
@@ -2299,6 +2344,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-204: Fix ChatMessage.tsx (Function body replaced with existing logic comment)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed placeholder and restored existing formatting logic in code blocks.
 - **Severity:** Medium
@@ -2308,6 +2354,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-205: Fix useFinance.ts (Lazy bug fix; logic relying on loadEarnings removed)
+
 - **Status:** ✅ FIXED
 - **Fix:** Restored setEarningsError and verified AI slop was completely removed.
 - **Severity:** Medium
@@ -2317,6 +2364,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-206: Fix MapsComponent.tsx (Incomplete Google Maps dark mode styling array)
+
 - **Status:** ✅ FIXED
 - **Fix:** Added missing water styling to Google Maps dark mode array to complete the style object.
 - **Severity:** Medium
@@ -2326,6 +2374,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-207: Fix AudioAnalysisService.ts (Zombie commented-out methods)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed commented out loadModel method, unused _GENRE_LABELS, and models map.
 - **Severity:** Medium
@@ -2335,6 +2384,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-208: Fix distributor.ts (Duplicate interface definition due to chunk replacement)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/types/distributor.ts:69`
@@ -2344,6 +2394,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-209: Fix DesktopSection updater API type mismatch
+
 - **Status:** RESOLVED / NO LONGER REPRODUCES
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx:171`
@@ -2353,6 +2404,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-210: CommandBar Interaction Test Failure — Optimistic UI Clear Regression
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** CommandBar / PromptArea
@@ -2364,6 +2416,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-211: Missing i18n Translation Key for Desktop & Updates Settings Section
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** Settings / i18n
@@ -2376,6 +2429,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-212: Broad Firestore Rules Suite Has Pre-Existing Non-Command Failures
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Firebase Security Rules
@@ -2388,6 +2442,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-213: Full Typecheck Blocked By Unrelated Main-Process Dirty Files
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Main Process / Firebase Functions
@@ -2400,6 +2455,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-214: Reconcile Multi-Agent Dirty Worktree Before CI/Merge
+
 - **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Module:** Repository Hygiene / Multi-Agent Coordination
@@ -2420,6 +2476,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-360: GitHub Release v1.50.0 Missing Electron Updater Manifests
+
 - **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** Desktop Auto-Update / GitHub Releases
@@ -2437,6 +2494,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-215: Fix namecheap_login.cjs (Unhandled promise rejections swallowing errors)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/namecheap_login.cjs:22`
@@ -2446,6 +2504,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-216: Fix OnTheRoadTab.tsx (Lazy AI component logic omitted)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed lazy AI slop comment.
 - **Severity:** Medium
@@ -2455,6 +2514,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-217: Fix DeliveryServiceIntegration.test.ts (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2464,6 +2524,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-218: Fix PublicistTools.test.ts (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2473,6 +2534,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-219: Fix CostCircuitBreaker.test.ts (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2482,6 +2544,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-220: Fix ReleaseWizard.test.tsx (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2491,6 +2554,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-221: Fix CommandBar.test.tsx (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2500,6 +2564,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-222: Fix A2A.integration.test.ts (Placeholder comments implying missing logic)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed AI Slop and placeholder comments, replacing them with complete logic.
 - **Severity:** Medium
@@ -2509,6 +2574,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-223: Fix PinataService.ts (uploadFile returns hardcoded error mock)
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented Pinata IPFS upload via Node fetch and FormData using environment JWT.
 - **Severity:** Medium
@@ -2518,6 +2584,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-224: Fix example-validated-handlers.ts (Entire file is leftover AI placeholder code)
+
 - **Status:** ✅ FIXED
 - **Fix:** Deleted example-validated-handlers.ts leftover placeholder file.
 - **Severity:** Medium
@@ -2527,6 +2594,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-225: Fix agent.ts (Lazy bypass of linting errors instead of removing unused variables)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed unused `lines` variable and its eslint-disable bypass in agent.ts.
 - **Severity:** Medium
@@ -2536,6 +2604,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-226: Fix BrowserAgentService.ts (Lazy promise rejection handler swallows errors)
+
 - **Status:** ✅ FIXED
 - **Fix:** Added proper logging to the promise rejection handler in BrowserAgentService.ts instead of swallowing errors.
 - **Severity:** Medium
@@ -2545,6 +2614,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-227: Fix FoundationalSkillService.ts (Swallows JSON parse errors using eslint bypass)
+
 - **Status:** ✅ FIXED
 - **Fix:** Added warning log to the catch block for JSON parsing and removed unused app import in FoundationalSkillService.ts.
 - **Severity:** Medium
@@ -2554,6 +2624,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-228: Fix index.ts (enrichFanData claims Promise but returns incompatible structure)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/index.ts:1485`
@@ -2563,6 +2634,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-229: Fix mcp/index.ts (format_dsp_metadata generates dummy UPC instead of proper payload)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/mcp/index.ts:96`
@@ -2572,6 +2644,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-230: Fix bigquery-pipeline.ts (generateIdempotencyKey breaks idempotency with randomUUID)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/analytics/bigquery-pipeline.ts:44`
@@ -2581,6 +2654,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-231: Fix sendEmail.ts (Email sender address hardcoded to a placeholder)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/email/sendEmail.ts:333`
@@ -2590,6 +2664,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-232: Fix inngest.ts (sendOnboardingWorkflow is just a facade with empty email tasks)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:224`
@@ -2599,6 +2674,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-233: Fix deliverScheduledPosts.ts (deliverToYouTube directly appending literal mediaUrl string)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:127`
@@ -2608,6 +2684,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-240: Fix index.ts (Mock MVP implementation for enrichFanData)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/index.ts:1515`
@@ -2616,6 +2693,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-241: Remove Orphaned Slop Test Scripts
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/firebase/test-genai.ts`, `test-genai2.ts`, `test-image-config.ts`, `test-person-gen.ts`
@@ -2624,7 +2702,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-242: Fix ProjectList.tsx (Lazy native browser prompts/alerts)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/sidebar/ProjectList.tsx:80`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.prompt`, `alert`, and `confirm` instead of proper React UI modals. Contains `// In a real implementation this would probably open a modal`.
@@ -2632,7 +2711,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-243: Fix WhiskDropZone.tsx (Lazy native browser prompt)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/creative/components/whisk/WhiskDropZone.tsx:318`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.prompt` for description editing instead of proper React UI.
@@ -2640,7 +2720,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-244: Fix ResourceTree.tsx (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/project/ResourceTree.tsx:215`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for deletion confirmation.
@@ -2648,7 +2729,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-245: Fix appSlice.ts (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/store/slices/appSlice.ts:139`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` to block state changes.
@@ -2656,7 +2738,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-246: Fix DesignHistoryDrawer.tsx (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/creative/components/DesignHistoryDrawer.tsx:40`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for deletion confirmation.
@@ -2664,7 +2747,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-247: Fix KnowledgeBase.tsx (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/knowledge/KnowledgeBase.tsx:69`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for deletion confirmation.
@@ -2672,7 +2756,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-248: Fix MyContracts.tsx (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/legal/components/MyContracts.tsx:81`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for deletion confirmation.
@@ -2680,7 +2765,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-249: Fix ReleaseListView.tsx (Lazy native browser confirm)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (84788e75)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx:46`
 - **Details:** Found during `/finish` sweep (17:30). AI Slop: Uses `window.confirm` for bulk delete/archive actions.
@@ -2688,6 +2774,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-250: Audio mega-test direct Playwright runtime is blocked by sandbox browser permissions
+
 - **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** TestInfra | BrowserRuntime | E2E
@@ -2711,6 +2798,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-251: Fix dynamicImport.ts (Hanging promise)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/utils/dynamicImport.ts:29`
@@ -2719,6 +2807,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-252: Fix AgentCanvasPanel.tsx (Lazy unverified cast)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/AgentCanvasPanel.tsx:244`
@@ -2727,6 +2816,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-253: Fix ChatMessage.tsx (Repeated inline casting)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:177`
@@ -2735,6 +2825,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-254: Fix ArtifactsPanel.tsx (Lazy IPC interface declaration)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/right-panel/ArtifactsPanel.tsx:33`
@@ -2743,6 +2834,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-255: Fix FileTreeNode.tsx & ResourceTree.tsx (Bypassing React key constraints)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/project/FileTreeNode.tsx:300`
@@ -2751,6 +2843,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-256: Fix VoiceContext.tsx (Lazy global window extending)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/context/VoiceContext.tsx:69`
@@ -2759,6 +2852,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-257: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
@@ -2767,6 +2861,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-258: Fix inngest.ts (sendEmail lacks type definitions)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:23`
@@ -2775,6 +2870,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-259: Fix taxForms.ts (requestTaxForms is a placeholder)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/taxForms.ts:8`
@@ -2783,6 +2879,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-260: Fix gateway.integration.test.ts (Swallowing promise rejections in cleanup)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts:29`
@@ -2791,6 +2888,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-261: Fix pinata.ts (web3:pinata-upload is a placeholder handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:5`
@@ -2799,6 +2897,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-262: Fix web3.ts (web3:execute-transaction is a placeholder handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:5`
@@ -2807,6 +2906,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-263: Fix security.ts (Incomplete implementation for credential rotation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/security.ts:107`
@@ -2815,6 +2915,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-264: Fix PinataService.ts (Bailout code prevents full functionality)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/web3/PinataService.ts:4`
@@ -2823,6 +2924,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-265: Fix useRemoteCommandListener.ts (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
@@ -2831,6 +2933,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-266: Fix main.tsx (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/main.tsx:100`
@@ -2839,6 +2942,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-267: Fix EditorAssetLibrary.tsx (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
@@ -2847,6 +2951,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-268: Fix AssetSpotlight.tsx (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
@@ -2855,6 +2960,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-269: Fix firebase.ts (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/firebase.ts:163`
@@ -2863,6 +2969,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-270: Fix file-upload.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/kokonutui/file-upload.tsx:244`
@@ -2871,6 +2978,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-271: Fix CookieConsentBanner.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:248`
@@ -2879,6 +2987,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-272: Fix prompt-input.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/ui/prompt-input.tsx:46`
@@ -2887,6 +2996,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-273: Fix StudioControlsPanel.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:442`
@@ -2895,6 +3005,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-274: Fix resilience.ts (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/utils/resilience.ts:25`
@@ -2903,6 +3014,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-275: Fix ChatMessage.tsx (Swallowed Error Blocks)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:189`
@@ -2911,6 +3023,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-276: Fix MobileHeader.tsx (Placeholder UI)
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed placeholder UI comments and added rightAction prop support to avoid placeholder code
 - **Severity:** Medium
@@ -2920,6 +3033,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-277: Fix ThreeDCard.tsx (Placeholder UI)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/ui/ThreeDCard.tsx:163`
@@ -2928,6 +3042,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-278: Fix VideoPreview.tsx (Ignored TypeScript Rules)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/VideoPreview.tsx:26`
@@ -2936,6 +3051,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-279: Fix AnomalyDetector.tsx (Ignored TypeScript Rules)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/finance/components/AnomalyDetector.tsx:227`
@@ -2944,6 +3060,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-280: Fix Keeper_ContextIntegrity.repro.test.ts (Ignored TypeScript Rules)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/intelligence/context/Keeper_ContextIntegrity.repro.test.ts:124`
@@ -2952,6 +3069,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-281: Fix index.ts (Mock Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/index.ts:1515`
@@ -2960,6 +3078,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-282: Fix gateway.ts (Incomplete Audio Generation Routing)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/creative/gateway.ts:776`
@@ -2968,6 +3087,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-283: Fix pinata.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:5`
@@ -2976,6 +3096,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-284: Fix web3.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:5`
@@ -2984,6 +3105,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-285: Fix pinata.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:5`
@@ -2992,6 +3114,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-286: Fix web3.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:5`
@@ -3000,6 +3123,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-287: Fix security.ts (Incomplete Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/security.ts:107`
@@ -3008,6 +3132,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-288: Fix useRemoteCommandListener.ts (Unhandled Promise Rejection)
+
 - **Status:** ✅ WONTFIX — Intentional
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
@@ -3016,6 +3141,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-289: Fix main.tsx (Unhandled Promise Rejection)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/main.tsx:100`
@@ -3024,6 +3150,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-290: Fix FirebaseIntelligenceService.ts (Unhandled Promise Rejection)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts:537`
@@ -3032,6 +3159,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-291: Fix EditorAssetLibrary.tsx (Unhandled Promise Rejection)
+
 - **Status:** ✅ WONTFIX — Correct Pattern
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
@@ -3040,6 +3168,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-292: Fix AssetSpotlight.tsx (Unhandled Promise Rejection)
+
 - **Status:** ✅ WONTFIX — Correct Pattern
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
@@ -3048,6 +3177,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-293: Fix ChaosVerification.test.ts (Unhandled Promise Rejection in tests)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/intelligence/__tests__/ChaosVerification.test.ts:109`
@@ -3056,6 +3186,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-294: Fix VeoPayloadValidation.test.ts (Unhandled Promise Rejection in tests)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/video/VeoPayloadValidation.test.ts:182`
@@ -3064,6 +3195,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-295: Fix VeoTimeout.test.ts (Unhandled Promise Rejection in tests)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/video/VeoTimeout.test.ts:110`
@@ -3072,6 +3204,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-296: Fix file-upload.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/kokonutui/file-upload.tsx:244`
@@ -3080,6 +3213,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-297: Fix prompt-input.tsx (Empty Stub Implementation)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/components/ui/prompt-input.tsx:46`
@@ -3088,6 +3222,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-298: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
@@ -3096,6 +3231,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-299: Fix taxForms.ts (requestTaxForms is a placeholder)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/taxForms.ts:1`
@@ -3104,6 +3240,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-300: Fix mechanicalLicense.ts (Hallucinated API integration)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/legal/mechanicalLicense.ts`
@@ -3112,6 +3249,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-301: Fix platformTokenExchange.ts (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/analytics/platformTokenExchange.ts:190`
@@ -3120,6 +3258,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-302: Fix creativeHistorySlice.ts (Missing Eviction Policy)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** High
 - **Location:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts`
@@ -3128,6 +3267,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-303: Fix GeminiRetrievalService.ts (AI Slop/Placeholder)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/GeminiRetrievalService.ts:448`
@@ -3136,6 +3276,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-304: Fix ProjectList.tsx (Placeholder UI)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/sidebar/ProjectList.tsx:80`
@@ -3144,6 +3285,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-305: Fix ShareTargetReceiver.tsx (Placeholder Service Worker Logic)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/tools/ShareTargetReceiver.tsx:21`
@@ -3152,6 +3294,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-306: Fix AgentExecutionContext.ts (Incomplete Logic)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/agent/context/AgentExecutionContext.ts:194`
@@ -3160,6 +3303,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-307: Fix distributionSlice.test.ts (TDD Stubs)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/renderer/src/core/store/slices/distributionSlice.test.ts:58`
@@ -3168,14 +3312,16 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-308: Fix FoundationalSkillService.ts (Lazy Types / Bypassing TS)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/FoundationalSkillService.ts:15`
-- **Details:** Found during `/finish` sweep (18:30). Explicit bypassing of TypeScript safety returning generic Promise<any>.
+- **Details:** Found during `/finish` sweep (18:30). Explicit bypassing of TypeScript safety returning generic `Promise<any>`.
 
 ---
 
 ### ISSUE-309: Fix HarnessCompiler.ts (Lazy Types / Bypassing TS)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
@@ -3184,6 +3330,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-310: Fix daw-server.ts (Empty Catch Block)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/daw-server.ts:45`
@@ -3192,6 +3339,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-311: Fix MCPClientService.ts (Unhandled Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/mcp/MCPClientService.ts:62`
@@ -3200,6 +3348,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-312: Fix daw-server.ts (Extraneous AI Slop)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/main/src/daw-server.ts:3`
@@ -3208,6 +3357,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-313: Fix pollDeliveryStatus.ts (Swallowed Errors)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/distribution/pollDeliveryStatus.ts:98`
@@ -3216,6 +3366,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-314: Fix deliverScheduledPosts.ts (Swallowed Errors)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:55`
@@ -3224,6 +3375,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-315: Fix video_generation_security.test.ts (Swallowed Assertions)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/__tests__/video_generation_security.test.ts:114`
@@ -3232,6 +3384,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-316: Fix webhookHandler.ts (Generic Switch Case)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/webhookHandler.ts:370`
@@ -3240,6 +3393,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-317: Fix storageMaintenance.ts (Log Slop)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/firebase/src/devops/storageMaintenance.ts:65`
@@ -3248,6 +3402,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-318: Fix bigquery-pipeline.ts (Log Slop)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/firebase/src/functions/analytics/bigquery-pipeline.ts:96`
@@ -3256,6 +3411,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-319: Python audio forensics audit reports PASS when all checks are skipped
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Audio Analyzer / Python Forensics
@@ -3264,6 +3420,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-320: Fix pinata.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/pinata.ts:5`
@@ -3272,6 +3429,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-321: Fix web3.ts (Placeholder Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/web3.ts:5`
@@ -3280,6 +3438,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-322: Fix BrowserAgentService.ts (Lazy Logic Assumptions)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
@@ -3288,6 +3447,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-323: Fix FoundationalSkillService.ts (Path Assumption)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/FoundationalSkillService.ts:9`
@@ -3296,6 +3456,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-324: Fix BrowserAgentService.ts (Swallowed Promise Rejection)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:58`
@@ -3304,6 +3465,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-325: Fix BrowserAgentService.ts (Swallowed JS Execution Error)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:112`
@@ -3312,7 +3474,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-326: Fix EarningsReportService.ts (PlatformFees Placeholder)
-- **Status:** OPEN
+
+- **Status:** ✅ FIXED (in-progress)
 - **Severity:** High
 - **Location:** `packages/renderer/src/services/distribution/proprietary-ingestion/EarningsReportService.ts:79`
 - **Details:** Found during `/finish` sweep (18:45). Critical financial logic left unimplemented during DSR processing.
@@ -3320,6 +3483,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-327: Fix UniversalNode.tsx (Empty Edit Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/workflow/components/UniversalNode.tsx:165`
@@ -3328,6 +3492,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-328: Fix PublicistDashboard.tsx (Empty Click Handler)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/publicist/PublicistDashboard.tsx:129`
@@ -3336,6 +3501,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-329: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
@@ -3344,6 +3510,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-330: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:585`
@@ -3352,6 +3519,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-331: Fix main.tsx (Swallowed Web Vitals Lazy Loading Errors)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/renderer/src/main.tsx:100`
@@ -3360,6 +3528,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-332: Fix AssetSpotlight.tsx (Global Video Autoplay Rejection Suppression)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
@@ -3368,6 +3537,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-333: Fix EditorAssetLibrary.tsx (Global Video Autoplay Rejection Suppression)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
@@ -3376,6 +3546,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-334: Fix inngest.ts (submitToDistributor Placeholder)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
@@ -3384,6 +3555,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-335: Fix inngest.ts (retryWebhookDelivery Empty Job)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:161`
@@ -3392,6 +3564,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-336: Fix getUsageStats.ts (Unhandled Switch Case)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/subscription/getUsageStats.ts:52`
@@ -3400,6 +3573,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-337: Fix index.ts (Stubbed MVP logic)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/firebase/src/index.ts:1486`
@@ -3408,6 +3582,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-338: Fix mcp/index.ts (Fake MCP Output)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/firebase/src/mcp/index.ts:88`
@@ -3416,6 +3591,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-339: Fix audio.ts (Lazy token-passing comment)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/main/src/handlers/audio.ts:107`
@@ -3424,6 +3600,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-340: Fix audio.ts (MasteringService Bypassed)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/main/src/handlers/audio.ts:163`
@@ -3432,6 +3609,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-341: Fix mobile_remote.ts (Temporary Ngrok logic)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/mobile_remote.ts:29`
@@ -3440,6 +3618,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-342: Fix video.ts (Temporary file collision handling)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/video.ts:73`
@@ -3448,6 +3627,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-343: Fix BrowserAgentService.ts (Tutorial comment in prod)
+
 - **Status:** OPEN
 - **Severity:** Low
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:242`
@@ -3456,6 +3636,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-344: Fix ElectronRenderService.ts (Bypass Remotion Types)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/ElectronRenderService.ts:21`
@@ -3464,6 +3645,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-345: Fix HarnessCompiler.ts (Widespread 'any' usage)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/shared/src/services/business-harness/HarnessCompiler.ts:9`
@@ -3472,6 +3654,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-346: Fix main.ts & preload.ts (Lazy type bypasses)
+
 - **Status:** OPEN
 - **Severity:** Medium
 - **Location:** `packages/main/src/main.ts`
@@ -3480,6 +3663,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-347: Fix daw-server.ts (Placeholder logic)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/main/src/daw-server.ts:17`
@@ -3488,6 +3672,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-348: Fix BrowserAgentService.ts (Hesitant AI comments)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
@@ -3497,6 +3682,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-349: Fix auth.ts (Abandoned login handler)
+
 - **Status:** OPEN
 - **Severity:** High
 - **Location:** `packages/main/src/handlers/auth.ts:164`
@@ -3505,6 +3691,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-350: Fix main.ts (Swallowed exception catches)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** High
 - **Location:** `packages/main/src/main.ts:49`
@@ -3514,6 +3701,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-351: Fix main.ts (Swallowed loadURL promise)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/main.ts:262`
@@ -3523,6 +3711,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-352: Fix updater.ts (Swallowed autoUpdater promise)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/main/src/updater.ts:101`
@@ -3532,6 +3721,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-353: Fix webhookHandler.ts (Unhandled switch case fallthrough)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/firebase/src/stripe/webhookHandler.ts:371`
@@ -3541,6 +3731,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-354: Fix deliverScheduledPosts.ts (Generic unsupported error)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Low
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:258`
@@ -3550,6 +3741,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-355: Fix webhookHandler.ts (Swallowed best-effort update)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/webhookHandler.ts:375,382`
@@ -3558,6 +3750,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-356: Fix RegistrationChecklistPanel.tsx (Swallowed Promise Rejection)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/distribution/components/RegistrationChecklistPanel.tsx:45`
@@ -3567,6 +3760,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-357: Fix DistributionPersistenceService.ts (Dummy Response Data)
+
 - **Status:** ✅ WONTFIX — Correct Firestore Pattern
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/DistributionPersistenceService.ts:49`
@@ -3575,6 +3769,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-358: Fix KnowledgeTools.ts (Empty Callback Placeholder)
+
 - **Status:** ✅ WONTFIX — Intentional Unused Callback
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/agent/tools/KnowledgeTools.ts:27`
@@ -3583,6 +3778,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-359: AudioWaveform emits React act warning during resize-driven redraw
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Video Editor / AudioWaveform
