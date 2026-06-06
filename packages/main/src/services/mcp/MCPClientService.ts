@@ -103,8 +103,14 @@ export class MCPClientService {
             }
         );
 
-        await this.harnessClient.connect(this.harnessTransport);
-        log.info('[MCP] ✅ Connected to harness MCP Server over Stdio');
+        try {
+            await this.harnessClient.connect(this.harnessTransport);
+            log.info('[MCP] ✅ Connected to harness MCP Server over Stdio');
+        } catch (err) {
+            this.harnessClient = null;
+            this.harnessTransport = null;
+            throw err;
+        }
     }
 
     /**
