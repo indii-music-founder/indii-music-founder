@@ -2380,17 +2380,12 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-210: CommandBar Interaction Test Failure — Optimistic UI Clear Regression
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** CommandBar / PromptArea
 - **Location:** `packages/renderer/src/core/components/CommandBar.interaction.test.tsx:266`
 - **Found:** 2026-06-06 by Vitest full suite run during `/end` closing protocol
-- **Details:** `Scenario 3: Optimistic UI - input clears immediately upon send` fails with `AssertionError: expected 'Fast clear' to be ''`. The test expects the input value to be cleared immediately upon send, but the value remains.
-- **Root Cause:** Uncommitted modifications to `packages/renderer/src/core/components/command-bar/PromptArea.tsx` from a parallel agent session broke the optimistic clear behavior. Test passes on clean tree (verified via `git stash` + re-run).
-- **Steps to Reproduce:**
-  1. Run `npx vitest run packages/renderer/src/core/components/CommandBar.interaction.test.tsx`
-  2. Scenario 3 fails — input value is `'Fast clear'` instead of `''`
-- **Fix Required:** Review the uncommitted `PromptArea.tsx` changes and ensure the `onSend` callback clears the input value synchronously before returning.
+- **Fix:** Moved `setCommandBarInput('')` and `setCommandBarAttachments([])` to clear synchronously at the start of `handleSubmit` before any asynchronous `await` calls.
 - **Files:** `packages/renderer/src/core/components/command-bar/PromptArea.tsx`
 
 ---
