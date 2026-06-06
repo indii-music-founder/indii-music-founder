@@ -31,6 +31,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         endFrameItem,
         magicFillPrompt,
         isHighFidelity,
+        processingStatus,
         canvasEl,
         generatedHistory,
 
@@ -52,7 +53,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
-        handleRefine,
         handleCreateLastFrame,
         handleFlattenCanvas,
         batchExportDimensions,
@@ -84,6 +84,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     setMagicFillPrompt={setMagicFillPrompt}
                     handleMagicFill={handleMagicFill}
                     isProcessing={isProcessing}
+                    processingStatus={processingStatus}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
                 />
@@ -146,6 +147,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 onSendToWorkflow={onSendToWorkflow}
                                 onCreateLastFrame={handleCreateLastFrame}
                                 isProcessing={isProcessing}
+                                processingStatus={processingStatus}
                                 saveCanvas={saveCanvas}
                                 batchExportDimensions={batchExportDimensions}
                                 flattenCanvas={handleFlattenCanvas}
@@ -155,12 +157,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
                     <div className="pointer-events-none absolute inset-x-[72px] top-0 h-24 bg-linear-to-b from-black/35 to-transparent" />
                     <div className="pointer-events-none absolute inset-x-[72px] bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent" />
-
-                    <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center rounded-full border border-white/10 bg-[#050608]/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/35 backdrop-blur-xl">
-                        Tools left
-                        <span className="mx-2 h-1 w-1 rounded-full bg-white/20" />
-                        Actions right
-                    </div>
 
                     <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
                         <CanvasToolbar
