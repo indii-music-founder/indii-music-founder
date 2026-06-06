@@ -140,7 +140,9 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
         // Loop 5 times: 5 * 0.20 = 1.00
         // We expect these to pass because the check is: (current + estimated) <= max
         // 1. current=0, cost=0.20 -> 0.20 <= 1.00 (OK) -> new spend 0.20
-        // ...
+        // 2. current=0.20, cost=0.20 -> 0.40 <= 1.00 (OK) -> new spend 0.40
+        // 3. current=0.40, cost=0.20 -> 0.60 <= 1.00 (OK) -> new spend 0.60
+        // 4. current=0.60, cost=0.20 -> 0.80 <= 1.00 (OK) -> new spend 0.80
         // 5. current=0.80, cost=0.20 -> 1.00 <= 1.00 (OK) -> new spend 1.00
 
         for (let i = 0; i < 5; i++) {
