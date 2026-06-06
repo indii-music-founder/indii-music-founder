@@ -92,33 +92,45 @@ export default function FieldRecorder() {
     const storagePath = `users/${user.uid}/recordings/${Date.now()}_${filename}.webm`;
     const storageRef = ref(storage, storagePath);
 
-    try {
-      // 1. Upload to Storage
-      const snapshot = await uploadBytes(storageRef, audioBlob);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+    const maxRetries = 3;
+    let attempt = 0;
+    let success = false;
 
-      // 2. Register in Firestore (Shared with Electron App)
-      await addDoc(collection(db, 'history'), {
-        userId: user.uid,
-        orgId: 'personal',
-        type: 'audio_capture',
-        prompt: filename,
-        storageUrl: downloadUrl,
-        mimeType: 'audio/webm',
-        createdAt: serverTimestamp(),
-        generatedAt: Date.now(),
-        estimatedDuration: timer,
-        metadata: {
-          source: 'Artist Portal (Field Recorder)',
-          originalFilename: filename
+    while (attempt < maxRetries && !success) {
+      try {
+        // 1. Upload to Storage
+        const snapshot = await uploadBytes(storageRef, audioBlob);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
+        // 2. Register in Firestore (Shared with Electron App)
+        await addDoc(collection(db, 'history'), {
+          userId: user.uid,
+          orgId: 'personal',
+          type: 'audio_capture',
+          prompt: filename,
+          storageUrl: downloadUrl,
+          mimeType: 'audio/webm',
+          createdAt: serverTimestamp(),
+          generatedAt: Date.now(),
+          estimatedDuration: timer,
+          metadata: {
+            source: 'Artist Portal (Field Recorder)',
+            originalFilename: filename
+          }
+        });
+
+        success = true;
+        setRecordingState('completed');
+      } catch (err) {
+        attempt++;
+        console.error(`Upload failed (attempt ${attempt}/${maxRetries}):`, err);
+        if (attempt >= maxRetries) {
+          setError('Cloud sync failed after multiple attempts. Please try again or download locally.');
+          setRecordingState('stopped');
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
-      });
-
-      setRecordingState('completed');
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setError('Cloud sync failed. Please try again or download locally.');
-      setRecordingState('stopped');
+      }
     }
   }
 
