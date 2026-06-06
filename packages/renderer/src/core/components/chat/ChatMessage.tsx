@@ -186,7 +186,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (_e: unknown) { /* ignore */ } }
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (err: unknown) { logger.debug('[ChatMessage] JSON parse failed inside pre block:', err); } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
         },

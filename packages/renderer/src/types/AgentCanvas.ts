@@ -50,8 +50,13 @@ export interface MarkdownPayload {
     content: string;
 }
 
+/** HTML payload. */
+export interface HtmlPayload {
+    content: string;
+}
+
 /** Union of all canvas data payloads. */
-export type CanvasData = ChartPayload | TablePayload | CardPayload | MarkdownPayload | Record<string, unknown>;
+export type CanvasData = ChartPayload | TablePayload | CardPayload | MarkdownPayload | HtmlPayload | Record<string, unknown>;
 
 /** A single canvas push payload from an agent. */
 export interface CanvasPushPayload {
