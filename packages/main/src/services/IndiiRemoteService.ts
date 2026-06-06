@@ -34,7 +34,9 @@ class IndiiRemoteService {
     private port = 3333;
     private password = '';
 
-    constructor() { }
+    constructor() {
+        console.info('[IndiiRemoteService] initialized');
+    }
 
     public async start(config: RemoteConfig): Promise<string> {
         if (this.isRunning) {

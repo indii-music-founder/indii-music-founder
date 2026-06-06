@@ -66,8 +66,6 @@ export interface TerritoryRightsConfig {
   splits: TerritoryRightsSplit[];
 }
 
-// ... (existing code)
-
 // Multi-distributor release request
 export interface MultiDistributorReleaseRequest {
   metadata: ExtendedGoldenMetadata;
@@ -233,19 +231,7 @@ export interface DistributorRequirements {
   };
 }
 
-// Multi-distributor release request
-export interface MultiDistributorReleaseRequest {
-  metadata: ExtendedGoldenMetadata;
-  assets: ReleaseAssets;
-  distributors: DistributorId[];
-  releaseDate: string;
-  territories: string[];
-  options?: {
-    autoSelectBestDistributor?: boolean;
-    prioritizePayoutRate?: boolean;
-    skipFailedDistributors?: boolean;
-  };
-}
+
 
 // Multi-distributor release result
 export interface MultiDistributorReleaseResult {

@@ -20,6 +20,7 @@
         "ffprobe-static": "3.1.0",
         "fluent-ffmpeg": "2.1.3",
         "keytar": "7.9.0",
+        "libsodium-wrappers": "^0.7.10",
         "ssh2-sftp-client": "12.0.1",
         "utf-8-validate": "^5.0.2",
         "ws": "^8.18.0",
@@ -28,6 +29,7 @@
     "devDependencies": {
         "@types/ffprobe-static": "^2.0.3",
         "@types/fluent-ffmpeg": "2.1.28",
+        "@types/libsodium-wrappers": "^0.7.14",
         "@types/node": "22.19.1",
         "@types/ssh2-sftp-client": "9.0.6",
         "@types/ws": "^8.5.14",

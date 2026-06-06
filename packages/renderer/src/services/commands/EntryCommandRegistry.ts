@@ -1,6 +1,8 @@
 import type { HarnessDomain } from '@/services/business-harness/types';
 
-export type EntryCommandSurface = 'dashboard' | 'command-bar' | 'mobile' | 'capture' | 'voice';
+export const ENTRY_COMMAND_SURFACES = ['dashboard', 'command-bar', 'mobile', 'capture', 'voice'] as const;
+
+export type EntryCommandSurface = typeof ENTRY_COMMAND_SURFACES[number];
 export type EntryCommandStatus = 'idle' | 'collecting' | 'ready' | 'running' | 'completed' | 'blocked';
 export type EntryCommandLaunchMode = 'guided-chat' | 'navigate' | 'workflow';
 
@@ -438,10 +440,16 @@ function isValidCustomCommand(value: unknown): value is EntryCommandDefinition {
     typeof command.title === 'string' &&
     typeof command.summary === 'string' &&
     Array.isArray(command.surfaces) &&
+    command.surfaces.length > 0 &&
+    command.surfaces.every(isEntryCommandSurface) &&
     Array.isArray(command.intakeFields) &&
     typeof command.launchMode === 'string' &&
     typeof command.outputContract === 'string' &&
     Array.isArray(command.approvalRequiredFor) &&
     typeof command.resumeBehavior === 'string'
   );
+}
+
+export function isEntryCommandSurface(value: unknown): value is EntryCommandSurface {
+  return typeof value === 'string' && (ENTRY_COMMAND_SURFACES as readonly string[]).includes(value);
 }

@@ -125,7 +125,39 @@ async function deliverToTikTok(token: PlatformToken, post: ScheduledPostDoc): Pr
 }
 
 async function deliverToYouTube(token: PlatformToken, post: ScheduledPostDoc): Promise<{ success: boolean; postId?: string; error?: string }> {
-    return { success: false, error: 'YouTube delivery is currently unsupported.' };
+    try {
+        const metadata = {
+            snippet: {
+                title: post.title || post.text || 'indii Upload',
+                description: post.description || post.text || '',
+                tags: ['music', 'indii'],
+                categoryId: '10' // Music
+            },
+            status: {
+                privacyStatus: 'public',
+                selfDeclaredMadeForKids: false
+            }
+        };
+
+        const boundary = 'foo_bar_baz';
+        const bodyStart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/*\r\n\r\n`;
+        const bodyEnd = `\r\n--${boundary}--`;
+        
+        const res = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token.accessToken}`,
+                'Content-Type': `multipart/related; boundary=${boundary}`
+            },
+            body: bodyStart + (post.mediaUrl || '') + bodyEnd
+        });
+
+        if (!res.ok) return { success: false, error: `YouTube API returned ${res.status}` };
+        const data = await res.json() as { id?: string };
+        return { success: true, postId: data.id };
+    } catch (e) {
+        return { success: false, error: String(e) };
+    }
 }
 
 /**

@@ -27,6 +27,7 @@ Implement the Universal Command Workflow Layer for dashboard cards, typed slash 
 - [x] Add Firestore security rules for user-scoped and team-scoped custom commands.
 - [x] Add focused sync service, static rules, and emulator-backed rules tests.
 - [x] Document custom command cloud sync.
+- [x] `/middle` audit: harden custom command surface validation across local registry, cloud hydration, and Firestore rules.
 
 ## Non-Goals
 - Do not handle CI, merge, cleanup, or unrelated open work.
@@ -41,3 +42,4 @@ Implement the Universal Command Workflow Layer for dashboard cards, typed slash 
 - ✅ `npx vitest run packages/renderer/src/services/commands/EntryCommandRegistry.test.ts packages/renderer/src/services/commands/EntryCommandService.test.ts --config vitest.config.ts` after custom command promotion updates
 - ✅ `npx vitest run packages/renderer/src/services/commands/EntryCommandRegistry.test.ts packages/renderer/src/services/commands/EntryCommandService.test.ts packages/renderer/src/services/commands/EntryCommandSyncService.test.ts packages/renderer/src/services/commands/EntryCommandSecurityRules.test.ts --config vitest.config.ts`
 - ✅ `npx -y firebase-tools@latest emulators:exec --only firestore "npx vitest run packages/renderer/src/services/commands/EntryCommandFirestoreRules.emulator.test.ts --config vitest.config.ts"`
+- ✅ `npx tsc -b packages/renderer`

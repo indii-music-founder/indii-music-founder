@@ -92,11 +92,12 @@ describe('Firestore Security Rules', () => {
 
     // ── Helpers (safe to define even if emulator is down) ─────────────────
     const verifiedCtx = (uid: string) => testEnv.authenticatedContext(uid);
-    const anonCtx = () => testEnv.authenticatedContext(ANON_UID, { token: ANON_TOKEN });
+    const anonCtx = () => testEnv.authenticatedContext(ANON_UID, ANON_TOKEN);
     const unauthCtx = () => testEnv.unauthenticatedContext();
-    const orgDoc = (...members: string[]) => ({
+    const orgDoc = (ownerId: string, ...members: string[]) => ({
         name: 'Test Org',
-        members,
+        ownerId: ownerId,
+        members: [ownerId, ...members],
         createdAt: Timestamp.now(),
     });
 
@@ -884,10 +885,10 @@ describe('Firestore Security Rules', () => {
             createdAt: Timestamp.now(),
         };
 
-        it('authenticated: create allowed (interim solution)', async () => {
+        it('authenticated: create denied (server-only)', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
-            await assertSucceeds(setDoc(doc(db, 'fraud_alerts', 'alert-1'), alertData));
+            await assertFails(setDoc(doc(db, 'fraud_alerts', 'alert-1'), alertData));
         });
 
         it('authenticated: read denied (no client reads)', async () => {

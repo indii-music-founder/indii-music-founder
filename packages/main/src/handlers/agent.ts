@@ -135,12 +135,13 @@ export function registerAgentHandlers() {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const lines = content.split('\n');
 
-            // Simplistic multi-replace implementation for agents
-            // In a real implementation this would need careful index handling
             for (const chunk of replacementChunks) {
                 const { targetContent, replacementContent } = chunk;
-                if (content.includes(targetContent)) {
+                const occurences = content.split(targetContent).length - 1;
+                if (occurences === 1) {
                     content = content.replace(targetContent, replacementContent);
+                } else if (occurences > 1) {
+                    throw new Error(`Target content occurs multiple times, cannot safely replace: ${targetContent.substring(0, 30)}...`);
                 } else {
                      throw new Error(`Target content not found in file: ${targetContent.substring(0, 30)}...`);
                 }

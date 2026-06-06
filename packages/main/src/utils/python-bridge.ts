@@ -5,9 +5,8 @@ import log from 'electron-log';
 
 export class PythonBridge {
     private static getPythonPath(): string {
-        // In production, we might bundle a python runtime or expect one
-        // For now, assume 'python3' is in PATH
-        return 'python3';
+        // Use environment variable if provided, fallback to python3 or python
+        return process.env.PYTHON_PATH || process.env.PYTHON_CMD || 'python3';
     }
 
     private static getScriptPath(scriptName: string): string {
@@ -38,7 +37,8 @@ export class PythonBridge {
         args: string[] = [],
         onProgress?: (progress: number, logLine?: string) => void,
         env: NodeJS.ProcessEnv = {},
-        sensitiveArgsIndices: number[] = []
+        sensitiveArgsIndices: number[] = [],
+        signal?: AbortSignal
     ): Promise<unknown> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
@@ -62,7 +62,8 @@ export class PythonBridge {
             log.info(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
             const childProcess = spawn(python, [fullScriptPath, ...args], {
-                env: { ...process.env, ...env }
+                env: { ...process.env, ...env },
+                signal
             });
 
             let stdout = '';

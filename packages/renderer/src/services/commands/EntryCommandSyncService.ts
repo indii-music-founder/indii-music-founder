@@ -12,6 +12,7 @@ import { logger } from '@/utils/logger';
 import type { EntryCommandDefinition } from './EntryCommandRegistry';
 import {
   getCustomEntryCommands,
+  isEntryCommandSurface,
   mergeCustomEntryCommands,
   saveCustomEntryCommand,
 } from './EntryCommandRegistry';
@@ -155,6 +156,7 @@ function fromPersistedCommand(data: unknown): EntryCommandDefinition | null {
   if (!value.isCustom || typeof value.id !== 'string' || typeof value.slash !== 'string') {
     return null;
   }
+  const surfaces = Array.isArray(value.surfaces) ? value.surfaces.filter(isEntryCommandSurface) : [];
 
   return {
     id: value.id,
@@ -162,7 +164,7 @@ function fromPersistedCommand(data: unknown): EntryCommandDefinition | null {
     aliases: Array.isArray(value.aliases) ? value.aliases.filter(isString) : [],
     title: typeof value.title === 'string' ? value.title : value.slash,
     summary: typeof value.summary === 'string' ? value.summary : 'Custom command workflow.',
-    surfaces: Array.isArray(value.surfaces) ? value.surfaces.filter(isString) as EntryCommandDefinition['surfaces'] : ['command-bar'],
+    surfaces: surfaces.length > 0 ? surfaces : ['command-bar'],
     intakeFields: Array.isArray(value.intakeFields) ? value.intakeFields as EntryCommandDefinition['intakeFields'] : [],
     ...(typeof value.harnessDomain === 'string' ? { harnessDomain: value.harnessDomain as EntryCommandDefinition['harnessDomain'] } : {}),
     ...(typeof value.workflowId === 'string' ? { workflowId: value.workflowId } : {}),

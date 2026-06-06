@@ -83,22 +83,6 @@ export class AudioAnalysisService {
         return { features, fromCache: false };
     }
 
-    /**
-     * Helper: Extract Log-Mel Spectrogram using Essentia (Removed)
-     */
-    /*
-    private extractMelSpectrogram(signal: any): number[][] {
-        // ...
-        return [];
-    }
-    */
-
-    /*
-    private async getResampledSignal(audioBuffer: AudioBuffer, targetRate: number) {
-        // ...
-    }
-    */
-
     public async generateFileHash(file: Blob): Promise<string> {
         const CHUNK_SIZE = 1024 * 1024; // 1MB
         const blob = file.slice(0, CHUNK_SIZE);
