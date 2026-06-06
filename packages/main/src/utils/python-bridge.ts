@@ -1,12 +1,22 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import path from 'path';
 import { app } from 'electron';
 import log from 'electron-log';
 
 export class PythonBridge {
     private static getPythonPath(): string {
-        // Use environment variable if provided, fallback to python3 or python
-        return process.env.PYTHON_PATH || process.env.PYTHON_CMD || 'python3';
+        if (process.env.PYTHON_PATH) return process.env.PYTHON_PATH;
+        if (process.env.PYTHON_CMD) return process.env.PYTHON_CMD;
+        
+        // Dynamically detect python executable
+        try {
+            const py3 = spawnSync('python3', ['--version'], { stdio: 'ignore' });
+            if (py3.status === 0) return 'python3';
+        } catch (_e) {
+            // fallback to python
+        }
+        
+        return 'python';
     }
 
     private static getScriptPath(scriptName: string): string {
@@ -62,9 +72,16 @@ export class PythonBridge {
             log.info(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
             const childProcess = spawn(python, [fullScriptPath, ...args], {
-                env: { ...process.env, ...env },
-                signal
+                env: { ...process.env, ...env }
             });
+
+            if (signal) {
+                signal.addEventListener('abort', () => {
+                    log.warn(`[PythonBridge] Abort signal received. Force killing child process ${childProcess.pid}`);
+                    // Use SIGKILL to prevent orphaned processes if SIGTERM is ignored
+                    childProcess.kill('SIGKILL');
+                });
+            }
 
             let stdout = '';
             let stderr = '';

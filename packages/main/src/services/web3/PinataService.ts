@@ -7,7 +7,7 @@ export class PinataService {
             }
 
             const formData = new FormData();
-            formData.append('file', new Blob([file]), filename);
+            formData.append('file', new Blob([new Uint8Array(file)]), filename);
             formData.append('pinataMetadata', JSON.stringify({ name: filename }));
 
             const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {

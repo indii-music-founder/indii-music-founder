@@ -661,3 +661,19 @@
   - Reconfirmed no net-new audio product failures were observable beyond the existing live-browser regression path already tracked by `ISSUE-188`.
   - Reconfirmed the repeated `--localstorage-file` warnings and `electron-log` EPERM writes are still environment/test-noise signals rather than newly logged audio product issues.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_16-37-51_browser_blocker_reconfirm.md`
+
+## 2026-06-06 — MegaTestAudioLoop Playwright Runtime Block
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~5 minutes
+- **Findings:** 1 new test-infrastructure issue filed (`ISSUE-250`). No new product-level audio failures were observable in this run.
+- **Blockers:**
+  - `npm run dev:web` passed preflight checks but Vite failed to bind `::1:4243` with `listen EPERM`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21 test files / 135 tests and Python checks, but its Playwright phase failed because `config.webServer` could not bind `::1:4242`.
+  - A direct Playwright Chromium probe outside the repo harness failed before page navigation with `bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer... Permission denied (1100)`.
+  - Alternate Playwright engines were not usable because Firefox and WebKit browser binaries are not installed in this environment.
+  - No fresh browser-rendered page or meaningful UI screenshot could be captured in this run.
+- **Coverage Delta:**
+  - Reconfirmed audio analyzer UI tests, local technical analysis services, semantic Audio DNA support, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security all remained green in the scoped harness.
+  - Reconfirmed the `--localstorage-file` warnings and `electron-log` EPERM writes remain pre-existing environment noise rather than new product defects.
+  - Added `ISSUE-250` to separate the new direct Playwright runtime failure from the already-tracked app bind and in-app browser access regressions.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_13-40-01_playwright_runtime_blocked.md`
