@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -403,6 +404,24 @@ function useFirestoreRelay(enabled: boolean) {
                         command.targetAgentId,
                         true
                     );
+
+                    const commandResult = await entryCommandService.handleInput(command.text, {
+                        source: 'mobile',
+                        includeUserMessage: true,
+                        remoteCommandId: command.id,
+                    });
+                    if (commandResult.handled) {
+                        await remoteRelayService.sendResponse(
+                            command.id,
+                            commandResult.responseText || 'Workflow command handled.',
+                            commandResult.agentId || command.targetAgentId || 'generalist',
+                            false
+                        );
+                        await remoteRelayService.markCommandCompleted(command.id);
+                        writeDiagnostic('entry_command_done', { commandId: command.id });
+                        isProcessing.current = false;
+                        return;
+                    }
 
                     await agentService.sendMessage(
                         command.text,

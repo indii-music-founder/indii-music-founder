@@ -22,6 +22,7 @@ import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { EntryOverlay } from './EntryOverlay';
+import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
 
 interface EmptyStateProps {
     /** Legacy: populate the prompt input box without submitting */
@@ -51,31 +52,24 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
         }
     }, [user?.uid]);
 
-    const suggestions = [
-        // Row 1 — each fires its command immediately on click
-        { icon: Eye, title: 'Analyze Brand', prompt: 'Audit my current visual brand and give me a detailed brand identity report with specific improvement recommendations.' },
-        { icon: Play, title: 'Create Video', prompt: "Generate a creative brief and shot list for a music video for my latest track, then kick off the video generation pipeline." },
-        { icon: Command, title: 'Build Release', prompt: 'Walk me through preparing a new distribution release: gather my track metadata, run QC checks, and stage it for distribution.' },
-        { icon: PenTool, title: 'Write Copy', prompt: 'Draft a compelling press release for my upcoming single, including a hook, artist bio blurb, and key talking points for media outreach.' },
-        { icon: Image, title: 'Design Cover', prompt: 'Generate several album artwork concepts for my new EP. Ask me about the vibe, genre, and visual references before generating.' },
-        // Row 2
-        { icon: MapPin, title: 'Scout Venues', prompt: 'Find suitable live music venues for my next tour. Ask me about my preferred cities, capacity range, and tour dates.' },
-        { icon: Megaphone, title: 'Plan Campaign', prompt: 'Build a detailed 30-day social media launch plan for my upcoming release, with platform-specific strategies and a content calendar.' },
-        { icon: FileCheck, title: 'Review Contract', prompt: 'Analyze my latest licensing agreement for red flags, unfavorable clauses, and key terms I should negotiate. Ask me to share the document.' },
-        { icon: TrendingUp, title: 'Track Revenue', prompt: 'Show me a summary of my royalty earnings this quarter broken down by platform, territory, and track.' },
-        // Custom Workflow — navigates instead of submitting
-        {
-            icon: Network,
-            title: 'Custom Workflow',
-            prompt: null,
-            action: () => setModule('workflow'),
-        },
-    ];
+    const commandIcons: Record<string, React.ElementType> = {
+        'analyze-brand': Eye,
+        'create-video': Play,
+        'build-release': Command,
+        'write-copy': PenTool,
+        'design-cover': Image,
+        'scout-venues': MapPin,
+        'plan-campaign': Megaphone,
+        'review-contract': FileCheck,
+        'track-revenue': TrendingUp,
+        'custom-workflow': Network,
+    };
 
     const displayItems: Array<{
         icon: React.ElementType;
         title: string;
         prompt: string | null;
+        summary?: string;
         action?: () => void;
         isWorkflow?: boolean;
     }> = [
@@ -90,7 +84,13 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
             },
             isWorkflow: true
         })),
-        ...suggestions
+        ...getDashboardEntryCommands().map((command: EntryCommandDefinition) => ({
+            icon: commandIcons[command.id] || Command,
+            title: command.title,
+            prompt: command.slash,
+            summary: command.summary,
+            action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
+        }))
     ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
 
     return (
@@ -147,7 +147,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                         <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${s.isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
                         <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
-                            {s.isWorkflow ? 'Custom User Workflow' : (s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0])}
+                            {s.isWorkflow ? 'Custom User Workflow' : (s.summary || s.prompt)}
                         </p>
                     </motion.button>
                 ))}
@@ -174,4 +174,3 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
 
     );
 }
-

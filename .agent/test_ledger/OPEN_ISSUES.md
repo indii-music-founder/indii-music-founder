@@ -2184,3 +2184,235 @@ Caller can decide whether to retry, surface error, or silently log.
   7. Attempt browser navigation to `http://127.0.0.1:4242/audio-analyzer` or `https://indii-music-founder.web.app/audio-analyzer` in the Codex in-app browser.
 - **Expected:** The scoped audio workflow should be able to start a local web runtime or reach an approved live route so browser-level audio validation can execute and capture fresh UI evidence.
 - **UX Impact:** Audio regressions in the live UI can be missed because this automation is limited to harness/test evidence instead of end-to-end browser observation.
+
+---
+
+### ISSUE-188: Audio mega-test live browser validation blocker regressed after ISSUE-187
+- **Status:** ❌ OPEN [REGRESSION]
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** TestInfra | Browser | E2E
+- **Module:** Audio Analyzer / Scoped Test Harness
+- **Flowchart:** docs/flowcharts/scoped-testing-architecture.md
+- **Tech Stack:** React 18.3.1 | Zustand 5.0.8 | Vite 6.4.2 | Playwright | Codex In-app Browser
+- **Found:** 2026-06-06 by MegaTestAudioLoop
+- **Summary:** `ISSUE-187` is marked fixed, but the combined live-browser validation block is still reproducible. `npm run dev:web` still fails in preflight with `tsx` IPC `listen EPERM`, direct Vite fallback still fails to bind `127.0.0.1:4243`, the scoped audio harness still passes 21/21 files and 135/135 tests while its Playwright phase fails because `config.webServer` cannot bind `127.0.0.1:4242`, and the Codex in-app browser still rejects both localhost and deployed audio routes before navigation.
+- **Steps to Reproduce:**
+  1. Run `npm run dev:web`.
+  2. Observe `listen EPERM` from `tsx scripts/production-gate.ts --dev` while creating its IPC pipe.
+  3. Run `npx vite --config packages/renderer/vite.config.ts --port 4243`.
+  4. Observe `listen EPERM: operation not permitted 127.0.0.1:4243`.
+  5. Run `python3 execution/run_department_test.py audio-analyzer`.
+  6. Observe unit/integration tests pass and the Playwright phase fail because `config.webServer` cannot start on `127.0.0.1:4242`.
+  7. Attempt browser navigation to `http://127.0.0.1:4242/audio-analyzer` and `https://indii-music-founder.web.app/audio-analyzer` in the Codex in-app browser.
+  8. Observe browser security policy denials before any page renders, including the message that the user has requested those hosts not be used.
+- **Expected:** A fixed `ISSUE-187` should leave at least one compliant browser path available so the audio MegaTest can validate live Audio Analyzer, Distribution, and downstream Creative/Video handoff surfaces in a real page.
+- **UX Impact:** The automation is still limited to harness evidence and cannot observe fresh live UI regressions in audio workflows despite the prior issue being marked resolved.
+
+---
+
+### ISSUE-189: Finish mcp/index.ts (format_dsp_metadata MCP tool is a dummy implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/mcp/index.ts:95`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-190: Finish mechanicalLicense.ts (verifyMechanicalLicense skips validation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/legal/mechanicalLicense.ts:37`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-191: Finish deliverScheduledPosts.ts (deliverToYouTube is an empty placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:127`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-192: Fix index.ts (Lazy MVP implementation inside stitchVideoFn)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/index.ts:685`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-193: Finish index.ts (executeBigQueryQuery has no actual execution logic)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/index.ts:1202`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-194: Finish index.ts (enrichFanData throws unconditionally)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/index.ts:1506`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-195: Finish security.ts (Proper encryption with libsodium is missing)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/security.ts:77`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-196: Fix agent.ts (Simplistic multi-replace implementation)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/agent.ts:138`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-197: Fix video.ts (Agent left internal monologue in comments)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/video.ts:126`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-198: Fix AgentSupervisor.ts (Timeout leaves Python process orphaned)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/utils/AgentSupervisor.ts:109`
+- **Details:** Found during `/finish` sweep. Resource Leak needs to be fixed.
+
+---
+
+### ISSUE-199: Fix python-bridge.ts (Hardcoded assumptions about python3)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/utils/python-bridge.ts:8`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-200: Fix IndiiRemoteService.ts (Empty constructor)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/IndiiRemoteService.ts:37`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-201: Fix distribution.ts (Lazy fallback for parsing CSV data)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/distribution.ts:265`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-202: Fix PropertiesPanel.tsx (Missing generic components implementations)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/components/studio/PropertiesPanel.tsx:89`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-203: Fix ChatMessage.tsx (Code block replaced with existing components comment)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:114`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-204: Fix ChatMessage.tsx (Function body replaced with existing logic comment)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/chat/ChatMessage.tsx:200`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-205: Fix useFinance.ts (Lazy bug fix; logic relying on loadEarnings removed)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/finance/hooks/useFinance.ts:98`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-206: Fix MapsComponent.tsx (Incomplete Google Maps dark mode styling array)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/marketing/components/MapsComponent.tsx:29`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-207: Fix AudioAnalysisService.ts (Zombie commented-out methods)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/audio/AudioAnalysisService.ts:89`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-208: Fix distributor.ts (Duplicate interface definition due to chunk replacement)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/distribution/types/distributor.ts:69`
+- **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
+
+---
+
+### ISSUE-209: Fix DesktopSection updater API type mismatch
+- **Status:** RESOLVED / NO LONGER REPRODUCES
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx:171`
+- **Details:** Found during Universal Command Workflow verification. `npm run typecheck` fails because `DesktopSection.tsx` calls `window.electronAPI.updater.setSource`, but `ElectronUpdaterAPI` does not declare `setSource`.
+- **Update:** A later `npm run typecheck` completed successfully, so this blocker no longer reproduces in the current worktree.
+
+---
+
+### ISSUE-210: CommandBar Interaction Test Failure — Optimistic UI Clear Regression
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** CommandBar / PromptArea
+- **Location:** `packages/renderer/src/core/components/CommandBar.interaction.test.tsx:266`
+- **Found:** 2026-06-06 by Vitest full suite run during `/end` closing protocol
+- **Details:** `Scenario 3: Optimistic UI - input clears immediately upon send` fails with `AssertionError: expected 'Fast clear' to be ''`. The test expects the input value to be cleared immediately upon send, but the value remains.
+- **Root Cause:** Uncommitted modifications to `packages/renderer/src/core/components/command-bar/PromptArea.tsx` from a parallel agent session broke the optimistic clear behavior. Test passes on clean tree (verified via `git stash` + re-run).
+- **Steps to Reproduce:**
+  1. Run `npx vitest run packages/renderer/src/core/components/CommandBar.interaction.test.tsx`
+  2. Scenario 3 fails — input value is `'Fast clear'` instead of `''`
+- **Fix Required:** Review the uncommitted `PromptArea.tsx` changes and ensure the `onSend` callback clears the input value synchronously before returning.
+- **Files:** `packages/renderer/src/core/components/command-bar/PromptArea.tsx`
+
+---
+
+### ISSUE-211: Missing i18n Translation Key for Desktop & Updates Settings Section
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Settings / i18n
+- **Location:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:91`
+- **Found:** 2026-06-06 during Desktop & Updates implementation
+- **Details:** The new "Desktop & Updates" section in Settings uses the i18n key `settings.sections.desktop.label` via the `t()` function for its sidebar nav label. This translation key has not been added to the i18n locale files yet, so it will display the raw key string instead of the label text. The section title and all content inside DesktopSection.tsx use hardcoded English strings (matching the pattern of other settings sections like AppearanceSection.tsx).
+- **Fix Required:** Add `settings.sections.desktop.label: "Desktop & Updates"` to all locale JSON files (e.g., `en.json`, or wherever `settings.sections.profile.label` etc. are defined).
+- **Files:** i18n locale files (location TBD — grep for `settings.sections.profile.label`)
+
+---
+
+### ISSUE-212: Broad Firestore Rules Suite Has Pre-Existing Non-Command Failures
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Firebase Security Rules
+- **Location:** `packages/firebase/src/test/security/firestore.rules.test.ts`, `packages/renderer/src/test/security/pii-redaction.test.ts`
+- **Found:** 2026-06-06 during custom command cloud-sync verification
+- **Details:** `npx -y firebase-tools@latest emulators:exec --only firestore "npm run test:rules"` still fails in existing non-command areas, including licenses, tax profiles, ISRC registry, SFTP ingestions, takedown requests, fraud alerts, and PII redaction expectations. The focused command sync rules test passes separately.
+- **Fix Required:** Review existing Firestore rule expectations versus current `packages/firebase/firestore.rules` behavior and update the unrelated failing security tests or rules as appropriate.
+- **Files:** `packages/firebase/firestore.rules`, `packages/firebase/src/test/security/firestore.rules.test.ts`, `packages/renderer/src/test/security/pii-redaction.test.ts`
