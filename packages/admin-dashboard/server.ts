@@ -318,25 +318,6 @@ async function getGoogleAuthClient() {
   }
 }
 
-// Mock database storage for developer workspace
-const mockEmails = [
-  { id: 'msg-1', from: 'Sony Music Legal <legal@sonymusic.com>', subject: 'Sync Licensing Agreement - Neon Nights', snippet: 'Hello, we reviewed the licensing agreement for Neon Nights and have a few requested adjustments...', date: new Date(Date.now() - 10 * 60 * 1000).toISOString(), isAiDraft: false },
-  { id: 'msg-2', from: 'William Paul Roberts <ii@indii.music>', subject: 'New release marketing assets', snippet: 'Hey team, here are the assets for the upcoming EP release. Let me know what you think.', date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), isAiDraft: false },
-  { id: 'msg-3', from: 'indii Conductor <agent@indii.music>', subject: 'Draft: Pitch to Spotify Playlist Curators', snippet: 'Suggested pitch: Hi editorial team, we are excited to submit Neon Nights EP by William Paul Roberts...', date: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), isAiDraft: true, draftText: 'Hi editorial team, we are excited to submit Neon Nights EP by William Paul Roberts for playlist consideration. The title track blends Detroit techno with modern analog synthesis...' },
-];
-
-const mockEvents = [
-  { id: 'evt-1', title: 'Neon Nights EP Release Pitching', start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), end: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(), description: 'AI marketing pitch to editorial curators' },
-  { id: 'evt-2', title: 'Campaign Strategy Review - William Paul Roberts', start: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), description: 'Sync marketing alignment' },
-  { id: 'evt-3', title: 'Distribution Sync with OneRPM', start: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), end: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString(), description: 'Check DDEX ingestion status' },
-];
-
-const mockFiles = [
-  { id: 'file-1', name: 'Founders_Agreement_William_Paul_Roberts.pdf', mimeType: 'application/pdf', size: '2.4 MB', modifiedTime: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() },
-  { id: 'file-2', name: 'Neon_Nights_Master_Metadata.xml', mimeType: 'text/xml', size: '42 KB', modifiedTime: new Date(Date.now() - 10 * 60 * 1000).toISOString() },
-  { id: 'file-3', name: 'indii_Distribution_SOP_V2.pdf', mimeType: 'application/pdf', size: '1.8 MB', modifiedTime: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
-];
-
 // Generate OAuth Consent URL
 app.get('/api/google/oauth/url', requireAdminAuth, (req, res) => {
   const scopes = [
@@ -381,7 +362,7 @@ app.get('/api/google/status', requireAdminAuth, async (req, res) => {
 app.get('/api/google/gmail/list', requireAdminAuth, async (req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ messages: mockEmails });
+    return res.json({ messages: [] });
   }
   try {
     const gmail = google.gmail({ version: 'v1', auth });
@@ -419,16 +400,7 @@ app.post('/api/google/gmail/send', requireAdminAuth, async (req, res) => {
   }
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    const newMsg = {
-      id: `msg-${Date.now()}`,
-      from: 'admin@indii.music',
-      subject,
-      snippet: body.length > 80 ? `${body.substring(0, 80)}...` : body,
-      date: new Date().toISOString(),
-      isAiDraft: false,
-    };
-    mockEmails.unshift(newMsg);
-    return res.json({ success: true, message: 'Mock email sent successfully', data: newMsg });
+    return res.status(412).json({ error: 'Google Workspace account is not connected' });
   }
   try {
     const gmail = google.gmail({ version: 'v1', auth });
@@ -462,7 +434,7 @@ app.post('/api/google/gmail/send', requireAdminAuth, async (req, res) => {
 app.get('/api/google/calendar/events', requireAdminAuth, async (req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ events: mockEvents });
+    return res.json({ events: [] });
   }
   try {
     const calendar = google.calendar({ version: 'v3', auth });
@@ -495,16 +467,7 @@ app.post('/api/google/calendar/events/create', requireAdminAuth, async (req, res
   }
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    const newEvent = {
-      id: `evt-${Date.now()}`,
-      title,
-      start,
-      end,
-      description: description || '',
-    };
-    mockEvents.push(newEvent);
-    mockEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-    return res.json({ success: true, event: newEvent });
+    return res.status(412).json({ error: 'Google Workspace account is not connected' });
   }
   try {
     const calendar = google.calendar({ version: 'v3', auth });
@@ -528,7 +491,7 @@ app.post('/api/google/calendar/events/create', requireAdminAuth, async (req, res
 app.get('/api/google/drive/files', requireAdminAuth, async (req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ files: mockFiles });
+    return res.json({ files: [] });
   }
   try {
     const drive = google.drive({ version: 'v3', auth });
@@ -559,15 +522,7 @@ app.post('/api/google/drive/upload', requireAdminAuth, async (req, res) => {
   }
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    const newFile = {
-      id: `file-${Date.now()}`,
-      name,
-      mimeType: mimeType || 'text/plain',
-      size: `${(Buffer.byteLength(content) / 1024).toFixed(1)} KB`,
-      modifiedTime: new Date().toISOString(),
-    };
-    mockFiles.unshift(newFile);
-    return res.json({ success: true, file: newFile });
+    return res.status(412).json({ error: 'Google Workspace account is not connected' });
   }
   try {
     const drive = google.drive({ version: 'v3', auth });
@@ -606,9 +561,10 @@ app.get('/api/messaging/inbox', requireAdminAuth, async (req, res) => {
     snapshot.forEach((doc) => {
       emails.push({ id: doc.id, ...doc.data() });
     });
-    res.json({ messages: emails.length > 0 ? emails : mockEmails });
-  } catch {
-    res.json({ messages: mockEmails });
+    res.json({ messages: emails });
+  } catch (error) {
+    console.error('[Messaging] Failed to query inbox messages:', error);
+    res.json({ messages: [] });
   }
 });
 
@@ -618,12 +574,6 @@ app.post('/api/messaging/approve-draft', requireAdminAuth, async (req, res) => {
   if (!id) return res.status(400).json({ error: 'Missing draft id' });
   
   try {
-    const index = mockEmails.findIndex((m) => m.id === id);
-    if (index !== -1 && mockEmails[index].isAiDraft) {
-      mockEmails[index].isAiDraft = false;
-      return res.json({ success: true, message: 'Draft approved and queued for dispatch' });
-    }
-
     const docRef = admin.firestore().collection('messages').doc(id);
     const doc = await docRef.get();
     if (doc.exists) {
@@ -645,19 +595,10 @@ app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
     snapshot.forEach((doc) => {
       deliveries.push({ id: doc.id, ...doc.data() });
     });
-    res.json({ deliveries: deliveries.length > 0 ? deliveries : [
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Spotify', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Apple Music', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'TIDAL', status: 'Failed', time: '12 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8909', title: 'Summer Anthem', dst: 'Amazon Music', status: 'Processing', time: '1 hour ago', type: 'ERN 4.1' },
-    ] });
-  } catch {
-    res.json({ deliveries: [
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Spotify', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'Apple Music', status: 'Delivered', time: '10 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8910', title: 'Neon Nights EP', dst: 'TIDAL', status: 'Failed', time: '12 mins ago', type: 'ERN 4.2' },
-      { releaseId: 'REL-8909', title: 'Summer Anthem', dst: 'Amazon Music', status: 'Processing', time: '1 hour ago', type: 'ERN 4.1' },
-    ] });
+    res.json({ deliveries });
+  } catch (error) {
+    console.error('[Deliveries] Failed to retrieve deliveries:', error);
+    res.json({ deliveries: [] });
   }
 });
 
@@ -669,17 +610,10 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
     snapshot.forEach((doc) => {
       logs.push({ id: doc.id, ...doc.data() });
     });
-    res.json({ logs: logs.length > 0 ? logs : [
-      { time: '10 mins ago', msg: 'TXT record verified for indii.music propagation check.', status: 'Success' },
-      { time: '2 hours ago', msg: 'MX records updated to Google Workspace aliases.', status: 'Pending' },
-      { time: '5 hours ago', msg: 'DMARC quarantine policy applied.', status: 'Success' },
-    ] });
-  } catch {
-    res.json({ logs: [
-      { time: '10 mins ago', msg: 'TXT record verified for indii.music propagation check.', status: 'Success' },
-      { time: '2 hours ago', msg: 'MX records updated to Google Workspace aliases.', status: 'Pending' },
-      { time: '5 hours ago', msg: 'DMARC quarantine policy applied.', status: 'Success' },
-    ] });
+    res.json({ logs });
+  } catch (error) {
+    console.error('[Nexus] Failed to retrieve system logs:', error);
+    res.json({ logs: [] });
   }
 });
 
