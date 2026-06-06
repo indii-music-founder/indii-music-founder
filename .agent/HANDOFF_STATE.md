@@ -1,76 +1,28 @@
 # Handoff State
-**Updated:** 2026-06-06 13:09 EDT
+**Updated:** 2026-06-06 13:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-af046d48e chore: session checkpoint [13:09]
-6a3465a8b chore: session checkpoint [12:38]
-76dcb73d3 fix: resolve CommandBar UI clearing regression and styling warnings
-db540a69c chore: session checkpoint [12:27]
-2a9856a60 chore: session checkpoint [12:27]
-bac6c79a2 chore: update coordination report and metadata with new trace ID and add deep test screenshots
-0173148d9 chore: session checkpoint [11:59]
-6c187d1bc feat: The Final Polish (Phase 5) - Issue 173, 174, 179, 181, 187
-f3156aa5f feat(social): resolve unsupported features and stubs for media and rendering (Phase 4)
-dc7e7de1a feat(distribution): resolve unsupported takedown and earnings stubs (Phase 3)
+b0b3cb975 chore: remove agent script artifacts
+cfe7851c5 Merge branch 'subagent-Firebase-Backend-Agent-self-cf837618'
+e4e7aaa20 Merge branch 'subagent-Main-Process-Repair-Agent-self-e1289ee7'
+852574aac Merge branch 'subagent-Test-Repair-Agent-self-9a9ed5d0'
+c1c5c2fce feat: fixes from Firebase-Backend-Agent-self-cf837618
+e04248207 feat: fixes from Main-Process-Repair-Agent-self-e1289ee7
+1c77dcc6a feat: fixes from Test-Repair-Agent-self-9a9ed5d0
+0ce6e291e feat: fixes from Frontend-Fixer-self-a5c45d84
+ac47946bb fix(chore): resolve early test ledger issues before agent swarm dispatch
+0edccea27 chore: clear all stashed diffs
 ```
 
 ## Working State
 ```
-M  .agent/artifacts/task.md
-A  .agent/checkpoints/codex-universal-command-workflows-2026-06-06.md
-M  .agent/skills/error_memory/ERROR_LEDGER.md
-M  .agent/test_ledger/OPEN_ISSUES.md
-M  .agent/test_ledger/REAL_TEST_HISTORY.md
-M  .agent/test_ledger/UNFINISHED_WORK.md
-A  artifacts/mega_test_audio_loop_2026-06-06_16-37-51_browser_blocker_reconfirm.md
-A  docs/flowcharts/tour-map-integration-micro.md
-M  e2e/video-producer-ux.spec.ts
-M  package-lock.json
-M  package.json
-M  packages/firebase/firestore.rules
-M  packages/firebase/src/index.ts
-M  packages/firebase/src/legal/mechanicalLicense.ts
-M  packages/firebase/src/mcp/index.ts
-M  packages/firebase/src/social/deliverScheduledPosts.ts
-M  packages/firebase/src/test/security/firestore.rules.test.ts
-A  packages/firebase/vitest.config.ts
-M  packages/main/package.json
-M  packages/main/src/handlers/agent.ts
-M  packages/main/src/handlers/distribution.ts
-M  packages/main/src/handlers/pinata.ts
-M  packages/main/src/handlers/security.ts
-M  packages/main/src/handlers/video.ts
-M  packages/main/src/handlers/web3.ts
-M  packages/main/src/services/IndiiRemoteService.ts
-M  packages/main/src/services/web3/PinataService.ts
-M  packages/main/src/utils/AgentSupervisor.ts
-M  packages/main/src/utils/python-bridge.ts
-M  packages/renderer/src/components/studio/PropertiesPanel.tsx
-M  packages/renderer/src/core/components/chat/ChatMessage.tsx
-M  packages/renderer/src/locales/en.json
-M  packages/renderer/src/locales/es.json
-M  packages/renderer/src/modules/finance/hooks/useFinance.ts
-M  packages/renderer/src/modules/marketing/components/MapsComponent.tsx
-M  packages/renderer/src/modules/touring/components/OnTheRoadTab.tsx
-M  packages/renderer/src/modules/touring/components/PlanningTab.tsx
-M  packages/renderer/src/modules/touring/components/TourMap.tsx
-M  packages/renderer/src/modules/touring/types.ts
-M  packages/renderer/src/services/audio/AudioAnalysisService.ts
-M  packages/renderer/src/services/audio/CopyrightFilterService.ts
-M  packages/renderer/src/services/commands/EntryCommandFirestoreRules.emulator.test.ts
-M  packages/renderer/src/services/commands/EntryCommandRegistry.ts
-M  packages/renderer/src/services/commands/EntryCommandSecurityRules.test.ts
-M  packages/renderer/src/services/commands/EntryCommandSyncService.test.ts
-M  packages/renderer/src/services/commands/EntryCommandSyncService.ts
-M  packages/renderer/src/services/distribution/types/distributor.ts
-M  packages/renderer/vite.config.ts
-M  playwright.config.ts
-A  test-rules.js
-A  test-rules.mjs
-A  test-rules2.mjs
-A  test-rules3.mjs
+ M .agent/skills/error_memory/ERROR_LEDGER.md
+ M .github/workflows/release.yml
+ M electron.vite.config.ts
+ M package.json
+?? .agent/checkpoints/antigravity-c2388714-maps-elevation.md
 ```
 
 ## Decisions
