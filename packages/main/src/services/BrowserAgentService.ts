@@ -109,7 +109,7 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(() => '');
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => { console.warn('[BrowserAgent] extract text error:', e); return ''; });
 
         return {
             title,
