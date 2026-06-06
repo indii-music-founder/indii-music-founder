@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { Lock, Sparkles, Star, Wand2 } from 'lucide-react';
 import { auth } from '@/services/firebase';
