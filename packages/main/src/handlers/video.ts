@@ -123,16 +123,8 @@ export function registerVideoHandlers() {
             const { outputLocation } = config;
 
             // Security Check 1: Access Control
-            // We use a stubbed AccessControlService check here as per the test expectation
-            // In a real scenario, we might verify if the destination folder is writable/allowed
-            // For this test, verifyAccess mock returns true/false
             const hasAccess = accessControlService.verifyAccess(outputLocation);
             if (!hasAccess) {
-                // Determine if it was explicit denial or just scope issue?
-                // The test expects "Security Violation" or "Access Denied"
-                // Let's assume verifyAccess covers path scope policy.
-                // However, we also need to check for unauthorized paths explicitly if verifyAccess is mocked to true but path is 'bad'?
-                // Actually, the test mocks verifyAccess to return false to trigger the error.
                 throw new Error("Security Violation: Access Denied to output location");
             }
 

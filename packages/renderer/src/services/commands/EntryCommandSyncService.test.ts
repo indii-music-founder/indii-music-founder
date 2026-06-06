@@ -112,4 +112,36 @@ describe('EntryCommandSyncService', () => {
       isCustom: true,
     });
   });
+
+  it('filters unknown cloud command surfaces before merging locally', async () => {
+    firestoreMocks.getDocs
+      .mockResolvedValueOnce({
+        forEach: (callback: (snapshot: { data: () => unknown }) => void) => callback({
+          data: () => ({
+            id: 'custom-safe-surface',
+            slash: '/safe-surface',
+            aliases: [],
+            title: 'Safe Surface',
+            summary: 'Uses only supported command surfaces locally.',
+            surfaces: ['command-bar', 'unknown-surface'],
+            intakeFields: [],
+            launchMode: 'guided-chat',
+            outputContract: 'Safe surface workflow.',
+            approvalRequiredFor: [],
+            resumeBehavior: 'Resume safe surface workflow.',
+            isCustom: true,
+            ownerId: 'user-1',
+            scope: 'user',
+            updatedAt: Date.now(),
+          }),
+        }),
+      })
+      .mockResolvedValueOnce({
+        forEach: vi.fn(),
+      });
+
+    await entryCommandSyncService.hydrateCustomCommands({ orgId: 'org-safe-surface' });
+
+    expect(resolveEntryCommand('/safe-surface')?.surfaces).toEqual(['command-bar']);
+  });
 });

@@ -49,6 +49,17 @@
 - FIX: For a focused renderer file in this environment, run with the base config and explicit file path: `npx vitest run packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts --config vitest.config.ts`. This avoids the broken project filter and still uses the renderer aliases/setup.
 - PREVENTION: If `--project renderer` reports no matching project, do not keep retrying the same command. Confirm which config was loaded, then either fix the package script to load the workspace correctly or use an explicit `--config vitest.config.ts` focused run for single-file verification.
 
+## 2026-06-06 Renderer Firestore Rules Tests Accidentally Hit Vitest Mocks
+
+**SEVERITY:** Medium (causes security rules tests to pass or fail against mocked Firestore instead of the emulator)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/commands/EntryCommandFirestoreRules.emulator.test.ts`, `packages/renderer/src/test/setup.ts`
+- ERROR: A focused Firestore emulator rules test reported denied writes as allowed because the renderer Vitest setup globally mocked `firebase/firestore`. The test was not actually exercising the Firestore emulator until the module was unmocked.
+- CAUSE: Renderer tests use `vitest.config.ts`, which loads `packages/renderer/src/test/setup.ts`. That setup mocks `firebase/firestore` globally for ordinary renderer unit tests. Rules-unit tests that import `doc`, `setDoc`, or `getDoc` from `firebase/firestore` under this config receive the mock unless they explicitly opt out.
+- FIX: Add `vi.unmock('firebase/firestore')` before importing Firestore SDK functions in emulator-backed rules tests, and include a deny-all probe against an unlisted collection to prove the test is hitting real rules.
+- PREVENTION: Any renderer-side emulator or integration test that must talk to real Firebase SDK APIs must explicitly unmock the affected Firebase module before import. Do not trust `assertFails` or `assertSucceeds` results until a known-denied path also fails under the same test.
+
 ## 2026-06-04 Google Maps Component Unmount Race Condition (IntersectionObserver Crash)
 
 **SEVERITY:** High (causes unhandled TypeError crashes in Sentry on map component unmount, e.g., `INDII-MUSIC-FOUNDER-3`)

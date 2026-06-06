@@ -55,8 +55,8 @@ export interface MapMarker {
     position: { lat: number; lng: number };
     title: string;
     type: 'venue' | 'gas' | 'hotel' | 'current' | 'waypoint';
+    label?: string;
     meta?: Record<string, unknown>;
-
 }
 
 // Fuel logistics returned by the fuel calculation AI

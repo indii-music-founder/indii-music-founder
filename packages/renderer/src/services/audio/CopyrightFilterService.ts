@@ -46,7 +46,7 @@ export class CopyrightFilterService {
         return report;
     }
 
-    private async queryRegistry(fingerprint: string, filename: string): Promise<CopyrightReport> {
+    private async queryRegistry(fingerprint: string, _filename: string): Promise<CopyrightReport> {
         const host = import.meta.env.VITE_ACRCLOUD_HOST;
         const accessKey = import.meta.env.VITE_ACRCLOUD_ACCESS_KEY;
         const accessSecret = import.meta.env.VITE_ACRCLOUD_ACCESS_SECRET;
