@@ -2516,7 +2516,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-223: Fix PinataService.ts (uploadFile returns hardcoded error mock)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Implemented Pinata IPFS upload via Node fetch and FormData using environment JWT.
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/web3/PinataService.ts:2`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2524,7 +2525,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-224: Fix example-validated-handlers.ts (Entire file is leftover AI placeholder code)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Deleted example-validated-handlers.ts leftover placeholder file.
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/example-validated-handlers.ts:1`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed or implemented properly.
@@ -2532,7 +2534,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-225: Fix agent.ts (Lazy bypass of linting errors instead of removing unused variables)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed unused `lines` variable and its eslint-disable bypass in agent.ts.
 - **Severity:** Medium
 - **Location:** `packages/main/src/handlers/agent.ts:135`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2540,7 +2543,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-226: Fix BrowserAgentService.ts (Lazy promise rejection handler swallows errors)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Added proper logging to the promise rejection handler in BrowserAgentService.ts instead of swallowing errors.
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:112`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2548,7 +2552,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-227: Fix FoundationalSkillService.ts (Swallows JSON parse errors using eslint bypass)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Added warning log to the catch block for JSON parsing and removed unused app import in FoundationalSkillService.ts.
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/FoundationalSkillService.ts:59`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
