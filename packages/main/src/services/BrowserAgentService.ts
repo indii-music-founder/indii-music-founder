@@ -239,12 +239,10 @@ export class BrowserAgentService {
                 // Use robust typeInto which handles waitForSelector internally
                 await this.typeInto(selector, text);
             } else if (action === 'press') {
-                const key = selector; // In Electron sendInputEvent, we usually pass the key code directly
-                // Using pressKey helper
+                const key = selector; // Pass the key code directly to Electron's input event simulator
                 await this.pressKey(key);
                 if (text) {
-                    // If text is provided with press, we assume typing after press? 
-                    // Or maybe it was a specific sequence. Keeping legacy behavior of typing afterwards.
+                    // Type the provided text immediately following the key press sequence
                     await this.typeInto(selector, text);
                 }
             } else if (action === 'scroll') {

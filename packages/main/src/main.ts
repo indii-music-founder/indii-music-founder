@@ -45,8 +45,9 @@ process.on('uncaughtException', (error: any) => {
     if (error.code === 'EIO' || (error.message && error.message.includes('EIO'))) return;
     try {
         log.error('Uncaught Exception in Main Process:', error);
-    } catch {
-        // If logging fails (EIO), just swallow it
+    } catch (err) {
+        // Fallback to stderr if electron-log fails (e.g. EPERM / EIO issues during early setup/shutdown)
+        process.stderr.write(`[Fallback Log Error] Uncaught Exception: ${error?.message || error}\nLogging failed: ${err}\n`);
     }
 });
 
@@ -56,8 +57,9 @@ process.on('unhandledRejection', (reason: any) => {
     if (reason instanceof Error && ((reason as any).code === 'EIO' || reason.message.includes('EIO'))) return;
     try {
         log.error('Unhandled Rejection in Main Process:', reason);
-    } catch {
-        // Swallow
+    } catch (err) {
+        // Fallback to stderr if electron-log fails
+        process.stderr.write(`[Fallback Log Error] Unhandled Rejection: ${reason?.message || reason}\nLogging failed: ${err}\n`);
     }
 });
 
@@ -257,14 +259,63 @@ const createWindow = async () => {
         }
     });
 
+    const handleLoadFailure = (context: string, error: Error) => {
+        log.error(`[Main] ${context} failed to load:`, error);
+        // Create dynamic HTML to show a friendly connection failure screen
+        const failureHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Connection Failure</title>
+                <style>
+                    body {
+                        background-color: #000;
+                        color: #fff;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                        text-align: center;
+                    }
+                    h1 { font-size: 24px; margin-bottom: 8px; font-weight: 600; }
+                    p { color: #888; font-size: 14px; margin-bottom: 24px; max-width: 400px; line-height: 1.5; }
+                    button {
+                        background-color: #ffffff;
+                        color: #000000;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 13px;
+                        transition: opacity 0.2s;
+                    }
+                    button:hover { opacity: 0.9; }
+                </style>
+            </head>
+            <body>
+                <h1>Failed to connect to studio</h1>
+                <p>Unable to connect to the dev server or load production files. Please check if the studio is running locally or reinstall the application.</p>
+                <button onclick="window.location.reload()">Retry Connection</button>
+            </body>
+            </html>
+        `;
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(failureHtml)}`;
+        win.loadURL(dataUrl).catch(e => log.error('[Main] Failed to load failure fallback page:', e));
+    };
+
     if (isDev) {
         log.info(`Attempting to load Dev Server URL: ${devServerUrl}`);
-        win.loadURL(devServerUrl).catch(err => log.error(`Failed to load URL: ${err}`));
+        win.loadURL(devServerUrl).catch(err => handleLoadFailure('Dev server URL', err));
         win.webContents.openDevTools();
     } else {
         const indexPath = path.join(__dirname, '../renderer/index.html');
         log.info(`Loading Production File: ${indexPath}`);
-        win.loadFile(indexPath).catch(err => log.error(`Failed to load file: ${err}`));
+        win.loadFile(indexPath).catch(err => handleLoadFailure('Production build index file', err));
     }
 
     win.once('ready-to-show', () => {

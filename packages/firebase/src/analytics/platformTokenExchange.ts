@@ -187,7 +187,9 @@ export const analyticsRevokeToken = functions
         if (snap.exists) {
             const stored = snap.data() as StoredToken;
             if (platform === "spotify" && stored.accessToken) {
-                await revokeSpotifyToken(stored.accessToken).catch(() => { /* best-effort */ });
+                await revokeSpotifyToken(stored.accessToken).catch((err: unknown) => {
+                    functions.logger.warn(`[analyticsRevokeToken] Spotify token revocation failed for user ${uid}:`, err);
+                });
             }
         }
 
@@ -277,7 +279,9 @@ async function revokeSpotifyToken(accessToken: string): Promise<void> {
     await fetch(`https://accounts.spotify.com/api/token`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err: unknown) => {
+        functions.logger.warn('[revokeSpotifyToken] Network request failed for Spotify token deletion:', err);
+    });
 }
 
 async function exchangeTikTokCode(code: string, redirectUri: string): Promise<TikTokTokenResponse> {

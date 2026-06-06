@@ -106,8 +106,8 @@ describe('ChaosVerification', () => {
             expect(keyB).not.toBe(keyA);
 
             // Cleanup
-            promiseA.catch(() => { });
-            promiseB.catch(() => { });
+            promiseA.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseA cleanup error:', err); });
+            promiseB.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseB cleanup error:', err); });
             void rawGenerateSpy;
         });
 
