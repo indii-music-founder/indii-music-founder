@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useProjectSlice } from '@/core/store/slices/projectSlice';
 import { ProjectService } from '@/services/project/ProjectService';
-import { FolderGit2, Plus, ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { FolderGit2, Plus, ChevronDown, Pencil, Trash2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
@@ -38,6 +38,9 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   const { syncProject } = useProjectSync();
 
   const [isOpen, setIsOpen] = React.useState(true);
+  const [pendingRename, setPendingRename] = useState<{ id: string; name: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   useEffect(() => {
     async function loadProjects() {
@@ -76,31 +79,38 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) return;
-    
-    // In a real implementation this would probably open a modal
-    const name = prompt('Project Name:');
-    if (!name) return;
-    
+
+    // Use a temporary inline project with an editable name field
+    const newName = `Project ${projects.size + 1}`;
     try {
-      const newProject = await ProjectService.create(user.uid, name);
-      // Reload projects
+      const newProject = await ProjectService.create(user.uid, newName);
       const updatedProjects = await ProjectService.listByUser(user.uid);
       setProjects(updatedProjects);
       setSelectedProject(newProject);
       syncProject(newProject.id);
+      // Immediately open rename for the new project
+      setPendingRename({ id: newProject.id, name: newName });
+      setRenameValue(newName);
     } catch (err) {
       Logger.error('ProjectList', 'Failed to create project', err);
     }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRenameProject = async (e: React.MouseEvent, project: any) => {
+  const handleRenameProject = (e: React.MouseEvent, project: any) => {
     e.stopPropagation();
-    const newName = prompt('Rename project:', project.name);
-    if (!newName || newName === project.name) return;
-    
+    setPendingRename({ id: project.id, name: project.name });
+    setRenameValue(project.name);
+  };
+
+  const commitRename = async (projectId: string) => {
+    const trimmed = renameValue.trim();
+    if (!trimmed || trimmed === pendingRename?.name) {
+      setPendingRename(null);
+      return;
+    }
     try {
-      await ProjectService.update(project.id, { name: newName });
+      await ProjectService.update(projectId, { name: trimmed });
       const auth = getAuth();
       if (auth.currentUser) {
         const updatedProjects = await ProjectService.listByUser(auth.currentUser.uid);
@@ -108,36 +118,37 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
       }
     } catch (err) {
       Logger.error('ProjectList', 'Failed to rename project', err);
+    } finally {
+      setPendingRename(null);
     }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDeleteProject = async (e: React.MouseEvent, project: any) => {
+  const handleDeleteProject = (e: React.MouseEvent, project: any) => {
     e.stopPropagation();
-    if (project.name === 'Inbox') {
-      alert('The Inbox project cannot be deleted.');
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to delete "${project.name}"?`)) return;
-    
+    if (project.name === 'Inbox') return; // Inbox cannot be deleted — silently ignore
+    setPendingDelete(project.id);
+  };
+
+  const commitDelete = async (project: any) => {
     try {
       await ProjectService.setStatus(project.id, 'archived');
       const auth = getAuth();
       if (auth.currentUser) {
         const updatedProjects = await ProjectService.listByUser(auth.currentUser.uid);
         setProjects(updatedProjects);
-        // Reset selected project if we deleted the current one
         if (selectedProjectId === project.id) {
-            const defaultProj = updatedProjects.find(p => p.name === 'Inbox') || updatedProjects[0];
-            if (defaultProj) {
-                setSelectedProject(defaultProj);
-                syncProject(defaultProj.id);
-            }
+          const defaultProj = updatedProjects.find((p: any) => p.name === 'Inbox') || updatedProjects[0];
+          if (defaultProj) {
+            setSelectedProject(defaultProj);
+            syncProject(defaultProj.id);
+          }
         }
       }
     } catch (err) {
       Logger.error('ProjectList', 'Failed to delete project', err);
+    } finally {
+      setPendingDelete(null);
     }
   };
 
@@ -190,10 +201,24 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               projectArray.map((project: any) => {
                 const isActive = selectedProjectId === project.id;
+                const isRenaming = pendingRename?.id === project.id;
+                const isConfirmingDelete = pendingDelete === project.id;
+
+                if (isConfirmingDelete) {
+                  return (
+                    <div key={project.id} className="w-[calc(100%-8px)] mx-1 flex items-center gap-1 px-3 py-2 text-xs rounded-lg bg-red-900/30 border border-red-500/30 mb-0.5">
+                      <span className="flex-1 text-red-300 truncate">Delete "{project.name}"?</span>
+                      <button onClick={() => commitDelete(project)} className="p-1 hover:text-red-300 text-red-400" title="Confirm delete"><Check size={12} /></button>
+                      <button onClick={() => setPendingDelete(null)} className="p-1 hover:text-gray-200 text-gray-400" title="Cancel"><X size={12} /></button>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={project.id}
                     onClick={() => {
+                      if (isRenaming) return;
                       setSelectedProject(project);
                       syncProject(project.id);
                       useStore.getState().setModule('files');
@@ -223,27 +248,43 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
                       />
                       
                       {isSidebarOpen && (
-                        <span className={cn(
-                          "truncate relative z-10 transition-all duration-200",
-                          isActive ? "translate-x-1" : "group-hover:translate-x-0.5"
-                        )}>
-                          {project.name}
-                        </span>
+                        isRenaming ? (
+                          <input
+                            autoFocus
+                            className="flex-1 bg-transparent border-b border-blue-400 text-white text-sm outline-none py-0.5 relative z-10"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onBlur={() => commitRename(project.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') commitRename(project.id);
+                              if (e.key === 'Escape') setPendingRename(null);
+                            }}
+                          />
+                        ) : (
+                          <span className={cn(
+                            "truncate relative z-10 transition-all duration-200",
+                            isActive ? "translate-x-1" : "group-hover:translate-x-0.5"
+                          )}>
+                            {project.name}
+                          </span>
+                        )
                       )}
                     </div>
 
-                    {isSidebarOpen && (
+                    {isSidebarOpen && !isRenaming && (
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative z-10">
                         <Pencil
                           size={14}
                           className="text-gray-400 hover:text-white transition-colors"
                           onClick={(e) => handleRenameProject(e, project)}
                         />
-                        <Trash2
-                          size={14}
-                          className="text-gray-400 hover:text-red-400 transition-colors"
-                          onClick={(e) => handleDeleteProject(e, project)}
-                        />
+                        {project.name !== 'Inbox' && (
+                          <Trash2
+                            size={14}
+                            className="text-gray-400 hover:text-red-400 transition-colors"
+                            onClick={(e) => handleDeleteProject(e, project)}
+                          />
+                        )}
                       </div>
                     )}
                   </div>

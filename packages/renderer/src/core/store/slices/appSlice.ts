@@ -70,7 +70,7 @@ export interface AppSlice {
     currentModule: ModuleId;
     currentProjectId: string;
     projects: ProjectMetadata[]; // Changed from Project[] to enforce UI type
-    setModule: (module: AppSlice['currentModule']) => void;
+    setModule: (module: AppSlice['currentModule']) => Promise<void>;
     setProject: (id: string) => void;
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
@@ -124,7 +124,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         set({ isEntryAssistantDismissed: dismissed });
     },
-    setModule: (module) => {
+    setModule: async (module) => {
         const state = get();
         const now = Date.now();
 
@@ -136,8 +136,18 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
 
         if (state.hasUnsavedChanges && state.currentModule !== module) {
-            const confirmLeave = window.confirm("You have unsaved changes that will be lost. Are you sure you want to leave?");
-            if (!confirmLeave) {
+            // Surface a proper React modal instead of a blocking browser dialog.
+            // The UnsavedChangesModal listens to pendingCostWarning and resolves it.
+            const approved = await new Promise<boolean>((resolve) => {
+                set({
+                    pendingCostWarning: {
+                        estimatedCost: 0,
+                        reason: 'You have unsaved changes that will be lost. Are you sure you want to leave this page?',
+                        resolve,
+                    },
+                });
+            });
+            if (!approved) {
                 return;
             }
             set({ hasUnsavedChanges: false });
