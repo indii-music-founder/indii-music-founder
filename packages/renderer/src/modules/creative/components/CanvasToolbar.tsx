@@ -15,6 +15,7 @@ interface CanvasToolbarProps {
     activeTool: 'select' | 'line' | 'polygon' | 'text' | 'brush';
     handleDetectObjects: () => void;
     handleClearDetections: () => void;
+    orientation?: 'horizontal' | 'vertical';
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
@@ -30,23 +31,28 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     activeTool,
     handleDetectObjects,
     handleClearDetections,
+    orientation = 'horizontal',
 }) => {
-    const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none";
-    const getActiveButtonClass = (tool: string) => `p-2 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${activeTool === tool ? 'bg-dept-creative text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`;
+    const isVertical = orientation === 'vertical';
+    const buttonFrameClass = "w-10 h-10 flex items-center justify-center";
+    const baseButtonClass = `${buttonFrameClass} hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none`;
+    const getActiveButtonClass = (tool: string) => `${buttonFrameClass} rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${activeTool === tool ? 'bg-dept-creative text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`;
+    const separatorClass = isVertical ? "h-px w-8 bg-white/10 my-1" : "h-5 w-px bg-white/10 mx-1";
+    const tooltipSide = isVertical ? 'right' : 'top';
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="flex items-center gap-1.5 px-2">
+            <div className={`flex ${isVertical ? 'flex-col' : 'items-center'} gap-1.5 ${isVertical ? 'py-1' : 'px-2'}`}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('select')} className={getActiveButtonClass('select')} aria-label="Select Tool">
                             <MousePointer2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Selection Tool</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Selection Tool</TooltipContent>
                 </Tooltip>
 
-                <div className="h-5 w-px bg-white/10 mx-1" />
+                <div className={separatorClass} />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -54,7 +60,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Wand2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Magic Fill (Drawing)</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Magic Fill (Drawing)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -63,7 +69,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Minus size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Line Tool (Shift for angles)</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Line Tool (Shift for angles)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -72,7 +78,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Pentagon size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Polygon Tool (Double click to finish)</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Polygon Tool (Double click to finish)</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -81,7 +87,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Square size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Add Rectangle</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Add Rectangle</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
@@ -90,7 +96,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <CircleIcon size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Add Circle</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Add Circle</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -99,10 +105,10 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Type size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Add Text</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Add Text</TooltipContent>
                 </Tooltip>
 
-                <div className="h-5 w-px bg-white/10 mx-1" />
+                <div className={separatorClass} />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -110,7 +116,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Scan size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Intelligence Object Detection</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Intelligence Object Detection</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -119,10 +125,10 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Trash2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Clear All Detections</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Clear All Detections</TooltipContent>
                 </Tooltip>
 
-                <div className="h-5 w-px bg-white/10 mx-1" />
+                <div className={separatorClass} />
 
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -130,7 +136,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Undo2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Undo</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Undo</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -139,7 +145,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Redo2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Redo</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Redo</TooltipContent>
                 </Tooltip>
             </div>
         </TooltipProvider>

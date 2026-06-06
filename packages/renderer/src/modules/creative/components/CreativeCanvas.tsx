@@ -6,6 +6,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
 import { CanvasViewport } from './CanvasViewport';
+import { CanvasActionRail } from './CanvasActionRail';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { canvasOps } from '../services/CanvasOperationsService';
 import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
@@ -83,25 +84,40 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     setMagicFillPrompt={setMagicFillPrompt}
                     handleMagicFill={handleMagicFill}
                     isProcessing={isProcessing}
-                    saveCanvas={saveCanvas}
-                    item={item}
-                    endFrameItem={endFrameItem}
-                    setEndFrameItem={setEndFrameItem}
-                    setIsSelectingEndFrame={setIsSelectingEndFrame}
-                    handleAnimate={handleAnimate}
-                    onClose={onClose}
-                    onSendToWorkflow={onSendToWorkflow}
-                    onRefine={handleRefine}
-                    onCreateLastFrame={handleCreateLastFrame}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
-                    batchExportDimensions={batchExportDimensions}
-                    flattenCanvas={handleFlattenCanvas}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-[#060608]">
-                    {/* Stage: Main Viewport */}
-                    <div className="absolute inset-0 z-0">
+                    <div className="absolute inset-0 grid grid-cols-[72px_minmax(0,1fr)_72px] gap-0">
+                        <aside className="z-30 flex min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl">
+                            <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                <CanvasToolbar
+                                    addRectangle={handleAddRectangle}
+                                    addCircle={handleAddCircle}
+                                    addText={handleAddText}
+                                    setTool={handleSetTool}
+                                    undo={handleUndo}
+                                    redo={handleRedo}
+                                    canUndo={canUndo}
+                                    canRedo={canRedo}
+                                    activeTool={activeTool}
+                                    handleDetectObjects={handleDetectObjects}
+                                    handleClearDetections={handleClearDetections}
+                                    orientation="vertical"
+                                />
+                                <div className="my-2 h-px w-8 bg-white/10" />
+                                <AnnotationPalette
+                                    activeColor={activeColor}
+                                    onColorSelect={setActiveColor}
+                                    colorDefinitions={definitions}
+                                    onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                                    orientation="vertical"
+                                />
+                            </div>
+                        </aside>
+
+                        {/* Stage: Main Viewport */}
                         <CanvasViewport
                             item={item}
                             canvasRef={canvasEl}
@@ -118,10 +134,35 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 setIsSelectingEndFrame(false);
                             }}
                         />
+
+                        <div className="z-30 flex min-h-0 flex-col items-center justify-center border-l border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl">
+                            <CanvasActionRail
+                                item={item}
+                                endFrameItem={endFrameItem}
+                                setEndFrameItem={setEndFrameItem}
+                                setIsSelectingEndFrame={setIsSelectingEndFrame}
+                                handleAnimate={handleAnimate}
+                                onClose={onClose}
+                                onSendToWorkflow={onSendToWorkflow}
+                                onCreateLastFrame={handleCreateLastFrame}
+                                isProcessing={isProcessing}
+                                saveCanvas={saveCanvas}
+                                batchExportDimensions={batchExportDimensions}
+                                flattenCanvas={handleFlattenCanvas}
+                            />
+                        </div>
                     </div>
 
-                    {/* Floating Dynamic Island */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 hidden md:flex items-center gap-2 bg-[#060608]/80 backdrop-blur-2xl border border-white/10 rounded-full px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                    <div className="pointer-events-none absolute inset-x-[72px] top-0 h-24 bg-linear-to-b from-black/35 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-[72px] bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent" />
+
+                    <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center rounded-full border border-white/10 bg-[#050608]/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/35 backdrop-blur-xl">
+                        Tools left
+                        <span className="mx-2 h-1 w-1 rounded-full bg-white/20" />
+                        Actions right
+                    </div>
+
+                    <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
                         <CanvasToolbar
                             addRectangle={handleAddRectangle}
                             addCircle={handleAddCircle}
@@ -134,13 +175,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             activeTool={activeTool}
                             handleDetectObjects={handleDetectObjects}
                             handleClearDetections={handleClearDetections}
-                        />
-                        <div className="w-px h-6 bg-white/10 mx-2" />
-                        <AnnotationPalette
-                            activeColor={activeColor}
-                            onColorSelect={setActiveColor}
-                            colorDefinitions={definitions}
-                            onOpenDefinitions={() => setIsDefinitionsOpen(true)}
                         />
                     </div>
 
