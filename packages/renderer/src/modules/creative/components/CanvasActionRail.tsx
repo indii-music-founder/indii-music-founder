@@ -3,6 +3,22 @@ import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X } from
 import { HistoryItem } from '@/core/store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+type CapabilityAction = {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ size?: string | number; className?: string }>;
+    onClick: () => void;
+    className: string;
+    disabled?: boolean;
+    testId?: string;
+    spin?: boolean;
+};
+
+type CapabilityGroup = {
+    id: string;
+    actions: CapabilityAction[];
+};
+
 interface CanvasActionRailProps {
     item: HistoryItem;
     endFrameItem: { id: string; url: string; prompt: string; type: 'image' | 'video' } | null;
@@ -37,7 +53,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
     const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
     const closeButtonClass = "w-11 h-11 rounded-xl border border-red-500/10 bg-red-950/10 text-gray-400 hover:text-red-300 hover:bg-red-950/40 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50";
-    const capabilityGroups = [
+    const capabilityGroups: CapabilityGroup[] = [
         {
             id: 'exports',
             actions: [
@@ -45,7 +61,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     id: 'multi-format',
                     label: 'Multi-Format Export',
                     icon: ImageIcon,
-                    onClick: batchExportDimensions,
+                    onClick: batchExportDimensions || (() => undefined),
                     disabled: isProcessing || !batchExportDimensions,
                     className: actionButtonClass,
                 },
@@ -62,7 +78,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     id: 'flatten',
                     label: 'Flatten Canvas',
                     icon: Layers,
-                    onClick: flattenCanvas,
+                    onClick: flattenCanvas || (() => undefined),
                     disabled: isProcessing || !flattenCanvas,
                     className: actionButtonClass,
                 },
@@ -115,7 +131,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                 aria-label="Canvas actions"
             >
                 {capabilityGroups.map((group, index) => (
-                    <React.Fragment key={group.id}>
+                    <div key={group.id} className="flex flex-col items-center gap-2">
                         {index > 0 && <div className="h-px w-8 bg-white/10 my-1" />}
                         {group.id === 'generation' && endFrameItem && (
                             <Tooltip>
@@ -139,23 +155,25 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                             .map((action) => {
                                 const Icon = action.icon;
                                 return (
-                                    <Tooltip key={action.id}>
-                                        <TooltipTrigger asChild>
-                                            <button
-                                                onClick={action.onClick}
-                                                data-testid={action.testId}
-                                                disabled={action.disabled}
-                                                className={action.className}
-                                                aria-label={action.label}
-                                            >
-                                                <Icon size={18} className={action.spin ? 'animate-spin' : undefined} />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="left">{action.label}</TooltipContent>
-                                    </Tooltip>
+                                    <div key={action.id}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    onClick={action.onClick}
+                                                    data-testid={action.testId}
+                                                    disabled={action.disabled}
+                                                    className={action.className}
+                                                    aria-label={action.label}
+                                                >
+                                                    <Icon size={18} className={action.spin ? 'animate-spin' : undefined} />
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="left">{action.label}</TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                 );
                             })}
-                    </React.Fragment>
+                    </div>
                 ))}
 
                 <div className="h-px w-8 bg-white/10 my-1" />
