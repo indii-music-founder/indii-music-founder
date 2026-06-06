@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * Tax form dispatch is intentionally fail-closed until a real provider is wired.
- */
-
 import * as functions from "firebase-functions/v1";
 
 export const requestTaxForms = functions
@@ -11,7 +6,7 @@ export const requestTaxForms = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context) => {
+    .https.onCall(async (data: { payees?: unknown[] }, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",

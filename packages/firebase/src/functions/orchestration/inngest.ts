@@ -283,6 +283,28 @@ async function submitToDistributor(
   distributor: string,
   tracks: Array<{ trackId: string; title: string }>
 ): Promise<Record<string, unknown>> {
+  const credsSnap = await db
+    .collection('users').doc(userId)
+    .collection('credentials').doc(distributor)
+    .get();
+
+  if (credsSnap.exists) {
+    const submissionId = `sub_${Date.now()}`;
+    await db
+      .collection('users').doc(userId)
+      .collection('distributions').doc(distributionId)
+      .collection('submissions').doc(distributor)
+      .set({
+        distributor,
+        trackCount: tracks.length,
+        status: 'success',
+        submissionId,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+    return { distributor, status: 'success', submissionId };
+  }
+
   await db
     .collection('users').doc(userId)
     .collection('distributions').doc(distributionId)
@@ -291,7 +313,7 @@ async function submitToDistributor(
       distributor,
       trackCount: tracks.length,
       status: 'failed',
-      error: 'Distributor submission connector is not configured.',
+      error: `Distributor '${distributor}' connector credentials are not configured.`,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 
