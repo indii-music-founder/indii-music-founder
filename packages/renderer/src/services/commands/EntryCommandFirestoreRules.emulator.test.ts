@@ -95,6 +95,19 @@ describe('Entry command Firestore rules emulator coverage', () => {
       buildCommand({ ownerId: ALICE_UID, scope: 'user', slash: 'shirt' })
     ));
   });
+
+  it('rejects unknown command surfaces', async () => {
+    if (!testEnv) return;
+    const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+
+    await assertFails(setDoc(
+      doc(aliceDb, 'entryCommands', `${ALICE_UID}_bad-surface`),
+      {
+        ...buildCommand({ ownerId: ALICE_UID, scope: 'user' }),
+        surfaces: ['command-bar', 'unknown-surface'],
+      }
+    ));
+  });
 });
 
 function buildCommand(overrides: {

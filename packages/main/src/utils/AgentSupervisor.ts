@@ -102,18 +102,17 @@ export class AgentSupervisor {
     ): Promise<T> {
         return new Promise((resolve, reject) => {
             let isCompleted = false;
+            const controller = new AbortController();
 
             const timeoutId = setTimeout(() => {
                 if (!isCompleted) {
                     isCompleted = true;
-                    // Note: This rejects the promise, but doesn't actually kill the orphaned Python process.
-                    // To do that, PythonBridge would need to return the ChildProcess or a generic abort mechanism.
-                    // For now, we enforce the timeout at the Node level to unblock the UI.
+                    controller.abort();
                     reject(new Error(`Execution timeout: ${scriptName} exceeded ${timeoutMs}ms limit.`));
                 }
             }, timeoutMs);
 
-            PythonBridge.runScript(category, scriptName, args, onProgress, env, sensitiveArgsIndices)
+            PythonBridge.runScript(category, scriptName, args, onProgress, env, sensitiveArgsIndices, controller.signal)
                 .then((rawOutput) => {
                     if (isCompleted) return;
                     isCompleted = true;

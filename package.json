@@ -64,8 +64,8 @@
     "prepare": "husky",
     "bootstrap": "npm install && cp -n .env.example .env 2>/dev/null || true && npm run typecheck",
     "ci": "bash scripts/ci.sh",
-    "preflight:dev": "tsx scripts/production-gate.ts --dev",
-    "preflight:prod": "tsx scripts/production-gate.ts --prod"
+    "preflight:dev": "node --import tsx scripts/production-gate.ts --dev",
+    "preflight:prod": "node --import tsx scripts/production-gate.ts --prod"
   },
   "devDependencies": {
     "@ai-sdk/google": "^3.0.60",

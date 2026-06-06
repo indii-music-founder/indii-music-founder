@@ -131,6 +131,7 @@ service cloud.firestore {
         data.surfaces is list &&
         data.surfaces.size() >= 1 &&
         data.surfaces.size() <= 5 &&
+        data.surfaces.hasOnly(['dashboard', 'command-bar', 'mobile', 'capture', 'voice']) &&
         data.intakeFields is list &&
         data.intakeFields.size() <= 12 &&
         data.launchMode in ['guided-chat', 'navigate', 'workflow'] &&
@@ -411,8 +412,8 @@ service cloud.firestore {
         // Cannot change owner without explicit transfer
         request.resource.data.ownerId == resource.data.ownerId) || isGuest();
       
-      // Only org owner can delete
-      allow delete: if (isVerifiedUser() && resource.data.ownerId == request.auth.uid) || isGuest();
+      // Delete always denied
+      allow delete: if false;
       
       // Projects subcollection
       match /projects/{projectId} {
@@ -867,8 +868,8 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
     match /isrc_registry/{docId} {
-      allow read: if isAuthenticated() || isGuest();
-      allow create: if false;
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isGuest();
+      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid && request.resource.data.isrc.matches('^[A-Z]{2}-[A-Z0-9]{3}-[0-9]{2}-[0-9]{5}$')) || isGuest();
       allow update, delete: if false;
     }
     match /upc_pool/{docId} {
@@ -1005,14 +1006,14 @@ service cloud.firestore {
     // Token Usage & Rate Limits
     // =========================================================================
     match /user_usage_stats/{statId} {
-      allow read: if (isAuthenticated() && statId.matches(request.auth.uid + '.*')) || (isGuest() && statId.matches('founder-demo-uid.*'));
-      allow create, update: if (isVerifiedUser() && statId.matches(request.auth.uid + '.*')) || (isGuest() && statId.matches('founder-demo-uid.*'));
+      allow read: if (isAuthenticated() && statId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9]+'));
+      allow create, update: if (isVerifiedUser() && statId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9]+'));
       allow delete: if false;
     }
 
     match /user_rate_limits/{limitId} {
-      allow read: if (isAuthenticated() && limitId.matches(request.auth.uid + '.*')) || (isGuest() && limitId.matches('founder-demo-uid.*'));
-      allow create, update: if (isVerifiedUser() && limitId.matches(request.auth.uid + '.*')) || (isGuest() && limitId.matches('founder-demo-uid.*'));
+      allow read: if (isAuthenticated() && limitId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && limitId.matches('founder-demo-uid_[0-9]+'));
+      allow create, update: if (isVerifiedUser() && limitId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && limitId.matches('founder-demo-uid_[0-9]+'));
       allow delete: if false;
     }
 
@@ -1070,7 +1071,8 @@ service cloud.firestore {
     }
     match /sftp_ingestions/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /video_releases/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
@@ -1080,7 +1082,15 @@ service cloud.firestore {
     // Owner-by-field (requestedBy).
     match /takedown_requests/{docId} {
       allow read: if isAuthenticated() && resource.data.requestedBy == request.auth.uid;
-      allow create, update, delete: if false;
+      allow create: if isVerifiedUser() && request.resource.data.requestedBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /licenses/{licenseId} {
+      allow read: if isVerifiedUser() || isGuest();
+      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId) || isGuest();
+      allow delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || isGuest();
     }
 
     // Owner-by-path segment (uid).
@@ -1127,8 +1137,9 @@ service cloud.firestore {
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
     }
     match /tax_profiles/{docId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow read, update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
+      allow delete: if false;
     }
     match /dsr_processed_reports/{docId} {
       allow read, update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');

@@ -47,7 +47,7 @@ export default defineConfig({
     },
     server: {
         port: 4243,
-        host: '127.0.0.1',
+        host: 'localhost',
         strictPort: true,
         // SPA fallback: any non-asset URL falls back to index.html. Vite already
         // does this for the root, but explicit is safer if router routes change.

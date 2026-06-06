@@ -14,7 +14,7 @@ export const verifyMechanicalLicense = functions
             );
         }
 
-        const { trackTitle, originalArtist } = data as { trackTitle: string; originalArtist: string };
+        const { trackTitle, originalArtist, durationMs } = data as { trackTitle: string; originalArtist: string; durationMs?: number };
 
         if (!trackTitle || !originalArtist) {
             throw new functions.https.HttpsError(
@@ -34,14 +34,35 @@ export const verifyMechanicalLicense = functions
             );
         }
         
-        // At this point we would make a real fetch to HFA
-        // throw new functions.https.HttpsError("unimplemented", "HFA API call implemented but requires real credentials to proceed.");
-        return {
-            status: "pending_manual_verification",
-            songCode: "unknown",
-            publisher: "unknown",
-            rate: 0.12,
-            requiresClearance: true
-        };
+        try {
+            const res = await fetch(`https://api.harryfox.com/v1/licenses/verify`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${hfaApiKey}`,
+                    'X-Account-ID': hfaAccountId,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ trackTitle, originalArtist, durationMs })
+            });
+
+            if (!res.ok) {
+                 throw new Error(`HFA API returned ${res.status}`);
+            }
+
+            const hfaData = await res.json() as { isCleared?: boolean; songCode?: string; publisher?: string; rate?: number };
+            return {
+                status: hfaData.isCleared ? 'verified' : 'pending_manual_verification',
+                songCode: hfaData.songCode || 'unknown',
+                publisher: hfaData.publisher || 'unknown',
+                rate: hfaData.rate || 0.12,
+                requiresClearance: !hfaData.isCleared
+            };
+        } catch (error) {
+            console.error('[verifyMechanicalLicense] HFA API failed:', error);
+            throw new functions.https.HttpsError(
+                "internal",
+                "Failed to verify mechanical license with provider."
+            );
+        }
         
     });

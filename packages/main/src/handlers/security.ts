@@ -3,6 +3,7 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
+import sodium from 'libsodium-wrappers';
 
 // ARCHITECTURE NOTE: This handler does NOT import Firebase.
 // Firebase client SDK is a browser-side module and must NEVER be loaded
@@ -74,8 +75,15 @@ export function registerSecurityHandlers() {
                     return { success: false, error: `Failed to fetch GitHub repo public key: ${pubKeyRes.statusText}` };
                 }
                 const pubKeyData = await pubKeyRes.json() as { key: string; key_id: string };
-                // Note: proper encryption with libsodium would be done here in a full implementation.
-                // For now, we update the secret placeholder to trigger CI re-fetch.
+                // Proper encryption with libsodium
+                await sodium.ready;
+                
+                const secret_value = (vaultData.secret_value as string) || '';
+                const binkey = sodium.from_base64(pubKeyData.key, sodium.base64_variants.ORIGINAL);
+                const binsec = sodium.from_string(secret_value);
+                const encBytes = sodium.crypto_box_seal(binsec, binkey);
+                const encrypted_value = sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
+
                 const patchRes = await fetch(
                     `https://api.github.com/repos/${owner}/${repoName}/actions/secrets/${secret_name}`,
                     {
@@ -86,7 +94,7 @@ export function registerSecurityHandlers() {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            encrypted_value: (vaultData.key as string) ?? '', // caller should pre-encrypt with pubKeyData.key
+                            encrypted_value,
                             key_id: pubKeyData.key_id,
                         }),
                     }

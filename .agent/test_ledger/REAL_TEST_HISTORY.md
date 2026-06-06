@@ -634,3 +634,30 @@
   - Reconfirmed the repeated `--localstorage-file` worker warning is still pre-existing test-environment noise rather than a newly logged audio defect.
   - Reconfirmed no net-new audio product failures were observable beyond the existing live-browser regression path already tracked by `ISSUE-188`.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_15-37-17_harness_reconfirm.md`
+
+## 2026-06-06 — MegaStressTestV11 E2E Gauntlet
+- **Modules Targeted:** Boardroom Swarm (Conductor/Creative/Video Directors), Creative Studio, Merch Studio, Distribution pipeline (DistroKid metadata and validation), Legal modules, Chaos and offline resilience, Route check
+- **Duration:** ~8 minutes
+- **Findings:** 0 new product issues. Fully executed all 10 routines in the V11.0 test ledger.
+- **Blockers:** None. Port 4242 was free and Playwright successfully launched its local Vite server to run the browser E2E specs.
+- **Coverage Delta:**
+  - Verified visual headed image-to-video media generation.
+  - Verified Zustand state isolation and module switches.
+  - Verified Firestore offline resilience, error boundaries, and empty rejections.
+  - Verified 40-module route checklist sanity checks.
+- **Artifacts:** `mega_v11_2026-06-06_results.md`
+
+## 2026-06-06 — MegaTestAudioLoop Browser Blocker Reconfirm
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~6 minutes
+- **Findings:** 0 new product issues filed. The scoped audio harness again stayed green outside the browser layer, and the live-validation blocker remained the already-open regression (`ISSUE-188`).
+- **Blockers:**
+  - `npm run dev:web` failed in preflight because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM` on `/var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/tsx-502/70795.pipe`).
+  - Direct `VITE_RENDERER_ONLY=true npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21 test files / 135 tests plus Python checks, but its Playwright phase failed because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The Codex in-app browser again rejected `http://127.0.0.1:4242/audio-analyzer`, `http://127.0.0.1:4243/audio-analyzer`, and `https://indii-music-founder.web.app/audio-analyzer` before navigation, so no new UI state or screenshotable page could be reached.
+- **Coverage Delta:**
+  - Reconfirmed audio analyzer UI tests, local technical analysis services, semantic Audio DNA support, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security in one scoped run.
+  - Reconfirmed no net-new audio product failures were observable beyond the existing live-browser regression path already tracked by `ISSUE-188`.
+  - Reconfirmed the repeated `--localstorage-file` warnings and `electron-log` EPERM writes are still environment/test-noise signals rather than newly logged audio product issues.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_16-37-51_browser_blocker_reconfirm.md`
