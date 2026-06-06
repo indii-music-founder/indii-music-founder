@@ -1,35 +1,52 @@
 import log from 'electron-log';
 import { spawn } from 'child_process';
 import path from 'path';
+import { app } from 'electron';
+
+export interface ScanResult {
+    success: boolean;
+    files?: string[];
+    directories?: string[];
+    message?: string;
+    [key: string]: unknown;
+}
+
+export interface KnowledgeUpdateResult {
+    success: boolean;
+    message?: string;
+    [key: string]: unknown;
+}
 
 export class FoundationalSkillService {
     private agentsRoot: string;
 
     constructor() {
-        // Assume agents are in the root of the project
-        // In dev, this is process.cwd() / agents
-        // In prod, we might need a different path
-        this.agentsRoot = path.join(process.cwd(), 'agents');
+        // Resolve agents path dynamically for dev vs prod (packaged app)
+        const isPackaged = app ? app.isPackaged : false;
+        if (isPackaged && app) {
+            this.agentsRoot = path.join(process.resourcesPath, 'agents');
+        } else {
+            this.agentsRoot = path.join(process.cwd(), 'agents');
+        }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async scanDirectory(): Promise<any> {
+    async scanDirectory(): Promise<ScanResult> {
         const scriptPath = path.join(this.agentsRoot, 'foundational/audit_skill/tools/scan_directory.py');
-        return this.runPythonScript(scriptPath, ['--root', this.agentsRoot]);
+        const res = await this.runPythonScript(scriptPath, ['--root', this.agentsRoot]);
+        return res as ScanResult;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async updateKnowledge(filePath: string, action: 'add' | 'remove', content: string): Promise<any> {
+    async updateKnowledge(filePath: string, action: 'add' | 'remove', content: string): Promise<KnowledgeUpdateResult> {
         const scriptPath = path.join(this.agentsRoot, 'foundational/memory_skill/tools/update_knowledge.py');
-        return this.runPythonScript(scriptPath, [
+        const res = await this.runPythonScript(scriptPath, [
             '--file_path', filePath,
             '--action', action,
             '--content', content
         ]);
+        return res as KnowledgeUpdateResult;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private runPythonScript(scriptPath: string, args: string[]): Promise<any> {
+    private runPythonScript(scriptPath: string, args: string[]): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
             log.info(`[FoundationalService] Running script: ${scriptPath} with args: ${args.join(' ')}`);
             
@@ -50,7 +67,7 @@ export class FoundationalSkillService {
                     try {
                         // Check if output is JSON
                         if (stdout.trim().startsWith('{') || stdout.trim().startsWith('[')) {
-                            resolve(JSON.parse(stdout));
+                            resolve(JSON.parse(stdout) as Record<string, unknown>);
                         } else {
                             resolve({ success: true, message: stdout.trim() });
                         }
@@ -68,3 +85,4 @@ export class FoundationalSkillService {
 }
 
 export const foundationalSkillService = new FoundationalSkillService();
+

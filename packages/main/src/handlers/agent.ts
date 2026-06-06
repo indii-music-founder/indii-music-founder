@@ -163,7 +163,7 @@ export function registerAgentHandlers() {
             
             const { foundationalSkillService } = await import('../services/FoundationalSkillService');
             const result = await foundationalSkillService.updateKnowledge(filePath, action, content);
-            return { success: true, ...result };
+            return { ...result, success: result.success ?? true };
         } catch (error) {
             log.error('Agent Update Knowledge Failed:', error);
             return { success: false, error: String(error) };

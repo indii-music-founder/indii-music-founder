@@ -6,26 +6,22 @@ export interface HarnessContext {
   save?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface HarnessCompiler<TInput = any, TOutput = Record<string, unknown>> {
+export interface HarnessCompiler<TInput = unknown, TOutput = Record<string, unknown>> {
   readonly domain: HarnessDomain;
   compile(input: TInput, ctx: HarnessContext): Promise<HarnessRun<TOutput>> | HarnessRun<TOutput>;
 }
 
 export class HarnessRegistry {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static compilers = new Map<HarnessDomain, HarnessCompiler<any, any>>();
+  private static compilers = new Map<HarnessDomain, HarnessCompiler<unknown, unknown>>();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static register(compiler: HarnessCompiler<any, any>): void {
+  static register<TIn, TOut>(compiler: HarnessCompiler<TIn, TOut>): void {
     if (this.compilers.has(compiler.domain)) {
       console.warn(`HarnessCompiler for domain ${compiler.domain} is already registered. Overwriting.`);
     }
-    this.compilers.set(compiler.domain, compiler);
+    this.compilers.set(compiler.domain, compiler as unknown as HarnessCompiler<unknown, unknown>);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static get(domain: HarnessDomain): HarnessCompiler<any, any> {
+  static get(domain: HarnessDomain): HarnessCompiler<unknown, unknown> {
     const compiler = this.compilers.get(domain);
     if (!compiler) {
       throw new Error(`No HarnessCompiler registered for domain: ${domain}`);
@@ -43,6 +39,6 @@ export async function compileHarness<TInput, TOutput>(
   input: TInput,
   ctx: HarnessContext
 ): Promise<HarnessRun<TOutput>> {
-  const compiler = HarnessRegistry.get(domain) as HarnessCompiler<TInput, TOutput>;
+  const compiler = HarnessRegistry.get(domain) as unknown as HarnessCompiler<TInput, TOutput>;
   return compiler.compile(input, ctx);
 }
