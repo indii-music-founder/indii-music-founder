@@ -1954,3 +1954,233 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Steps to Reproduce:** Run `npx playwright test e2e/boardroom-real-user-scenario.spec.ts`.
 - **Expected:** All seated agents must be unseated successfully, and the regex matching should support escaped/backslashed JSON args.
 - **UX Impact:** The boardroom zen mode retains "ghost" seated agents after unseating command execution.
+
+---
+
+### ISSUE-161: Finish E2EEncryption.interop.test.ts (TS→Py: encrypts a payload)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:23`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-162: Finish E2EEncryption.interop.test.ts (TS→Py: writes recipient_private_key.pem)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:24`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-163: Finish E2EEncryption.interop.test.ts (TS→Py: writes expected_plaintext.txt)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:25`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-164: Finish E2EEncryption.interop.test.ts (Py→TS: reads py_to_ts/envelope.json)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:27`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-165: Finish E2EEncryption.interop.test.ts (Py→TS: imports recipient_public_jwk.json)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:28`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-166: Finish E2EEncryption.interop.test.ts (Py→TS: decrypted plaintext matches expected)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:29`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-167: Finish E2EEncryption.interop.test.ts (Algorithm parity: RSA-OAEP / SHA-256)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:31`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-168: Finish E2EEncryption.interop.test.ts (Algorithm parity: AES-GCM / 12-byte IV)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:32`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-169: Finish E2EEncryption.interop.test.ts (Wire format: [4-byte BE length][wrapped_key])
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/security/E2EEncryption.interop.test.ts:33`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-170: Finish security.ts (Key rotation not implemented for service)
+- **Status:** ✅ FIXED
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/security.ts:100`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-171: Finish CDBabyAdapter.ts (CDBaby takedown delivery explicitly not implemented)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/distribution/adapters/CDBabyAdapter.ts:203`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-172: Finish DistroKidAdapter.ts (DistroKid takedown delivery explicitly not implemented)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:208`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-173: Finish FieldRecorder.tsx (Missing robust retry logic for cloud sync failures)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/landing/src/pages/FieldRecorder.tsx:118`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-174: Finish mega-stress-test-v4.spec.ts (30+ tests marked as skipped without clear reasons)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `e2e/mega-stress-test-v4.spec.ts:89`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-175: Finish pinata.ts (Stubbed IPC handler for Pinata/IPFS operations)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/pinata.ts:1`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-176: Finish web3.ts (Stubbed IPC handler for Web3 operations)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/handlers/web3.ts:1`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-177: Finish PinataService.ts (Stubbed underlying service class for Pinata)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/main/src/services/web3/PinataService.ts:1`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-178: Finish deliverScheduledPosts.ts (Switch block missing 'youtube' platform handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:200`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-179: Finish sendEmail.ts (Switch block missing 'dmca' template handler)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/firebase/src/email/sendEmail.ts:230`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-180: Finish MarketingService.ts (updateMarketingStats method is an empty stub)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/marketing/MarketingService.ts:220`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-181: Finish CopyrightFilterService.ts (queryRegistry missing ACRCloud authentication/signature)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/audio/CopyrightFilterService.ts:58`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-182: Finish AgentCanvasPanel.tsx (HTML rendering returns 'coming soon' placeholder)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/core/components/AgentCanvasPanel.tsx:241`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-183: Finish DistroKidAdapter.ts (getAllEarnings returns empty array stub)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-184: Finish WalletConnectService.ts (connectViaWalletConnect throws error instead of modal)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-185: Finish SocialPostingService.ts (YouTube Shorts missing delivery mechanism)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/social/SocialPostingService.ts:98`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-186: Finish RenderService.ts (renderComposition bypasses dynamic bundling)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Location:** `packages/renderer/src/services/video/RenderService.ts:101`
+- **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
+
+---
+
+### ISSUE-187: Audio mega-test live browser validation is blocked in sandbox automation
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** TestInfra | Browser | E2E
+- **Module:** Audio Analyzer / Scoped Test Harness
+- **Flowchart:** docs/flowcharts/scoped-testing-architecture.md
+- **Tech Stack:** React 18.3.1 | Vite 6.4.2 | Playwright | Codex In-app Browser
+- **Found:** 2026-06-06 by MegaTestAudioLoop
+- **Summary:** The scoped audio harness still passes 21/21 audio-related unit suites and Python checks, but compliant live-browser validation is blocked in this automation environment. `npm run dev:web` fails in preflight because `tsx scripts/production-gate.ts --dev` cannot create its IPC pipe, direct Vite fallback cannot bind `127.0.0.1:4243`, Playwright cannot start its configured web server on `127.0.0.1:4242`, and the in-app browser security policy rejects both localhost and the deployed `/audio-analyzer` route before navigation.
+- **Steps to Reproduce:**
+  1. Run `npm run dev:web`.
+  2. Observe `listen EPERM` from `tsx` while creating its IPC pipe.
+  3. Run `npx vite --config packages/renderer/vite.config.ts --port 4243`.
+  4. Observe `listen EPERM: operation not permitted 127.0.0.1:4243`.
+  5. Run `python3 execution/run_department_test.py audio-analyzer`.
+  6. Observe Playwright fail because `config.webServer` cannot start on `127.0.0.1:4242`.
+  7. Attempt browser navigation to `http://127.0.0.1:4242/audio-analyzer` or `https://indii-music-founder.web.app/audio-analyzer` in the Codex in-app browser.
+- **Expected:** The scoped audio workflow should be able to start a local web runtime or reach an approved live route so browser-level audio validation can execute and capture fresh UI evidence.
+- **UX Impact:** Audio regressions in the live UI can be missed because this automation is limited to harness/test evidence instead of end-to-end browser observation.
