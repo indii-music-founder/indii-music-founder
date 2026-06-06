@@ -6,13 +6,10 @@ import { logger } from '@/utils/logger';
 import { DSPComplianceValidator } from './DSPComplianceValidator';
 import type { DeepAudioFeatures, TechnicalAudit } from './types';
 
-// Genre labels for Rosamerica model
-const _GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
 
 export class AudioAnalysisService {
     private initialized = false;
 
-    // private models: { [key: string]: any } = {}; // Removed
 
     private async init(): Promise<void> {
         if (this.initialized) return;
@@ -24,12 +21,6 @@ export class AudioAnalysisService {
         logger.info("[AudioAnalysis] Initialized CSP-safe Web Audio analyzer.");
     }
 
-    /*
-    private async loadModel(key: string): Promise<any> {
-        // Implementation removed
-        throw new Error("TensorFlow.js not available");
-    }
-    */
 
     /**
      * Analyzes an audio file/blob to extract high-level features.

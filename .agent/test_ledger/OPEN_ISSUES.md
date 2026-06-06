@@ -2332,7 +2332,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-205: Fix useFinance.ts (Lazy bug fix; logic relying on loadEarnings removed)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Restored setEarningsError and verified AI slop was completely removed.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/finance/hooks/useFinance.ts:98`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2340,7 +2341,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-206: Fix MapsComponent.tsx (Incomplete Google Maps dark mode styling array)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Added missing water styling to Google Maps dark mode array to complete the style object.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/marketing/components/MapsComponent.tsx:29`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2348,7 +2350,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-207: Fix AudioAnalysisService.ts (Zombie commented-out methods)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed commented out loadModel method, unused _GENRE_LABELS, and models map.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/audio/AudioAnalysisService.ts:89`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -2450,7 +2453,8 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-216: Fix OnTheRoadTab.tsx (Lazy AI component logic omitted)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed lazy AI slop comment.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/touring/components/OnTheRoadTab.tsx:77`
 - **Details:** Found during `/finish` sweep. AI Slop: Comment `{/* ... rest of existing imports and logic ... */}`.

@@ -15,7 +15,7 @@ export function useFinance() {
 
     const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
     const [earningsLoading, setEarningsLoading] = useState(true);
-    const [earningsError] = useState<string | null>(null);
+    const [earningsError, setEarningsError] = useState<string | null>(null);
 
     const toast = useToast();
 
