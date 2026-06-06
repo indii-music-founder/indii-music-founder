@@ -541,3 +541,18 @@
   - Reconfirmed the only observable failures in this session were environment-level localhost bind restrictions and not a new audio product regression.
   - Reconfirmed the live-browser baseline remains `ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_23-05-04_harness_reconfirm.md`
+
+## 2026-06-05 — MegaTestAudioLoop Browser-Policy Reconfirm
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~9 minutes
+- **Findings:** 0 new product issues filed. The audio scoped harness again passed outside the browser layer, while both localhost runtime startup and browser validation remained blocked before a fresh app frame could render.
+- **Blockers:**
+  - `npm run dev:web` failed in preflight because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe (`listen EPERM` on `/var/folders/.../tsx-502/63459.pipe`).
+  - Direct `npx vite --config packages/renderer/vite.config.ts --port 4243` fallback also failed with `listen EPERM` on `127.0.0.1:4243`.
+  - `python3 execution/run_department_test.py audio-analyzer` passed 21 test files / 135 tests and Python checks, but its Playwright phase failed because `config.webServer` could not bind `127.0.0.1:4242`.
+  - The in-app browser explicitly rejected `http://127.0.0.1:4243/audio-analyzer` with a browser security policy denial before navigation, so no fresh screenshotable UI state was reachable.
+- **Coverage Delta:**
+  - Reconfirmed the repo's scoped audio harness still covers Audio Analyzer UI logic, local audio analysis, semantic fingerprinting, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, marketing/director tools, and audio IPC security.
+  - Reconfirmed no net-new audio regressions beyond the existing live-browser baseline (`ISSUE-153`, `ISSUE-154`, `ISSUE-155`, and `ISSUE-158`).
+  - Logged this run as a combined port-binding plus browser-policy environment block rather than a product failure.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-05_20-05-28_browser_policy_reconfirm.md`
