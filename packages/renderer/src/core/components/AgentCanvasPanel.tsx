@@ -14,7 +14,7 @@ import {
     Trash2,
     PanelRightClose,
 } from 'lucide-react';
-import type { CanvasPushPayload, ChartPayload, TablePayload, CardPayload, MarkdownPayload } from '@/types/AgentCanvas';
+import type { CanvasPushPayload, ChartPayload, TablePayload, CardPayload, MarkdownPayload, HtmlPayload } from '@/types/AgentCanvas';
 
 /**
  * AgentCanvasPanel — Agent-to-UI Push (A2UI)
@@ -240,8 +240,7 @@ const PanelContent: React.FC<{ panel: CanvasPushPayload }> = ({ panel }) => {
             return (
                 <div 
                     className="bg-white/5 rounded-xl p-4 text-sm text-zinc-300 prose prose-invert"
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    dangerouslySetInnerHTML={{ __html: (panel.data as any).content || 'HTML rendering unsupported' }} 
+                    dangerouslySetInnerHTML={{ __html: (panel.data as HtmlPayload).content || 'HTML rendering unsupported' }} 
                 />
             );
         default:
