@@ -2441,10 +2441,11 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-215: Fix namecheap_login.cjs (Unhandled promise rejections swallowing errors)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/namecheap_login.cjs:22`
 - **Details:** Found during `/finish` sweep. AI Slop: Explicitly catches and suppresses errors completely.
+- **Fix:** Removed `.catch(() => {})` slop from the Puppeteer/Playwright methods so that UI automation failures bubble up accurately to the main try/catch block.
 
 ---
 
