@@ -26,14 +26,18 @@ describe('Creative Gateway (Integration)', () => {
     afterAll(async () => {
         // Clean up any stray documents and files created during the test
         for (const jobId of createdJobIds) {
-            await db.collection('creative_jobs').doc(jobId).delete().catch(() => {});
+            await db.collection('creative_jobs').doc(jobId).delete().catch((err: unknown) => {
+                console.warn('[GatewayCleanup] doc delete failed (teardown warning):', err);
+            });
         }
         
         const bucket = storage.bucket();
         for (const uri of createdStorageUris) {
             if (uri.startsWith(`gs://${bucket.name}/`)) {
                 const path = uri.replace(`gs://${bucket.name}/`, '');
-                await bucket.file(path).delete().catch(() => {});
+                await bucket.file(path).delete().catch((err: unknown) => {
+                    console.warn('[GatewayCleanup] storage file delete failed (teardown warning):', err);
+                });
             }
         }
 

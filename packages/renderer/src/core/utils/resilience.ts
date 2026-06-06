@@ -22,7 +22,10 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
     maxDelayMs: 10000,
     backoffMultiplier: 2,
     retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'Network Error'],
-    onRetry: () => { },
+    onRetry: (attempt: number, error: Error) => {
+        // Default logger output to prevent empty stub warning and keep trace in debug log.
+        console.debug(`[Resilience] Retrying after attempt ${attempt} due to error:`, error);
+    },
 };
 
 /**

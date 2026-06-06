@@ -24,6 +24,13 @@ interface DailyStream {
     trackC: number;
 }
 
+interface EnrichedDailyStream extends DailyStream {
+    trackA_spike: boolean;
+    trackB_spike: boolean;
+    trackC_spike: boolean;
+    hasAnomaly: boolean;
+}
+
 const TRACK_NAMES: Record<string, string> = {};
 
 // Static stream data (14 days)
@@ -130,7 +137,7 @@ export function AnomalyDetector() {
     }
 
     // Build chart data — optionally filter to anomalous days only
-    const chartData = useMemo(() => {
+    const chartData = useMemo((): EnrichedDailyStream[] => {
         const enriched = STREAM_DATA.map((d, i) => {
             const trackA_spike = isAnomalousBar(STREAM_DATA, i, 'trackA');
             const trackB_spike = isAnomalousBar(STREAM_DATA, i, 'trackB');
@@ -223,22 +230,16 @@ export function AnomalyDetector() {
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="trackA" name="trackA" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                        // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackA-${index}`} fill={entry.trackA_spike ? '#ef4444' : '#8b5cf6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackB" name="trackB" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                        // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackB-${index}`} fill={entry.trackB_spike ? '#ef4444' : '#3b82f6'} />;
                                     })}
                                 </Bar>
                                 <Bar dataKey="trackC" name="trackC" radius={[2, 2, 0, 0]}>
                                     {chartData.map((entry, index) => {
-                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                        // @ts-ignore - added dynamically in useMemo
                                         return <Cell key={`trackC-${index}`} fill={entry.trackC_spike ? '#ef4444' : '#10b981'} />;
                                     })}
                                 </Bar>

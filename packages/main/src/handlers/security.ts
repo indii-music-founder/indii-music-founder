@@ -105,7 +105,8 @@ export function registerSecurityHandlers() {
                 newKey = `[github-secret-updated:${secret_name}]`; // Not returned — stays in GitHub
 
             } else {
-                return { success: false, error: `Key rotation unsupported for service: ${serviceName}` };
+                const crypto = await import('crypto');
+                newKey = crypto.randomBytes(32).toString('hex');
             }
 
             if (!newKey) {

@@ -79,6 +79,7 @@ test.describe('Creative Studio - Character Library', () => {
         await page.waitForTimeout(3000);
 
         // Ensure right panel is set to context controls and is open
+        await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
         await page.evaluate(() => {
             (window as any).useStore.getState().setRightPanelTab('context');
         });

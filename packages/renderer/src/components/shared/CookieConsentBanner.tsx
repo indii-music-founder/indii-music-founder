@@ -245,7 +245,7 @@ export function CookieConsentBanner() {
                                         label="Essential"
                                         description="Authentication, navigation, and core app functionality."
                                         checked={true}
-                                        onChange={() => { }}
+                                        onChange={(v) => logger.debug('[CookieConsent] Essential consent changed (ignored as disabled):', v)}
                                         disabled
                                     />
                                     <ConsentToggle

@@ -23,6 +23,21 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         super('history');
     }
 
+    private mergeHistoryItems(groups: HistoryItem[][], limitCount: number): HistoryItem[] {
+        const byId = new Map<string, HistoryItem>();
+        for (const group of groups) {
+            for (const item of group) {
+                const existing = byId.get(item.id);
+                if (!existing || item.timestamp >= existing.timestamp) {
+                    byId.set(item.id, item);
+                }
+            }
+        }
+        return Array.from(byId.values())
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, limitCount);
+    }
+
     /**
      * Item 362: Resize and convert an image file to WebP on the client before upload.
      * Caps at 3000x3000px and converts to WebP (quality 0.9) to reduce bandwidth.
@@ -144,7 +159,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         // and become invalid after page refresh. We must upload to Firebase Storage
         // and persist the durable https:// URL to the history collection.
         if (item.url.startsWith('blob:') && item.type === 'video') {
-            const { auth } = await import('./firebase');
+        const { auth } = await import('./firebase');
             const userId = auth.currentUser?.uid;
 
             if (userId) {
@@ -248,46 +263,32 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             return [];
         }
 
-        // Try standard query with server-side sort
-        try {
-            const { auth } = await import('./firebase');
-            
-            if (!auth.currentUser?.uid) {
-                return [];
-            }
-            
+        const loadForOrg = async (targetOrgId: string, userId: string): Promise<HistoryItem[]> => {
             const constraints = [
-                where('orgId', '==', orgId),
+                where('orgId', '==', targetOrgId),
                 orderBy('timestamp', 'desc'),
                 limit(limitCount)
             ];
 
-            // If personal org, we must filter by userId to match security rules
-            if (orgId === 'personal') {
-                constraints.push(where('userId', '==', auth.currentUser.uid));
+            if (targetOrgId === 'personal') {
+                constraints.push(where('userId', '==', userId));
             }
 
-            return (await this.query(constraints)).map(doc => this.mapDocumentToItem(doc));
-        } catch (e: unknown) {
-            const error = e as { code?: string; message?: string };
-            // Check if it's the index error
-            if (error.code === 'failed-precondition' || error.message?.includes('index')) {
-                const { auth } = await import('./firebase');
-                
-                if (!auth.currentUser?.uid) {
-                    return [];
-                }
-                
-                const constraints = [where('orgId', '==', orgId), limit(limitCount)];
-
-                // Only filter by userId for personal org
-                if (orgId === 'personal') {
-                    constraints.push(where('userId', '==', auth.currentUser.uid));
+            try {
+                return (await this.query(constraints)).map(doc => this.mapDocumentToItem(doc));
+            } catch (e: unknown) {
+                const error = e as { code?: string; message?: string };
+                if (error.code !== 'failed-precondition' && !error.message?.includes('index')) {
+                    throw error;
                 }
 
-                // Fallback to client-side sort
+                const fallbackConstraints = [where('orgId', '==', targetOrgId), limit(limitCount)];
+                if (targetOrgId === 'personal') {
+                    fallbackConstraints.push(where('userId', '==', userId));
+                }
+
                 const results = await this.query(
-                    constraints,
+                    fallbackConstraints,
                     (a, b) => {
                         const timeA = a.timestamp.toMillis();
                         const timeB = b.timestamp.toMillis();
@@ -296,8 +297,21 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 );
                 return results.map(doc => this.mapDocumentToItem(doc));
             }
-            throw error;
+        };
+
+            const { auth } = await import('./firebase');
+
+        if (!auth.currentUser?.uid) {
+            return [];
         }
+
+        const orgHistory = await loadForOrg(orgId, auth.currentUser.uid);
+        if (orgId === 'personal') {
+            return orgHistory;
+        }
+
+        const personalHistory = await loadForOrg('personal', auth.currentUser.uid);
+        return this.mergeHistoryItems([orgHistory, personalHistory], limitCount);
 
     }
 
@@ -324,6 +338,17 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             return () => { };
         }
         
+        const snapshots: Record<'org' | 'personal', HistoryItem[]> = {
+            org: [],
+            personal: []
+        };
+
+        const emitMerged = () => {
+            onUpdate(orgId === 'personal'
+                ? snapshots.org
+                : this.mergeHistoryItems([snapshots.org, snapshots.personal], limitCount));
+        };
+
         const constraints = [
             where('orgId', '==', orgId),
             orderBy('timestamp', 'desc'),
@@ -334,61 +359,81 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             constraints.push(where('userId', '==', auth.currentUser.uid));
         }
 
-        const q = query(this.collection, ...constraints);
-
-        let unsubscribe: Unsubscribe | null = null;
-        let isUnsubscribed = false;
-
-        const originalUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-            const items = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+        const makeSnapshotHandler = (scope: 'org' | 'personal') => (snapshot: QuerySnapshot<DocumentData>) => {
+            snapshots[scope] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data() as HistoryDocument;
                 return this.mapDocumentToItem({ ...data, id: doc.id });
             });
-            onUpdate(items);
-        }, (error: FirestoreError | Error & { code?: string }) => {
-            // Check if it's an index error, fallback to un-ordered query if so
-            if (error.code === 'failed-precondition' || error.message.includes('index')) {
-                logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
+            emitMerged();
+        };
 
-                const fallbackConstraints = [
-                    where('orgId', '==', orgId),
-                    limit(limitCount)
-                ];
+        const subscribeWithFallback = (scope: 'org' | 'personal', activeConstraints: typeof constraints): Unsubscribe => {
+            const q = query(this.collection, ...activeConstraints);
 
-                if (orgId === 'personal' && auth.currentUser?.uid) {
-                    fallbackConstraints.push(where('userId', '==', auth.currentUser.uid));
+            let unsubscribe: Unsubscribe | null = null;
+            let isUnsubscribed = false;
+
+            const originalUnsubscribe = onSnapshot(q, makeSnapshotHandler(scope), (error: FirestoreError | Error & { code?: string }) => {
+                // Check if it's an index error, fallback to un-ordered query if so
+                if (error.code === 'failed-precondition' || error.message.includes('index')) {
+                    logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
+
+                    const fallbackConstraints = [
+                        where('orgId', '==', scope === 'personal' ? 'personal' : orgId),
+                        limit(limitCount)
+                    ];
+
+                    if ((scope === 'personal' || orgId === 'personal') && auth.currentUser?.uid) {
+                        fallbackConstraints.push(where('userId', '==', auth.currentUser.uid));
+                    }
+
+                    const fallbackQ = query(this.collection, ...fallbackConstraints);
+
+                    unsubscribe = onSnapshot(fallbackQ, (fallbackSnap: QuerySnapshot<DocumentData>) => {
+                        snapshots[scope] = fallbackSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+                            const data = doc.data() as HistoryDocument;
+                            return this.mapDocumentToItem({ ...data, id: doc.id });
+                        });
+
+                        // Client-side sort
+                        snapshots[scope].sort((a: HistoryItem, b: HistoryItem) => b.timestamp - a.timestamp);
+                        emitMerged();
+                    }, onError);
+
+                    // If user called the wrapper's unsubscribe before fallback finished attaching
+                    if (isUnsubscribed && unsubscribe) {
+                        unsubscribe();
+                    }
+                } else {
+                    if (onError) onError(error);
                 }
+            });
 
-                const fallbackQ = query(this.collection, ...fallbackConstraints);
-
-                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap: QuerySnapshot<DocumentData>) => {
-                    const items = fallbackSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-                        const data = doc.data() as HistoryDocument;
-                        return this.mapDocumentToItem({ ...data, id: doc.id });
-                    });
-
-                    // Client-side sort
-                    items.sort((a: HistoryItem, b: HistoryItem) => b.timestamp - a.timestamp);
-                    onUpdate(items);
-                }, onError);
-
-                // If user called the wrapper's unsubscribe before fallback finished attaching
-                if (isUnsubscribed && unsubscribe) {
-                    unsubscribe();
-                }
-            } else {
-                if (onError) onError(error);
+            // If fallback hasn't happened yet, set inner to original
+            if (!unsubscribe) {
+                unsubscribe = originalUnsubscribe;
             }
-        });
 
-        // If fallback hasn't happened yet, set inner to original
-        if (!unsubscribe) {
-            unsubscribe = originalUnsubscribe;
+            return () => {
+                isUnsubscribed = true;
+                if (unsubscribe) unsubscribe();
+            };
+        };
+
+        const unsubscribes: Unsubscribe[] = [subscribeWithFallback('org', constraints)];
+
+        if (orgId !== 'personal') {
+            const personalConstraints = [
+                where('orgId', '==', 'personal'),
+                where('userId', '==', auth.currentUser.uid),
+                orderBy('timestamp', 'desc'),
+                limit(limitCount)
+            ];
+            unsubscribes.push(subscribeWithFallback('personal', personalConstraints));
         }
 
         return () => {
-            isUnsubscribed = true;
-            if (unsubscribe) unsubscribe();
+            unsubscribes.forEach(unsubscribe => unsubscribe());
         };
     }
 

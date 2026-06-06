@@ -439,8 +439,6 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         items={videoInputs.firstFrame ? [{ id: 'ff', type: 'image', content: videoInputs.firstFrame.url, checked: true, category: 'subject' }] : []}
                                                         onAdd={(type, content) => setVideoInput('firstFrame', { id: `ff_${Date.now()}`, type: 'image', url: content, prompt: 'Start frame', timestamp: Date.now(), projectId: '' })}
                                                         onRemove={() => setVideoInput('firstFrame', null)}
-                                                        onToggle={() => { }}
-                                                        onUpdate={() => { }}
                                                         description="Drop start"
                                                         compact={true}
                                                     />
@@ -453,8 +451,6 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         items={videoInputs.lastFrame ? [{ id: 'lf', type: 'image', content: videoInputs.lastFrame.url, checked: true, category: 'subject' }] : []}
                                                         onAdd={(type, content) => setVideoInput('lastFrame', { id: `lf_${Date.now()}`, type: 'image', url: content, prompt: 'End frame', timestamp: Date.now(), projectId: '' })}
                                                         onRemove={() => setVideoInput('lastFrame', null)}
-                                                        onToggle={() => { }}
-                                                        onUpdate={() => { }}
                                                         description="Drop end"
                                                         compact={true}
                                                     />

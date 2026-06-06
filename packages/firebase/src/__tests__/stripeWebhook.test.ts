@@ -450,6 +450,6 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(statusFn).not.toHaveBeenCalled();
-        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+        expect(jsonFn).toHaveBeenCalledWith({ received: true, status: 'unhandled_event', type: 'payment_intent.created' });
     });
 });
