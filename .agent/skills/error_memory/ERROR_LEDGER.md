@@ -888,3 +888,15 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: Synchronously calling functions (e.g. `fetchDeliveries()`, `fetchInbox()`, `fetchNexusData()`, `checkAuthStatus()`) within `useEffect` hooks that subsequently execute state mutations (like `setLoading(true)`) triggers rendering cascading and violates the repository's strict performance validation rules.
 - FIX: Wrapped initial fetching/loading operations inside an asynchronous `init` function using `await Promise.resolve()` or similar async handlers. This defers the execution of state mutations to the next microtask loop, executing them safely outside the mount render phase.
 - PREVENTION: When calling methods inside `useEffect` that update component state, ensure the updates run asynchronously (e.g. wrapped in an async function with `await Promise.resolve()`) to satisfy strict render checks.
+
+## 2026-06-06 Mermaid Flowchart Syntax validation fails on Nested Brackets
+
+**SEVERITY:** Medium (blocks unified CI checks via `validate-flowcharts.js` script)
+
+**MISTAKE:**
+- FILES: `docs/flowcharts/issue-gauntlet-macro.md`
+- ERROR: `Line 7: Unquoted special characters/labels in node definition ("Start(["/finish Sweep Complete: 27 Issues Found"]) --> Phase1"). Enclose labels in quotes: id["Label Text"]`
+- CAUSE: The flowchart validator regex `/^[a-zA-Z0-9_-]+\s*([\[\(])([^"'].*?)([\]\)])/` expects the first character inside the node shape brackets `[` or `(` to be a double/single quote. When nested Mermaid node shapes are used (such as stadium shapes `([ ... ])` or subgraphs), the bracket is immediately followed by another bracket/parenthesis, which does not match a quote and triggers a false positive "unquoted special characters" failure.
+- FIX: Replaced nested shapes `Start([...])` and `Finish([...])` with standard rectangle brackets `Start["..."]` and `Finish["..."]`. This ensures the first character inside the bracket is the quote character, satisfying the validation regex.
+- PREVENTION: When writing Mermaid flowcharts in `docs/flowcharts/`, avoid using nested shape brackets like `([ ... ])` or `(( ... ))` with quoted labels unless you modify the validation script, as the regex will flag the second opening bracket as an unquoted character. Stick to standard shapes: `id["Label Text"]` or `id("Label Text")`.
+
