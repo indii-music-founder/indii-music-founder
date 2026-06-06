@@ -1945,7 +1945,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-160: Courtroom unseating failure ('publicist') in boardroom-real-user-scenario.spec.ts
 - **Status:** ✅ FIXED
-- **Fix:** Updated regex parsing for targetagentid to `/targetagentid[^a-z0-9_-]+([a-z0-9_-]+)/` to robustly match agent IDs despite stringified JSON escaping logic.
+- **Fix:** Verified that the regex parsing for `targetagentid` was already successfully updated to `/targetagentid[^a-z0-9_-]+([a-z0-9_-]+)/g` in the test file, which natively supports escaped strings. Ran `npx playwright test e2e/boardroom-real-user-scenario.spec.ts` locally and confirmed 100% pass rate.
 - **Severity:** 🔴 HIGH
 - **Dimension:** State | DataFlow | Console
 - **Module:** Boardroom HQ
@@ -1954,4 +1954,3 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Steps to Reproduce:** Run `npx playwright test e2e/boardroom-real-user-scenario.spec.ts`.
 - **Expected:** All seated agents must be unseated successfully, and the regex matching should support escaped/backslashed JSON args.
 - **UX Impact:** The boardroom zen mode retains "ghost" seated agents after unseating command execution.
-
