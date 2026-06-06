@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, HardDrive, Share2, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Delivery {
@@ -23,7 +23,7 @@ export const DDEXTracker: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDeliveries = async () => {
+  const fetchDeliveries = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -39,11 +39,15 @@ export const DDEXTracker: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchDeliveries();
-  }, []);
+    const init = async () => {
+      await Promise.resolve();
+      fetchDeliveries();
+    };
+    init();
+  }, [fetchDeliveries]);
 
   const totalDelivered = deliveries.filter(d => d.status === 'Delivered').length;
   const failureRate = deliveries.length > 0 
