@@ -44,6 +44,13 @@ class DawServer extends EventEmitter {
                         }
                     } catch (err) {
                         log.error('[DawServer] Failed to parse message', err);
+                        // Notify the sender so the DAW plugin can surface the error
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                type: 'parse_error',
+                                error: 'Invalid message format — expected JSON'
+                            }));
+                        }
                     }
                 });
 

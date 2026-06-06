@@ -1,5 +1,21 @@
 import * as functions from "firebase-functions/v1";
 
+/**
+ * verifyMechanicalLicense — Mechanical License Verification (NOT YET INTEGRATED)
+ *
+ * NOTE (ISSUE-300): The previous implementation called `https://api.harryfox.com/v1/licenses/verify`
+ * which is a hallucinated endpoint. Harry Fox Agency (HFA) was acquired by MusicMark in 2021
+ * and does not expose a public REST API at that URL. Calls would fail with 404/503.
+ *
+ * Integration path:
+ *   1. Subscribe to MusicMark's licensing API program (https://www.musicmark.com)
+ *   2. Obtain production credentials (API key + account ID)
+ *   3. Implement against their documented endpoint schema
+ *   4. Remove the NOT_IMPLEMENTED guard below
+ *
+ * Until that integration is complete, this function fails transparently so callers
+ * can surface a clear "not available" state rather than silently returning bad data.
+ */
 export const verifyMechanicalLicense = functions
     .region("us-central1")
     .runWith({
@@ -14,7 +30,7 @@ export const verifyMechanicalLicense = functions
             );
         }
 
-        const { trackTitle, originalArtist, durationMs } = data as { trackTitle: string; originalArtist: string; durationMs?: number };
+        const { trackTitle, originalArtist } = data as { trackTitle: string; originalArtist: string };
 
         if (!trackTitle || !originalArtist) {
             throw new functions.https.HttpsError(
@@ -23,46 +39,15 @@ export const verifyMechanicalLicense = functions
             );
         }
 
-        const hfaApiKey = process.env.VITE_HFA_API_KEY || process.env.HFA_API_KEY;
-        const hfaAccountId = process.env.VITE_HFA_ACCOUNT_ID || process.env.HFA_ACCOUNT_ID;
-        
-        if (!hfaApiKey || !hfaAccountId) {
-            console.error(`[verifyMechanicalLicense] Mechanical licensing provider not configured for "${trackTitle}" by ${originalArtist}.`);
-            throw new functions.https.HttpsError(
-                "failed-precondition",
-                "Mechanical licensing provider is not configured. No license verification was performed."
-            );
-        }
-        
-        try {
-            const res = await fetch(`https://api.harryfox.com/v1/licenses/verify`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${hfaApiKey}`,
-                    'X-Account-ID': hfaAccountId,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ trackTitle, originalArtist, durationMs })
-            });
-
-            if (!res.ok) {
-                 throw new Error(`HFA API returned ${res.status}`);
-            }
-
-            const hfaData = await res.json() as { isCleared?: boolean; songCode?: string; publisher?: string; rate?: number };
-            return {
-                status: hfaData.isCleared ? 'verified' : 'pending_manual_verification',
-                songCode: hfaData.songCode || 'unknown',
-                publisher: hfaData.publisher || 'unknown',
-                rate: hfaData.rate || 0.12,
-                requiresClearance: !hfaData.isCleared
-            };
-        } catch (error) {
-            console.error('[verifyMechanicalLicense] HFA API failed:', error);
-            throw new functions.https.HttpsError(
-                "internal",
-                "Failed to verify mechanical license with provider."
-            );
-        }
-        
+        // ISSUE-300: MusicMark/HFA API integration not yet implemented.
+        // Throw a documented not-yet-available error rather than calling a dead endpoint.
+        console.warn(
+            `[verifyMechanicalLicense] Mechanical license verification requested for ` +
+            `"${trackTitle}" by ${originalArtist} — MusicMark integration not yet implemented.`
+        );
+        throw new functions.https.HttpsError(
+            "unimplemented",
+            "Mechanical license verification is not yet available. " +
+            "MusicMark/HFA API integration is pending. Please verify manually."
+        );
     });

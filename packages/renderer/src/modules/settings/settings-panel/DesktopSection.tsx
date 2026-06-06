@@ -45,6 +45,9 @@ interface UpdateConfig {
     channel: 'stable' | 'beta';
     source: 'github' | 'firebase';
     isAvailable: boolean;
+    releaseName?: string;
+    releaseNumber?: number;
+    technicalVersion?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +64,8 @@ const DesktopSection: React.FC = () => {
         channel: 'stable',
         source: 'github',
         isAvailable: false,
+        releaseName: 'Founders Version One',
+        releaseNumber: 1,
     });
     const [isElectron] = useState(() => !!window.electronAPI);
 
@@ -165,10 +170,14 @@ const DesktopSection: React.FC = () => {
         }
     }, []);
 
-    const handleSourceChange = useCallback((value: string) => {
+    const handleSourceChange = useCallback(async (value: string) => {
         const source = value as 'github' | 'firebase';
-        setConfig((prev) => ({ ...prev, source }));
-        logger.info(`[DesktopSection] Update source changed to: ${source}`);
+        const updater = window.electronAPI?.updater;
+        if (updater?.setSource) {
+            await updater.setSource(source);
+            setConfig((prev) => ({ ...prev, source }));
+            logger.info(`[DesktopSection] Update source changed to: ${source}`);
+        }
     }, []);
 
     // -----------------------------------------------------------------------
@@ -229,9 +238,11 @@ const DesktopSection: React.FC = () => {
                             <Monitor size={18} className="text-cyan-400" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-white">indii Studio</p>
+                            <p className="text-sm font-semibold text-white">{config.releaseName || 'Founders Version One'}</p>
                             <p className="text-xs text-slate-500 font-mono mt-0.5">
-                                v{appVersion || '...'}
+                                indii Studio
+                                <span className="ml-2 text-slate-600">•</span>
+                                build v{config.technicalVersion || appVersion || '...'}
                                 <span className="ml-2 text-slate-600">•</span>
                                 <span className="ml-2 capitalize text-slate-400">{config.channel}</span>
                             </p>

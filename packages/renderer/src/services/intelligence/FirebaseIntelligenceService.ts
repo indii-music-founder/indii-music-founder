@@ -534,11 +534,18 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         const requestPromise = executeRequest();
         this.activeRequests.set(cacheKey, requestPromise);
+        // Attach a secondary .catch to the .finally() chain to suppress duplicate
+        // UnhandledPromiseRejection — the error is already surfaced via the returned
+        // requestPromise. This suppression is intentional, not a silent swallow.
         requestPromise.finally(() => {
             if (this.activeRequests.get(cacheKey) === requestPromise) {
                 this.activeRequests.delete(cacheKey);
             }
-        }).catch(() => { });
+        }).catch((err: unknown) => {
+            // Error already propagated to caller; suppress secondary rejection on the
+            // .finally() sub-chain to avoid duplicate UnhandledPromiseRejection events.
+            logger.debug('[FirebaseIntelligenceService] Suppressed duplicate rejection on pool cleanup:', err);
+        });
 
         return requestPromise;
     }

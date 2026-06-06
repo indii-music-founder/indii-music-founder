@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { getAudioData } from '@remotion/media-utils';
 import type { AudioData } from '@remotion/media-utils';
 import { logger } from '@/utils/logger';
@@ -11,34 +11,28 @@ interface AudioWaveformProps {
 }
 
 export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height, color = 'rgba(255, 255, 255, 0.5)' }) => {
-    // ⚡ Bolt Optimization: Cache raw audio data to avoid re-fetching/decoding on resize
-    const [audioData, setAudioData] = useState<AudioData | null>(null);
-    const [waveform, setWaveform] = useState<number[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    // Cache raw audio data to avoid re-fetching/decoding on resize.
+    const [audioData, setAudioData] = useState<{ src: string; data: AudioData } | null>(null);
+    const [error, setError] = useState<{ src: string; message: string } | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const activeAudioData = audioData?.src === src ? audioData.data : null;
+    const activeError = error?.src === src ? error.message : null;
 
     // 1. Fetch Audio (Only when src changes)
     useEffect(() => {
         let isMounted = true;
-
-        // Reset state on new src (async to avoid lint warning)
-        Promise.resolve().then(() => {
-            if (isMounted) {
-                setAudioData(null);
-                setError(null);
-            }
-        });
 
         const fetchAudio = async () => {
             try {
                 // This is the expensive operation we want to cache
                 const data = await getAudioData(src);
                 if (isMounted) {
-                    setAudioData(data);
+                    setAudioData({ src, data });
+                    setError(null);
                 }
             } catch (err: unknown) {
                 logger.error("Failed to load audio waveform:", err);
-                if (isMounted) setError("Failed to load audio");
+                if (isMounted) setError({ src, message: "Failed to load audio" });
             }
         };
 
@@ -50,12 +44,12 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
     }, [src]);
 
     // 2. Resample (When width or audioData changes)
-    useEffect(() => {
-        if (!audioData) return;
+    const waveform = useMemo(() => {
+        if (!activeAudioData) return [];
 
         // Resample data to fit width
-        const samples = audioData.channelWaveforms[0]; // Use first channel
-        if (!samples) return;
+        const samples = activeAudioData.channelWaveforms[0]; // Use first channel
+        if (!samples) return [];
         const step = Math.ceil(samples.length / width);
         const resampled: number[] = [];
 
@@ -74,8 +68,8 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
             resampled.push(max);
         }
 
-        Promise.resolve().then(() => setWaveform(resampled));
-    }, [audioData, width]);
+        return resampled;
+    }, [activeAudioData, width]);
 
     // 3. Draw (When waveform or dimensions change)
     useEffect(() => {
@@ -97,7 +91,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
 
     }, [waveform, width, height, color]);
 
-    if (error) return <div className="text-[10px] text-red-400 p-1">Audio Error</div>;
+    if (activeError) return <div className="text-[10px] text-red-400 p-1">Audio Error</div>;
 
     return (
         <canvas
