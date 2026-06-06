@@ -171,10 +171,11 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
                     <TourMap
                         // If stops have non-zero coordinates, pass them as markers, otherwise they are geocoded via locations list
-                        markers={itinerary ? itinerary.stops.filter(s => s.coordinates && s.coordinates.lat !== 0).map((stop) => ({
+                        markers={itinerary ? itinerary.stops.filter(s => s.coordinates && s.coordinates.lat !== 0).map((stop, idx) => ({
                             position: stop.coordinates!,
                             title: stop.venue || stop.city,
                             type: 'venue' as const,
+                            label: (idx + 1).toString(),
                             meta: stop as unknown as Record<string, unknown>
                         })) : []}
                         locations={selectedStop ? [selectedStop.city] : (itinerary ? itinerary.stops.map(s => s.city) : locations)}
