@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Globe, 
   Mail, 
@@ -112,13 +112,13 @@ export const GoogleHub: React.FC = () => {
       } else {
         setError('Failed to generate OAuth redirect URL');
       }
-    } catch (err) {
+    } catch {
       setError('Connection failure starting OAuth consent flow');
     }
   };
 
   // Fetch relevant Workspace data depending on active tab
-  const fetchTabData = async () => {
+  const fetchTabData = useCallback(async () => {
     setLoadingData(true);
     setError(null);
     const token = getAdminToken();
@@ -150,15 +150,23 @@ export const GoogleHub: React.FC = () => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [activeSubTab]);
 
   useEffect(() => {
-    checkAuthStatus();
+    const init = async () => {
+      await Promise.resolve();
+      checkAuthStatus();
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    fetchTabData();
-  }, [activeSubTab, authorized]);
+    const init = async () => {
+      await Promise.resolve();
+      fetchTabData();
+    };
+    init();
+  }, [fetchTabData]);
 
   // Handle Send Email
   const handleSendEmail = async (e: React.FormEvent) => {
@@ -189,7 +197,7 @@ export const GoogleHub: React.FC = () => {
         const data = await res.json();
         setError(data.error || 'Failed to dispatch email');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to transmit outbound mail');
     }
   };
@@ -225,7 +233,7 @@ export const GoogleHub: React.FC = () => {
         const data = await res.json();
         setError(data.error || 'Failed to insert calendar event');
       }
-    } catch (err) {
+    } catch {
       setError('Calendar write request failed');
     }
   };
@@ -258,7 +266,7 @@ export const GoogleHub: React.FC = () => {
         const data = await res.json();
         setError(data.error || 'Upload rejected by Drive service');
       }
-    } catch (err) {
+    } catch {
       setError('File upload failed');
     }
   };
@@ -310,7 +318,7 @@ export const GoogleHub: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => {
-              setActiveSubTab(tab.id as any);
+              setActiveSubTab(tab.id as 'gmail' | 'calendar' | 'drive');
               setSelectedEmail(null);
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer relative z-10 ${
