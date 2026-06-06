@@ -25,7 +25,7 @@ export const requestTaxForms = functions
 
         console.error(`[requestTaxForms] Tax form provider not configured. Refusing to report ${payees.length} requests as sent.`);
         throw new functions.https.HttpsError(
-            "failed-precondition",
+            "unimplemented",
             "Tax form provider is not configured. No tax form requests were sent."
         );
     });
