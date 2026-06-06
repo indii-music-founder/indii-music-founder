@@ -55,19 +55,39 @@ export class CopyrightFilterService {
             throw new Error('Copyright fingerprint registry (ACRCloud) is not configured. No clearance report was generated.');
         }
 
-        // Implementation of actual call to ACRCloud would go here
-        // For the sake of removing mock logic, we attempt a real fetch
-        // and handle the response or error out if it fails.
+        // Generate ACRCloud signature
+        const httpMethod = 'POST';
+        const httpUri = '/v1/identify';
+        const dataType = 'fingerprint';
+        const signatureVersion = '1';
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const stringToSign = `${httpMethod}\n${httpUri}\n${accessKey}\n${dataType}\n${signatureVersion}\n${timestamp}`;
+
+        // Create HMAC-SHA1 signature using Web Crypto API
+        const encoder = new TextEncoder();
+        const cryptoKey = await window.crypto.subtle.importKey(
+            'raw',
+            encoder.encode(accessSecret),
+            { name: 'HMAC', hash: 'SHA-1' },
+            false,
+            ['sign']
+        );
+        const signatureBuffer = await window.crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(stringToSign));
+        const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+        const signature = btoa(String.fromCharCode.apply(null, signatureArray));
+
+        const formData = new FormData();
+        formData.append('sample', fingerprint);
+        formData.append('sample_bytes', fingerprint.length.toString());
+        formData.append('access_key', accessKey);
+        formData.append('data_type', dataType);
+        formData.append('signature_version', signatureVersion);
+        formData.append('signature', signature);
+        formData.append('timestamp', timestamp);
+
         const response = await fetch(`https://${host}/v1/identify`, {
             method: 'POST',
-            // ACRCloud requires multipart form data with signature, which we would construct here.
-            // For now, if we don't have the library to sign, we'll send a basic request
-            // to trigger a real network path.
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessKey}`
-            },
-            body: JSON.stringify({ fingerprint, filename })
+            body: formData
         });
 
         if (!response.ok) {

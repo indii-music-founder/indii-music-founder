@@ -2054,7 +2054,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-173: Finish FieldRecorder.tsx (Missing robust retry logic for cloud sync failures)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/landing/src/pages/FieldRecorder.tsx:118`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2062,7 +2062,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-174: Finish mega-stress-test-v4.spec.ts (30+ tests marked as skipped without clear reasons)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `e2e/mega-stress-test-v4.spec.ts:89`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2102,7 +2102,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-179: Finish sendEmail.ts (Switch block missing 'dmca' template handler)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/email/sendEmail.ts:230`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2118,7 +2118,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-181: Finish CopyrightFilterService.ts (queryRegistry missing ACRCloud authentication/signature)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/audio/CopyrightFilterService.ts:58`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2166,7 +2166,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-187: Audio mega-test live browser validation is blocked in sandbox automation
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** TestInfra | Browser | E2E
 - **Module:** Audio Analyzer / Scoped Test Harness

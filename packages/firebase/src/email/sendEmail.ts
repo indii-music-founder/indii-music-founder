@@ -227,6 +227,49 @@ function getEmailTemplate(
                 text: `You're Invited!\n\n${data.inviterName || 'Someone'} has invited you to join their team on indii.\n\nAccept: ${data.inviteLink || 'https://indii.music'}\n\nThis invitation expires in 7 days.`
             };
 
+        case 'dmca':
+            return {
+                html: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { margin: 0; padding: 0; background-color: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; background: #111118; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(153, 27, 27, 0.1)); padding: 40px; text-align: center; border-bottom: 1px solid rgba(239, 68, 68, 0.2); }
+        .logo { font-size: 28px; font-weight: 800; color: #ffffff; }
+        .logo span { color: #ef4444; }
+        .body { padding: 40px; color: #e2e8f0; text-align: left; }
+        .body h2 { color: #ef4444; font-size: 22px; margin: 0 0 16px 0; }
+        .body p { color: #94a3b8; font-size: 15px; line-height: 1.7; }
+        .footer { padding: 24px 40px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; }
+        .footer p { color: #475569; font-size: 12px; margin: 0; }
+    </style>
+</head>
+<body>
+    <div style="padding: 24px;">
+        <div class="container">
+            <div class="header">
+                <div class="logo">indii<span>OS</span></div>
+            </div>
+            <div class="body">
+                <h2>DMCA Takedown Notice</h2>
+                <p>Dear ${data.recipientName || 'User'},</p>
+                <p>We have received a notification of claimed copyright infringement concerning content associated with your account.</p>
+                <p><strong>Content details:</strong><br/>${data.contentDetails || 'Not specified'}</p>
+                <p>If you believe this is an error, please respond to this email with a valid counter-notice.</p>
+            </div>
+            <div class="footer">
+                <p>© ${new Date().getFullYear()} New Detroit Music LLC</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+                text: `DMCA Takedown Notice\n\nDear ${data.recipientName || 'User'},\n\nWe have received a notification of claimed copyright infringement concerning content associated with your account.\n\nContent details:\n${data.contentDetails || 'Not specified'}\n\nIf you believe this is an error, please respond to this email with a valid counter-notice.\n\n---\nindiiOS`
+            };
+
         default:
             return {
                 html: data.html || `<p>${data.message || ''}</p>`,

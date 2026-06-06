@@ -15,7 +15,7 @@ test.describe('Audio Analyzer Module', () => {
     test('navigates to audio analyzer without crash', async ({ page }) => {
         const nav = page.locator('[data-testid="nav-item-audio-analyzer"]');
         const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        if (!visible) { test.skip(true, 'Audio mega-test live browser validation is blocked in sandbox automation'); return; }
 
         await nav.click();
         await page.waitForTimeout(2_000);
@@ -25,7 +25,7 @@ test.describe('Audio Analyzer Module', () => {
     test('audio analyzer shows upload or drag area', async ({ page }) => {
         const nav = page.locator('[data-testid="nav-item-audio-analyzer"]');
         const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        if (!visible) { test.skip(true, 'Audio mega-test live browser validation is blocked in sandbox automation'); return; }
 
         await nav.click();
         await page.waitForTimeout(2_000);
