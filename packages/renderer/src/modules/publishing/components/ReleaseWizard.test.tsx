@@ -28,8 +28,7 @@ describe('ReleaseWizard Integration', () => {
         canGoNext: true,
         selectedDistributors: [],
         assets: {},
-        uploadProgress: {},
-        // ... other props required by the component if accessed directly
+        uploadProgress: {}
     };
 
     beforeEach(() => {
@@ -86,8 +85,7 @@ describe('ReleaseWizard Integration', () => {
             ...defaultHookValues,
             currentStep: 'distribution', // Force step
             toggleDistributor: mockToggleDistributor,
-            selectedDistributors: [],
-            // ...
+            selectedDistributors: []
         });
 
         render(<ReleaseWizard />);
