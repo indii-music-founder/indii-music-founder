@@ -2094,7 +2094,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-178: Finish deliverScheduledPosts.ts (Switch block missing 'youtube' platform handler)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/social/deliverScheduledPosts.ts:200`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2110,7 +2110,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-180: Finish MarketingService.ts (updateMarketingStats method is an empty stub)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/marketing/MarketingService.ts:220`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2126,7 +2126,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-182: Finish AgentCanvasPanel.tsx (HTML rendering returns 'coming soon' placeholder)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/AgentCanvasPanel.tsx:241`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2150,7 +2150,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-185: Finish SocialPostingService.ts (YouTube Shorts missing delivery mechanism)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/social/SocialPostingService.ts:98`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2158,7 +2158,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-186: Finish RenderService.ts (renderComposition bypasses dynamic bundling)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/video/RenderService.ts:101`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.

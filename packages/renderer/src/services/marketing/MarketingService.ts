@@ -216,9 +216,15 @@ export class MarketingService {
     /**
      * Update Marketing Stats
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     static async updateMarketingStats(stats: { totalReach?: number; engagementRate?: number; activeCampaigns?: number }) {
-        // Implementation kept for compatibility
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) return;
+        try {
+            const statsRef = doc(db, 'users', userProfile.id, 'stats', 'marketing');
+            await updateDoc(statsRef, { ...stats, updatedAt: serverTimestamp() });
+        } catch (e) {
+            logger.error("MarketingService: Update stats failed", e);
+        }
     }
 
     /**

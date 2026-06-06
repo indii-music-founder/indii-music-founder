@@ -238,9 +238,11 @@ const PanelContent: React.FC<{ panel: CanvasPushPayload }> = ({ panel }) => {
             return <MarkdownRenderer data={panel.data as MarkdownPayload} />;
         case 'html':
             return (
-                <div className="bg-white/5 rounded-xl p-4 text-center text-zinc-500 text-sm">
-                    HTML rendering coming soon
-                </div>
+                <div 
+                    className="bg-white/5 rounded-xl p-4 text-sm text-zinc-300 prose prose-invert"
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    dangerouslySetInnerHTML={{ __html: (panel.data as any).content || 'HTML rendering unsupported' }} 
+                />
             );
         default:
             return (
