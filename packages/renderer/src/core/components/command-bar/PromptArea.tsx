@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -34,7 +35,7 @@ interface PromptAreaProps {
 export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
 
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isLocalProcessing, setIsLocalProcessing] = useState(false);
 
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -245,11 +246,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
                 return;
             }
-            if (isProcessing) {
+            if (isLocalProcessing) {
                 return;
             }
 
-            setIsProcessing(true);
+            setIsLocalProcessing(true);
             let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
@@ -260,7 +261,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
                 setCommandBarInput('');
                 setCommandBarAttachments([]);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
                 return;
             }
 
@@ -270,7 +271,18 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 toast.success('System Status: Viral Velocity Active, CPS Kill-switches Armed.');
                 setCommandBarInput('');
                 setCommandBarAttachments([]);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
+                return;
+            }
+
+            const entryCommandResult = await entryCommandService.handleInput(currentInput, {
+                source: 'command-bar',
+                includeUserMessage: true,
+            });
+            if (entryCommandResult.handled) {
+                setCommandBarInput('');
+                setCommandBarAttachments([]);
+                setIsLocalProcessing(false);
                 return;
             }
 
@@ -303,19 +315,19 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
                 await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
             } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
                 toast.error("Failed to send message.");
                 setCommandBarInput(currentInput);
                 setCommandBarAttachments(currentAttachments);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
             }
         } catch (fatalError: unknown) {
             logger.error("PromptArea: Fatal crash", fatalError);
-            setIsProcessing(false);
+            setIsLocalProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
 
     const actionButtonBase = "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
     const submitButtonBase = "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white";
@@ -362,7 +374,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
-                disabled={isProcessing}
+                disabled={isLocalProcessing}
             >
                 <PromptInputTextarea
                     placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${activeAgentName}...`)}
@@ -443,7 +455,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 )}
                                 aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
                                 aria-pressed={isKnowledgeBaseEnabled}
-                            >
+                             >
                                 <Database size={isDocked ? 10 : 12} />
                                 {isMobile && <span>KB</span>}
                             </button>
@@ -537,7 +549,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </div>
                         )}
 
-                        {isProcessing || isAgentProcessing ? (
+                        {isLocalProcessing || isAgentProcessing ? (
                             <PromptInputAction tooltip="Stop Agent (Esc)">
                                 <button
                                     onClick={(e) => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { logger } from '@/utils/logger';
 
 const SESSION_START = Date.now();
@@ -63,6 +64,12 @@ export function useAgentWorkspace() {
         useStore.setState({ commandBarInput: '' });
 
         try {
+            const commandResult = await entryCommandService.handleInput(cmd, {
+                source: 'dashboard',
+                includeUserMessage: true,
+            });
+            if (commandResult.handled) return;
+
             await agentService.sendMessage(cmd);
         } catch (error: unknown) {
             logger.error('useAgentWorkspace: submitCommand failed', error);

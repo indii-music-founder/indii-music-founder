@@ -8,6 +8,7 @@
  * - ConnectionsSection   → Email integrations, push notifications
  * - NotificationsSection → Alert preferences and digest settings
  * - AppearanceSection    → Theme, compact mode, animations
+ * - DesktopSection       → App version, auto-update controls, channel/source
  * - SecuritySection      → Auth info, audit log, data export, account management
  *
  * Shared UI primitives (SectionHeader, SettingRow, Toggle, SelectDropdown)
@@ -22,6 +23,7 @@ import {
     Link2,
     Palette,
     Shield,
+    Monitor,
     LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -31,18 +33,20 @@ import ConnectionsSection from './settings-panel/ConnectionsSection';
 import NotificationsSection from './settings-panel/NotificationsSection';
 import AppearanceSection from './settings-panel/AppearanceSection';
 import SecuritySection from './settings-panel/SecuritySection';
+import DesktopSection from './settings-panel/DesktopSection';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
 // ---------------------------------------------------------------------------
 
-type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'security';
+type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'desktop' | 'security';
 
 const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
+    { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
     { id: 'security', label: 'Account & Security', icon: Shield, description: 'Sign out, data export, delete' },
 ];
 
@@ -60,6 +64,7 @@ const SettingsPanel: React.FC = () => {
             case 'connections': return <ConnectionsSection />;
             case 'notifications': return <NotificationsSection />;
             case 'appearance': return <AppearanceSection />;
+            case 'desktop': return <DesktopSection />;
             case 'security': return <SecuritySection />;
         }
     };

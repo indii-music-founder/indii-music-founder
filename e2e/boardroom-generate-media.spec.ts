@@ -1,56 +1,98 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
+import { join } from 'path';
 
-test('Boardroom Live Visual Media Generation', async ({ page }) => {
-    // Navigate to live production site
-    console.log('[E2E:Media] Navigating to live production site: https://indii-music-studio.web.app');
-    await page.goto('https://indii-music-studio.web.app', { waitUntil: 'networkidle', timeout: 30000 });
+test('Boardroom Live Visual Media Generation', async ({ authedPage: page }) => {
+    // Navigate to local site
+    console.log('[E2E:Media] Navigating to local site...');
+    
+    // Mock AI API calls inside the spec to return custom responses for puppy image and video
+    await page.route(
+      /.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/,
+      async (route) => {
+        const url = route.request().url();
+        console.log(`[E2E:Media-Spec] Intercepted Vertex AI inside spec: ${url}`);
+
+        if (route.request().method() === "OPTIONS") {
+          await route.fulfill({ status: 204 });
+          return;
+        }
+
+        const postData = route.request().postData() || "";
+        
+        let responseText = "Mock Boardroom Response";
+        if (postData.includes("grass") || postData.includes("puppy")) {
+          // Puppy image response
+          responseText = "I have generated an image of a puppy playing in the grass: ![puppy](https://via.placeholder.com/1024)";
+        } else if (postData.includes("animate") || postData.includes("video")) {
+          // Puppy video response
+          responseText = "I have animated the puppy image into a 4-second cinematic video: [puppy video](https://mock-video.com/v.mp4)";
+        }
+
+        const aiResponseObj = {
+          candidates: [
+            {
+              content: {
+                role: "model",
+                parts: [{ text: responseText }],
+              },
+              finishReason: "STOP",
+            },
+          ],
+        };
+
+        if (url.includes("streamGenerateContent")) {
+          if (url.includes("alt=sse")) {
+            await route.fulfill({
+              status: 200,
+              contentType: "text/event-stream",
+              body: `data: ${JSON.stringify(aiResponseObj)}\n\n`,
+            });
+            return;
+          } else {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify([aiResponseObj]),
+            });
+            return;
+          }
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(aiResponseObj),
+        });
+      }
+    );
+
+    await page.goto('/creative', { waitUntil: 'networkidle', timeout: 30000 });
+
+    const scratchDir = join(process.cwd(), 'scratch');
 
     // Capture Landing Page
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779694161957.png' });
+    await page.screenshot({ path: join(scratchDir, 'boardroom-generate-media-landing.png') });
     console.log('[E2E:Media] Saved landing page screenshot.');
-
-    // Bypass onboarding modal
-    try {
-        console.log('[E2E:Media] Handling onboarding modal...');
-        const exploreGuest = page.getByRole('button', { name: /Explore as Guest/i });
-        await exploreGuest.waitFor({ state: 'visible', timeout: 5000 });
-        await exploreGuest.click();
-        console.log('[E2E:Media] Clicked "Explore as Guest" successfully.');
-        
-        const declineCookies = page.getByRole('button', { name: /Decline/i });
-        await declineCookies.waitFor({ state: 'visible', timeout: 3000 });
-        await declineCookies.click();
-        console.log('[E2E:Media] Declined cookies.');
-    } catch (e) {
-        console.log('[E2E:Media] Onboarding dialog not found, proceeding.');
-    }
 
     // Inject Boardroom mode state directly
     console.log('[E2E:Media] Injecting Boardroom overlay state...');
+    await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
     await page.evaluate(() => {
-        if ((window as any).useStore) {
-            const state = (window as any).useStore.getState();
-            state.setConversationMode('boardroom');
-            // Auto-seat Generalist & Creative director
-            state.addActiveAgent('generalist');
-            state.addActiveAgent('creative');
-        } else {
-            console.error('Zustand store is not available in window context.');
-        }
+        const state = (window as any).useStore.getState();
+        state.setConversationMode('boardroom');
+        // Auto-seat Generalist, Creative director, and Video director
+        state.addActiveAgent('generalist');
+        state.addActiveAgent('creative');
+        state.addActiveAgent('video');
     });
-    await page.waitForTimeout(3000);
+    await expect(page.locator('[data-testid="boardroom-module"]')).toBeVisible({ timeout: 15000 });
 
     // Send chat message to generate an image of dogs
     console.log('[E2E:Media] Submitting prompt to generate dog image...');
-    const chatInput = page.getByPlaceholder(/message|launch/i).first();
-    if (await chatInput.isVisible()) {
-        await chatInput.fill('generate an image of a cute puppy playing in the grass');
-        await chatInput.press('Enter');
-    } else {
-        const textbox = page.getByRole('textbox').first();
-        await textbox.fill('generate an image of a cute puppy playing in the grass');
-        await textbox.press('Enter');
-    }
+    const chatInput = page.locator('[data-testid="main-prompt-input"]').first();
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
+    await chatInput.fill('generate an image of a cute puppy playing in the grass');
+    await chatInput.press('Enter');
 
     // Wait for the Conductor and Creative Director to process the image generation
     console.log('[E2E:Media] Polling store for generated creative studio assets...');
@@ -63,7 +105,7 @@ test('Boardroom Live Visual Media Generation', async ({ page }) => {
     }, { timeout: 60000 });
 
     // Capture Boardroom showing the generated puppy image
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779694211423.png' });
+    await page.screenshot({ path: join(scratchDir, 'boardroom-generate-media-puppy.png') });
     console.log('[E2E:Media] Saved screenshot of generated puppy image.');
 
     // Fetch the generated image base64 bytes or URL from creative history
@@ -80,16 +122,10 @@ test('Boardroom Live Visual Media Generation', async ({ page }) => {
 
     // Direct the Conductor to make this puppy image into a headed video using the image-to-video tool (Veo firstFrame)
     console.log('[E2E:Media] Submitting prompt to animate image into a video...');
-    const chatInputAnimate = page.getByPlaceholder(/message|launch/i).first();
+    const chatInputAnimate = page.locator('[data-testid="main-prompt-input"]').first();
     const commandText = `animate this puppy image into a 4-second cinematic video showing it running towards the camera: ${assetUrl}`;
-    if (await chatInputAnimate.isVisible()) {
-        await chatInputAnimate.fill(commandText);
-        await chatInputAnimate.press('Enter');
-    } else {
-        const textbox = page.getByRole('textbox').first();
-        await textbox.fill(commandText);
-        await textbox.press('Enter');
-    }
+    await chatInputAnimate.fill(commandText);
+    await chatInputAnimate.press('Enter');
 
     // Wait for the Conductor/Video Director to complete the first-to-last frame video generation
     console.log('[E2E:Media] Waiting for video generation segment to complete...');
@@ -102,7 +138,7 @@ test('Boardroom Live Visual Media Generation', async ({ page }) => {
     }, { timeout: 60000 });
 
     // Capture boardroom showing completed puppy video
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__puppy_video_final.png' });
+    await page.screenshot({ path: join(scratchDir, 'boardroom-generate-media-video.png') });
     console.log('[E2E:Media] Saved final puppy video animation screenshot.');
 
     // Assert that the video is successfully rendered
