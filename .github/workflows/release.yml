@@ -98,6 +98,12 @@ jobs:
           fi
           gcloud storage cp "$DMG_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Installer.dmg" \
             --content-type=application/x-apple-diskimage
+          
+          YML_FILE=$(find dist-electron -maxdepth 1 -name "latest-mac.yml" -type f | head -n 1)
+          if [ -n "$YML_FILE" ]; then
+            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
+              --content-type=text/yaml
+          fi
 
       - name: Upload Installer to Firebase Storage (Windows)
         if: runner.os == 'Windows'
@@ -110,6 +116,12 @@ jobs:
           fi
           gcloud storage cp "$EXE_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Setup.exe" \
             --content-type=application/vnd.microsoft.portable-executable
+
+          YML_FILE=$(find dist-electron -maxdepth 1 -name "latest.yml" -type f | head -n 1)
+          if [ -n "$YML_FILE" ]; then
+            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
+              --content-type=text/yaml
+          fi
 
       - name: Upload Installer to Firebase Storage (Linux)
         if: runner.os == 'Linux'
