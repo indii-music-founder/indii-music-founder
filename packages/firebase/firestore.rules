@@ -75,6 +75,106 @@ service cloud.firestore {
       return field is string && field.size() >= minLen && field.size() <= maxLen;
     }
 
+    function isValidEntryCommand(data, ownerId, scope) {
+      return data.keys().hasOnly([
+          'id',
+          'slash',
+          'aliases',
+          'title',
+          'summary',
+          'surfaces',
+          'intakeFields',
+          'harnessDomain',
+          'workflowId',
+          'launchMode',
+          'outputContract',
+          'approvalRequiredFor',
+          'resumeBehavior',
+          'isCustom',
+          'createdAt',
+          'sourceSummary',
+          'ownerId',
+          'scope',
+          'orgId',
+          'updatedAt'
+        ]) &&
+        data.keys().hasAll([
+          'id',
+          'slash',
+          'aliases',
+          'title',
+          'summary',
+          'surfaces',
+          'intakeFields',
+          'launchMode',
+          'outputContract',
+          'approvalRequiredFor',
+          'resumeBehavior',
+          'isCustom',
+          'ownerId',
+          'scope',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        data.id.size() >= 3 &&
+        data.id.size() <= 80 &&
+        data.slash is string &&
+        data.slash.matches("^/[a-z][a-z0-9-]{1,31}$") &&
+        data.aliases is list &&
+        data.aliases.size() <= 12 &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 80 &&
+        data.summary is string &&
+        data.summary.size() >= 1 &&
+        data.summary.size() <= 280 &&
+        data.surfaces is list &&
+        data.surfaces.size() >= 1 &&
+        data.surfaces.size() <= 5 &&
+        data.intakeFields is list &&
+        data.intakeFields.size() <= 12 &&
+        data.launchMode in ['guided-chat', 'navigate', 'workflow'] &&
+        data.outputContract is string &&
+        data.outputContract.size() >= 1 &&
+        data.outputContract.size() <= 400 &&
+        data.approvalRequiredFor is list &&
+        data.approvalRequiredFor.size() <= 12 &&
+        data.resumeBehavior is string &&
+        data.resumeBehavior.size() >= 1 &&
+        data.resumeBehavior.size() <= 300 &&
+        data.isCustom == true &&
+        data.ownerId == ownerId &&
+        data.scope == scope &&
+        data.updatedAt is number &&
+        (!('createdAt' in data) || data.createdAt is number) &&
+        (!('sourceSummary' in data) || (data.sourceSummary is string && data.sourceSummary.size() <= 1500)) &&
+        (!('harnessDomain' in data) || data.harnessDomain in [
+          'artist_memory',
+          'song_dna',
+          'creator_protection',
+          'distribution_ddex',
+          'release',
+          'finance',
+          'activity_time_value',
+          'road_travel',
+          'gear_asset',
+          'merch_pod',
+          'marketing_growth',
+          'fan_crm',
+          'publishing_rights',
+          'collaboration_splits',
+          'licensing_sync',
+          'royalty_revenue',
+          'legal_compliance',
+          'creative_production',
+          'opportunity',
+          'education_curriculum',
+          'security_trust',
+          'boardroom_meta'
+        ]) &&
+        (!('workflowId' in data) || (data.workflowId is string && data.workflowId.size() <= 80));
+    }
+
     // =========================================================================
     // User Profiles
     // =========================================================================
@@ -327,6 +427,41 @@ service cloud.firestore {
           allow write: if isOrgMember(orgId);
         }
       }
+
+    }
+
+    match /entryCommands/{commandId} {
+      allow read: if isAuthenticated() &&
+        resource.data.ownerId == request.auth.uid &&
+        resource.data.scope == 'user';
+      allow create: if isAuthenticated() &&
+        isValidEntryCommand(request.resource.data, request.auth.uid, 'user');
+      allow update: if isAuthenticated() &&
+        resource.data.ownerId == request.auth.uid &&
+        request.resource.data.ownerId == resource.data.ownerId &&
+        isValidEntryCommand(request.resource.data, request.auth.uid, 'user');
+      allow delete: if false;
+    }
+
+    match /teamEntryCommands/{commandId} {
+      allow read: if isAuthenticated() &&
+        resource.data.scope == 'team' &&
+        resource.data.orgId is string &&
+        isOrgMember(resource.data.orgId);
+      allow create: if isAuthenticated() &&
+        request.resource.data.orgId is string &&
+        isOrgMember(request.resource.data.orgId) &&
+        isValidEntryCommand(request.resource.data, request.auth.uid, 'team');
+      allow update: if isAuthenticated() &&
+        resource.data.scope == 'team' &&
+        resource.data.orgId is string &&
+        isOrgMember(resource.data.orgId) &&
+        request.resource.data.orgId == resource.data.orgId &&
+        request.resource.data.ownerId == resource.data.ownerId &&
+        isValidEntryCommand(request.resource.data, resource.data.ownerId, 'team');
+      allow delete: if isAuthenticated() &&
+        resource.data.orgId is string &&
+        isOrgOwner(resource.data.orgId);
     }
 
     // =========================================================================

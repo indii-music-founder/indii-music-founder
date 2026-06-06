@@ -34,6 +34,7 @@ import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from '@/core/context/VoiceContext';
+import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
 
 interface ChatMessage {
     id: string;
@@ -248,7 +249,12 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 targetAgentId = selectedAgent;
             }
 
-            const commandId = await remoteRelayService.sendCommand(userText, targetAgentId);
+            const entryCommand = resolveEntryCommand(userText);
+            const commandId = await remoteRelayService.sendCommand(
+                userText,
+                targetAgentId,
+                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined
+            );
             if (!commandId) throw new Error('Failed to send command');
 
             logger.info(`[AgentChat] 📱 Sent command ${commandId}`);

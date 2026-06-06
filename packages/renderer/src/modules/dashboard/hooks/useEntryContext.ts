@@ -100,7 +100,7 @@ export function useEntryContext(): EntryContext {
 
     if (scenario === 'new-user') {
         suggestedActions.push(
-            { id: 'brand-kit', label: 'Setup Brand Kit', prompt: 'Help me set up my brand kit and artist identity.', icon: UserPlus, variant: 'primary' },
+            { id: 'brand-kit', label: 'Setup Brand Kit', prompt: '/analyze-brand', icon: UserPlus, variant: 'primary' },
             { id: 'tour', label: 'Take a Tour', prompt: 'Show me around the studio and tell me what you can do.', icon: Sparkles, variant: 'secondary' }
         );
     } else if (scenario === 'returning-active' && mostRecent) {
@@ -111,9 +111,9 @@ export function useEntryContext(): EntryContext {
         );
     } else {
         suggestedActions.push(
-            { id: 'new-task', label: 'Start New Task', prompt: 'I want to start a new project.', icon: Sparkles, variant: 'primary' },
+            { id: 'new-task', label: 'Start New Task', prompt: '/custom-workflow', icon: Sparkles, variant: 'primary' },
             { id: 'history', label: 'View History', prompt: null, action: () => useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'archives', isRightPanelOpen: true }), icon: History, variant: 'secondary' },
-            { id: 'trends', label: 'Analyze Trends', prompt: 'What are the current trending sounds and visual styles in my genre right now?', icon: TrendingUp, variant: 'secondary' }
+            { id: 'trends', label: 'Plan Campaign', prompt: '/plan-campaign', icon: TrendingUp, variant: 'secondary' }
         );
     }
 

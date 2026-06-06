@@ -1,11 +1,13 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
+import { join } from 'path';
 
 test.describe('Boardroom Real User Multi-Turn Scenario', () => {
     test('should execute a realistic multi-turn conversation with dynamic seating and unseating', async ({ authedPage: page }) => {
         test.setTimeout(180_000);
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
+        const scratchDir = join(process.cwd(), 'scratch');
 
         let currentActivePrompt = '';
         (globalThis as any).unseatedAgentsInTest = new Set<string>();
@@ -523,7 +525,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(seatedAfterTurn1).toContain('finance');
 
         // Take Turn 1 screenshot
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779694161957.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn1.png') });
         console.log('[E2E:Scenario] Turn 1 Seating verified. Captured screenshot.');
 
         // ----------------------------------------------------
@@ -536,7 +538,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         const hasBudgetDetail = messagesAfterTurn2.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
         expect(hasBudgetDetail).toBe(true);
         console.log('[E2E:Scenario] Turn 2 responses verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn2_budget.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn2.png') });
 
         // ----------------------------------------------------
         // TURN 3: Summon Legal
@@ -547,7 +549,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         const seatedAfterTurn3 = await page.evaluate(() => window.useStore.getState().activeAgents);
         expect(seatedAfterTurn3).toContain('legal');
         console.log('[E2E:Scenario] Turn 3 Legal seating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn3_legal_seated.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn3.png') });
 
         // ----------------------------------------------------
         // TURN 4: Dismiss Marketing & Finance
@@ -560,7 +562,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(seatedAfterTurn4).not.toContain('marketing');
         expect(seatedAfterTurn4).not.toContain('finance');
         console.log('[E2E:Scenario] Turn 4 Marketing and Finance unseating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn4_unseated.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn4.png') });
 
         // ----------------------------------------------------
         // TURN 5: Ask Legal about Split Agreement
@@ -583,7 +585,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         const hasLegalSplit = messagesAfterTurn5.some(m => m.text?.includes('50/50 split') && m.agentId === 'legal');
         expect(hasLegalSplit).toBe(true);
         console.log('[E2E:Scenario] Turn 5 Legal response verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn5_legal_split.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn5.png') });
 
         // ----------------------------------------------------
         // TURN 6: Summon Creative & Video
@@ -595,7 +597,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(seatedAfterTurn6).toContain('creative');
         expect(seatedAfterTurn6).toContain('video');
         console.log('[E2E:Scenario] Turn 6 Creative and Video seating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn6_creative_video_seated.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn6.png') });
 
         // ----------------------------------------------------
         // TURN 7: Summon Social & Publicist
@@ -607,7 +609,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(seatedAfterTurn7).toContain('social');
         expect(seatedAfterTurn7).toContain('publicist');
         console.log('[E2E:Scenario] Turn 7 Social and Publicist seating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn7_social_publicist_seated.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn7.png') });
 
         // ----------------------------------------------------
         // TURN 8: Align on Brand and Music
@@ -619,7 +621,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(seatedAfterTurn8).toContain('brand');
         expect(seatedAfterTurn8).toContain('music');
         console.log('[E2E:Scenario] Turn 8 Brand and Music seating verified.');
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/turn8_brand_music_seated.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn8.png') });
 
         // ----------------------------------------------------
         // TURN 9: Clear the boardroom table
@@ -638,7 +640,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         expect(finalSeated).not.toContain('music');
 
         // Capture final empty boardroom state screenshot
-        await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/.tempmediaStorage/media_3e1aa88c-2608-40c1-a35b-af5e12444c40_1779714383863.png' });
+        await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-final.png') });
         console.log('[E2E:Scenario] Multi-turn test completely successful! All 9 turns seated, unseated, and verified correctly.');
     });
 });
