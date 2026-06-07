@@ -334,11 +334,35 @@ export class VideoGenerationService {
             userId,
         });
 
+        // Google Search Grounding Pre-flight: Imagen 3 grounding generation used as firstFrame
+        let groundingFirstFrame = options.firstFrame;
+        if (options.useGrounding && !groundingFirstFrame) {
+            logger.info('[VideoGeneration] 🌍 Google Search Grounding enabled. Running pre-flight Imagen 3 generation...');
+            try {
+                const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+                const imageResults = await ImageGeneration.generateImages({
+                    prompt: options.prompt,
+                    count: 1,
+                    aspectRatio: options.aspectRatio === '9:16' ? '9:16' : options.aspectRatio === '1:1' ? '1:1' : '16:9',
+                    useGoogleSearch: true,
+                    model: 'fast' // Imagen 3 / Flash image gen
+                });
+                if (imageResults && imageResults.length > 0) {
+                    groundingFirstFrame = imageResults[0].url;
+                    logger.info('[VideoGeneration] 🌍 Grounded image generated successfully:', groundingFirstFrame);
+                } else {
+                    logger.warn('[VideoGeneration] 🌍 Grounding pre-flight did not return any image. Continuing without grounded firstFrame.');
+                }
+            } catch (imageErr: unknown) {
+                logger.error('[VideoGeneration] 🌍 Grounding pre-flight image generation failed:', imageErr);
+            }
+        }
+
         // Upload first frame if present
         let firstFrameUri;
-        if (options.firstFrame) {
-            // firstFrame is a base64 or data URI. Upload it to get a gs:// URI.
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, options.firstFrame, 'image');
+        if (groundingFirstFrame) {
+            // groundingFirstFrame is a base64, data URI, or URL. Upload it to get a gs:// URI.
+            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, groundingFirstFrame, 'image');
         } else if (options.image && options.image.imageBytes) {
             // handle the old imageBytes format just in case
             const b64 = options.image.imageBytes;
@@ -544,7 +568,7 @@ export class VideoGenerationService {
         userProfile?: UserProfile;
         personGeneration?: "dont_allow" | "allow_adult" | "allow_all";
         referenceImages?: {
-            image: { uri: string };
+            image: { uri?: string; imageBytes?: string; mimeType?: string };
             referenceType: 'asset'; // Official API only supports lowercase 'asset'
         }[];
     }): Promise<{ id: string, url: string, prompt: string }[]> {
@@ -641,6 +665,7 @@ export class VideoGenerationService {
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,
                             seed: options.seed,
+                            referenceImages: options.referenceImages,
                         }),
                     }),
                     `Segment ${i + 1}/${numBlocks}`,
