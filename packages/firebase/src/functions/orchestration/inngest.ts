@@ -167,14 +167,19 @@ export const retryWebhookDelivery = inngest.createFunction(
     const { webhookEventId, attempt } = event.data as WebhookRetryPayload;
 
     const result = await step.run(`attempt-${attempt}`, async () => {
-      const webhookEvent = await db.collection('webhook_queue').doc(webhookEventId).get();
+      const webhookEventRef = db.collection('webhook_queue').doc(webhookEventId);
+      const webhookEvent = await webhookEventRef.get();
       if (!webhookEvent.exists) {
         return { status: 'not-found' };
       }
 
-      // Retry logic handled by WebhookDispatcher
-      // This job just ensures retries are scheduled
-      return { status: 'queued', webhookEventId, attempt };
+      // Schedule for immediate delivery retry in WebhookDispatcher
+      await webhookEventRef.update({
+        nextRetry: new Date().toISOString(),
+        attempt: attempt
+      });
+
+      return { status: 'retry-scheduled', webhookEventId, attempt };
     });
 
     return result;
