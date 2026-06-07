@@ -57,8 +57,8 @@ export class LicensingService {
 
         if (results.length === 0 && userId) {
             await this.seedDatabase(userId);
-            // After seeding, fetch again with the same credentials
-            return this.getActiveLicenses(userId);
+            // After seeding, fetch again once to check if seeding populated anything
+            return this.licensesStore.list(constraints);
         }
 
         return results;
