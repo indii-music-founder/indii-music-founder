@@ -156,7 +156,7 @@ const AudioAnalyzer: React.FC = () => {
         <ModuleDashboard title="Audio Distribution Hub" description="Music Data Audits, Delivery Optimization & Asset Generation" icon={<Activity className="text-primary" />}>
             <div className="flex flex-col h-full bg-black/10">
                 <Tabs defaultValue="compliance" className="flex-1 flex flex-col overflow-hidden">
-                    <div id="tour-audio-tabs" className="px-6 border-b border-white/5 flex-shrink-0 bg-card/50 flex justify-between items-center">
+                    <div id="tour-audio-tabs" className="px-6 border-b border-white/5 shrink-0 bg-card/50 flex justify-between items-center">
                         <TabsList className="bg-transparent gap-8 p-0 h-14 inline-flex">
                             <TabsTrigger value="compliance" className="text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 h-full font-black transition-all text-xs uppercase tracking-widest whitespace-nowrap">
                                 Distribution QC
@@ -304,7 +304,7 @@ const AudioAnalyzer: React.FC = () => {
                                         <div className="flex flex-wrap gap-3 mt-6 pt-5 border-t border-indigo-500/20">
                                             <Button
                                                 data-testid="send-to-video-studio-btn"
-                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                                className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
                                                     window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);
@@ -430,7 +430,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                                                         <span className="text-xs font-bold text-white flex items-center gap-2">Spotify Target (-14 LUFS)</span>
                                                         {profile.technical.audit.integratedLoudness > -12 ? (
-                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                                         ) : profile.technical.audit.integratedLoudness < -16 ? (
                                                             <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                                         ) : (
@@ -440,7 +440,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                                                         <span className="text-xs font-bold text-white flex items-center gap-2">Apple Music Target (-16 LUFS)</span>
                                                         {profile.technical.audit.integratedLoudness > -14 ? (
-                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                                         ) : profile.technical.audit.integratedLoudness < -18 ? (
                                                             <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                                         ) : (

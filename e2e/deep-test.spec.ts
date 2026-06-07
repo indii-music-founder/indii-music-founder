@@ -2,7 +2,7 @@ import { test, expect } from './fixtures/auth';
 
 test('Detroit Producer Deep Test (Phase 1)', async ({ authedPage: page }) => {
     console.log('Navigating to app on 4242...');
-    await page.goto('http://localhost:4242');
+    await page.goto('http://localhost:4242', { waitUntil: 'domcontentloaded' });
 
     console.log('Waiting for load...');
     await page.waitForTimeout(3000);
@@ -28,17 +28,17 @@ test('Detroit Producer Deep Test (Phase 1)', async ({ authedPage: page }) => {
     }
 
     console.log('Navigating to Campaign Manager...');
-    await page.goto('http://localhost:4242/marketing');
+    await page.goto('http://localhost:4242/marketing', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
     await page.screenshot({ path: 'deep-test-campaign-1.png' });
     
     console.log('Navigating to Booking Agent...');
-    await page.goto('http://localhost:4242/road');
+    await page.goto('http://localhost:4242/road', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
     await page.screenshot({ path: 'deep-test-booking-1.png' });
 
     console.log('Navigating to Publicist...');
-    await page.goto('http://localhost:4242/publicist');
+    await page.goto('http://localhost:4242/publicist', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
     await page.screenshot({ path: 'deep-test-publicist-1.png' });
 

@@ -61,7 +61,7 @@ test.describe('indii Macro Flywheel Integration', () => {
     test('Digital Vinyl (SoundLocker) Campaign Creation', async ({ authedPage: page }) => {
         // Assume /crm is the route for Superfan Vault / CRM
         console.log('[FLYWHEEL TEST] Navigating to /crm...');
-        await page.goto('/crm');
+        await page.goto('/crm', { waitUntil: 'domcontentloaded' });
         
         // Verify we are on the CRM page
         await expect(page.locator('text=Superfan CRM').or(page.locator('text=Audience'))).toBeVisible({ timeout: 15_000 });
@@ -90,7 +90,7 @@ test.describe('indii Macro Flywheel Integration', () => {
     test('Geo-Bounty Mission Setup for Street Team', async ({ authedPage: page }) => {
         // Assume /tour or /marketing is the route for Tour Router
         console.log('[FLYWHEEL TEST] Navigating to /marketing...');
-        await page.goto('/marketing');
+        await page.goto('/marketing', { waitUntil: 'domcontentloaded' });
 
         const newBountyBtn = page.locator('button:has-text("New Geo-Bounty"), button:has-text("Create Mission")').first();
         if (await newBountyBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -112,7 +112,7 @@ test.describe('indii Macro Flywheel Integration', () => {
     test('AI CFO & Royalty Ingestion (Mocked Web3 Event)', async ({ authedPage: page }) => {
         // Assume /finance is the AI CFO Ledger
         console.log('[FLYWHEEL TEST] Navigating to /finance...');
-        await page.goto('/finance');
+        await page.goto('/finance', { waitUntil: 'domcontentloaded' });
 
         // This test simulates the UI receiving a real-time update when the mocked
         // Web3 Oracle endpoint (from the beforeEach block) fires a success message.

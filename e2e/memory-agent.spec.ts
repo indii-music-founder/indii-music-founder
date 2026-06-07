@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Memory Agent Module E2E Tests
@@ -6,13 +6,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Memory Agent Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to memory agent without crash', async ({ page }) => {
+    test('navigates to memory agent without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-memory"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -22,7 +22,7 @@ test.describe('Memory Agent Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('memory agent displays status or controls', async ({ page }) => {
+    test('memory agent displays status or controls', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-memory"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

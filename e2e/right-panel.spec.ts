@@ -28,7 +28,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
         });
 
         // Navigate to dashboard HQ
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
     });
@@ -149,7 +149,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
 
     test('should dynamically render Context Controls panel for Creative Director', async ({ authedPage: page }) => {
         // Navigate directly to Creative Director
-        await page.goto('/creative');
+        await page.goto('/creative', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
 
         // Open panel to Context Controls tab
@@ -237,7 +237,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
 
     test('should dynamically render Context Controls panel for Workflow Builder and execute workflow', async ({ authedPage: page }) => {
         // Navigate directly to Workflow
-        await page.goto('/workflow');
+        await page.goto('/workflow', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
 
         // Open panel to Context Controls tab
@@ -260,7 +260,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
 
     test('should dynamically render Context Controls panel for Knowledge Base and open ingest dialog', async ({ authedPage: page }) => {
         // Navigate directly to Knowledge
-        await page.goto('/knowledge');
+        await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
 
         // Open panel to Context Controls tab
@@ -283,7 +283,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
 
     test('should dynamically render Context Controls panel for Marketing and deploy protocol', async ({ authedPage: page }) => {
         // Navigate directly to Marketing
-        await page.goto('/marketing');
+        await page.goto('/marketing', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
 
         // Setup userProfile in store so deployment doesn't fail due to auth check

@@ -10,7 +10,7 @@ test.describe('Marketing Module', () => {
 
     test.beforeEach(async ({ authedPage: page }) => {
         // Navigate directly to the marketing module URL
-        await page.goto('/marketing');
+        await page.goto('/marketing', { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded');
 
         // Wait for core app container

@@ -27,7 +27,7 @@ test.describe('Agent Dashboard', () => {
 
         console.log('[AGENT TEST] Navigating to Agent module...');
         // Navigate directly to agent module for speed and stability
-        await page.goto('/agent');
+        await page.goto('/agent', { waitUntil: 'domcontentloaded' });
 
         console.log('[AGENT TEST] Waiting for navigation item...');
         // Wait for the specific module container to be rendered
@@ -186,7 +186,7 @@ test.describe('Agent Mobile Warning', () => {
     test('agent module shows mobile warning on small viewports', async ({ authedPage: page }) => {
         // IMPORTANT: authedPage fixture only sets up mocks — it does NOT navigate.
         // Navigate directly to the agent route.
-        await page.goto('/agent');
+        await page.goto('/agent', { waitUntil: 'domcontentloaded' });
 
         // Root must always be present once React mounts
         await page.waitForSelector('#root', { state: 'visible', timeout: 20_000 });

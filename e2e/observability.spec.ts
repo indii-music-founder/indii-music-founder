@@ -7,7 +7,7 @@ import { test, expect } from './fixtures/auth';
 
 test.describe('Observability Module', () => {
     test.beforeEach(async ({ authedPage: page }) => {
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });

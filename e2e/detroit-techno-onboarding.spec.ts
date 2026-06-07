@@ -535,7 +535,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
             // 3. Force Zustand state to Onboarding
             console.log('[Techno E2E] Initializing onboarding state...');
-            await page.goto(BASE_URL);
+            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
             await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
 
             await page.evaluate((persona) => {

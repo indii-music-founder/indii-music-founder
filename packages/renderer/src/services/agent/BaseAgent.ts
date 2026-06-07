@@ -59,7 +59,7 @@ export class BaseAgent implements SpecializedAgent {
     protected authorizedTools?: string[];
     /** Fine-tuned Vertex endpoint for this agent. Agent execution must never
      *  silently downgrade to a base Gemini model. */
-    private modelId: string;
+    protected modelId: string;
     private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
 

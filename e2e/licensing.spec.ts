@@ -15,7 +15,7 @@ test.describe('Licensing Module', () => {
             await licensingNav.click();
             await page.waitForTimeout(2_000);
         } else {
-            await page.goto('/#licensing');
+            await page.goto('/#licensing', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
 

@@ -26,7 +26,7 @@ test.describe('Finance Module', () => {
 
         console.log('[FINANCE TEST] Navigating to Finance module...');
         // Direct navigation to Finance module for stability
-        await page.goto('/finance');
+        await page.goto('/finance', { waitUntil: 'domcontentloaded' });
 
         console.log('[FINANCE TEST] Waiting for finance-specific content...');
         // Wait for finance-specific content

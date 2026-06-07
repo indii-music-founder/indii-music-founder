@@ -60,7 +60,7 @@ test.describe('Creative Studio', () => {
         // authedPage fixture handles auth mock and navigates to '/'
 
         // Navigate directly to creative module
-        await page.goto('/creative');
+        await page.goto('/creative', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
 
         // Wait for the Creative module to fully mount (direct generation button is always present in navbar)

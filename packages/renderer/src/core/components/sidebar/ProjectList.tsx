@@ -223,8 +223,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
                     className={cn(
                       "w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 relative group overflow-hidden mb-0.5 cursor-pointer",
                       isActive
-                        ? "text-white font-bold bg-white/[0.12] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10"
-                        : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.05]"
+                        ? "text-white font-bold bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10"
+                        : "text-gray-400 font-medium hover:text-white hover:bg-white/5"
                     )}
                   >
                     <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -239,7 +239,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
                       <FolderGit2
                         size={16}
                         className={cn(
-                          "relative z-10 transition-transform duration-200 flex-shrink-0 group-hover:scale-110",
+                          "relative z-10 transition-transform duration-200 shrink-0 group-hover:scale-110",
                           isActive ? "text-blue-400" : "opacity-70 group-hover:opacity-100"
                         )}
                       />
