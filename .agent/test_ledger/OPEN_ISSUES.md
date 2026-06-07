@@ -3003,7 +3003,8 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-273: Fix StudioControlsPanel.tsx (Empty Stub Implementation)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Passed `onToggle` and `onUpdate` handlers to the transition frame `WhiskDropZone` components to handle inline updates correctly.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:442`
 - **Details:** Found during `/finish` sweep (18:00). Empty fallback functions for `onToggle` and `onUpdate`.
@@ -3012,7 +3013,8 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-274: Fix resilience.ts (Empty Stub Implementation)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Provided non-empty default `onRetry` implementation utilizing debug logger.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/core/utils/resilience.ts:25`
 - **Details:** Found during `/finish` sweep (18:00). Empty fallback function for `onRetry`.
@@ -3607,7 +3609,8 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-340: Fix audio.ts (MasteringService Bypassed)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Extracted audio mastering logic into a dedicated `MasteringService` class under `packages/main/src/services/MasteringService.ts` and updated `audio.ts` to call it.
 - **Severity:** High
 - **Location:** `packages/main/src/handlers/audio.ts:163`
 - **Details:** Found during `/finish` sweep (19:15). A major architectural bypass where logic was re-introduced locally instead of relying on a missing `MasteringService`.
