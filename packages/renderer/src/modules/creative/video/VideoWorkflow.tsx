@@ -374,6 +374,18 @@ export default function VideoWorkflow() {
             const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
             const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
 
+            // Combine character references and active Whisk references (max 3 items)
+            const combinedReferenceImages = [
+                ...(characterReferences || []).map(ref => ({
+                    image: { uri: ref.image.url },
+                    referenceType: 'asset' as const
+                })),
+                ...(WhiskService.getSourceMedia(whiskState) || []).map(w => ({
+                    image: { imageBytes: w.data, mimeType: w.mimeType },
+                    referenceType: 'asset' as const
+                }))
+            ].slice(0, 3);
+
             // Check for long-form Video (Daisy Chain or duration > 8s)
             if (studioControls.duration > 8 || videoInputs.isDaisyChain) {
                 results = await VideoGeneration.generateLongFormVideo({
@@ -388,7 +400,9 @@ export default function VideoWorkflow() {
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model,
-                                    onProgress: (current: number, total: number) => {
+                    personGeneration: studioControls.personGeneration,
+                    referenceImages: combinedReferenceImages,
+                    onProgress: (current: number, total: number) => {
                         // Optional: Could wire this up to a local progress update if store supports it
                         logger.info(`Segment ${current}/${total}`);
                     }
@@ -407,10 +421,7 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     lastFrame: videoInputs.lastFrame?.url,
                     timeOffset: videoInputs.timeOffset,
-                    referenceImages: characterReferences?.slice(0, 3).map(ref => ({
-                        image: { uri: ref.image.url },
-                        referenceType: 'asset' as const  // Official API only supports lowercase 'asset'
-                    })),
+                    referenceImages: combinedReferenceImages,
                     personGeneration: studioControls.personGeneration,
                     orgId: currentOrganizationId,
                     duration: studioControls.duration,
@@ -418,7 +429,8 @@ export default function VideoWorkflow() {
                     // Audio suppression handled via prompt augmentation above
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
-                    model: studioControls.model
+                    model: studioControls.model,
+                    useGrounding: studioControls.useGrounding
                 });
             }
 

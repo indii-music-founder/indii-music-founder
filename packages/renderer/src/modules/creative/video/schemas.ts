@@ -61,7 +61,8 @@ export const VideoGenerationOptionsSchema = z.object({
     thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
     orgId: z.string().optional(),
     userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
-    jobId: z.string().optional()
+    jobId: z.string().optional(),
+    useGrounding: z.boolean().optional()
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

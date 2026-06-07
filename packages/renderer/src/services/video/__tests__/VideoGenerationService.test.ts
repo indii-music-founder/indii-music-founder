@@ -10,6 +10,12 @@ vi.mock('@/services/creative/CreativeStorageService', () => ({
     }
 }));
 
+vi.mock('@/services/image/ImageGenerationService', () => ({
+    ImageGeneration: {
+        generateImages: vi.fn().mockResolvedValue([{ url: 'https://grounded-image.png' }])
+    }
+}));
+
 // Mock dependencies
 vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -352,4 +358,55 @@ describe('VideoGenerationService', () => {
             }
         });
     });
+
+    describe('Google Grounding Pre-flight & Long Form References', () => {
+        it('should trigger pre-flight Imagen 3 generation when useGrounding is true and firstFrame is empty', async () => {
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+
+            await VideoGeneration.generateVideo({
+                prompt: 'grounded location video',
+                useGrounding: true
+            });
+
+            expect(ImageGeneration.generateImages).toHaveBeenCalledWith({
+                prompt: 'grounded location video',
+                count: 1,
+                aspectRatio: '16:9',
+                useGoogleSearch: true,
+                model: 'fast'
+            });
+
+            // Ensure the generated image was uploaded
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalledWith(
+                'test-user',
+                'https://grounded-image.png',
+                'image'
+            );
+        });
+
+        it('should forward reference images in generateLongFormVideo', async () => {
+            const spyGenerateVideo = vi.spyOn(AutonomousIntelligence, 'generateVideo').mockResolvedValue('https://storage.googleapis.com/segment-video.mp4');
+
+            await VideoGeneration.generateLongFormVideo({
+                prompt: 'long video with refs',
+                totalDuration: 10,
+                referenceImages: [
+                    { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
+                ],
+                personGeneration: 'allow_adult'
+            });
+
+            expect(spyGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
+                config: expect.objectContaining({
+                    referenceImages: [
+                        { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
+                    ]
+                })
+            }));
+
+            spyGenerateVideo.mockRestore();
+        });
+    });
 });
+
