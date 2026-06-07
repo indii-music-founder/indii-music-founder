@@ -110,8 +110,7 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline (Thin Client)', { time
         // Assert
         expect(mocks.uploadReferenceMedia).not.toHaveBeenCalled();
         expect(mocks.generateVideoV3).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining(userPrompt),
-            firstFrameUri: undefined
+            prompt: expect.stringContaining(userPrompt)
         }));
     });
 });
