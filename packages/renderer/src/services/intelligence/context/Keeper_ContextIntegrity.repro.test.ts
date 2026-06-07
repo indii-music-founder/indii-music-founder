@@ -120,7 +120,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
     afterEach(() => {
         // Clean up the electronAPI we added
-        const win = window as unknown as Record<string, unknown>;
+        const win = window as any;
         delete win.electronAPI;
     });
 
