@@ -31,10 +31,15 @@ test.describe('Video Studio', () => {
             });
         });
 
-        console.log('[VIDEO TEST] Navigating to /creative?mode=video...');
-        // Note: Actual routing depends on app setup, might be /creative or another route.
-        await page.goto('/creative');
-        await expect(page.locator('#root')).toBeVisible({ timeout: 30_000 });
+        console.log('[VIDEO TEST] Navigating to /creative client-side...');
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
+        await expect(page.locator('[data-testid="creative-studio-container"]')).toBeVisible({ timeout: 30_000 });
         
         // Switch to video mode if needed
         const videoModeBtn = page.locator('[data-testid="mode-switch-video"]').or(page.locator('button:has-text("Video")')).first();
