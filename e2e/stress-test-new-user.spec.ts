@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 import { test as authedTest } from './fixtures/auth';
 // Typed window interface for Zustand store access in E2E tests
 interface TestWindow extends Window {
@@ -20,7 +20,7 @@ const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || process.env.AUDITOR_PASSW
 test.describe('The Gauntlet: Live Production Stress Test', () => {
     test.setTimeout(60000); // Increase timeout to 60s for full flow
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Capture browser logs for debugging
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
@@ -376,7 +376,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
     });
 
     // New test: Authenticated flow using env credentials
-    test('Scenario 5: Real Auth Flow (requires credentials)', async ({ page }) => {
+    test('Scenario 5: Real Auth Flow (requires credentials)', async ({ authedPage: page }) => {
         // Skip if no credentials configured
         test.skip(!TEST_EMAIL || !TEST_PASSWORD, 'E2E credentials not configured in environment');
 

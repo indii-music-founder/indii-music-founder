@@ -14,7 +14,7 @@ test('Live Test: Boardroom', async ({ authedPage: page }) => {
   });
 
   // Navigate to dev server
-  await page.goto('http://localhost:4242');
+  await page.goto('http://localhost:4242', { waitUntil: 'domcontentloaded' });
 
   // Handle onboarding dialog if it appears
   try {

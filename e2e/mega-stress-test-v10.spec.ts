@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+
 import { test as authedTest } from './fixtures/auth';
 
 interface TestWindow extends Window {
@@ -14,7 +14,7 @@ const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 test.describe('Mega Stress Test v10.0 (API and Security Hardening Regression)', () => {
     test.setTimeout(120000); // Allow ample time
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
 

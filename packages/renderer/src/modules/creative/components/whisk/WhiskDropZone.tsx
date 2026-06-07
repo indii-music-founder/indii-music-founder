@@ -286,7 +286,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             {/* Toggle Checkbox */}
                                             <button
                                                 onClick={() => onToggle?.(item.id)}
-                                                className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
+                                                className={`shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
                                                     ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
                                                     : 'bg-transparent border-gray-600 hover:border-gray-400'
                                                     }`}
@@ -341,7 +341,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                     <>
                                                         {item.type === 'image' ? (
                                                             <>
-                                                                <div className={`${compact ? 'w-full h-full' : 'w-12 h-12'} rounded-lg border border-gray-700 overflow-hidden bg-black flex-shrink-0 shadow-inner`}>
+                                                                <div className={`${compact ? 'w-full h-full' : 'w-12 h-12'} rounded-lg border border-gray-700 overflow-hidden bg-black shrink-0 shadow-inner`}>
                                                                     <img src={item.content} className="w-full h-full object-cover" alt="" />
                                                                 </div>
                                                                 <span className="text-[10px] text-gray-300 truncate flex-1">

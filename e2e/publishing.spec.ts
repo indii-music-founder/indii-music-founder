@@ -15,7 +15,7 @@ test.describe('Publishing Module', () => {
             await publishingNav.click();
             await page.waitForTimeout(2_000);
         } else {
-            await page.goto('/#publishing');
+            await page.goto('/#publishing', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
 

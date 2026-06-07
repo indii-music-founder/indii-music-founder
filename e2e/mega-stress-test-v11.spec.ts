@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+
 import { test as authedTest } from './fixtures/auth';
 
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
@@ -6,7 +6,7 @@ const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 test.describe('Mega Stress Test v11.0 (End-to-End Generative & Architectural Gauntlet)', () => {
     test.setTimeout(120000); // 2 minutes
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
     });

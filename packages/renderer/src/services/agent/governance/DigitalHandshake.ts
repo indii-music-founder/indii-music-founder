@@ -6,6 +6,7 @@ import { DirectiveService } from '../../directive/DirectiveService';
 import type { ToolRiskTier } from '../types';
 import { getToolRiskMetadata } from '../ToolRiskRegistry';
 import type { AgentIdentityCard } from './AgentIdentity';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface HandshakeRequest {
     directiveId: string;
@@ -120,14 +121,32 @@ export class DigitalHandshake {
         return true; // Approved to proceed
     }
 
+    private static pruneUndefined(obj: any): any {
+        if (obj === null || typeof obj !== 'object' || (typeof Timestamp === 'function' && obj instanceof Timestamp)) return obj;
+        if (Array.isArray(obj)) return obj.map(item => this.pruneUndefined(item));
+
+        const pruned: any = {};
+        Object.keys(obj).forEach(key => {
+            if (obj[key] !== undefined) {
+                pruned[key] = this.pruneUndefined(obj[key]);
+            }
+        });
+        return pruned;
+    }
+
     public static async logAuditTrail(
         userId: string,
         action: string,
         details: Record<string, unknown>,
         agentIdentity?: AgentIdentityCard
     ): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) {
+            logger.debug(`[DigitalHandshake] [E2E] Bypassing logAuditTrail write for ${action}`);
+            return;
+        }
+
         const auditRef = collection(db, `users/${userId}/agentAuditTrails`);
-        await addDoc(auditRef, {
+        await addDoc(auditRef, this.pruneUndefined({
             action,
             details,
             timestamp: Timestamp.now(),
@@ -141,7 +160,7 @@ export class DigitalHandshake {
                     attestation: agentIdentity.attestation,
                 }
             } : {}),
-        });
+        }));
     }
 
     /**
@@ -150,13 +169,18 @@ export class DigitalHandshake {
     private static async pingMemoryInbox(userId: string, request: HandshakeRequest): Promise<void> {
         logger.info(`[DigitalHandshake] Pinging ~/indii/memory-inbox/ for User ${userId}`);
 
+        if (isFirebaseE2EMockEnabled()) {
+            logger.debug(`[DigitalHandshake] [E2E] Bypassing pingMemoryInbox write`);
+            return;
+        }
+
         const inboxRef = collection(db, `users/${userId}/memoryInbox`);
 
-        await addDoc(inboxRef, {
+        await addDoc(inboxRef, this.pruneUndefined({
             type: 'DIGITAL_HANDSHAKE_REQUEST',
             ...request,
             status: 'PENDING',
             createdAt: Timestamp.now()
-        });
+        }));
     }
 }

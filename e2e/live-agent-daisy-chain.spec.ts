@@ -124,7 +124,7 @@ test.describe('Live coordinated agent daisy chain', () => {
 
     await installLiveAgentMocks(page, scenario, chain);
 
-    await page.goto('/agent');
+    await page.goto('/agent', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#root', { state: 'visible', timeout: 20_000 });
     await seedAppContext(page, scenario, chain);
 
@@ -151,7 +151,7 @@ test.describe('Live coordinated agent daisy chain', () => {
     await expect(page.getByText(scenario.campaign.title)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(`Budget: $${scenario.campaign.budget.toLocaleString()}`)).toBeVisible({ timeout: 10_000 });
 
-    await page.goto('/campaign');
+    await page.goto('/campaign', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#root', { state: 'visible', timeout: 20_000 });
     await page.locator('h2').filter({ hasText: 'Active Campaigns' }).waitFor({ state: 'visible', timeout: 15_000 });
     await page.evaluate((campaign) => {

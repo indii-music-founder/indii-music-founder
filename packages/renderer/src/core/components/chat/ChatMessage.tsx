@@ -223,7 +223,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${variant === 'compact' ? 'mb-3' : 'mb-6'} px-1`}
         >
             {msg.role === 'model' && (
-                <div className="relative mt-1 flex-shrink-0">
+                <div className="relative mt-1 shrink-0">
                     <div className={`absolute -inset-1 bg-${agentIdentity?.color || 'purple'}-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                     {avatarUrl ? (
                         <img
@@ -255,7 +255,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
 
                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
 
-                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden break-words break-all leading-[1.5] font-medium tracking-tight`}>
+                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word break-all leading-normal font-medium tracking-tight`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}

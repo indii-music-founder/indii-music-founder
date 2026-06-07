@@ -558,6 +558,18 @@ export class GeneralistAgent extends BaseAgent {
         signal?: AbortSignal,
         attachments?: { mimeType: string; base64: string }[]
     ): Promise<AgentResponse> {
+        // GEAP Agent Identity: Mint cryptographic identity on first execution.
+        const { agentIdentityService } = await import('../governance/AgentIdentity');
+        if (!this.identityCard) {
+            const card = await agentIdentityService.mintIdentity(
+                this.id,
+                this.name,
+                this.systemPrompt,
+                this.authorizedTools,
+                this.modelId
+            );
+            this.identityCard = card;
+        }
 
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
@@ -767,7 +779,10 @@ CURRENT REQUEST: ${task}
                         let result: any;
                         if (this.functions[name]) {
                             try {
-                                result = await this.functions[name](args as Record<string, unknown>, context);
+                                result = await this.functions[name](args as Record<string, unknown>, {
+                                    ...context,
+                                    agentIdentity: this.identityCard || undefined
+                                });
                             } catch (err: unknown) {
                                 const msg = err instanceof Error ? err.message : String(err);
                                 result = { success: false, error: msg, message: `Tool error: ${msg}` };
@@ -777,7 +792,10 @@ CURRENT REQUEST: ${task}
                             const { TOOL_REGISTRY } = await import('../tools');
                             if (TOOL_REGISTRY[name]) {
                                 try {
-                                    result = await TOOL_REGISTRY[name](args);
+                                    result = await TOOL_REGISTRY[name](args, {
+                                        ...context,
+                                        agentIdentity: this.identityCard || undefined
+                                    });
                                 } catch (err: unknown) {
                                     const msg = err instanceof Error ? err.message : String(err);
                                     result = { success: false, error: msg, message: `Tool error: ${msg}` };

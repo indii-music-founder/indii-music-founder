@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Item 278: Payment Flow E2E Tests — Subscription Checkout Journey
@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Payment Flow (Item 278)', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
-    test('Strict Stripe Test Mode directive followed during E2E checkout', async ({ page }) => {
+    test('Strict Stripe Test Mode directive followed during E2E checkout', async ({ authedPage: page }) => {
         let checkoutRequestUrl = '';
         let testModeDirectiveFound = false;
 
@@ -61,7 +61,7 @@ test.describe('Payment Flow (Item 278)', () => {
         }
     });
 
-    test('Micro-transaction credit purchase process', async ({ page }) => {
+    test('Micro-transaction credit purchase process', async ({ authedPage: page }) => {
         let microTransactionRequested = false;
         
         await page.route('**/cloudfunctions.net/**/createMicroTransaction**', async route => {
@@ -93,7 +93,7 @@ test.describe('Payment Flow (Item 278)', () => {
         }
     });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // ── Mock createCheckoutSession Cloud Function ────────────────────────
         await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
             await route.fulfill({
@@ -187,14 +187,14 @@ test.describe('Payment Flow (Item 278)', () => {
             });
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(1_500);
     });
 
     // ── Plan selection & checkout initiation ──────────────────────────────────
 
-    test('subscription plan cards render and are interactive', async ({ page }) => {
+    test('subscription plan cards render and are interactive', async ({ authedPage: page }) => {
         // Navigate to settings / subscription section
         const settingsSelectors = [
             '[data-testid="nav-item-settings"]',
@@ -231,7 +231,7 @@ test.describe('Payment Flow (Item 278)', () => {
         console.log('Plan section navigation complete');
     });
 
-    test('Upgrade button triggers mocked Stripe checkout session', async ({ page }) => {
+    test('Upgrade button triggers mocked Stripe checkout session', async ({ authedPage: page }) => {
         let checkoutCallMade = false;
 
         // Intercept checkout CF and record the call
@@ -271,7 +271,7 @@ test.describe('Payment Flow (Item 278)', () => {
 
     // ── Subscription activation simulation ───────────────────────────────────
 
-    test('simulated webhook activates subscription display', async ({ page }) => {
+    test('simulated webhook activates subscription display', async ({ authedPage: page }) => {
         // Simulate a checkout.session.completed webhook by calling the mocked endpoint
         const response = await page.request.post(
             'https://us-central1-test-project.cloudfunctions.net/stripeWebhook',
@@ -304,7 +304,7 @@ test.describe('Payment Flow (Item 278)', () => {
 
     // ── Feature gating ────────────────────────────────────────────────────────
 
-    test('Pro-gated features show upgrade prompt for free tier', async ({ page }) => {
+    test('Pro-gated features show upgrade prompt for free tier', async ({ authedPage: page }) => {
         // Mock subscription as free tier
         await page.route('**/cloudfunctions.net/**/getSubscription**', async route => {
             await route.fulfill({
@@ -371,7 +371,7 @@ test.describe('Payment Flow (Item 278)', () => {
         });
 
         // Navigate to a commercial module (e.g., distribution)
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(2_000);
 
         // Should show UpgradeGate or premium feature prompt, not module content
@@ -393,7 +393,7 @@ test.describe('Payment Flow (Item 278)', () => {
         await expect(page.locator('body')).not.toContainText('Something went wrong');
     });
 
-    test('payment history section renders without crash', async ({ page }) => {
+    test('payment history section renders without crash', async ({ authedPage: page }) => {
         // Mock invoice list
         await page.route('**/cloudfunctions.net/**/listInvoices**', async route => {
             await route.fulfill({
@@ -424,7 +424,7 @@ test.describe('Payment Flow (Item 278)', () => {
 
     // ── Data Integrity Tests ──────────────────────────────────────────────────
 
-    test('subscription tier change is persisted in Firestore', async ({ page }) => {
+    test('subscription tier change is persisted in Firestore', async ({ authedPage: page }) => {
         // Track Firestore write to subscriptions collection
         let subscriptionWritten = false;
         let tierWritten: string | null = null;
@@ -482,7 +482,7 @@ test.describe('Payment Flow (Item 278)', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('error state handling: payment failure shows appropriate message', async ({ page }) => {
+    test('error state handling: payment failure shows appropriate message', async ({ authedPage: page }) => {
         // Mock failed checkout session
         await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
             await route.fulfill({

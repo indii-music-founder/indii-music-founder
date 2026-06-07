@@ -53,9 +53,16 @@ test.describe('Creative Studio - Character Library', () => {
             }
         });
 
-        // Navigate to creative module
-        await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        // Wait for the app container from the initial page load in the authedPage fixture
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+
+        // Navigate client-side to creative module via Zustand store
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
 
         // Ensure Direct mode is active
         const directBtn = page.locator('[data-testid="direct-view-btn"]');

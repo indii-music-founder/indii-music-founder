@@ -369,15 +369,30 @@ export const test = base.extend<AuthFixtures>({
 
         const postData = route.request().postData() || "";
         const hasUpdateProfileTool = postData.includes("updateProfile");
+        const hasSeatFinanceTool = postData.toLowerCase().includes("financial department") || postData.toLowerCase().includes("finance");
 
         const parts: Array<{
           text?: string;
           functionCall?: Record<string, unknown>;
-        }> = [
-            {
-              text: "Awesome! I've updated your brand kit with those details. You're ready to go!",
-            },
-          ];
+        }> = [];
+
+        if (hasSeatFinanceTool) {
+          parts.push({
+            text: "Calling seat_agent for finance.",
+          });
+          parts.push({
+            functionCall: {
+              name: "seat_agent",
+              args: {
+                targetAgentId: "finance"
+              }
+            }
+          });
+        } else {
+          parts.push({
+            text: "Awesome! I've updated your brand kit with those details. You're ready to go!",
+          });
+        }
 
         if (hasUpdateProfileTool) {
           parts.push({
@@ -845,13 +860,42 @@ export const test = base.extend<AuthFixtures>({
       }
     });
 
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    // If the app stripped the E2E mock (e.g. production staging build), we must manually log in.
-    // The network intercepts for identitytoolkit will handle the API response.
+    // Explicitly write localStorage values on the page origin to guarantee they are set
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("onboarding_dismissed", "true");
+        localStorage.setItem("indii_tour_completed_v1", "true");
+        localStorage.setItem("indii_cookie_consent", JSON.stringify({
+          essential: true,
+          analytics: false,
+          errorTracking: false,
+          marketing: false,
+          timestamp: new Date().toISOString(),
+          version: 1,
+        }));
+      } catch (e) {
+        console.error("Failed to set localStorage in authedPage evaluation:", e);
+      }
+    });
+
+    // Wait for either the dashboard button OR the email input to be visible, showing the page has loaded
+    const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first();
     const emailInput = page.locator('input[type="email"]').first();
-    if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      console.log("[E2E] App ignored mock (production mode). Performing manual login...");
+    
+    try {
+      await Promise.race([
+        dashboardBtn.waitFor({ state: 'visible', timeout: 10000 }),
+        emailInput.waitFor({ state: 'visible', timeout: 10000 })
+      ]);
+    } catch (e) {
+      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 10s.");
+    }
+    
+    if (await emailInput.isVisible().catch(() => false)) {
+      console.log("[E2E] App login form visible. Performing manual login...");
       await emailInput.fill('e2e@indii.test');
       const passwordInput = page.locator('input[type="password"]').first();
       if (await passwordInput.isVisible().catch(() => false)) {
@@ -860,9 +904,11 @@ export const test = base.extend<AuthFixtures>({
       await page.locator('form button[type="submit"]').first().click();
       
       // Wait for dashboard to be visible to confirm login
-      await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+      await dashboardBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
           console.log("[E2E] Dashboard not found after manual login click!");
       });
+    } else if (await dashboardBtn.isVisible().catch(() => false)) {
+      console.log("[E2E] Dashboard already visible. Already authenticated.");
     }
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

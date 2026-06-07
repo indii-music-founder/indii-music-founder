@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Mobile Responsiveness E2E Tests
@@ -17,13 +17,13 @@ const MOBILE_VIEWPORT = { width: 390, height: 844 }; // iPhone 14
 test.describe('Mobile Layout', () => {
     test.use({ viewport: MOBILE_VIEWPORT });
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('app renders on mobile viewport without horizontal overflow', async ({ page }) => {
+    test('app renders on mobile viewport without horizontal overflow', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
 
         // Check no horizontal overflow (body width should match viewport)
@@ -34,7 +34,7 @@ test.describe('Mobile Layout', () => {
         expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 5);
     });
 
-    test('desktop sidebar is hidden on mobile viewport', async ({ page }) => {
+    test('desktop sidebar is hidden on mobile viewport', async ({ authedPage: page }) => {
         // The desktop sidebar toggle should not be visible
         const sidebarToggle = page.locator('[data-testid="sidebar-toggle"]');
         const toggleVisible = await sidebarToggle.isVisible().catch(() => false);
@@ -45,7 +45,7 @@ test.describe('Mobile Layout', () => {
         console.log(`Sidebar toggle visible on mobile: ${toggleVisible}`);
     });
 
-    test('mobile navigation renders on small viewport', async ({ page }) => {
+    test('mobile navigation renders on small viewport', async ({ authedPage: page }) => {
         // MobileNav uses fixed bottom bar or hamburger menu
         const mobileNav = page.locator(
             '[class*="mobile-nav"], [class*="MobileNav"], [aria-label*="mobile"], nav'
@@ -63,7 +63,7 @@ test.describe('Mobile Layout', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('module navigation works on mobile', async ({ page }) => {
+    test('module navigation works on mobile', async ({ authedPage: page }) => {
         // Try navigating to modules via URL since sidebar may not be visible
         const modules = ['finance', 'distribution'];
 
@@ -74,9 +74,9 @@ test.describe('Mobile Layout', () => {
         }
     });
 
-    test('content is scrollable on mobile (no fixed overflow:hidden trap)', async ({ page }) => {
+    test('content is scrollable on mobile (no fixed overflow:hidden trap)', async ({ authedPage: page }) => {
         // Navigate to a content-heavy module
-        await page.goto('/#finance');
+        await page.goto('/#finance', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(2_000);
 
         // Attempt touch scroll
@@ -98,13 +98,13 @@ test.describe('Mobile Layout', () => {
 test.describe('Desktop Layout', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('three-panel layout is visible on desktop', async ({ page }) => {
+    test('three-panel layout is visible on desktop', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
 
         // Desktop shows sidebar + main + optional right panel

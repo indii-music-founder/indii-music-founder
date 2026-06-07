@@ -8,7 +8,7 @@ test.describe('Visual QA - Agent Alignment Transitions', () => {
         const artifactDir = '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/ac5e7866-4081-44fa-a354-0a704ec179c7';
 
         // Nav to Dashboard
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(2000);
         await page.screenshot({ path: path.join(artifactDir, 'dashboard_module.png'), fullPage: true });

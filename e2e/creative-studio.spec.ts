@@ -31,8 +31,14 @@ test.describe('Creative Studio', () => {
             });
         });
 
-        console.log('[CREATIVE TEST] Navigating to /creative...');
-        await page.goto('/creative');
+        console.log('[CREATIVE TEST] Navigating to /creative client-side...');
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
         await expect(page.locator('[data-testid="creative-studio-container"]')).toBeVisible({ timeout: 30_000 });
     });
 

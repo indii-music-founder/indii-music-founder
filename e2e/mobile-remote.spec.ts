@@ -14,7 +14,7 @@ test.describe('Mobile Remote Companion Device', () => {
 
     test('mobile remote loads and renders controller branding', async ({ authedPage: page }) => {
         console.log('[REMOTE TEST] Navigating to /mobile-remote...');
-        await page.goto('/mobile-remote');
+        await page.goto('/mobile-remote', { waitUntil: 'domcontentloaded' });
 
         // Verify root is present
         await page.waitForSelector('#root', { state: 'visible', timeout: 15_000 });
@@ -29,7 +29,7 @@ test.describe('Mobile Remote Companion Device', () => {
     });
 
     test('mobile remote renders link code button when disconnected', async ({ authedPage: page }) => {
-        await page.goto('/mobile-remote');
+        await page.goto('/mobile-remote', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { state: 'visible', timeout: 15_000 });
 
         // When disconnected (mock user has no active desktop state), it should show "Link" or "Pairing" button or qr code trigger

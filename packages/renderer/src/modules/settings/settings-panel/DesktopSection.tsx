@@ -214,7 +214,7 @@ const DesktopSection: React.FC = () => {
                     description="Auto-update controls are available in the desktop app."
                 />
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
-                    <Info size={16} className="text-slate-500 flex-shrink-0" />
+                    <Info size={16} className="text-slate-500 shrink-0" />
                     <p className="text-sm text-slate-400">
                         You're using the web version of indii. Desktop auto-update settings are only available in the Electron app.
                     </p>
@@ -231,10 +231,10 @@ const DesktopSection: React.FC = () => {
             />
 
             {/* Version Info Card */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/50">
+            <div className="mb-6 p-4 rounded-xl bg-linear-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
                             <Monitor size={18} className="text-cyan-400" />
                         </div>
                         <div>
@@ -262,7 +262,7 @@ const DesktopSection: React.FC = () => {
                         >
                             <div className="h-1.5 w-full bg-slate-700/50 rounded-full overflow-hidden">
                                 <motion.div
-                                    className="h-full bg-gradient-to-r from-purple-500 to-cyan-500"
+                                    className="h-full bg-linear-to-r from-purple-500 to-cyan-500"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${downloadProgress}%` }}
                                     transition={{ type: 'spring', damping: 20, stiffness: 100 }}
@@ -307,7 +307,7 @@ const DesktopSection: React.FC = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             onClick={handleInstall}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
                         >
                             <Download size={14} />
                             Restart & Install v{availableVersion}
@@ -351,7 +351,7 @@ const DesktopSection: React.FC = () => {
 
             {/* Auto-update info */}
             <div className="mt-6 flex items-start gap-3 p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/30">
-                <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                <Info size={14} className="text-slate-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-slate-500 leading-relaxed">
                     indii automatically checks for updates on launch and every 4 hours. Downloaded updates are installed when you quit the app, or you can click "Restart & Install" to apply immediately.
                 </p>
