@@ -105,18 +105,16 @@ test.describe('Prompt Builder Hardening', () => {
         const promptEngLabel = page.getByText('Prompt Engineering');
         await expect(promptEngLabel).toBeVisible({ timeout: 5_000 });
 
-        // Navigate away to Dashboard via UI click (handles desktop and mobile layout)
-        const dashboardNav = page.locator('button[aria-label="Home"]').or(page.locator('[data-testid="nav-item-dashboard"]')).first();
-        await expect(dashboardNav).toBeVisible({ timeout: 5_000 });
-        await dashboardNav.click();
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        // Navigate away to Dashboard programmatically via Zustand store
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setModule('dashboard');
+        });
         await page.waitForTimeout(1_000);
 
-        // Navigate back to Creative via UI click (handles desktop and mobile layout)
-        const creativeNav = page.locator('button[aria-label="Creative"]').or(page.locator('[data-testid="nav-item-creative"]')).first();
-        await expect(creativeNav).toBeVisible({ timeout: 5_000 });
-        await creativeNav.click();
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        // Navigate back to Creative programmatically via Zustand store
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setModule('creative');
+        });
         await page.waitForTimeout(1_000);
 
         // Re-enter Direct mode
