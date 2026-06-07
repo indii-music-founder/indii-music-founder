@@ -75,7 +75,12 @@ vi.mock('@/core/store', () => {
             preciseReference: false
         },
         studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24, model: 'fast' },
-        initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
+        initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
+        characterReferences: [],
+        addCharacterReference: vi.fn(),
+        removeCharacterReference: vi.fn(),
+        updateCharacterReference: vi.fn(),
+        addUploadedImage: vi.fn()
     }));
     (mockStore as any).subscribe = vi.fn();
     return { useStore: mockStore };
@@ -85,6 +90,7 @@ vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
         getWhiskStatus: vi.fn().mockResolvedValue({}),
         synthesizeVideoPrompt: vi.fn((prompt) => prompt), // Identity function for mock
+        getSourceMedia: vi.fn(() => []),
     }
 }));
 
@@ -247,7 +253,12 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 isRightPanelOpen: false,
                 toggleRightPanel: vi.fn(),
                 whiskState: state.whiskState,
-                initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
+                initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
+                characterReferences: [],
+                addCharacterReference: vi.fn(),
+                removeCharacterReference: vi.fn(),
+                updateCharacterReference: vi.fn(),
+                addUploadedImage: vi.fn()
             }), [state, setVideoInput, setGenerationMode, setViewMode, setCreativePrompt, addToHistory]);
 
             // Sync useStore mock to this local state
