@@ -781,3 +781,20 @@
   - Reconfirmed the repeated `--localstorage-file` warnings and `electron-log` EPERM writes remain pre-existing environment/test noise rather than new audio product defects.
   - No net-new audio product or test-infrastructure issue was identified beyond the already-open live-browser/runtime blockers.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-06_23-46-16_harness_playwright_reconfirm.md`
+
+## 2026-06-07 — MegaTestAudioLoop Runtime Shift Reconfirm
+- **Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+- **Duration:** ~6 minutes
+- **Findings:** 0 new issues filed. No fresh browser-rendered audio failures were observable because live app startup and browser navigation remained blocked before any page render.
+- **Blockers:**
+  - `npm run dev:web` passed the full production preflight and then failed only when Vite tried to bind `::1:4243` with `listen EPERM`.
+  - `python3 execution/run_department_test.py audio-analyzer` again passed 21/21 scoped audio test files and 135/135 tests, but its Playwright phase failed because `config.webServer` could not bind `::1:4242`.
+  - The Codex in-app browser again rejected `http://localhost:4242/audio-analyzer`, `http://localhost:4243/audio-analyzer`, and `https://indii-music-founder.web.app/audio-analyzer` before navigation because of browser security policy.
+  - No browser-rendered audio route became reachable in this run, and a screenshot attempt after the policy denials timed out against `about:blank`, so no meaningful failure screenshot could be captured.
+- **Coverage Delta:**
+  - Reconfirmed the scoped audio harness still keeps Audio Analyzer UI/accessibility tests, local technical analysis services, semantic Audio DNA support, MusicLibrary persistence, distribution/DDEX mapping, agent audio handoff, Firebase audio helpers, and audio IPC/security green outside the browser layer.
+  - Reconfirmed Python syntax/dependency surface checks for `execution/audio/audio_forensics.py` and `execution/audio/audio_fidelity_audit.py` still pass as part of the scoped harness.
+  - Reconfirmed the repeated `--localstorage-file` warnings and `electron-log` EPERM writes remain pre-existing environment/test noise rather than new audio product defects.
+  - Recorded one environment-level shift: the old `tsx` IPC preflight failure did not reproduce in this run; the remaining blocker now starts at the Vite listener bind stage.
+  - No net-new audio product or test-infrastructure issue was identified beyond the already-open live-browser/runtime blockers.
+- **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-07_02-51-56_runtime_shift_reconfirm.md`
