@@ -30,12 +30,16 @@ export const isTestHarnessRuntime = (): boolean => {
 export const isFirebaseE2EMockEnabled = (): boolean => {
     if (!isTestHarnessRuntime()) return false;
 
-    if (typeof window !== 'undefined' && trueLike((window as RuntimeWindow).FIREBASE_E2E_MOCK)) {
-        return true;
+    if (typeof window !== 'undefined') {
+        const winMock = (window as RuntimeWindow).FIREBASE_E2E_MOCK;
+        if (winMock === false || winMock === 'false') return false;
+        if (trueLike(winMock)) return true;
     }
 
     try {
-        if (trueLike(localStorage.getItem('FIREBASE_E2E_MOCK'))) return true;
+        const lsMock = localStorage.getItem('FIREBASE_E2E_MOCK');
+        if (lsMock === 'false') return false;
+        if (trueLike(lsMock)) return true;
     } catch {
         // ignore
     }
