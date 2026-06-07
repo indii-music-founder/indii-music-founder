@@ -4,11 +4,11 @@ Purpose: Map the execution, state transition, and feedback loops of the media-fo
 
 ```mermaid
 graph TD
-    CronTrigger["Cron Job Trigger<br>(*/30 * * * *)"] --> PromptAgent["Agent receives high-priority notification"]
+    CronTrigger["Cron Job Trigger - every 30 minutes"] --> PromptAgent["Agent receives high-priority notification"]
     PromptAgent --> ExecRotator["Run 'node scratch/test-rotator.js'"]
     
     ExecRotator --> ReadState["Read current index from scratch/test-state.json"]
-    ReadState --> MapSpec["Map index to E2E spec in SPECS array<br>(0 to 6)"]
+    ReadState --> MapSpec["Map index to E2E spec in SPECS array (0 to 6)"]
     
     MapSpec --> RunPlaywright["Execute 'npx playwright test {spec} --project=chromium'"]
     
