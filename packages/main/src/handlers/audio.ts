@@ -11,6 +11,7 @@ import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
 import { accessControlService } from '../security/AccessControlService';
+import { masteringService } from '../services/MasteringService';
 
 import { z } from 'zod';
 
@@ -159,37 +160,7 @@ export function registerAudioHandlers() {
 
         try {
             validateSender(event);
-
-            // Re-introduced logic locally instead of relying on a missing MasteringService
-            const getFilterForStyle = (s: string) => {
-                const styles: Record<string, string> = {
-                    'warm': 'equalizer=f=100:width_type=h:width=200:g=2, equalizer=f=10000:width_type=h:width=2000:g=-2',
-                    'punchy': 'compand=attacks=0:points=-80/-90|-40/-40|0/-10|20/-5',
-                    'bright': 'equalizer=f=5000:width_type=h:width=1000:g=3'
-                };
-                return styles[s] || 'anull';
-            };
-            const filter = getFilterForStyle(style);
-
-            // Ensure output directory exists
-            const outputDir = path.dirname(outputPath);
-            if (!fs.existsSync(outputDir)) {
-                fs.mkdirSync(outputDir, { recursive: true });
-            }
-
-            return new Promise((resolve) => {
-                ffmpeg(inputPath)
-                    .audioFilters(filter)
-                    .on('end', () => {
-                        log.info('[Main] Mastering finished');
-                        resolve({ success: true, path: outputPath });
-                    })
-                    .on('error', (err) => {
-                        log.error('[Main] Mastering failed:', err);
-                        resolve({ success: false, error: err.message });
-                    })
-                    .save(outputPath);
-            });
+            return await masteringService.masterAudio(inputPath, outputPath, style);
         } catch (error) {
             log.error('[Main] Audio mastering setup failed:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
