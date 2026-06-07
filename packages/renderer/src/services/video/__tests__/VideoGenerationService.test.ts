@@ -242,4 +242,114 @@ describe('VideoGenerationService', () => {
                 .rejects.toThrow(`Video generation timeout for Job ID: ${mockJobId}`);
         });
     });
+
+    describe('Parameter Forwarding & Image Sources', () => {
+        it('should forward all parameters to gateway payload in generateVideo', async () => {
+            const options = {
+                prompt: 'cinematic video of a cat',
+                firstFrame: 'data:image/png;base64,start',
+                lastFrame: 'data:image/png;base64,end',
+                referenceImages: [
+                    { image: { uri: 'data:image/png;base64,ref1' }, referenceType: 'asset' as const }
+                ],
+                aspectRatio: '16:9' as const,
+                model: 'veo-3.1-generate-preview',
+                resolution: '1080p' as const,
+                duration: 6,
+                personGeneration: 'allow_adult' as const,
+                negativePrompt: 'blurry',
+                seed: 42
+            };
+
+            await VideoGeneration.generateVideo(options);
+
+            expect(mockHttpsCallable).toHaveBeenCalledWith({
+                prompt: expect.stringContaining('cinematic video of a cat'),
+                firstFrameUri: 'gs://mock-bucket/mock-uri',
+                lastFrameUri: 'gs://mock-bucket/mock-uri',
+                referenceUris: ['gs://mock-bucket/mock-uri'],
+                aspectRatio: '16:9',
+                model: 'veo-3.1-generate-preview',
+                resolution: '1080p',
+                durationSeconds: 6,
+                personGeneration: 'allow_adult',
+                negativePrompt: 'blurry',
+                seed: 42
+            });
+        });
+
+        it('should handle gs:// URIs and HTTP URLs in MediaGenerator', async () => {
+            const { generateVideo } = await import('../../intelligence/generators/MediaGenerator');
+            
+            // Mock global fetch
+            const mockFetchResponse = {
+                ok: true,
+                blob: vi.fn().mockResolvedValue({
+                    type: 'image/png',
+                    arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+                })
+            };
+            const originalFetch = global.fetch;
+            global.fetch = vi.fn().mockResolvedValue(mockFetchResponse);
+
+            try {
+                const mockClient = {
+                    models: {
+                        generateVideos: vi.fn().mockResolvedValue({
+                            name: 'mock-op-name',
+                            done: true,
+                            response: {
+                                generatedVideos: [{
+                                    video: {
+                                        uri: 'https://mock-uri',
+                                        mimeType: 'video/mp4'
+                                    }
+                                }]
+                            }
+                        })
+                    }
+                } as any;
+
+                // 1. Test gs:// URI input
+                await generateVideo(mockClient, {
+                    prompt: 'test',
+                    image: { imageBytes: 'gs://bucket/frame.png', mimeType: 'image/png' },
+                    config: {
+                        lastFrame: 'gs://bucket/last.png',
+                        referenceImages: [
+                            { image: { uri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
+                        ]
+                    }
+                });
+
+                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
+                    model: expect.any(String),
+                    prompt: 'test',
+                    image: { gcsUri: 'gs://bucket/frame.png' },
+                    config: expect.objectContaining({
+                        lastFrame: { gcsUri: 'gs://bucket/last.png' },
+                        referenceImages: [
+                            { image: { gcsUri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
+                        ]
+                    })
+                });
+
+                // 2. Test HTTP URL input
+                await generateVideo(mockClient, {
+                    prompt: 'test',
+                    image: { imageBytes: 'https://example.com/frame.png', mimeType: 'image/png' }
+                });
+
+                expect(global.fetch).toHaveBeenCalledWith('https://example.com/frame.png');
+                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
+                    model: expect.any(String),
+                    prompt: 'test',
+                    image: { imageBytes: expect.any(String), mimeType: 'image/png' },
+                    config: expect.any(Object)
+                });
+            } finally {
+                global.fetch = originalFetch;
+            }
+        });
+    });
 });
