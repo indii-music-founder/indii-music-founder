@@ -34,9 +34,14 @@ test.describe('Video Producer UX Hardening', () => {
             }
         });
 
-        // Navigate to creative module
-        await page.goto('/creative');
+        // Navigate to creative module client-side
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
         
         // Switch to Video Production Mode
         const videoTab = page.locator('[data-testid="director-view-btn"]');
