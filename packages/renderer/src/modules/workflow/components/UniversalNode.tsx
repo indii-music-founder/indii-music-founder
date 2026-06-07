@@ -42,10 +42,10 @@ const statusConfig: Record<Status, StatusStyle> = {
 type UniversalNodeData = DepartmentNodeData | LogicNodeData;
 
 
-const UniversalNode = ({ id: _id, data, selected }: NodeProps<UniversalNodeData>) => {
+const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => {
     
-    const { _nodes } = useStore(useShallow(state => ({
-        _nodes: state.nodes
+    const { setSelectedNodeId } = useStore(useShallow(state => ({
+        setSelectedNodeId: state.setSelectedNodeId
     })));
 
     // 1. Resolve Definition
@@ -162,8 +162,7 @@ const UniversalNode = ({ id: _id, data, selected }: NodeProps<UniversalNodeData>
 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        // Placeholder for openPromptEditor action
-        // logger.debug("Edit node:", id);
+        setSelectedNodeId(id);
     };
 
     // 3. Dynamic Handle Calculation
