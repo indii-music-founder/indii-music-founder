@@ -74,7 +74,10 @@ async function checkDistributorStatus(
             signal: AbortSignal.timeout(8000),
         });
 
-        if (!response.ok) return null;
+        if (!response.ok) {
+            logger.warn(`[checkDistributorStatus] API request failed with status ${response.status} for ${distributorId} / ${distributorReleaseId}`);
+            return null;
+        }
 
         const data = await response.json() as { status?: string; state?: string };
         const rawStatus = data.status || data.state;
