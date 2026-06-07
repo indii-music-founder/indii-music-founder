@@ -830,6 +830,19 @@ export const test = base.extend<AuthFixtures>({
         // Ignore if localStorage is unavailable
       }
 
+      // Inject CSS override to prevent any driver.js or driver overlays from intercepting pointer events during E2E tests
+      try {
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .driver-overlay, .driver-popover, .driver-overlay-animated, .driver-popover-arrow, .driver-popover-backdrop {
+            display: none !important;
+            pointer-events: none !important;
+          }
+        `;
+        document.documentElement.appendChild(style);
+      } catch (e) {
+        // Ignore errors
+      }
     });
 
     await page.goto("/");

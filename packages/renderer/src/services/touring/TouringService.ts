@@ -17,6 +17,7 @@ import { VehicleStats, Itinerary, EmergencyContact } from '@/modules/touring/typ
 import { TourVehicleDocument, TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
@@ -53,12 +54,51 @@ export const VehicleStatsSchema = z.object({
     updatedAt: z.instanceof(Timestamp).optional()
 });
 
+export const EmergencyContactSchema = z.object({
+    userId: z.string(),
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    relationship: z.string().min(1),
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
+});
+
+// E2E Mock Memory Storage to bypass Firestore network calls in offline testing
+let mockItineraries: Itinerary[] = [];
+let mockVehicleStats: VehicleStats | null = null;
+let mockEmergencyContacts: EmergencyContact[] = [];
+
+const itineraryListeners = new Set<(itineraries: Itinerary[]) => void>();
+const emergencyListeners = new Set<(contacts: EmergencyContact[]) => void>();
+
+const notifyItineraryListeners = () => {
+    itineraryListeners.forEach(cb => cb([...mockItineraries]));
+};
+
+const notifyEmergencyListeners = () => {
+    emergencyListeners.forEach(cb => cb([...mockEmergencyContacts]));
+};
+
 export const TouringService = {
     /**
      * Get vehicle stats for a user.
      * Returns null if not found, allowing the consumer to decide when to seed.
      */
     getVehicleStats: async (userId: string): Promise<VehicleStats | null> => {
+        if (isFirebaseE2EMockEnabled()) {
+            if (!mockVehicleStats) {
+                mockVehicleStats = {
+                    userId,
+                    milesDriven: 1200,
+                    fuelLevelPercent: 75,
+                    tankSizeGallons: 150,
+                    mpg: 8,
+                    gasPricePerGallon: 4.25
+                };
+            }
+            return mockVehicleStats;
+        }
+
         try {
             const q = query(
                 collection(db, VEHICLES_COLLECTION),
@@ -98,6 +138,16 @@ export const TouringService = {
      * Subscribe to user's itineraries
      */
     subscribeToItineraries: (userId: string, callback: (itineraries: Itinerary[]) => void) => {
+        if (isFirebaseE2EMockEnabled()) {
+            itineraryListeners.add(callback);
+            setTimeout(() => {
+                callback([...mockItineraries]);
+            }, 0);
+            return () => {
+                itineraryListeners.delete(callback);
+            };
+        }
+
         const q = query(
             collection(db, ITINERARIES_COLLECTION),
             where('userId', '==', userId),
@@ -127,6 +177,16 @@ export const TouringService = {
      * Save/Create an itinerary
      */
     saveItinerary: async (itinerary: Omit<Itinerary, 'id'>) => {
+        if (isFirebaseE2EMockEnabled()) {
+            const newItinerary: Itinerary = {
+                ...itinerary,
+                id: `mock-itinerary-${Date.now()}`
+            };
+            mockItineraries = [newItinerary, ...mockItineraries];
+            notifyItineraryListeners();
+            return;
+        }
+
         // Validate input before sending to DB
         const validated = ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary);
 
@@ -140,6 +200,17 @@ export const TouringService = {
      * Update an itinerary
      */
     updateItinerary: async (id: string, updates: Partial<Itinerary>) => {
+        if (isFirebaseE2EMockEnabled()) {
+            mockItineraries = mockItineraries.map(it => {
+                if (it.id === id) {
+                    return { ...it, ...updates };
+                }
+                return it;
+            });
+            notifyItineraryListeners();
+            return;
+        }
+
         const docRef = doc(db, ITINERARIES_COLLECTION, id);
         await updateDoc(docRef, {
             ...updates,
@@ -151,6 +222,21 @@ export const TouringService = {
      * Save/Update Vehicle Stats
      */
     saveVehicleStats: async (userId: string, stats: Partial<VehicleStats>) => {
+        if (isFirebaseE2EMockEnabled()) {
+            mockVehicleStats = {
+                ...(mockVehicleStats || {
+                    userId,
+                    milesDriven: 0,
+                    fuelLevelPercent: 100,
+                    tankSizeGallons: 15,
+                    mpg: 8,
+                    gasPricePerGallon: 3.50
+                }),
+                ...stats
+            };
+            return;
+        }
+
         const q = query(
             collection(db, VEHICLES_COLLECTION),
             where('userId', '==', userId)
@@ -175,6 +261,16 @@ export const TouringService = {
      * Subscribe to emergency contacts for a user.
      */
     subscribeToEmergencyContacts: (userId: string, callback: (contacts: EmergencyContact[]) => void) => {
+        if (isFirebaseE2EMockEnabled()) {
+            emergencyListeners.add(callback);
+            setTimeout(() => {
+                callback([...mockEmergencyContacts]);
+            }, 0);
+            return () => {
+                emergencyListeners.delete(callback);
+            };
+        }
+
         const q = query(
             collection(db, 'tour_emergency_contacts'),
             where('userId', '==', userId)
@@ -208,6 +304,33 @@ export const TouringService = {
      * Save/Create/Update an emergency contact
      */
     saveEmergencyContact: async (userId: string, contact: { id?: string; name: string; phone: string; relationship: string }) => {
+        if (isFirebaseE2EMockEnabled()) {
+            if (contact.id) {
+                mockEmergencyContacts = mockEmergencyContacts.map(c => {
+                    if (c.id === contact.id) {
+                        return {
+                            ...c,
+                            name: contact.name.trim(),
+                            phone: contact.phone.trim(),
+                            relationship: contact.relationship.trim()
+                        };
+                    }
+                    return c;
+                });
+            } else {
+                const newContact: EmergencyContact = {
+                    id: `mock-contact-${Date.now()}`,
+                    userId,
+                    name: contact.name.trim(),
+                    phone: contact.phone.trim(),
+                    relationship: contact.relationship.trim()
+                };
+                mockEmergencyContacts = [...mockEmergencyContacts, newContact];
+            }
+            notifyEmergencyListeners();
+            return;
+        }
+
         const payload = {
             userId,
             name: contact.name.trim(),
@@ -236,16 +359,13 @@ export const TouringService = {
      * Delete an emergency contact
      */
     deleteEmergencyContact: async (id: string) => {
+        if (isFirebaseE2EMockEnabled()) {
+            mockEmergencyContacts = mockEmergencyContacts.filter(c => c.id !== id);
+            notifyEmergencyListeners();
+            return;
+        }
+
         const docRef = doc(db, 'tour_emergency_contacts', id);
         await deleteDoc(docRef);
     }
 };
-
-export const EmergencyContactSchema = z.object({
-    userId: z.string(),
-    name: z.string().min(1),
-    phone: z.string().min(1),
-    relationship: z.string().min(1),
-    createdAt: z.instanceof(Timestamp).optional(),
-    updatedAt: z.instanceof(Timestamp).optional()
-});
