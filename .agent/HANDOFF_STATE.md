@@ -1,24 +1,37 @@
 # Handoff State
-**Updated:** 2026-06-06 20:24 EDT
+**Updated:** 2026-06-07 12:08 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-fd80d7621 chore: add session f2181e9c distributed checkpoint file
-b16fd0944 fix(workflow): implement node edit handler and update ledger status
-f601a98e2 feat(browser): add typeIntoActiveElement to support active element typing in browser automation
-1938e4012 test: streamline programmatic navigation in prompt builder E2E specs
-8abfdfe86 fix(audio): resolve ISSUE-340 and ISSUE-273 by extracting MasteringService and handling frame update events
-b1db1af31 chore: resolve targeted backlog issues 280-350
-4ad937abb chore: session checkpoint [20:00]
-31109542b feat(creative): adapt responsive visibility layout and update header tests
-3eb78db9e feat(creative): fix map closing syntax error in CanvasActionRail
-0d7c50e0e feat(creative): build beautiful side action rails and layouts for the CreativeCanvas
+6553f1132 docs: clean up formatting and resolve markdown lint warnings across OPEN_ISSUES.md and workflows
+b8815b263 feat(creative): integrate location grounding and Whisk references into video pipeline
+046e4d2c0 docs(flowchart): format flowchart to improve mermaid renderer compatibility
+eaa92a62e docs(flowchart): add creative video and image integration macro flowchart
+7b8580217 test: align LensVeoMultimodal expectations with compacted payload fields
+653379630 feat(touring): implement offline E2E mocks for TouringService to support offline testing
+c41381187 test(keeper): resolve window type assertion override in context integrity test
+3bc906340 refactor(better): document handleEdit method in UniversalNode component
+39f6ed639 docs(flowchart): add Project Pinocchio media test rotator flowchart
+774906f93 fix(test): use correct vitest pattern argument instead of invalid --grep
 ```
 
 ## Working State
 ```
-clean working tree
+ M artifacts/boardroom_initial.png
+ M artifacts/boardroom_result.png
+ M deep-test-boardroom-1.png
+ M e2e/analytics.spec.ts
+ M e2e/deep-test.spec.ts
+ M e2e/live_tests_runner.spec.ts
+ M packages/renderer/src/core/components/chat/ChatMessage.tsx
+ M packages/renderer/src/core/components/command-bar/PromptArea.tsx
+ M packages/renderer/src/core/components/sidebar/ProjectList.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
+ M packages/renderer/src/modules/creative/components/whisk/WhiskDropZone.tsx
+ M packages/renderer/src/modules/creative/video/components/VideoDaisychain.interaction.test.tsx
+ M packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx
+ M packages/renderer/src/modules/tools/AudioAnalyzer.tsx
 ```
 
 ## Decisions
