@@ -897,6 +897,16 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FILES: `docs/flowcharts/issue-gauntlet-macro.md`
 - ERROR: `Line 7: Unquoted special characters/labels in node definition ("Start(["/finish Sweep Complete: 27 Issues Found"]) --> Phase1"). Enclose labels in quotes: id["Label Text"]`
 - CAUSE: The flowchart validator regex `/^[a-zA-Z0-9_-]+\s*([\[\(])([^"'].*?)([\]\)])/` expects the first character inside the node shape brackets `[` or `(` to be a double/single quote. When nested Mermaid node shapes are used (such as stadium shapes `([ ... ])` or subgraphs), the bracket is immediately followed by another bracket/parenthesis, which does not match a quote and triggers a false positive "unquoted special characters" failure.
-- FIX: Replaced nested shapes `Start([...])` and `Finish([...])` with standard rectangle brackets `Start["..."]` and `Finish["..."]`. This ensures the first character inside the bracket is the quote character, satisfying the validation regex.
 - PREVENTION: When writing Mermaid flowcharts in `docs/flowcharts/`, avoid using nested shape brackets like `([ ... ])` or `(( ... ))` with quoted labels unless you modify the validation script, as the regex will flag the second opening bracket as an unquoted character. Stick to standard shapes: `id["Label Text"]` or `id("Label Text")`.
+
+## 2026-06-07 Playwright Network Idle Timeouts caused by Firestore Mocks
+
+**SEVERITY:** High (causes random timeout failures across the entire E2E suite)
+
+**MISTAKE:**
+- FILES: `e2e/fixtures/auth.ts`, `e2e/*.spec.ts`
+- ERROR: `Test timeout of 60000ms exceeded` during initial `page.goto` or early assertions, accompanied by `Failed to load resource: net::ERR_FAILED` and `[code=unavailable]` logs.
+- CAUSE: Using `page.goto("/")` without a `waitUntil` state defaults to waiting for the `load` event (network idle). When Firestore offline/mock intercepts block the WebChannel `:listen` long-polling streams, Firestore continuously retries the connection. This prevents the network from ever going idle, hanging Playwright's `goto` command for up to 30 seconds before proceeding, bleeding the test timeout.
+- FIX: Use `await page.goto("/", { waitUntil: "domcontentloaded" })` instead. This unlocks the test execution immediately after HTML parsing, bypassing the hanging Firestore network requests completely.
+- PREVENTION: Never use default `page.goto` (network idle) inside Playwright tests when running offline/mocked Firebase backends, as background SDK retry loops will permanently block navigation. Always explicitly await `domcontentloaded`.
 
