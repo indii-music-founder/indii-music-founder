@@ -334,10 +334,10 @@ export class VideoGenerationService {
             userId,
         });
 
-        // Google Search Grounding Pre-flight: Imagen 3 grounding generation used as firstFrame
+        // Google Search Grounding Pre-flight: Imagen 4 grounding generation used as firstFrame
         let groundingFirstFrame = options.firstFrame;
         if (options.useGrounding && !groundingFirstFrame) {
-            logger.info('[VideoGeneration] 🌍 Google Search Grounding enabled. Running pre-flight Imagen 3 generation...');
+            logger.info('[VideoGeneration] 🌍 Google Search Grounding enabled. Running pre-flight Imagen 4 generation...');
             try {
                 const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
                 const imageResults = await ImageGeneration.generateImages({
@@ -345,7 +345,7 @@ export class VideoGenerationService {
                     count: 1,
                     aspectRatio: options.aspectRatio === '9:16' ? '9:16' : options.aspectRatio === '1:1' ? '1:1' : '16:9',
                     useGoogleSearch: true,
-                    model: 'fast' // Imagen 3 / Flash image gen
+                    model: 'imagen-4.0-generate-001' // Imagen 4 Grounded Image Gen
                 });
                 if (imageResults && imageResults.length > 0) {
                     groundingFirstFrame = imageResults[0].url;
