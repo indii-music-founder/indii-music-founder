@@ -135,10 +135,10 @@ export function registerAgentHandlers() {
 
             for (const chunk of replacementChunks) {
                 const { targetContent, replacementContent } = chunk;
-                const occurences = content.split(targetContent).length - 1;
-                if (occurences === 1) {
+                const occurrences = content.split(targetContent).length - 1;
+                if (occurrences === 1) {
                     content = content.replace(targetContent, replacementContent);
-                } else if (occurences > 1) {
+                } else if (occurrences > 1) {
                     throw new Error(`Target content occurs multiple times, cannot safely replace: ${targetContent.substring(0, 30)}...`);
                 } else {
                      throw new Error(`Target content not found in file: ${targetContent.substring(0, 30)}...`);
