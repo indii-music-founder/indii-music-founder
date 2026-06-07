@@ -2477,7 +2477,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-360: GitHub Release v1.50.0 Missing Electron Updater Manifests
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Desktop Auto-Update / GitHub Releases
 - **Location:** `https://github.com/indii-music-founder/indii-music-founder/releases/download/v1.50.0/latest-mac.yml`
@@ -3447,7 +3447,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-322: Fix BrowserAgentService.ts (Lazy Logic Assumptions)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Low
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:246`
 - **Details:** Found during `/finish` sweep (18:45). Contains sloppy, uncertain agent comments guessing at implementation details rather than finalizing the behavior.
@@ -3456,7 +3456,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-323: Fix FoundationalSkillService.ts (Path Assumption)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/FoundationalSkillService.ts:9`
 - **Details:** Found during `/finish` sweep (18:45). Hardcoded development path and left a lazy assumption comment for production.
@@ -3465,7 +3465,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-324: Fix BrowserAgentService.ts (Swallowed Promise Rejection)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:58`
 - **Details:** Found during `/finish` sweep (18:45). Promise rejection on cleanup lazily swallowed with just a console warn instead of properly resolving or handling the cleanup state.
@@ -3474,7 +3474,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-325: Fix BrowserAgentService.ts (Swallowed JS Execution Error)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/main/src/services/BrowserAgentService.ts:112`
 - **Details:** Found during `/finish` sweep (18:45). JS execution error is swallowed and returns an empty string instead of properly surfacing the extraction failure.
@@ -3492,7 +3492,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-327: Fix UniversalNode.tsx (Empty Edit Handler)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/workflow/components/UniversalNode.tsx:165`
 - **Details:** Found during `/finish` sweep (18:45). Empty edit handler; the edit button for nodes does nothing.
@@ -3501,7 +3501,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-328: Fix PublicistDashboard.tsx (Empty Click Handler)
 
-- **Status:** OPEN
+- **Status:** ✅ WONTFIX — Future tab placeholder, explicitly disabled by design
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/modules/publicist/PublicistDashboard.tsx:129`
 - **Details:** Found during `/finish` sweep (18:45). The Analytics tab is stubbed out with an empty click handler.
@@ -3510,7 +3510,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-329: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:291`
 - **Details:** Found during `/finish` sweep (18:45). Silent failure suppression via .catch(() => { }) on component unmount and cleanup.
@@ -3519,7 +3519,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-330: Fix useRemoteCommandListener.ts (Silent Failure Suppression)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:585`
 - **Details:** Found during `/finish` sweep (18:45). Silent failure suppression via .catch(() => { }) on cleanup interval.
@@ -3528,7 +3528,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-331: Fix main.tsx (Swallowed Web Vitals Lazy Loading Errors)
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** Low
 - **Location:** `packages/renderer/src/main.tsx:100`
 - **Details:** Found during `/finish` sweep (18:45). Swallowing lazy-loading errors for web vitals.
@@ -3537,7 +3537,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-332: Fix AssetSpotlight.tsx (Global Video Autoplay Rejection Suppression)
 
-- **Status:** OPEN
+- **Status:** ✅ WONTFIX — Standard browser autoplay error handling
 - **Severity:** Low
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:135`
 - **Details:** Found during `/finish` sweep (18:45). Global suppression of video autoplay rejections.
@@ -3546,7 +3546,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-333: Fix EditorAssetLibrary.tsx (Global Video Autoplay Rejection Suppression)
 
-- **Status:** OPEN
+- **Status:** ✅ WONTFIX — Standard browser autoplay error handling
 - **Severity:** Low
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx:71`
 - **Details:** Found during `/finish` sweep (18:45). Global suppression of video autoplay rejections.
