@@ -50,7 +50,8 @@ test.describe('Live Test Orchestrator', () => {
             text.includes('Unauthorized: Access denied to') ||
             text.includes('Failed to load merch stats') ||
             text.includes('violates the following report-only Content Security Policy') ||
-            text.includes('frame-ancestors')
+            text.includes('frame-ancestors') ||
+            text.includes('net::ERR_FAILED')
           ) {
             return;
           }

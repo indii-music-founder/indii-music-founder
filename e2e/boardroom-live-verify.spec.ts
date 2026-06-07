@@ -1,12 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
-test('Boardroom Live Visual Verification', async ({ page }) => {
-    // Navigate to live production site
-    console.log('[E2E:Live] Navigating to live production site: https://indii-music-studio.web.app');
-    await page.goto('https://indii-music-studio.web.app', { waitUntil: 'networkidle', timeout: 30000 });
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4242';
+
+test('Boardroom Live Visual Verification', async ({ authedPage: page }) => {
+    // Navigate to local server or configured BASE_URL
+    console.log(`[E2E:Live] Navigating to: ${BASE_URL}`);
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     // Capture Home Page initial state
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779690015541.png' });
+    await page.screenshot({ path: 'artifacts/boardroom_live_home.png' });
     console.log('[E2E:Live] Saved initial home page screenshot.');
 
     // Bypass onboarding modal
@@ -25,6 +27,10 @@ test('Boardroom Live Visual Verification', async ({ page }) => {
         console.log('[E2E:Live] Onboarding dialog not found, proceeding.');
     }
 
+    // Wait for the main app view to be fully loaded and authenticated
+    console.log('[E2E:Live] Waiting for main app view to be loaded...');
+    await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 30000 });
+
     // Inject Boardroom mode state directly
     console.log('[E2E:Live] Injecting Boardroom overlay state...');
     await page.evaluate(() => {
@@ -34,10 +40,13 @@ test('Boardroom Live Visual Verification', async ({ page }) => {
             console.error('Zustand store is not available in window context.');
         }
     });
+
+    // Now wait for the boardroom prompt input to be mounted and visible
+    await page.waitForSelector('[data-testid="main-prompt-input"]', { state: 'visible', timeout: 30000 });
     await page.waitForTimeout(3000);
 
     // Capture initial Boardroom state
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779690176238.png' });
+    await page.screenshot({ path: 'artifacts/boardroom_live_initial.png' });
     console.log('[E2E:Live] Saved initial empty Boardroom state screenshot.');
 
     // Send chat message to bring in the financial department
@@ -68,7 +77,7 @@ test('Boardroom Live Visual Verification', async ({ page }) => {
     console.log('[E2E:Live] Active Boardroom Agents in store after seating:', activeAgents);
 
     // Capture Boardroom after seating the finance agent
-    await page.screenshot({ path: '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/3e1aa88c-2608-40c1-a35b-af5e12444c40/media__1779690559030.png' });
+    await page.screenshot({ path: 'artifacts/boardroom_live_seated.png' });
     console.log('[E2E:Live] Saved final boardroom seating screenshot.');
 
     // Assert that the finance agent was successfully seated

@@ -32,7 +32,7 @@ test.describe('Distribution Module Hardened Suite', () => {
         });
 
         console.log('[E2E] Navigating to /distribution...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 20_000 });
         console.log('[E2E] Dashboard loaded.');
     });

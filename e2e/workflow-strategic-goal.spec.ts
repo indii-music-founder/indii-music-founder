@@ -223,7 +223,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
 
         // Open Boardroom
         console.log('[E2E:Strategic] Navigating and opening Boardroom...');
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => typeof window.useStore?.getState === 'function');
         await page.evaluate(() => {
             window.useStore.getState().setConversationMode('boardroom');

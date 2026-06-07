@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 // Configuration
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
@@ -68,7 +68,7 @@ const mockFirestoreUserDoc = async (route: any) => {
 test.describe('Authentication Flow', () => {
     test.setTimeout(60000);
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Bypass onboarding screen if Firestore marks client offline and defaults to pending profile
         await page.addInitScript(() => {
             window.localStorage.setItem('onboarding_dismissed', 'true');
@@ -109,7 +109,7 @@ test.describe('Authentication Flow', () => {
         });
     });
 
-    test('Login page renders correctly', async ({ page }) => {
+    test('Login page renders correctly', async ({ authedPage: page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
@@ -123,7 +123,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Login page rendered correctly');
     });
 
-    test('Invalid credentials show error', async ({ page }) => {
+    test('Invalid credentials show error', async ({ authedPage: page }) => {
         // Mock the Firebase Identity Toolkit API to return an auth error deterministically.
         // Without this, the test depends on network reachability to the real Firebase backend,
         // which can hang if the API key is fake, restricted, or rate-limited.
@@ -179,7 +179,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Invalid credentials correctly rejected');
     });
 
-    test('Valid credentials authenticate successfully', async ({ page }) => {
+    test('Valid credentials authenticate successfully', async ({ authedPage: page }) => {
         // Mock Firestore to prevent network hangs
         await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
@@ -268,7 +268,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Login successful — dashboard reached');
     });
 
-    test('Logout clears session (mock)', async ({ page }) => {
+    test('Logout clears session (mock)', async ({ authedPage: page }) => {
         // Mock Firestore
         await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
@@ -380,7 +380,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Logout flow completed');
     });
 
-    test('Session persists on page reload (mock)', async ({ page }) => {
+    test('Session persists on page reload (mock)', async ({ authedPage: page }) => {
         // Mock Firestore
         await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
@@ -495,7 +495,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Session persisted after reload (mock auth)');
     });
 
-    test('Protected routes redirect to login when unauthenticated', async ({ page }) => {
+    test('Protected routes redirect to login when unauthenticated', async ({ authedPage: page }) => {
         // Clear any existing session
         await page.goto(BASE_URL);
         await page.evaluate(() => {
@@ -521,7 +521,7 @@ test.describe('Authentication Flow', () => {
 });
 
 test.describe('OAuth Flow', () => {
-    test('Google OAuth button is present', async ({ page }) => {
+    test('Google OAuth button is present', async ({ authedPage: page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 

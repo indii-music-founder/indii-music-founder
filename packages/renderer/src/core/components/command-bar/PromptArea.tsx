@@ -334,6 +334,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
         : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300";
 
+    const roundedClass = isMobile ? "rounded-lg" : "rounded-full";
+
     const modePickerButtonClasses = isBoardroom
         ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
         : conversationMode === 'department'
@@ -451,9 +453,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 }}
                                 className={cn(
                                     "flex items-center justify-center gap-1 transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    roundedClass,
                                     isMobile
-                                        ? "px-2.5 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide"
-                                        : isDocked ? "size-7 rounded-full" : "size-8 rounded-full",
+                                        ? "px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide"
+                                        : isDocked ? "size-7" : "size-8",
                                     kbButtonClasses
                                 )}
                                 aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}

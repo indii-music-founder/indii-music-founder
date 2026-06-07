@@ -11,7 +11,7 @@ import { test, expect } from './fixtures/auth';
 test.describe('Video Producer', () => {
     test.beforeEach(async ({ authedPage: page }) => {
         // Navigate to creative module
-        await page.goto('/creative');
+        await page.goto('/creative', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
 
         // Wait for the Creative module to mount and click Video tab

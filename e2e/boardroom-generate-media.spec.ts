@@ -66,7 +66,16 @@ test('Boardroom Live Visual Media Generation', async ({ authedPage: page }) => {
       }
     );
 
-    await page.goto('/creative', { waitUntil: 'networkidle', timeout: 30000 });
+    // Wait for the app container from the initial page load in the authedPage fixture
+    await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+
+    // Navigate client-side to creative module via Zustand store
+    await page.evaluate(() => {
+        const store = (window as any).useStore;
+        if (store) {
+            store.getState().setModule('creative');
+        }
+    });
 
     const scratchDir = join(process.cwd(), 'scratch');
 

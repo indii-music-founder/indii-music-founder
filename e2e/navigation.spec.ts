@@ -95,7 +95,7 @@ test.describe('Sidebar Navigation', () => {
 
     test('module lazy-loading shows loading state then content', async ({ authedPage: page }) => {
         // Navigate via URL to trigger lazy load
-        await page.goto('/#finance');
+        await page.goto('/#finance', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(3_000);
 
         // App container should be present after load

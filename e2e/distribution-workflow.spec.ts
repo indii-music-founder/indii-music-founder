@@ -22,7 +22,7 @@ test.describe('Distribution Module', () => {
         });
 
         console.log('[DISTRO TEST] Navigating to /distribution...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
 
         console.log('[DISTRO TEST] Waiting for distribution-dashboard...');
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
@@ -167,7 +167,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         });
 
         console.log('[DISTRO TEST] Navigating to /distribution (v2)...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
 
         console.log('[DISTRO TEST] Waiting for distribution-dashboard...');
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
@@ -232,7 +232,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         });
 
         console.log('[DISTRO TEST] Creating release for persistence check...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
         await page.locator('[data-testid="distro-tab-new"]').click();
 
@@ -280,7 +280,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         });
 
         console.log('[DISTRO TEST] Testing DDEX validation...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
 
         // Navigate to Brain tab (QC)
@@ -325,7 +325,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         });
 
         console.log('[DISTRO TEST] Checking delivery status...');
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
 
         // Look for delivery status indicator

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Marketplace Module E2E Tests
@@ -9,13 +9,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Marketplace Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to marketplace module without crash', async ({ page }) => {
+    test('navigates to marketplace module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-marketplace"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -25,7 +25,7 @@ test.describe('Marketplace Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('marketplace module loads without JS errors', async ({ page }) => {
+    test('marketplace module loads without JS errors', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -42,7 +42,7 @@ test.describe('Marketplace Module', () => {
         expect(fatal).toHaveLength(0);
     });
 
-    test('marketplace module renders storefront or product area', async ({ page }) => {
+    test('marketplace module renders storefront or product area', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-marketplace"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -59,7 +59,7 @@ test.describe('Marketplace Module', () => {
         expect(hasMarketContent).toBe(true);
     });
 
-    test('marketplace Add Product button opens modal or form', async ({ page }) => {
+    test('marketplace Add Product button opens modal or form', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-marketplace"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -80,7 +80,7 @@ test.describe('Marketplace Module', () => {
         expect(modalCount).toBeGreaterThanOrEqual(0); // graceful
     });
 
-    test('marketplace shows empty state when no products exist', async ({ page }) => {
+    test('marketplace shows empty state when no products exist', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-marketplace"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

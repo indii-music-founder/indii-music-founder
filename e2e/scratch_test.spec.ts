@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -40,7 +40,7 @@ const mockFirestoreUserDoc = async (route: any) => {
     await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
 };
 
-test('Create Account sign-up flow simulation with logout', async ({ page }) => {
+test('Create Account sign-up flow simulation with logout', async ({ authedPage: page }) => {
     // Capture browser logs for debugging
     page.on('console', msg => console.log(`[BROWSER LOG] [${msg.type()}] ${msg.text()}`));
     page.on('pageerror', err => console.error(`[BROWSER ERROR] ${err.message}`));
@@ -117,7 +117,7 @@ test('Create Account sign-up flow simulation with logout', async ({ page }) => {
 
     // 1. Navigate to Studio Page
     console.log('[PLAYWRIGHT] Navigating to http://localhost:4242...');
-    await page.goto('http://localhost:4242');
+    await page.goto('http://localhost:4242', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for store initialization

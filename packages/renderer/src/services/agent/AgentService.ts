@@ -404,6 +404,7 @@ export class AgentService {
         const conversationMode = state.conversationMode;
         
         context.conversationMode = conversationMode;
+        context.runAgent = this.runAgent.bind(this);
 
         // 0. Dispatch by Mode — MUST be checked FIRST.
         if (conversationMode === 'boardroom') {

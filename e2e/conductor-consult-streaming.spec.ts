@@ -32,8 +32,8 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
             });
         });
 
-        // Firebase Vertex AI model calls.
-        await page.route('**firebasevertexai.googleapis.com/**', async (route) => {
+        // Firebase Vertex AI and Gemini model calls.
+        await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async (route) => {
             const url = route.request().url();
             const postData = route.request().postData() || '';
             const isStream = url.includes('streamGenerateContent');
@@ -76,14 +76,14 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
             }
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.locator('[data-testid="dev-bypass-button"]').click({ timeout: 10_000 }).catch(() => { });
-        await page.waitForTimeout(1500);
+        await page.waitForSelector('[data-testid="main-prompt-input"]', { state: 'visible', timeout: 30_000 });
     });
 
     test('specialist reply renders in the chat', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="agent-input"], textarea, [role="textbox"]').first();
+        const input = page.locator('[data-testid="main-prompt-input"]').first();
         await input.waitFor({ state: 'visible', timeout: 15_000 });
         await input.click({ force: true });
         await input.fill('Help me launch my new album');

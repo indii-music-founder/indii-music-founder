@@ -12,7 +12,7 @@ test.describe('Founders Program Flow', () => {
     });
 
     test('should render the manual payment instructions on founders-checkout', async ({ authedPage: page }) => {
-        await page.goto('/founders-checkout');
+        await page.goto('/founders-checkout', { waitUntil: 'domcontentloaded' });
 
         // Verify the heading is visible
         const checkoutHeading = page.locator('h1:has-text("Back The")');
@@ -29,7 +29,7 @@ test.describe('Founders Program Flow', () => {
 
     test('should show Access Denied in the Founders Portal for non-founders', async ({ authedPage: page }) => {
         // Try navigating to the portal
-        await page.goto('/dashboard');
+        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
@@ -67,7 +67,7 @@ test.describe('Founders Program Flow', () => {
     });
 
     test('should render platform download options for verified founders', async ({ authedPage: page }) => {
-        await page.goto('/dashboard');
+        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);

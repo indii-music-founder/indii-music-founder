@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Workflow Builder Module E2E Tests
@@ -6,13 +6,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Workflow Builder Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to workflow builder without crash', async ({ page }) => {
+    test('navigates to workflow builder without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-workflow"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -22,7 +22,7 @@ test.describe('Workflow Builder Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('workflow builder shows canvas area', async ({ page }) => {
+    test('workflow builder shows canvas area', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-workflow"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

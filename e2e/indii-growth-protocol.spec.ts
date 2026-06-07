@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * indii Growth Protocol E2E Tests
@@ -8,13 +8,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('indii Growth Protocol', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('application loads without fatal JS errors related to growth protocol', async ({ page }) => {
+    test('application loads without fatal JS errors related to growth protocol', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -31,7 +31,7 @@ test.describe('indii Growth Protocol', () => {
         expect(fatal).toHaveLength(0);
     });
 
-    test('Marketing module remains accessible for growth loop orchestration', async ({ page }) => {
+    test('Marketing module remains accessible for growth loop orchestration', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-marketing"]');
         const visible = await nav.isVisible().catch(() => false);
 

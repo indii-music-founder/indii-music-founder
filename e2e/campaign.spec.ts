@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Campaign Module E2E Tests
@@ -8,13 +8,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Campaign Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to campaign module without crash', async ({ page }) => {
+    test('navigates to campaign module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-campaign"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -24,7 +24,7 @@ test.describe('Campaign Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('campaign module loads without fatal JS errors', async ({ page }) => {
+    test('campaign module loads without fatal JS errors', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -41,7 +41,7 @@ test.describe('Campaign Module', () => {
         expect(fatal).toHaveLength(0);
     });
 
-    test('campaign module renders dashboard content', async ({ page }) => {
+    test('campaign module renders dashboard content', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-campaign"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

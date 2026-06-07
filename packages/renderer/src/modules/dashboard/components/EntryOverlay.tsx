@@ -164,6 +164,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask me anything — stats, royalties, or start a new project..."
                                         className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-5 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-hidden focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
+                                        data-testid="main-prompt-input"
                                     />
                                     <button
                                         type="submit"
