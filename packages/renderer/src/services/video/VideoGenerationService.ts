@@ -346,6 +346,30 @@ export class VideoGenerationService {
             firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, `data:${mime};base64,${b64}`, 'image');
         }
 
+        // Upload last frame if present
+        let lastFrameUri;
+        if (options.lastFrame) {
+            lastFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, options.lastFrame, 'image');
+        }
+
+        // Upload reference images if present
+        let referenceUris;
+        if (options.referenceImages && options.referenceImages.length > 0) {
+            referenceUris = await Promise.all(
+                options.referenceImages.map(async (ref) => {
+                    const url = ref.image?.uri || ref.image?.imageBytes;
+                    if (url) {
+                        return CreativeStorageService.uploadReferenceMedia(userId, url, 'image');
+                    }
+                    return '';
+                })
+            );
+            referenceUris = referenceUris.filter(Boolean);
+        }
+
+        const durationSec = options.duration || options.durationSeconds;
+        const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
+
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
@@ -356,10 +380,26 @@ export class VideoGenerationService {
 
         try {
             const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
-            const res = await generateVideoV3({
+            
+            const payload = {
                 prompt: enrichedPrompt,
-                firstFrameUri
-            });
+                firstFrameUri,
+                lastFrameUri,
+                referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
+                aspectRatio: options.aspectRatio,
+                model: options.model,
+                resolution: options.resolution,
+                durationSeconds: clampedDuration,
+                personGeneration: options.personGeneration,
+                negativePrompt: options.negativePrompt,
+                seed: options.seed,
+            };
+
+            const compactedPayload = Object.fromEntries(
+                Object.entries(payload).filter(([, v]) => v !== undefined && v !== null)
+            );
+
+            const res = await generateVideoV3(compactedPayload);
             const data = res.data as { jobId: string };
 
             // We return a placeholder URL; the actual video will be resolved by waitForJob or the UI listener

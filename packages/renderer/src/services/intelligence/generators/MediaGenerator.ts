@@ -31,6 +31,69 @@ const RESOLUTION_MAP: Record<string, string> = {
 };
 
 /**
+ * Resolves an image input (base64 data, URL, or gs:// URI) to the format expected by the Google Gen AI SDK.
+ */
+async function resolveImageInput(
+    input: string | { uri?: string; imageBytes?: string; data?: string; mimeType?: string }
+): Promise<{ gcsUri?: string; imageBytes?: string; mimeType?: string } | undefined> {
+    if (!input) return undefined;
+
+    let value = '';
+    let mimeType = 'image/jpeg';
+
+    if (typeof input === 'string') {
+        value = input;
+    } else {
+        value = input.uri || input.imageBytes || input.data || '';
+        mimeType = input.mimeType || 'image/jpeg';
+    }
+
+    if (!value) return undefined;
+
+    if (value.startsWith('gs://')) {
+        return { gcsUri: value };
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+        try {
+            logger.info(`[MediaGenerator] Fetching client-side image bytes from: ${value}`);
+            const response = await fetch(value);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
+            }
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            const base64Bytes = btoa(
+                new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            return {
+                imageBytes: base64Bytes,
+                mimeType: blob.type || mimeType
+            };
+        } catch (fetchErr: unknown) {
+            logger.error('[MediaGenerator] Error fetching image URL:', fetchErr);
+            throw new AppException(
+                AppErrorCode.INVALID_INPUT,
+                `Failed to retrieve reference image from URL: ${fetchErr instanceof Error ? fetchErr.message : String(fetchErr)}`
+            );
+        }
+    }
+
+    // Strip data URI prefix if present — API expects raw base64
+    let cleanBytes = value;
+    if (cleanBytes.startsWith('data:')) {
+        const parts = cleanBytes.split(',');
+        const match = cleanBytes.match(/data:([^;]+);base64/);
+        if (match?.[1]) {
+            mimeType = match[1];
+        }
+        cleanBytes = parts[1] || cleanBytes;
+    }
+
+    return { imageBytes: cleanBytes, mimeType };
+}
+
+/**
  * Generate a video using the @google/genai SDK (client-side Veo 3.1).
  *
  * This bypasses Cloud Functions entirely by calling models.generateVideos()
@@ -101,24 +164,33 @@ export async function generateVideo(
         videoConfig.enhancePrompt = options.config.enhancePrompt;
     }
     if (options.config?.referenceImages && Array.isArray(options.config.referenceImages) && options.config.referenceImages.length > 0) {
-        videoConfig.referenceImages = options.config.referenceImages;
+        const resolvedRefs = await Promise.all(
+            options.config.referenceImages.map(async (ref) => {
+                if (ref.image) {
+                    const resolvedImg = await resolveImageInput(ref.image);
+                    if (resolvedImg) {
+                        return {
+                            image: resolvedImg,
+                            referenceType: ref.referenceType
+                        };
+                    }
+                }
+                return null;
+            })
+        );
+        videoConfig.referenceImages = resolvedRefs.filter((r): r is NonNullable<typeof r> => r !== null);
     }
     if (options.config?.lastFrame) {
-        videoConfig.lastFrame = options.config.lastFrame;
+        const resolvedLastFrame = await resolveImageInput(options.config.lastFrame);
+        if (resolvedLastFrame) {
+            videoConfig.lastFrame = resolvedLastFrame;
+        }
     }
 
     // Build image input (first frame / image-to-video)
-    let imageInput: { imageBytes: string; mimeType: string } | undefined;
+    let imageInput: { imageBytes?: string; gcsUri?: string; mimeType?: string } | undefined;
     if (options.image) {
-        let imageBytes = options.image.imageBytes || options.image.data;
-        const mimeType = options.image.mimeType || 'image/jpeg';
-        if (imageBytes) {
-            // Strip data URI prefix if present — API expects raw base64
-            if (imageBytes.startsWith('data:')) {
-                imageBytes = imageBytes.split(',')[1] || imageBytes;
-            }
-            imageInput = { imageBytes, mimeType };
-        }
+        imageInput = await resolveImageInput(options.image);
     }
 
     logger.info('[MediaGenerator] Generating video with @google/genai SDK:', {
