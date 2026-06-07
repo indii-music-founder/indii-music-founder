@@ -160,6 +160,10 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 
+    /**
+     * Handles clicking the edit button. Sets this node as the selected node
+     * in the store, which opens/focuses the Node Inspector sidebar.
+     */
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         setSelectedNodeId(id);
