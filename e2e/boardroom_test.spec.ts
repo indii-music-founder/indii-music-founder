@@ -1,6 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './fixtures/auth';
 
-test('Live Test: Boardroom', async ({ page }) => {
+test('Live Test: Boardroom', async ({ authedPage: page }) => {
   // Catch console errors
   page.on('console', msg => {
     if (msg.type() === 'error') {

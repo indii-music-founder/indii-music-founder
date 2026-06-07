@@ -25,3 +25,4 @@ Synchronize the local repository with the remote `main` branch, ensuring all con
 
 - **Rebase Hung:** If a git command hangs for more than 5 minutes, terminate and check `.git/rebase-merge`.
 - **Merge Conflict Loop:** If conflicts reappear, perform a hard reset to the last known good state and re-apply changes in smaller batches.
+- **Orphaned Subagent Worktrees:** Git sync and rebase loops MUST audit for and force-remove any background subagent worktrees (`git worktree list` -> `git worktree remove --force`) and delete stale local subagent branches (`git branch -D`) to keep the user's source control clean.
