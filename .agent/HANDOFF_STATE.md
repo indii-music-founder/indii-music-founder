@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-07 16:29 EDT
+**Updated:** 2026-06-07 16:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1ef6e0ea8 test(agent): Fix mock expectations for context forwarding
+c37215ec4 chore: session checkpoint [16:29]
 3299ec82e chore(e2e): Resolve system-wide Playwright timeouts and consolidate fixes
 71bc7f342 test(e2e): optimize video-producer-ux and video-studio specs to navigate client-side
 1d6e04635 feat(creative): upgrade pre-flight video location grounding model to Imagen 4
@@ -12,8 +14,6 @@ f85902800 test: resolve RouterContext dynamic import hang and fix video/image mo
 27d6cb487 chore: session checkpoint [12:08]
 6553f1132 docs: clean up formatting and resolve markdown lint warnings across OPEN_ISSUES.md and workflows
 b8815b263 feat(creative): integrate location grounding and Whisk references into video pipeline
-046e4d2c0 docs(flowchart): format flowchart to improve mermaid renderer compatibility
-eaa92a62e docs(flowchart): add creative video and image integration macro flowchart
 ```
 
 ## Working State
