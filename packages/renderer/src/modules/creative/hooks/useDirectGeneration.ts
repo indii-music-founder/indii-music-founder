@@ -7,11 +7,13 @@ import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
+import { VideoAspectRatioSchema } from '../video/schemas';
 import { functions, db, auth, storage } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 type CallableGenerationError = {
@@ -335,53 +337,50 @@ export function useDirectGeneration() {
             sequencePrompt = `[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}`;
         }
 
-        let firstFrameUri;
         const ingredientsList = videoInputs?.ingredients || [];
         const firstIngredient = ingredientsList[0];
         const firstCharRef = characterReferences?.[0];
-        if (firstIngredient && firstIngredient.url) {
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, firstIngredient.type as 'image'|'video');
-        } else if (videoInputs?.firstFrame?.url) {
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, videoInputs.firstFrame.url, 'image');
-        } else if (firstCharRef && firstCharRef.image?.url) {
-            firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, firstCharRef.image.url, 'image');
-        }
+        const firstFrame = firstIngredient?.url || videoInputs?.firstFrame?.url || firstCharRef?.image?.url;
+        const lastFrame = videoInputs?.lastFrame?.url;
 
-        let lastFrameUri;
-        if (videoInputs?.lastFrame?.url) {
-            lastFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, videoInputs.lastFrame.url, 'image');
-        }
+        const combinedReferenceImages = [
+            ...(characterReferences || []).map(ref => ({
+                image: { uri: ref.image.url },
+                referenceType: 'asset' as const
+            })),
+            ...(WhiskService.getSourceMedia(whiskState) || []).map(w => ({
+                image: { imageBytes: w.data, mimeType: w.mimeType },
+                referenceType: 'asset' as const
+            }))
+        ].slice(0, 3);
 
-        const referenceUris = characterReferences?.slice(0, 3).length
-            ? await Promise.all(characterReferences.slice(0, 3).map(refItem =>
-                CreativeStorageService.uploadReferenceMedia(userId, refItem.image.url, 'image')
-            ))
-            : undefined;
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
+        const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
+        const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
 
-        const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
-        const res = await generateVideoV3(compactCallablePayload({
+        const results = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
-            firstFrameUri,
-            lastFrameUri,
-            referenceUris,
-            aspectRatio: studioControls.aspectRatio,
+            firstFrame,
+            lastFrame,
+            referenceImages: combinedReferenceImages,
+            aspectRatio: effectiveAspectRatio,
             model: studioControls.model,
             resolution: effectiveResolution,
-            durationSeconds: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
+            duration: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
             personGeneration: studioControls.personGeneration,
             negativePrompt: studioControls.negativePrompt || undefined,
             seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
-            enhancePrompt: true,
-        }));
+            useGrounding: studioControls.useGrounding
+        });
 
-        const data = res.data as { jobId: string };
-        setActiveJobs(prev => [
-            ...prev,
-            { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
-        ]);
-        toast.info('Video job queued. Check gallery for progress.');
-    }, [studioControls, localPrompt, sequence, bpm, videoInputs, characterReferences, toast]);
+        if (results && results.length > 0) {
+            setActiveJobs(prev => [
+                ...prev,
+                { id: results[0]!.id, prompt: localPrompt, status: 'queued' as const, progress: 0 }
+            ]);
+            toast.info('Video job queued. Check gallery for progress.');
+        }
+    }, [studioControls, localPrompt, sequence, bpm, videoInputs, characterReferences, whiskState, toast]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) {
