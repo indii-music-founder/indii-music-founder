@@ -17,7 +17,7 @@ test.describe('Road Manager Module', () => {
 
     test.beforeEach(async ({ authedPage: page }) => {
         // Mock generateItinerary Firebase function
-        await page.route('**/generateItinerary', async route => {
+        await page.route(/.*generateItinerary.*/i, async route => {
             if (route.request().method() === "OPTIONS") {
                 await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
@@ -51,7 +51,7 @@ test.describe('Road Manager Module', () => {
         });
 
         // Mock checkLogistics Firebase function
-        await page.route('**/checkLogistics', async route => {
+        await page.route(/.*checkLogistics.*/i, async route => {
             if (route.request().method() === "OPTIONS") {
                 await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
@@ -71,7 +71,7 @@ test.describe('Road Manager Module', () => {
         });
 
         // Mock findPlaces Firebase function
-        await page.route('**/findPlaces', async route => {
+        await page.route(/.*findPlaces.*/i, async route => {
             if (route.request().method() === "OPTIONS") {
                 await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
@@ -105,14 +105,18 @@ test.describe('Road Manager Module', () => {
             });
         });
 
-        await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+
+        // Dismiss first-run guided tour overlay
+        await page.evaluate(() => {
+            localStorage.setItem("indii_tour_completed_v1", "true");
+            window.dispatchEvent(new CustomEvent('indii:dismiss_tour'));
+        });
 
         const nav = page.locator('[data-testid="nav-item-road"]');
         await nav.waitFor({ state: 'visible', timeout: 15_000 });
         await nav.click();
-        await page.waitForTimeout(2_000);
+        await page.waitForSelector('text=Tour Parameters', { timeout: 15_000 });
     });
 
     test('navigates to road manager module and displays components', async ({ authedPage: page }) => {
@@ -128,19 +132,19 @@ test.describe('Road Manager Module', () => {
         const waypointsInput = page.locator('#newLocation');
         await waypointsInput.fill('Austin, TX');
         await page.getByRole('button', { name: 'Add location' }).click();
-        await expect(page.locator('text=Austin, TX')).toBeVisible({ timeout: 5_000 });
-
+        await expect(page.locator('text=Austin, TX').first()).toBeVisible({ timeout: 5_000 });
+ 
         // Add Houston, TX waypoint
         await waypointsInput.fill('Houston, TX');
         await waypointsInput.press('Enter');
-        await expect(page.locator('text=Houston, TX')).toBeVisible({ timeout: 5_000 });
+        await expect(page.locator('text=Houston, TX').first()).toBeVisible({ timeout: 5_000 });
 
         // Click Initialize Route
         await page.getByRole('button', { name: 'Initialize Route' }).click();
 
         // Expect Generated Itinerary table to load
         await expect(page.locator('text=Generated Itinerary')).toBeVisible({ timeout: 15_000 });
-        await expect(page.locator('text=Austin, TX')).toBeVisible();
+        await expect(page.getByRole('cell', { name: 'Austin, TX' })).toBeVisible();
         await expect(page.locator("text=Antone's Nightclub")).toBeVisible();
 
         // Run Logistics Check
