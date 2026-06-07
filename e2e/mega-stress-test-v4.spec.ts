@@ -1,5 +1,6 @@
 
-import { test as authedTest } from './fixtures/auth';
+import { test, expect } from './fixtures/auth';
+const authedTest = test;
 
 interface TestWindow extends Window {
     useStore: {
