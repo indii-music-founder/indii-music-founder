@@ -33,7 +33,7 @@ graph TD
     
     %% Grounding Path
     GG -->|Enabled| LI
-    LI -->|1. Call Imagen 3 with Search Grounding| IM["Grounded Location Image"]
+    LI -->|1. Call Imagen 4 with Search Grounding| IM["Grounded Location Image"]
     IM -->|2. Upload to GCS| CS
     
     %% Video Service Routing
