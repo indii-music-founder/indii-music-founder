@@ -2455,6 +2455,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-214: Reconcile Multi-Agent Dirty Worktree Before CI/Merge
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Verified git status is clean and all files from parallel agent tasks have been reconciled and committed successfully.
 - **Severity:** 🟡 MEDIUM
@@ -2775,6 +2776,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-250: Audio mega-test direct Playwright runtime is blocked by sandbox browser permissions
+
 - **Status:** ✅ WONTFIX — Sandbox Limitation
 - **Fix:** E2E browser permissions and MachPortRendezvousServer sandbox limits are set by OS/browser sandboxing configuration and cannot be bypassed via code.
 - **Severity:** 🟡 MEDIUM
@@ -2799,6 +2801,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-251: Fix dynamicImport.ts (Hanging promise)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Already resolved. Replaced hanging Promise constructor with reject promise upon chunk fetch reload failure.
 - **Severity:** Medium
@@ -2808,6 +2811,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-252: Fix AgentCanvasPanel.tsx (Lazy unverified cast)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Defined HtmlPayload interface in AgentCanvas types and replaced unverified any-cast in AgentCanvasPanel with strict HtmlPayload typecasting.
 - **Severity:** Medium
@@ -2817,6 +2821,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-253: Fix ChatMessage.tsx (Repeated inline casting)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Cleaned up inline typescript casting blocks in chat components.
 - **Severity:** Medium
@@ -2826,6 +2831,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-254: Fix ArtifactsPanel.tsx (Lazy IPC interface declaration)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Removed unverified any typecasts from window.electronAPI.agent calls by relying on typed ElectronAPI interface.
 - **Severity:** Medium
@@ -2835,6 +2841,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-255: Fix FileTreeNode.tsx & ResourceTree.tsx (Bypassing React key constraints)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Replaced key-object spreading hacks with direct key prop passing on FileTreeNode elements in mapped renders.
 - **Severity:** Medium
@@ -2844,6 +2851,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-256: Fix VoiceContext.tsx (Lazy global window extending)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Declared SpeechRecognition constructors inside local Window extension block to remove any-casts.
 - **Severity:** Medium
@@ -2853,6 +2861,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-257: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Upgraded submitToDistributor to check user credentials in Firestore before throwing, simulating success for configured distributors.
 - **Severity:** Medium
@@ -2862,6 +2871,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-258: Fix inngest.ts (sendEmail lacks type definitions)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Already resolved. Added explicit parameter and return type annotations to sendEmail in inngest.ts.
 - **Severity:** Medium
@@ -2871,6 +2881,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-259: Fix taxForms.ts (requestTaxForms is a placeholder)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Fully typed parameters of requestTaxForms and removed eslint-disable bypass.
 - **Severity:** Medium
@@ -2890,6 +2901,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-261: Fix pinata.ts (web3:pinata-upload is a placeholder handler)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Already resolved. Wired pinata-upload IPC handler to PinataService.
 - **Severity:** Medium
@@ -2899,6 +2911,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-262: Fix web3.ts (web3:execute-transaction is a placeholder handler)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Implemented a transactional mock executor simulation handler returning transaction hashes and details.
 - **Severity:** Medium
@@ -2908,6 +2921,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-263: Fix security.ts (Incomplete implementation for credential rotation)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Added cryptographically secure random fallback key rotation generation for unsupported services.
 - **Severity:** Medium
@@ -2917,6 +2931,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-264: Fix PinataService.ts (Bailout code prevents full functionality)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Added environment-based test checks to allow Pinata upload simulation in vitest runs without blocking.
 - **Severity:** Medium
@@ -3022,6 +3037,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ---
 
 ### ISSUE-275: Fix ChatMessage.tsx (Swallowed Error Blocks)
+
 - **Status:** ✅ FIXED (2026-06-06)
 - **Fix:** Replaced empty JSON parse catch blocks with debug logger outputs.
 - **Severity:** Medium
@@ -3792,3 +3808,29 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Video Editor / AudioWaveform
 - **Fix:** Removed the `Promise.resolve().then(...)` async micro-task patterns and refactored `AudioWaveform` so source resets are derived from `{ src, data }` state while waveform samples are derived with `useMemo`. The component no longer schedules extra micro-task state updates, and it also avoids synchronous state setters inside effect bodies so React hook lint stays clean.
+
+---
+
+### ISSUE-360: System-Wide E2E Suite Failures (21 tests)
+
+- **Status:** 🔴 OPEN
+- **Severity:** HIGH
+- **Module:** System-Wide E2E
+- **Found:** 2026-06-07 by System-Wide Suite
+- **Summary:** The full system-wide E2E test suite (`npm run test:e2e`) was executed and finished with 170 passed, 83 skipped, and 21 failed tests. The logs indicate repetitive failures around Firestore connection timeouts (`code=unavailable`) and Firebase permission errors, as well as several strict mode locator failures across disparate modules.
+- **Failing Specs:**
+  - `e2e/auth-flow.spec.ts`
+  - `e2e/boardroom_test.spec.ts`
+  - `e2e/boardroom-live-verify.spec.ts`
+  - `e2e/conductor-consult-streaming.spec.ts`
+  - `e2e/creative-prompt-builder.spec.ts`
+  - `e2e/deep-test.spec.ts`
+  - `e2e/detroit-techno-onboarding.spec.ts`
+  - `e2e/indii-macro-flywheel.spec.ts`
+  - `e2e/legal.spec.ts`
+  - `e2e/licensing.spec.ts`
+  - `e2e/live_tests_runner.spec.ts`
+  - `e2e/live-agent-daisy-chain.spec.ts`
+  - `e2e/mega-stress-test-v4.spec.ts`
+  - `e2e/mobile-remote.spec.ts`
+- **Next Steps:** Use the `//issue` workflow so the Fix Agent can triage and resolve these failures.
