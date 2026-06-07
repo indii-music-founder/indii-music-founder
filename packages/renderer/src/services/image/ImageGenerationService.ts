@@ -43,8 +43,8 @@ export interface ImageGenerationOptions {
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
 
-    // Nano Banana Model Tier
-    model?: NanoBananaTier;
+    // Gemini 3 advanced parameters
+    model?: NanoBananaTier | 'imagen-4.0-ultra-generate-001' | 'imagen-4.0-generate-001' | 'imagen-4.0-fast-generate-001' | string;
 
     // --- Gemini 3 Advanced Configuration ---
 
