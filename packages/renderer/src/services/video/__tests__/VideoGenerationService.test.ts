@@ -360,7 +360,7 @@ describe('VideoGenerationService', () => {
     });
 
     describe('Google Grounding Pre-flight & Long Form References', () => {
-        it('should trigger pre-flight Imagen 3 generation when useGrounding is true and firstFrame is empty', async () => {
+        it('should trigger pre-flight Imagen 4 generation when useGrounding is true and firstFrame is empty', async () => {
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
             const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
 
@@ -374,7 +374,7 @@ describe('VideoGenerationService', () => {
                 count: 1,
                 aspectRatio: '16:9',
                 useGoogleSearch: true,
-                model: 'fast'
+                model: 'imagen-4.0-generate-001'
             });
 
             // Ensure the generated image was uploaded

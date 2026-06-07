@@ -53,13 +53,14 @@ vi.mock('firebase/storage', () => ({
 vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
         synthesizeWhiskPrompt: vi.fn((p) => p),
-        synthesizeVideoPrompt: vi.fn((p) => p)
+        synthesizeVideoPrompt: vi.fn((p) => p),
+        getSourceMedia: vi.fn(() => [])
     }
 }));
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: vi.fn(),
+        generateVideo: vi.fn().mockResolvedValue([{ id: 'mock-job-id', url: '', prompt: 'A cinematic drone shot' }]),
         subscribeToJob: vi.fn((jobId, callback) => {
             setTimeout(() => {
                 callback({
@@ -94,7 +95,13 @@ const useMockStore = create<any>((set) => ({
     generationMode: 'image',
     setGenerationMode: (val: string) => set({ generationMode: val }),
     isPromptBuilderOpen: false,
-    togglePromptBuilder: () => set((state: any) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen }))
+    togglePromptBuilder: () => set((state: any) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
+    characterReferences: [],
+    addCharacterReference: vi.fn(),
+    removeCharacterReference: vi.fn(),
+    updateCharacterReference: vi.fn(),
+    addUploadedImage: vi.fn(),
+    generatedHistory: []
 }));
 
 // Use a simplified store mock
@@ -122,7 +129,9 @@ describe('DirectGenerationTab', () => {
             whiskState: {},
             videoInputs: { ingredients: [] },
             generationMode: 'image',
-            isPromptBuilderOpen: false
+            isPromptBuilderOpen: false,
+            characterReferences: [],
+            generatedHistory: []
         });
     });
 
@@ -189,15 +198,14 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        expect(mockHttpsCallable).toHaveBeenCalled();
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+        expect(VideoGeneration.generateVideo).toHaveBeenCalled();
+        expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: 'A cinematic drone shot',
             aspectRatio: '16:9',
             model: 'fast',
             resolution: '1080p',
-            durationSeconds: 6,
+            duration: 6,
             personGeneration: 'allow_adult',
-            enhancePrompt: true,
         }));
 
         // Fast-forward all pending timers including the 10ms subscription callback
