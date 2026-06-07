@@ -1,4 +1,4 @@
-import { test as base, Page } from "@playwright/test";
+import { test as base, Page, Route, Request } from "@playwright/test";
 
 /**
  * Auth fixture — bypasses Firebase auth for E2E tests using state injection.
@@ -52,10 +52,12 @@ export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
     // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
     const originalRoute = page.route.bind(page);
-    (page as any).route = (url: any, handler: any, options: any) => {
-      return originalRoute(url, async (route: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (page as any).route = (url: string | RegExp | ((url: URL) => boolean), handler: (route: Route, request: Request) => void, options?: { times?: number }) => {
+      return originalRoute(url, async (route: Route) => {
         const req = route.request();
         const originalFulfill = route.fulfill.bind(route);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         route.fulfill = async (fulfillOptions: any) => {
           const reqHeaders = req.headers();
           const reqOrigin = reqHeaders['origin'] || reqHeaders['Origin'] || 'https://indii-music-studio.web.app';
@@ -142,7 +144,7 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
-    const handleCloudFunction = async (route: any) => {
+    const handleCloudFunction = async (route: Route) => {
       const url = route.request().url();
       console.log(
         `[E2E] CATCH-ALL intercepted (cloudfunctions): ${route.request().method()} ${url}`,
@@ -886,10 +888,8 @@ export const test = base.extend<AuthFixtures>({
     const emailInput = page.locator('input[type="email"]').first();
     
     try {
-      await Promise.race([
-        dashboardBtn.waitFor({ state: 'visible', timeout: 10000 }),
-        emailInput.waitFor({ state: 'visible', timeout: 10000 })
-      ]);
+      // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
+      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 10000 });
     } catch (e) {
       console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 10s.");
     }
