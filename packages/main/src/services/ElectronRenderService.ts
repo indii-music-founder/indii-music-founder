@@ -20,7 +20,7 @@ export const electronRenderService = {
                     fps: 30,
                     durationInFrames: 300,
                     defaultProps: {},
-                } as any,
+                } as unknown as RenderMediaParams['composition'],
                 serveUrl,
                 codec: 'h264',
                 outputLocation: config.outputLocation,

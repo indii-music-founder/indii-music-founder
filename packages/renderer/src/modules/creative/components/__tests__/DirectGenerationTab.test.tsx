@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DirectGenerationTab from '../DirectGenerationTab';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 

@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
-import { useReleases } from './hooks/useReleases';
 import { useStore } from '@/core/store';
 
 // Mock dependencies - Global
@@ -34,8 +33,7 @@ const mockStore = {
     setModule: mockSetModule
 };
 
-import { useReleaseList } from './hooks/useReleaseList';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 
 // Mock the store implementation directly here to ensure consistent behavior
 vi.mock('@/core/store', () => ({
