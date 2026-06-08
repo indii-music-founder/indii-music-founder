@@ -1,5 +1,5 @@
 
-import { test as authedTest } from './fixtures/auth';
+import { test, expect } from './fixtures/auth';
 
 interface TestWindow extends Window {
     useStore: {
@@ -101,7 +101,7 @@ test.describe('Mega Stress Test v10.0 (API and Security Hardening Regression)', 
         });
     });
 
-    authedTest('Routine 5. API Key Fallback Verification (ISSUE-090 / ISSUE-095)', async ({ authedPage: page }) => {
+    test('Routine 5. API Key Fallback Verification (ISSUE-090 / ISSUE-095)', async ({ authedPage: page }) => {
         // Go to home and verify no cost control ledger crash unblocked loading
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
@@ -112,7 +112,7 @@ test.describe('Mega Stress Test v10.0 (API and Security Hardening Regression)', 
         expect(content).not.toContain('Cost control ledger unavailable');
     });
 
-    authedTest('Routine 7. Campaign Image Storage (ISSUE-091 / ISSUE-097)', async ({ authedPage: page }) => {
+    test('Routine 7. Campaign Image Storage (ISSUE-091 / ISSUE-097)', async ({ authedPage: page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
@@ -127,7 +127,7 @@ test.describe('Mega Stress Test v10.0 (API and Security Hardening Regression)', 
         await expect(marketingHeader).toBeVisible({ timeout: 45000 });
     });
 
-    authedTest('Routine 8. OmniWorkflow Graceful Degradation (ISSUE-092 / ISSUE-098)', async ({ authedPage: page }) => {
+    test('Routine 8. OmniWorkflow Graceful Degradation (ISSUE-092 / ISSUE-098)', async ({ authedPage: page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
@@ -142,7 +142,7 @@ test.describe('Mega Stress Test v10.0 (API and Security Hardening Regression)', 
         await expect(workflowHeader).toBeVisible({ timeout: 45000 });
     });
 
-    authedTest('Routine 9. Firestore Rules Compilation (ISSUE-094 / ISSUE-099)', async ({ authedPage: page }) => {
+    test('Routine 9. Firestore Rules Compilation (ISSUE-094 / ISSUE-099)', async ({ authedPage: page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(2000);
