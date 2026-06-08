@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-07 17:03 EDT
+**Updated:** 2026-06-08 09:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f9ecaef64 test: skip real LLM execution in AgentExecutor integration test on CI
+4738fbc39 fix: correct typo from occurences to occurrences in agent handler and dictionary
+355c6deb2 chore: add final session checkpoint for ca4be31e
+77738b74c chore: session checkpoint [17:03]
 9d3b17a97 chore: session checkpoint [17:02]
 af8dccd20 chore(agent): commit remaining workspace updates
 4960dfa3a chore: session checkpoint [16:41]
 c8f079dd9 refactor(better): Elevate E2E auth fixture with Playwright locator.or() and strict typing
 cc41c373d docs(agent): Update error ledger and agent checkpoints
 c00ce7bac chore: session checkpoint [16:30]
-1ef6e0ea8 test(agent): Fix mock expectations for context forwarding
-c37215ec4 chore: session checkpoint [16:29]
-3299ec82e chore(e2e): Resolve system-wide Playwright timeouts and consolidate fixes
-71bc7f342 test(e2e): optimize video-producer-ux and video-studio specs to navigate client-side
 ```
 
 ## Working State
 ```
-?? .agent/checkpoints/antigravity-session-ca4be31e-final.md
+clean working tree
 ```
 
 ## Decisions
