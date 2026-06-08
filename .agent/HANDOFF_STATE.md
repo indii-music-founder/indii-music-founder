@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-08 12:19 EDT
+**Updated:** 2026-06-08 12:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a04853785 test: add FoundersPortal component unit tests
+8025c6fce chore: session checkpoint [12:19]
 033880f69 chore: session checkpoint [11:54]
 f4a0c93e2 fix(firebase): correctly re-throw HttpsError in generateReleaseDownloadUrl and add unit tests
 0756ec66c fix(lint): resolve unused imports, any casts, and unused eslint directives to fix CI build
@@ -12,13 +14,11 @@ b3fefb628 chore: session checkpoint [11:20]
 c13828f0b fix(e2e): resolve ReferenceError for test in mega stress tests and clean up imports
 1c079834d chore: session checkpoint [09:06]
 f9ecaef64 test: skip real LLM execution in AgentExecutor integration test on CI
-4738fbc39 fix: correct typo from occurences to occurrences in agent handler and dictionary
-355c6deb2 chore: add final session checkpoint for ca4be31e
 ```
 
 ## Working State
 ```
-?? packages/renderer/src/modules/founders/FoundersPortal.test.tsx
+clean working tree
 ```
 
 ## Decisions
