@@ -121,17 +121,20 @@ export class DigitalHandshake {
         return true; // Approved to proceed
     }
 
-    private static pruneUndefined(obj: any): any {
+    private static pruneUndefined<T>(obj: T): T {
         if (obj === null || typeof obj !== 'object' || (typeof Timestamp === 'function' && obj instanceof Timestamp)) return obj;
-        if (Array.isArray(obj)) return obj.map(item => this.pruneUndefined(item));
+        if (Array.isArray(obj)) {
+            return (obj as unknown as unknown[]).map(item => this.pruneUndefined(item)) as unknown as T;
+        }
 
-        const pruned: any = {};
-        Object.keys(obj).forEach(key => {
-            if (obj[key] !== undefined) {
-                pruned[key] = this.pruneUndefined(obj[key]);
+        const pruned: Record<string, unknown> = {};
+        const record = obj as Record<string, unknown>;
+        Object.keys(record).forEach(key => {
+            if (record[key] !== undefined) {
+                pruned[key] = this.pruneUndefined(record[key]);
             }
         });
-        return pruned;
+        return pruned as unknown as T;
     }
 
     public static async logAuditTrail(
