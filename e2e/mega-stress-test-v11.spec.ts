@@ -1,5 +1,5 @@
 
-import { test as authedTest } from './fixtures/auth';
+import { test, expect } from './fixtures/auth';
 
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 
@@ -11,14 +11,14 @@ test.describe('Mega Stress Test v11.0 (End-to-End Generative & Architectural Gau
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
     });
 
-    authedTest('Routine 111: Creative Studio -> Merch Studio Pipeline', async ({ authedPage: page }) => {
+    test('Routine 111: Creative Studio -> Merch Studio Pipeline', async ({ authedPage: page }) => {
         await page.goto(BASE_URL + '/creative');
         // We will just verify it loads for now as a mock
         await expect(page).toHaveURL(/.*creative/);
         // ... more steps could be added here
     });
 
-    authedTest('Routine 120: Exhaustive Interface Check', async ({ authedPage: page }) => {
+    test('Routine 120: Exhaustive Interface Check', async ({ authedPage: page }) => {
         const routes = [
             '/',
             '/creative',

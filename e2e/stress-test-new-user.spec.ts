@@ -1,5 +1,4 @@
 import { test, expect } from './fixtures/auth';
-import { test as authedTest } from './fixtures/auth';
 // Typed window interface for Zustand store access in E2E tests
 interface TestWindow extends Window {
     useStore: {
@@ -32,8 +31,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.waitForLoadState('domcontentloaded');
     });
 
-    authedTest('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
-        authedTest.setTimeout(120000); // 120 seconds timeout due to AI loading
+    test('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
+        test.setTimeout(120000); // 120 seconds timeout due to AI loading
         // Enable console log proxying
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
@@ -182,7 +181,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Scenario 1 complete — Onboarding → Dashboard → Creative Director flow verified.');
     });
 
-    authedTest('Scenario 2: Chaos Check (Rapid Navigation)', async ({ authedPage: page }) => {
+    test('Scenario 2: Chaos Check (Rapid Navigation)', async ({ authedPage: page }) => {
         // A. Setup: State already injected via authedPage fixture
         // Wait briefly for state completion
         await page.waitForTimeout(1000);
@@ -217,7 +216,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         }
     });
 
-    authedTest('Scenario 3: Membership Limits Gauntlet', async ({ authedPage: page }) => {
+    test('Scenario 3: Membership Limits Gauntlet', async ({ authedPage: page }) => {
         // State injected by authedPage
         await page.waitForTimeout(1000);
 
@@ -320,7 +319,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Membership Limits Gauntlet completed successfully.');
     });
 
-    authedTest('Scenario 4: Tier Transition Stress Test', async ({ authedPage: page }) => {
+    test('Scenario 4: Tier Transition Stress Test', async ({ authedPage: page }) => {
         // State injected by authedPage fixture
         await page.waitForTimeout(1000);
 
