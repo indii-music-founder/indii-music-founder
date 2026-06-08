@@ -44,6 +44,12 @@ describe('AgentExecutor (Integration)', () => {
     });
 
     it('should execute a basic prompt through the generalist agent if credentials exist', async () => {
+        // Skip in CI environment to avoid flaky external network timeouts and API rate limits
+        if (process.env.CI || process.env.GITHUB_ACTIONS) {
+            console.warn('Skipping AgentExecutor real execution test in CI environment.');
+            return;
+        }
+
         // Skip if no API key is provided, as real execution requires it.
         if (!process.env.VITE_API_KEY && !process.env.GEMINI_API_KEY) {
             console.warn('Skipping AgentExecutor real execution test: No API keys found.');
