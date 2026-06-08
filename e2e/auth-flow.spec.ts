@@ -68,7 +68,7 @@ const mockFirestoreUserDoc = async (route: any) => {
 test.describe('Authentication Flow', () => {
     test.setTimeout(60000);
 
-    test.beforeEach(async ({ authedPage: page }) => {
+    test.beforeEach(async ({ page }) => {
         // Bypass onboarding screen if Firestore marks client offline and defaults to pending profile
         await page.addInitScript(() => {
             window.localStorage.setItem('onboarding_dismissed', 'true');
@@ -109,7 +109,7 @@ test.describe('Authentication Flow', () => {
         });
     });
 
-    test('Login page renders correctly', async ({ authedPage: page }) => {
+    test('Login page renders correctly', async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
@@ -123,7 +123,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Login page rendered correctly');
     });
 
-    test('Invalid credentials show error', async ({ authedPage: page }) => {
+    test('Invalid credentials show error', async ({ page }) => {
         // Mock the Firebase Identity Toolkit API to return an auth error deterministically.
         // Without this, the test depends on network reachability to the real Firebase backend,
         // which can hang if the API key is fake, restricted, or rate-limited.
@@ -179,7 +179,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Invalid credentials correctly rejected');
     });
 
-    test('Valid credentials authenticate successfully', async ({ authedPage: page }) => {
+    test('Valid credentials authenticate successfully', async ({ page }) => {
         // Mock Firestore to prevent network hangs
         await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
@@ -495,7 +495,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Session persisted after reload (mock auth)');
     });
 
-    test('Protected routes redirect to login when unauthenticated', async ({ authedPage: page }) => {
+    test('Protected routes redirect to login when unauthenticated', async ({ page }) => {
         // Clear any existing session
         await page.goto(BASE_URL);
         await page.evaluate(() => {
@@ -521,7 +521,7 @@ test.describe('Authentication Flow', () => {
 });
 
 test.describe('OAuth Flow', () => {
-    test('Google OAuth button is present', async ({ authedPage: page }) => {
+    test('Google OAuth button is present', async ({ page }) => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
