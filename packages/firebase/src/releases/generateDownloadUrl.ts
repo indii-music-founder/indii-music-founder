@@ -67,6 +67,9 @@ export const generateReleaseDownloadUrl = functions
 
             return { success: true, url };
         } catch (error) {
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
             console.error("[ReleaseDownload] Error generating signed URL:", error);
             throw new functions.https.HttpsError(
                 "internal",
