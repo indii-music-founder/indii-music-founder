@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-08 09:06 EDT
+**Updated:** 2026-06-08 11:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+169be6657 fix(e2e): restore standard page fixture for unauthenticated auth-flow tests
+c13828f0b fix(e2e): resolve ReferenceError for test in mega stress tests and clean up imports
+1c079834d chore: session checkpoint [09:06]
 f9ecaef64 test: skip real LLM execution in AgentExecutor integration test on CI
 4738fbc39 fix: correct typo from occurences to occurrences in agent handler and dictionary
 355c6deb2 chore: add final session checkpoint for ca4be31e
@@ -11,9 +14,6 @@ f9ecaef64 test: skip real LLM execution in AgentExecutor integration test on CI
 9d3b17a97 chore: session checkpoint [17:02]
 af8dccd20 chore(agent): commit remaining workspace updates
 4960dfa3a chore: session checkpoint [16:41]
-c8f079dd9 refactor(better): Elevate E2E auth fixture with Playwright locator.or() and strict typing
-cc41c373d docs(agent): Update error ledger and agent checkpoints
-c00ce7bac chore: session checkpoint [16:30]
 ```
 
 ## Working State
