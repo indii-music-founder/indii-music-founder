@@ -46,6 +46,15 @@ export class CampaignFSM {
             if (newState === 'FAILED') updates.retries = context.retries + 1;
         }
 
+            const doc = await db.collection('campaign_fsm').doc(this.releaseId).get();
+            if (!doc.exists) {
+                // If it doesn't exist, we must initialize the full default state so merge:true doesn't leave orphaned properties
+                Object.assign(updates, {
+                    releaseId: this.releaseId,
+                    retries: 0
+                });
+            }
+
         await db.collection('campaign_fsm').doc(this.releaseId).set(updates, { merge: true });
         console.log(`Campaign ${this.releaseId} transitioned to ${newState}`);
     }

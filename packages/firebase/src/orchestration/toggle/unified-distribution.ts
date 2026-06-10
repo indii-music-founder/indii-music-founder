@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { compileDDEXRelease } from '../../publishing/ddex-generator';
 import { CampaignFSM } from '../fsm/machine';
+import { withCircuitBreaker } from '../circuit-breaker';
 
 /**
  * Unified Distribution Toggle Wrapper
@@ -24,10 +25,10 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
         console.log(`Executing concurrent distribution for ${releaseId}...`);
         
         const distributionTasks = [
-            dispatchToSpotify(ddexPayload),
-            dispatchToAppleMusic(ddexPayload),
-            dispatchToTidal(ddexPayload),
-            dispatchToPerformanceRightsOrganizations(releaseId)
+            withCircuitBreaker('SpotifyDispatch', () => dispatchToSpotify(ddexPayload)),
+            withCircuitBreaker('AppleMusicDispatch', () => dispatchToAppleMusic(ddexPayload)),
+            withCircuitBreaker('TidalDispatch', () => dispatchToTidal(ddexPayload)),
+            withCircuitBreaker('PRODispatch', () => dispatchToPerformanceRightsOrganizations(releaseId))
         ];
 
         const results = await Promise.allSettled(distributionTasks);

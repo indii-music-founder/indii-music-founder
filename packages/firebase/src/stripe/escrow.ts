@@ -13,7 +13,12 @@ export const handleEscrowWebhook = onRequest(async (request, response) => {
     const webhookPayload = request.rawBody.toString('utf8');
     
     // In production, fetch this securely from Google Cloud Secret Manager
-    const secret = process.env.ESCROW_WEBHOOK_SECRET || 'fallback-secret-do-not-use-in-prod';
+    const secret = process.env.ESCROW_WEBHOOK_SECRET;
+    if (!secret) {
+        console.error("CRITICAL: ESCROW_WEBHOOK_SECRET is unset. Aborting to prevent forgery.");
+        response.status(500).send("Internal Server Error: Misconfigured Environment");
+        return;
+    }
 
     try {
         const expectedSig = crypto.createHmac('sha256', secret).update(webhookPayload).digest('hex');
@@ -23,7 +28,14 @@ export const handleEscrowWebhook = onRequest(async (request, response) => {
             return;
         }
 
-        const data = JSON.parse(webhookPayload);
+        let data;
+        try {
+            data = JSON.parse(webhookPayload);
+        } catch (e) {
+            response.status(400).send("Bad Request: Invalid JSON");
+            return;
+        }
+        
         const transactionId = data.transaction_id;
 
         if (!transactionId) {
