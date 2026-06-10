@@ -80,21 +80,8 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                 </div>
             </div>
 
-            {/* DDEX / DSP Delivery Mini Badges */}
+            {/* DDEX / DSP Delivery Mini Badges (Removed - waiting for real backend integration) */}
             <div className="hidden lg:flex items-center gap-2 mr-Auto">
-                {/* Mocking DSP indicators based on typical DDEX scenarios */}
-                <div className="flex -space-x-1.5 overflow-hidden">
-                    <div className="w-6 h-6 rounded-full bg-emerald-500/10 border border-white/5 flex items-center justify-center">
-                        <span className="text-[8px] text-emerald-400 font-bold uppercase italic">S</span>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-white/5 flex items-center justify-center">
-                        <span className="text-[8px] text-blue-400 font-bold uppercase italic">A</span>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-red-500/10 border border-white/5 flex items-center justify-center">
-                        <span className="text-[8px] text-red-400 font-bold uppercase italic">Y</span>
-                    </div>
-                </div>
-                <div className="h-4 w-px bg-gray-800/50 mx-1" />
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-400 uppercase tracking-widest font-bold bg-gray-900/50 px-2 py-0.5 rounded border border-gray-800">
                     <Globe size={10} /> {release.metadata.genre || 'GENRE'}
                 </div>

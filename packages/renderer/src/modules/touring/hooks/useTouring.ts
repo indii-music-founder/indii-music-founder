@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
-import { VehicleStats, Itinerary, ItineraryStop, EmergencyContact } from '../types';
+import { Itinerary, ItineraryStop, EmergencyContact } from '../types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -10,7 +9,6 @@ import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const useTouring = () => {
     const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
-    const [vehicleStats, setVehicleStats] = useState<VehicleStats | null>(null);
     const [itineraries, setItineraries] = useState<Itinerary[]>([]);
     const [currentItinerary, setCurrentItinerary] = useState<Itinerary | null>(null);
     const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
@@ -38,30 +36,7 @@ export const useTouring = () => {
         // Guard: skip Firestore listeners if no authenticated user or pending profile
         if (!userProfile?.id || userProfile.id === 'pending') return;
 
-        const defaultStats: VehicleStats = {
-            userId: userProfile.id,
-            milesDriven: 0,
-            fuelLevelPercent: 100,
-            tankSizeGallons: 150,
-            mpg: 8,
-            gasPricePerGallon: 4.50
-        };
 
-        // Fetch vehicle stats
-        TouringService.getVehicleStats(userProfile.id).then(stats => {
-            if (!isMountedRef.current) return;
-            if (stats) {
-                setVehicleStats(stats);
-            } else {
-                // Use default local state if no data exists
-                setVehicleStats(defaultStats);
-            }
-        }).catch(error => {
-            if (!isMountedRef.current) return;
-            logger.error('Failed to fetch vehicle stats:', error);
-            // Fallback to default state on error to keep UI functional
-            setVehicleStats(defaultStats);
-        });
 
         // Subscribe to itineraries — mounted guard prevents post-unmount state updates
         const unsubscribe = TouringService.subscribeToItineraries(userProfile.id, (data) => {
@@ -122,17 +97,6 @@ export const useTouring = () => {
         }
     };
 
-    const saveVehicleStats = async (stats: VehicleStats) => {
-        if (!userProfile?.id) return;
-        setVehicleStats(stats); // Optimistic update
-        try {
-            await TouringService.saveVehicleStats(userProfile.id, stats);
-            toast.success("Vehicle stats updated");
-        } catch (error: unknown) {
-            logger.error("Failed to save vehicle stats", error);
-            toast.error("Failed to save vehicle stats");
-        }
-    };
 
     const saveEmergencyContact = async (contact: { id?: string; name: string; phone: string; relationship: string }) => {
         if (!userProfile?.id) return;
@@ -156,7 +120,6 @@ export const useTouring = () => {
     };
 
     return {
-        vehicleStats,
         itineraries,
         currentItinerary,
         setCurrentItinerary,
@@ -164,7 +127,6 @@ export const useTouring = () => {
         loading,
         updateItineraryStop,
         saveItinerary,
-        saveVehicleStats,
         saveEmergencyContact,
         deleteEmergencyContact
     };

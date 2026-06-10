@@ -40,7 +40,9 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [isRealData, setIsRealData] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [, setIsRefreshing] = useState(false);
+    const [, setIsRealData] = useState(false);
 
     // Load real database data
     const loadRealData = async (isManualRefresh = false) => {
@@ -92,41 +94,14 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
-    // Beautiful Sandbox/Mock data generators to ensure WOW factor when Firestore is brand new/empty
-    const fallbackRevenueHistory = [
-        { date: 'May 20', amount: 1250 },
-        { date: 'May 21', amount: 1450 },
-        { date: 'May 22', amount: 1300 },
-        { date: 'May 23', amount: 1850 },
-        { date: 'May 24', amount: 2100 },
-        { date: 'May 25', amount: 1900 },
-        { date: 'May 26', amount: 2400 },
-        { date: 'May 27', amount: 2900 },
-        { date: 'May 28', amount: 2750 },
-        { date: 'May 29', amount: 3200 },
-    ];
-
-    const fallbackActivityStats = [
-        { name: 'Images', current: dailyUsage?.imagesGenerated ?? 18, max: tierLimits?.maxImagesPerDay ?? 50 },
-        { name: 'Videos', current: dailyUsage?.videosGenerated ?? 2, max: tierLimits?.maxVideoGenerationsPerDay ?? 5 },
-        { name: 'Storage (MB)', current: dailyUsage?.storageUsedMB ?? 120, max: tierLimits?.maxStorageMB ?? 500 },
-        { name: 'Daily Budget ($)', current: dailyUsage?.totalSpend ?? 0.45, max: tierLimits?.maxDailySpend ?? 1.00 },
-    ];
-
-    const fallbackExpenses = [
-        { id: '1', category: 'Marketing', amount: 250, description: 'TikTok campaign ads promotion', createdAt: '2026-05-28T14:32:00Z' },
-        { id: '2', category: 'Tools', amount: 49, description: 'Gemini developer plan premium API key', createdAt: '2026-05-27T09:15:00Z' },
-        { id: '3', category: 'Production', amount: 120, description: 'Mixing & Mastering studio booking fee', createdAt: '2026-05-25T17:45:00Z' },
-    ];
-
     // Compute metrics
-    const totalEarnings = financeSummary?.totalEarnings ?? (earningsSummary?.totalGrossRevenue ?? (revenueStats?.totalRevenue ?? 4250.00));
-    const pendingPayouts = financeSummary?.pendingPayouts ?? 850.00;
+    const totalEarnings = financeSummary?.totalEarnings ?? (earningsSummary?.totalGrossRevenue ?? (revenueStats?.totalRevenue ?? 0));
+    const pendingPayouts = financeSummary?.pendingPayouts ?? 0;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const lastPayout = financeSummary?.lastPayout ?? 1200.00;
+    const lastPayout = financeSummary?.lastPayout ?? 0;
 
-    const actualExpensesList = expenses.length > 0 ? expenses : fallbackExpenses;
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) || actualExpensesList.reduce((sum, e) => sum + e.amount, 0);
+    const actualExpensesList = expenses;
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
     const netProfit = totalEarnings - totalExpenses;
 
@@ -148,13 +123,6 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div>
                             <h2 className="text-xl font-bold font-mono tracking-tight text-white flex items-center gap-2">
                                 Customizable Dashboard
-                                <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border ${
-                                    isRealData 
-                                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' 
-                                        : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                                }`}>
-                                    {isRealData ? 'Live Data Connected' : 'Sandbox Demo Mode'}
-                                </span>
                             </h2>
                             <p className="text-xs text-slate-400 mt-1">
                                 Comprehensive real-time analysis across Stripe financial ledger, user usage quotas, and database systems.
@@ -236,7 +204,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="h-56 mt-2 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart
-                                    data={revenueStats?.history && revenueStats.history.length > 0 ? revenueStats.history : fallbackRevenueHistory}
+                                    data={revenueStats?.history && revenueStats.history.length > 0 ? revenueStats.history : []}
                                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                                 >
                                     <defs>
@@ -297,7 +265,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
                         {/* Quota Progress Bars */}
                         <div className="space-y-5 flex-1 justify-center flex flex-col">
-                            {fallbackActivityStats.map((stat, i) => {
+                            {[
+                                { name: 'Images', current: dailyUsage?.imagesGenerated ?? 0, max: tierLimits?.maxImagesPerDay ?? 50 },
+                                { name: 'Videos', current: dailyUsage?.videosGenerated ?? 0, max: tierLimits?.maxVideoGenerationsPerDay ?? 5 },
+                                { name: 'Storage (MB)', current: dailyUsage?.storageUsedMB ?? 0, max: tierLimits?.maxStorageMB ?? 500 },
+                                { name: 'Daily Budget ($)', current: dailyUsage?.totalSpend ?? 0, max: tierLimits?.maxDailySpend ?? 1.00 },
+                            ].map((stat, i) => {
                                 const ratio = stat.max > 0 ? stat.current / stat.max : 0;
                                 const percentage = Math.min(Math.round(ratio * 100), 100);
                                 return (
@@ -355,7 +328,9 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         </div>
 
                         <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                            {actualExpensesList.slice(0, 5).map((exp, index) => (
+                            {actualExpensesList.length === 0 ? (
+                                <div className="text-xs text-slate-500 text-center py-6 font-mono border border-dashed border-white/10 rounded-xl">No expenses recorded yet.</div>
+                            ) : actualExpensesList.slice(0, 5).map((exp, index) => (
                                 <div
                                     key={exp.id || index}
                                     className="p-3 bg-slate-900/40 border border-white/5 rounded-xl flex items-center justify-between hover:bg-slate-900/60 transition-colors"
@@ -403,7 +378,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="h-56 mt-2 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
-                                    data={fallbackActivityStats}
+                                    data={[
+                                        { name: 'Images', current: dailyUsage?.imagesGenerated ?? 0, max: tierLimits?.maxImagesPerDay ?? 50 },
+                                        { name: 'Videos', current: dailyUsage?.videosGenerated ?? 0, max: tierLimits?.maxVideoGenerationsPerDay ?? 5 },
+                                        { name: 'Storage (MB)', current: dailyUsage?.storageUsedMB ?? 0, max: tierLimits?.maxStorageMB ?? 500 },
+                                        { name: 'Daily Budget ($)', current: dailyUsage?.totalSpend ?? 0, max: tierLimits?.maxDailySpend ?? 1.00 },
+                                    ]}
                                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                                     barSize={24}
                                 >
@@ -428,7 +408,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                         wrapperStyle={{ fontSize: '10px', fontFamily: 'monospace', paddingTop: '10px' }}
                                     />
                                     <Bar dataKey="current" fill="#10b981" name="Current Daily Usage">
-                                        {fallbackActivityStats.map((entry, index) => (
+                                        {[0,1,2,3].map((index) => (
                                             <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#6366f1'} />
                                         ))}
                                     </Bar>

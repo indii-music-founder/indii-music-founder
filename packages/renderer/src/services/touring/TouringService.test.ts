@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TouringService } from './TouringService';
-import { getDocs, onSnapshot } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
@@ -43,47 +43,7 @@ describe('TouringService', () => {
         vi.spyOn(console, 'warn').mockImplementation(() => { });
     });
 
-    describe('getVehicleStats', () => {
-        it('validates and returns correct vehicle stats', async () => {
-            const mockData = {
-                userId: 'user1',
-                milesDriven: 1000,
-                fuelLevelPercent: 50,
-                tankSizeGallons: 20,
-                mpg: 25,
-                gasPricePerGallon: 4.0
-            };
 
-            vi.mocked(getDocs).mockResolvedValueOnce({
-                empty: false,
-                docs: [{
-                    id: 'doc1',
-                    data: () => mockData
-                }]
-            } as unknown as import('firebase/firestore').QuerySnapshot);
-
-            const result = await TouringService.getVehicleStats('user1');
-            expect(result).toEqual({ id: 'doc1', ...mockData });
-        });
-
-        it('returns null for invalid data (Zod validation failure)', async () => {
-            const invalidData = {
-                userId: 'user1',
-                milesDriven: "NOT A NUMBER", // Invalid type
-            };
-
-            vi.mocked(getDocs).mockResolvedValueOnce({
-                empty: false,
-                docs: [{
-                    id: 'doc1',
-                    data: () => invalidData
-                }]
-            } as unknown as import('firebase/firestore').QuerySnapshot);
-
-            const result = await TouringService.getVehicleStats('user1');
-            expect(result).toBeNull();
-        });
-    });
 
     describe('subscribeToItineraries', () => {
         it('filters out invalid itineraries', () => {
