@@ -6,7 +6,7 @@ import {
     TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
     LayoutGrid, PenTool, Package, Settings, LogOut,
     Palette, Truck, BarChart3, Sparkles,
-    Store, Flame, Globe, Wallet, Shield, Lock, type LucideIcon
+    Flame, Globe, Wallet, Shield, Lock, type LucideIcon
 } from 'lucide-react';
 
 import { useMerchandise, MerchStats } from './hooks/useMerchandise';
@@ -15,7 +15,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
 import { formatCurrency } from '@/lib/utils';
 import { PODIntegrationPanel } from './components/PODIntegrationPanel';
-import { StorefrontPreviewModal } from './components/StorefrontPreviewModal';
+
 import { InventoryTracker } from './components/InventoryTracker';
 import { PricingEngine } from './components/PricingEngine';
 import { DropCampaignWizard } from './components/DropCampaignWizard';
@@ -60,7 +60,6 @@ export default function MerchDashboard() {
     const { stats, topSellingProducts, products, loading, error } = useMerchandise();
     const [centerTab, setCenterTab] = useState<CenterTab>('dashboard');
     const [web3SubTab, setWeb3SubTab] = useState<Web3SubTab>('wallet');
-    const [storefrontOpen, setStorefrontOpen] = useState(false);
     const [dropWizardOpen, setDropWizardOpen] = useState(false);
 
     const handleDesignClick = useCallback(() => {
@@ -156,12 +155,7 @@ export default function MerchDashboard() {
                         </button>
                     ))}
                     <div className="ml-auto flex items-center gap-2 pb-1">
-                        <button
-                            onClick={() => setStorefrontOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold text-neutral-400 hover:text-white hover:border-white/20 transition-all"
-                        >
-                            <Store size={11} /> Preview Store
-                        </button>
+
                         <button
                             onClick={() => setDropWizardOpen(true)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFE135]/10 border border-[#FFE135]/20 rounded-lg text-[11px] font-bold text-[#FFE135] hover:bg-[#FFE135]/20 transition-all"
@@ -314,12 +308,7 @@ export default function MerchDashboard() {
             </div>
 
             {/* Modals */}
-            <StorefrontPreviewModal
-                isOpen={storefrontOpen}
-                onClose={() => setStorefrontOpen(false)}
-                products={products}
-                artistName={userProfile?.displayName || ''}
-            />
+
             <DropCampaignWizard
                 isOpen={dropWizardOpen}
                 onClose={() => setDropWizardOpen(false)}

@@ -8,13 +8,13 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics, LogisticsReport, EmergencyContact } from './types';
+import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContact } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
-import { Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Phone, Calendar, CheckSquare, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
@@ -217,8 +217,6 @@ const RoadManager: React.FC = () => {
         setCurrentItinerary,
         saveItinerary,
         updateItineraryStop,
-        vehicleStats,
-        saveVehicleStats,
         emergencyContacts,
         saveEmergencyContact,
         deleteEmergencyContact,
@@ -244,8 +242,6 @@ const RoadManager: React.FC = () => {
     const [currentLocation, setCurrentLocation] = useState('');
     const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
     const [isFindingPlaces, setIsFindingPlaces] = useState(false);
-    const [fuelLogistics, setFuelLogistics] = useState<FuelLogistics | null>(null);
-    const [isCalculatingFuel, setIsCalculatingFuel] = useState(false);
 
     // Reactive mobile detection via centralized hook
     const { isAnyPhone: isMobile } = useMobile();
@@ -363,21 +359,7 @@ const RoadManager: React.FC = () => {
         }
     };
 
-    const handleCalculateFuel = async () => {
-        setIsCalculatingFuel(true);
-        try {
-            const calculateFuelLogistics = httpsCallable(functions, 'calculateFuelLogistics');
-            const response = await calculateFuelLogistics(vehicleStats);
-            const result = response.data as FuelLogistics;
-            setFuelLogistics(result);
-            toast.success("Fuel logistics calculated");
-        } catch (error: unknown) {
-            logger.error("Fuel Calc Failed:", error);
-            toast.error("Failed to calculate fuel logistics");
-        } finally {
-            setIsCalculatingFuel(false);
-        }
-    };
+
 
     const handleUpdateStop = async (updatedStop: Itinerary['stops'][number]) => {
         if (!itinerary) return;
@@ -450,18 +432,6 @@ const RoadManager: React.FC = () => {
                                         handleFindGasStations={handleFindGasStations}
                                         isFindingPlaces={isFindingPlaces}
                                         nearbyPlaces={nearbyPlaces}
-                                        fuelStats={vehicleStats || {
-                                            milesDriven: 0,
-                                            fuelLevelPercent: 50,
-                                            tankSizeGallons: 15,
-                                            mpg: 8,
-                                            gasPricePerGallon: 3.50,
-                                            userId: ''
-                                        }}
-                                        setFuelStats={saveVehicleStats}
-                                        handleCalculateFuel={handleCalculateFuel}
-                                        isCalculatingFuel={isCalculatingFuel}
-                                        fuelLogistics={fuelLogistics}
                                         itinerary={itinerary}
                                     />
                                 )}
@@ -503,7 +473,6 @@ const RoadManager: React.FC = () => {
                 {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
-                    <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
                     <RiderQuickPanel onNavigate={() => setActiveTab('rider')} />
                     <EmergencyContactsPanel
                         contacts={emergencyContacts}
@@ -553,59 +522,6 @@ function ItinerarySummaryPanel({ itinerary }: { itinerary: Itinerary | null }) {
     );
 }
 
-interface VehicleStatsShape { fuelLevelPercent?: number; milesDriven?: number; mpg?: number }
-
-function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: VehicleStatsShape | null; fuelLogistics: FuelLogistics | null }) {
-
-    const isConfigured = vehicleStats !== null;
-    const fuelPct = vehicleStats?.fuelLevelPercent ?? 0;
-    const fuelColor = fuelPct > 50 ? 'text-green-400' : fuelPct > 20 ? 'text-yellow-400' : 'text-red-400';
-
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Vehicle Status</h3>
-            <div className="space-y-2">
-                {!isConfigured ? (
-                    <div className="p-3 rounded-lg bg-white/[0.02] text-center">
-                        <p className="text-[10px] text-gray-600">Not configured</p>
-                        <p className="text-[10px] text-gray-700 mt-0.5">Set up vehicle stats in On The Road</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="p-3 rounded-lg bg-white/[0.02]">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] text-gray-500 font-bold">Fuel Level</span>
-                                <span className={`text-[10px] font-bold ${fuelColor}`}>{fuelPct}%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all ${fuelPct > 50 ? 'bg-green-500' : fuelPct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                    style={{ width: `${fuelPct}%` }}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
-                            <Fuel size={14} className="text-gray-400 flex-shrink-0" />
-                            <div>
-                                <p className="text-xs text-white">{vehicleStats?.milesDriven?.toLocaleString() || '0'} mi driven</p>
-                                <p className="text-[10px] text-gray-500">{vehicleStats?.mpg || 0} MPG</p>
-                            </div>
-                        </div>
-                    </>
-                )}
-                {fuelLogistics && (
-                    <div className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${fuelLogistics.status === 'CRITICAL' ? 'bg-red-500/10 border border-red-500/20 text-red-300' :
-                        fuelLogistics.status === 'LOW' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300' :
-                            'bg-green-500/10 border border-green-500/20 text-green-300'
-                        }`}>
-                        <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
-                        <span>Range: {fuelLogistics.currentRangeMiles} mi · ${fuelLogistics.costToFill} to fill</span>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
 
 function RiderQuickPanel({ onNavigate }: { onNavigate?: () => void }) {
     return (
