@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
@@ -240,7 +241,7 @@ const PanelContent: React.FC<{ panel: CanvasPushPayload }> = ({ panel }) => {
             return (
                 <div 
                     className="bg-white/5 rounded-xl p-4 text-sm text-zinc-300 prose prose-invert"
-                    dangerouslySetInnerHTML={{ __html: (panel.data as HtmlPayload).content || 'HTML rendering unsupported' }} 
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((panel.data as HtmlPayload).content || 'HTML rendering unsupported') }} 
                 />
             );
         default:

@@ -166,3 +166,7 @@ ci-full-output.txt
 test-results.txt
 test-results2.txt
 test_results.json
+
+# Discovered Audit Files
+users.json
+anonymous_users_audit_report.json
