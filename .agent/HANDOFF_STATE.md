@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-10 19:13 EDT
+**Updated:** 2026-06-10 19:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dd443924d chore: session checkpoint [19:13]
 eb339a1ad feat(audio): local-first native audio analysis and semantic extraction pipeline via python
 bf414bd35 refactor(better): elevate AudioIntelligence pipeline performance to avoid duplicate local extraction
 aeab7aeb8 chore: session checkpoint [18:59]
@@ -13,7 +14,6 @@ aeab7aeb8 chore: session checkpoint [18:59]
 04b334545 chore: clean up comment
 c05c8a941 feat: implement concurrent multi-agent orchestration fsm, toggle, and circuit breaker
 35dcb4991 feat: implement native ddex generator and iswc pending state listener
-8855757db feat: implement escrow idempotency, gdf middleware, and 90-day retention daemon
 ```
 
 ## Working State
