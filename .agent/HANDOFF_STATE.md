@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-10 09:44 EDT
+**Updated:** 2026-06-10 14:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-9d52e7f4a fix: resolve typescript errors and correct electron-builder publish config for mac auto-updates
-56c54aff3 chore: remove fake UI garnish and mock data across modules
-7c521cd4f chore: uncomment code-signing configuration in release workflow
-0cde1f0ec chore: session checkpoint [12:20]
-a04853785 test: add FoundersPortal component unit tests
-8025c6fce chore: session checkpoint [12:19]
-033880f69 chore: session checkpoint [11:54]
-f4a0c93e2 fix(firebase): correctly re-throw HttpsError in generateReleaseDownloadUrl and add unit tests
-0756ec66c fix(lint): resolve unused imports, any casts, and unused eslint directives to fix CI build
-b3fefb628 chore: session checkpoint [11:20]
+0693a6214 docs: mark ISSUE-361 to ISSUE-366 as FIXED in root ledger
+c1d9361d4 chore: resolve ISSUE-361 to ISSUE-366 security and slop audit findings
+9f2b854d4 chore: session checkpoint [09:44]
+afcd856d7 fix: resolve typescript errors and correct electron-builder publish config for mac auto-updates
+c09521de0 chore: remove fake UI garnish and mock data across modules
+19c9acb16 chore: uncomment code-signing configuration in release workflow
+ed26add2e chore: session checkpoint [12:20]
+1f9710421 test: add FoundersPortal component unit tests
+24dbc3201 chore: session checkpoint [12:19]
+1df7e12d7 chore: session checkpoint [11:54]
 ```
 
 ## Working State
