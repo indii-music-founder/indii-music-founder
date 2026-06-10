@@ -60,13 +60,13 @@ jobs:
           npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing (optional — set these secrets to enable)
-          # CSC_LINK: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 }}
-          # CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          # macOS signing (uncommented to enable when secrets are set)
+          CSC_LINK: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: true
-          # Windows signing (optional)
-          # WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
-          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          # Windows signing (uncommented to enable when secrets are set)
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE || secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
