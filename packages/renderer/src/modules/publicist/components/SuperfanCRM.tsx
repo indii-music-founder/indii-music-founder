@@ -7,24 +7,10 @@ import { useTranslation } from 'react-i18next';
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Crown, Star, Users, TrendingUp, Gift, Send, ChevronUp, Search } from 'lucide-react';
-import { Contact } from '../types';
+import { Crown, Star, Users, TrendingUp, Gift, Send, ChevronUp, Search, Loader2 } from 'lucide-react';
+import { useSuperfans, FanTier } from '../hooks/useSuperfans';
 
-type FanTier = 'Superfan' | 'VIP' | 'Standard';
-
-interface FanRecord {
-    id: string;
-    name: string;
-    email: string;
-    tier: FanTier;
-    totalSpend: number;
-    streamsThisMonth: number;
-    lastActive: string;
-    avatarInitial: string;
-}
-
-// No hardcoded fan data — fans come from Firestore contacts collection.
-// In production, populate via a CRM integration or listener on the contacts collection.
+// Fans are loaded from the real contacts collection in Firestore.
 
 const TIER_CONFIG: Record<FanTier, { color: string; bg: string; border: string; icon: React.ReactNode; threshold: string }> = {
     Superfan: {
@@ -50,15 +36,11 @@ const TIER_CONFIG: Record<FanTier, { color: string; bg: string; border: string; 
     },
 };
 
-interface SuperfanCRMProps {
-    contacts?: Contact[];
-}
-
-export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
+export function SuperfanCRM() {
     const { t } = useTranslation();
+    const { fans, loading } = useSuperfans();
     const [activeTier, setActiveTier] = useState<FanTier | 'all'>('all');
     const [search, setSearch] = useState('');
-    const [fans] = useState<FanRecord[]>([]);
 
     const filtered = fans.filter(f => {
         const matchTier = activeTier === 'all' || f.tier === activeTier;
@@ -196,10 +178,16 @@ export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
                         })}
                     </AnimatePresence>
 
-                    {filtered.length === 0 && (
+                    {filtered.length === 0 && !loading && (
                         <div className="py-20 text-center">
                             <Users size={28} className="mx-auto text-slate-700 mb-3" />
                             <p className="text-sm text-slate-500">No fans match your filters.</p>
+                        </div>
+                    )}
+                    {loading && (
+                        <div className="py-20 text-center">
+                            <Loader2 size={28} className="mx-auto text-slate-700 mb-3 animate-spin" />
+                            <p className="text-sm text-slate-500">Loading your superfans...</p>
                         </div>
                     )}
                 </div>

@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, CheckCircle2, Sparkles, Info } from 'lucide-react';
 import { MerchProduct } from '../types';
+import { usePricingConfig, PricingConfig } from '../hooks/usePricingConfig';
 
 interface PricedProduct extends MerchProduct {
     suggestedPrice: number;
@@ -14,18 +15,9 @@ interface PricedProduct extends MerchProduct {
     benchmarkMargin: number;
 }
 
-const INDIE_MARGINS: Record<string, { suggested: number; benchmark: number }> = {
-    'T-Shirt': { suggested: 28, benchmark: 34 },
-    'Hoodie': { suggested: 55, benchmark: 45 },
-    'Vinyl Record': { suggested: 22, benchmark: 28 },
-    'Poster': { suggested: 18, benchmark: 24 },
-    'Sticker Sheet': { suggested: 8, benchmark: 65 },
-    'Snapback': { suggested: 35, benchmark: 40 },
-};
-
-function enrichProduct(product: MerchProduct): PricedProduct {
+function enrichProduct(product: MerchProduct, config: PricingConfig): PricedProduct {
     const current = parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 25;
-    const defaults = INDIE_MARGINS[product.title || ''] || { suggested: current * 1.15, benchmark: 38 };
+    const defaults = config[product.title || ''] || { suggested: current * 1.15, benchmark: 38 };
     const margin = Math.round(((current - current * 0.6) / current) * 100);
     return {
         ...product,
@@ -42,7 +34,8 @@ interface PricingEngineProps {
 }
 
 export function PricingEngine({ products = [] }: PricingEngineProps) {
-    const enriched = products.map(enrichProduct);
+    const { config } = usePricingConfig();
+    const enriched = products.map(p => enrichProduct(p, config));
     const [applied, setApplied] = useState<Set<string>>(new Set());
 
     const handleApply = (id: string) => {

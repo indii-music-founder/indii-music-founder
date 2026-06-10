@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Plus, Trash2, Palette, Activity,
-    Loader2, CheckCircle, ShieldCheck
+    CheckCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
@@ -20,7 +20,6 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
     saveBrandKit,
 }) => {
     const toast = useToast();
-    const [isAuditingAssets, setIsAuditingAssets] = useState(false);
 
     // -- Handoff Intercept Hook --
     const consumeHandoff = useStore(state => state.consumeHandoff);
@@ -78,24 +77,8 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
         saveBrandKit({ digitalAura: updated });
     };
 
-    const handleAuditVisualAssets = async () => {
-        const totalAssets = (brandKit.brandAssets?.length || 0) + (brandKit.referenceImages?.length || 0);
-        if (totalAssets === 0) {
-            toast.warning("No visual assets found in your library to audit.");
-            return;
-        }
-
-        setIsAuditingAssets(true);
-        try {
-            // Intelligence-driven visual consistency check across both collections
-            await new Promise(resolve => setTimeout(resolve, 2500));
-            toast.success(`Visual audit complete. ${totalAssets} assets are brand-aligned.`);
-        } catch (__e: unknown) {
-            toast.error("Visual audit failed check system logs.");
-        } finally {
-            setIsAuditingAssets(false);
-        }
-    };
+    // The "Audit Visual Assets" fake functionality was removed per slop audit.
+    // In the future, real Intelligence-driven consistency checks can be wired here.
 
     return (
         <motion.div
@@ -240,31 +223,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                         }}
                     />
 
-                    <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <ShieldCheck className="text-emerald-500" size={20} />
-                            <div>
-                                <h4 className="text-sm font-bold text-white">Visual Audit System</h4>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Powered by Brand Intelligence</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleAuditVisualAssets}
-                            disabled={isAuditingAssets}
-                            className="px-6 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isAuditingAssets ? (
-                                <>
-                                    <Loader2 className="animate-spin" size={12} />
-                                    <span>Auditing...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>Audit All Assets</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
+
                 </div>
             </div>
         </motion.div>

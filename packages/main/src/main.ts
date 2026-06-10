@@ -231,14 +231,20 @@ const createWindow = async () => {
 
     // Handle Window Open Requests
     win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
-        if (url.startsWith('https://indii.music')) return { action: 'allow' };
-        if (url.startsWith('https://indii-music-founder.firebaseapp.com')) return { action: 'allow' };
+        try {
+            const parsedUrl = new URL(url);
+            const allowedOrigins = ['https://accounts.google.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
 
-        // Use logic similar to will-navigate for consistency
-        const parsedUrl = new URL(url);
-        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-            shell.openExternal(url);
+            if (allowedOrigins.some(origin => parsedUrl.origin === origin)) {
+                return { action: 'allow' };
+            }
+
+            // Use logic similar to will-navigate for consistency
+            if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+                shell.openExternal(url);
+            }
+        } catch (err) {
+            log.error('[Security] Invalid URL in window open request:', url);
         }
         return { action: 'deny' };
     });
