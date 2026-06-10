@@ -76,9 +76,22 @@ export class EnergyMapService {
         technicalFeatures: AudioFeatures
     ): Promise<EmotionalNarrative> {
         return withServiceError('EnergyMap', 'mapEmotionalArc', async () => {
-            Logger.info('EnergyMap', `Mapping emotional arc for ${file.name}`);
-
             const base64Audio = await this.fileToBase64(file);
+            return this.mapEmotionalArcWithProxy(base64Audio, file.type || 'audio/mp3', technicalFeatures);
+        });
+    }
+
+    /**
+     * Generates an emotional arc using an already-compressed proxy base64 string.
+     */
+    async mapEmotionalArcWithProxy(
+        base64Audio: string,
+        mimeType: string,
+        technicalFeatures: AudioFeatures
+    ): Promise<EmotionalNarrative> {
+        return withServiceError('EnergyMap', 'mapEmotionalArcWithProxy', async () => {
+            Logger.info('EnergyMap', `Mapping emotional arc (using proxy data)`);
+
             const duration = technicalFeatures.duration;
             const segmentContext = this.formatSegments(technicalFeatures.segments);
 
@@ -119,7 +132,7 @@ RULES:
                     { text: prompt },
                     {
                         inlineData: {
-                            mimeType: file.type || 'audio/mp3',
+                            mimeType: mimeType,
                             data: base64Audio
                         }
                     }

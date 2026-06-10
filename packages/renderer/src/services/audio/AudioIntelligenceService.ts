@@ -1,6 +1,6 @@
 import { audioAnalysisService } from './AudioAnalysisService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { AudioIntelligenceProfile, AudioSemanticData, DeepAudioFeatures } from './types';
+import { AudioIntelligenceProfile, AudioSemanticData } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -8,7 +8,10 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { neuralCortex } from '@/services/intelligence/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
-import type { AudioAnalysisResult } from '@/types/electron';
+import { styleMemoryStore } from './StyleMemoryStore';
+import { energyMapService } from './EnergyMapService';
+import { autoCopywriter } from '@/services/marketing/AutoCopywriter';
+
 
 const SEMANTIC_SCHEMA: Schema = {
     type: 'OBJECT' as const,
@@ -128,48 +131,89 @@ export class AudioIntelligenceService {
             Logger.info('AudioIntelligence', 'Running technical analysis...');
             const analysisResult = await audioAnalysisService.analyze(file);
             const technical = analysisResult.features;
-            const localSemantic = analysisResult.semantic as NonNullable<AudioAnalysisResult['semantic']> | null;
+            const proxyBase64 = analysisResult.proxyBase64; // Extracted via Electron/FFmpeg
 
-            // 4. Run Semantic Analysis
-            Logger.info('AudioIntelligence', 'Running semantic analysis...');
-            let semantic: AudioSemanticData;
+            // 4. Run Semantic & Energy Map Analysis in Parallel (Session 1 & Session 2)
+            Logger.info('AudioIntelligence', 'Running semantic and energy map analysis in parallel...');
+
+            let semanticPromise: Promise<AudioSemanticData>;
+            let energyMapPromise: Promise<any>;
 
             const isOnline = navigator.onLine;
-
-            if (isOnline) {
-                if (window.electronAPI && localSemantic) {
-                    Logger.info('AudioIntelligence', 'Online Electron detected. Running text-only semantic synthesis...');
-                    semantic = await this.analyzeSemanticTextOnly(filename, technical, localSemantic);
-                } else {
-                    if (typeof file === 'string') {
-                        throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
-                    }
-                    semantic = await this.analyzeSemantic(file, technical.bpm, technical.key);
-                }
-            } else {
-                Logger.info('AudioIntelligence', 'Offline detected. Degrading to local features.');
-                if (localSemantic) {
-                    semantic = this.degradeToLocalSemantic(localSemantic, technical);
-                } else {
-                    throw new Error('Offline and local semantic features are missing.');
-                }
+            if (!isOnline) {
+                Logger.info('AudioIntelligence', 'Offline detected. Full semantic profile requires internet.');
+                throw new Error('You are currently offline. Semantic musicology analysis requires an internet connection.');
             }
+
+            if (proxyBase64) {
+                Logger.info('AudioIntelligence', 'Online Electron detected. Running synthesis using compressed proxy MP3...');
+                semanticPromise = this.analyzeSemanticWithProxy(proxyBase64, technical.bpm, technical.key);
+                energyMapPromise = energyMapService.mapEmotionalArcWithProxy(proxyBase64, typeof file === 'string' ? 'audio/mp3' : file.type || 'audio/mp3', technical)
+                    .catch(e => {
+                        Logger.warn('AudioIntelligence', `EnergyMap failed (non-fatal): ${String(e)}`);
+                        return undefined;
+                    });
+            } else {
+                if (typeof file === 'string') {
+                    throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
+                }
+                semanticPromise = this.analyzeSemantic(file, technical.bpm, technical.key);
+                energyMapPromise = energyMapService.mapEmotionalArc(file, technical)
+                    .catch(e => {
+                        Logger.warn('AudioIntelligence', `EnergyMap failed (non-fatal): ${String(e)}`);
+                        return undefined;
+                    });
+            }
+
+            const [semantic, emotionalNarrative] = await Promise.all([semanticPromise, energyMapPromise]);
+
+            // 5. Run Auto Copywriter & Style Comparison in Parallel (Session 4 & Session 5)
+            Logger.info('AudioIntelligence', 'Running copywriter and style comparison in parallel...');
+
+            const copywriterPromise = autoCopywriter.generateCopyPackage({
+                trackTitle: filename,
+                artistName: 'Unknown Artist', // In a real app this would be extracted from ID3 or user input
+                semantic,
+                emotionalNarrative
+            }).catch(e => {
+                Logger.warn('AudioIntelligence', `AutoCopywriter failed (non-fatal): ${String(e)}`);
+                return undefined;
+            });
+
+            const stylePromise = styleMemoryStore.compareToDiscography(semantic, filename)
+                .catch(e => {
+                    Logger.warn('AudioIntelligence', `StyleComparison failed (non-fatal): ${String(e)}`);
+                    return null;
+                });
+
+            const [marketingCopy, styleComparisonResult] = await Promise.all([copywriterPromise, stylePromise]);
+            const styleComparison = styleComparisonResult ?? undefined;
 
             const profile: AudioIntelligenceProfile = {
                 id,
                 technical,
                 semantic,
+                emotionalNarrative,
+                marketingCopy,
+                styleComparison,
                 analyzedAt: Date.now(),
                 modelVersion: INTELLIGENCE_MODELS.TEXT.AGENT
             };
 
-            // 5. Save to Firestore/Music Library Cache
+            // 8. Save to Firestore/Music Library Cache
+            // (Note: We pass profile.semantic here for backward compatibility, but ideally we'd pass the whole profile or update MusicLibraryService)
             await musicLibraryService.saveAnalysis(id, filename, technical, id, semantic);
 
-            // 6. Auto-register in Neural Cortex (non-blocking, fail-safe)
+            // 9. Auto-register in Neural Cortex (non-blocking, fail-safe)
             //    Generates embeddings for targetPrompts and stores for visual drift detection.
             neuralCortex.ingest(profile, filename).catch((cortexErr) => {
                 Logger.warn('AudioIntelligence', `Neural Cortex ingest failed (non-fatal): ${String(cortexErr)}`);
+            });
+
+            // 10. Auto-register in StyleMemoryStore (non-blocking, fail-safe)
+            //    Records the stylistic markers for discography comparison.
+            styleMemoryStore.recordTrack(id, filename, semantic).catch((styleErr) => {
+                Logger.warn('AudioIntelligence', `StyleMemoryStore record failed (non-fatal): ${String(styleErr)}`);
             });
 
             return profile;
@@ -301,107 +345,69 @@ CRITICAL RULES:
         return mimeByExtension[ext ?? ''] ?? 'application/octet-stream';
     }
 
-    private async analyzeSemanticTextOnly(
-        filename: string,
-        technical: DeepAudioFeatures,
-        localSemantic: NonNullable<AudioAnalysisResult['semantic']>
+    private async analyzeSemanticWithProxy(
+        proxyBase64: string,
+        bpm: number,
+        key: string
     ): Promise<AudioSemanticData> {
+        Logger.info('AudioIntelligence', `Sending FFmpeg proxy to Gemini...`);
+
         const systemPrompt = `
-You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience.
-Synthesize the final semantic metadata profile based on the local acoustic and classification features.
-Every field below must be derived from these inputs.
+You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
+PHYSICALLY LISTEN to this audio track proxy. Every field below must be derived from what you ACTUALLY HEAR — not assumptions.
 
-Input File: ${filename}
-Technical Features:
-- BPM: ${technical.bpm}
-- Key: ${technical.key}
-- Scale: ${technical.scale}
-- Energy: ${technical.energy}
-- Danceability: ${technical.danceability}
-- Loudness: ${technical.loudness} LUFS
-- Valence: ${technical.valence}
-
-Local ONNX Genre Estimates (confidence scores):
-${JSON.stringify(localSemantic.genre, null, 2)}
-
-Local ONNX Mood Estimates:
-${JSON.stringify(localSemantic.moods, null, 2)}
-
-Local ONNX Instrument Estimates:
-${JSON.stringify(localSemantic.instruments, null, 2)}
+Technical Context (Do NOT override this with your assumptions):
+- BPM: ${Math.round(bpm)}
+- Key: ${key}
 
 === OUTPUT TARGETS ===
-Follow the required JSON schema to output:
-1. ddexGenre, ddexSubGenre, language (ISO 639-2, use 'zxx' if instrumental), isExplicit
-2. marketingComment: Write 2-3 sentences of high-conversion DSP pitch copy.
-3. timbre: texture, brightness, saturation, spaceDepth
-4. productionValue: era, quality, mixBalance, aiArtifacts
-5. visualImagery: abstract, narrative, lighting
-6. marketingHooks: keywords, oneLiner
-7. targetPrompts: image (Gemini 3 Image prompt), veo (Veo 3.1 video prompt)
+
+1. DDEX Industry Metadata:
+   - 'ddexGenre': Exact primary genre (Hip-Hop, R&B, Electronic, Rock, Pop, Jazz, Country, etc.). Be precise — do NOT default.
+   - 'ddexSubGenre': Exact sub-genre (Trap, Boom Bap, Nu-Soul, Ambient, etc.).
+   - 'language': ISO 639-2 code ('eng', 'spa', etc.). Use 'zxx' if purely instrumental.
+   - 'isExplicit': true if you can clearly hear explicit language.
+   - 'marketingComment': Write 2-3 sentences of high-conversion DSP pitch copy (as if pitching to Spotify Editorial). Capture the emotional hook, reference points, and who this is for. Be specific — no generic phrases.
+
+2. Sonic Soul — Timbre & Production Texture:
+   - 'timbre.texture': The single most accurate descriptor of the sonic texture (e.g., "Analog Warmth", "Digital Quantization", "Gritty Lo-Fi", "Glassy & Clean", "Saturated Tape").
+   - 'timbre.brightness': High-frequency character (e.g., "Dark & Muddy", "Crisp & Airy", "Harsh & Bright", "Midrange-Heavy").
+   - 'timbre.saturation': Dynamic range / compression character (e.g., "Heavily Brick-Walled", "Lightly Compressed", "Punchy with Headroom", "Dynamic & Unprocessed").
+   - 'timbre.spaceDepth': Reverb/stereo field (e.g., "Cavernous Hall Reverb", "Dry & Intimate", "Wide Stereo Field", "Mono Club Sound").
+   - 'productionValue.era': What era does the production most accurately evoke? (e.g., "Late 90s Boom Bap", "2010s Trap", "Modern Hyperpop", "70s Soul", "80s Synthwave").
+   - 'productionValue.quality': Production tier (e.g., "Bedroom Producer", "Independent Pro Studio", "Major Label Mastered", "Lo-Fi Aesthetic — Intentional").
+   - 'productionValue.mixBalance': Dominant frequency/element focus (e.g., "Bass-Forward", "Vocal-Forward", "Balanced", "Mid-Heavy", "High-End Shimmer").
+   - 'productionValue.aiArtifacts': true if you detect unnatural quantization, robotic phrasing, or clear signs of Intelligence-generated audio. This is a GOAL 3 COMPLIANCE check.
+
+3. Creative Direction (For Visual Agents):
+   - 'visualImagery.abstract': Abstract visual for a motion visualizer.
+   - 'visualImagery.narrative': Scene description for stock footage or Intelligence video generation.
+   - 'visualImagery.lighting': Specific lighting (e.g., "Red neon backlight through rain-soaked glass").
+   - 'targetPrompts.image': A render-ready prompt for Gemini Image 3.1 that captures this song's visual soul.
+   - 'targetPrompts.veo': A scene-ready prompt for Veo 3.1 with camera movement and atmosphere.
+
+CRITICAL RULES:
+- If it's dark, tag it dark. If it's happy, tag it happy. Do NOT hallucinate tone.
+- Do NOT produce generic output. Every field must be specific to THIS track.
+- 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
         const response = await AutonomousIntelligence.generateStructuredData<AudioSemanticData>(
             [
-                { text: systemPrompt }
+                { text: systemPrompt },
+                {
+                    inlineData: {
+                        mimeType: 'audio/mpeg', // Proxy is always MP3
+                        data: proxyBase64
+                    }
+                }
             ],
             SEMANTIC_SCHEMA,
-            4096,
-            "You are an expert musicologist and A&R analyst.",
+            8192,
+            "You are an expert musicologist and audio analyst.",
             INTELLIGENCE_MODELS.TEXT.AGENT
         );
         return response;
-    }
-
-    private degradeToLocalSemantic(
-        localSemantic: NonNullable<AudioAnalysisResult['semantic']>,
-        _technical: DeepAudioFeatures
-    ): AudioSemanticData {
-        const topGenres = Object.entries(localSemantic.genre as Record<string, number> || {})
-            .filter(([_, conf]) => conf > 0.1)
-            .map(([name]) => name);
-        const topMoods = Object.entries(localSemantic.moods as Record<string, number> || {})
-            .filter(([_, conf]) => conf > 0.1)
-            .map(([name]) => name);
-        const topInstruments = Object.entries(localSemantic.instruments as Record<string, number> || {})
-            .filter(([_, conf]) => conf > 0.1)
-            .map(([name]) => name);
-
-        return {
-            genre: topGenres.length > 0 ? topGenres : [localSemantic.ddexGenre || 'Electronic'],
-            mood: topMoods.length > 0 ? topMoods : ['relaxed'],
-            instruments: topInstruments.length > 0 ? topInstruments : ['synth'],
-            ddexGenre: localSemantic.ddexGenre || 'Electronic',
-            ddexSubGenre: localSemantic.ddexSubGenre || 'Techno',
-            language: localSemantic.language || 'zxx',
-            isExplicit: localSemantic.isExplicit || false,
-            marketingComment: 'Offline - DSP pitching comments unavailable.',
-            timbre: {
-                texture: 'Offline - Timbre texture analysis unavailable.',
-                brightness: 'Offline - Brightness analysis unavailable.',
-                saturation: 'Offline - Saturation analysis unavailable.',
-                spaceDepth: 'Offline - Stereo space depth analysis unavailable.'
-            },
-            productionValue: {
-                era: 'Offline',
-                quality: 'Offline',
-                mixBalance: 'Offline',
-                aiArtifacts: false
-            },
-            visualImagery: {
-                abstract: 'Offline - Visual generation requires online services.',
-                narrative: 'Offline',
-                lighting: 'Offline'
-            },
-            marketingHooks: {
-                keywords: topGenres.concat(topMoods),
-                oneLiner: 'Offline - Creative hooks unavailable.'
-            },
-            targetPrompts: {
-                image: '',
-                veo: ''
-            }
-        };
     }
 }
 
