@@ -101,5 +101,4 @@ export async function dispatchPROPayload(releaseId: string): Promise<void> {
     };
 
     console.log(`Dispatching PRO payload for ${releaseId}:`, proPayload);
-    // In production, this would dispatch to an external HTTP gateway
 }
