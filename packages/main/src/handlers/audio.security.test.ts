@@ -22,22 +22,33 @@ vi.mock('electron', () => ({
 
 // Mock external deps
 vi.mock('fluent-ffmpeg', () => ({
-    default: {
-        setFfmpegPath: vi.fn(),
-        setFfprobePath: vi.fn(),
-        ffprobe: vi.fn((path, cb) => {
-            cb(null, { format: { duration: 100, format_name: 'wav', bit_rate: 1000 } });
-        })
-    }
+    default: Object.assign(
+        vi.fn(() => ({
+            audioChannels: vi.fn().mockReturnThis(),
+            audioFrequency: vi.fn().mockReturnThis(),
+            audioBitrate: vi.fn().mockReturnThis(),
+            format: vi.fn().mockReturnThis(),
+            on: vi.fn(function(this: any, event: string, cb: any) {
+                if (event === 'end') setTimeout(cb, 0);
+                return this;
+            }),
+            save: vi.fn().mockReturnThis()
+        })),
+        {
+            setFfmpegPath: vi.fn(),
+            setFfprobePath: vi.fn(),
+            ffprobe: vi.fn((path, cb) => {
+                cb(null, { format: { duration: 100, format_name: 'wav', bit_rate: 1000 } });
+            })
+        }
+    )
 }));
 vi.mock('ffmpeg-static', () => ({ default: 'ffmpeg-bin' }));
 vi.mock('ffprobe-static', () => ({ default: { path: 'ffprobe-bin' } }));
 
 // Mock fs
-vi.mock('fs', async (importOriginal) => {
-    const mod = await importOriginal() as typeof import('fs');
-    const mocked = {
-        ...mod,
+vi.mock('fs', () => {
+    const fsMock = {
         createReadStream: vi.fn().mockImplementation((path) => {
             const s = new stream.Readable();
             s.push('sensitive-content');
@@ -47,11 +58,16 @@ vi.mock('fs', async (importOriginal) => {
         realpathSync: vi.fn().mockImplementation((p) => {
              if (p === '/tmp/exploit.wav') return '/etc/passwd';
              return p;
-        })
+        }),
+        existsSync: vi.fn().mockReturnValue(true),
+        promises: {
+            readFile: vi.fn().mockResolvedValue(Buffer.from('mocked-proxy')),
+            unlink: vi.fn().mockResolvedValue(undefined)
+        }
     };
     return {
-        ...mocked,
-        default: mocked
+        default: fsMock,
+        ...fsMock
     };
 });
 

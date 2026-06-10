@@ -12,6 +12,7 @@ export interface AnalyzedTrack {
     semantic?: AudioSemanticData; // Optional semantic data from Gemini
     analyzedAt: string; // ISO string
     fileHash?: string; // Optional hash for de-duplication
+    proxyBase64?: string; // FFmpeg generated base64 encoded mp3
 }
 
 export class MusicLibraryService {

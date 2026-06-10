@@ -12,10 +12,7 @@ import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
 import { accessControlService } from '../security/AccessControlService';
 import { masteringService } from '../services/MasteringService';
-import { AgentSupervisor } from '../utils/AgentSupervisor';
 import os from 'os';
-import { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
 
 import { z } from 'zod';
 
@@ -53,40 +50,7 @@ const calculateFileHash = (filePath: string): Promise<string> => {
     });
 };
 
-const YAMNET_URL = 'https://huggingface.co/zeropointnine/yamnet-onnx/resolve/main/yamnet.onnx';
 
-async function ensureYamnetModelExists(): Promise<string | null> {
-    const modelDir = path.join(os.homedir(), '.cache', 'indii');
-    const modelPath = path.join(modelDir, 'yamnet.onnx');
-
-    if (fs.existsSync(modelPath)) {
-        return modelPath;
-    }
-
-    log.info(`[AudioHandler] YAMNet model not found at ${modelPath}. Downloading from ${YAMNET_URL}...`);
-    try {
-        await fs.promises.mkdir(modelDir, { recursive: true });
-        
-        const response = await fetch(YAMNET_URL, { redirect: 'follow' });
-        if (!response.ok) {
-            throw new Error(`Failed to download model: ${response.statusText}`);
-        }
-        if (!response.body) {
-            throw new Error('Response body is empty');
-        }
-
-        const tempPath = `${modelPath}.tmp`;
-        const fileStream = fs.createWriteStream(tempPath);
-        
-        await pipeline(Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]), fileStream);
-        await fs.promises.rename(tempPath, modelPath);
-        log.info(`[AudioHandler] YAMNet model successfully downloaded to ${modelPath}`);
-        return modelPath;
-    } catch (error) {
-        log.error('[AudioHandler] Failed to download YAMNet model:', error);
-        return null;
-    }
-}
 
 export function registerAudioHandlers() {
     ipcMain.handle('audio:analyze', async (event, filePath) => {
@@ -101,44 +65,49 @@ export function registerAudioHandlers() {
                 throw new Error(`Security Violation: Access to ${validatedPath} is denied. File was not authorized by user.`);
             }
 
-            const [hash, probeData, pythonResult] = await Promise.all([
+            const [hash, probeData] = await Promise.all([
                 calculateFileHash(validatedPath),
                 new Promise<{ format: ffmpeg.FfprobeFormat; streams: ffmpeg.FfprobeStream[] }>((resolve, reject) => {
                     ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
                         else resolve({ format: metadata.format, streams: metadata.streams });
                     });
-                }),
-                (async () => {
-                    await ensureYamnetModelExists().catch(err => {
-                        log.error('[AudioHandler] Error in ensureYamnetModelExists:', err);
-                    });
-                    try {
-                        return await AgentSupervisor.execute<{
-                            status: string;
-                            features: Record<string, unknown> | null;
-                            semantic: Record<string, unknown> | null;
-                        }>('audio', 'audio_analysis.py', [validatedPath]);
-                    } catch (err) {
-                        log.error('[AudioHandler] Local python analysis failed:', err);
-                        return null;
-                    }
-                })()
+                })
             ]);
 
-            log.info("Analysis Complete. Hash:", hash.substring(0, 8) + "...");
+            log.info("Generating compressed MP3 proxy for cloud analysis...");
+            const tempProxyPath = path.join(os.tmpdir(), `${hash}_proxy.mp3`);
+            
+            await new Promise<void>((resolve, reject) => {
+                ffmpeg(validatedPath)
+                    .audioChannels(1)
+                    .audioFrequency(32000)
+                    .audioBitrate('64k')
+                    .format('mp3')
+                    .on('end', () => resolve())
+                    .on('error', (err) => reject(new Error(`FFmpeg proxy generation failed: ${err.message}`)))
+                    .save(tempProxyPath);
+            });
+
+            const proxyBuffer = await fs.promises.readFile(tempProxyPath);
+            const proxyBase64 = proxyBuffer.toString('base64');
+            
+            // Clean up the temp file silently
+            fs.promises.unlink(tempProxyPath).catch(err => log.warn('Failed to delete temp proxy file:', err));
+
+            log.info(`Analysis Complete. Hash: ${hash.substring(0, 8)}... Proxy Size: ${(proxyBuffer.length / 1024).toFixed(1)} KB`);
 
             return {
                 status: 'success',
                 hash,
                 metadata: {
-                    duration: probeData.format.duration ? Number(probeData.format.duration) : (pythonResult?.features?.duration ?? 0),
+                    duration: probeData.format.duration ? Number(probeData.format.duration) : 0,
                     format: probeData.format.format_name ?? '',
                     bitrate: probeData.format.bit_rate ? Number(probeData.format.bit_rate) : 0
                 },
                 streams: probeData.streams ?? [],
-                features: pythonResult?.features || null,
-                semantic: pythonResult?.semantic || null
+                features: null, // Basic features will be extracted via Web Audio API in Renderer
+                proxyBase64
             };
         } catch (error) {
             log.error("Audio analysis failed:", error);
