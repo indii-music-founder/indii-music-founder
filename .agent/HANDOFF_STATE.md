@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-08 12:20 EDT
+**Updated:** 2026-06-10 09:44 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9d52e7f4a fix: resolve typescript errors and correct electron-builder publish config for mac auto-updates
+56c54aff3 chore: remove fake UI garnish and mock data across modules
+7c521cd4f chore: uncomment code-signing configuration in release workflow
+0cde1f0ec chore: session checkpoint [12:20]
 a04853785 test: add FoundersPortal component unit tests
 8025c6fce chore: session checkpoint [12:19]
 033880f69 chore: session checkpoint [11:54]
 f4a0c93e2 fix(firebase): correctly re-throw HttpsError in generateReleaseDownloadUrl and add unit tests
 0756ec66c fix(lint): resolve unused imports, any casts, and unused eslint directives to fix CI build
 b3fefb628 chore: session checkpoint [11:20]
-169be6657 fix(e2e): restore standard page fixture for unauthenticated auth-flow tests
-c13828f0b fix(e2e): resolve ReferenceError for test in mega stress tests and clean up imports
-1c079834d chore: session checkpoint [09:06]
-f9ecaef64 test: skip real LLM execution in AgentExecutor integration test on CI
 ```
 
 ## Working State
