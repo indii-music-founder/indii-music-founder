@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-10 14:41 EDT
+**Updated:** 2026-06-10 15:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+845b57bb7 refactor(better): apply safeUnsubscribe and local auth allowlists
+4c103a0fe chore: session checkpoint [14:41]
 0693a6214 docs: mark ISSUE-361 to ISSUE-366 as FIXED in root ledger
 c1d9361d4 chore: resolve ISSUE-361 to ISSUE-366 security and slop audit findings
 9f2b854d4 chore: session checkpoint [09:44]
@@ -12,8 +14,6 @@ c09521de0 chore: remove fake UI garnish and mock data across modules
 19c9acb16 chore: uncomment code-signing configuration in release workflow
 ed26add2e chore: session checkpoint [12:20]
 1f9710421 test: add FoundersPortal component unit tests
-24dbc3201 chore: session checkpoint [12:19]
-1df7e12d7 chore: session checkpoint [11:54]
 ```
 
 ## Working State
