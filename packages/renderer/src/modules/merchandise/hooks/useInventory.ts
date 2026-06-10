@@ -4,6 +4,7 @@ import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export interface InventoryItem {
     id: string;
@@ -56,7 +57,7 @@ export const useInventory = () => {
 
         return () => {
             clearTimeout(timer2);
-            unsubscribe();
+            safeUnsubscribe(unsubscribe);
         };
     }, [userProfile?.id]);
 
