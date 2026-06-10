@@ -77,10 +77,9 @@ describe('Vulnerability: Audio Handler Symlink Exploit', () => {
         // In reality (mocked), this points to /etc/passwd
         const maliciousPath = '/tmp/exploit.wav';
 
-        // Execute handler - EXPECT ERROR
-        await expect(handler({ senderFrame: { url: 'file://app/index.html' } }, maliciousPath))
-            .rejects
-            .toThrow(/Security Violation/);
+        const result = await handler({ senderFrame: { url: 'file://app/index.html' } }, maliciousPath) as { success: boolean; error: string };
+        expect(result).toHaveProperty('success', false);
+        expect(result.error).toMatch(/Security Violation/);
 
         // Verify fs.createReadStream was NOT accessed
         expect(fs.createReadStream).not.toHaveBeenCalled();

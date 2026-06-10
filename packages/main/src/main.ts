@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net } from 'electron';
 import path from 'path';
 import log from 'electron-log';
+import { accessControlService } from './security/AccessControlService';
 
 // Item 86: isDev must be defined early for logging config
 const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
@@ -250,7 +251,7 @@ const createWindow = async () => {
             if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
                 shell.openExternal(url);
             }
-        } catch (err) {
+        } catch (_err) {
             log.error('[Security] Invalid URL in window open request:', url);
         }
         return { action: 'deny' };
@@ -451,6 +452,25 @@ if (!gotTheLock) {
 
         // Apply Content Security Policy headers
         applyCSP();
+
+        // Register secure `safe-file` protocol handler
+        protocol.handle('safe-file', (request) => {
+            try {
+                const url = new URL(request.url);
+                let filePath = decodeURIComponent(url.pathname);
+                if (process.platform === 'win32' && filePath.startsWith('/')) {
+                    filePath = filePath.substring(1);
+                }
+                if (!accessControlService.verifyAccess(filePath)) {
+                    log.warn(`[SafeFileProtocol] Access Denied to path: ${filePath}`);
+                    return new Response('Access Denied', { status: 403 });
+                }
+                return net.fetch(`file://${filePath}`);
+            } catch (err) {
+                log.error('[SafeFileProtocol] Request failed:', err);
+                return new Response('Internal Error', { status: 500 });
+            }
+        });
 
         registerSystemHandlers();
         registerAuthHandlers();
