@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 
 import { DSPComplianceValidator } from './DSPComplianceValidator';
 import type { DeepAudioFeatures, TechnicalAudit } from './types';
+import type { AudioAnalysisResult } from '@/types/electron';
 
 
 export class AudioAnalysisService {
@@ -26,27 +27,76 @@ export class AudioAnalysisService {
      * Analyzes an audio file/blob to extract high-level features.
      * Checks MusicLibraryService cache first to avoid expensive re-computation.
      */
-    async analyze(file: File): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
-        // 1. Generate a robust hash for the file
-        const fileHash = await this.generateFileHash(file);
+    async analyze(file: File | string): Promise<{ features: DeepAudioFeatures, semantic?: AudioAnalysisResult['semantic'], fromCache: boolean }> {
+        let fileHash = '';
+        let filename = '';
 
-        // 2. Check Cache
+        if (typeof file === 'string') {
+            filename = file.split(/[/\\]/).pop() || 'audio';
+            if (window.electronAPI) {
+                try {
+                    const result = await window.electronAPI.audio.analyze(file);
+                    if (result.status === 'success') {
+                        fileHash = result.hash;
+                        const cached = await musicLibraryService.getAnalysis(fileHash);
+                        if (cached) {
+                            logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
+                            return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
+                        }
+                        const features = this.mapElectronResultToFeatures(result);
+                        await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
+                        return { features, semantic: result.semantic, fromCache: false };
+                    } else {
+                        throw new Error(result.error || 'Electron analysis failed');
+                    }
+                } catch (e) {
+                    logger.error('[AudioAnalysis] Electron analysis failed', e);
+                    throw e;
+                }
+            } else {
+                throw new Error('Paths are only supported in Electron environment');
+            }
+        }
+
+        // It is a File object
+        filename = file.name;
+        const filePath = (file as { path?: string }).path;
+
+        if (window.electronAPI && filePath) {
+            try {
+                const result = await window.electronAPI.audio.analyze(filePath);
+                if (result.status === 'success') {
+                    fileHash = result.hash;
+                    const cached = await musicLibraryService.getAnalysis(fileHash);
+                    if (cached) {
+                        logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
+                        return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
+                    }
+                    const features = this.mapElectronResultToFeatures(result);
+                    await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
+                    return { features, semantic: result.semantic, fromCache: false };
+                }
+            } catch (e) {
+                logger.warn('[AudioAnalysis] Electron path analysis failed, falling back to Web Audio', e);
+            }
+        }
+
+        // Web browser / fallback path
+        fileHash = await this.generateFileHash(file);
         try {
             const cached = await musicLibraryService.getAnalysis(fileHash);
             if (cached) {
-                logger.info(`[AudioAnalysis] Cache hit for ${file.name}`);
-                // Safely cast cached features to DeepAudioFeatures if compatible, or just return as is
-                return { features: cached.features as DeepAudioFeatures, fromCache: true };
+                logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
+                return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
             }
-        } catch (e: unknown) {
+        } catch (e) {
             logger.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
         }
 
-        // 3. Perform Fresh Analysis (Deep)
         return this.analyzeDeep(file, fileHash);
     }
 
-    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
+    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, semantic?: AudioAnalysisResult['semantic'], fromCache: boolean }> {
         await this.init();
 
         // Decode Audio
@@ -71,7 +121,7 @@ export class AudioAnalysisService {
             logger.warn("[AudioAnalysis] Failed to save to local cache", e);
         }
 
-        return { features, fromCache: false };
+        return { features, semantic: null, fromCache: false };
     }
 
     public async generateFileHash(file: Blob): Promise<string> {
@@ -289,6 +339,32 @@ export class AudioAnalysisService {
         return {
             key: noteNames[root] ?? 'C',
             scale: minorThird > majorThird ? 'minor' : 'major',
+        };
+    }
+
+    private mapElectronResultToFeatures(result: AudioAnalysisResult): DeepAudioFeatures {
+        const technical = result.features;
+        const audit = result.features?.audit || {
+            peakLevel: 0,
+            truePeakDb: 0,
+            integratedLoudness: result.features?.loudness ?? -14,
+            sampleRate: result.streams?.[0]?.sample_rate ? parseInt(result.streams[0].sample_rate) : 44100,
+            isStereo: result.streams?.[0]?.channels ? result.streams[0].channels > 1 : true,
+            rejectionRisks: []
+        };
+
+        return {
+            bpm: technical?.bpm ?? 120,
+            key: technical?.key ?? 'C',
+            scale: technical?.scale ?? 'major',
+            energy: technical?.energy ?? 0.5,
+            duration: result.metadata.duration,
+            danceability: technical?.danceability ?? 0.5,
+            loudness: technical?.loudness ?? -14,
+            valence: technical?.valence ?? 0.5,
+            genre: technical?.genre ?? {},
+            moods: technical?.moods ?? { happy: 0, aggressive: 0, relaxed: 0, sad: 0 },
+            audit
         };
     }
 
