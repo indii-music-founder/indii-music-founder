@@ -1,6 +1,6 @@
 import { audioAnalysisService } from './AudioAnalysisService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { AudioIntelligenceProfile, AudioSemanticData } from './types';
+import { AudioIntelligenceProfile, AudioSemanticData, DeepAudioFeatures } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -8,6 +8,7 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { neuralCortex } from '@/services/intelligence/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
+import type { AudioAnalysisResult } from '@/types/electron';
 
 const SEMANTIC_SCHEMA: Schema = {
     type: 'OBJECT' as const,
@@ -81,12 +82,30 @@ export class AudioIntelligenceService {
      * 1. Technical (local WASM)
      * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
-    async analyze(file: File): Promise<AudioIntelligenceProfile> {
+    async analyze(file: File | string): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
-            Logger.info('AudioIntelligence', `Starting analysis for ${file.name}`);
+            const filename = typeof file === 'string'
+                ? file.split(/[/\\]/).pop() || 'audio'
+                : file.name;
+
+            Logger.info('AudioIntelligence', `Starting analysis for ${filename}`);
 
             // 1. Generate ID (Fingerprint)
-            const id = await fingerprintService.generateFingerprint(file);
+            let id = '';
+            const filePath = typeof file === 'string' ? file : (file as { path?: string }).path;
+
+            if (window.electronAPI && filePath) {
+                // In Electron, call analyze first to get hash
+                const result = await window.electronAPI.audio.analyze(filePath);
+                if (result.status === 'success') {
+                    id = result.hash;
+                }
+            }
+
+            if (!id && typeof file !== 'string') {
+                id = await fingerprintService.generateFingerprint(file);
+            }
+
             if (!id) {
                 throw new Error('Failed to generate audio fingerprint');
             }
@@ -95,7 +114,7 @@ export class AudioIntelligenceService {
             const cachedAnalysis = await musicLibraryService.getAnalysisByHash(id);
 
             if (cachedAnalysis && cachedAnalysis.semantic) {
-                Logger.info('AudioIntelligence', `Cache hit for ${file.name}. Returning cached profile.`);
+                Logger.info('AudioIntelligence', `Cache hit for ${filename}. Returning cached profile.`);
                 return {
                     id,
                     technical: cachedAnalysis.features,
@@ -105,16 +124,36 @@ export class AudioIntelligenceService {
                 };
             }
 
-            // 3. Technical Analysis (Cache miss or partial hit)
-
-            // 2. Run Technical Analysis (Parallelizable but fast enough to await)
+            // 3. Technical Analysis
             Logger.info('AudioIntelligence', 'Running technical analysis...');
             const analysisResult = await audioAnalysisService.analyze(file);
             const technical = analysisResult.features;
+            const localSemantic = analysisResult.semantic as NonNullable<AudioAnalysisResult['semantic']> | null;
 
-            // 3. Run Semantic Analysis
+            // 4. Run Semantic Analysis
             Logger.info('AudioIntelligence', 'Running semantic analysis...');
-            const semantic = await this.analyzeSemantic(file, technical.bpm, technical.key);
+            let semantic: AudioSemanticData;
+
+            const isOnline = navigator.onLine;
+
+            if (isOnline) {
+                if (window.electronAPI && localSemantic) {
+                    Logger.info('AudioIntelligence', 'Online Electron detected. Running text-only semantic synthesis...');
+                    semantic = await this.analyzeSemanticTextOnly(filename, technical, localSemantic);
+                } else {
+                    if (typeof file === 'string') {
+                        throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
+                    }
+                    semantic = await this.analyzeSemantic(file, technical.bpm, technical.key);
+                }
+            } else {
+                Logger.info('AudioIntelligence', 'Offline detected. Degrading to local features.');
+                if (localSemantic) {
+                    semantic = this.degradeToLocalSemantic(localSemantic, technical);
+                } else {
+                    throw new Error('Offline and local semantic features are missing.');
+                }
+            }
 
             const profile: AudioIntelligenceProfile = {
                 id,
@@ -125,11 +164,11 @@ export class AudioIntelligenceService {
             };
 
             // 5. Save to Firestore/Music Library Cache
-            await musicLibraryService.saveAnalysis(id, file.name, technical, id, semantic);
+            await musicLibraryService.saveAnalysis(id, filename, technical, id, semantic);
 
             // 6. Auto-register in Neural Cortex (non-blocking, fail-safe)
             //    Generates embeddings for targetPrompts and stores for visual drift detection.
-            neuralCortex.ingest(profile, file.name).catch((cortexErr) => {
+            neuralCortex.ingest(profile, filename).catch((cortexErr) => {
                 Logger.warn('AudioIntelligence', `Neural Cortex ingest failed (non-fatal): ${String(cortexErr)}`);
             });
 
@@ -260,6 +299,109 @@ CRITICAL RULES:
         };
 
         return mimeByExtension[ext ?? ''] ?? 'application/octet-stream';
+    }
+
+    private async analyzeSemanticTextOnly(
+        filename: string,
+        technical: DeepAudioFeatures,
+        localSemantic: NonNullable<AudioAnalysisResult['semantic']>
+    ): Promise<AudioSemanticData> {
+        const systemPrompt = `
+You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience.
+Synthesize the final semantic metadata profile based on the local acoustic and classification features.
+Every field below must be derived from these inputs.
+
+Input File: ${filename}
+Technical Features:
+- BPM: ${technical.bpm}
+- Key: ${technical.key}
+- Scale: ${technical.scale}
+- Energy: ${technical.energy}
+- Danceability: ${technical.danceability}
+- Loudness: ${technical.loudness} LUFS
+- Valence: ${technical.valence}
+
+Local ONNX Genre Estimates (confidence scores):
+${JSON.stringify(localSemantic.genre, null, 2)}
+
+Local ONNX Mood Estimates:
+${JSON.stringify(localSemantic.moods, null, 2)}
+
+Local ONNX Instrument Estimates:
+${JSON.stringify(localSemantic.instruments, null, 2)}
+
+=== OUTPUT TARGETS ===
+Follow the required JSON schema to output:
+1. ddexGenre, ddexSubGenre, language (ISO 639-2, use 'zxx' if instrumental), isExplicit
+2. marketingComment: Write 2-3 sentences of high-conversion DSP pitch copy.
+3. timbre: texture, brightness, saturation, spaceDepth
+4. productionValue: era, quality, mixBalance, aiArtifacts
+5. visualImagery: abstract, narrative, lighting
+6. marketingHooks: keywords, oneLiner
+7. targetPrompts: image (Gemini 3 Image prompt), veo (Veo 3.1 video prompt)
+`;
+
+        const response = await AutonomousIntelligence.generateStructuredData<AudioSemanticData>(
+            [
+                { text: systemPrompt }
+            ],
+            SEMANTIC_SCHEMA,
+            4096,
+            "You are an expert musicologist and A&R analyst.",
+            INTELLIGENCE_MODELS.TEXT.AGENT
+        );
+        return response;
+    }
+
+    private degradeToLocalSemantic(
+        localSemantic: NonNullable<AudioAnalysisResult['semantic']>,
+        _technical: DeepAudioFeatures
+    ): AudioSemanticData {
+        const topGenres = Object.entries(localSemantic.genre as Record<string, number> || {})
+            .filter(([_, conf]) => conf > 0.1)
+            .map(([name]) => name);
+        const topMoods = Object.entries(localSemantic.moods as Record<string, number> || {})
+            .filter(([_, conf]) => conf > 0.1)
+            .map(([name]) => name);
+        const topInstruments = Object.entries(localSemantic.instruments as Record<string, number> || {})
+            .filter(([_, conf]) => conf > 0.1)
+            .map(([name]) => name);
+
+        return {
+            genre: topGenres.length > 0 ? topGenres : [localSemantic.ddexGenre || 'Electronic'],
+            mood: topMoods.length > 0 ? topMoods : ['relaxed'],
+            instruments: topInstruments.length > 0 ? topInstruments : ['synth'],
+            ddexGenre: localSemantic.ddexGenre || 'Electronic',
+            ddexSubGenre: localSemantic.ddexSubGenre || 'Techno',
+            language: localSemantic.language || 'zxx',
+            isExplicit: localSemantic.isExplicit || false,
+            marketingComment: 'Offline - DSP pitching comments unavailable.',
+            timbre: {
+                texture: 'Offline - Timbre texture analysis unavailable.',
+                brightness: 'Offline - Brightness analysis unavailable.',
+                saturation: 'Offline - Saturation analysis unavailable.',
+                spaceDepth: 'Offline - Stereo space depth analysis unavailable.'
+            },
+            productionValue: {
+                era: 'Offline',
+                quality: 'Offline',
+                mixBalance: 'Offline',
+                aiArtifacts: false
+            },
+            visualImagery: {
+                abstract: 'Offline - Visual generation requires online services.',
+                narrative: 'Offline',
+                lighting: 'Offline'
+            },
+            marketingHooks: {
+                keywords: topGenres.concat(topMoods),
+                oneLiner: 'Offline - Creative hooks unavailable.'
+            },
+            targetPrompts: {
+                image: '',
+                veo: ''
+            }
+        };
     }
 }
 
