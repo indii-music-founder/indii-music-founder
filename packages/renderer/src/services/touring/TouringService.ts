@@ -10,8 +10,7 @@ import {
     deleteDoc,
     serverTimestamp,
     onSnapshot,
-    Timestamp,
-    deleteDoc
+    Timestamp
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary, EmergencyContact } from '@/modules/touring/types';
 import { TourItineraryDocument } from '@/types/firestore';
