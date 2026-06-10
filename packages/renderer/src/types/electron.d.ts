@@ -24,6 +24,41 @@ export interface AudioAnalysisResult {
         bits_per_sample?: string;
         channels?: number;
     }>;
+    features?: {
+        bpm: number;
+        key: string;
+        scale: string;
+        energy: number;
+        duration: number;
+        danceability: number;
+        valence: number;
+        loudness: number;
+        genre: Record<string, number>;
+        moods: {
+            happy: number;
+            aggressive: number;
+            relaxed: number;
+            sad: number;
+        };
+        audit?: {
+            peakLevel: number;
+            truePeakDb: number;
+            integratedLoudness: number;
+            sampleRate: number;
+            isStereo: boolean;
+            rejectionRisks: string[];
+        };
+    } | null;
+    semantic?: {
+        ddexGenre: string;
+        ddexSubGenre: string;
+        language: string;
+        isExplicit: boolean;
+        genre: Record<string, number>;
+        moods: Record<string, number>;
+        instruments: Record<string, number>;
+    } | null;
+    error?: string;
 }
 
 export interface ElectronAPI {

@@ -71,6 +71,52 @@ const AudioAnalyzer: React.FC = () => {
         return LOSSLESS_EXTENSIONS.has(ext);
     };
 
+    const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
+        if (window.electronAPI) {
+            e.preventDefault();
+            if (isAnalyzing) return;
+
+            try {
+                const filePath = await window.electronAPI.selectFile({
+                    title: 'Select Lossless Master Track',
+                    filters: [{ name: 'Lossless Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'm4a'] }]
+                });
+                
+                if (filePath) {
+                    const pathStr = filePath as string;
+                    const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
+                    if (!LOSSLESS_EXTENSIONS.has(ext)) {
+                        toast.error(
+                            `${ext.toUpperCase()} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please select a lossless format.`
+                        );
+                        return;
+                    }
+
+                    const filename = pathStr.split(/[/\\]/).pop() || 'audio';
+                    const mockFile = {
+                        name: filename,
+                        path: pathStr,
+                        type: 'audio/wav'
+                    } as unknown as File;
+
+                    setFile(mockFile);
+                    
+                    if (audioUrl) {
+                        URL.revokeObjectURL(audioUrl);
+                    }
+                    setAudioUrl(`safe-file://${filePath}`);
+                    setTags([]);
+                    setProfile(null);
+                    
+                    await runAnalysis(mockFile);
+                }
+            } catch (err) {
+                logger.error("File selection failed", err);
+                toast.error("File selection failed.");
+            }
+        }
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
         if (!uploadedFile) return;
@@ -96,7 +142,7 @@ const AudioAnalyzer: React.FC = () => {
         await runAnalysis(uploadedFile);
     };
 
-    const runAnalysis = async (audioFile: File) => {
+    const runAnalysis = async (audioFile: File | string) => {
         setIsAnalyzing(true);
         const extractToastId = toast.loading("Executing full technical and semantic audio scan...");
 
@@ -182,7 +228,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </h2>
                                     <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.</p>
                                 </div>
-                                <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                                <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                                     {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
                                     {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
                                     <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
@@ -390,7 +436,7 @@ const AudioAnalyzer: React.FC = () => {
                                     <p className="text-sm max-w-md mx-auto leading-relaxed mb-8">
                                         Analyze LUFS, True Peak, and frequency spectrum distribution against specific platform targets (Spotify, Apple Music) before delivery.
                                     </p>
-                                    <label className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
+                                    <label onClick={handleLoadClick} className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
                                         <Upload size={16} className="mr-2" /> Upload Master for Audit
                                         <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                     </label>
@@ -405,7 +451,7 @@ const AudioAnalyzer: React.FC = () => {
                                             </h2>
                                             <p className="text-sm text-muted-foreground mt-1">Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.</p>
                                         </div>
-                                        <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
+                                        <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
                                             <Upload size={18} /> Re-Audit New File
                                             <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                         </label>
