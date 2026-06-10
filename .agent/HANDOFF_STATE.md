@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-10 15:47 EDT
+**Updated:** 2026-06-10 18:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7cfc34844 refactor(better): apply structural and defensive elevations to fsm and escrow
+3ab246b7c docs: add unified distribution flowchart diagram
+04b334545 chore: clean up comment
+c05c8a941 feat: implement concurrent multi-agent orchestration fsm, toggle, and circuit breaker
+35dcb4991 feat: implement native ddex generator and iswc pending state listener
+8855757db feat: implement escrow idempotency, gdf middleware, and 90-day retention daemon
+9578b802a refactor(better): elevate dsp ingestion pipeline with memory-safe streaming and defensive gcs error handling
+82dfab77d chore: session checkpoint [15:47]
 845b57bb7 refactor(better): apply safeUnsubscribe and local auth allowlists
 4c103a0fe chore: session checkpoint [14:41]
-0693a6214 docs: mark ISSUE-361 to ISSUE-366 as FIXED in root ledger
-c1d9361d4 chore: resolve ISSUE-361 to ISSUE-366 security and slop audit findings
-9f2b854d4 chore: session checkpoint [09:44]
-afcd856d7 fix: resolve typescript errors and correct electron-builder publish config for mac auto-updates
-c09521de0 chore: remove fake UI garnish and mock data across modules
-19c9acb16 chore: uncomment code-signing configuration in release workflow
-ed26add2e chore: session checkpoint [12:20]
-1f9710421 test: add FoundersPortal component unit tests
 ```
 
 ## Working State
