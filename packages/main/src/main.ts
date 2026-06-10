@@ -233,7 +233,14 @@ const createWindow = async () => {
     win.webContents.setWindowOpenHandler(({ url }) => {
         try {
             const parsedUrl = new URL(url);
-            const allowedOrigins = ['https://accounts.google.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
+            const allowedOrigins = [
+                'https://accounts.google.com', 
+                'https://indii.music', 
+                'https://indii-music-founder.firebaseapp.com',
+                'http://localhost:3000',
+                'http://localhost:4242',
+                'http://localhost:9099'
+            ];
 
             if (allowedOrigins.some(origin => parsedUrl.origin === origin)) {
                 return { action: 'allow' };
