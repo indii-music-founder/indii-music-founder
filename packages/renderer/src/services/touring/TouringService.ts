@@ -2,7 +2,6 @@ import { db } from '@/services/firebase';
 import {
     collection,
     addDoc,
-    getDocs,
     query,
     where,
     orderBy,
@@ -11,15 +10,15 @@ import {
     deleteDoc,
     serverTimestamp,
     onSnapshot,
-    Timestamp
+    Timestamp,
+    deleteDoc
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary, EmergencyContact } from '@/modules/touring/types';
-import { TourVehicleDocument, TourItineraryDocument } from '@/types/firestore';
+import { TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
-const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
 
 // Zod Schemas for Runtime Validation
@@ -65,7 +64,6 @@ export const EmergencyContactSchema = z.object({
 
 // E2E Mock Memory Storage to bypass Firestore network calls in offline testing
 let mockItineraries: Itinerary[] = [];
-let mockVehicleStats: VehicleStats | null = null;
 let mockEmergencyContacts: EmergencyContact[] = [];
 
 const itineraryListeners = new Set<(itineraries: Itinerary[]) => void>();
@@ -80,59 +78,7 @@ const notifyEmergencyListeners = () => {
 };
 
 export const TouringService = {
-    /**
-     * Get vehicle stats for a user.
-     * Returns null if not found, allowing the consumer to decide when to seed.
-     */
-    getVehicleStats: async (userId: string): Promise<VehicleStats | null> => {
-        if (isFirebaseE2EMockEnabled()) {
-            if (!mockVehicleStats) {
-                mockVehicleStats = {
-                    userId,
-                    milesDriven: 1200,
-                    fuelLevelPercent: 75,
-                    tankSizeGallons: 150,
-                    mpg: 8,
-                    gasPricePerGallon: 4.25
-                };
-            }
-            return mockVehicleStats;
-        }
 
-        try {
-            const q = query(
-                collection(db, VEHICLES_COLLECTION),
-                where('userId', '==', userId)
-            );
-
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const docSnapshot = snapshot.docs[0]!;
-                const data = docSnapshot.data() as TourVehicleDocument;
-                try {
-                    const validated = VehicleStatsSchema.passthrough().parse(data);
-                    return {
-                        ...validated,
-                        id: docSnapshot.id,
-                        createdAt: validated.createdAt,
-                        updatedAt: validated.updatedAt
-                    } as VehicleStats;
-                } catch (validationError: unknown) {
-                    logger.error('Invalid VehicleStats data:', validationError);
-                    return null;
-                }
-            }
-            return null;
-        } catch (error: unknown) {
-            const code = (error as { code?: string })?.code;
-            if (code === 'permission-denied') {
-                logger.debug('[Touring] Vehicle stats unavailable — insufficient permissions (expected in dev).');
-                return null;
-            }
-            logger.error('Error fetching vehicle stats:', error);
-            throw error;
-        }
-    },
 
     /**
      * Subscribe to user's itineraries
@@ -218,44 +164,7 @@ export const TouringService = {
         });
     },
 
-    /**
-     * Save/Update Vehicle Stats
-     */
-    saveVehicleStats: async (userId: string, stats: Partial<VehicleStats>) => {
-        if (isFirebaseE2EMockEnabled()) {
-            mockVehicleStats = {
-                ...(mockVehicleStats || {
-                    userId,
-                    milesDriven: 0,
-                    fuelLevelPercent: 100,
-                    tankSizeGallons: 15,
-                    mpg: 8,
-                    gasPricePerGallon: 3.50
-                }),
-                ...stats
-            };
-            return;
-        }
 
-        const q = query(
-            collection(db, VEHICLES_COLLECTION),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-            const docRef = snapshot.docs[0]!.ref;
-            await updateDoc(docRef, { ...stats, updatedAt: serverTimestamp() });
-        } else {
-            // If we are creating, we expect essential fields from standard partial updates
-            await addDoc(collection(db, VEHICLES_COLLECTION), {
-                ...stats,
-                userId,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-        }
-    },
 
     /**
      * Subscribe to emergency contacts for a user.
