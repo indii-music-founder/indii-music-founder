@@ -10,6 +10,37 @@ This root file is a current index for agents. The detailed issue ledger is:
 
 ## Active Beta-Readiness Issues
 
+### ISSUE-361: Real user PII + password hashes committed to public repo (`users.json`)
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 CRITICAL
+- **Summary:** Purged via git filter-repo and added to gitignore.
+
+### ISSUE-362: Spoofer-vulnerable window allowlist
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 CRITICAL
+- **Summary:** Applied strict URL origins allowlist in `packages/main/src/main.ts`.
+
+### ISSUE-363: Unsanitized HTML rendering
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Summary:** Added DOMPurify for sanitization in AgentCanvasPanel.
+
+### ISSUE-364: Slop UI components (No Backends)
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Summary:** Integrated real firestore backends for InventoryTracker, PricingEngine, and SuperfanCRM.
+
+### ISSUE-365: Fake visual audit operation
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Summary:** Removed the fake timeout and 'isAuditingAssets' state.
+
+### ISSUE-366: Event-listener Imbalance
+- **Status:** ✅ FIXED
+- **Severity:** 🟢 LOW
+- **Summary:** Verified and fixed improper removeEventListener and unsubscribe methods in useEffect across renderer.
+
+
 ### ISSUE-079: Founder Seat Model Split-Brain Across Product Surfaces
 - **Status:** ✅ FIXED
 - **Severity:** HIGH
