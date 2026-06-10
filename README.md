@@ -10,7 +10,7 @@ indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenan
 
 👉 **New to the platform?** Read the [App Access Points Guide](docs/APP_ACCESS_POINTS_GUIDE.md) to understand how the Web App, Desktop App, and Mobile Remote work together.
 
-[![Version](https://img.shields.io/badge/Version-1.64.0-blue)](https://github.com/indii-music-founder/indii-music-founder)
+[![Version](https://img.shields.io/badge/Version-1.64.2-blue)](https://github.com/indii-music-founder/indii-music-founder)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -486,7 +486,7 @@ indii ships with 36 lazy-loaded modules organized across four domains:
 | **Agent Tools** | `/agent` | Hub for Agent Swarm interactions and specialist agent routing |
 | **Memory Agent** | `/memory` | Always-On Memory dashboard — memory timeline, insights, and query interface |
 | **Knowledge Base** | `/knowledge` | Searchable knowledge repository for artists and labels |
-| **Audio Analyzer** | `/audio-analyzer` | Deep audio analysis — BPM, key detection, timbre analysis via Essentia.js |
+| **Audio Analyzer** | `/audio-analyzer` | Hybrid audio analysis — local Python background thread execution (BPM, key, scale, loudness) + local YAMNet ONNX semantic tagging |
 | **Road Manager** | `/road` | Tour logistics, fuel calculations, venue discovery, and route planning |
 | **Files** | `/files` | Integrated file manager for project assets |
 | **Marketplace** | `/marketplace` | Marketplace for beats, samples, presets, and services |
@@ -540,7 +540,7 @@ Firebase API keys are **identifiers, not secrets** — security is enforced via 
 | Animation | Framer Motion 12.x | Micro-animations and page transitions |
 | Canvas | Fabric.js 6.9 | Infinite canvas image editing |
 | Graph Editor | React Flow 11.11 | Node-based workflow automation |
-| Audio | Wavesurfer.js 7.11 + Essentia.js | Analysis and visualization |
+| Audio | Wavesurfer.js 7.11 + Essentia.js + Python (YAMNet ONNX) | Local-first analysis and visualization |
 | Video | Remotion 4.0 | Programmatic video rendering |
 | 3D | Three.js 0.182 | `@react-three/fiber` integration |
 | Charts | Recharts 3.6 | Data visualization |
@@ -789,6 +789,22 @@ For deep-dives into specific subsystems:
 ---
 
 ## 🔄 Recent Updates
+
+### v1.64.2 — Hybrid Local-First Audio Intelligence & Swarm FSM (June 2026)
+
+**15 files changed, +956 / −124 lines** — This release implements the hybrid local-first audio analysis pipeline for the Premium Electron desktop tier and introduces concurrent multi-agent FSM orchestration.
+
+#### 🎵 Hybrid Local-First Audio Analysis
+- **Local Python Analysis Background Engine** — Executes acoustic features extraction (BPM, key, scale, energy, loudness) and YAMNet ONNX semantic tagging locally in background threads, eliminating external API latency and cloud dependencies.
+- **On-Demand YAMNet ONNX Downloader** — Automatically fetches and caches the YAMNet ONNX model from a HuggingFace mirror directly to `~/.cache/indii/yamnet.onnx` on demand, falling back gracefully to rules-based classifications in offline mode.
+- **Secure File Streaming** — Introduces a secure `safe-file://` custom protocol handler in Electron's main process, enabling browser-safe range-request audio streaming directly from the local filesystem without memory growth.
+- **Cheap Text-only Gemini Synthesis** — Optimizes costs by using local acoustic vectors to run lightweight, text-only semantic synthesis prompts on Gemini instead of raw audio/Base64 uploads.
+
+#### 🤖 Swarm FSM & Security Hardening
+- **Multi-Agent Orchestration FSM** — Implements a concurrent multi-agent state machine with toggles and circuit breakers for robust swarm execution.
+- **Defensive Stripe Escrow Guards** — Stabilizes and secures escrow handling routines within the billing services.
+
+---
 
 ### v1.50.0 — Developer Experience & CI/CD Hardening (April 2026)
 
