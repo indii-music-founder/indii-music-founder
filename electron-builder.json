@@ -53,12 +53,14 @@
       ]
     }
   ],
-  "publish": {
-    "provider": "github",
-    "owner": "indii-music-founder",
-    "repo": "indii-music-founder",
-    "releaseType": "release"
-  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "indii-music-founder",
+      "repo": "indii-music-founder",
+      "releaseType": "release"
+    }
+  ],
   "win": {
     "artifactName": "${productName} Setup ${version}-${arch}.${ext}",
     "icon": "build/icon.ico",
