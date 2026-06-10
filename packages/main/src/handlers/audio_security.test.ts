@@ -181,7 +181,8 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
         };
         const handler = handlers['audio:analyze'];
 
-        // Match the exact error from ipc-security.ts
-        await expect(handler(maliciousEvent, '/tmp/song.mp3')).rejects.toThrow(/Security: Unauthorized sender URL/);
+        const result = await handler(maliciousEvent, '/tmp/song.mp3') as HandlerResult;
+        expect(result).toHaveProperty('success', false);
+        expect(result.error).toMatch(/Security: Unauthorized sender URL/);
     });
 });

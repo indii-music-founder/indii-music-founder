@@ -1,6 +1,6 @@
 # Music & Audio DNA Intelligence Flowchart
 
-This flowchart maps the technical execution path for the audio intelligence suite in indii. It details how raw audio files are processed client-side for DNA extraction (BPM, Key, Mood), how that metadata interacts with the MusicAgent, and how Text-to-Speech (TTS) generation is offloaded to the backend.
+This flowchart maps the technical execution path for the hybrid, local-first audio intelligence suite in indii. It details how raw audio files are processed natively under the Premium Electron desktop tier (using local Python extraction and ONNX/YAMNet classification) versus the standard Web browser fallback tier.
 
 ```mermaid
 graph TD
@@ -8,80 +8,88 @@ graph TD
     subgraph UI ["Client UI (packages/renderer/src/modules/tools/)"]
         Dropzone["Audio File Dropzone"]
         Visualizer["Waveform & DNA Dashboard"]
-        TTSInput["Text-to-Speech Prompt Input"]
     end
 
     %% Client Services & Analysis
     subgraph ClientLogic ["Client Logic & Extraction"]
         AudioIntSlice["Zustand `audioIntelligenceSlice`"]
         Wavesurfer["Wavesurfer.js (Waveform Rendering)"]
-        Essentia["Essentia.js (WASM Audio Analysis)"]
-        MusicAgent["MusicAgent (A2A Specialist)"]
+        AudioAnalysisService["AudioAnalysisService"]
+        AudioIntelligenceService["AudioIntelligenceService"]
     end
 
-    %% Backend Execution
-    subgraph CloudFunctions ["Firebase Cloud Functions"]
-        GenSpeechFn["`generateSpeech` (Callable HTTPS)"]
-        AuthCheck["Quota Verification Gate"]
+    %% Electron Main Process (Premium Tier)
+    subgraph ElectronMain ["Electron Main Process (Premium Tier)"]
+        IPCAnalyze["IPC Handler 'audio:analyze'"]
+        SafeFile["safe-file:// Protocol Handler"]
+        PythonAnalysis["Python audio_analysis.py (Acoustic + YAMNet ONNX)"]
+        AccessControl["AccessControlService"]
     end
 
-    %% AI & Storage Infrastructure
-    subgraph GCP ["Google Cloud Platform"]
-        Storage["Firebase Cloud Storage (`gs://`)"]
-        Firestore["Firestore Database (`tracks` metadata)"]
-        VertexTTS["Vertex AI (`Vertex AI Speech-to-Text API`)"]
+    %% Cloud AI Services
+    subgraph CloudServices ["Cloud Services"]
+        GeminiOnline["Gemini 3 Pro (Text-Only Semantic Synthesis)"]
+        GeminiBase64["Gemini 3 Pro (Base64 Audio Upload - Browser Fallback)"]
     end
 
-    %% Transitions - Audio DNA Extraction
-    Dropzone -->|"User uploads .wav/.mp3"| Wavesurfer
-    Wavesurfer -->|"Decodes & Renders"| Visualizer
+    %% Transitions - Ingestion
+    Dropzone -->|"User loads audio"| EnvCheck{Running in Electron?}
     
-    Dropzone -->|"Passes Audio Buffer"| Essentia
-    Essentia -->|"Extracts BPM, Key, Energy (WASM)"| AudioIntSlice
-    AudioIntSlice -->|"Updates DNA Dashboard"| Visualizer
+    %% Electron Path
+    EnvCheck -->|"Yes (Electron)"| SelectFile["window.electronAPI.selectFile()"]
+    SelectFile -->|"Authorizes Path"| AccessControl
+    SelectFile -->|"Set safe-file:// url"| SafeFile
+    SafeFile -->|"Verify Access"| AccessControl
+    SafeFile -->|"Stream from disk (Range Requests)"| Wavesurfer
     
-    AudioIntSlice -->|"Passes metadata for analysis"| MusicAgent
-    MusicAgent -->|"Generates marketing insights"| UI
+    SelectFile -->|"filePath"| AudioAnalysisService
+    AudioAnalysisService -->|"IPC audio:analyze"| IPCAnalyze
+    IPCAnalyze -->|"Execute"| PythonAnalysis
+    PythonAnalysis -->|"Acoustic Features + ONNX Tags"| IPCAnalyze
+    IPCAnalyze -->|"Return Result"| AudioAnalysisService
     
-    AudioIntSlice -->|"Saves DNA Profile"| Firestore
-    Wavesurfer -->|"Uploads Original File"| Storage
+    AudioAnalysisService -->|"technical features"| AudioIntelligenceService
+    AudioIntelligenceService -->|"Check internet"| NetCheck{Is Online?}
+    NetCheck -->|"Yes"| GeminiOnline
+    NetCheck -->|"No"| OfflineFallback["degradeToLocalSemantic (Local ONNX mappings)"]
 
-    %% Transitions - Text-To-Speech
-    TTSInput -->|"Submits Text & Voice Profile"| GenSpeechFn
-    GenSpeechFn -->|"Verifies tier limits"| AuthCheck
-    AuthCheck -->|"Pass"| VertexTTS
-    
-    VertexTTS -->|"Generates Audio Buffer"| GenSpeechFn
-    GenSpeechFn -->|"Uploads output"| Storage
-    Storage -->|"Returns URL"| GenSpeechFn
-    GenSpeechFn -->|"Returns URL to UI"| AudioIntSlice
-    AudioIntSlice -->|"Loads into player"| Wavesurfer
+    %% Browser Path
+    EnvCheck -->|"No (Browser)"| BrowserRead["FileReader (arrayBuffer)"]
+    BrowserRead -->|"Decode (Web Audio API)"| Wavesurfer
+    BrowserRead -->|"decodeAudioData"| AudioAnalysisService
+    AudioAnalysisService -->|"Basic BPM/Key WASM Fallback"| AudioIntelligenceService
+    AudioIntelligenceService -->|"Base64 Audio Upload"| GeminiBase64
+
+    %% Common output
+    GeminiOnline -->|"DNA Profile + Copy"| AudioIntSlice
+    GeminiBase64 -->|"DNA Profile + Copy"| AudioIntSlice
+    OfflineFallback -->|"DNA Profile (Local only)"| AudioIntSlice
+    AudioIntSlice -->|"Update UI"| Visualizer
 
     %% Styling
     style Dropzone fill:#00D4FF,color:#000
     style Visualizer fill:#00D4FF,color:#000
-    style TTSInput fill:#00D4FF,color:#000
-
     style AudioIntSlice fill:#8A2BE2,color:#FFF
     style Wavesurfer fill:#8A2BE2,color:#FFF
-    style Essentia fill:#8A2BE2,color:#FFF
-    style MusicAgent fill:#8A2BE2,color:#FFF
-
-    style GenSpeechFn fill:#FF8C00,color:#000
-    style AuthCheck fill:#FF00FF,color:#FFF
-
-    style VertexTTS fill:#39FF14,color:#000
-    style Storage fill:#39FF14,color:#000
-    style Firestore fill:#39FF14,color:#000
+    style AudioAnalysisService fill:#8A2BE2,color:#FFF
+    style AudioIntelligenceService fill:#8A2BE2,color:#FFF
+    style ElectronMain fill:#FF8C00,color:#FFF
+    style PythonAnalysis fill:#FF00FF,color:#FFF
+    style GeminiOnline fill:#39FF14,color:#000
+    style GeminiBase64 fill:#39FF14,color:#000
 ```
 
 ## Transition Breakdown
 
-1. **Audio Ingestion & Rendering:** The user uploads a `.wav` or `.mp3` file into the **Audio File Dropzone**. This file is immediately handed to **Wavesurfer.js**, which decodes the audio and renders a visual waveform in the **Visualizer** for immediate playback capability.
-2. **Local DNA Extraction:** Simultaneously, the audio buffer is passed to **Essentia.js**, which runs heavy signal processing locally in the browser via WebAssembly (WASM). It extracts the structural DNA of the track (BPM, Key, Scale, Energy, Mood) without needing to upload the raw file to a heavy backend compute server.
-3. **State Sync:** The extracted data updates the **Zustand `audioIntelligenceSlice`**, populating the **DNA Dashboard** instantly.
-4. **Agentic Handoff:** The structural metadata (e.g., "120 BPM, C Minor, High Energy") is injected into the context of the **MusicAgent**. The agent uses this raw data to generate human-readable insights (e.g., "This track fits well into workout playlists or high-energy sync placements").
-5. **Persistence:** The original audio file is uploaded to **Firebase Cloud Storage**, and its corresponding DNA metadata is saved to the **Firestore** `tracks` collection for future retrieval.
-6. **Text-to-Speech Generation:** If the user wants to generate vocal assets, they use the **Text-to-Speech Prompt Input**. This sends a secure payload to the **`generateSpeech`** Cloud Function.
-7. **Cloud TTS Execution:** The backend runs the **Quota Verification Gate**, ensuring the user hasn't exceeded their limits. It then requests the audio from **Vertex AI (`Vertex AI Speech-to-Text API`)**.
-8. **Fulfillment:** The backend saves the generated audio buffer to **Storage**, returning the URL to the **`audioIntelligenceSlice`**, which loads it directly into **Wavesurfer.js** for the user to hear.
+1. **Environment Detection:** When a user loads a track, the application checks if it is running inside the **Electron Desktop environment** (Premium tier) or a **standard Web browser** (Lite tier).
+2. **Premium Electron Native Pipeline:**
+    - **Native Dialog:** The app calls `window.electronAPI.selectFile()`, spawning the OS file dialog in the Main process. The path is authorized via **AccessControlService**.
+    - **Secure Streaming Preview:** The waveform viewer loads `safe-file://${filePath}`. The custom protocol handler streams chunks of the lossless audio directly from disk, avoiding memory spikes in the Chromium renderer.
+    - **Local Acoustic & ONNX Classification:** The file path is passed to the native `audio:analyze` IPC handler, which executes the background Python worker script (`audio_analysis.py`). This script extracts technical markers (BPM, key, scale, energy) and performs YAMNet ONNX audio classification locally on the user's CPU/GPU.
+    - **Hybrid Online Synthesis:** If online, the local metrics and confidence scores are sent to **Gemini 3 Pro** via a cheap, text-only prompt to synthesize editorial pitch copy and target generation prompts, saving latency and network costs.
+    - **Offline Graceful Degradation:** If offline, the app maps the local ONNX classification scores directly to the DDEX database schema using `degradeToLocalSemantic()`, keeping the entire pipeline fully operational.
+3. **Web Browser Fallback Pipeline:**
+    - The browser decodes the audio file to an AudioBuffer via the standard Web Audio API.
+    - **Basic Analysis Fallback:** It runs lightweight mathematical heuristics in Javascript (zero-crossings) to estimate BPM, key, and energy.
+    - **Base64 Cloud Analysis:** To bypass browser CORS blocks on the Files API, the raw audio file is converted to a Base64 string and sent as inline data to **Gemini 3 Pro** to "listen" and generate semantic tags.
+4. **State Sync:** The consolidated DNA profile updates the **Zustand `audioIntelligenceSlice`** and populates the **Visualizer** dashboard for display.
