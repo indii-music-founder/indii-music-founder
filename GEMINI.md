@@ -454,6 +454,31 @@ Every code change, review, and agent-authored diff must meet the standards in th
 
 Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
 
+### 7. MERGE CONFLICT HYGIENE (MANDATORY AFTER EVERY MERGE)
+
+> [!CRITICAL]
+> Deletion-on-our-side vs. modification-on-their-side conflicts are silently resolved by keeping both. Three-way merge tools default to "keep both" when one side deletes and the other modifies. **You must verify deletions actually stayed deleted.**
+
+**Severity:** High. Stale code with deleted prop names breaks typechecks and blocks CI.
+
+**Root Cause:** After a merge from main (or any base branch), duplicate JSX blocks or stale prop names can be silently resurrected if the merge tool sees conflicting delete/modify operations.
+
+**Prevention Protocol (MANDATORY BEFORE ANY PUSH AFTER A MERGE):**
+
+1. **Grep for duplicates**: `grep -nE '<ComponentName|onPropName'` in any files that were modified during the merge. Look specifically for:
+   - Duplicate JSX blocks (same component rendered twice)
+   - Stale prop names (props that were intentionally renamed/deleted in your branch)
+   
+2. **Run the full CI typecheck**: Execute `npm run typecheck` (the exact command from the CI pipeline), NOT local `tsc --noEmit`. The CI command has broader scoping rules.
+
+3. **Inspect the merge diff**: Run `git diff <pre-merge-sha> HEAD -- <modified-file>` to understand the full three-way picture. When you see a deletion symbol (`-`) on your side and a modification on theirs, the merge may have kept both. Always verify the intended delete is gone.
+
+4. **Delete resurrected code**: If you find duplicate blocks or stale props, delete them immediately. These will always cause CI failures.
+
+**Example (PR #1631):** CreativeNavbar.tsx had two `<PromptBuilder>` blocks after merge. The newer one (mine) had `onSetPrompt`, the older one (from main's alternate impl) had the deleted `onPromptImproved` prop. The merge kept both. This broke typecheck with "Property 'onPromptImproved' does not exist." Fix: delete the duplicate inline render block.
+
+**Failure to perform this check after a merge is a protocol violation and will block deployment.**
+
 ---
 
 ## Key Files Quick Reference
