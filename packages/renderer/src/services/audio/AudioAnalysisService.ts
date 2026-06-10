@@ -27,7 +27,7 @@ export class AudioAnalysisService {
      * Analyzes an audio file/blob to extract high-level features.
      * Checks MusicLibraryService cache first to avoid expensive re-computation.
      */
-    async analyze(file: File | string): Promise<{ features: DeepAudioFeatures, semantic?: AudioAnalysisResult['semantic'], fromCache: boolean }> {
+    async analyze(file: File | string): Promise<{ features: DeepAudioFeatures, proxyBase64?: string, fromCache: boolean }> {
         let fileHash = '';
         let filename = '';
 
@@ -41,11 +41,16 @@ export class AudioAnalysisService {
                         const cached = await musicLibraryService.getAnalysis(fileHash);
                         if (cached) {
                             logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
-                            return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
+                            return { features: cached.features as DeepAudioFeatures, proxyBase64: cached.proxyBase64, fromCache: true };
                         }
+                        
+                        // String path means we can't run Web Audio API directly on it unless we fetch it.
+                        // We will rely on mapped features for now if it's a pure string path.
                         const features = this.mapElectronResultToFeatures(result);
+                        const proxyBase64 = result.proxyBase64 || undefined;
+                        
                         await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
-                        return { features, semantic: result.semantic, fromCache: false };
+                        return { features, proxyBase64, fromCache: false };
                     } else {
                         throw new Error(result.error || 'Electron analysis failed');
                     }
@@ -70,14 +75,21 @@ export class AudioAnalysisService {
                     const cached = await musicLibraryService.getAnalysis(fileHash);
                     if (cached) {
                         logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
-                        return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
+                        return { features: cached.features as DeepAudioFeatures, proxyBase64: cached.proxyBase64, fromCache: true };
                     }
-                    const features = this.mapElectronResultToFeatures(result);
+                    
+                    // Since we removed local Python ML, we use Web Audio for basic features (BPM/Key)
+                    const { features } = await this.analyzeDeep(file, fileHash);
+                    
+                    // Attach the compressed proxy from Electron
+                    const proxyBase64 = result.proxyBase64 || undefined;
+                    
+                    // Save to cache (we don't save proxyBase64 to IndexedDB to save space)
                     await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
-                    return { features, semantic: result.semantic, fromCache: false };
+                    return { features, proxyBase64, fromCache: false };
                 }
             } catch (e) {
-                logger.warn('[AudioAnalysis] Electron path analysis failed, falling back to Web Audio', e);
+                logger.warn('[AudioAnalysis] Electron path analysis failed, falling back to pure Web Audio', e);
             }
         }
 
@@ -87,7 +99,7 @@ export class AudioAnalysisService {
             const cached = await musicLibraryService.getAnalysis(fileHash);
             if (cached) {
                 logger.info(`[AudioAnalysis] Cache hit for ${filename}`);
-                return { features: cached.features as DeepAudioFeatures, semantic: cached.semantic as unknown as AudioAnalysisResult['semantic'], fromCache: true };
+                return { features: cached.features as DeepAudioFeatures, proxyBase64: cached.proxyBase64, fromCache: true };
             }
         } catch (e) {
             logger.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
@@ -96,7 +108,7 @@ export class AudioAnalysisService {
         return this.analyzeDeep(file, fileHash);
     }
 
-    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, semantic?: AudioAnalysisResult['semantic'], fromCache: boolean }> {
+    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, proxyBase64?: string, fromCache: boolean }> {
         await this.init();
 
         // Decode Audio
@@ -121,7 +133,7 @@ export class AudioAnalysisService {
             logger.warn("[AudioAnalysis] Failed to save to local cache", e);
         }
 
-        return { features, semantic: null, fromCache: false };
+        return { features, proxyBase64: undefined, fromCache: false };
     }
 
     public async generateFileHash(file: Blob): Promise<string> {

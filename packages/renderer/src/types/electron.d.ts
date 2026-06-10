@@ -49,15 +49,7 @@ export interface AudioAnalysisResult {
             rejectionRisks: string[];
         };
     } | null;
-    semantic?: {
-        ddexGenre: string;
-        ddexSubGenre: string;
-        language: string;
-        isExplicit: boolean;
-        genre: Record<string, number>;
-        moods: Record<string, number>;
-        instruments: Record<string, number>;
-    } | null;
+    proxyBase64?: string | null;
     error?: string;
 }
 

@@ -13,6 +13,10 @@ const mocks = vi.hoisted(() => ({
         createReadStream: vi.fn(),
         existsSync: vi.fn(),
         realpathSync: vi.fn(),
+        promises: {
+            readFile: vi.fn().mockResolvedValue(Buffer.from('mock-proxy')),
+            unlink: vi.fn().mockResolvedValue(undefined),
+        },
         default: {
             createReadStream: vi.fn(),
             existsSync: vi.fn(),
@@ -20,11 +24,24 @@ const mocks = vi.hoisted(() => ({
         }
     },
     // Mock ffmpeg
-    ffmpeg: {
-        setFfmpegPath: vi.fn(),
-        setFfprobePath: vi.fn(),
-        ffprobe: vi.fn()
-    }
+    ffmpeg: Object.assign(
+        vi.fn(() => ({
+            audioChannels: vi.fn().mockReturnThis(),
+            audioFrequency: vi.fn().mockReturnThis(),
+            audioBitrate: vi.fn().mockReturnThis(),
+            format: vi.fn().mockReturnThis(),
+            on: vi.fn(function(this: any, event: string, cb: any) {
+                if (event === 'end') setTimeout(cb, 0);
+                return this;
+            }),
+            save: vi.fn().mockReturnThis()
+        })),
+        {
+            setFfmpegPath: vi.fn(),
+            setFfprobePath: vi.fn(),
+            ffprobe: vi.fn()
+        }
+    )
 }));
 
 // Mock 'electron'
