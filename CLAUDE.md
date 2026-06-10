@@ -148,7 +148,7 @@ indii-music-founder/
 | Animation | Framer Motion 12.x | |
 | Canvas | Fabric.js 6.9 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
-| Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 | Analysis & visualization |
+| Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 + Python (YAMNet ONNX) | Local-first analysis & visualization |
 | Video | Remotion 4.0.445 | Video rendering |
 | 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |

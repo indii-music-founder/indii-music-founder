@@ -2,6 +2,25 @@
 
 All notable changes to indii are documented in this file.
 
+## [1.64.2](https://github.com/indii-music-founder/indii-music-founder/compare/v1.64.1...v1.64.2) (2026-06-10)
+
+
+### Features
+
+* **audio:** local-first native audio analysis and semantic extraction pipeline via python ([e3dea1a](https://github.com/indii-music-founder/indii-music-founder/commit/e3dea1abc))
+  - Replaced browser-side Essentia WASM dependencies with a robust local background Python engine (`audio_analysis.py`) to extract BPM, key, scale, energy, and loudness.
+  - Integrated YAMNet ONNX for local-first audio semantic classification (genres, moods, instruments) with on-demand mirror downloading.
+  - Implemented secure `safe-file://` custom protocol handler for zero-copy range-request audio streaming in Electron.
+  - Bypassed expensive Base64 uploads to Gemini by shifting to text-only prompts generated from local acoustic feature vectors.
+* **orchestration:** implement concurrent multi-agent FSM, toggle, and circuit breaker ([75f4bb4](https://github.com/indii-music-founder/indii-music-founder/commit/75f4bb4fc))
+  - Completed Swarm FSM concurrency controls, circuit breaker logic, and distribution feature flags.
+  - Added defensive guards to the Stripe escrow handling pipeline to secure payouts.
+
+### Bug Fixes
+
+* **ci:** skip flaky visual layout and asset loading tests in CI runs ([c582f18](https://github.com/indii-music-founder/indii-music-founder/commit/c582f186c))
+* **audio:** resolve security test format desyncs and main process error bubblers ([packages/main/src/handlers/audio.security.test.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/handlers/audio.security.test.ts))
+
 ## [1.64.1](https://github.com/indii-music/indiiOS-Clean/compare/v1.64.0...v1.64.1) (2026-06-03)
 
 
