@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-10 18:59 EDT
+**Updated:** 2026-06-10 19:13 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+eb339a1ad feat(audio): local-first native audio analysis and semantic extraction pipeline via python
+bf414bd35 refactor(better): elevate AudioIntelligence pipeline performance to avoid duplicate local extraction
+aeab7aeb8 chore: session checkpoint [18:59]
 441e8cb9e chore: session checkpoint [18:50]
 7cfc34844 refactor(better): apply structural and defensive elevations to fsm and escrow
 3ab246b7c docs: add unified distribution flowchart diagram
@@ -11,20 +14,10 @@
 c05c8a941 feat: implement concurrent multi-agent orchestration fsm, toggle, and circuit breaker
 35dcb4991 feat: implement native ddex generator and iswc pending state listener
 8855757db feat: implement escrow idempotency, gdf middleware, and 90-day retention daemon
-9578b802a refactor(better): elevate dsp ingestion pipeline with memory-safe streaming and defensive gcs error handling
-82dfab77d chore: session checkpoint [15:47]
-845b57bb7 refactor(better): apply safeUnsubscribe and local auth allowlists
 ```
 
 ## Working State
 ```
- M docs/flowcharts/audio-intelligence-flow.md
- M packages/main/src/handlers/audio.ts
- M packages/main/src/main.ts
- M packages/renderer/src/modules/tools/AudioAnalyzer.tsx
- M packages/renderer/src/services/audio/AudioAnalysisService.ts
- M packages/renderer/src/services/audio/AudioIntelligenceService.ts
- M packages/renderer/src/types/electron.d.ts
 ?? .agent/checkpoints/antigravity-session-05f2b457-final.md
 ```
 
