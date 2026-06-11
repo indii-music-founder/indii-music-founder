@@ -915,3 +915,36 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 **Symptom:** `Error: Invalid JSON at line X in file.jsonl`
 **Context:** When resolving git merge conflicts in JSONL files using blanket marker removal, the conflict markers (`<<<<<<< HEAD`, `=======`, `>>>>>>>`) can split a single JSON object across multiple lines if not careful, leading to invalid JSON parsing downstream.
 **Fix:** Use a script to strip the conflict markers directly without adding newlines, or properly regenerate the JSONL file if it gets corrupted. Ensure all `>>>>>>> branch` variants are targeted in the cleanup script.
+
+## 2026-06-11 Zustand 5 Selector Re-render Loops
+
+**SEVERITY:** High (causes browser execution crash or extreme lag due to "maximum update depth exceeded")
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/modules/founders/FoundersPortal.tsx`
+- ERROR: `Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate.`
+- CAUSE: Zustand 5 defaults to strict reference equality comparison (`Object.is`) for selected slices. Returning a newly allocated raw object from a state selector hook (e.g. `useStore(state => ({ userProfile: state.userProfile, setModule: state.setModule }))`) without wrapping it in `useShallow` results in a new object reference on every state dispatch, causing infinite React render loops.
+- FIX: Wrap the selector function inside `useShallow` (imported from `zustand/react/shallow`) before passing it to `useStore`.
+- PREVENTION: Always use `useShallow` when selecting multiple properties from a Zustand store slice as an object, to prevent reference-equality checks from triggering cascading re-render loops.
+
+## 2026-06-11 Thread Race Conditions on Dynamic Module Imports in Vite
+
+**SEVERITY:** High (causes "Failed to fetch dynamically imported module" runtime crashes during concurrent operations)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/agent/ModuleImportCache.ts`, `packages/renderer/src/services/agent/AgentService.ts`
+- ERROR: `TypeError: Failed to fetch dynamically imported module` or dynamic import timeouts when the central conductor triggered concurrent delegations.
+- CAUSE: When multiple parallel execution streams try to load the exact same chunk or module simultaneously (via `import()`), Vite's browser-side module loader hits a network race condition that corrupts the resolved promise or triggers duplicate fetch requests.
+- FIX: Implemented a thread-safe `ModuleImportCache` class that caches dynamic import promises in-flight, ref-counts concurrent requests, and implements exponential backoff retries (3 attempts: 100ms, 200ms, 400ms) so that parallel imports for the same chunk share a single, cached promise.
+- PREVENTION: When orchestrating parallel operations that lazy-load shared code chunks, deduplicate the import statements through a central cache to prevent chunk fetch race conditions.
+
+## 2026-06-11 Heartbeat Presence Tracking Navigation State Desync
+
+**SEVERITY:** High (causes remote mobile companion devices to constantly un-pair and re-pair)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/hooks/useRemoteCommandListener.ts`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`
+- ERROR: Mobile remote device constantly transitions between `pairing` and `idle`/`disconnected` state.
+- CAUSE: The `useFirestoreRelay` state-push effect dependencies ran the unmount cleanup on every navigation or mode switch, writing `online: false` to the relay document before writing `online:true`. The companion reacted by immediately disconnecting and reconnecting.
+- FIX: Decoupled the heartbeat loop from navigation state updates using `enabledRef.current` and a mount-once effect, so the heartbeat runs continuously without unmounting, and write `online: false` only on true hook unmount/disable.
+- PREVENTION: Heartbeat loops should be isolated from rapid UI navigation paths. Use mutable references (`useRef`) to store connection state and run the heartbeat loop inside a mount-once effect.
