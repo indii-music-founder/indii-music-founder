@@ -1,9 +1,4 @@
 ---
-
-> [!IMPORTANT]
-> **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
 name: /mega-test
 description: >
   Execute a specific version of the Mega Stress Test Plan using the browser subagent,
@@ -13,6 +8,11 @@ description: >
   to .agent/test_ledger/OPEN_ISSUES.md, and produces a structured test report.
   TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 
 # /mega-test — Multi-Dimensional Mega Stress Test Execution Protocol
 

@@ -37,27 +37,21 @@ fi
 echo "=== Agent Checkpoints ==="
 ls -lh .agent/checkpoints/*.md 2>/dev/null || echo "WARNING: No agent checkpoints found"
 
-# Check for deprecated singleton handoff file with conflicts
+# HANDOFF_STATE.md is the canonical session handoff (auto-written by the Stop hook
+# and read at session bootstrap per CLAUDE.md). Per-agent checkpoints in
+# .agent/checkpoints/ supplement it for parallel-agent work. Only fail on conflicts:
 if grep -q "^<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
-  echo "ERROR: .agent/HANDOFF_STATE.md still has merge conflicts"
-  echo "This file is deprecated. Use distributed checkpoints in .agent/checkpoints/ instead"
-  echo "See: .agent/HANDOFF_STRATEGY.md for migration steps"
+  echo "ERROR: .agent/HANDOFF_STATE.md has unresolved merge conflicts — resolve before validating"
+  echo "See: .agent/HANDOFF_STRATEGY.md for the distributed checkpoint protocol"
   exit 1
-fi
-
-# Warn if old singleton file was modified recently
-if [ -f ".agent/HANDOFF_STATE.md" ]; then
-  MODIFIED=$(git log -1 --format=%ai .agent/HANDOFF_STATE.md 2>/dev/null | cut -d' ' -f1)
-  echo "WARNING: Old .agent/HANDOFF_STATE.md still exists (last modified: $MODIFIED)"
-  echo "Consider migrating to distributed checkpoints: .agent/checkpoints/*.md"
 fi
 ```
 
 **IF checkpoint validation fails:**
 
-- Missing `checkpoints/` directory → Follow migration in `.agent/HANDOFF_STRATEGY.md`
-- Merge conflicts in old file → Resolve per Step 0.2 below
-- No agent checkpoints found → Ensure agents are writing to `.agent/checkpoints/{agent-id}.md` on session end
+- Missing `checkpoints/` directory → Create it: `mkdir -p .agent/checkpoints && touch .agent/checkpoints/.gitkeep`
+- Merge conflicts in `HANDOFF_STATE.md` → Resolve them before proceeding (it is the canonical handoff, not deprecated)
+- No agent checkpoints found → Fine for solo sessions; for parallel-agent work, ensure agents write `.agent/checkpoints/{agent-id}.md` on session end
 
 ### 0.2 — Commit Audit & Consolidation
 
@@ -163,12 +157,12 @@ Read the known patterns. If your change touches a service with dynamic imports, 
 ```text
 # 1. Find the failing job ID
 curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/new-detroit-music-llc/indii-Clean/actions/runs/{RUN_ID}/jobs?per_page=20" \
+  "https://api.github.com/repos/indii-music-founder/indii-music-founder/actions/runs/{RUN_ID}/jobs?per_page=20" \
   | python3 -c "import sys,json; [print('FAIL', j['name'], j['id']) for j in json.load(sys.stdin)['jobs'] if j['conclusion']=='failure']"
 
 # 2. Get annotations (the real error, not the phantom git/gitleaks warning)
 curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/new-detroit-music-llc/indii-Clean/check-runs/{JOB_ID}/annotations" \
+  "https://api.github.com/repos/indii-music-founder/indii-music-founder/check-runs/{JOB_ID}/annotations" \
   | python3 -c "import sys,json; [print(a['annotation_level'], a['path'], a['start_line'], a['message'][:300]) for a in json.load(sys.stdin)]"
 
 # 3. IGNORE annotations where message contains 'git' and path='.github' — those are phantom
@@ -230,9 +224,9 @@ echo "=== Checkpoint System Validation ==="
 RECENT=$(find .agent/checkpoints -name "*.md" -mtime -1 2>/dev/null | wc -l)
 echo "✓ Recent agent checkpoints: $RECENT"
 
-# 3. Check for merge conflicts in old file
+# 3. Check for merge conflicts in the handoff file
 if grep -q "<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
-  echo "✗ CONFLICT in HANDOFF_STATE.md — use distributed checkpoints instead"
+  echo "✗ CONFLICT in HANDOFF_STATE.md — resolve before pushing"
 else
   echo "✓ No conflicts in HANDOFF_STATE.md"
 fi

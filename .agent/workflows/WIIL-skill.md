@@ -1,11 +1,11 @@
 ---
+description: The master manifest of all approved, global /commands for the agent swarm.
+---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
-description: The master manifest of all approved, global /commands for the agent swarm.
----
 
 # WIIL-Skill: The Master Command Manifest
 
@@ -88,7 +88,11 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 
 ### `/better` — Universal Improvement Engine
 - **Purpose:** Audits, elevates, and polishes whatever you're currently working on. Checks style alignment, performance, and formatting.
-- **When to use:** Drop it anywhere during execution to polish a feature.
+- **When to use:** Can be invoked manually anytime. In the automated pipeline it runs in exactly two places: per-task inside `/go` (Step 5, scoped to the files just modified) and once in `/end` before `/ci-validate`. No other workflow auto-invokes it — chained auto-polish passes were removed to stop redundant triple-audits of the same files.
+
+### `/finish` — Unfinished Work Sweep
+- **Purpose:** Scours the repo for TODOs, stubs, placeholders, and AI slop using a subagent swarm, then logs all findings to `.agent/test_ledger/OPEN_ISSUES.md` for `/issue` to fix.
+- **When to use:** Periodically, or before a release seal, to flush out half-finished work.
 
 ### `/devex-review` — Developer Experience Audit
 - **Purpose:** Comprehensive Developer Experience audit to ensure coding environment, aliases, and dependencies are optimized.

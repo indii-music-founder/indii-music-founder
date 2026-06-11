@@ -25,13 +25,13 @@ Run all scans in parallel. These catch low-hanging fruit fast.
 ### 1.1 Security Vectors
 ```bash
 # XSS: dangerouslySetInnerHTML
-grep -rn 'dangerouslySetInnerHTML' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'dangerouslySetInnerHTML' packages/renderer/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 
 # Hardcoded secrets
-grep -rn 'sk_live\|sk_test\|ghp_\|AIza' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'MOCK_KEY' | grep -v 'import.meta.env'
+grep -rn 'sk_live\|sk_test\|ghp_\|AIza' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'MOCK_KEY' | grep -v 'import.meta.env'
 
 # process.env in browser context (should be import.meta.env)
-grep -rn 'process\.env\.' src/ --include='*.ts' --include='*.tsx' | grep -v 'VITEST\|NODE_ENV\|import\.meta' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'process\.env\.' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v 'VITEST\|NODE_ENV\|import\.meta' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -42,11 +42,11 @@ grep -rn 'process\.env\.' src/ --include='*.ts' --include='*.tsx' | grep -v 'VIT
 ### 1.2 Memory Leaks
 ```bash
 # Event listener mismatch (add vs remove counts)
-echo "=== addEventListener ===" && grep -rn 'addEventListener' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
-echo "=== removeEventListener ===" && grep -rn 'removeEventListener' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "=== addEventListener ===" && grep -rn 'addEventListener' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "=== removeEventListener ===" && grep -rn 'removeEventListener' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
 
 # Firestore onSnapshot without matching unsubscribe
-grep -rn 'onSnapshot' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'onSnapshot' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -57,10 +57,10 @@ grep -rn 'onSnapshot' src/ --include='*.ts' --include='*.tsx' | grep -v node_mod
 ```bash
 # Loading gates that block ALL rendering with no timeout/fallback
 # These cause infinite spinners when the underlying service fails silently
-grep -rn 'if.*Loading.*return' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'if.*Loading.*return' packages/renderer/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 
 # Init functions that set loading=true but have no timeout
-grep -rn 'authLoading\|isLoading.*true\|loading: true' src/core/store/slices/ --include='*.ts' | grep -v '.test.'
+grep -rn 'authLoading\|isLoading.*true\|loading: true' packages/renderer/src/core/store/slices/ --include='*.ts' | grep -v '.test.'
 
 # CI/CD env var mismatch: check deployed key matches local key
 grep 'VITE_FIREBASE_API_KEY' .env
@@ -75,10 +75,10 @@ grep 'VITE_FIREBASE_API_KEY' .env
 ### 1.4 Swallowed Errors
 ```bash
 # Empty catch blocks (silent failure)
-grep -rn 'catch.*{}' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'catch.*{}' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 
 # Raw console.log (should use logger)
-grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v '//'
+grep -rn 'console\.log' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v '//'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -88,10 +88,10 @@ grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_m
 ### 1.5 HTTP Error Codes
 ```bash
 # Unhandled response codes
-grep -rn '!response.ok' src/services/ --include='*.ts' | grep -v 'status\|429\|502\|503' | grep -v test
+grep -rn '!response.ok' packages/renderer/src/services/ --include='*.ts' | grep -v 'status\|429\|502\|503' | grep -v test
 
 # Missing retry logic for 429 rate limits
-grep -rn 'fetch(' src/services/ --include='*.ts' | grep -v 'retry\|backoff\|429' | grep -v test | grep -v '.d.ts'
+grep -rn 'fetch(' packages/renderer/src/services/ --include='*.ts' | grep -v 'retry\|backoff\|429' | grep -v test | grep -v '.d.ts'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -100,9 +100,9 @@ grep -rn 'fetch(' src/services/ --include='*.ts' | grep -v 'retry\|backoff\|429'
 
 ### 1.6 Vendor Chunk Conflicts
 ```bash
-# Check vite.config.ts manualChunks for React-dependent libs split from vendor-react
+# Check manualChunks (electron.vite.config.ts + packages/renderer/vite.config.ts) for React-dependent libs split from vendor-react
 # Any lib that imports react-reconciler, scheduler, or react-dom MUST be in vendor-react
-grep -A 30 'manualChunks' vite.config.ts
+grep -A 30 'manualChunks' electron.vite.config.ts packages/renderer/vite.config.ts
 
 # Check for scheduler duplication in production build
 npm run build:studio 2>&1 | grep -i 'scheduler\|reconciler' || echo 'No scheduler warnings'
@@ -115,10 +115,10 @@ npm run build:studio 2>&1 | grep -i 'scheduler\|reconciler' || echo 'No schedule
 ### 1.7 Impure Render Functions
 ```bash
 # Math.random() in render — violates react-hooks/purity, causes lint failure
-grep -rn 'Math\.random()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v 'useMemo\|useCallback\|useRef'
+grep -rn 'Math\.random()' packages/renderer/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v 'useMemo\|useCallback\|useRef'
 
 # Date.now() in render (non-deterministic)
-grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'useMemo\|useCallback\|useRef\|useEffect'
+grep -rn 'Date\.now()' packages/renderer/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'useMemo\|useCallback\|useRef\|useEffect'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -128,10 +128,10 @@ grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '
 ### 1.8 Anti-AI Slop (Clean-Up Scan)
 ```bash
 # Lazy AI placeholders
-grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
 
 # AI conversational boilerplate
-grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -146,7 +146,7 @@ Read actual code line-by-line. For each file, apply fixes immediately.
 
 ### 2.1 Store & State (Zustand Slices)
 
-Read every slice in `src/core/store/slices/`:
+Read every slice in `packages/renderer/src/core/store/slices/`:
 
 **SCAN FOR:**
 - Subscription leaks (onSnapshot without registerSubscription)
@@ -155,8 +155,8 @@ Read every slice in `src/core/store/slices/`:
 - Selector instability (multi-property useStore without useShallow)
 
 ```bash
-echo "useShallow:" && grep -rn 'useShallow' src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
-echo "useStore:" && grep -rn 'useStore(' src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "useShallow:" && grep -rn 'useShallow' packages/renderer/src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "useStore:" && grep -rn 'useStore(' packages/renderer/src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
 ```
 
 **AUTO-FIX:** For each finding:
@@ -167,10 +167,10 @@ echo "useStore:" && grep -rn 'useStore(' src/ --include='*.tsx' --include='*.ts'
 
 ### 2.2 Race Conditions
 
-Read any file that does Firestore read-modify-write, especially in `functions/src/`:
+Read any file that does Firestore read-modify-write, especially in `packages/firebase/src/`:
 
 ```bash
-grep -rn '\.update({' functions/src/ --include='*.ts' | grep -v 'transaction\.'
+grep -rn '\.update({' packages/firebase/src/ --include='*.ts' | grep -v 'transaction\.'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -181,7 +181,7 @@ grep -rn '\.update({' functions/src/ --include='*.ts' | grep -v 'transaction\.'
 ### 2.3 Finance & Revenue
 
 ```bash
-grep -rn 'toFixed\|Math.round' src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'toFixed\|Math.round' packages/renderer/src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
 **AUTO-FIX:** For each finding:
@@ -191,7 +191,7 @@ grep -rn 'toFixed\|Math.round' src/services/ --include='*.ts' | grep -v node_mod
 ### 2.4 AI & Agent Services
 
 ```bash
-grep -rn 'maxOutputTokens\|max_tokens' src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'maxOutputTokens\|max_tokens' packages/renderer/src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
 **AUTO-FIX:** For each Gemini call missing `maxOutputTokens`:
@@ -201,7 +201,7 @@ grep -rn 'maxOutputTokens\|max_tokens' src/services/ --include='*.ts' | grep -v 
 ### 2.5 Locale & i18n
 
 ```bash
-grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' packages/renderer/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
 **AUTO-FIX:** For each finding in business-critical paths (DDEX, invoices, legal):
@@ -221,7 +221,7 @@ npx vitest run 2>&1 | tail -30
 npm run build:studio 2>&1 | tail -20
 
 # Cloud Functions (if modified)
-cd functions && npx tsc --noEmit 2>&1 | tail -20 && cd ..
+cd packages/firebase && npx tsc --noEmit 2>&1 | tail -20 && cd ../..
 
 # Firestore rules (if modified)
 firebase firestore:rules validate --project indii-v-1-1

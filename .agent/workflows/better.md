@@ -1,11 +1,11 @@
 ---
+description: Universal improvement engine — drop anywhere to audit, elevate, and polish whatever you're currently working on. Observes from every angle others miss. Never breaks anything.
+---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
-description: Universal improvement engine — drop anywhere to audit, elevate, and polish whatever you're currently working on. Observes from every angle others miss. Never breaks anything.
----
 
 # /better — The Elevation Engine
 

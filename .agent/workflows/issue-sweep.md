@@ -1,14 +1,14 @@
 ---
-
-> [!IMPORTANT]
-> **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
 description: >-
   End-to-end issue sweep — branch uncommitted work → fix all CodeRabbit and Sentry issues →
   validate → generate the next Regression Gauntlet mega test plan → execute it via /mega-test →
   report. A complete closed-loop quality cycle. Run after any significant block of work.
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 
 // turbo-all
 

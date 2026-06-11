@@ -1,9 +1,4 @@
 ---
-
-> [!IMPORTANT]
-> **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
 name: /real
 description: >
   Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios.
@@ -11,6 +6,11 @@ description: >
   Always exhausts the system until completion or documented failure.
   TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a separate fixing agent.
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 
 # /real — Real-Life Scenario Testing
 
