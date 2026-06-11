@@ -161,6 +161,11 @@
             "tasks": "Task Queue",
             "campaigns": "Campaigns",
             "inbox": "Inbox"
+        },
+        "campaigns": {
+            "budget": "Budget: {{amount}}",
+            "noCampaigns": "No campaigns active",
+            "goToMarketing": "Go to Marketing"
         }
     },
     "sync": {
