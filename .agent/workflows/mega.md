@@ -1,4 +1,9 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 name: /mega
 description: >
   The Master Orchestrator for all Mega Stress Tests (V1–V7+).
@@ -6,7 +11,7 @@ description: >
   sustained real-user abuse. Pairs with /real for realistic scenario testing.
   Can run autonomously for hours or even days, cycling through every plan
   on a loop until explicitly stopped by the user.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to OPEN_ISSUES.md for a fixing agent.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
 ---
 
 # /mega — Master Mega Stress Test Orchestrator
@@ -17,7 +22,7 @@ description: >
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications. EVER.
 > **Duration:** Designed to run for hours or days. The agent cycles through every
 > plan on a loop until the user says stop.
-> **Output:** Per-routine verdicts → `OPEN_ISSUES.md` + session reports.
+> **Output:** Per-routine verdicts → `.agent/test_ledger/OPEN_ISSUES.md` + session reports.
 
 ---
 
@@ -25,13 +30,13 @@ description: >
 
 1. **You are a relentless QA machine.** You do not stop until the user tells you to,
    or until you have cycled through every plan and every routine has a verdict.
-2. **You do not write code.** Issues go to `OPEN_ISSUES.md` for a separate fixing agent.
+2. **You do not write code.** Issues go to `.agent/test_ledger/OPEN_ISSUES.md` for a separate fixing agent.
 3. **You do not read source code.** You are a user. You click, type, and observe.
 4. **You do not skip routines.** Every routine must execute and receive a verdict.
 5. **You batch intelligently.** Send 5–8 routines per browser subagent call to stay
    within context limits. Never try to run all 50 in a single call.
 6. **You log continuously.** After every batch, append results to the running report
-   and update `OPEN_ISSUES.md` before starting the next batch.
+   and update `.agent/test_ledger/OPEN_ISSUES.md` before starting the next batch.
 
 ---
 
@@ -148,7 +153,7 @@ This is the heart of `/mega`. It runs continuously until the queue is empty or t
 │       a. Build a batch of 5–8 routines             │
 │       b. Launch browser_subagent with the batch    │
 │       c. Collect results (PASS/PARTIAL/FAIL)       │
-│       d. Append new issues to OPEN_ISSUES.md       │
+│       d. Append new issues to .agent/test_ledger/OPEN_ISSUES.md       │
 │       e. Update running report                     │
 │       f. Print a progress line to the user          │
 │       g. Brief cooldown (5s) for browser stability │
@@ -454,7 +459,7 @@ After every `/mega` session completes (all plans executed, report produced, issu
 
 This ensures:
 1. All user prompts from the session have been acknowledged and addressed
-2. The `OPEN_ISSUES.md` ledger is consistent and up-to-date
+2. The `.agent/test_ledger/OPEN_ISSUES.md` ledger is consistent and up-to-date
 3. The `REAL_TEST_HISTORY.md` coverage ledger has been appended
 4. Any task artifacts or implementation plans are updated
 5. The Error Ledger is checked for patterns matching newly discovered issues

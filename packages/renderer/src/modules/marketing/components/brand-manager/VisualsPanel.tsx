@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '@/core/store';
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

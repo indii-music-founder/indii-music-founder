@@ -1,4 +1,9 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 description: Universal improvement engine — drop anywhere to audit, elevate, and polish whatever you're currently working on. Observes from every angle others miss. Never breaks anything.
 ---
 
@@ -280,7 +285,7 @@ Then commit: `git add -A && git commit -m "refactor(better): [summary of changes
 Output findings to **two targets**:
 
 1. **Consolidated findings doc** (`.agent/test_ledger/AUDIT_FINDINGS_<timestamp>.md`):
-   - Format matches `OPEN_ISSUES.md` house style
+   - Format matches `.agent/test_ledger/OPEN_ISSUES.md` house style
    - Per finding: Status | Severity | Module | Evidence | Files | Fix Direction | Verified?
    - Include "Corrections" section if you found false leads to warn the fixing agent
 

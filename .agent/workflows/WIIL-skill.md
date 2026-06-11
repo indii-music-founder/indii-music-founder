@@ -1,4 +1,9 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 description: The master manifest of all approved, global /commands for the agent swarm.
 ---
 
@@ -148,7 +153,7 @@ These skills reside inside `.agent/skills/` and are actively used by the agent s
 - **When to use:** Triggered when a build completes or when visual verification is needed.
 
 ### `/issue` — The Fix Agent
-- **Purpose:** Scans `OPEN_ISSUES.md` for unresolved issues logged by test agents, diagnoses, and fixes them.
+- **Purpose:** Scans `.agent/test_ledger/OPEN_ISSUES.md` for unresolved issues logged by test agents, diagnoses, and fixes them.
 - **When to use:** The counterpart to the test agents. Runs surgically to clear the issue backlog.
 
 ---
