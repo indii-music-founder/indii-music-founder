@@ -513,6 +513,18 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 
 ---
 
+
+
+### 8. ISSUE TRACKING & MASTER LEDGER PROTOCOL (MANDATORY)
+
+> [!CRITICAL]
+> All issues, test failures, bugs, and tasks MUST be logged into the single master ledger: `.agent/test_ledger/OPEN_ISSUES.md`.
+
+**Prevention Protocol (MANDATORY BEFORE LOGGING ISSUES):**
+1. **Never** create standalone issue files (e.g., `BROWSER_ISSUES.md`, `artifacts/*-regression.md`).
+2. **Never** log issues to generic `OPEN_ISSUES.md` strings without specifying the exact path.
+3. **Always** append directly to `.agent/test_ledger/OPEN_ISSUES.md`.
+
 ## Key Files Quick Reference
 
 | File | Purpose |
