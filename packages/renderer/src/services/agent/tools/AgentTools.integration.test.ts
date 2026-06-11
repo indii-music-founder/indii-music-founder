@@ -65,9 +65,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
             );
             expect(result).toBeDefined();
             // Should fail with invalid agent ID
-            if ('error' in result || result.message?.includes('Invalid agent ID')) {
-                expect(true).toBe(true); // Expected behavior
-            }
+            expect('error' in result || result.message?.includes('Invalid agent ID')).toBe(true);
         });
 
         it('set_mode rejects invalid modes', async () => {
