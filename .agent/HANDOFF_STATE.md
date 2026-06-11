@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-11 15:34 EDT
+**Updated:** 2026-06-11 18:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bcfd6d6c0 chore: add missing campaigns translation keys to resolve E2E warnings
+ed3cffc0c fix(docs): resolve flowchart syntax validation errors
+4b4e0d9c1 feat(agent): synchronize capability registry and prune stale playbook links
+675340132 feat(agent): elevate merchandise and curriculum agents to dynamic A2A JSON cards
+b8775ee76 chore: session checkpoint [15:34]
 d2b24c789 chore: session checkpoint [15:26]
 a8da7584c chore: session checkpoint [15:24]
 90ea7c056 docs(agents): create ANTIGRAVITY.md and unify all agent mirrors from CLAUDE.md
 c2110a900 chore: session checkpoint [15:20]
 d3994a029 docs(agents): document the four skill registries in all agent mirrors
-676cfcecc chore: session checkpoint [15:15]
-323470e1f docs(workflows): register vendored and proprietary skill registries in routing system
-713932b67 chore: session checkpoint [15:10]
-d4a4b4676 docs(skills): fix stale monorepo paths and outdated references
-1e9cd4a96 chore: session checkpoint [14:59]
 ```
 
 ## Working State
 ```
-clean working tree
+ M artifacts/live-agent-daisy-chain/coordination-report.html
+ M artifacts/live-agent-daisy-chain/latest.json
 ```
 
 ## Decisions
