@@ -1,14 +1,57 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "licensing",
-  "displayName": "Licensing Agent",
-  "description": "Licensing specialist \u2014 sync, sample clearance",
-  "capabilities": [],
+  "displayName": "Licensing Director",
+  "description": "Manages sync licensing, master usage rights, and clearance pipelines.",
+  "capabilities": [
+    {
+      "name": "check_availability",
+      "description": "Check if a piece of content is available for licensing. Can use a URL for deep analysis.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "analyze_contract",
+      "description": "Analyze a licensing agreement using contract parsing tools.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "draft_license",
+      "description": "Draft a new licensing agreement or contract.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "browser_tool",
+      "description": "Research Music Supervisors or Sync Libraries.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "document_query",
+      "description": "Analyze license agreements for unfair terms.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "payment_gate",
+      "description": "Pay for clearance fees.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +62,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "department",
+    "departmentId": "legal"
+  },
+  "promptVersion": "1.55.3-licensing",
+  "trainingModel": "legal"
 }

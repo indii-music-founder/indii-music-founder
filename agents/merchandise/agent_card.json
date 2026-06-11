@@ -1,14 +1,57 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "merchandise",
-  "displayName": "Merchandise Agent",
-  "description": "Merchandise specialist \u2014 product, fulfillment, drops",
-  "capabilities": [],
+  "displayName": "Merchandise Specialist",
+  "description": "Intelligence-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.",
+  "capabilities": [
+    {
+      "name": "search_assets",
+      "description": "Search for logos, designs, and images across all user projects in Creative Studio. Returns matching assets with URLs and metadata.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "create_product_mockup",
+      "description": "Generate photorealistic product mockup with design applied. Supports multiple product types and placements.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_product_video",
+      "description": "Create cinematic product video from mockup. Generates promotional video with camera movements.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "submit_to_production",
+      "description": "Submit merchandise design to production/manufacturing. Returns order ID for tracking.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "ask_clarification",
+      "description": "Ask the user a clarifying question to better understand their needs. Use this when ambiguous.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "list_product_types",
+      "description": "Get available product types, placements, and configurations.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +62,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "specialist",
+    "departmentId": "merchandise"
+  },
+  "promptVersion": "1.55.3-merchandise",
+  "trainingModel": "merchandise"
 }

@@ -1,2 +1,0 @@
-description: Generates a standard non-disclosure agreement (NDA).
-trigger_labels: ["legal", "contract", "privacy"]
