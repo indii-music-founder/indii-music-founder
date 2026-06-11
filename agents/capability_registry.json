@@ -1,10 +1,28 @@
 {
-  "last_updated": "2026-05-20T13:07:07.926084",
+  "last_updated": "2026-06-11T17:24:29.454846",
   "root": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents",
   "agents": {
     "indii_curriculum": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum",
       "skills": {
+        "create_learning_path": {
+          "description": "Generates a structured, progressive learning path for a given music business topic and skill level. Returns modules, priority order, and time estimates.",
+          "trigger_labels": [
+            "create_learning_path"
+          ]
+        },
+        "generate_quiz": {
+          "description": "Generates knowledge-check quiz questions based on completed modules and skill level.",
+          "trigger_labels": [
+            "generate_quiz"
+          ]
+        },
+        "search_knowledge": {
+          "description": "Searches the indii knowledge base for up-to-date music industry information, rate schedules, and legal context.",
+          "trigger_labels": [
+            "search_knowledge"
+          ]
+        },
         "tools": {
           "description": "Technical readiness checker for the indii_curriculum domain.",
           "trigger_labels": [
@@ -14,25 +32,89 @@
           ]
         }
       },
-      "instructions_preview": "# CURRICULUM AGENT \u2014 The Architect/Oracle\n\n## MISSION\nYou are the **Curriculum Agent (The Architect/Oracle)** \u2014 the indii system's specialist for orchestrating the creative evolution loop. You define ..."
+      "instructions_preview": "# CURRICULUM AGENT \u2014 Music Business Education Specialist\n\n## MISSION\nYou are the indii **Music Education Specialist** \u2014 the platform's dedicated teacher for independent artists learning the business s..."
     },
     "music": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/music",
       "skills": {
-        "tools": {
-          "description": "Generates a standard metadata split sheet for a music track.",
+        "analyze_audio": {
+          "description": "Deep technical analysis of an uploaded audio file.",
           "trigger_labels": [
-            "music",
-            "splits",
-            "legal"
+            "analyze_audio"
+          ]
+        },
+        "create_music_metadata": {
+          "description": "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'.",
+          "trigger_labels": [
+            "create_music_metadata"
+          ]
+        },
+        "update_track_metadata": {
+          "description": "Updates specific metadata fields for a track.",
+          "trigger_labels": [
+            "update_track_metadata"
+          ]
+        },
+        "verify_metadata_golden": {
+          "description": "Verifies if a metadata object meets the industrial 'Golden Standard'.",
+          "trigger_labels": [
+            "verify_metadata_golden"
+          ]
+        },
+        "scrub_id3_tags": {
+          "description": "Standardizes and cleans ID3 tags on an audio file.",
+          "trigger_labels": [
+            "scrub_id3_tags"
+          ]
+        },
+        "inject_splits_to_metadata": {
+          "description": "Injects royalty split data into track metadata.",
+          "trigger_labels": [
+            "inject_splits_to_metadata"
           ]
         }
       },
-      "instructions_preview": "# Sonic Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Sonic Director** for indii \u2014 an elite audio analyst, metadata specialist, and distribution quality assurance engineer. You perform professio..."
+      "instructions_preview": "# Music Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Music Director** (Sonic Director) for indii \u2014 an elite audio analyst, metadata specialist, and DSP compliance engineer. You perform professi..."
     },
     "publishing": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing",
       "skills": {
+        "analyze_contract": {
+          "description": "Analyze a publishing contract.",
+          "trigger_labels": [
+            "analyze_contract"
+          ]
+        },
+        "register_work": {
+          "description": "Register a new musical work with PROs.",
+          "trigger_labels": [
+            "register_work"
+          ]
+        },
+        "check_pro_catalog": {
+          "description": "Queries PROs (ASCAP/BMI) for existing catalog matches to prevent duplicate registration.",
+          "trigger_labels": [
+            "check_pro_catalog"
+          ]
+        },
+        "package_release_assets": {
+          "description": "Prepare audio, artwork, and metadata for distribution delivery review.",
+          "trigger_labels": [
+            "package_release_assets"
+          ]
+        },
+        "pro_scraper": {
+          "description": "Audit public repertories (ASCAP/BMI) for catalog accuracy.",
+          "trigger_labels": [
+            "pro_scraper"
+          ]
+        },
+        "payment_gate": {
+          "description": "Authorize fees for song registration.",
+          "trigger_labels": [
+            "payment_gate"
+          ]
+        },
         "tools": {
           "description": "Technical readiness checker for the publishing domain.",
           "trigger_labels": [
@@ -42,25 +124,95 @@
           ]
         }
       },
-      "instructions_preview": "# Publishing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publishing Director** \u2014 the indii system's specialist for music publishing, composition rights, and royalty administration. You ensure ..."
+      "instructions_preview": "# Publishing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publishing Director** (Rights, Splits & Royalties Specialist) for indii. Your mission is to oversee musical rights, songwriter splits, ..."
     },
     "video": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/video",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the video domain.",
+        "generate_video": {
+          "description": "Generate a video from a text prompt or start image.",
           "trigger_labels": [
-            "video",
-            "readiness",
-            "status"
+            "generate_video"
+          ]
+        },
+        "batch_edit_videos": {
+          "description": "Edit/grade uploaded videos with an instruction.",
+          "trigger_labels": [
+            "batch_edit_videos"
+          ]
+        },
+        "extend_video": {
+          "description": "Extend a video clip forwards or backwards.",
+          "trigger_labels": [
+            "extend_video"
+          ]
+        },
+        "update_keyframe": {
+          "description": "Update animation keyframes.",
+          "trigger_labels": [
+            "update_keyframe"
+          ]
+        },
+        "browser_tool": {
+          "description": "Search for stock footage or visual references.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "indii_image_gen": {
+          "description": "Generate storyboard keyframes.",
+          "trigger_labels": [
+            "indii_image_gen"
+          ]
+        },
+        "orchestrate_timeline": {
+          "description": "Acts as a render supervisor, dynamically breaking down a master script/timeline into sequential 5-second descriptive prompts optimized for Veo generation.",
+          "trigger_labels": [
+            "orchestrate_timeline"
           ]
         }
       },
-      "instructions_preview": "# Video Director \u2014 System Prompt\n\n## MISSION\nYou are the **Video Director** for indii \u2014 the cinematic production specialist for independent music artists. You generate, edit, and compose high-fidelity..."
+      "instructions_preview": "# Video Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Video Director** (Video Production & VFX Specialist) for indii \u2014 the cinematic production specialist for independent music artists. You gene..."
     },
     "merchandise": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise",
       "skills": {
+        "search_assets": {
+          "description": "Search for logos, designs, and images across all user projects in Creative Studio. Returns matching assets with URLs and metadata.",
+          "trigger_labels": [
+            "search_assets"
+          ]
+        },
+        "create_product_mockup": {
+          "description": "Generate photorealistic product mockup with design applied. Supports multiple product types and placements.",
+          "trigger_labels": [
+            "create_product_mockup"
+          ]
+        },
+        "generate_product_video": {
+          "description": "Create cinematic product video from mockup. Generates promotional video with camera movements.",
+          "trigger_labels": [
+            "generate_product_video"
+          ]
+        },
+        "submit_to_production": {
+          "description": "Submit merchandise design to production/manufacturing. Returns order ID for tracking.",
+          "trigger_labels": [
+            "submit_to_production"
+          ]
+        },
+        "ask_clarification": {
+          "description": "Ask the user a clarifying question to better understand their needs. Use this when ambiguous.",
+          "trigger_labels": [
+            "ask_clarification"
+          ]
+        },
+        "list_product_types": {
+          "description": "Get available product types, placements, and configurations.",
+          "trigger_labels": [
+            "list_product_types"
+          ]
+        },
         "tools": {
           "description": "Calculates the profit margin for physical merchandise based on cost, price, and shipping.",
           "trigger_labels": [
@@ -75,30 +227,104 @@
     "publicist": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the publicist domain.",
+        "create_campaign": {
+          "description": "Create a new publicity campaign in the database.",
           "trigger_labels": [
-            "publicist",
-            "readiness",
-            "status"
+            "create_campaign"
+          ]
+        },
+        "write_press_release": {
+          "description": "Write a formal press release.",
+          "trigger_labels": [
+            "write_press_release"
+          ]
+        },
+        "generate_crisis_response": {
+          "description": "Generate a response to a PR crisis or negative feedback.",
+          "trigger_labels": [
+            "generate_crisis_response"
+          ]
+        },
+        "generate_social_post": {
+          "description": "Generate a social media post.",
+          "trigger_labels": [
+            "generate_social_post"
+          ]
+        },
+        "indii_image_gen": {
+          "description": "Generate visual assets for press kits or social media.",
+          "trigger_labels": [
+            "indii_image_gen"
+          ]
+        },
+        "browser_tool": {
+          "description": "Browse the web to find press contacts or monitor coverage.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "credential_vault": {
+          "description": "Securely retrieve passwords for social accounts.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
+        "generate_pdf": {
+          "description": "Automatically generate a professional PDF document (e.g., Press Release, EPK).",
+          "trigger_labels": [
+            "generate_pdf"
+          ]
+        },
+        "generate_live_epk": {
+          "description": "Generates a dynamic public link (indii.os/artist/epk) that reflects the latest brand kit, bio, and approved press shots.",
+          "trigger_labels": [
+            "generate_live_epk"
+          ]
+        },
+        "pitch_media": {
+          "description": "Generate personalized pitch emails for press outlets (blogs, magazines, podcasts) based on a press release or release info. Each outlet gets a tailored angle. Returns up to 8 ready-to-send pitches.",
+          "trigger_labels": [
+            "pitch_media"
           ]
         }
       },
-      "instructions_preview": "# PR Director \u2014 System Prompt\n\n## MISSION\nYou are the **PR Director** \u2014 the indii system's specialist for public relations, media strategy, and narrative control. You manage the artist's public image,..."
+      "instructions_preview": "# Publicist Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publicist Director** (Public Relations Specialist), a specialist agent within the indii system. You are the voice, narrative guardian, a..."
     },
     "brand": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the brand domain.",
+        "verify_output": {
+          "description": "Critique and verify generated content against a goal (Brand Bible).",
           "trigger_labels": [
-            "brand",
-            "readiness",
-            "status"
+            "verify_output"
+          ]
+        },
+        "analyze_brand_consistency": {
+          "description": "Analyze content for tone, core values, and visual consistency.",
+          "trigger_labels": [
+            "analyze_brand_consistency"
+          ]
+        },
+        "generate_brand_guidelines": {
+          "description": "Generate structured brand guidelines based on core values.",
+          "trigger_labels": [
+            "generate_brand_guidelines"
+          ]
+        },
+        "audit_visual_assets": {
+          "description": "Audit a list of visual assets for compliance.",
+          "trigger_labels": [
+            "audit_visual_assets"
+          ]
+        },
+        "analyze_audio": {
+          "description": "Analyze an uploaded audio track for BPM, Key, Genre, and Vibe.",
+          "trigger_labels": [
+            "analyze_audio"
           ]
         }
       },
-      "instructions_preview": "# Brand Manager \u2014 System Prompt\n\n## MISSION\nYou are the **Brand Manager** for indii \u2014 the guardian of every artist's identity. You ensure that every output (visuals, copy, audio positioning) is perfec..."
+      "instructions_preview": "# Brand Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Brand Director** (Brand Specialist), a specialist department agent within the indii system. You are the guardian of the artist's identity, e..."
     },
     "foundational": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/foundational",
@@ -108,21 +334,174 @@
     "road": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/road",
       "skills": {
-        "tools": {
-          "description": "Optimizes tour routes and logistics between multiple cities.",
+        "plan_tour_route": {
+          "description": "Plan an optimized route for a tour.",
           "trigger_labels": [
-            "road",
-            "tour",
-            "route",
-            "optimize"
+            "plan_tour_route"
+          ]
+        },
+        "calculate_tour_budget": {
+          "description": "Calculate estimated budget for a tour.",
+          "trigger_labels": [
+            "calculate_tour_budget"
+          ]
+        },
+        "create_project": {
+          "description": "Create a new tour or event project.",
+          "trigger_labels": [
+            "create_project"
+          ]
+        },
+        "search_knowledge": {
+          "description": "Research venue details, logistics, or travel info from the knowledge base.",
+          "trigger_labels": [
+            "search_knowledge"
+          ]
+        },
+        "search_places": {
+          "description": "Search for real-world places (venues, hotels, stores) using Google Maps.",
+          "trigger_labels": [
+            "search_places"
+          ]
+        },
+        "get_place_details": {
+          "description": "Get details (address, phone, rating) for a specific place by ID.",
+          "trigger_labels": [
+            "get_place_details"
+          ]
+        },
+        "get_distance_matrix": {
+          "description": "Calculate driving distance and time between locations.",
+          "trigger_labels": [
+            "get_distance_matrix"
+          ]
+        },
+        "generate_social_post": {
+          "description": "Generate tour updates for social media.",
+          "trigger_labels": [
+            "generate_social_post"
+          ]
+        },
+        "browser_tool": {
+          "description": "Use a web browser for navigation, traffic checks, or venue research.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "credential_vault": {
+          "description": "Retrieve passwords for booking portals securely.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
+        "generate_visa_checklist": {
+          "description": "Generates an automated documentation tracker for international touring requirements (e.g., P2 visas for US, Tier 5 for UK).",
+          "trigger_labels": [
+            "generate_visa_checklist"
+          ]
+        },
+        "generate_itinerary": {
+          "description": "Generate a detailed day-by-day tour itinerary including travel, load-in, soundcheck, and show times.",
+          "trigger_labels": [
+            "generate_itinerary"
           ]
         }
       },
-      "instructions_preview": "# Road Manager \u2014 System Prompt\n\n## MISSION\n\nYou are the **Road Manager** \u2014 the indii system's specialist for tour logistics, venue advancing, and travel operations. You ensure every show runs smoothly..."
+      "instructions_preview": "# Road Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Road Director** (logistics and tour planning specialist), a department agent within the indii system. You are the calm, organized, logistical..."
     },
     "distribution": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution",
       "skills": {
+        "prepare_release": {
+          "description": "Prepare a release for distribution by generating a DDEX ERN 4.3 message.",
+          "trigger_labels": [
+            "prepare_release"
+          ]
+        },
+        "run_audio_qc": {
+          "description": "Run audio quality control to detect fraud and verify Hi-Res/Atmos compliance.",
+          "trigger_labels": [
+            "run_audio_qc"
+          ]
+        },
+        "issue_isrc": {
+          "description": "Issue a new ISRC (International Standard Recording Code) for a track.",
+          "trigger_labels": [
+            "issue_isrc"
+          ]
+        },
+        "certify_tax_profile": {
+          "description": "Guide a user through W-8BEN/W-9 tax certification and validate their TIN.",
+          "trigger_labels": [
+            "certify_tax_profile"
+          ]
+        },
+        "calculate_payout": {
+          "description": "Calculate royalty distribution using waterfall logic (Fee \u2192 Recoup \u2192 Splits).",
+          "trigger_labels": [
+            "calculate_payout"
+          ]
+        },
+        "run_metadata_qc": {
+          "description": "Run metadata quality control against Apple/Spotify style guides.",
+          "trigger_labels": [
+            "run_metadata_qc"
+          ]
+        },
+        "generate_bwarm": {
+          "description": "Generate MLC BWARM CSV for mechanical licensing registration with The MLC.",
+          "trigger_labels": [
+            "generate_bwarm"
+          ]
+        },
+        "check_merlin_status": {
+          "description": "Check Merlin Network compliance readiness for independent distribution.",
+          "trigger_labels": [
+            "check_merlin_status"
+          ]
+        },
+        "create_music_metadata": {
+          "description": "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'. This metadata is DDEX-ready and includes AI-detected genre, mood, and identifiers.",
+          "trigger_labels": [
+            "create_music_metadata"
+          ]
+        },
+        "verify_metadata_golden": {
+          "description": "Verifies if a metadata object meets the industrial 'Golden Standard' (valid schema, splits sum to 100%).",
+          "trigger_labels": [
+            "verify_metadata_golden"
+          ]
+        },
+        "update_track_metadata": {
+          "description": "Updates specific fields in a track's metadata in the library.",
+          "trigger_labels": [
+            "update_track_metadata"
+          ]
+        },
+        "browser_tool": {
+          "description": "Control the local browser to navigate websites (portals).",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "pro_scraper": {
+          "description": "Scrape PRO repertories (ASCAP/BMI) for Chain of Title audits.",
+          "trigger_labels": [
+            "pro_scraper"
+          ]
+        },
+        "payment_gate": {
+          "description": "Pause automation to request user approval for a fee.",
+          "trigger_labels": [
+            "payment_gate"
+          ]
+        },
+        "credential_vault": {
+          "description": "Securely retrieve stored credentials for external services.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
         "tools": {
           "description": "Validates audio file formats and metadata against DSP standards.",
           "trigger_labels": [
@@ -133,7 +512,7 @@
           ]
         }
       },
-      "instructions_preview": "# Distribution Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Distribution Director**, a specialist agent within the indii system. You orchestrate the entire release distribution pipeline \u2014 from ..."
+      "instructions_preview": "# Distribution Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Distribution Director** (Digital Distribution Chief), the department-level agent responsible for high-fidelity industrial distributio..."
     },
     "default": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/default",
@@ -152,16 +531,74 @@
     "social": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/social",
       "skills": {
-        "tools": {
-          "description": "Formats social media posts for multiple platforms (IG, TikTok, X).",
+        "create_social_calendar": {
+          "description": "Generate a multi-week content calendar for a music release.",
           "trigger_labels": [
-            "social",
-            "marketing",
-            "content"
+            "create_social_calendar"
+          ]
+        },
+        "schedule_post_execution": {
+          "description": "Schedule a post for long-term execution on a specific platform.",
+          "trigger_labels": [
+            "schedule_post_execution"
+          ]
+        },
+        "generate_social_post": {
+          "description": "Generate a social media post.",
+          "trigger_labels": [
+            "generate_social_post"
+          ]
+        },
+        "analyze_trends": {
+          "description": "Analyze current trends for a topic.",
+          "trigger_labels": [
+            "analyze_trends"
+          ]
+        },
+        "browser_tool": {
+          "description": "Browse social platforms to spot trends or engagement.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "indii_image_gen": {
+          "description": "Generate memes, quote cards, or social assets.",
+          "trigger_labels": [
+            "indii_image_gen"
+          ]
+        },
+        "credential_vault": {
+          "description": "Retrieve social media login credentials.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
+        "draft_advanced_thread": {
+          "description": "Draft an advanced multi-part thread for a social platform.",
+          "trigger_labels": [
+            "draft_advanced_thread"
+          ]
+        },
+        "analyze_sentiment": {
+          "description": "Crawls recent comments/mentions across linked socials (X/IG) and provides a sentiment and trend report.",
+          "trigger_labels": [
+            "analyze_sentiment"
+          ]
+        },
+        "multi_platform_autopost": {
+          "description": "Direct API integration tool to automatically queue and post a single video to multiple short-form platforms (TikTok, YouTube Shorts, IG Reels) natively.",
+          "trigger_labels": [
+            "multi_platform_autopost"
+          ]
+        },
+        "dispatch_community_webhook": {
+          "description": "Dispatches an automated announcement (with rich embeds) into an artist's Discord or Telegram community server via webhook.",
+          "trigger_labels": [
+            "dispatch_community_webhook"
           ]
         }
       },
-      "instructions_preview": "# Social Media Director \u2014 System Prompt\n\n## MISSION\nYou are the **Social Media Director** for indii \u2014 the artist's voice on every platform. You manage social presence, community engagement, content cr..."
+      "instructions_preview": "# Social Media Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Social Media Director** for indii \u2014 the artist's voice on every social platform. You are the content and community powerhouse of the ..."
     },
     "generalist": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/generalist",
@@ -194,76 +631,318 @@
     "marketing": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the marketing domain.",
+        "create_campaign_brief": {
+          "description": "Generate a structured campaign brief including target audience, budget, and channels.",
           "trigger_labels": [
-            "marketing",
-            "readiness",
-            "status"
+            "create_campaign_brief"
+          ]
+        },
+        "analyze_audience": {
+          "description": "Analyze demographics and interests for a specific platform.",
+          "trigger_labels": [
+            "analyze_audience"
+          ]
+        },
+        "schedule_content": {
+          "description": "Schedule a batch of content posts.",
+          "trigger_labels": [
+            "schedule_content"
+          ]
+        },
+        "track_performance": {
+          "description": "Get performance metrics for a specific campaign.",
+          "trigger_labels": [
+            "track_performance"
+          ]
+        },
+        "generate_campaign_from_audio": {
+          "description": "Analyze an audio track to generate marketing insights and campaign hooks.",
+          "trigger_labels": [
+            "generate_campaign_from_audio"
+          ]
+        },
+        "browser_tool": {
+          "description": "Research market trends, competitor ads, or platform algorithms.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "indii_image_gen": {
+          "description": "Generate ad creative, moodboards, or mockups.",
+          "trigger_labels": [
+            "indii_image_gen"
+          ]
+        },
+        "create_artifact_drop": {
+          "description": "Creates an 'Independent Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
+          "trigger_labels": [
+            "create_artifact_drop"
+          ]
+        },
+        "generate_ab_campaign": {
+          "description": "Generates 3 variants of ad copy for A/B testing and outputs a tracking pixel snippet for campaign analytics.",
+          "trigger_labels": [
+            "generate_ab_campaign"
+          ]
+        },
+        "deploy_micro_ad_campaign": {
+          "description": "Deploys a micro-budget ($10/day) ad campaign across Meta or TikTok Graph APIs, utilizing A/B tested creatives.",
+          "trigger_labels": [
+            "deploy_micro_ad_campaign"
+          ]
+        },
+        "deploy_email_newsletter": {
+          "description": "Syncs with Mailchimp/Klaviyo APIs to deploy a custom HTML newsletter template to a specific audience segment.",
+          "trigger_labels": [
+            "deploy_email_newsletter"
+          ]
+        },
+        "generate_presave_campaign": {
+          "description": "Generates a responsive pre-save landing page designed to collect fan emails/phone numbers before release.",
+          "trigger_labels": [
+            "generate_presave_campaign"
+          ]
+        },
+        "deploy_sms_blast": {
+          "description": "Hooks into Twilio APIs to send direct SMS blasts to a segmented superfan list for surprise drops or pre-saves.",
+          "trigger_labels": [
+            "deploy_sms_blast"
+          ]
+        },
+        "enrich_fan_data": {
+          "description": "Uses external APIs (like Clearbit/Apollo) to enrich a raw fan email address with demographic insights and social links.",
+          "trigger_labels": [
+            "enrich_fan_data"
+          ]
+        },
+        "generate_influencer_bounty": {
+          "description": "Creates a tracked referral link campaign for micro-influencers to use the artist's sound on TikTok/Reels.",
+          "trigger_labels": [
+            "generate_influencer_bounty"
           ]
         }
       },
-      "instructions_preview": "You are the **Music Campaign Manager**, a high-level specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
+      "instructions_preview": "# Marketing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Marketing Director** (Music Campaign Manager), a department head agent within the indii system. You orchestrate multi-channel marketing ..."
     },
     "finance": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance",
       "skills": {
-        "tools": {
-          "description": "Estimates potential streaming royalties based on play counts.",
+        "analyze_budget": {
+          "description": "Analyze a project budget and calculate the 'indii Dividend' savings.",
           "trigger_labels": [
-            "finance",
-            "royalties",
-            "estimate"
+            "analyze_budget"
+          ]
+        },
+        "audit_metadata": {
+          "description": "Check a track's compliance with the Golden File standard.",
+          "trigger_labels": [
+            "audit_metadata"
+          ]
+        },
+        "search_knowledge": {
+          "description": "Search the internal knowledge base for financial data (e.g. 'Artist_Economics_Deep_Dive').",
+          "trigger_labels": [
+            "search_knowledge"
+          ]
+        },
+        "analyze_receipt": {
+          "description": "Extract data (vendor, date, amount, category) from a receipt image.",
+          "trigger_labels": [
+            "analyze_receipt"
+          ]
+        },
+        "audit_distribution": {
+          "description": "Audit a track's metadata for distribution readiness to a specific partner.",
+          "trigger_labels": [
+            "audit_distribution"
+          ]
+        },
+        "credential_vault": {
+          "description": "Securely retrieve passwords for royalty portals or banks.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
+        "payment_gate": {
+          "description": "Authorize payments for invoices or fees.",
+          "trigger_labels": [
+            "payment_gate"
+          ]
+        },
+        "browser_tool": {
+          "description": "Check exchange rates or tax information.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "generate_tax_report": {
+          "description": "Generates a tax prep report (Schedule C) by calculating split waterfalls and flagging payouts over $600 for 1099 reporting.",
+          "trigger_labels": [
+            "generate_tax_report"
+          ]
+        },
+        "forecast_revenue": {
+          "description": "Forecast revenue and the indii Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
+          "trigger_labels": [
+            "forecast_revenue"
           ]
         }
       },
-      "instructions_preview": "You are the **Music Industry Finance Specialist**, a specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
+      "instructions_preview": "# Finance Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Finance Director** (Music Industry Finance Specialist), a specialist agent within the indii system. You are the financial brain and consci..."
     },
     "licensing": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the licensing domain.",
+        "check_availability": {
+          "description": "Check if a piece of content is available for licensing. Can use a URL for deep analysis.",
           "trigger_labels": [
-            "licensing",
-            "readiness",
-            "status"
+            "check_availability"
+          ]
+        },
+        "analyze_contract": {
+          "description": "Analyze a licensing agreement using contract parsing tools.",
+          "trigger_labels": [
+            "analyze_contract"
+          ]
+        },
+        "draft_license": {
+          "description": "Draft a new licensing agreement or contract.",
+          "trigger_labels": [
+            "draft_license"
+          ]
+        },
+        "browser_tool": {
+          "description": "Research Music Supervisors or Sync Libraries.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "document_query": {
+          "description": "Analyze license agreements for unfair terms.",
+          "trigger_labels": [
+            "document_query"
+          ]
+        },
+        "payment_gate": {
+          "description": "Pay for clearance fees.",
+          "trigger_labels": [
+            "payment_gate"
           ]
         }
       },
-      "instructions_preview": "## MISSION\nYou are the **Licensing Director** \u2014 the indii system's specialist for rights clearance, sync licensing, and third-party content authorization. You ensure every sample, loop, and third-part..."
+      "instructions_preview": "# Licensing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Licensing Director** (Licensing Agent), a specialist agent within the indii system. You are the defender of intellectual property, maste..."
     },
     "creative": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative",
       "skills": {
-        "tools": {
-          "description": "Technical readiness checker for the creative domain.",
+        "generate_image": {
+          "description": "Generate AI images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.",
           "trigger_labels": [
-            "creative",
-            "readiness",
-            "status"
+            "generate_image"
+          ]
+        },
+        "batch_edit_images": {
+          "description": "Edit multiple uploaded images with a text instruction.",
+          "trigger_labels": [
+            "batch_edit_images"
+          ]
+        },
+        "run_showroom_mockup": {
+          "description": "Generate photorealistic product mockups for showcases (vinyl, CD, t-shirt, poster).",
+          "trigger_labels": [
+            "run_showroom_mockup"
+          ]
+        },
+        "generate_high_res_asset": {
+          "description": "Generate print-quality visual assets at high resolution for physical media (CD jacket, vinyl sleeve, poster, merch).",
+          "trigger_labels": [
+            "generate_high_res_asset"
+          ]
+        },
+        "render_cinematic_grid": {
+          "description": "Create a 2x2 cinematic shot grid (Wide, Medium, Close-up, Low Angle) for visual storytelling and shot composition planning.",
+          "trigger_labels": [
+            "render_cinematic_grid"
+          ]
+        },
+        "extract_grid_frame": {
+          "description": "Extract a single frame from a previously generated 2x2 cinematic grid for standalone use or further editing.",
+          "trigger_labels": [
+            "extract_grid_frame"
+          ]
+        },
+        "add_character_reference": {
+          "description": "Set a character reference image for maintaining visual consistency across multiple image generations.",
+          "trigger_labels": [
+            "add_character_reference"
+          ]
+        },
+        "analyze_audio": {
+          "description": "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.",
+          "trigger_labels": [
+            "analyze_audio"
+          ]
+        },
+        "canvas_push": {
+          "description": "Push a visual asset or moodboard directly to the Agent Canvas for A2UI interaction and further design refinement.",
+          "trigger_labels": [
+            "canvas_push"
           ]
         }
       },
-      "instructions_preview": "# Creative Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Creative Director** \u2014 the indii system's specialist for visual identity, image generation, and design production. Your mission is to tran..."
+      "instructions_preview": "# Creative Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Creative Director** (Visual Identity & Asset Generation Specialist) for indii. Your mission is to translate an artist's sonic identity in..."
     },
     "legal": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal",
       "skills": {
-        "tools": {
-          "description": "Generates a standard non-disclosure agreement (NDA).",
+        "analyze_rights": {
+          "description": "Analyze the copyright status of a track based on its composition.",
           "trigger_labels": [
-            "legal",
-            "contract",
-            "privacy"
+            "analyze_rights"
+          ]
+        },
+        "browser_tool": {
+          "description": "Research copyright databases or legal precedents.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "document_query": {
+          "description": "Analyze a legal document (PDF/Text) for clauses.",
+          "trigger_labels": [
+            "document_query"
+          ]
+        },
+        "draft_split_sheet": {
+          "description": "Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider.",
+          "trigger_labels": [
+            "draft_split_sheet"
           ]
         }
       },
-      "instructions_preview": "# Music Industry Legal Specialist \u2014 System Prompt\n\n## MISSION\n\nYou are the **Music Industry Legal Specialist** \u2014 the indii system's specialist for contract analysis, rights clearance, and IP protectio..."
+      "instructions_preview": "# Legal Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Legal Director** (Legal Department Head), the central legal authority within the indii system. Your mission is to protect artists' intellect..."
     },
     "conductor": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor",
       "skills": {
+        "delegate_task": {
+          "description": "Delegate a task to a specialized spoke agent.",
+          "trigger_labels": [
+            "delegate_task"
+          ]
+        },
+        "consult_specialist": {
+          "description": "Consult a specialized agent via the A2A protocol.",
+          "trigger_labels": [
+            "consult_specialist"
+          ]
+        },
+        "propose_plan": {
+          "description": "Propose a structured Living Plan for a high-level goal.",
+          "trigger_labels": [
+            "propose_plan"
+          ]
+        },
         "audio_engineering": {
           "description": "No description found.",
           "trigger_labels": []
@@ -287,6 +966,10 @@
             "readiness",
             "status"
           ]
+        },
+        "business_harness_system": {
+          "description": "No description found.",
+          "trigger_labels": []
         },
         "digital_distribution": {
           "description": "No description found.",
@@ -382,6 +1065,30 @@
     "analytics": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics",
       "skills": {
+        "calculate_viral_potential_score": {
+          "description": "Predict viral potential based on tempo/BPM, genre, and mood using historical artist distributions.",
+          "trigger_labels": [
+            "calculate_viral_potential_score"
+          ]
+        },
+        "benchmark_release_velocity": {
+          "description": "Compare current release streaming trajectory (24h, 7d, 30d) against artist historical baseline.",
+          "trigger_labels": [
+            "benchmark_release_velocity"
+          ]
+        },
+        "detect_streaming_anomalies": {
+          "description": "Scan streaming event logs for sudden spikes or drop-offs to detect potential botting or viral events.",
+          "trigger_labels": [
+            "detect_streaming_anomalies"
+          ]
+        },
+        "run_cohort_analysis": {
+          "description": "Run cohort retention queries to track weekly user listening activity.",
+          "trigger_labels": [
+            "run_cohort_analysis"
+          ]
+        },
         "tools": {
           "description": "Calculates the viral potential score of a track based on BPM and genre.",
           "trigger_labels": [
@@ -392,7 +1099,7 @@
           ]
         }
       },
-      "instructions_preview": "# Analytics Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Analytics Director**, a specialist agent within the indii system. You are the data brain of the operation \u2014 transforming raw streaming m..."
+      "instructions_preview": "# Analytics Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Analytics Director** (Intelligence Analytics Specialist), a specialist agent within the indii system. You are the data brain of the oper..."
     }
   }
 }

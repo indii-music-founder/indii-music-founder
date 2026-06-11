@@ -2,13 +2,13 @@
   "schemaVersion": "1.0.0",
   "agentId": "default",
   "displayName": "Default Agent",
-  "description": "Default fallback agent",
+  "description": "Default fallback agent for broad-domain reasoning.",
   "capabilities": [],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "read",
   "sla": {
@@ -19,5 +19,10 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "specialist"
+  },
+  "promptVersion": "1.55.3-default",
+  "trainingModel": "default"
 }
