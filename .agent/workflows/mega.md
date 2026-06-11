@@ -1,9 +1,4 @@
 ---
-
-> [!IMPORTANT]
-> **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
 name: /mega
 description: >
   The Master Orchestrator for all Mega Stress Tests (V1–V7+).
@@ -13,6 +8,11 @@ description: >
   on a loop until explicitly stopped by the user.
   TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 
 # /mega — Master Mega Stress Test Orchestrator
 
@@ -55,10 +55,7 @@ These are the canonical test plans. The agent must know the full registry.
 | V6 | `MEGA_STRESS_TEST_V6_PROJECTS.md` | Projects & Inbox File Ingestion System | 50 |
 | V7 | `MEGA_STRESS_TEST_V7_REGRESSION.md` | Targeted Regression Against All Fixed Issues | 35 |
 
-**Total Routines Across All Plans: ~335**
-
-When new plans are added (V8, V9, etc.), they are automatically picked up
-because the agent scans `.agent/test_ledger/MEGA_STRESS_TEST_V*.md` at startup.
+> **The table above is a historical snapshot, NOT the authoritative list.** Plans beyond V7 already exist (V8–V11 as of 2026-06). The authoritative registry is whatever `ls .agent/test_ledger/MEGA_STRESS_TEST_V*.md | sort -V` returns at startup — always build the queue from that scan, and treat the highest-numbered `*REGRESSION*` plan (run first) as the regression plan rather than hardcoding V7.
 
 ---
 

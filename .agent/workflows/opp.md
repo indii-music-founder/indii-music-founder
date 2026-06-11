@@ -41,7 +41,7 @@ Inject pattern awareness:
 
 Verify user memory is accessible:
 
-- Check if memory directory exists: `/Volumes/X SSD 2025/Users/narrowchannel/.claude/projects/-Volumes-X-SSD-2025-Users-narrowchannel-indiiOS-Clean/memory/`
+- Check if memory directory exists: `/Volumes/X SSD 2025/Users/narrowchannel/.claude/projects/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/memory/`
 - Read `MEMORY.md` to see what's being tracked
 - Count memory files to gauge prior session depth
 
@@ -53,9 +53,9 @@ Verify user memory is accessible:
 === OPERATOR STATUS ===
 
 WORKSPACE:
-  Project:      indii-Alpha-Electron
+  Project:      indii-music-founder
   Branch:       [current branch]
-  Location:     /Volumes/X SSD 2025/Users/narrowchannel/indiiOS-Clean
+  Location:     /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder
 
 GIT STATE:
   Status:       [clean/dirty/conflicts]

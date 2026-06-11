@@ -17,7 +17,7 @@ This command is used during the core build phase to manage iterative execution, 
 - **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
 - **Proof of Verification:** You are forbidden from stating "it works" or "I have verified this" without pasting the raw terminal output, test results, or explicit browser DOM state that proves it. If you cannot provide the raw output, the task is incomplete.
 - **Zero-Placeholder Policy:** When editing files, you must NEVER use placeholders like `// rest of code` or `// existing implementations here`. You must output the full, functional code every time. If you realize you skipped something to save time, stop and rewrite it completely.
-- **Anti-Looping (Two-Strike Rule):** If your proposed fix fails verification twice in a row, you must STOP. Do not attempt a third minor tweak. You must write a summary of why the current approach is fundamentally flawed and propose a completely new architectural approach before proceeding.
+- **Anti-Looping (Strike Ladder):** This is the same ladder used by `/go`, `/issue`, and `/better` — apply it identically everywhere. **Strike 2 (Pivot):** if your proposed fix fails verification twice in a row, STOP. Do not attempt a third minor tweak. Write a summary of why the current approach is fundamentally flawed and propose a completely new architectural approach. **Strike 3 (Escalate):** if the new approach also fails, stop work on that task and ask the user for help with a detailed blocker description.
 
 ## 2. Recursive Execution Loop (via `/go`)
 Invoke the **Recursive Execution Loop**:
@@ -33,9 +33,4 @@ As complex logic, state transitions, or component architectures are built:
 
 **Repeat the `/middle` process until all tasks in the active task ledger are marked complete, or until the current user objective is verified complete when no matching ledger exists.**
 
-
-## Elevate and Polish (The `/better` Audit)
-At the conclusion of this workflow, automatically execute the `/better` workflow to:
-1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
-2. Elevate the codebase to Platinum Quality Standards.
-3. Apply any necessary micro-refactors or polish before proceeding.
+> **Note on polish:** Do NOT run a separate `/better` pass at the end of `/middle`. The `/go` loop already runs `/better` on each task's modified files (Step 5), and `/end` runs the final session-wide pass. Triple-polishing the same files burns time and tokens without adding quality.

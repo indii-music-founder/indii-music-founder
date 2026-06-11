@@ -1,11 +1,11 @@
 ---
+description: The ultimate closed-loop automation workflow. Spins up the Test Orchestrator, the Fix Agent, and the CI Publisher simultaneously to run full system tests, auto-patch bugs, and deploy overnight.
+---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
-description: The ultimate closed-loop automation workflow. Spins up the Test Orchestrator, the Fix Agent, and the CI Publisher simultaneously to run full system tests, auto-patch bugs, and deploy overnight.
----
 
 # /factory — The Automated CI Factory
 
@@ -19,7 +19,7 @@ When `/factory` is invoked, the primary agent acts as the **Floor Manager** and 
 
 ### 1. The Test Orchestrator
 - **Role:** To break the app.
-- **Task:** Iterates through all 24+ `live_test_*.md` protocols in `.agent/workflows/`. It spawns browser testing agents to execute each protocol against `localhost:4242`.
+- **Task:** Iterates through the Mega Stress Test plans in `.agent/test_ledger/MEGA_STRESS_TEST_V*.md` (the canonical test protocols — the legacy `live_test_*.md` files are deprecated and deleted). It spawns browser testing agents to execute each plan against `localhost:4242`, following the `/mega` batching rules (5–8 routines per subagent call).
 - **Output:** Logs every failure, crash, or visual bug directly into `.agent/test_ledger/OPEN_ISSUES.md`. 
 
 ### 2. The Fix Agent (`/issue`)

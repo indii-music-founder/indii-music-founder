@@ -1,11 +1,10 @@
 ---
+description: Git Repository Sync, Pre-Push Validation, and Background Cron Monitor. Runs git fetch/pull/rebase, runs typecheck & Vitest validation on ahead commits, pushes verified changes, and reschedules the dynamic polling backoff cron job.
+---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
-description: Git Repository Sync, Pre-Push Validation, and Background Cron Monitor. Runs git fetch/pull/rebase, runs typecheck & Vitest validation on ahead commits, pushes verified changes, and reschedules the dynamic polling backoff cron job.
----
 
 # /get-git — The Git Repository Sync & Monitor Engine
 
@@ -73,12 +72,6 @@ If safe to proceed, execute `/issue sync` to:
 2. If a failed run is detected, fetch the logs to diagnose the failure.
 3. Automatically initiate a fix cycle to resolve the CI failure, verify locally, and push the fix to restore the green checkmark.
 
-## 6. Polish and Elevate (The `/better` Audit)
-
-Once any issues are fixed (or before the final commit of the cycle), execute the `/better` workflow:
-
-1. Audit the current changes and fixes from every angle (Performance, DevEx, Architecture).
-2. Elevate the codebase to Platinum Quality Standards.
-3. Apply any necessary micro-refactors or polish before the cycle concludes.
-
 **Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues or CI pipelines.**
+
+> **Note on polish:** `/get-git` is a sync-and-validate utility — do NOT run `/better` here. Polish belongs to `/go` (per task) and `/end` (final pass).

@@ -1,9 +1,4 @@
 ---
-
-> [!IMPORTANT]
-> **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-
 name: /issue
 description: >
   The Fix Agent. Scans .agent/test_ledger/OPEN_ISSUES.md for unresolved issues, triages by severity,
@@ -12,6 +7,11 @@ description: >
   only find issues — /issue is the one that resolves them.
   THE FIX AGENT DOES NOT RUN TESTS. It reads issues, patches code, and verifies.
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 
 # /issue — Automated Issue Resolution Agent
 

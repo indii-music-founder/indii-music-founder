@@ -27,7 +27,13 @@ If any architecture, state flow, or logic shifted during the execution phase:
 - Invoke the **`/flowchart`** command for a final pass to update or generate the definitive diagrams for what was built.
 - **Save Requirement:** Update the relevant markdown files inside `docs/flowcharts/` as part of the formal closing notes.
 
-## 4. Resource Cleanup & The Gauntlet (via `/ci-validate`)
+## 4. Final Polish Pass (via `/better`)
+Run the session's single final `/better` pass now — BEFORE the CI gauntlet, never after it (polishing after validation would invalidate the validation):
+- Scope it to the files touched this session (`git diff --name-only main...HEAD` plus uncommitted changes).
+- Audit from every angle (Performance, DevEx, Architecture) and elevate to Platinum Quality Standards.
+- Apply any micro-refactors, then let the gauntlet below verify them.
+
+## 5. Resource Cleanup & The Gauntlet (via `/ci-validate`)
 Signal "we're done" and leave a perfectly clean repository and environment:
 - **Resource Cleanup (MANDATORY):** Before finalizing the session, list all background tasks and subagents. You MUST explicitly terminate any running background tasks (using `manage_task` with action `kill`) and all active subagents (using `manage_subagents` with action `kill_all`) to prevent leaking processes or orphaned CPU/memory resource usage.
 - **Uncommitted Workspace Changes Alert (MANDATORY):** You must run a `git status` check at the start of `/end`. If any dirty or untracked files remain in the workspace, you MUST list them prominently in your final session report under a dedicated `### ⚠️ Uncommitted Workspace Changes / Pre-existing Dirty Files` header, explaining which session they belong to and prompting the user for instructions.
@@ -38,9 +44,4 @@ Signal "we're done" and leave a perfectly clean repository and environment:
 - **Do not exit this phase until the CI script passes flawlessly.**
 - **Push Commits to GitHub (MANDATORY):** Once all CI validation checks pass flawlessly, you MUST run `git push origin $(git branch --show-current)` to ensure all local commits are pushed to GitHub, synchronizing the work and triggering the remote deployment pipeline.
 
-
-## Elevate and Polish (The `/better` Audit)
-At the conclusion of this workflow, automatically execute the `/better` workflow to:
-1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
-2. Elevate the codebase to Platinum Quality Standards.
-3. Apply any necessary micro-refactors or polish before proceeding.
+> **No post-gauntlet edits:** The push is the last action. Do not run `/better` or any other code-modifying workflow after `/ci-validate` passes — any change after the gauntlet means the gauntlet must run again.
