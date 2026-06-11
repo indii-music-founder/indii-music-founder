@@ -86,7 +86,7 @@ describe('E2E encryption — Python interop harness (Phase 0.7 skeleton)', () =>
 
   it('Algorithm parity: RSA-OAEP / SHA-256 / 4096-bit modulus / 65537 exponent', async () => {
     const keyPair = (e2eRecipient as any).keyPairs.get('recipient-agent');
-    const algorithm = keyPair.publicKey.algorithm as RsaKeyAlgorithm;
+    const algorithm = keyPair.publicKey.algorithm as RsaHashedKeyAlgorithm;
 
     expect(algorithm.name).toBe('RSA-OAEP');
     expect(algorithm.modulusLength).toBe(4096);
