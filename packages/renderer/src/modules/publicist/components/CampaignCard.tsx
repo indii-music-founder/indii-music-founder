@@ -6,6 +6,7 @@ import { Campaign } from '../types';
 interface CampaignCardProps {
     campaign: Campaign;
     onClick?: (campaign: Campaign) => void;
+    key?: React.Key;
 }
 
 export function CampaignCard({ campaign, onClick }: CampaignCardProps) {

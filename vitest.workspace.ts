@@ -13,6 +13,15 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'landing',
+      environment: 'jsdom',
+      include: ['packages/landing/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'main',
       environment: 'node',
       include: ['packages/main/src/**/*.{test,spec}.{ts,tsx}'],
@@ -38,10 +47,16 @@ export default [
       ],
       exclude: ['dist/**', 'e2e/**', 'node_modules/**', 'packages/firebase/src/test/security/**'],
       setupFiles: [path.resolve(import.meta.dirname, './packages/firebase/src/test/setup.ts')],
-      // Firebase functions tests do a dynamic `import('../index')` in beforeEach which
-      // barrel-loads the entire package (MCP server, orchestration, etc). Under shard
-      // ordering where AgentStreaming runs first, the node resolution can take >10s.
       hookTimeout: 30000,
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
+      name: 'sdk',
+      environment: 'node',
+      include: ['packages/sdk/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
     }
   },
 ];

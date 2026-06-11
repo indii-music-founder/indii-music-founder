@@ -1,6 +1,6 @@
 # How to Register with a PRO
 
-**For:** indiiOS Artists  
+**For:** indii Artists  
 **Reading Time:** 5 minutes  
 **Last Updated:** March 2026
 
@@ -205,9 +205,9 @@ Once you have your IPI number, register each song:
 
 **Do this BEFORE releasing music.**
 
-### Update indiiOS
+### Update indii
 
-In your indiiOS profile:
+In your indii profile:
 1. Go to Settings → Royalties
 2. Select your PRO
 3. Enter your IPI number
@@ -251,7 +251,7 @@ You can, but there's a waiting period (usually 1-2 years) and paperwork. Choose 
 - **BMI:** 1-800-925-8451
 - **ASCAP:** 1-800-952-7227
 - **SESAC:** 1-800-826-3346
-- **indiiOS Publishing Agent:** Available in-app
+- **indii Publishing Agent:** Available in-app
 
 ---
 

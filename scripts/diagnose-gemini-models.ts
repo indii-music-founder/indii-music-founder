@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function listModels() {
-    const projectId = process.env.VITE_PROJECT_ID || process.env.VITE_VERTEX_PROJECT_ID || 'indiios-v-1-1';
+    const projectId = process.env.VITE_PROJECT_ID || process.env.VITE_VERTEX_PROJECT_ID || 'indii-v-1-1';
     const location = 'us-central1'; // We'll test this first
 
     console.log(`🔍 Diagnosing Vertex AI Models for Project: ${projectId} in ${location}`);

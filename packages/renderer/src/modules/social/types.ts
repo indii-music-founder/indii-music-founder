@@ -18,7 +18,7 @@ export interface ScheduledPost {
     copy: string;
     imageAsset: ImageAsset;
     day: number; // Keep for backward compatibility or relative scheduling
-    scheduledTime?: Date;
+    scheduledTime?: Date | number;
     status: CampaignStatus;
     errorMessage?: string;
     postId?: string;

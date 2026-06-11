@@ -1,7 +1,7 @@
 /**
  * generateTelegramLinkCode — Creates a one-time code for linking Telegram
  *
- * Called from the indiiOS frontend (Settings → Integrations → Link Telegram).
+ * Called from the indii frontend (Settings → Integrations → Link Telegram).
  * Generates a random 8-character code, stores it in Firestore with a 10-minute TTL,
  * and returns the code to the user who then sends it to the Telegram bot via /link.
  *
@@ -14,7 +14,7 @@ import * as crypto from "crypto";
 const LINK_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export const generateTelegramLinkCode = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 30, memory: "128MB"  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 30, memory: "256MB"  })
     .https.onCall(async (_data, context) => {
         // Require authentication
         if (!context.auth) {
@@ -43,7 +43,7 @@ export const generateTelegramLinkCode = functions
         return {
             code,
             expiresInMinutes: 10,
-            instructions: "Send /link " + code + " to the indiiOS bot on Telegram",
+            instructions: "Send /link " + code + " to the indii bot on Telegram",
         };
     });
 
@@ -53,7 +53,7 @@ export const generateTelegramLinkCode = functions
  * Called from the frontend to show the linking status in Settings.
  */
 export const getTelegramLinkStatus = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 15, memory: "128MB"  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 15, memory: "256MB"  })
     .https.onCall(async (_data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(

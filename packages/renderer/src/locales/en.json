@@ -1,0 +1,314 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "confirm": "Confirm",
+        "close": "Close",
+        "loading": "Loading…",
+        "error": "Something went wrong",
+        "retry": "Retry",
+        "search": "Search",
+        "noResults": "No results found",
+        "back": "Back",
+        "next": "Next",
+        "submit": "Submit",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "settings": "Settings",
+        "logout": "Log Out",
+        "login": "Log In",
+        "signUp": "Sign Up"
+    },
+    "sidebar": {
+        "dashboard": "Dashboard",
+        "creative": "Creative Studio",
+        "video": "Video Production",
+        "distribution": "Distribution",
+        "marketing": "Marketing",
+        "finance": "Finance",
+        "legal": "Legal",
+        "licensing": "Licensing",
+        "publishing": "Publishing",
+        "merchandise": "Merchandise",
+        "social": "Social",
+        "touring": "Touring",
+        "workflow": "Workflow",
+        "knowledge": "Knowledge Base",
+        "files": "Files",
+        "agent": "Agent",
+        "settings": "Settings"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back, {{name}}",
+        "recentActivity": "Recent Activity",
+        "quickActions": "Quick Actions",
+        "foundersRound": "Founders Round",
+        "active": "Active",
+        "foundersBannerText": "Secure your stake in the operating system for musical independence.",
+        "backVision": "Back the Vision",
+        "dismiss": "Dismiss",
+        "agentWorkspace": "Agent Workspace",
+        "commandCenter": "Command Center",
+        "desktopStudio": "Desktop Studio",
+        "growthProtocolActive": "Growth Protocol Active.",
+        "live": "Live",
+        "viralScore": "Viral Score",
+        "velocity": "Velocity",
+        "cpsKillSwitch": "CPS Kill-Switch",
+        "standby": "STANDBY",
+        "webPreview": "Web Preview",
+        "preview": "Preview",
+        "webPreviewDescription": "Explore every module and meet the Intelligence agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.",
+        "unlockDesktop": "Unlock full Desktop Studio",
+        "web": "Web",
+        "founders": "Founders",
+        "features": {
+            "creativeStudio": "Creative Studio",
+            "agentOrchestration": "Agent Orchestration",
+            "distributionPipeline": "Distribution Pipeline",
+            "audioDNA": "Audio DNA Analyzer",
+            "localFile": "Local File Processing",
+            "sftp": "SFTP Delivery",
+            "offlineMode": "Offline Mode"
+        }
+    },
+    "creative": {
+        "title": "Creative Studio",
+        "generateImage": "Generate Image",
+        "generateVideo": "Generate Video",
+        "promptPlaceholder": "Describe what you want to create…",
+        "generating": "Generating…",
+        "downloadImage": "Download Image",
+        "saveToLibrary": "Save to Library"
+    },
+    "distribution": {
+        "title": "Distribution",
+        "subtitle": "150+ PLATFORMS • ONE-CLICK GLOBAL DELIVERY",
+        "newRelease": "New Release",
+        "status": "Status",
+        "distributed": "Distributed",
+        "pending": "Pending",
+        "failed": "Failed",
+        "liveSystem": "Live System",
+        "tabs": {
+            "releases": "Releases",
+            "connections": "Distributors",
+            "bank": "Bank",
+            "authority": "Authority",
+            "keys": "Keys",
+            "brain": "Brain (QC)",
+            "transmission": "Transfer",
+            "new": "New Release",
+            "catalogue": "Catalogue",
+            "analytics": "Analytics",
+            "transmissions": "Transmissions"
+        }
+    },
+    "finance": {
+        "title": "Finance",
+        "subtitle": "REAL-TIME FISCAL OPERATIONS",
+        "tabs": {
+            "earnings": "Earnings",
+            "expenses": "Expenses",
+            "merch": "Merchandise",
+            "royalties": "Royalties",
+            "currency": "Multi-Currency",
+            "splits": "Split Escrow",
+            "onboarding": "Stripe Connect",
+            "tax": "Tax Forms",
+            "anomaly": "Anomaly",
+            "audit": "Audit Logs",
+            "budget": "Budget",
+            "receipts": "Receipt OCR",
+            "recoupment": "Recoupment"
+        }
+    },
+    "legal": {
+        "title": "Legal",
+        "subtitle": "AI-POWERED CONTRACT ANALYSIS",
+        "tabs": {
+            "analyzer": "Contract Analysis",
+            "dmca": "DMCA Notices",
+            "counsel": "Find Counsel"
+        }
+    },
+    "agent": {
+        "title": "AI Assistant",
+        "placeholder": "Ask me anything…",
+        "thinking": "Thinking…",
+        "sidecarOnline": "AI Service Online",
+        "sidecarOffline": "AI Service Offline",
+        "sidecarChecking": "Checking AI Service…",
+        "restart": "Restart AI Service",
+        "scout": {
+            "title": "The Scout",
+            "description": "AI-powered venue scouting and booking intelligence.",
+            "ready": "Ready to scan",
+            "initializing": "Initializing scan...",
+            "scanCompleteNoNew": "Scan complete. No new venues found.",
+            "missionComplete": "Scan complete. Found {{count}} new venues!",
+            "missionFailed": "Scan failed. Please check parameters.",
+            "scoutedVenues": "Scouted Venues ({{count}})",
+            "noVenues": "No venues found",
+            "configureParams": "Adjust search parameters and scan again."
+        },
+        "tabs": {
+            "scout": "The Scout",
+            "browser": "Browser Agent",
+            "chat": "Chat",
+            "tasks": "Task Queue",
+            "campaigns": "Campaigns",
+            "inbox": "Inbox"
+        }
+    },
+    "sync": {
+        "synced": "All changes synced",
+        "syncing": "Syncing…",
+        "pending": "{{count}} change pending",
+        "pending_plural": "{{count}} changes pending",
+        "error": "Sync error"
+    },
+    "auth": {
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "forgotPassword": "Forgot Password?",
+        "noAccount": "Don't have an account?",
+        "hasAccount": "Already have an account?"
+    },
+    "onboarding": {
+        "title": "Brand Kit Builder",
+        "placeholder": "Type your answer...",
+        "profileStatus": "Profile Status",
+        "artistIdentity": "Artist Identity",
+        "currentRelease": "Current Release",
+        "livePreview": "Live Preview",
+        "bio": "Bio",
+        "activeRelease": "Active Release",
+        "closeLabel": "Close onboarding",
+        "attachLabel": "Attach files",
+        "sendLabel": "Send message",
+        "processing": "Thinking…",
+        "welcomeTitle": "Deploy your independence.",
+        "welcomeText": "indii is your private music operating system. Let's build your brand kit, catalog metadata, and smart distributor integrations to launch your career.",
+        "startSession": "Start Autonomous Onboarding",
+        "completeStatus": "Verification Complete",
+        "incompleteStatus": "Incomplete Verification",
+        "requiredAction": "Required Action",
+        "profileProgress": "Profile Progress",
+        "completePercent": "{{percent}}% complete",
+        "chatPlaceholder": "Tell indii about your music (genres, recent releases, style)...",
+        "inputPlaceholder": "Tell indii about your music (genres, recent releases, style)...",
+        "typeMessage": "Type your message",
+        "attachFile": "Attach file",
+        "sendMessage": "Send message",
+        "viewProgress": "View profile progress, {{progress}}% complete",
+        "viewProfileProgress": "View profile progress",
+        "overallProgress": "Overall Progress",
+        "identitySetup": "Identity Setup",
+        "releaseData": "Release Data",
+        "identityDescription": "Legal name, artist moniker, primary genres, and brand guidelines.",
+        "releaseDescription": "Audio DNA, cover art, publisher keys, and delivery pipelines.",
+        "brandKit": "Brand Kit",
+        "brandKitDescription": "Preview your public visual and textual presence compiled by the AI.",
+        "noIdentityData": "No identity data registered yet.",
+        "noReleaseData": "No release data registered yet.",
+        "notCompiled": "Visual brand identity has not been compiled yet.",
+        "verified": "Verified",
+        "missing": "Missing",
+        "statusTitle": "Status",
+        "pending": "Pending",
+        "verifiedCaps": "VERIFIED",
+        "missingCaps": "MISSING",
+        "incomplete": "INCOMPLETE",
+        "coreStatus": "Core Identity Status",
+        "distributionStatus": "Distribution Readiness Status",
+        "closeModal": "Close modal",
+        "voiceInput": "Voice Input",
+        "greetings": [
+            "Hey — let's update your profile. What's changed since we last talked? New release brewing, or just tweaking the brand?",
+            "Back for round two. What are we working on — new music, new direction, or just tidying things up?",
+            "Good to see you again. What needs an update — the artist identity stuff or the current release details?",
+            "Alright, let's do this. What's on the agenda — adding new info, changing direction, or prepping for something new?",
+            "Quick check-in time. What's new in your world? I'll help you get it captured."
+        ],
+        "errors": [
+            "Hmm, something went sideways on my end. Mind trying that again?",
+            "Tech hiccup — my bad. Hit me with that one more time?",
+            "Lost the thread there for a second. What were you saying?",
+            "Connection blip. Run that by me again?"
+        ],
+        "processingOptions": [
+            "One sec...",
+            "Mmm...",
+            "Okay..."
+        ]
+    },
+    "settings": {
+        "title": "Settings",
+        "sections": {
+            "desktop": {
+                "label": "Desktop & Updates"
+            },
+            "profile": {
+                "label": "Profile",
+                "title": "Profile",
+                "description": "Manage your personal information and how others see you."
+            },
+            "connections": {
+                "label": "Connected Services",
+                "title": "Connected Services",
+                "description": "Allows your AI agents to read and draft emails on your behalf."
+            },
+            "notifications": {
+                "label": "Notifications",
+                "title": "Notifications",
+                "description": "Push, email, and sound preferences"
+            },
+            "appearance": {
+                "label": "Appearance",
+                "title": "Appearance",
+                "description": "Theme, layout, and animations"
+            },
+            "security": {
+                "label": "Account & Security",
+                "title": "Account & Security",
+                "description": "Sign out, data export, delete"
+            }
+        },
+        "hints": {
+            "display_name": "Enter your display name",
+            "bio_desc": "Tell us about yourself..."
+        },
+        "profile": {
+            "displayName": "Display Name",
+            "bio": "Bio",
+            "email": "Email",
+            "saveChanges": "Save Changes",
+            "saving": "Saving...",
+            "cancel": "Cancel",
+            "emailCannotChange": "Email cannot be changed directly. Contact support.",
+            "characters": "{{count}}/280 characters",
+            "noName": "No name set",
+            "noEmail": "No email"
+        },
+        "connections": {
+            "connected": "Connected",
+            "notConnected": "Not connected",
+            "disconnect": "Disconnect",
+            "connect": "Connect",
+            "pushNotifications": "Push Notifications",
+            "pushDesc": "Browser/native push via Firebase Cloud Messaging",
+            "enable": "Enable",
+            "securityNote": "Connected accounts are secured via OAuth 2.0. Refresh tokens are stored server-side and never exposed to the browser."
+        }
+    },
+    "touring": {
+        "hints": {
+            "current_location": "Current City, State or coordinates (e.g. Austin, TX)",
+            "city_state_example": "City, State or coordinates (e.g. Austin, TX)",
+            "agent_request": "Ask road agent (e.g. Find gas station)..."
+        }
+    }
+}

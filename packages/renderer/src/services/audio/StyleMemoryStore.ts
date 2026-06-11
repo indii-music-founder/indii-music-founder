@@ -17,8 +17,8 @@ import { auth, db } from '@/services/firebase';
 import {
     collection, addDoc, getDocs, doc, setDoc, serverTimestamp
 } from 'firebase/firestore';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -191,12 +191,12 @@ RULES:
 - An 'evolutionNote' is positive unless the deviation is jarring.
 `;
 
-            return await GenAI.generateStructuredData<StyleComparisonResult>(
+            return await AutonomousIntelligence.generateStructuredData<StyleComparisonResult>(
                 [{ text: prompt }],
                 STYLE_COMPARISON_SCHEMA,
                 2048,
                 'You are indii\'s style recognition engine. Analyze with precision and creative intelligence.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
         });
     }
@@ -233,12 +233,12 @@ Synthesize this into a StyleDNA profile:
 Be honest. Be specific. Brand narratives don't need to be flattering — they need to be accurate.
 `;
 
-            const dnaFields = await GenAI.generateStructuredData<Omit<StyleDNA, 'artistId' | 'trackCount' | 'lastUpdated'>>(
+            const dnaFields = await AutonomousIntelligence.generateStructuredData<Omit<StyleDNA, 'artistId' | 'trackCount' | 'lastUpdated'>>(
                 [{ text: prompt }],
                 BRAND_NARRATIVE_SCHEMA,
                 2048,
                 'You are a music brand strategist and A&R analyst.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             const dna: StyleDNA = {

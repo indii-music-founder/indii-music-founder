@@ -12,7 +12,7 @@ import { GauntletStep } from './components/GauntletStep';
 import { GauntletPreview } from './components/GauntletPreview';
 
 /**
- * MultimodalGauntlet — Debug tool for proving consistent AI generation.
+ * MultimodalGauntlet — Debug tool for proving consistent Autonomous generation.
  *
  * Executes a 4-step pipeline:
  *   1. Primary Image Generation
@@ -38,6 +38,7 @@ export default function MultimodalGauntlet() {
         vid1?: string;
         vid2?: string;
     }>({});
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const runGauntlet = async () => {
@@ -107,7 +108,7 @@ export default function MultimodalGauntlet() {
     const steps = [
         { num: 1, title: "Primary Image Generation", detail: "Bypassing App Check locally for developer verification." },
         { num: 2, title: "Derivative Reference (Consistency)", detail: "Generating last frame from primary context." },
-        { num: 3, title: "Temporal Interpolation (Video)", detail: "AI Video: Startframe -> Endframe mapping." },
+        { num: 3, title: "Temporal Interpolation (Video)", detail: "Autonomous Video: Startframe -> Endframe mapping." },
         { num: 4, title: "Loop Synchronization", detail: "Inverse mapping for seamless loop." },
     ];
 
@@ -124,7 +125,7 @@ export default function MultimodalGauntlet() {
                     MULTIMODAL GAUNTLET
                 </h1>
                 <p className="text-muted-foreground font-mono text-sm">
-                    PROVING CONSISTENT AI GENERATION & LOOPING LOGIC
+                    PROVING CONSISTENT Autonomous GENERATION & LOOPING LOGIC
                 </p>
             </header>
 
@@ -166,7 +167,7 @@ export default function MultimodalGauntlet() {
             </div>
 
             <footer className="pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                <div>Environment: Local Dev (us-west1)</div>
+                <div>Environment: Local Dev (us-central1)</div>
                 <div>Logic: Multimodal Chain Verification</div>
                 <div className="text-purple-500 font-bold">Protocol: IS IT SPELLED IN CAPITAL LETTERS BOTH TIMES</div>
             </footer>

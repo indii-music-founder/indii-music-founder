@@ -1,6 +1,6 @@
 # Marketplace & Assets Module (RC1)
 
-The Marketplace is the commercial hub of indiiOS, where creators can discover, purchase, and license assets from other artists and the platform itself. It facilitates a circular economy within the indiiOS ecosystem.
+The Marketplace is the commercial hub of indii, where creators can discover, purchase, and license assets from other artists and the platform itself. It facilitates a circular economy within the indii ecosystem.
 
 ## 🛒 Key Features
 - **Asset Discovery:** Filterable search for audio samples, design templates, and video keyframes.

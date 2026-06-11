@@ -100,12 +100,22 @@ describe('WhiskDropZone', () => {
         expect(mockRemoveWhiskItem).toHaveBeenCalledWith('1');
     });
 
-    it('updates an item caption', () => {
-        window.prompt = vi.fn().mockReturnValue('New Robot Caption');
+    it('updates an item caption', async () => {
         render(<WhiskDropZone {...defaultProps} />);
         const editBtn = screen.getByRole('button', { name: 'Edit text' });
         fireEvent.click(editBtn);
-        expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { aiCaption: 'New Robot Caption' });
+        
+        // Find input and change value
+        const input = screen.getByRole('textbox');
+        fireEvent.change(input, { target: { value: 'New Robot Caption' } });
+        
+        // Click save button
+        const saveBtn = screen.getByRole('button', { name: 'Save' });
+        fireEvent.click(saveBtn);
+        
+        await waitFor(() => {
+            expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { intelligenceCaption: 'New Robot Caption' });
+        });
     });
 
     it('handles QuotaExceededError during file upload', async () => {

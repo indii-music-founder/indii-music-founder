@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 import fs from 'fs';
 import path from 'path';
 
@@ -47,7 +47,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
         }
     });
 
-    test('Ingest, Index, and Retrieve Real Data', async ({ page }) => {
+    test('Ingest, Index, and Retrieve Real Data', async ({ authedPage: page }) => {
         // Skip if credentials not available
         test.skip(!TEST_EMAIL || !TEST_PASSWORD, 'Test credentials not configured');
 

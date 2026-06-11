@@ -24,7 +24,10 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
     async createSession(session: ConversationSession): Promise<string> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
-        const userId = auth.currentUser?.uid || 'anonymous';
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to create an agent session.');
+        }
 
         const doc: SessionDocument = {
             ...session,

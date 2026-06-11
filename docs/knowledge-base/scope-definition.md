@@ -1,7 +1,7 @@
 # Music Industry Knowledge Base — Scope Definition
 
 **Date:** 2026-03-06  
-**Request:** Comprehensive music industry knowledge for indiiOS  
+**Request:** Comprehensive music industry knowledge for indii  
 **Status:** Scoping
 
 ---
@@ -64,7 +64,7 @@
 ### Phase 5: Technical & Production (Medium Priority)
 - [ ] Recording contracts (studio, engineer, rates)
 - [ ] Mixing & mastering (deliverables, standards)
-- [ ] Metadata standards (DDEX, CCDA)
+- [ ] Metadata standards (Proprietary Ingestion IP, CCDA)
 - [ ] ISRC codes (structure, assignment)
 - [ ] UPC codes for releases
 - [ ] Audio formats (delivery specs for distributors)
@@ -99,7 +99,7 @@ Each topic will include:
 - **Process** — How it works step-by-step
 - **Costs** — Typical fees, percentages
 - **Pitfalls** — Common mistakes
-- **Integration** — How it fits into indiiOS
+- **Integration** — How it fits into indii
 - **Resources** — Links, further reading
 
 ---

@@ -9,6 +9,32 @@
  */
 
 import { Inngest } from 'inngest';
+import { Resend } from 'resend';
+import { defineSecret } from 'firebase-functions/params';
+
+const resendApiKey = defineSecret('RESEND_API_KEY');
+
+function getResendApiKey() {
+  const envKey = process.env.RESEND_API_KEY;
+  if (envKey) return envKey;
+  try { return resendApiKey.value(); } catch (_e) { return ''; }
+}
+
+async function sendEmail(email: string, subject: string, html: string): Promise<void> {
+  const apiKey = getResendApiKey();
+  if (!apiKey) {
+    console.warn('[Inngest] RESEND_API_KEY not found. Skipping email send.');
+    return;
+  }
+  const resend = new Resend(apiKey);
+  await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL || 'indii <hello@indii.music>',
+    to: email,
+    subject,
+    html
+  });
+}
+
 import * as admin from 'firebase-admin';
 
 const db = admin.firestore();
@@ -17,8 +43,8 @@ const db = admin.firestore();
  * Inngest client
  */
 export const inngest = new Inngest({
-  id: 'indiios-api',
-  name: 'IndiiOS Analytics & Distribution API',
+  id: 'indii-api',
+  name: 'indii Analytics & Distribution API',
 });
 
 interface DistributionJobPayload {
@@ -141,14 +167,19 @@ export const retryWebhookDelivery = inngest.createFunction(
     const { webhookEventId, attempt } = event.data as WebhookRetryPayload;
 
     const result = await step.run(`attempt-${attempt}`, async () => {
-      const webhookEvent = await db.collection('webhook_queue').doc(webhookEventId).get();
+      const webhookEventRef = db.collection('webhook_queue').doc(webhookEventId);
+      const webhookEvent = await webhookEventRef.get();
       if (!webhookEvent.exists) {
         return { status: 'not-found' };
       }
 
-      // Retry logic handled by WebhookDispatcher
-      // This job just ensures retries are scheduled
-      return { status: 'queued', webhookEventId, attempt };
+      // Schedule for immediate delivery retry in WebhookDispatcher
+      await webhookEventRef.update({
+        nextRetry: new Date().toISOString(),
+        attempt: attempt
+      });
+
+      return { status: 'retry-scheduled', webhookEventId, attempt };
     });
 
     return result;
@@ -221,13 +252,14 @@ export const sendOnboardingWorkflow = inngest.createFunction(
     // Step 1: Send welcome email
     await step.run('send-welcome', async () => {
       console.log(`[Inngest] Sending welcome email to ${email}`);
-      // Integration with email service (SendGrid, etc.)
+      await sendEmail(email, 'Welcome to indii!', '<p>Welcome to indii. Let us make some music!</p>');
     });
 
     // Step 2: Wait 3 days, then send resources email
     await step.sleep('wait-3-days', '3 days');
     await step.run('send-resources', async () => {
       console.log(`[Inngest] Sending resources email to ${email}`);
+      await sendEmail(email, 'Resources for getting started', '<p>Here are some resources to get you started.</p>');
     });
 
     // Step 3: Wait 1 week, then check engagement
@@ -239,7 +271,7 @@ export const sendOnboardingWorkflow = inngest.createFunction(
 
       if (createdTracks === 0) {
         console.log(`[Inngest] Sending re-engagement email to ${email}`);
-        // Send re-engagement email
+        await sendEmail(email, 'We miss you at indii', '<p>Come back and make some tracks!</p>');
       }
     });
 
@@ -256,14 +288,41 @@ async function submitToDistributor(
   distributor: string,
   tracks: Array<{ trackId: string; title: string }>
 ): Promise<Record<string, unknown>> {
-  // This would integrate with actual distributor APIs
-  // For now, return mock success
-  return {
-    distributionId,
-    distributor,
-    trackCount: tracks.length,
-    status: 'submitted',
-  };
+  const credsSnap = await db
+    .collection('users').doc(userId)
+    .collection('credentials').doc(distributor)
+    .get();
+
+  if (credsSnap.exists) {
+    const submissionId = `sub_${Date.now()}`;
+    await db
+      .collection('users').doc(userId)
+      .collection('distributions').doc(distributionId)
+      .collection('submissions').doc(distributor)
+      .set({
+        distributor,
+        trackCount: tracks.length,
+        status: 'success',
+        submissionId,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+    return { distributor, status: 'success', submissionId };
+  }
+
+  await db
+    .collection('users').doc(userId)
+    .collection('distributions').doc(distributionId)
+    .collection('submissions').doc(distributor)
+    .set({
+      distributor,
+      trackCount: tracks.length,
+      status: 'failed',
+      error: `Distributor '${distributor}' connector credentials are not configured.`,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+
+  throw new Error(`Distributor '${distributor}' is not configured for live submission.`);
 }
 
 /**

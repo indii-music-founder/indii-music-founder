@@ -1,7 +1,6 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
-import { useReleases } from './hooks/useReleases';
 import { useStore } from '@/core/store';
 
 // Mock dependencies - Global
@@ -11,6 +10,8 @@ const mockToastPromise = vi.fn();
 const mockSetModule = vi.fn();
 const mockFetchDistributors = vi.fn();
 const mockFetchEarnings = vi.fn();
+const mockUseReleases = vi.fn();
+const mockUseReleaseList = vi.fn();
 
 const mockStore = {
     currentOrganizationId: 'test-org-id',
@@ -32,6 +33,8 @@ const mockStore = {
     setModule: mockSetModule
 };
 
+import { useState } from 'react';
+
 // Mock the store implementation directly here to ensure consistent behavior
 vi.mock('@/core/store', () => ({
     useStore: vi.fn((selector) => {
@@ -43,14 +46,11 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('./hooks/useReleases', () => ({
-    useReleases: vi.fn(() => ({
-        releases: [],
-        loading: false,
-        error: null,
-        hasPendingSync: false,
-        deleteRelease: mockDeleteRelease,
-        archiveRelease: mockArchiveRelease
-    }))
+    useReleases: (...args: any[]) => mockUseReleases(...args)
+}));
+
+vi.mock('./hooks/useReleaseList', () => ({
+    useReleaseList: (...args: any[]) => mockUseReleaseList(...args)
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -113,6 +113,28 @@ describe('PublishingDashboard', () => {
             }
             return state;
         }) as any);
+
+        mockUseReleases.mockReturnValue({
+            releases: [],
+            loading: false,
+            error: null,
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
+        mockUseReleaseList.mockImplementation(() => ({
+            releases: [],
+            allReleases: [],
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        }));
     });
 
     it('renders the dashboard title and stats', () => {
@@ -124,7 +146,7 @@ describe('PublishingDashboard', () => {
     });
 
     it('shows skeleton loading state', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: true,
             deleteRelease: mockDeleteRelease,
@@ -140,7 +162,7 @@ describe('PublishingDashboard', () => {
     });
 
     it('renders empty state when no releases exist', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -173,7 +195,7 @@ describe('PublishingDashboard', () => {
             }
         ] as any[];
 
-        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,
@@ -181,6 +203,19 @@ describe('PublishingDashboard', () => {
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
         });
+
+        mockUseReleaseList.mockImplementation(() => ({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        }));
 
         render(<PublishingDashboard />);
 
@@ -209,7 +244,7 @@ describe('PublishingDashboard', () => {
             { id: '2', metadata: { trackTitle: 'Berry', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
         ] as any[];
 
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -218,10 +253,34 @@ describe('PublishingDashboard', () => {
             archiveRelease: mockArchiveRelease
         });
 
+        mockUseReleaseList.mockImplementation(() => {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [statusFilter, setStatusFilter] = useState('all');
+            const filtered = mockReleases.filter(release => {
+                const matchesSearch =
+                    release.metadata.trackTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    release.metadata.artistName?.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesFilter = statusFilter === 'all' || release.status === statusFilter;
+                return matchesSearch && matchesFilter;
+            });
+            return {
+                releases: filtered,
+                allReleases: mockReleases,
+                loading: false,
+                searchQuery,
+                setSearchQuery,
+                statusFilter,
+                setStatusFilter,
+                hasPendingSync: false,
+                deleteRelease: mockDeleteRelease,
+                archiveRelease: mockArchiveRelease
+            };
+        });
+
         render(<PublishingDashboard />);
 
         // Search
-        const searchInput = screen.getByPlaceholderText('Search by title, artist, or ISRC...');
+        const searchInput = screen.getByPlaceholderText('publishing.hints.search_releases');
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getAllByText('Apple')[0]).toBeInTheDocument();
         expect(screen.queryByText('Berry')).not.toBeInTheDocument();
@@ -235,14 +294,11 @@ describe('PublishingDashboard', () => {
     });
 
     it('executes bulk delete with toast promise', async () => {
-        // Mock global confirm
-        global.confirm = vi.fn(() => true);
-
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
         ] as any[];
 
-        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,
@@ -250,6 +306,19 @@ describe('PublishingDashboard', () => {
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease
         });
+
+        mockUseReleaseList.mockImplementation(() => ({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        }));
 
         render(<PublishingDashboard />);
 
@@ -265,20 +334,24 @@ describe('PublishingDashboard', () => {
             fireEvent.click(deleteBtn);
         });
 
-        expect(global.confirm).toHaveBeenCalled();
-        expect(mockToastPromise).toHaveBeenCalled();
-        expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+        // Click confirm in the bulk action modal
+        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
+        await act(async () => {
+            fireEvent.click(confirmBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockToastPromise).toHaveBeenCalled();
+            expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+        });
     });
 
     it('executes bulk archive with toast promise', async () => {
-        // Mock global confirm
-        global.confirm = vi.fn(() => true);
-
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Test Track' }, status: 'live', assets: {} }
         ] as any[];
 
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: mockReleases,
             loading: false,
             deleteRelease: mockDeleteRelease,
@@ -286,6 +359,19 @@ describe('PublishingDashboard', () => {
             hasPendingSync: false,
             error: null
         });
+
+        mockUseReleaseList.mockImplementation(() => ({
+            releases: mockReleases,
+            allReleases: mockReleases,
+            loading: false,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            statusFilter: 'all',
+            setStatusFilter: vi.fn(),
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        }));
 
         render(<PublishingDashboard />);
 
@@ -301,13 +387,20 @@ describe('PublishingDashboard', () => {
             fireEvent.click(archiveBtn);
         });
 
-        expect(global.confirm).toHaveBeenCalled();
-        expect(mockToastPromise).toHaveBeenCalled();
-        expect(mockArchiveRelease).toHaveBeenCalledWith('1');
+        // Click confirm in the bulk action modal
+        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
+        await act(async () => {
+            fireEvent.click(confirmBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockToastPromise).toHaveBeenCalled();
+            expect(mockArchiveRelease).toHaveBeenCalledWith('1');
+        });
     });
 
     it('navigates to distribution module via Manage Distributors', () => {
-        vi.mocked(useReleases).mockReturnValue({
+        mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
             deleteRelease: mockDeleteRelease,

@@ -23,10 +23,10 @@ export class VideoGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_video',
     name: 'Generate Video',
-    description: 'Generate AI videos from text prompts using Veo 3.1. Supports multiple aspect ratios and durations.',
+    description: 'Generate Intelligence videos from text prompts using Veo 3.1. Supports multiple aspect ratios and durations.',
     category: 'generation',
     version: '1.0.0',
-    author: 'indiiOS Core Team',
+    author: 'indii Core Team',
     isAsync: true,
     timeoutMs: 300000, // 5 minutes timeout
     cost: {
@@ -165,19 +165,14 @@ export class VideoGenerationInstrument implements Instrument {
     try {
       // Get current user ID
       const { auth } = await import('@/services/firebase');
-      let userId = auth.currentUser?.uid;
+      const userId = auth.currentUser?.uid;
 
       if (!userId) {
-        if (import.meta.env.DEV) {
-          logger.warn("[VideoGenerationInstrument] Anonymous user in DEV, using mock ID.");
-          userId = 'dev_user_anonymous';
-        } else {
-          return {
-            success: false,
-            error: 'User must be authenticated',
-            metadata: { executionTimeMs: Date.now() - startTime }
-          };
-        }
+        return {
+          success: false,
+          error: 'User must be authenticated',
+          metadata: { executionTimeMs: Date.now() - startTime }
+        };
       }
 
       // Check quota using subscription service

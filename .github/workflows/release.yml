@@ -8,6 +8,10 @@ on:
     tags:
       - 'v*.*.*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write  # required to create/modify GitHub Releases
 
@@ -36,7 +40,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 \
-            libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+            libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Install dependencies
         run: npm ci
@@ -55,46 +60,119 @@ jobs:
           npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing (optional — set these secrets to enable)
-          # CSC_LINK: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 }}
-          # CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          # macOS signing (uncommented to enable when secrets are set)
+          CSC_LINK: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: true
-          # Windows signing (optional)
-          # WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
-          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          # Windows signing (uncommented to enable when secrets are set)
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE || secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Setup Firebase CLI
-        run: npm install -g firebase-tools@13.29.1
-
-      - name: Authenticate with Firebase
+      - name: Verify updater manifest was published
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
+          case "$RUNNER_OS" in
+            macOS)
+              MANIFEST="latest-mac.yml"
+              ;;
+            Windows)
+              MANIFEST="latest.yml"
+              ;;
+            Linux)
+              MANIFEST="latest-linux.yml"
+              ;;
+            *)
+              echo "Unsupported runner OS for updater manifest verification: $RUNNER_OS"
+              exit 1
+              ;;
+          esac
+
+          if [ ! -f "dist-electron/$MANIFEST" ]; then
+            echo "Missing local updater manifest: dist-electron/$MANIFEST"
+            echo "dist-electron contents:"
+            find dist-electron -maxdepth 1 -type f -print | sort
+            exit 1
+          fi
+
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fx "$MANIFEST"; then
+            echo "GitHub release $GITHUB_REF_NAME is missing updater manifest asset: $MANIFEST"
+            echo "Release assets currently published:"
+            gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Authenticate with Google Cloud
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          gcloud auth activate-service-account --key-file="$HOME/gcloud-key.json"
+          gcloud config set project indii-music-founder
 
       - name: Upload Installer to Firebase Storage (macOS)
         if: runner.os == 'macOS'
         run: |
-          # Upload DMG files from packages/main/dist or dist folder. 
-          # Note: Adjust source path if electron-builder output directory is different.
-          DMG_FILE=$(find . -name "*.dmg" -type f | head -n 1)
-          if [ -n "$DMG_FILE" ]; then
-            firebase storage:upload "$DMG_FILE" founders/releases/indiiOS-Installer.dmg --project indiios-v-1-1 --non-interactive
+          DMG_FILE=$(find dist-electron -maxdepth 1 -name "*.dmg" -type f | head -n 1)
+          if [ -z "$DMG_FILE" ]; then
+            echo "No DMG artifact found in dist-electron"
+            exit 1
           fi
-        continue-on-error: true
+          gcloud storage cp "$DMG_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Installer.dmg" \
+            --content-type=application/x-apple-diskimage
+          
+          YML_FILE=$(find dist-electron -maxdepth 1 -name "latest-mac.yml" -type f | head -n 1)
+          if [ -z "$YML_FILE" ]; then
+            echo "No latest-mac.yml artifact found in dist-electron"
+            exit 1
+          fi
+          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
+            --content-type=text/yaml
 
       - name: Upload Installer to Firebase Storage (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          # Upload EXE files
-          EXE_FILE=$(find . -name "*.exe" -type f | head -n 1)
-          if [ -n "$EXE_FILE" ]; then
-            firebase storage:upload "$EXE_FILE" founders/releases/indiiOS-Setup.exe --project indiios-v-1-1 --non-interactive
+          EXE_FILE=$(find dist-electron -maxdepth 1 -name "*.exe" -type f | head -n 1)
+          if [ -z "$EXE_FILE" ]; then
+            echo "No Windows EXE artifact found in dist-electron"
+            exit 1
           fi
-        continue-on-error: true
+          gcloud storage cp "$EXE_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Setup.exe" \
+            --content-type=application/vnd.microsoft.portable-executable
+
+          YML_FILE=$(find dist-electron -maxdepth 1 -name "latest.yml" -type f | head -n 1)
+          if [ -z "$YML_FILE" ]; then
+            echo "No latest.yml artifact found in dist-electron"
+            exit 1
+          fi
+          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
+            --content-type=text/yaml
+
+      - name: Upload Installer to Firebase Storage (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          APPIMAGE_FILE=$(find dist-electron -maxdepth 1 -name "*.AppImage" -type f | head -n 1)
+          if [ -n "$APPIMAGE_FILE" ]; then
+            gcloud storage cp "$APPIMAGE_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Installer.AppImage" \
+              --content-type=application/vnd.appimage
+          else
+            echo "No Linux AppImage artifact found in dist-electron; skipping optional Linux Founder upload."
+          fi
 
       - name: Cleanup credentials
         if: always()

@@ -60,7 +60,7 @@ test.describe('Creative Studio', () => {
         // authedPage fixture handles auth mock and navigates to '/'
 
         // Navigate directly to creative module
-        await page.goto('/creative');
+        await page.goto('/creative', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
 
         // Wait for the Creative module to fully mount (direct generation button is always present in navbar)
@@ -152,6 +152,12 @@ test.describe('Creative Studio', () => {
         const directBtn = page.locator('[data-testid="direct-view-btn"]');
         if (await directBtn.isVisible().catch(() => false)) {
             await directBtn.click();
+            await page.waitForTimeout(1_000);
+        }
+
+        const videoModeBtn = page.locator('[data-testid="direct-video-mode-btn"]');
+        if (await videoModeBtn.isVisible().catch(() => false)) {
+            await videoModeBtn.click();
             await page.waitForTimeout(1_000);
         }
 

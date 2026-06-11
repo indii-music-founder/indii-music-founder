@@ -12,8 +12,8 @@
     "release_type": "Single",
     "explicit": false,
     "language": "English",
-    "copyright": "© 2026 KIRA NOVA, under exclusive license to IndiiOS Records",
-    "p_line": "℗ 2026 IndiiOS Records"
+    "copyright": "© 2026 KIRA NOVA, under exclusive license to indii Records",
+    "p_line": "℗ 2026 indii Records"
   },
   "artist_profile": {
     "age": 24,
@@ -38,7 +38,7 @@
     },
     "press_email": "press@kiranova.io",
     "management_email": "mgmt@kiranova.io",
-    "label": "IndiiOS Records (Self-Released)"
+    "label": "indii Records (Self-Released)"
   },
   "song_story": {
     "concept": "The electric tension of meeting someone across a crowded club and feeling an instant, dangerous attraction",
@@ -83,7 +83,7 @@
     }
   ],
   "distribution": {
-    "distributor": "IndiiOS Direct",
+    "distributor": "indii Direct",
     "territories": "Worldwide",
     "platforms": ["Spotify", "Apple Music", "Amazon Music", "YouTube Music", "Tidal", "Deezer", "Pandora", "SoundCloud Go+"],
     "pre_save_date": "2026-03-28",

@@ -7,6 +7,7 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Hoisted mocks must be defined before imports
 const mocks = vi.hoisted(() => ({
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
     serverTimestamp: vi.fn(),
     analyzeImage: vi.fn(),
     generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4'),
@@ -22,11 +23,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Mock modules
-vi.mock('../ai/FirebaseAIService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage,
-        generateVideo: mocks.generateVideo
+        generateVideo: mocks.httpsCallableFn
     }
 }));
 
@@ -34,6 +35,8 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: mocks.canPerformAction
+    ,
+        getCurrentSubscription: vi.fn().mockResolvedValue({ tier: 'pro' })
     }
 }));
 
@@ -43,8 +46,8 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     db: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
-    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn(() => mocks.httpsCallableFn) })) },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -67,8 +70,16 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-    httpsCallable: vi.fn(() => vi.fn()),
+    httpsCallable: vi.fn(() => mocks.httpsCallableFn),
     getFunctions: vi.fn()
+}));
+
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    uploadBytes: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
+    getDownloadURL: vi.fn().mockResolvedValue('https://mock.storage.com/file')
 }));
 
 vi.mock('@/core/store', () => ({
@@ -92,7 +103,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         // Default successful mocks
         mocks.analyzeImage.mockResolvedValue('Calculated temporal context');
         mocks.canPerformAction.mockResolvedValue({ allowed: true });
-        mocks.generateVideo.mockResolvedValue('https://storage.googleapis.com/mock/video.mp4');
+        mocks.httpsCallableFn.mockResolvedValue({ data: { jobId: 'mock-job-id' } });
     });
 
     afterEach(() => {
@@ -100,8 +111,8 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
     });
 
     it('should proceed with generation (Resilience) when Temporal Context Analysis fails', async () => {
-        // Scenario: AI Service is down or returns 500
-        mocks.analyzeImage.mockRejectedValue(new Error('AI Service Unavailable'));
+        // Scenario: Intelligence Service is down or returns 500
+        mocks.analyzeImage.mockRejectedValue(new Error('Intelligence Service Unavailable'));
 
         const options = {
             prompt: 'A cinematic shot of a cyberpunk city',
@@ -118,14 +129,14 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         expect(result[0]!.id).toBe('mock-job-id');
 
         // firebaseAI.generateVideo should have been called
-        expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
+        expect(mocks.httpsCallableFn).toHaveBeenCalledTimes(1);
 
         // Prompt should contain original but NOT the failed analysis
-        const callArgs = mocks.generateVideo.mock.calls[0]![0];
+        const callArgs = mocks.httpsCallableFn.mock.calls[0]![0];
         expect(callArgs.prompt).toContain('A cinematic shot of a cyberpunk city');
     });
 
-    it('should proceed with generation (Fallback) when Quota Service fails', async () => {
+    it('should BLOCK generation (Fail-Secure) when Quota Service fails', async () => {
         // Scenario: Subscription Service network error
         mocks.canPerformAction.mockRejectedValue(new Error('Network Error'));
 
@@ -133,15 +144,11 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
             prompt: 'A calm ocean view'
         };
 
-        // Execute — should proceed gracefully and generate video when quota check fails with network error
-        const result = await service.generateVideo(options);
+        // Execute & Assert: Should block for safety if quota status is unknown
+        await expect(service.generateVideo(options)).rejects.toThrow(/Quota check unavailable/);
 
-        // Assert: Video was still generated
-        expect(result).toHaveLength(1);
-        expect(result[0]!.id).toBe('mock-job-id');
-
-        // generateVideo SHOULD be called as a fallback
-        expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
+        // generateVideo should NOT be called
+        expect(mocks.httpsCallableFn).not.toHaveBeenCalled();
     });
 
     it('should BLOCK generation when Quota is strictly exceeded', async () => {
@@ -153,14 +160,14 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         };
 
         // Execute & Assert
-        await expect(service.generateVideo(options)).rejects.toThrow(/Quota exceeded: Monthly limit reached/);
+        await expect(service.generateVideo(options)).rejects.toThrow(/Quota exceeded.*Monthly limit reached/);
 
         // generateVideo should NOT have been called
-        expect(mocks.generateVideo).not.toHaveBeenCalled();
+        expect(mocks.httpsCallableFn).not.toHaveBeenCalled();
     });
 
     it('should correctly enrich prompt with Veo 3.1 parameters even during Fallback', async () => {
-        // Scenario: AI analysis fails, but we still want Camera/Motion control
+        // Scenario: Intelligence analysis fails, but we still want Camera/Motion control
         mocks.analyzeImage.mockRejectedValue(new Error('AI fail'));
 
         const options = {
@@ -173,8 +180,8 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         await service.generateVideo(options);
 
         // Assert that firebaseAI.generateVideo was called with enriched prompt
-        expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
-        const callArgs = mocks.generateVideo.mock.calls[0]![0];
+        expect(mocks.httpsCallableFn).toHaveBeenCalledTimes(1);
+        const callArgs = mocks.httpsCallableFn.mock.calls[0]![0];
         expect(callArgs.prompt).toContain('cinematic pan camera movement');
         expect(callArgs.prompt).toContain('high dynamic motion');
     });

@@ -67,7 +67,7 @@ To counter algorithmic polish, designs must incorporate "Wabi-Sabi" (beauty in i
 
 ---
 
-## 3. UX PATTERNS & INTERACTION DESIGN
+## 3. UX PATTIngestionNotificationS & INTERACTION DESIGN
 
 ### 3.1 Agentic UX & The "Machine Experience" (MX)
 
@@ -166,7 +166,7 @@ Use `ffmpeg` to ensure every frame is a keyframe for smooth scrubbing. Bind vide
 * **Center-Stage Product**: The "hero" (product/app) remains pinned (sticky) while context evolves around it.
 * **Emotional Journey**: Every motion serves a storytelling purpose—turning visitors into users by guiding them through a "cinematic" arc.
 
-## 6. ETHICS & GOVERNANCE
+## 6. ETHICS & GOVIngestionNotificationANCE
 
 ### 6.1 Trust & Privacy
 

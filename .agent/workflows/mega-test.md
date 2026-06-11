@@ -1,30 +1,32 @@
 ---
 name: /mega-test
 description: >
-  Execute a specific version of the Mega Stress Test Plan using the browser subagent.
+  Execute a specific version of the Mega Stress Test Plan using the browser subagent,
+  measuring against 11 dimensions including deep technical architecture, asset generation,
+  and real artifact validation.
   Runs numbered routines sequentially, documents pass/fail per routine, logs new issues
   to OPEN_ISSUES.md, and produces a structured test report.
   TEST AGENT DOES NOT WRITE CODE. Issues go to OPEN_ISSUES.md for a fixing agent.
 ---
 
-# /mega-test — Mega Stress Test Execution Protocol
+# /mega-test — Multi-Dimensional Mega Stress Test Execution Protocol
 
-> **Purpose:** Execute numbered routines from a specific Mega Stress Test plan file
-> against the live running application using the browser subagent.
+> **Purpose:** Execute numbered routines from a specific Mega Stress Test plan file against the live running application using the browser subagent. Evaluate the application across 11 critical dimensions.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
-> **Output:** Per-routine pass/fail log + all new issues → `OPEN_ISSUES.md`
+> **Output:** Multi-dimensional pass/fail report + all new issues → `OPEN_ISSUES.md`
 
 ---
 
 ## 0. PRIME RULES (READ BEFORE ANYTHING ELSE)
 
-You are a **test executor**, not an engineer.
+You are a **multi-dimensional test executor**, not an engineer. For every routine, you observe through ALL 11 lenses simultaneously.
 
 You DO:
 - Open the browser subagent and navigate the live app
 - Execute each routine's exact steps as written in the plan
+- Validate real outputs (images, videos, PDFs) end-to-end
 - Screenshot every meaningful state, error toast, and failure
-- Report PASS, PARTIAL, or FAIL per routine with a 1-line reason
+- Report PASS, PARTIAL, or FAIL per routine with dimensional scores
 - Append new issues to `OPEN_ISSUES.md` using the standard format
 
 You do NOT:
@@ -34,14 +36,27 @@ You do NOT:
 - Diagnose root causes or suggest code fixes
 - Skip routines because they "seem fine" — every routine must execute
 
+**Technology Snapshot Check:**
+- Framework: React 18.3.1 (Concurrent mode)
+- State: Zustand 5.0.8 (28 slices)
+- Build: Vite 6.4.2 / Electron-Vite 5.0.0
+- AI: Gemini 3 Pro/Flash Preview models (strict policy)
+- Backend: Firebase Gen 2 Cloud Functions
+
+Before executing ANY routine, read the Architecture Snapshot (Section 8.1) to understand what the code SHOULD do.
+
 ---
 
 ## 1. INITIALIZATION
 
-### Step 1 — Determine which test plan to run
+### Step 0 — Technology Snapshot
+Verify current system matches the expected tech stack:
+```bash
+npm ls react zustand vite
+```
 
-Read the user's input. It will be one of:
-
+### Step 1 — Determine which test plan or department to run
+Read the user's input:
 | Input | Behavior |
 |-------|---------|
 | `/mega-test` (no args) | Run the highest-version plan found in `.agent/test_ledger/` |
@@ -49,162 +64,179 @@ Read the user's input. It will be one of:
 | `/mega-test v4 section 3` | Run only Section 3 of V4 |
 | `/mega-test v4 101-110` | Run only routines 101–110 of V4 |
 | `/mega-test regression` | Run all routines tagged `[REGRESSION]` across all plans |
+| `/mega-test marketing` | Run the scoped department tests (unit, integration, E2E, and connections) for the Marketing department using `python3 execution/run_department_test.py marketing` |
+| `/mega-test-audio`, `/mega-test audio`, `/mega-test MegaTestAudioLoop` | Run the scoped audio system gauntlet using `python3 execution/run_department_test.py audio-analyzer`, including Audio Analyzer UI, audio services, Firebase audio API tests, agent audio tools, distribution/DDEX audio paths, Python audio forensics checks, fixtures, and connected Creative/Marketing/Distribution coverage |
+| `/mega-test <department>` | Run tests scoped by department name or alias (e.g., creative, finance, distribution, legal, publishing) |
 
 ### Step 2 — Read the target test plan in full
-
 ```bash
 cat .agent/test_ledger/MEGA_STRESS_TEST_V<N>_*.md
 ```
+Build a mental checklist of modules, actions, and PASS conditions.
 
-Before touching the browser, read every routine in the plan. Build a mental checklist of:
-- What modules you will need to navigate to
-- What user actions are required (typing, clicking, uploading)
-- What the PASS condition is for each routine
-- Which routines are tagged `OPEN` (still-open issues — document state, don't skip)
-
-### Step 3 — Read OPEN_ISSUES.md to know the current issue count
-
+### Step 3 — Read OPEN_ISSUES.md
 ```bash
 tail -30 .agent/test_ledger/OPEN_ISSUES.md
 ```
-
-Note the last ISSUE number (e.g., `ISSUE-043`). Any new issues you file start at `ISSUE-044`.
+Note the last ISSUE number. Any new issues start at the next number.
 
 ### Step 4 — Confirm the app is running
-
 ```bash
 curl -s -o /dev/null -w "%{http_code}" http://localhost:4242
 ```
+If not 200, ask the user to start the dev server (`npm run dev:web`).
 
-If the response is not `200`, stop and ask the user to start the dev server:
-```bash
-npm run dev:web
-```
-Do not proceed until the app is confirmed running.
+### Step 5 — Console Baseline
+Open the browser subagent, navigate to `http://localhost:4242`. Record ALL console messages on initial load as the BASELINE. Any new console errors during testing = new findings.
 
-### Step 5 — Open the browser subagent
+### Step 6 — Read Flowchart Index
+Scan `docs/flowcharts/` to build a mental map of key architectural invariants.
 
-Launch the browser subagent targeting `http://localhost:4242`. Take an initial screenshot
-to confirm the app loaded. Note the starting state (which module is active, any toast
-messages, loading spinners). This screenshot is your baseline.
+### Step 7 — Check Slash Command Availability
+Verify `/hunter`, `/issue`, `/real`, `/auto_qa`, `/flowchart`, `/health_audit`, `/factory`, `/ci-validate` exist in `.agent/workflows/`.
+
+### Step 8 — Read REAL_TEST_HISTORY.md
+Load the coverage history to prioritize under-tested areas.
 
 ---
 
 ## 2. EXECUTION PROTOCOL
 
 ### 2.1 Routine Execution Loop
-
 For each routine in the test plan:
-
-1. **Read the routine** — understand the full scenario before clicking anything.
+1. **Read the routine** — understand the full scenario.
 2. **Navigate** — get to the correct module using the sidebar.
-3. **Execute** — follow the exact steps described in the routine.
-4. **Observe** — watch for the specific PASS/FAIL condition stated in the routine.
-5. **Screenshot** — take a screenshot of the final state (pass or fail).
-6. **Record** — append to your running test report (see Section 4).
+3. **Execute** — follow the exact steps.
+4. **Observe** — watch for PASS/FAIL conditions across all 11 Dimensions.
+5. **Screenshot** — capture final state (pass or fail).
+6. **Record** — append to running test report with dimensional scores.
 7. **Log issues** — if FAIL or PARTIAL, append to `OPEN_ISSUES.md`.
 
 ### 2.2 Browser Subagent Usage Rules
-
-When calling `browser_subagent`, always:
-
-- **Provide the full routine text** as task context — do not paraphrase or abbreviate it.
-- **Specify the exact PASS condition** so the subagent knows what to verify.
-- **Ask for console error reporting** — always request the subagent note any browser console errors.
-- **Request a screenshot at the end** — the subagent must capture the final state.
-- **Give it enough time** — set generous timeouts for AI generation routines (2+ minutes).
-
-Example browser subagent call structure (do NOT copy verbatim — adapt to each routine):
-
-```
-Task: Execute Mega Stress Test Routine <N>: "<Routine Title>"
-
-Context:
-- App URL: http://localhost:4242
-- Starting module: <module name>
-- Current user state: <note any pre-existing data or state>
-
-Steps to execute:
-<paste the exact routine steps from the test plan>
-
-PASS condition: <paste the verification criteria from the routine>
-FAIL condition: Any deviation from PASS condition, or a browser console error.
-
-Required output:
-1. Screenshot of the final state
-2. PASS | PARTIAL | FAIL verdict with 1-line explanation
-3. Any browser console errors observed
-4. Exact time taken for the routine (start to finish)
-```
+When calling `browser_subagent`:
+- Provide the full routine text as task context.
+- Specify the exact PASS condition.
+- Ask for console error reporting.
+- Request a screenshot at the end.
+- Set generous timeouts for AI generation routines (2+ minutes).
 
 ### 2.3 Verdict Definitions
-
 | Verdict | When to Use |
 |---------|-------------|
-| ✅ PASS | The routine's PASS condition was fully met. No errors, no deviations. |
-| ⚠️ PARTIAL | The feature works but with minor degradation (slower than expected, console warning, minor visual glitch). Not a full failure. |
-| ❌ FAIL | The PASS condition was NOT met, OR a blocking console error occurred. |
-| 🔵 OPEN | Routine was for an already-open issue. Document current state. No verdict required. |
+| ✅ PASS | PASS condition fully met. No errors, no deviations. |
+| ⚠️ PARTIAL | Works but with degradation (slow, console warning, visual glitch). |
+| ❌ FAIL | PASS condition NOT met, OR blocking console error. |
+| 🔵 OPEN | Already-open issue. Document current state. |
+| 🚫 BUDGET_HOLD | Stopped due to API costs exceeding budget. |
 
-### 2.4 OPEN Routine Handling
-
-Routines labeled `(ISSUE-NNN — OPEN)` test issues that were OPEN at test plan creation time.
-For these routines:
-- Execute the routine exactly as written
-- Do NOT mark PASS or FAIL — mark `🔵 OPEN`
-- Record the **current observed behavior** precisely
-- If the behavior has improved since the issue was filed, note it
-- If unchanged, note it
-- If it has gotten worse, mark it `❌ FAIL [REGRESSION]` and file a new issue
-
-### 2.5 Regression Detection Rule
-
-If a routine maps to a previously `✅ FIXED` issue and you observe it failing:
-
-1. Mark the routine `❌ FAIL [REGRESSION]`
-2. Immediately file a new issue in `OPEN_ISSUES.md`:
-   ```
-   ### ISSUE-NNN: [REGRESSION] <Original Issue Title>
-   - **Status:** OPEN
-   - **Severity:** 🔴 HIGH (regression of previously fixed issue)
-   - **Module:** <module>
-   - **Found:** <date> by Mega Stress Test V<X> Routine <N>
-   - **Summary:** This issue was previously fixed (ISSUE-XXX) but has regressed.
-   - **Observed behavior:** <exact description of what happened>
-   - **Expected behavior:** <what the fix should have guaranteed>
-   ```
+### 2.4 Regression Detection
+If a routine maps to a previously `✅ FIXED` issue and fails:
+1. Mark `❌ FAIL [REGRESSION]`.
+2. File a new issue with `Severity: 🔴 HIGH`.
 
 ---
 
-## 3. MODULE NAVIGATION GUIDE
+## 3. THE 11 DIMENSIONS
 
-Use these exact sidebar navigation paths for each module:
+You evaluate every routine across these 11 lenses.
 
-| Module | How to Navigate |
-|--------|----------------|
-| Boardroom | Click "Boardroom HQ" in the left sidebar |
-| Creative Director | Click "Creative Director" in the left sidebar |
-| Audio Analyzer | Click "Audio Intelligence" or "Audio Analyzer" in the TOOLS section |
-| Workflow Builder | Click "Workflow Builder" in the TOOLS section |
-| Knowledge Base | Click "Knowledge Base" in the TOOLS section |
-| Observability | Click "Observability" or "Observability Matrix" in the TOOLS section |
-| Finance | Click "Finance" in the left sidebar |
-| Marketing | Click "Marketing" in the left sidebar |
-| Distribution | Click "Distribution" in the left sidebar |
-| Memory Agent | Click the Memory Agent entry in the TOOLS section |
-| Agent Picker | Click the agent avatar/portrait ring or "Change Agent Mode" button |
-| Settings | Click the gear icon (⚙️) in the bottom-left or top-right corner |
+### Dimension 1: Performance Profiling
+1. Measure page load time (start → interactive).
+2. Record memory usage via DevTools.
+3. Re-measure memory after 5 minutes (detect leaks).
+4. Check for layout shifts during transitions.
+5. Time AI responses.
+*Budgets: Load < 3s, Switch < 500ms, AI First Token < 5s, No CLS.*
 
-If a module is not visible in the sidebar, it may be hidden under a "More" or "Tools" expand
-button. Always expand the full sidebar before declaring a module missing.
+### Dimension 2: Accessibility Audit
+1. Run axe-core scan.
+2. Tab through elements — verify focus ring.
+3. Verify alt text on images.
+4. Verify accessible names on buttons.
+5. Check color contrast (4.5:1).
+*Severity: Missing alt text = HIGH, Contrast = MEDIUM.*
+
+### Dimension 3: Security Surface Testing
+1. Check for exposed API keys in network (sk_, ghp_, AIza).
+2. Auth tokens not in URLs.
+3. Test protected routes unauthenticated.
+4. Check CSP headers.
+*Red Flags: API key exposed = ❌ FAIL.*
+
+### Dimension 4: Architecture Validation (Flowchart-Driven)
+Verify the live app matches `docs/flowcharts/`.
+- Validate app layers (entire-app-architecture.md).
+- Validate state management (zustand-state-architecture.md).
+- Validate creative flow (creative-studio-pipeline.md).
+
+### Dimension 5: State Management Integrity
+- Verify Zustand state persists across module navigation.
+- Detect subscription leaks (rapidly switch modules, check memory).
+- Verify slice isolation (actions in Creative don't re-render Finance).
+
+### Dimension 6: AI/Agent Integrity
+- Model Policy: Verify banned models are NOT used (gemini-1.5*, gemini-2.0*, gemini-pro*).
+- Verify approved models ARE used (gemini-3*, veo-3.1*).
+- Verify Agent Orchestrator (Conductor) delegates correctly.
+
+### Dimension 7: Cross-Module Data Flow
+Verify assets are visible where needed:
+- Creative Image → Video Producer, Distribution, Brand Kit.
+- Audio DNA → Distribution Metadata.
+
+### Dimension 8: Responsive & PWA
+Test viewport breakpoints:
+- 1920px (Desktop), 1280px (Laptop), 768px (Tablet), 375px (Mobile).
+- Verify no horizontal scrollbars, touch targets ≥ 44x44px.
+- PWA: manifest.json valid, service worker active.
+
+### Dimension 9: Production Parity
+- Compare `.env` to production.
+- Verify `VITE_SKIP_ONBOARDING` is off in prod logic.
+- Verify App Check token requirements.
+
+### Dimension 10: Console Intelligence
+Classify all console messages:
+- 🔴 CRITICAL (Unhandled Rejection, TypeError) → HIGH issue.
+- 🟡 WARNING (React key, deprecated) → MEDIUM issue.
+- React 18 specific: Catch "Cannot update component while rendering", "unique key", "suspense boundary" errors.
+
+### Dimension 11: Asset Generation Gauntlet (The Generative Crucible)
+Every endpoint that CREATES a real artifact MUST be tested end-to-end.
+**Procedure:**
+1. TRIGGER generation.
+2. WAIT (generous timeouts).
+3. VERIFY ARTIFACT: Real (not undefined/placeholder), correct MIME, VISIBLE in UI, PLAYABLE/DOWNLOADABLE.
+4. USE DOWNSTREAM: Verify it can be used in another module.
+
+**Key Chain Tests (End-to-End):**
+- Logo → T-Shirt Mockup (`mockup_merchandise`).
+- Image → Video (`generateVideoV3`).
+- Audio → DNA → Distribution.
+- Contract → PDF → Signature.
+- Full Artist Lifecycle (Gauntlet): Logo → Art → Merch → Split Sheet → PR → Release → DDEX.
+
+*Cost Awareness:* Respect API budgets. Use `check_budget_status()`.
 
 ---
 
-## 4. TEST REPORT FORMAT
+## 4. MODULE NAVIGATION GUIDE
 
-Maintain a running test report throughout the session. At the end, finalize it as an artifact.
+Use explicit sidebar paths:
+- Boardroom: "Boardroom HQ"
+- Creative Director: "Creative Director"
+- Audio Analyzer: TOOLS > "Audio Analyzer"
+- Workflow Builder: TOOLS > "Workflow Builder"
+- Finance: "Finance"
+- Marketing: "Marketing"
+- Distribution: "Distribution"
+Expand the sidebar if tools are hidden.
 
-### 4.1 Report Header
+---
+
+## 5. TEST REPORT FORMAT
+
+Maintain a running report, finalize as an artifact `artifacts/mega_v<N>_<date>_results.md`.
 
 ```markdown
 # Mega Stress Test V<N>.0 Execution Report
@@ -212,118 +244,96 @@ Maintain a running test report throughout the session. At the end, finalize it a
 **Date:** <ISO date>
 **Plan:** MEGA_STRESS_TEST_V<N>_*.md
 **Routines Executed:** <X> of <Y> total
-**Build:** Dev (localhost:4242) | Production (specify if applicable)
-**Executor:** Browser Subagent (Antigravity)
 
-## Summary
+## Dimensional Health Matrix
 
-| Verdict | Count |
-|---------|-------|
-| ✅ PASS | X |
-| ⚠️ PARTIAL | X |
-| ❌ FAIL | X |
-| 🔵 OPEN (state documented) | X |
-| ❌ FAIL [REGRESSION] | X |
+| Dimension | Score | Critical | Warning | Pass | Notes |
+|-----------|-------|----------|---------|------|-------|
+| Performance | 🟢 8/10 | 0 | 2 | 8 | Memory growth in Creative |
+| Accessibility | 🟡 6/10 | 1 | 3 | 6 | Missing alt text |
+| [All 11 Dimensions] | ... | ... | ... | ... | ... |
+| **OVERALL** | **🟡 85/110** | **2** | **20** | **88** | **Target: 100/110** |
 
-**New issues filed:** ISSUE-NNN through ISSUE-MMM
-```
+## Asset Generation Scorecard
+| Endpoint | Status | Time | Downstream |
+|----------|--------|------|------------|
+| generateImageV3 | ✅ PASS | 4.2s | Used as cover art |
+| ... | ... | ... | ... |
 
-### 4.2 Per-Routine Entry
+## Architecture Violation Log
+- [VIOLATION-001] Video pipeline skips canvas step
 
-Append one entry per routine:
-
-```markdown
-### Routine <N>: <Title> (<ISSUE-NNN reference if applicable>)
-- **Verdict:** ✅ PASS | ⚠️ PARTIAL | ❌ FAIL | 🔵 OPEN
+## Per-Routine Entry
+### Routine <N>: <Title>
+- **Verdict:** ✅ PASS
 - **Duration:** ~<seconds>s
-- **Observed:** <1-3 sentences describing exactly what happened>
-- **Console errors:** None | <error text if present>
-- **Screenshot:** <description of what is captured>
-- **New issue filed:** None | ISSUE-NNN
-```
+- **Observed:** <what happened>
+- **Dimensional Scores:** [Table of 11 scores]
+- **New issue filed:** ISSUE-NNN
 
-### 4.3 Report Footer
-
-At the end of the session:
-
-```markdown
-## Section Summary
-
-| Section | Total | PASS | PARTIAL | FAIL | REGRESSION |
-|---------|-------|------|---------|------|------------|
-| Section 1: <name> | X | X | X | X | X |
-| Section 2: <name> | X | X | X | X | X |
-...
-
-## New Issues Filed This Run
+## New Issues Filed
 - ISSUE-NNN: <title> (<severity>)
-- ...
-
-## Regressions Detected
-- ISSUE-NNN: [REGRESSION] <title>
-- ...
-
-## Deferred / Blocked Routines
-- Routine <N>: <reason it could not execute> (e.g., module not accessible, prerequisite missing)
-
-## Recommendations
-<1-3 sentences on what the fix agent should prioritize first>
 ```
 
 ---
 
-## 5. ISSUE FILING FORMAT (OPEN_ISSUES.md)
+## 6. ISSUE FILING FORMAT (OPEN_ISSUES.md)
 
-All new issues must follow this exact format. Append to the bottom of `OPEN_ISSUES.md`.
-Do not edit existing entries.
+Append to `.agent/test_ledger/OPEN_ISSUES.md`. DO NOT edit existing entries.
 
 ```markdown
-### ISSUE-<NNN>: <Short descriptive title>
+### ISSUE-<NNN>: <Short title>
 - **Status:** OPEN
 - **Severity:** 🔴 HIGH | 🟡 MEDIUM | 🟢 LOW
+- **Dimension:** Performance | Accessibility | Security | Architecture | State | AI | DataFlow | Responsive | ProdParity | Console | AssetGen
 - **Module:** <module name>
+- **Flowchart:** <flowchart file> | N/A
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase | N/A
 - **Found:** <YYYY-MM-DD> by Mega Stress Test V<N> (Routine <N>)
-- **Summary:** <2-3 sentences. What is the issue? What did the user attempt? What actually happened?>
-- **Steps to Reproduce:**
-  1. Navigate to <module>
-  2. <Exact action>
-  3. <Observe the failure>
-- **Expected:** <What should have happened>
-- **UX Impact:** <What can the user NOT do because of this? How severe is the experience break?>
+- **Summary:** <description>
+- **Steps to Reproduce:** ...
+- **Expected:** ...
+- **UX Impact:** ...
+- **Dimensional Data:** <Metrics from failing dimensions>
 ```
 
-Severity guide:
-- 🔴 HIGH — Feature is broken, data was lost, or the UI is unusable
-- 🟡 MEDIUM — Feature works but with friction, partial failure, or inconsistency
-- 🟢 LOW — Polish issue, cosmetic bug, or minor UX improvement
+---
+
+## 7. SLASH COMMAND INTEGRATION
+
+Test Orchestration Pipeline:
+- **BEFORE:** `/health_audit` (snapshot), `/flowchart` (architecture map)
+- **DURING:** `/hunter audit` (if ≥5 security issues), `/auto_qa` (after sections)
+- **AFTER:** `/issue triage` (auto-triage), `/ci-validate` (test regressions), `/go` (snapshot)
+- **OPTIONAL:** `/factory` (closed-loop), `/real deep <module>`
 
 ---
 
-## 6. SECTION-LEVEL CHAOS FINALE
+## 8. FLOWCHART VALIDATION ENGINE
 
-Every V4+ test plan ends with a "Chaos Finale" note specifying which routines to combine
-simultaneously. To execute this:
-
-1. Open **4 browser tabs** all pointing to `http://localhost:4242` and logged in as the same user.
-2. Assign one routine per tab.
-3. Start all 4 routines **at the same time** (within a 5-second window).
-4. Let them run for at least **5 minutes** without intervening.
-5. After 5 minutes, check each tab for:
-   - Any crash, blank screen, or infinite spinner
-   - Any cross-tab state corruption (e.g., tab 1's agent shows tab 3's data)
-   - Memory pressure (browser tab memory usage in Task Manager)
-   - Any console errors logged during the concurrent run
-6. Record the combined result as **Chaos Finale: ✅ PASS | ❌ FAIL**.
+Read flowcharts in `docs/flowcharts/` and extract invariants. Verify them live.
+- `entire-app-architecture.md`: 6 layers operational.
+- `zustand-state-architecture.md`: 10 slices isolated.
+- `creative-studio-pipeline.md`: Generate → Edit → Canvas → Save.
+File `ARCHITECTURE_VIOLATION` issues for deviations.
 
 ---
 
-## 7. QUICK REFERENCE
+## 9. TECHNOLOGY-AWARE TESTING
+
+Specific routines for exact stack versions:
+- **React 18.3.1:** Concurrent rendering, automatic batching, suspense boundaries, strict mode double-renders.
+- **Zustand 5.0.8:** Shallow equality checks, 28-slice stress tests, persistence survival.
+- **Vite 6.4.2 / Tailwind 4.1.17:** HMR speed, chunk splitting, class collision.
+- **Firebase Gen 2:** Firestore rule drops, app check tokens, cold starts.
+
+---
+
+## 10. QUICK REFERENCE
 
 ```
 /mega-test                  → Run highest-version plan, all routines
 /mega-test v4               → Run V4 plan, all routines
-/mega-test v4 section 3     → Run only V4 Section 3
-/mega-test v4 101-115       → Run only routines 101–115
 /mega-test regression       → Run only [REGRESSION]-tagged routines
 
 Output files:
@@ -332,21 +342,15 @@ Output files:
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Append one-line summary
 ```
 
-At the end of EVERY run, append one line to `REAL_TEST_HISTORY.md`:
-```
-## <DATE> — Mega Test V<N> — Routines <X>-<Y>: <PASS_COUNT>✅ <FAIL_COUNT>❌ <NEW_ISSUE_COUNT> new issues
-```
-
 ---
 
-## 8. ANTI-PATTERNS (DO NOT DO THESE)
+## 11. ANTI-PATTERNS (DO NOT DO THESE)
 
 | Anti-Pattern | Why It's Wrong |
 |-------------|---------------|
 | Skipping a routine because it "looks fine" | Every routine must run. The PASS condition is not assumed. |
-| Filing vague issues ("Something broke in Creative") | Every issue needs exact steps to reproduce. |
-| Marking PARTIAL when it's clearly FAIL | Do not soften failures. The fix agent needs accurate severity. |
-| Reading `src/` files to understand why something failed | You are the user. You don't have source access. |
-| Running all 35 routines in one giant browser subagent call | Split into sections. Browser subagent has a context limit. Aim for 5–10 routines per call. |
-| Declaring FAIL because a feature is slow (> 30s) | Log it as PARTIAL with timing data unless it fully times out. |
-| Filing a new issue for something already in OPEN_ISSUES.md | Check the ledger first. Add a comment to the existing issue instead. |
+| Failing to verify downstream Asset flow | An image generated but not usable in Distribution is a FAIL. |
+| Filing vague issues | Every issue needs exact steps to reproduce and Dimension tags. |
+| Marking PARTIAL when it's clearly FAIL | Do not soften failures. |
+| Running all 35 routines in one browser call | Split into sections. Browser subagent has limits. |
+| Ignoring console errors on PASS | A "working" feature with an Unhandled Promise Rejection is a FAIL. |

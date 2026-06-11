@@ -9,7 +9,7 @@ test.describe('Legal Module', () => {
 
     test.beforeEach(async ({ authedPage: page }) => {
         // Navigate directly to the legal module
-        await page.goto('/legal');
+        await page.goto('/legal', { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded');
 
         // Wait for the app container and module content to be ready

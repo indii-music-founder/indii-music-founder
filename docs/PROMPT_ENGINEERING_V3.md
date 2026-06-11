@@ -1,6 +1,6 @@
 # Gemini 3 ("Nano Banana") Prompt Engineering Standards (V3.0)
 
-This document outlines the mandatory structures for multimodal image editing prompts within indiiOS, optimized for **Gemini 3 Pro** and **2.5 Flash**.
+This document outlines the mandatory structures for multimodal image editing prompts within indii, optimized for **Gemini 3 Pro** and **2.5 Flash**.
 
 ## 1. The "Task-Inputs-Instruction" (TII) Structure
 

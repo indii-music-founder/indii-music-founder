@@ -1,7 +1,7 @@
 
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { VideoGenerationOptions } from '@/modules/video/schemas';
+import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -12,6 +12,7 @@ import type { AnyToolFunction } from '../types';
 const VALID_ASPECT_RATIOS = ['16:9', '9:16'] as const; // Veo 3.1 only supports these two
 type ValidAspectRatio = typeof VALID_ASPECT_RATIOS[number];
 const VALID_RESOLUTIONS = ['720p', '1080p', '4k'] as const;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ValidResolution = typeof VALID_RESOLUTIONS[number];
 const MAX_DURATION_SECONDS = 300;
 const MAX_CHAIN_DURATION_SECONDS = 300;
@@ -303,7 +304,7 @@ export const VideoTools = {
     }),
 
     update_keyframe: wrapTool('update_keyframe', async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
-        const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+        const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
         const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
         const clip = project.clips.find(c => c.id === args.clipId);
 
@@ -437,44 +438,18 @@ export const VideoTools = {
     }),
 
     orchestrate_video_render: wrapTool('orchestrate_video_render', async (args: { scriptTimeline: Array<{ sceneId: number, durationSeconds: number, description: string }> }) => {
-        // Mock Video Agent breaking down the script into veo prompts
-        const prompts = args.scriptTimeline.map(scene => {
-            return {
-                sceneId: scene.sceneId,
-                model: 'veo-3.1',
-                prompt: `Cinematic high-quality shot: ${scene.description}`,
-                duration: scene.durationSeconds,
-                status: 'queued'
-            };
-        });
+        void args;
+        return toolError('Video render orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
+    }),
 
-        return toolSuccess({
-            totalScenes: prompts.length,
-            estimatedTotalDuration: prompts.reduce((acc, p) => acc + p.duration, 0),
-            renderQueue: prompts
-        }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
+    orchestrate_timeline: wrapTool('orchestrate_timeline', async (args: { masterScript: string; totalDuration: number; artStyle: string }) => {
+        void args;
+        return toolError('Timeline orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
     }),
 
     generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
-        // Enforce Meta Andromeda 15-variant generation
-        // 6 to 15 unique 9:16 vertical video variations
-        // Enforce the 3-Second Hook rule
-        const variations = [];
-        const count = 15;
-        for (let i = 0; i < count; i++) {
-            variations.push({
-                variationId: crypto.randomUUID(),
-                model: 'veo-3.1-generate-preview',
-                prompt: `[MANDATORY 3-SECOND HOOK - SCROLL ARRESTING] Vertical 9:16 video variant ${i + 1}. ${args.basePrompt}`,
-                status: 'queued'
-            });
-        }
-
-        return toolSuccess({
-            totalVariations: count,
-            pipeline: 'Meta Andromeda',
-            variations
-        }, `Video Agent mass-generated ${count} unique 9:16 vertical video variations targeting veo-3.1-generate-preview for Meta Andromeda A/B testing.`);
+        void args;
+        return toolError('Bulk video variation orchestration is unavailable: no A/B render queue backend is configured.', 'VIDEO_VARIATION_QUEUE_UNAVAILABLE');
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -488,5 +463,6 @@ export const {
     generate_video_chain,
     interpolate_sequence,
     orchestrate_video_render,
+    orchestrate_timeline,
     generate_andromeda_variations
 } = VideoTools;

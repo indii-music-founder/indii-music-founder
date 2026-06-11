@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -113,9 +114,12 @@ interface NearbyResultsViewProps {
     action: QuickAction;
     onClose: () => void;
     onNavigate: (place: NearbyPlace) => void;
+    key?: React.Key;
 }
 
-const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, onClose, onNavigate }) => {
+function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResultsViewProps) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { t } = useTranslation();
     const ActionIcon = action.icon;
 
     return (
@@ -213,13 +217,14 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
             </div>
         </motion.div>
     );
-};
+}
 
 // ============================================================================
 // RoadMode Main Component
 // ============================================================================
 
 export const RoadMode: React.FC = () => {
+    const { t } = useTranslation();
     const { isListening, toggleListening, transcript } = useVoice();
     const { currentItinerary: itinerary } = useTouring();
 
@@ -504,7 +509,7 @@ export const RoadMode: React.FC = () => {
                                     value={manualInput}
                                     onChange={(e) => setManualInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                                    placeholder="Tell your agent what you need..."
+                                    placeholder={t('touring.hints.agent_request')}
                                     className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                     autoFocus
                                 />

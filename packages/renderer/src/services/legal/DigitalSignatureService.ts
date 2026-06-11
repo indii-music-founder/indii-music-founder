@@ -1,12 +1,11 @@
 import { logger } from '@/utils/logger';
 import { PandaDocService } from './PandaDocService';
-import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 /**
  * Item 241: Digital Signature Service
  *
  * Integrates with DocuSign eSignature REST API v2.1 for real envelope sending.
- * Falls back gracefully when credentials are not configured (dev/staging environments).
+ * Fails closed when credentials are not configured.
  *
  * Required env vars for production:
  *   VITE_DOCUSIGN_BASE_URL       - e.g. https://demo.docusign.net/restapi (sandbox) or https://na4.docusign.net/restapi (production)
@@ -23,10 +22,10 @@ export interface Collaborator {
 
 export interface SignatureEnvelope {
     envelopeId: string;
-    status: 'sent' | 'delivered' | 'signed' | 'declined' | 'pending_config';
+    status: 'sent' | 'delivered' | 'signed' | 'declined';
     recipients: string[];
     sentAt: string;
-    provider: 'docusign' | 'pandadoc' | 'mock';
+    provider: 'docusign' | 'pandadoc';
 }
 
 /**
@@ -88,8 +87,8 @@ export class DigitalSignatureService {
     /**
      * Sends a generated split sheet to collaborators for signature.
      *
-     * If DocuSign credentials are configured, sends a real envelope via the API.
-     * Otherwise, returns a mock envelope with status 'pending_config' and logs a warning.
+     * Sends a real envelope through the configured provider.
+     * Missing credentials are treated as blocking configuration errors.
      */
     /**
      * Item 242: Route based on user preference (stored in localStorage).
@@ -120,16 +119,10 @@ export class DigitalSignatureService {
         const config = getDocuSignConfig();
 
         if (!config) {
-            logger.warn('[DigitalSignatureService] DocuSign credentials not configured. Returning mock envelope.');
-            logger.warn('[DigitalSignatureService] Set VITE_DOCUSIGN_BASE_URL, VITE_DOCUSIGN_ACCOUNT_ID, and VITE_DOCUSIGN_ACCESS_TOKEN to enable real signing.');
-
-            return {
-                envelopeId: `mock_${Date.now()}_${secureRandomAlphanumeric(6)}`,
-                status: 'pending_config',
-                recipients: collaborators.map(c => c.email),
-                sentAt: new Date().toISOString(),
-                provider: 'mock',
-            };
+            throw new Error(
+                'DocuSign credentials are not configured. Set VITE_DOCUSIGN_BASE_URL, ' +
+                'VITE_DOCUSIGN_ACCOUNT_ID, and VITE_DOCUSIGN_ACCESS_TOKEN before sending signature requests.'
+            );
         }
 
         return this.sendViaDocuSign(config, trackName, collaborators);
@@ -157,7 +150,7 @@ export class DigitalSignatureService {
                 totalSplits: String(collaborators.length),
                 collaboratorList: collaborators.map(c => `${c.name} (${c.role}): ${c.splitPercentage}%`).join('\n'),
             },
-            metadata: { source: 'indiiOS', type: 'split_sheet' },
+            metadata: { source: 'indii', type: 'split_sheet' },
         });
 
         await pandaDoc.sendDocument(doc.id, `Please review and sign the split sheet for "${trackName}".`);

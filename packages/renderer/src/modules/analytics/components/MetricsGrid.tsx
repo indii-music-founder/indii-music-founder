@@ -16,6 +16,7 @@ interface MetricCardProps {
     trend: 'up' | 'down' | 'neutral';
     color: string;
     delay: number;
+    key?: React.Key;
 }
 
 function MetricCard({ label, value, subtitle, icon: Icon, trend, color, delay }: MetricCardProps) {

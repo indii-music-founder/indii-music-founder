@@ -32,7 +32,7 @@ export function useFinance() {
 
     // Subscribe to Earnings
     useEffect(() => {
-        if (!userProfile?.id) {
+        if (!userProfile?.id || userProfile.id === 'pending') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setEarningsLoading(false);
             return;
@@ -53,7 +53,7 @@ export function useFinance() {
 
     // Subscribe to Expenses
     useEffect(() => {
-        if (!userProfile?.id) {
+        if (!userProfile?.id || userProfile.id === 'pending') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpensesLoading(false);
             return;
@@ -94,13 +94,6 @@ export function useFinance() {
             return false;
         }
     }, [toast]);
-
-    // Initial load (Current Month) - Removed undefined loadEarnings call
-    /*
-    useEffect(() => {
-        // ... Logic relying on undefined loadEarnings removed
-    }, [userProfile?.id, earningsSummary, earningsLoading]);
-    */
 
     return {
         // Earnings

@@ -56,7 +56,7 @@ vi.mock('../../core/store', () => {
 // Mock dependencies from AgentService
 vi.mock('@/utils/logger', () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('../../services/agent/MemoryService', () => ({ memoryService: { saveMemory: vi.fn().mockResolvedValue(true) } }));
-vi.mock('../../services/ai/GenAI', () => ({ GenAI: { generateContentStream: vi.fn() } }));
+vi.mock('../../services/intelligence/AutonomousIntelligence', () => ({ AutonomousIntelligence: { generateContentStream: vi.fn() } }));
 
 describe('🛡️ Shield: PII Redaction Security Test', () => {
     let agentService: AgentService;

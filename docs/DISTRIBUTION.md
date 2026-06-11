@@ -26,7 +26,7 @@ The SFTP/Aspera transmission bridge is **fully implemented and tested**.
 
 ### How to Use
 
-1. Launch indiiOS Studio
+1. Launch indii Studio
 2. Navigate to **Distribution** → **Transmission** tab
 3. Select protocol (SFTP or Aspera)
 4. Configure connection details
@@ -37,7 +37,7 @@ The SFTP/Aspera transmission bridge is **fully implemented and tested**.
 Your production build is ready at:
 
 ```
-dist-electron-studio/mac-arm64/indiiOS Studio.app
+dist-electron-studio/mac-arm64/indii Studio.app
 ```
 
 To test SFTP transmission in the packaged app:

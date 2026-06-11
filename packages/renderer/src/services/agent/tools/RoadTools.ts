@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { MapsTools } from './MapsTools';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -80,7 +80,7 @@ export const RoadTools = {
         3. Do NOT just list the cities; calculate the connections.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -109,7 +109,7 @@ export const RoadTools = {
         const vehicles = Math.ceil(c / 5);
         const transportCost = rate.transport * vehicles * d;
 
-        // Crew Wages (Simulated Base Rate of $250/day/person)
+        // Estimated crew wages. Replace with crew quotes before booking.
         const crewWages = 250 * c * d;
 
         const subtotal = lodgingCost + foodCost + transportCost + crewWages;
@@ -154,7 +154,7 @@ export const RoadTools = {
         const fullPrompt = `You are a Road Manager. ${promptInfo}`;
         const schema = zodToJsonSchema(ItinerarySchema);
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: fullPrompt }],
             schema as Record<string, unknown>
         );
@@ -225,7 +225,7 @@ export const RoadTools = {
         and estimated audience reach.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -262,7 +262,7 @@ export const RoadTools = {
         5. Any backline that should be provided by venue
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -288,6 +288,42 @@ export const RoadTools = {
             riderId,
             status: 'Complete — ready for PDF export from the Legal module.'
         }, `Technical rider generated for ${args.artistName} (Ref: ${riderId}). Includes stage plot, ${validated.inputList.length}-channel input list, and power requirements.`);
+    }),
+
+    generate_visa_checklist: wrapTool('generate_visa_checklist', async (args: {
+        artistCitizenship: string;
+        tourDestination: string;
+        crewSize?: number;
+        timelineDays: number;
+    }) => {
+        const crewSize = Math.max(1, args.crewSize || 1);
+        const urgency = args.timelineDays < 45 ? 'urgent' : args.timelineDays < 90 ? 'standard' : 'early';
+        const destination = args.tourDestination.toLowerCase();
+        const likelyVisa = destination.includes('united states') || destination === 'us' || destination === 'usa'
+            ? 'P-1/P-2 artist visa review'
+            : destination.includes('uk') || destination.includes('united kingdom')
+                ? 'Temporary Creative Worker route review'
+                : 'Local performance/work authorization review';
+
+        return toolSuccess({
+            checklistId: `visa-${Date.now().toString(36)}`,
+            artistCitizenship: args.artistCitizenship,
+            tourDestination: args.tourDestination,
+            crewSize,
+            timelineDays: args.timelineDays,
+            urgency,
+            likelyVisa,
+            documents: [
+                'Passport scans for all traveling personnel',
+                'Confirmed itinerary and venue contracts',
+                'Artist biography and press proof',
+                'Letters of invitation or engagement',
+                'Crew role list and payment responsibilities',
+            ],
+            nextStep: urgency === 'urgent'
+                ? 'Escalate to immigration counsel immediately before announcing dates.'
+                : 'Collect documents and confirm destination-specific filing route.',
+        }, `Visa checklist generated for ${crewSize} traveler(s) from ${args.artistCitizenship} to ${args.tourDestination}.`);
     }),
 
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
@@ -331,5 +367,6 @@ export const {
     generate_itinerary,
     optimize_tour_route,
     generate_technical_rider,
+    generate_visa_checklist,
     log_live_setlist_for_pro
 } = RoadTools;

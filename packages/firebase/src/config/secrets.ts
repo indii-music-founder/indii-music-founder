@@ -21,6 +21,8 @@ export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
 // Used by activateFounderPass to commit new founder entries to src/config/founders.ts.
 // Required secret in GCP Secret Manager: GITHUB_TOKEN_FOUNDERS
 export const githubTokenFounders = defineSecret("GITHUB_TOKEN_FOUNDERS");
+export const clearbitApiKey = defineSecret("CLEARBIT_API_KEY");
+export const apolloApiKey = defineSecret("APOLLO_API_KEY");
 
 /**
  * Helper to safely retrieve the GitHub Token for the Founders Program.
@@ -39,11 +41,38 @@ export function getGithubTokenFounders(): string {
     throw new Error("GitHub Token for Founders Program not found. Please set GITHUB_TOKEN_FOUNDERS secret or environment variable.");
 }
 
+// ---------------------------------------------------------------------------
+// Bug Reporter — GitHub Issues Integration
+// ---------------------------------------------------------------------------
+// Fine-grained GitHub PAT scoped to issues:write on this repo only.
+// Used by reportBugFn to create/update GitHub issues from in-app bug reports.
+// Required secret in GCP Secret Manager: GITHUB_TOKEN
+export const githubToken = defineSecret("GITHUB_TOKEN");
+
+/**
+ * Helper to safely retrieve the GitHub Token for bug reporting.
+ * Returns null (instead of throwing) when the token is not configured,
+ * allowing the bug reporter to gracefully skip GitHub integration.
+ */
+export function getGithubToken(): string | null {
+    const envKey = process.env.GITHUB_TOKEN;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = githubToken.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+    }
+
+    return null; // Graceful — caller decides whether to skip
+}
+
 /**
  * Helper to safely retrieve the Gemini API Key.
  * Handles both production (secrets) and local development (environment variables).
  */
-export function getGeminiApiKey(): string {
+export function getGeminiApiKey(): string | null {
     // 1. Try Environment Variable (Local/Dev/Emulator)
     const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
     if (envKey && envKey.trim().length > 0) {
@@ -66,7 +95,7 @@ export function getGeminiApiKey(): string {
         }
     }
 
-    throw new Error("Gemini API Key not found. Please set GEMINI_API_KEY secret or environment variable.");
+    return null;
 }
 
 /**
@@ -79,11 +108,41 @@ export function getStripeSecretKey(): string {
     try {
         const secret = stripeSecretKey.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY;
     }
 
     throw new Error("Stripe Secret Key not found.");
+}
+
+/**
+ * Helper to safely retrieve the Clearbit API Key.
+ */
+export function getClearbitApiKey(): string | null {
+    const envKey = process.env.CLEARBIT_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+    try {
+        const secret = clearbitApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        // Fallback
+    }
+    return null;
+}
+
+/**
+ * Helper to safely retrieve the Apollo API Key.
+ */
+export function getApolloApiKey(): string | null {
+    const envKey = process.env.APOLLO_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+    try {
+        const secret = apolloApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        // Fallback
+    }
+    return null;
 }
 
 /**
@@ -96,7 +155,7 @@ export function getStripeWebhookSecret(): string {
     try {
         const secret = stripeWebhookSecret.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.STRIPE_WEBHOOK_SECRET) return process.env.STRIPE_WEBHOOK_SECRET;
     }
 
@@ -113,7 +172,7 @@ export function getPandaDocApiKey(): string {
     try {
         const secret = pandaDocApiKey.value();
         if (secret && secret.trim().length > 0) return secret;
-    } catch (e) {
+    } catch (_e) {
         if (process.env.PANDADOC_API_KEY) return process.env.PANDADOC_API_KEY;
     }
 
@@ -151,3 +210,19 @@ export const metaAppSecret = defineSecret("META_APP_SECRET");
 //   - GOOGLE_OAUTH_CLIENT_SECRET  (Google Cloud Console → OAuth 2.0 Client Secret)
 //   - MICROSOFT_CLIENT_ID         (Azure Portal → App Registration → Client ID)
 //   - MICROSOFT_CLIENT_SECRET     (Azure Portal → App Registration → Client Secret)
+
+export const printfulApiKey = defineSecret("PRINTFUL_API_KEY");
+
+export function getPrintfulApiKey(): string {
+    const envKey = process.env.PRINTFUL_API_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = printfulApiKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch (_e) {
+        if (process.env.PRINTFUL_API_KEY) return process.env.PRINTFUL_API_KEY;
+    }
+
+    throw new Error("Printful API Key not found. Please set PRINTFUL_API_KEY secret or environment variable.");
+}

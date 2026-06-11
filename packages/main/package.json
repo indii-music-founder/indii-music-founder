@@ -1,5 +1,5 @@
 {
-    "name": "@indiios/main",
+    "name": "@indii/main",
     "version": "0.0.1",
     "private": true,
     "main": "src/main.ts",
@@ -7,7 +7,7 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@indiios/shared": "*",
+        "@indii/shared": "*",
         "@modelcontextprotocol/sdk": "^1.25.2",
         "@ngrok/ngrok": "^1.7.0",
         "bufferutil": "^4.1.0",
@@ -20,17 +20,19 @@
         "ffprobe-static": "3.1.0",
         "fluent-ffmpeg": "2.1.3",
         "keytar": "7.9.0",
+        "libsodium-wrappers": "^0.7.10",
         "ssh2-sftp-client": "12.0.1",
-        "utf-8-validate": "^6.0.6",
-        "ws": "^8.18.0"
+        "utf-8-validate": "^5.0.2",
+        "ws": "^8.18.0",
+        "electron-updater": "^6.8.3"
     },
     "devDependencies": {
         "@types/ffprobe-static": "^2.0.3",
         "@types/fluent-ffmpeg": "2.1.28",
+        "@types/libsodium-wrappers": "^0.7.14",
         "@types/node": "22.19.1",
         "@types/ssh2-sftp-client": "9.0.6",
         "@types/ws": "^8.5.14",
-        "electron-updater": "^6.8.3",
         "typescript": "5.8.2"
     }
 }

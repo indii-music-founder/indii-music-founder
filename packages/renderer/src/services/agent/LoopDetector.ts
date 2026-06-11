@@ -1,3 +1,5 @@
+import { MembershipService } from '../MembershipService';
+
 /**
  * Advanced Loop Detection System
  *
@@ -57,9 +59,9 @@ export class LoopDetector {
     }
 
     /**
-     * Detect if current tool call would create a loop
+     * Detect if current tool call would create a loop or exceed budget
      */
-    detectLoop(name: string, args: Record<string, unknown>): LoopDetectionResult {
+    async detectLoop(name: string, args: Record<string, unknown>): Promise<LoopDetectionResult> {
         const argsStr = JSON.stringify(args);
 
         // Check 1: Exact same tool+args called twice in a row
@@ -142,8 +144,28 @@ export class LoopDetector {
             };
         }
 
-        // Check 7: Removed to allow multi-turn generation workflows.
-        // Standard loop counters (Check 1-4) will catch actual runaways.
+        // Check 7: Real-time Budget Enforcement (Global Circuit Breaker)
+        // This stops agents if the USER'S daily limit or SESSION hard limit is hit.
+        
+        // Estimate cost for this specific call to prevent unmonitored credit burn (Bug C4)
+        let currentCost = 0;
+        if (name === 'generate_video' || name === 'indii_video_gen') {
+            const duration = typeof args.duration === 'number' ? args.duration : 4;
+            currentCost = duration * 0.20; // Approx $0.20 per second for 720p
+        } else if (name === 'generate_image' || name === 'indii_image_gen') {
+            currentCost = 0.04;
+        } else if (name === 'generate_audio' || name === 'indii_audio_gen') {
+            currentCost = 0.10;
+        }
+
+        const canExecute = await MembershipService.checkBudget(currentCost);
+        if (!canExecute.allowed) {
+            return {
+                isLoop: true,
+                reason: canExecute.requiresApproval ? 'Action requires explicit user approval (cost ceiling reached)' : 'Budget limit exceeded or Emergency Kill Switch triggered. All agent operations suspended for safety.',
+                pattern: 'Emergency Circuit Breaker Triggered'
+            };
+        }
 
         return { isLoop: false };
     }
@@ -191,12 +213,12 @@ export class DelegationLoopDetector {
 
     /**
      * Record an agent delegation
-     * @param traceId Unique trace ID for this execution chain
+     * @param swarmId Global swarm/session ID for this execution chain
      * @param agentId Agent being delegated to
      * @returns LoopDetectionResult
      */
-    static recordDelegation(traceId: string, agentId: string): LoopDetectionResult {
-        const chain = this.delegationChains.get(traceId) || [];
+    static recordDelegation(swarmId: string, agentId: string): LoopDetectionResult {
+        const chain = this.delegationChains.get(swarmId) || [];
 
         // Check for loop: same agent appearing twice in chain
         const agentOccurrences = chain.filter(id => id === agentId).length;
@@ -221,7 +243,7 @@ export class DelegationLoopDetector {
 
         // Record this delegation
         chain.push(agentId);
-        this.delegationChains.set(traceId, chain);
+        this.delegationChains.set(swarmId, chain);
 
         return { isLoop: false };
     }
@@ -229,14 +251,14 @@ export class DelegationLoopDetector {
     /**
      * Clean up completed delegation chain
      */
-    static cleanup(traceId: string): void {
-        this.delegationChains.delete(traceId);
+    static cleanup(swarmId: string): void {
+        this.delegationChains.delete(swarmId);
     }
 
     /**
      * Get current delegation chain for debugging
      */
-    static getChain(traceId: string): string[] {
-        return this.delegationChains.get(traceId) || [];
+    static getChain(swarmId: string): string[] {
+        return this.delegationChains.get(swarmId) || [];
     }
 }

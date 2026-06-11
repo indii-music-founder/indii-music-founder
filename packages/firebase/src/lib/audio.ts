@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions/v1";
 import { z } from "zod";
 import { getGeminiApiKey, geminiApiKey } from "../config/secrets";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { enforceRateLimit } from "./rateLimit";
 
 export const GenerateSpeechRequestSchema = z.object({
@@ -36,8 +36,8 @@ Return ONLY a JSON object that adheres to the following schema:
  * Uses Gemini 3 Pro (Multimodal) for high-fidelity extraction.
  */
 export const analyzeAudioFn = () => functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true, 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
@@ -69,7 +69,7 @@ export const analyzeAudioFn = () => functions
 
         try {
             const apiKey = getGeminiApiKey();
-            const modelId = FUNCTION_AI_MODELS.AUDIO.ANALYSIS;
+            const modelId = FUNCTION_INTELLIGENCE_MODELS.AUDIO.ANALYSIS;
 
             console.log(`[analyzeAudio] Using model: ${modelId} for track: ${audioUrl}`);
 

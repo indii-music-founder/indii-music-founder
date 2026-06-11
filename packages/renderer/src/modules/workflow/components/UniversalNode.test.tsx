@@ -20,7 +20,7 @@ vi.mock('../services/nodeRegistry', () => ({
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: () => ({ nodes: [] }),
+    useStore: () => ({ nodes: [], setSelectedNodeId: vi.fn() }),
 }));
 
 describe('UniversalNode', () => {

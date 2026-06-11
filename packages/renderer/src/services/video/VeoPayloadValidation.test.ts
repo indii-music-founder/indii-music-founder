@@ -69,7 +69,7 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('../ai/FirebaseAIService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
   serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
@@ -179,7 +179,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
 
         const pendingJob = service.waitForJob(jobId);
         // Suppress unhandled rejection warning by attaching a catch
-        pendingJob.catch(() => { });
+        pendingJob.catch((err: unknown) => { console.debug('[VeoPayloadValidationTest] Safety rejection expected:', err); });
 
         await vi.advanceTimersByTimeAsync(2100);
 
@@ -216,7 +216,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
         const pendingJob = service.waitForJob(jobId);
 
         // Suppress unhandled rejection warning by attaching a catch (wait for assertion)
-        pendingJob.catch(() => { });
+        pendingJob.catch((err: unknown) => { console.debug('[VeoPayloadValidationTest] MIME type rejection expected:', err); });
 
         await vi.advanceTimersByTimeAsync(1100);
 

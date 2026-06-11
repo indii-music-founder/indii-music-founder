@@ -4,7 +4,7 @@
 
 ### Overview
 
-This document covers the disaster recovery procedure for a full or partial data loss event in the indiiOS production environment.
+This document covers the disaster recovery procedure for a full or partial data loss event in the indii production environment.
 
 ---
 
@@ -31,13 +31,13 @@ This document covers the disaster recovery procedure for a full or partial data 
 2. Locate the latest backup in GCS:
 
    ```bash
-   gsutil ls gs://indiiOS-firestore-backups/ | tail -5
+   gsutil ls gs://indii-firestore-backups/ | tail -5
    ```
 
 3. Import only the affected collection:
 
    ```bash
-   gcloud firestore import gs://indiiOS-firestore-backups/YYYY-MM-DD \
+   gcloud firestore import gs://indii-firestore-backups/YYYY-MM-DD \
      --collection-ids=<collection_name>
    ```
 
@@ -58,13 +58,13 @@ This document covers the disaster recovery procedure for a full or partial data 
 2. Select the most recent clean backup:
 
    ```bash
-   gsutil ls -l gs://indiiOS-firestore-backups/ | sort -k2 | tail -10
+   gsutil ls -l gs://indii-firestore-backups/ | sort -k2 | tail -10
    ```
 
 3. Perform full import:
 
    ```bash
-   gcloud firestore import gs://indiiOS-firestore-backups/YYYY-MM-DD
+   gcloud firestore import gs://indii-firestore-backups/YYYY-MM-DD
    ```
 
 4. Re-deploy Cloud Functions: `firebase deploy --only functions`
@@ -109,7 +109,7 @@ This document covers the disaster recovery procedure for a full or partial data 
 2. Verify function deployment status:
 
    ```bash
-   gcloud functions list --project=indiiOS-v-1-1
+   gcloud functions list --project=indii-v-1-1
    ```
 
 3. Redeploy from last known good commit:

@@ -1,5 +1,6 @@
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
+import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import type { Content, GenerationConfig } from 'firebase/ai';
@@ -19,6 +20,7 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // ============================================================================
 // TYPES
@@ -89,6 +91,10 @@ export class MemoryIngestionPipeline {
     // PUBLIC API
     // ========================================================================
 
+    private get isE2EMode(): boolean {
+        return isFirebaseE2EMockEnabled();
+    }
+
     /**
      * Ingest raw text content into the memory system.
      *
@@ -101,6 +107,15 @@ export class MemoryIngestionPipeline {
 
         if (!text.trim()) {
             return { success: false, error: 'Empty text content' };
+        }
+
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for text`);
+            return {
+                success: true,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for: ${text.slice(0, 30)}`,
+            };
         }
 
         // Log the ingestion event
@@ -180,6 +195,15 @@ export class MemoryIngestionPipeline {
      */
     async ingestFile(userId: string, input: IngestFileInput): Promise<IngestResult> {
         const { fileBytes, fileName, mimeType, sizeBytes } = input;
+
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing real ingestion for file: ${fileName}`);
+            return {
+                success: true,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for file: ${fileName}`,
+            };
+        }
 
         // Validate file size
         if (sizeBytes > MAX_INLINE_FILE_SIZE_BYTES) {
@@ -278,6 +302,15 @@ export class MemoryIngestionPipeline {
     ): Promise<IngestResult[]> {
         if (messages.length === 0) return [];
 
+        if (this.isE2EMode) {
+            logger.info(`[MemoryIngestionPipeline] [E2E Mode] Bypassing session ingestion`);
+            return [{
+                success: true,
+                memoryId: `e2e-memory-${Date.now()}`,
+                summary: `E2E summary for session: ${sessionId}`,
+            }];
+        }
+
         try {
             // Compile the conversation into a single text block
             const conversationText = messages
@@ -286,29 +319,31 @@ export class MemoryIngestionPipeline {
                 .slice(0, 8000); // Limit context window usage
 
             // Use Gemini to extract memorable facts from the conversation
-            const prompt = `You are a Memory Extraction Agent for a creative music/visual production platform.
-Analyze this conversation and extract discrete, memorable facts, preferences, decisions, and goals.
+            const prompt = cleanPrompt(`
+                You are a Memory Extraction Agent for a creative music/visual production platform.
+                Analyze this conversation and extract discrete, memorable facts, preferences, decisions, and goals.
 
-CONVERSATION:
-${conversationText}
+                CONVERSATION:
+                ${conversationText}
 
-For each memory, provide:
-- content: The fact/preference/decision (1-2 sentences, standalone)
-- category: One of: preference, fact, context, goal, skill, interaction, feedback, relationship, creative, business, technical
-- importance: 0.0 to 1.0
+                For each memory, provide:
+                - content: The fact/preference/decision (1-2 sentences, standalone)
+                - category: One of: preference, fact, context, goal, skill, interaction, feedback, relationship, creative, business, technical
+                - importance: 0.0 to 1.0
 
-Respond in JSON format:
-{
-  "memories": [
-    {"content": "...", "category": "...", "importance": 0.X}
-  ]
-}
+                Respond in JSON format:
+                {
+                  "memories": [
+                    {"content": "...", "category": "...", "importance": 0.X}
+                  ]
+                }
 
-Rules:
-- Only extract NEW information that wasn't previously known
-- Prefer specific, actionable facts over general observations
-- Skip small talk, greetings, and procedural exchanges
-- Return an empty array if nothing worth remembering was said`;
+                Rules:
+                - Only extract NEW information that wasn't previously known
+                - Prefer specific, actionable facts over general observations
+                - Skip small talk, greetings, and procedural exchanges
+                - Return an empty array if nothing worth remembering was said
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
@@ -379,12 +414,14 @@ Rules:
         if (text.length < 200) return text;
 
         try {
-            const prompt = `Summarize the following in 1-2 concise sentences. Preserve specific details like names, numbers, and dates.
+            const prompt = cleanPrompt(`
+                Summarize the following in 1-2 concise sentences. Preserve specific details like names, numbers, and dates.
 
-TEXT:
-${text.slice(0, 4000)}
+                TEXT:
+                ${text.slice(0, 4000)}
 
-SUMMARY:`;
+                SUMMARY:
+            `);
 
             const summary = await AIService.getInstance().generateText(
                 prompt,
@@ -404,23 +441,25 @@ SUMMARY:`;
      */
     private async classifyCategory(text: string, source: string): Promise<AlwaysOnMemoryCategory> {
         try {
-            const prompt = `Classify this text into exactly ONE category:
-- preference: User preferences and settings
-- fact: Facts about the user or their work
-- context: Current working context
-- goal: Goals and objectives
-- skill: Skills and expertise
-- interaction: Communication patterns
-- feedback: Corrections or complaints
-- relationship: Social/professional relationships
-- creative: Creative decisions (art direction, sound design, visual style)
-- business: Business information (contracts, revenue, distribution, deadlines)
-- technical: Technical specifications (audio formats, mastering specs, export settings)
+            const prompt = cleanPrompt(`
+                Classify this text into exactly ONE category:
+                - preference: User preferences and settings
+                - fact: Facts about the user or their work
+                - context: Current working context
+                - goal: Goals and objectives
+                - skill: Skills and expertise
+                - interaction: Communication patterns
+                - feedback: Corrections or complaints
+                - relationship: Social/professional relationships
+                - creative: Creative decisions (art direction, sound design, visual style)
+                - business: Business information (contracts, revenue, distribution, deadlines)
+                - technical: Technical specifications (audio formats, mastering specs, export settings)
 
-TEXT (source: ${source}):
-${text.slice(0, 2000)}
+                TEXT (source: ${source}):
+                ${text.slice(0, 2000)}
 
-Respond with ONLY a JSON object: {"category": "<category>"}`;
+                Respond with ONLY a JSON object: {"category": "<category>"}
+            `);
 
             const response = await AIService.getInstance().generateText(
                 prompt,
@@ -451,16 +490,18 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
         try {
             const mediaType = mimeType.split('/')[0]; // image, audio, video, application
 
-            const prompt =
-                `You are a Memory Ingest Agent. Thoroughly analyze this ${mediaType} file (${fileName}) and ` +
-                `extract ALL meaningful information for memory storage.\n\n` +
-                `For images: describe the scene, objects, text, people, colors, style, mood, and any visual details.\n` +
-                `For audio: describe the spoken content, sounds, mood, genre, tempo, key, and instrumentation.\n` +
-                `For video: describe the visual scenes, spoken content, sounds, key moments, and narrative.\n` +
-                `For PDFs: extract and summarize the document content, key data points, and any tables/figures.\n\n` +
-                `Provide a comprehensive description that preserves all important details.`;
+            const prompt = cleanPrompt(`
+                You are a Memory Ingest Agent. Thoroughly analyze this ${mediaType} file (${fileName}) and extract ALL meaningful information for memory storage.
 
-            // Use Firebase AI Service for multimodal content
+                For images: describe the scene, objects, text, people, colors, style, mood, and any visual details.
+                For audio: describe the spoken content, sounds, mood, genre, tempo, key, and instrumentation.
+                For video: describe the visual scenes, spoken content, sounds, key moments, and narrative.
+                For PDFs: extract and summarize the document content, key data points, and any tables/figures.
+
+                Provide a comprehensive description that preserves all important details.
+            `);
+
+            // Use Firebase Intelligence Service for multimodal content
             const result = await AIService.getInstance().generateContent(
                 [{
                     role: 'user',
@@ -474,7 +515,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
                         },
                     ],
                 }] as Content[],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { temperature: 0.3 } as GenerationConfig,
             );
 

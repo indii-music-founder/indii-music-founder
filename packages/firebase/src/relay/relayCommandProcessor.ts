@@ -25,7 +25,8 @@ import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
 import { getGeminiApiKey } from "../config/secrets";
 import { geminiApiKey } from "../config/secrets";
 import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { checkOperationBudget } from "../functions/billing/enforceOperationCost";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -33,11 +34,32 @@ import { FUNCTION_AI_MODELS } from "../config/models";
 const MAX_COMMAND_LENGTH = 10_000;
 const PROCESSING_INDICATOR = "⏳ Processing your request...";
 
+/**
+ * Conservative fixed cost estimate (USD) charged against the user's budget for
+ * each relay command. Relay commands are text-only Gemini calls; 0.02 USD is a
+ * deliberate over-estimate so the kill-switch trips before real spend does.
+ */
+const RELAY_COMMAND_COST_ESTIMATE_USD = 0.02;
+
+/**
+ * Markers that indicate a command is handled exclusively by the desktop client
+ * (e.g. image generation). The cloud relay is text-only, so any command
+ * starting with one of these markers must be left untouched for the desktop.
+ */
+const DESKTOP_ONLY_MARKERS = ["[GENERATE_IMAGE]"] as const;
+
+// User-facing messages — these MUST NOT leak internal endpoint names or other
+// implementation identifiers (see Change 4).
+const RATE_LIMIT_USER_MESSAGE =
+    "⚠️ You're sending messages a little fast — give it a few seconds and try again.";
+const BUDGET_LIMIT_USER_MESSAGE =
+    "⚠️ You've reached your usage limit for now. Please try again later.";
+
 // ---------------------------------------------------------------------------
 // Cloud Function: Firestore onCreate Trigger
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({ enforceAppCheck: true, 
         secrets: [geminiApiKey],
         timeoutSeconds: 540,
         memory: "2GB",
@@ -47,20 +69,31 @@ export const processRelayCommand = functions
         const { userId, commandId } = context.params;
         const data = snapshot.data();
 
-        // ---------------------------------------------------------------
-        // 1. Validate — only process "pending" commands
-        // ---------------------------------------------------------------
-        if (data.status !== "pending") {
-            console.log(`[Relay] Skipping command ${commandId} — status is "${data.status}", not "pending".`);
-            return;
-        }
-
         const text = data.text;
         const targetAgentId: string | undefined = data.targetAgentId;
 
+        // ---------------------------------------------------------------
+        // 1. Validate command text
+        // ---------------------------------------------------------------
         if (!text || typeof text !== "string" || text.trim().length === 0) {
             console.error(`[Relay] Invalid command ${commandId} — empty text.`);
             await markFailed(userId, commandId, "Empty command text.");
+            return;
+        }
+
+        const trimmedText = text.trim();
+
+        // ---------------------------------------------------------------
+        // 1a. Capability partition — skip desktop-only commands
+        //
+        // Image generation (and any other desktop-only marker) is handled
+        // by the desktop client, not this text-only cloud relay. If a command
+        // is desktop-only, RETURN IMMEDIATELY without claiming or processing
+        // it — leaving the doc "pending" so the desktop can pick it up. This
+        // prevents the cloud function from breaking image requests.
+        // ---------------------------------------------------------------
+        if (DESKTOP_ONLY_MARKERS.some((marker) => trimmedText.startsWith(marker))) {
+            console.log(`[Relay] Skipping command ${commandId} — desktop-only marker detected; leaving for desktop client.`);
             return;
         }
 
@@ -76,37 +109,88 @@ export const processRelayCommand = functions
             // Don't fail — just route to Conductor
         }
 
+        // ---------------------------------------------------------------
+        // 2. Atomic claim (idempotency / exactly-once)
+        //
+        // onCreate can be delivered more than once. Use a transaction to flip
+        // pending → processing only if the doc is still "pending". If another
+        // delivery already claimed it (processing/completed), abort without
+        // processing. This guarantees exactly-once execution and only sends
+        // the streaming indicator AFTER a successful claim.
+        // ---------------------------------------------------------------
+        const commandRef = admin.firestore()
+            .collection("users").doc(userId)
+            .collection("remote-relay-commands").doc(commandId);
+
+        let claimed = false;
+        try {
+            claimed = await admin.firestore().runTransaction(async (tx) => {
+                const fresh = await tx.get(commandRef);
+                const status = fresh.exists ? fresh.data()?.status : undefined;
+                if (status !== "pending") {
+                    return false;
+                }
+                tx.update(commandRef, { status: "processing" });
+                return true;
+            });
+        } catch (err) {
+            console.error(`[Relay] Failed to claim command ${commandId}:`, err);
+            return;
+        }
+
+        if (!claimed) {
+            console.log(`[Relay] Skipping command ${commandId} — already claimed (duplicate delivery or non-pending status).`);
+            return;
+        }
+
         console.log(`[Relay] Processing command ${commandId} for user ${userId} → agent: ${targetAgentId || "auto (conductor)"}`);
 
-        // ---------------------------------------------------------------
-        // 2. Mark as processing + send streaming indicator
-        // ---------------------------------------------------------------
+        // Send the streaming indicator now that we own the command.
         try {
-            await admin.firestore()
-                .collection("users").doc(userId)
-                .collection("remote-relay-commands").doc(commandId)
-                .update({ status: "processing" });
-
             await sendResponse(userId, commandId, PROCESSING_INDICATOR, undefined, true);
         } catch (err) {
-            console.error(`[Relay] Failed to update status for ${commandId}:`, err);
-            // Continue anyway — the response is more important than the status
+            console.error(`[Relay] Failed to send streaming indicator for ${commandId}:`, err);
+            // Continue anyway — the response is more important than the indicator.
         }
 
         // ---------------------------------------------------------------
-        // 3. Rate Limiting
+        // 3. Cost kill-switch — verify budget BEFORE any Gemini call
+        //
+        // Reuse the shared budget logic (daily/monthly ledgers, user tier,
+        // and the $500/month runaway kill-switch). Fail-secure: a blocked or
+        // failed check prevents the (paid) Gemini call entirely.
         // ---------------------------------------------------------------
-        try {
-            await enforceRateLimit(userId, "processRelayCommand", RATE_LIMITS.generation);
-        } catch (rateLimitErr: unknown) {
-            const msg = rateLimitErr instanceof Error ? rateLimitErr.message : "Rate limit exceeded";
-            console.warn(`[Relay] Rate limited user ${userId}: ${msg}`);
-            await markFailed(userId, commandId, `⚠️ ${msg}`);
+        const budget = await checkOperationBudget({
+            userId,
+            estimatedCost: RELAY_COMMAND_COST_ESTIMATE_USD,
+            operationType: "agent_stream",
+            metadata: { commandId },
+        });
+        if (!budget.allowed) {
+            console.warn(`[Relay] Budget check blocked command ${commandId} for user ${userId}: ${budget.reason ?? "no reason provided"}`);
+            await markFailed(userId, commandId, BUDGET_LIMIT_USER_MESSAGE);
             return;
         }
 
         // ---------------------------------------------------------------
-        // 4. Call Gemini with the appropriate agent prompt
+        // 4. Rate limiting — counted ONLY for real, billable calls.
+        //
+        // Runs after the atomic claim and budget check, immediately before the
+        // Gemini call, so skipped/duplicate/budget-blocked commands never
+        // increment the 10/min counter.
+        // ---------------------------------------------------------------
+        try {
+            await enforceRateLimit(userId, "processRelayCommand", RATE_LIMITS.generation);
+        } catch (rateLimitErr: unknown) {
+            const detail = rateLimitErr instanceof Error ? rateLimitErr.message : "Rate limit exceeded";
+            // Keep the detailed reason in server logs only — never surface it to the user.
+            console.warn(`[Relay] Rate limited user ${userId} on command ${commandId}: ${detail}`);
+            await markFailed(userId, commandId, RATE_LIMIT_USER_MESSAGE);
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // 5. Call Gemini with the appropriate agent prompt
         // ---------------------------------------------------------------
         try {
             const { resolvedAgentId, prompt } = getAgentPrompt(targetAgentId);
@@ -114,13 +198,17 @@ export const processRelayCommand = functions
 
             // Lazy import to reduce cold start
             const { GoogleGenAI } = await import("@google/genai");
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+            const apiKey = getGeminiApiKey();
+            if (!apiKey) {
+                throw new Error('Gemini API key is not configured.');
+            }
+            const client = new GoogleGenAI({ apiKey });
 
-            const modelId = FUNCTION_AI_MODELS.TEXT.PRO;
+            const modelId = FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 
             const result = await client.models.generateContent({
                 model: modelId,
-                contents: [{ role: "user", parts: [{ text: text.trim() }] }],
+                contents: [{ role: "user", parts: [{ text: trimmedText }] }],
                 config: {
                     systemInstruction: prompt,
                     temperature: 1.0,
@@ -135,7 +223,7 @@ export const processRelayCommand = functions
                 || "I processed your request but couldn't generate a response. Please try again.";
 
             // ---------------------------------------------------------------
-            // 5. Send final response to phone
+            // 6. Send final response to phone
             // ---------------------------------------------------------------
             await sendResponse(userId, commandId, responseText, resolvedAgentId, false);
             await markCompleted(userId, commandId);

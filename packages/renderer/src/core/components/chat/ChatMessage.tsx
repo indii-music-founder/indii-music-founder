@@ -31,13 +31,14 @@ import { Components } from 'react-markdown';
 import { logger } from '@/utils/logger';
 
 interface MessageItemProps {
-    msg: AgentMessage;
+    msg: AgentMessage & { agentId?: string };
     avatarUrl?: string;
     variant?: 'default' | 'compact';
     agentIdentity?: {
         color: string;
         initials: string;
     };
+    key?: React.Key;
 }
 
 const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
@@ -110,7 +111,6 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
 
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
-    // ... existing components ...
     const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
         const text = msg.text || '';
         const tools: Array<{name: string, json: any}> = [];
@@ -174,7 +174,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
     }, [msg.text, msg.planId, msg.metadata]);
 
     const markdownComponents: Components = useMemo(() => ({
-        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />,
+        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} messageId={msg.id} agentId={msg.agentId || 'generalist'} />,
         p: ({ children }: { children?: React.ReactNode }) => {
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
@@ -186,7 +186,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (_e: unknown) { /* ignore */ } }
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (err: unknown) { logger.debug('[ChatMessage] JSON parse failed inside pre block:', err); } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
         },
@@ -196,7 +196,6 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             </div>
         ),
         code({ inline, className, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) {
-            // ... existing logic ...
             const match = /language-(\w+)/.exec(className || '')
             const isJson = match && match[1] === 'json';
             const childrenStr = String(children);
@@ -213,6 +212,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             }
             return <code className={className} {...props}>{children}</code>
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }), []);
 
     return (
@@ -223,13 +223,13 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${variant === 'compact' ? 'mb-3' : 'mb-6'} px-1`}
         >
             {msg.role === 'model' && (
-                <div className="relative mt-1 flex-shrink-0">
+                <div className="relative mt-1 shrink-0">
                     <div className={`absolute -inset-1 bg-${agentIdentity?.color || 'purple'}-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                     {avatarUrl ? (
                         <img
                             src={avatarUrl}
                             className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
-                            alt="AI"
+                            alt="Autonomous"
                         />
                     ) : agentIdentity ? (
                         <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-linear-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
@@ -255,7 +255,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
 
                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
 
-                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden break-words break-all leading-[1.5] font-medium tracking-tight`}>
+                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word break-all leading-normal font-medium tracking-tight`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}
@@ -329,7 +329,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {json.urls.map((url: string, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={msg.agentId || 'generalist'} />
                                         ))}
                                     </div>
                                 );
@@ -347,7 +347,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {images.map((img, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} messageId={msg.id} agentId={msg.agentId || 'generalist'} />
                                         ))}
                                     </div>
                                 );
@@ -360,7 +360,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             return (
                                 <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     {urls.map((url: string, idx: number) => (
-                                        <ToolDocumentOutput key={idx} toolName={toolName} idx={idx} url={url} prompt={json.name || json.title} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                        <ToolDocumentOutput key={idx} toolName={toolName} idx={idx} url={url} prompt={json.name || json.title} messageId={msg.id} agentId={msg.agentId || 'generalist'} />
                                     ))}
                                 </div>
                             );
@@ -385,7 +385,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 })}
 
                 {msg.isStreaming && (
-                    <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
+                    <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="Intelligence is thinking">
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}

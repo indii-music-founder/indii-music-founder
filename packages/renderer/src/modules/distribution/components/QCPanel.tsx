@@ -3,7 +3,6 @@ import { Loader2, AlertTriangle, CheckCircle, XCircle, FileText, Youtube } from 
 import { useToast } from '@/core/context/ToastContext';
 import { distributionService } from '@/services/distribution/DistributionService';
 import type { ValidationReport } from '@/types/distribution';
-import { secureRandomInt } from '@/utils/crypto-random';
 
 export const QCPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
@@ -22,13 +21,17 @@ export const QCPanel: React.FC = () => {
         setLoading('qc');
         setQcResult(null);
         try {
-            const ddexMetadata: import('@/types/distribution').DDEXMetadata = {
+            if (!metadata.title.trim() || !metadata.artist.trim()) {
+                throw new Error('Track title and artist name are required for QC validation.');
+            }
+
+            const ddexMetadata: import('@/types/distribution').IngestionMetadata = {
                 releaseId: `qc-${Date.now()}`,
                 title: metadata.title,
                 artists: [metadata.artist],
                 tracks: [{
-                    title: metadata.title || 'Untitled Track',
-                    artist: metadata.artist || 'Unknown Artist',
+                    title: metadata.title,
+                    artist: metadata.artist,
                     duration: 180,
                     explicit: false,
                     isrc: metadata.isrc
@@ -54,10 +57,14 @@ export const QCPanel: React.FC = () => {
         setLoading('cid');
         setCsvOutput(null);
         try {
+            if (!metadata.title.trim() || !metadata.isrc.trim()) {
+                throw new Error('Track title and a real ISRC are required before generating a Content ID CSV.');
+            }
+
             const cidPayload: import('@/types/distribution').ContentIdData = {
                 tracks: [{
-                    title: metadata.title || 'Test Track',
-                    isrc: metadata.isrc || `US-S1Z-25-${secureRandomInt(0, 99999).toString().padStart(5, '0')}`,
+                    title: metadata.title,
+                    isrc: metadata.isrc,
                     asset_id: `ASSET-${Date.now()}`
                 }]
             };

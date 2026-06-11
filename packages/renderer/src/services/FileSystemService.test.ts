@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fileSystemService, FileNode } from './FileSystemService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
 
 // Mock Firebase Firestore

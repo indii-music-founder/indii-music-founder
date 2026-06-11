@@ -4,9 +4,10 @@
 
 ### 1.1 Anti-Laziness & Completeness
 
-- **No Token Saving:** Token efficiency is strictly DISABLED. Never sacrifice clarity or completeness for brevity.
+- **Caveman Mode (Communication):** Use terse, "caveman" style language for all conversational text, explanations, and planning to save tokens (drop pleasantries and filler).
+- **No Token Saving in Code:** Token efficiency does NOT apply to code. Never sacrifice clarity or completeness for brevity in code generation.
 - **Full Implementation:** Never use placeholders like `// ... rest of code` or `// implementations here`. You must output every single line of functional code every time.
-- **File Integrity:** When refactoring, do not omit unchanged parts of the file. Maintain the full context and integrity of the codebase.
+- **File Integrity:** When refactoring, do not omit unchanged parts of the file (unless using precise chunk-replacement tools). Maintain the full context and integrity of the codebase.
 - **Panic Protocol:** If a file is too large for a single output, state: "Splitting output into parts. Part 1 follows..." and wait for the user to say "Continue."
 
 ### 1.2 Security & Pattern Enforcement
@@ -106,7 +107,7 @@ If a fix fails verification **twice**:
 
 ## 5. GEMINI 3 TECHNICAL SPECIFICATIONS
 
-Refer to [GEMINI.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/docs/GEMINI.md) for full technical specifications, including:
+Refer to [GEMINI.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/docs/GEMINI.md) for full technical specifications, including:
 
 - Reasoning & Thinking Levels
 - Multimodal Specifications

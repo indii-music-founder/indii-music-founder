@@ -26,7 +26,7 @@ interface OfflineConfig {
  * - Exponential backoff retry
  */
 export class OfflineFirstService {
-  private dbName = 'indiiOS_offline';
+  private dbName = 'indii_offline';
   private db: IDBDatabase | null = null;
   private syncQueue: Map<string, SyncItem> = new Map();
   private isOnline = navigator.onLine;
@@ -101,7 +101,7 @@ export class OfflineFirstService {
     data: Record<string, unknown>,
     id?: string
   ): Promise<string> {
-    const itemId = id || `${collection}_${Date.now()}_${Math.random()}`;
+    const itemId = id || `${collection}_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
 
     const item: SyncItem = {
       id: itemId,

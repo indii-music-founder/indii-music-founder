@@ -1,4 +1,4 @@
-import { ValidationResult, ValidationError, ValidationWarning } from '@/services/ddex/types/common';
+import { ValidationResult, ValidationError, ValidationWarning } from '@/services/distribution/proprietary-ingestion/types/common';
 import { DistributorRequirements } from '@/services/distribution/types/distributor';
 
 /**

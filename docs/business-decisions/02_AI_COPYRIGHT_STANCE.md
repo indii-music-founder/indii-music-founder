@@ -41,7 +41,7 @@ The U.S. Copyright Office has been clear:
 
 ### Decision A1: Purely AI-Generated Tracks
 
-> **Question:** Will indiiOS allow users to distribute music that was 100% AI-generated (no human arrangement, selection, or composition)?
+> **Question:** Will indii allow users to distribute music that was 100% AI-generated (no human arrangement, selection, or composition)?
 
 | Option | What it means | Risk | Best for |
 |--------|-------------|------|----------|
@@ -50,7 +50,7 @@ The U.S. Copyright Office has been clear:
 | **(c) Allow but warn** | Allow distribution, but show a warning: "This track has no copyright protection. You cannot sue for infringement." | Medium risk — users are informed but may still have bad outcomes | Balanced approach |
 
 > **Recommendation:** 🟡 **Option (a) — Allow with mandatory disclosure.**
-> This mirrors DistroKid's model (the largest indie distributor) and puts the burden on the user. The platform is not making the legal claim — the user is. indiiOS's distribution flow already includes an AI disclosure step.
+> This mirrors DistroKid's model (the largest indie distributor) and puts the burden on the user. The platform is not making the legal claim — the user is. indii's distribution flow already includes an AI disclosure step.
 
 **Your answer:** `_________________________________`
 
@@ -58,18 +58,18 @@ The U.S. Copyright Office has been clear:
 
 ### Decision A2: AI Disclosure at Distribution Time
 
-> **Question:** Will the DDEX release wizard require users to declare AI involvement before submitting to DSPs?
+> **Question:** Will the Proprietary Ingestion IP release wizard require users to declare AI involvement before submitting to DSPs?
 
 | Option | What it means |
 |--------|-------------|
 | **(a) Mandatory disclosure checkbox** | Every release asks: "Does this release contain AI-generated content?" If yes, user must describe human contribution. Cannot proceed without answering. |
 | **(b) Optional** | Checkbox available but not required. |
-| **(c) Mirror DistroKid's exact model** | Checkbox + description field, identical UX to DistroKid's flow so there's no mismatch between what the user disclosed on indiiOS and what DistroKid expects. |
+| **(c) Mirror DistroKid's exact model** | Checkbox + description field, identical UX to DistroKid's flow so there's no mismatch between what the user disclosed on indii and what DistroKid expects. |
 
 > **Recommendation:** 🟢 **Option (c) — Mirror DistroKid's model.**
 > Since DistroKid is the primary distribution partner, matching their UX exactly prevents disclosure mismatches that could cause DSP rejections. This is also the most legally defensible position.
 >
-> ✅ **Already implemented in code:** The distribution flow in `useDDEXRelease.ts` includes an `ai_disclosure` step in the wizard. The `ERNMapper.ts` includes AI disclosure classification in DDEX ERN 4.3 output.
+> ✅ **Already implemented in code:** The distribution flow in `useProprietary Ingestion IPRelease.ts` includes an `ai_disclosure` step in the wizard. The `IngestionNotificationMapper.ts` includes AI disclosure classification in Proprietary Ingestion IP IngestionNotification 4.3 output.
 
 **Your answer:** `_________________________________`
 
@@ -94,12 +94,12 @@ The U.S. Copyright Office has been clear:
 
 ### Decision A4: AI Image Ownership
 
-> **Question:** For images generated in the Creative Studio (via Gemini), does indiiOS claim any license?
+> **Question:** For images generated in the Creative Studio (via Gemini), does indii claim any license?
 
 | Option | What it means |
 |--------|-------------|
-| **(a) User owns all** | indiiOS claims zero rights to any generated image. Cleanest for users, but means indiiOS can't use user creations in marketing without separate permission. |
-| **(b) User owns + platform display license** | User owns all rights. indiiOS gets a non-exclusive, revocable license to display thumbnails/previews within the platform UI (not externally). Standard SaaS clause. |
+| **(a) User owns all** | indii claims zero rights to any generated image. Cleanest for users, but means indii can't use user creations in marketing without separate permission. |
+| **(b) User owns + platform display license** | User owns all rights. indii gets a non-exclusive, revocable license to display thumbnails/previews within the platform UI (not externally). Standard SaaS clause. |
 | **(c) Attorney to advise** | Let the attorney recommend based on your business model. |
 
 > **Recommendation:** 🟡 **Option (b) — User owns + platform display license.**
@@ -146,8 +146,8 @@ All code paths for these decisions already exist:
 
 | Feature | Status | Location |
 |---------|--------|----------|
-| AI disclosure wizard step | ✅ Built | `src/modules/publishing/hooks/useDDEXRelease.ts` → `ai_disclosure` step |
-| ERN 4.3 AI classification | ✅ Built | `src/services/ddex/ERNMapper.ts` → `classifyAIDisclosure()` |
+| AI disclosure wizard step | ✅ Built | `src/modules/publishing/hooks/useProprietary Ingestion IPRelease.ts` → `ai_disclosure` step |
+| IngestionNotification 4.3 AI classification | ✅ Built | `src/services/ingestion/IngestionNotificationMapper.ts` → `classifyAIDisclosure()` |
 | Distribution flow with disclosure | ✅ Built | `src/modules/publishing/` → ReleaseWizard components |
 | Legal page scaffolds | ✅ Built | `src/modules/legal/pages/LegalPages.tsx` — awaiting attorney text |
 

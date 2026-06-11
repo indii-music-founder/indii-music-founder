@@ -12,7 +12,7 @@ app.use(cors({ origin: true }));
 
 const server = new Server(
     {
-        name: 'indiios-remote-mcp-server',
+        name: 'indii-remote-mcp-server',
         version: '0.1.0',
     },
     {
@@ -92,24 +92,63 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             artists: string[];
             genre: string;
         };
-        const { releaseTitle, artists, genre } = args;
-
-        // Mocked remote operation that would actually hit Firestore/BigQuery
-        const formattedMetadata = {
-            upc: `US-INDIIOS-${Math.floor(Math.random() * 100000)}`,
-            dspTitle: `${releaseTitle} - Single`,
-            primaryArtistString: artists.join(' & '),
-            genreCategory: genre.toUpperCase(),
-            formattedAt: new Date().toISOString(),
-        };
+        const upc = `19${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        const messageId = `indii-msg-${Date.now()}`;
+        const releaseDate = new Date().toISOString().split('T')[0];
+        
+        const ddexXml = `<?xml version="1.0" encoding="utf-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/411">
+  <MessageHeader>
+    <MessageThreadId>${messageId}</MessageThreadId>
+    <MessageId>${messageId}</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA2014120901U</PartyId>
+      <PartyName>
+        <FullName>Indii Music</FullName>
+      </PartyName>
+    </MessageSender>
+    <MessageCreatedDateTime>${new Date().toISOString()}</MessageCreatedDateTime>
+  </MessageHeader>
+  <ResourceList>
+    <!-- Resource details omitted for brevity -->
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseId>
+        <ICPN IsEan="false">${upc}</ICPN>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>${args.releaseTitle}</TitleText>
+      </ReferenceTitle>
+      <ReleaseResourceReferenceList>
+        <ReleaseResourceReference>A1</ReleaseResourceReference>
+      </ReleaseResourceReferenceList>
+      <ReleaseType>Album</ReleaseType>
+      <ReleaseDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>${args.artists.join(', ')}</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <Title>
+          <TitleText>${args.releaseTitle}</TitleText>
+        </Title>
+        <Genre>
+          <GenreText>${args.genre}</GenreText>
+        </Genre>
+        <OriginalReleaseDate>${releaseDate}</OriginalReleaseDate>
+      </ReleaseDetailsByTerritory>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>`;
 
         return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(formattedMetadata, null, 2),
-                },
-            ],
+            content: [{
+                type: 'text',
+                text: ddexXml
+            }]
         };
     }
 

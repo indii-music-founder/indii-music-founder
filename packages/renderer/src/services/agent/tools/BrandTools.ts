@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -66,7 +66,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await GenAI.generateStructuredData<z.infer<typeof VerifyOutputSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof VerifyOutputSchema>>(prompt, schema as Record<string, unknown>);
         const validated = VerifyOutputSchema.parse(data);
         return {
             ...validated,
@@ -122,7 +122,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await GenAI.generateStructuredData<z.infer<typeof AnalyzeBrandConsistencySchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof AnalyzeBrandConsistencySchema>>(prompt, schema as Record<string, unknown>);
         const validated = AnalyzeBrandConsistencySchema.parse(data);
         return {
             ...validated,
@@ -142,7 +142,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await GenAI.generateStructuredData<z.infer<typeof GenerateBrandGuidelinesSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof GenerateBrandGuidelinesSchema>>(prompt, schema as Record<string, unknown>);
         const validated = GenerateBrandGuidelinesSchema.parse(data);
         return {
             ...validated,
@@ -151,17 +151,35 @@ export const BrandTools = {
     }),
 
     audit_visual_assets: wrapTool('audit_visual_assets', async ({ assets }: { assets: string[] }) => {
-        const schema = zodToJsonSchema(AuditVisualAssetsSchema);
-        const prompt = `
-        Audit the following list of visual assets for brand compliance (simulated):
-        Assets: ${assets.join(', ')}
+        const electronWin = window as unknown as ElectronWindowAPI;
+        if (!electronWin.electronAPI?.brand) {
+            return toolError(
+                `Visual brand audit requires the Electron brand analysis bridge. No assets were audited: ${assets.join(', ')}`,
+                'BRAND_BRIDGE_UNAVAILABLE'
+            );
+        }
 
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
-        `;
+        const reports = await Promise.all(assets.map(async (assetPath) => {
+            const response = await electronWin.electronAPI!.brand!.analyzeConsistency(assetPath, {});
+            if (!response.success) {
+                throw new Error(response.error || `Brand audit failed for ${assetPath}`);
+            }
+            return { assetPath, report: response.report };
+        }));
 
-        const data = await GenAI.generateStructuredData<z.infer<typeof AuditVisualAssetsSchema>>(prompt, schema as Record<string, unknown>);
-        const validated = AuditVisualAssetsSchema.parse(data);
+        const flagged_assets = reports
+            .filter(({ report }) => !report.consistent)
+            .map(({ assetPath }) => assetPath);
+        const validated = AuditVisualAssetsSchema.parse({
+            compliant: flagged_assets.length === 0,
+            flagged_assets,
+            report: JSON.stringify(reports.map(({ assetPath, report }) => ({
+                assetPath,
+                score: report.consistency_score,
+                summary: report.summary,
+            })))
+        });
+
         return {
             ...validated,
             message: validated.compliant

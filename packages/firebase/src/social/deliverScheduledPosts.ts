@@ -52,7 +52,8 @@ async function getTokenForUser(
     try {
         const snap = await db.collection('users').doc(userId).collection('socialTokens').doc(platform).get();
         return snap.exists ? (snap.data() as PlatformToken) : null;
-    } catch {
+    } catch (err) {
+        logger.warn(`[getTokenForUser] Failed to fetch social token for user ${userId} on ${platform}:`, err);
         return null;
     }
 }
@@ -119,6 +120,55 @@ async function deliverToTikTok(token: PlatformToken, post: ScheduledPostDoc): Pr
         if (!res.ok) return { success: false, error: `TikTok ${res.status}` };
         const data = await res.json() as { data?: { publish_id: string } };
         return { success: true, postId: data.data?.publish_id };
+    } catch (e) {
+        return { success: false, error: String(e) };
+    }
+}
+
+async function deliverToYouTube(token: PlatformToken, post: ScheduledPostDoc): Promise<{ success: boolean; postId?: string; error?: string }> {
+    try {
+        const metadata = {
+            snippet: {
+                title: post.title || post.text || 'indii Upload',
+                description: post.description || post.text || '',
+                tags: ['music', 'indii'],
+                categoryId: '10' // Music
+            },
+            status: {
+                privacyStatus: 'public',
+                selfDeclaredMadeForKids: false
+            }
+        };
+
+        let videoBuffer = null;
+        if (post.mediaUrl) {
+            const mediaRes = await fetch(post.mediaUrl);
+            if (!mediaRes.ok) throw new Error(`Failed to fetch media from ${post.mediaUrl}`);
+            videoBuffer = await mediaRes.arrayBuffer();
+        }
+
+        const boundary = 'foo_bar_baz';
+        const bodyStart = Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/*\r\n\r\n`);
+        const bodyEnd = Buffer.from(`\r\n--${boundary}--`);
+        
+        const body = Buffer.concat([
+            bodyStart,
+            videoBuffer ? Buffer.from(videoBuffer) : Buffer.alloc(0),
+            bodyEnd
+        ]);
+
+        const res = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token.accessToken}`,
+                'Content-Type': `multipart/related; boundary=${boundary}`
+            },
+            body: body
+        });
+
+        if (!res.ok) return { success: false, error: `YouTube API returned ${res.status}` };
+        const data = await res.json() as { id?: string };
+        return { success: true, postId: data.id };
     } catch (e) {
         return { success: false, error: String(e) };
     }
@@ -203,8 +253,14 @@ export const deliverScheduledPosts = onSchedule({
                 case 'tiktok':
                     result = await deliverToTikTok(token, post);
                     break;
-                default:
-                    result = { success: false, error: `Unsupported platform: ${post.platform}` };
+                case 'youtube':
+                    result = await deliverToYouTube(token, post);
+                    break;
+                default: {
+                    const unsupportedPlatform = (post as { platform: string }).platform;
+                    logger.warn(`[deliverScheduledPosts] Unsupported platform encountered: ${unsupportedPlatform} for post ${docSnap.id}`);
+                    result = { success: false, error: `Unsupported social platform: ${unsupportedPlatform}` };
+                }
             }
 
             if (result.success) {

@@ -48,7 +48,7 @@ export class BiometricService {
             const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
                 challenge,
                 rp: {
-                    name: 'indiiOS',
+                    name: 'indii',
                     id: window.location.hostname, // Must match current domain
                 },
                 user: {

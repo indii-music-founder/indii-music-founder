@@ -21,6 +21,7 @@ interface Bounty {
     views: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface LeaderboardEntry {
     name: string;
     bounties: number;

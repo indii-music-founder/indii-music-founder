@@ -71,6 +71,52 @@ const AudioAnalyzer: React.FC = () => {
         return LOSSLESS_EXTENSIONS.has(ext);
     };
 
+    const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
+        if (window.electronAPI) {
+            e.preventDefault();
+            if (isAnalyzing) return;
+
+            try {
+                const filePath = await window.electronAPI.selectFile({
+                    title: 'Select Lossless Master Track',
+                    filters: [{ name: 'Lossless Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'm4a'] }]
+                });
+                
+                if (filePath) {
+                    const pathStr = filePath as string;
+                    const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
+                    if (!LOSSLESS_EXTENSIONS.has(ext)) {
+                        toast.error(
+                            `${ext.toUpperCase()} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please select a lossless format.`
+                        );
+                        return;
+                    }
+
+                    const filename = pathStr.split(/[/\\]/).pop() || 'audio';
+                    const mockFile = {
+                        name: filename,
+                        path: pathStr,
+                        type: 'audio/wav'
+                    } as unknown as File;
+
+                    setFile(mockFile);
+                    
+                    if (audioUrl) {
+                        URL.revokeObjectURL(audioUrl);
+                    }
+                    setAudioUrl(`safe-file://${filePath}`);
+                    setTags([]);
+                    setProfile(null);
+                    
+                    await runAnalysis(mockFile);
+                }
+            } catch (err) {
+                logger.error("File selection failed", err);
+                toast.error("File selection failed.");
+            }
+        }
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
         if (!uploadedFile) return;
@@ -96,14 +142,14 @@ const AudioAnalyzer: React.FC = () => {
         await runAnalysis(uploadedFile);
     };
 
-    const runAnalysis = async (audioFile: File) => {
+    const runAnalysis = async (audioFile: File | string) => {
         setIsAnalyzing(true);
         const extractToastId = toast.loading("Executing full technical and semantic audio scan...");
 
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
 
-            // This runs the full local audio analysis + remote AI deep analysis
+            // This runs the full local audio analysis + remote Autonomous deep analysis
             const resultProfile = await audioIntelligence.analyze(audioFile);
 
             // Populate tags from the semantic output
@@ -117,12 +163,12 @@ const AudioAnalyzer: React.FC = () => {
             setProfile(resultProfile); // Set profile ONLY after semantic is validated/processed
 
             toast.dismiss(extractToastId);
-            toast.success("Extraction Complete: Deep AI acoustic fingerprint generated.");
+            toast.success("Extraction Complete: Deep Autonomous acoustic fingerprint generated.");
 
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
-            toast.error("Deep Extraction failed. AI service limits or connectivity issues detected.");
+            toast.error("Deep Extraction failed. Autonomous service limits or connectivity issues detected.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -156,7 +202,7 @@ const AudioAnalyzer: React.FC = () => {
         <ModuleDashboard title="Audio Distribution Hub" description="Music Data Audits, Delivery Optimization & Asset Generation" icon={<Activity className="text-primary" />}>
             <div className="flex flex-col h-full bg-black/10">
                 <Tabs defaultValue="compliance" className="flex-1 flex flex-col overflow-hidden">
-                    <div id="tour-audio-tabs" className="px-6 border-b border-white/5 flex-shrink-0 bg-card/50 flex justify-between items-center">
+                    <div id="tour-audio-tabs" className="px-6 border-b border-white/5 shrink-0 bg-card/50 flex justify-between items-center">
                         <TabsList className="bg-transparent gap-8 p-0 h-14 inline-flex">
                             <TabsTrigger value="compliance" className="text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 h-full font-black transition-all text-xs uppercase tracking-widest whitespace-nowrap">
                                 Distribution QC
@@ -180,9 +226,9 @@ const AudioAnalyzer: React.FC = () => {
                                         <ShieldCheck className="text-green-400" size={24} />
                                         Ingestion & Data Extraction
                                     </h2>
-                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via AI-powered acoustic analysis.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.</p>
                                 </div>
-                                <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                                <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                                     {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
                                     {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
                                     <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
@@ -231,7 +277,7 @@ const AudioAnalyzer: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* AI Deep Analysis & Distribution Spec */}
+                            {/* Autonomous Deep Analysis & Distribution Spec */}
                             {profile && (
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
 
@@ -304,11 +350,12 @@ const AudioAnalyzer: React.FC = () => {
                                         <div className="flex flex-wrap gap-3 mt-6 pt-5 border-t border-indigo-500/20">
                                             <Button
                                                 data-testid="send-to-video-studio-btn"
-                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                                className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
+                                                    window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);
-                                                    setModule('video');
-                                                    toast.success('Video prompt loaded into Video Studio');
+                                                    setModule('creative');
+                                                    toast.success('Video prompt loaded into Creative Studio');
                                                 }}
                                             >
                                                 <Video size={16} className="mr-2" />
@@ -320,6 +367,7 @@ const AudioAnalyzer: React.FC = () => {
                                                 variant="outline"
                                                 className="border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-400/50 font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
+                                                    window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.image);
                                                     setModule('creative');
                                                     toast.success('Image prompt loaded into Creative Studio');
@@ -388,7 +436,7 @@ const AudioAnalyzer: React.FC = () => {
                                     <p className="text-sm max-w-md mx-auto leading-relaxed mb-8">
                                         Analyze LUFS, True Peak, and frequency spectrum distribution against specific platform targets (Spotify, Apple Music) before delivery.
                                     </p>
-                                    <label className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
+                                    <label onClick={handleLoadClick} className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
                                         <Upload size={16} className="mr-2" /> Upload Master for Audit
                                         <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                     </label>
@@ -403,7 +451,7 @@ const AudioAnalyzer: React.FC = () => {
                                             </h2>
                                             <p className="text-sm text-muted-foreground mt-1">Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.</p>
                                         </div>
-                                        <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
+                                        <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
                                             <Upload size={18} /> Re-Audit New File
                                             <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                         </label>
@@ -428,7 +476,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                                                         <span className="text-xs font-bold text-white flex items-center gap-2">Spotify Target (-14 LUFS)</span>
                                                         {profile.technical.audit.integratedLoudness > -12 ? (
-                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                                         ) : profile.technical.audit.integratedLoudness < -16 ? (
                                                             <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                                         ) : (
@@ -438,7 +486,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                                                         <span className="text-xs font-bold text-white flex items-center gap-2">Apple Music Target (-16 LUFS)</span>
                                                         {profile.technical.audit.integratedLoudness > -14 ? (
-                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                                         ) : profile.technical.audit.integratedLoudness < -18 ? (
                                                             <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                                         ) : (

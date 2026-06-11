@@ -8,6 +8,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag, Upload, FileCheck, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -245,7 +246,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
     );
 }
 
-function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[] }) {
+function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[]; key?: React.Key }) {
     const [open, setOpen] = useState(false);
     const [clearanceTrack, setClearanceTrack] = useState<CatalogTrack | null>(null);
     const [submittedTracks, setSubmittedTracks] = useState<Set<string>>(new Set());

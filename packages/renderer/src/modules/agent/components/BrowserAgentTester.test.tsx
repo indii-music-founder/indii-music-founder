@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import BrowserAgentTester from './BrowserAgentTester';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useAgentStore } from '../store/AgentStore';
 import { AgentActionType } from '../types';
 

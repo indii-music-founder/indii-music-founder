@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net } from 'electron';
 import path from 'path';
 import log from 'electron-log';
+import { accessControlService } from './security/AccessControlService';
 
 // Item 86: isDev must be defined early for logging config
 const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
@@ -16,9 +17,11 @@ const originalConsoleError = console.error;
 const originalConsoleInfo = console.info;
 const originalConsoleWarn = console.warn;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const wrapConsole = (original: (...args: any[]) => void) => (...args: any[]) => {
     try {
         original(...args);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         if (e.code === 'EIO' || (e.message && e.message.includes('EIO'))) {
             // Silently ignore IO errors on console (dead terminal/pipe)
@@ -38,21 +41,26 @@ console.info = wrapConsole(originalConsoleInfo);
 console.warn = wrapConsole(originalConsoleWarn);
 
 // Item 374: Global Uncaught Exception Handler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('uncaughtException', (error: any) => {
     if (error.code === 'EIO' || (error.message && error.message.includes('EIO'))) return;
     try {
         log.error('Uncaught Exception in Main Process:', error);
-    } catch {
-        // If logging fails (EIO), just swallow it
+    } catch (err) {
+        // Fallback to stderr if electron-log fails (e.g. EPERM / EIO issues during early setup/shutdown)
+        process.stderr.write(`[Fallback Log Error] Uncaught Exception: ${error?.message || error}\nLogging failed: ${err}\n`);
     }
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (reason instanceof Error && ((reason as any).code === 'EIO' || reason.message.includes('EIO'))) return;
     try {
         log.error('Unhandled Rejection in Main Process:', reason);
-    } catch {
-        // Swallow
+    } catch (err) {
+        // Fallback to stderr if electron-log fails
+        process.stderr.write(`[Fallback Log Error] Unhandled Rejection: ${reason?.message || reason}\nLogging failed: ${err}\n`);
     }
 });
 
@@ -82,6 +90,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
+import { registerDawHandlers } from './handlers/daw';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { indiiRemoteService } from './services/IndiiRemoteService';
 import { registerSchedulerHandlers } from './handlers/scheduler';
@@ -104,7 +113,7 @@ if (isDev) {
 // Item 374: Crash reporter (no PII — only crash metadata is submitted)
 if (app.isPackaged) {
     crashReporter.start({
-        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indiios/minidump/',
+        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indii/minidump/',
         uploadToServer: !!process.env.CRASH_REPORTER_URL,
     });
 }
@@ -131,7 +140,7 @@ const createWindow = async () => {
 
     try {
         const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
-        const password = Math.floor(100000 + Math.random() * 900000).toString();
+        const password = crypto.randomUUID().substring(0, 6);
         try {
             const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
@@ -223,13 +232,27 @@ const createWindow = async () => {
 
     // Handle Window Open Requests
     win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
-        if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
+        try {
+            const parsedUrl = new URL(url);
+            const allowedOrigins = [
+                'https://accounts.google.com', 
+                'https://indii.music', 
+                'https://indii-music-founder.firebaseapp.com',
+                'http://localhost:3000',
+                'http://localhost:4242',
+                'http://localhost:9099'
+            ];
 
-        // Use logic similar to will-navigate for consistency
-        const parsedUrl = new URL(url);
-        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-            shell.openExternal(url);
+            if (allowedOrigins.some(origin => parsedUrl.origin === origin)) {
+                return { action: 'allow' };
+            }
+
+            // Use logic similar to will-navigate for consistency
+            if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+                shell.openExternal(url);
+            }
+        } catch (_err) {
+            log.error('[Security] Invalid URL in window open request:', url);
         }
         return { action: 'deny' };
     });
@@ -237,7 +260,7 @@ const createWindow = async () => {
     // Security Gate for WebNavigation
     win.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indiios-v-1-1.firebaseapp.com'];
+        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
 
         if (navigationUrl.startsWith(devServerUrl)) return;
 
@@ -250,14 +273,63 @@ const createWindow = async () => {
         }
     });
 
+    const handleLoadFailure = (context: string, error: Error) => {
+        log.error(`[Main] ${context} failed to load:`, error);
+        // Create dynamic HTML to show a friendly connection failure screen
+        const failureHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Connection Failure</title>
+                <style>
+                    body {
+                        background-color: #000;
+                        color: #fff;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                        text-align: center;
+                    }
+                    h1 { font-size: 24px; margin-bottom: 8px; font-weight: 600; }
+                    p { color: #888; font-size: 14px; margin-bottom: 24px; max-width: 400px; line-height: 1.5; }
+                    button {
+                        background-color: #ffffff;
+                        color: #000000;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 13px;
+                        transition: opacity 0.2s;
+                    }
+                    button:hover { opacity: 0.9; }
+                </style>
+            </head>
+            <body>
+                <h1>Failed to connect to studio</h1>
+                <p>Unable to connect to the dev server or load production files. Please check if the studio is running locally or reinstall the application.</p>
+                <button onclick="window.location.reload()">Retry Connection</button>
+            </body>
+            </html>
+        `;
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(failureHtml)}`;
+        win.loadURL(dataUrl).catch(e => log.error('[Main] Failed to load failure fallback page:', e));
+    };
+
     if (isDev) {
         log.info(`Attempting to load Dev Server URL: ${devServerUrl}`);
-        win.loadURL(devServerUrl).catch(err => log.error(`Failed to load URL: ${err}`));
+        win.loadURL(devServerUrl).catch(err => handleLoadFailure('Dev server URL', err));
         win.webContents.openDevTools();
     } else {
-        const indexPath = path.join(__dirname, '../dist/index.html');
+        const indexPath = path.join(__dirname, '../renderer/index.html');
         log.info(`Loading Production File: ${indexPath}`);
-        win.loadFile(indexPath).catch(err => log.error(`Failed to load file: ${err}`));
+        win.loadFile(indexPath).catch(err => handleLoadFailure('Production build index file', err));
     }
 
     win.once('ready-to-show', () => {
@@ -277,7 +349,7 @@ const createTray = () => {
 
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: 'Show IndiiOS',
+            label: 'Show indii',
             click: () => {
                 mainWindow?.show();
                 if (process.platform === 'darwin') {
@@ -295,7 +367,7 @@ const createTray = () => {
         }
     ]);
 
-    tray.setToolTip('IndiiOS Studio');
+    tray.setToolTip('indii Studio');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {
@@ -333,11 +405,11 @@ if (process.defaultApp) {
     if (process.argv.length >= 2) {
         const scriptPath = path.resolve(process.argv[1]);
         log.info(`Setting default protocol client in DEV mode. Script: ${scriptPath}`);
-        app.setAsDefaultProtocolClient('indii-os', process.execPath, [scriptPath]);
+        app.setAsDefaultProtocolClient('indii', process.execPath, [scriptPath]);
     }
 } else {
     // Production/Bundled
-    app.setAsDefaultProtocolClient('indii-os');
+    app.setAsDefaultProtocolClient('indii');
 }
 
 // Single Instance Lock
@@ -348,15 +420,20 @@ if (!gotTheLock) {
     log.info('Failed to acquire lock, quitting secondary instance...');
     app.quit();
 } else {
-    // Protocol handle for secondary instances (Windows/Linux)
+    // Protocol handle for secondary instances (Windows/Linux/macOS)
     app.on('second-instance', (_event, commandLine) => {
         log.info(`second-instance event: ${JSON.stringify(commandLine)}`);
-        if (BrowserWindow.getAllWindows().length > 0) {
-            const win = BrowserWindow.getAllWindows()[0];
-            if (win.isMinimized()) win.restore();
-            win.focus();
+        if (mainWindow) {
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+                if (process.platform === 'darwin') {
+                    app.dock?.show();
+                }
+            }
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
         }
-        const url = commandLine.find(arg => arg.startsWith('indii-os://'));
+        const url = commandLine.find(arg => arg.startsWith('indii://'));
         if (url) {
             log.info(`Handling deep link from second-instance: ${url}`);
             handleDeepLink(url, mainWindow);
@@ -376,6 +453,25 @@ if (!gotTheLock) {
         // Apply Content Security Policy headers
         applyCSP();
 
+        // Register secure `safe-file` protocol handler
+        protocol.handle('safe-file', (request) => {
+            try {
+                const url = new URL(request.url);
+                let filePath = decodeURIComponent(url.pathname);
+                if (process.platform === 'win32' && filePath.startsWith('/')) {
+                    filePath = filePath.substring(1);
+                }
+                if (!accessControlService.verifyAccess(filePath)) {
+                    log.warn(`[SafeFileProtocol] Access Denied to path: ${filePath}`);
+                    return new Response('Access Denied', { status: 403 });
+                }
+                return net.fetch(`file://${filePath}`);
+            } catch (err) {
+                log.error('[SafeFileProtocol] Request failed:', err);
+                return new Response('Internal Error', { status: 500 });
+            }
+        });
+
         registerSystemHandlers();
         registerAuthHandlers();
         registerAudioHandlers();
@@ -390,6 +486,7 @@ if (!gotTheLock) {
         registerSecurityHandlers();
         registerVideoHandlers();
         registerSonicBridgeHandlers();
+        registerDawHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -412,9 +509,10 @@ if (!gotTheLock) {
             'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
+            'daw:start', 'daw:stop', 'daw:get-state',
             'video:render', 'video:open-folder', 'video:save-asset',
             'power:get-state', 'mobile-remote:stop',
-            'updater:check', 'updater:install',
+            'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
         ]);
@@ -551,7 +649,12 @@ app.on('child-process-gone', (_event, details) => {
 });
 
 app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        if (app.isReady()) createWindow();
+    if (mainWindow === null) {
+        createWindow();
+    } else {
+        mainWindow.show();
+        if (process.platform === 'darwin') {
+            app.dock?.show();
+        }
     }
 });

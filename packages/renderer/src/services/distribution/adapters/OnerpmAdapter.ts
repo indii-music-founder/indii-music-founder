@@ -19,8 +19,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 const ONERPM_API_BASE = 'https://api.onerpm.com/v2';
@@ -77,7 +77,7 @@ export class OnerpmAdapter extends BaseDistributorAdapter {
         const releaseId = metadata.id || `ORP-${Date.now()}`;
 
         try {
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'onerpm', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'onerpm', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {

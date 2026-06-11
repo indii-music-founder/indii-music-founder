@@ -31,6 +31,7 @@ export interface DesignCanvasProps {
 }
 
 export const DesignCanvas: React.FC<DesignCanvasProps> = ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onExport,
     onLayersChange,
     onSelectionChange,
@@ -523,6 +524,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 };
 
 // Export canvas manipulation functions
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCanvasControls = (canvas: fabric.Canvas | null) => {
     // Smart positioning: find empty space or center
     const getSmartPosition = useCallback((width: number, height: number): { left: number; top: number } => {
@@ -742,7 +744,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             }
 
             // Raster formats (PNG, JPEG, WebP)
-            // ⚡ INDIIOS FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
+            // ⚡ indii.music FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
             // to ensure no cropping occurs due to responsive scaling
             const currentZoom = canvas.getZoom();
             const currentWidth = canvas.width;

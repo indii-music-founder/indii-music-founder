@@ -8,8 +8,9 @@
  * - Stripe checkout sessions
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { auth } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '@/services/firebase';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
   UsageWarningLevel
 } from './types';
@@ -29,7 +30,40 @@ import { logger } from '@/utils/logger';
 export class SubscriptionService {
   private subscriptionCache: Map<string, { subscription: Subscription; timestamp: number }> = new Map();
   private usageCache: Map<string, { stats: UsageStats; timestamp: number }> = new Map();
+  private inFlightSubscription: Map<string, Promise<Subscription>> = new Map();
+  private inFlightUsage: Map<string, Promise<UsageStats>> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  private formatQuotaCheckError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : '';
+
+    return code ? `${code}: ${message}` : message;
+  }
+
+  private isAuthQuotaCheckError(reason: string): boolean {
+    const lower = reason.toLowerCase();
+    return lower.includes('unauthenticated')
+      || lower.includes('permission-denied')
+      || lower.includes('unauthorized');
+  }
+
+  private isQuotaServiceInfrastructureError(reason: string): boolean {
+    const lower = reason.toLowerCase();
+    return lower.includes('internal')
+      || lower.includes('not-found')
+      || lower.includes('failed-precondition')
+      || lower.includes('unavailable')
+      || lower.includes('deadline-exceeded')
+      || lower.includes('timeout')
+      || lower.includes('network-request-failed')
+      || lower.includes('failed to fetch')
+      || lower.includes('invalid subscription data')
+      || lower.includes('invalid usage stats')
+      || lower.includes('subscription not found');
+  }
 
   /**
    * Get current user's subscription
@@ -37,6 +71,21 @@ export class SubscriptionService {
   async getSubscription(userId: string, forceRefresh = false): Promise<Subscription> {
     if (!userId) {
       throw new Error('User ID is required');
+    }
+
+    if (isFirebaseE2EMockEnabled()) {
+      const now = Date.now();
+      return {
+        id: 'mock-subscription-123',
+        userId,
+        tier: SubscriptionTier.STUDIO,
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: now + 30 * 24 * 60 * 60 * 1000,
+        cancelAtPeriodEnd: false,
+        createdAt: now,
+        updatedAt: now
+      };
     }
 
     // Check cache
@@ -54,31 +103,70 @@ export class SubscriptionService {
       return cached;
     }
 
-    // Fetch from Firebase Functions
-    try {
-      const functions = getFunctions();
-      const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
+    // Deduplicate in-flight requests
+    if (this.inFlightSubscription.has(userId)) {
+      return this.inFlightSubscription.get(userId)!;
+    }
 
-      const result = await getSubscriptionFn({ userId });
+    const fetchPromise = (async (): Promise<Subscription & { isFallback?: boolean }> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let lastError: any = null;
+      const maxRetries = 3;
+      const baseDelay = 500;
 
-      // Zod Validation (Bolt Hardening)
-      const parsed = SubscriptionSchema.safeParse(result.data);
-      if (!parsed.success) {
-        logger.error("Subscription data validation failed:", parsed.error);
-        throw new Error("Received invalid subscription data from backend.");
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
+
+          const result = await getSubscriptionFn({ userId });
+
+          // Zod Validation (Bolt Hardening)
+          const parsed = SubscriptionSchema.safeParse(result.data);
+          if (!parsed.success) {
+            logger.error(`[SubscriptionService] Validation failed (Attempt ${attempt}):`, parsed.error);
+            throw new Error("Received invalid subscription data from backend.");
+          }
+
+          const subscription: Subscription = parsed.data as Subscription;
+
+          // Update caches
+          this.subscriptionCache.set(userId, { subscription, timestamp: Date.now() });
+          cacheService.set(`subscription:${userId}`, subscription, this.CACHE_TTL);
+
+          return subscription;
+        } catch (error: unknown) {
+          lastError = error;
+          const isNetworkError = error instanceof Error && 
+            (error.message.includes('network-request-failed') || error.message.includes('Failed to fetch'));
+          
+          if (isNetworkError && attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            logger.warn(`[SubscriptionService] Network error fetching subscription (Attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          // If not a network error or we're out of retries, break to the fail-closed error below.
+          break;
+        }
       }
 
-      const subscription: Subscription = parsed.data as Subscription;
+      // If we're here, all retries failed or it was a non-retryable error
+      logger.error("SubscriptionService.getSubscription failed after retries:", {
+        error: lastError,
+        userId,
+        message: lastError instanceof Error ? lastError.message : String(lastError)
+      });
 
-      // Update caches
-      this.subscriptionCache.set(userId, { subscription, timestamp: Date.now() });
-      cacheService.set(`subscription:${userId}`, subscription, this.CACHE_TTL);
+      throw lastError instanceof Error
+        ? lastError
+        : new Error(`Failed to fetch subscription for ${userId}.`);
+    })().finally(() => {
+      this.inFlightSubscription.delete(userId);
+    });
 
-      return subscription;
-    } catch (error: unknown) {
-      logger.error("SubscriptionService.getSubscription error:", error);
-      throw new Error('Failed to fetch subscription. Please try again.');
-    }
+    this.inFlightSubscription.set(userId, fetchPromise);
+    return fetchPromise;
   }
 
   /**
@@ -95,6 +183,35 @@ export class SubscriptionService {
    * Get usage statistics for a user
    */
   async getUsageStats(userId: string, forceRefresh = false): Promise<UsageStats> {
+    if (isFirebaseE2EMockEnabled()) {
+      const tierConfig = getTierConfig(SubscriptionTier.STUDIO);
+      return {
+        userId,
+        tier: SubscriptionTier.STUDIO,
+        resetDate: Date.now() + (7 * 24 * 60 * 60 * 1000),
+        imagesGenerated: 0,
+        imagesRemaining: tierConfig.imageGenerations.monthly,
+        imagesPerMonth: tierConfig.imageGenerations.monthly,
+        videoDurationSeconds: 0,
+        videoDurationMinutes: 0,
+        videoRemainingMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        videoTotalMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        aiChatTokensUsed: 0,
+        aiChatTokensRemaining: tierConfig.aiChat.tokensPerMonth,
+        aiChatTokensPerMonth: tierConfig.aiChat.tokensPerMonth,
+        storageUsedGB: 0,
+        storageRemainingGB: tierConfig.storage.totalGB,
+        storageTotalGB: tierConfig.storage.totalGB,
+        projectsCreated: 0,
+        projectsRemaining: tierConfig.maxProjects,
+        maxProjects: tierConfig.maxProjects,
+        teamMembersUsed: 0,
+        teamMembersRemaining: tierConfig.maxTeamMembers,
+        maxTeamMembers: tierConfig.maxTeamMembers,
+        isFallback: true
+      };
+    }
+
     // Check cache
     if (!forceRefresh && this.usageCache.has(userId)) {
       const cached = this.usageCache.get(userId)!;
@@ -103,29 +220,94 @@ export class SubscriptionService {
       }
     }
 
-    try {
-      const functions = getFunctions();
-      const getUsageStatsFn = httpsCallable(functions, 'getUsageStats');
+    // Deduplicate in-flight requests
+    if (this.inFlightUsage.has(userId)) {
+      return this.inFlightUsage.get(userId)!;
+    }
 
-      const result = await getUsageStatsFn({ userId });
+    const fetchPromise = (async (): Promise<UsageStats & { isFallback?: boolean }> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let lastError: any = null;
+      const maxRetries = 3;
+      const baseDelay = 500;
 
-      // Zod Validation (Bolt Hardening)
-      const parsed = UsageStatsSchema.safeParse(result.data);
-      if (!parsed.success) {
-        logger.error("Usage stats validation failed:", parsed.error);
-        throw new Error("Received invalid usage stats from backend.");
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const getUsageStatsFn = httpsCallable(functions, 'getUsageStats');
+
+          const result = await getUsageStatsFn({ userId });
+
+          // Zod Validation (Bolt Hardening)
+          const parsed = UsageStatsSchema.safeParse(result.data);
+          if (!parsed.success) {
+            logger.error(`[SubscriptionService] Usage stats validation failed (Attempt ${attempt}):`, parsed.error);
+            throw new Error("Received invalid usage stats from backend.");
+          }
+
+          const stats: UsageStats = parsed.data as UsageStats;
+
+          // Update cache
+          this.usageCache.set(userId, { stats, timestamp: Date.now() });
+
+          return stats;
+        } catch (error: unknown) {
+          lastError = error;
+          const isNetworkError = error instanceof Error && 
+            (error.message.includes('network-request-failed') || error.message.includes('Failed to fetch'));
+          
+          if (isNetworkError && attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            logger.warn(`[SubscriptionService] Network error fetching usage stats (Attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          // If not a network error or we're out of retries, break to fallback
+          break;
+        }
       }
 
-      const stats: UsageStats = parsed.data as UsageStats;
+      // If we're here, all retries failed or it was a non-retryable error
+      logger.error("SubscriptionService.getUsageStats failed after retries:", {
+        error: lastError,
+        userId,
+        message: lastError instanceof Error ? lastError.message : String(lastError)
+      });
 
-      // Update cache
-      this.usageCache.set(userId, { stats, timestamp: Date.now() });
+      // SAFE FALLBACK: Return empty FREE stats
+      const tierConfig = getTierConfig(SubscriptionTier.FREE);
+      const fallback: UsageStats & { isFallback: boolean } = {
+        userId,
+        tier: SubscriptionTier.FREE,
+        resetDate: Date.now() + (7 * 24 * 60 * 60 * 1000),
+        imagesGenerated: 0,
+        imagesRemaining: tierConfig.imageGenerations.monthly,
+        imagesPerMonth: tierConfig.imageGenerations.monthly,
+        videoDurationSeconds: 0,
+        videoDurationMinutes: 0,
+        videoRemainingMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        videoTotalMinutes: tierConfig.videoGenerations.totalDurationMinutes,
+        aiChatTokensUsed: 0,
+        aiChatTokensRemaining: tierConfig.aiChat.tokensPerMonth,
+        aiChatTokensPerMonth: tierConfig.aiChat.tokensPerMonth,
+        storageUsedGB: 0,
+        storageRemainingGB: tierConfig.storage.totalGB,
+        storageTotalGB: tierConfig.storage.totalGB,
+        projectsCreated: 0,
+        projectsRemaining: tierConfig.maxProjects,
+        maxProjects: tierConfig.maxProjects,
+        teamMembersUsed: 0,
+        teamMembersRemaining: tierConfig.maxTeamMembers,
+        maxTeamMembers: tierConfig.maxTeamMembers,
+        isFallback: true
+      };
+      return fallback;
+    })().finally(() => {
+      this.inFlightUsage.delete(userId);
+    });
 
-      return stats;
-    } catch (error: unknown) {
-      logger.error("SubscriptionService.getUsageStats error:", error);
-      throw new Error('Failed to fetch usage statistics. Please try again.');
-    }
+    this.inFlightUsage.set(userId, fetchPromise);
+    return fetchPromise;
   }
 
   /**
@@ -165,14 +347,8 @@ export class SubscriptionService {
     const targetUserId = userId || auth.currentUser?.uid;
 
     if (!targetUserId) {
-      if (action === 'generateVideo' || action === 'generateImage') {
-        logger.warn(`[SubscriptionService] Blocked unauthenticated AI generation (${action})`);
-        return { allowed: false, reason: 'Authentication required for AI generation.' };
-      }
-      // DEMO MODE: Allow limited actions for unauthenticated users
-      // This enables the demo experience without blocking on auth
-      logger.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
-      return { allowed: true };
+      logger.warn(`[SubscriptionService] Blocked unauthenticated action (${action})`);
+      return { allowed: false, reason: 'Authentication required for subscription quota checks.' };
     }
 
     try {
@@ -197,13 +373,19 @@ export class SubscriptionService {
 
       if (timeoutId) clearTimeout(timeoutId);
 
-      // If either call failed (auth error, network, etc.), allow with graceful degradation
+      // If either call failed (auth error, network, etc.), block instead of granting unmetered access.
       if (subscriptionResult.status === 'rejected' || usageResult.status === 'rejected') {
         const reason = subscriptionResult.status === 'rejected'
-          ? (subscriptionResult.reason instanceof Error ? subscriptionResult.reason.message : String(subscriptionResult.reason))
-          : (usageResult.status === 'rejected' ? (usageResult.reason instanceof Error ? usageResult.reason.message : String(usageResult.reason)) : 'unknown');
-        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}), allowing with graceful degradation.`);
-        return { allowed: true };
+          ? this.formatQuotaCheckError(subscriptionResult.reason)
+          : (usageResult.status === 'rejected' ? this.formatQuotaCheckError(usageResult.reason) : 'unknown');
+
+        if (this.isQuotaServiceInfrastructureError(reason) && !this.isAuthQuotaCheckError(reason)) {
+          logger.warn(`[SubscriptionService] Quota service unavailable (${reason}); allowing action and relying on backend usage tracking.`);
+          return { allowed: true };
+        }
+
+        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action.`);
+        return { allowed: false, reason: `Subscription quota check failed: ${reason}` };
       }
 
       const [subscription, usage] = [subscriptionResult.value, usageResult.value] as [Subscription, UsageStats];
@@ -256,7 +438,7 @@ export class SubscriptionService {
           if (usage.aiChatTokensRemaining < amount) {
             return {
               allowed: false,
-              reason: 'AI chat token quota exceeded. Upgrade to continue using AI chat.',
+              reason: 'Intelligence chat token quota exceeded. Upgrade to continue using Intelligence chat.',
               upgradeRequired: subscription.tier === SubscriptionTier.FREE,
               suggestedTier: subscription.tier === SubscriptionTier.FREE ? SubscriptionTier.PRO_MONTHLY : SubscriptionTier.STUDIO,
               upgradeUrl: '/pricing',
@@ -333,7 +515,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const createSessionFn = httpsCallable(functions, 'createCheckoutSession');
 
       const result = await createSessionFn(params);
@@ -352,7 +533,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const getPortalFn = httpsCallable(functions, 'getCustomerPortal');
 
       const result = await getPortalFn({
@@ -375,7 +555,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const cancelFn = httpsCallable(functions, 'cancelSubscription');
 
       await cancelFn({ userId: targetUserId });
@@ -398,7 +577,6 @@ export class SubscriptionService {
     }
 
     try {
-      const functions = getFunctions();
       const resumeFn = httpsCallable(functions, 'resumeSubscription');
 
       await resumeFn({ userId: targetUserId });
@@ -487,7 +665,7 @@ export class SubscriptionService {
       warnings.push({
         type: 'chat',
         level: UsageWarningLevel.EXCEEDED,
-        message: 'AI chat quota exceeded. Upgrade your plan for more tokens.',
+        message: 'Intelligence chat quota exceeded. Upgrade your plan for more tokens.',
         percentage: chatPercentage,
         upgradeUrl: '/pricing',
         dismissible: false
@@ -496,7 +674,7 @@ export class SubscriptionService {
       warnings.push({
         type: 'chat',
         level: UsageWarningLevel.CRITICAL,
-        message: `${usage.aiChatTokensRemaining} tokens remaining for AI chat this month.`,
+        message: `${usage.aiChatTokensRemaining} tokens remaining for Intelligence chat this month.`,
         percentage: chatPercentage,
         upgradeUrl: '/pricing',
         dismissible: true

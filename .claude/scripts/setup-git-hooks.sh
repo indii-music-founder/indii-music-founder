@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs local git hooks for indiiOS.
+# Installs local git hooks for indii.
 # Run once per machine: bash .claude/scripts/setup-git-hooks.sh
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "Not a git repo"; exit 1; }
@@ -7,7 +7,7 @@ HOOKS_DIR="$REPO_ROOT/.git/hooks"
 
 cat > "$HOOKS_DIR/pre-commit" <<'HOOK'
 #!/bin/bash
-# indiiOS pre-commit: lint + typecheck staged TS/TSX files
+# indii pre-commit: lint + typecheck staged TS/TSX files
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$')
 

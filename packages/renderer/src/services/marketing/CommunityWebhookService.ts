@@ -62,7 +62,7 @@ export class CommunityWebhookService {
                 description: payload.message,
                 color: 0x5865F2, // Discord Blurple
                 image: payload.imageUrl ? { url: payload.imageUrl } : undefined,
-                footer: { text: 'Sent via indiiOS' },
+                footer: { text: 'Sent via indii' },
                 url: payload.actionUrl,
                 author: payload.authorName ? { name: payload.authorName } : undefined
             }]

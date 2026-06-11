@@ -1,18 +1,18 @@
 /**
  * Onboarding Service — Core Conversation Logic
  *
- * This file contains the main AI conversation loop and function call processor.
+ * This file contains the main Autonomous conversation loop and function call processor.
  * Types, tool definitions, profile calculation, and natural fallback logic have
  * been extracted to their own modules for maintainability:
  *
  * - types.ts             → Types, enums, interfaces, option whitelists
- * - toolDefinitions.ts   → AI function declarations for the model
+ * - toolDefinitions.ts   → Autonomous function declarations for the model
  * - profileCalculator.ts → Profile completeness + phase determination
  * - naturalFallback.ts   → Human-like fallback response generation
  */
 
-import { GenAI as AI } from '../ai/GenAI';
-import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
@@ -60,6 +60,7 @@ import {
     type OnboardingPhase,
     type UserProfile,
     type ConversationFile,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     type ContentPart,
     type FunctionCallPart,
     type UpdateProfileArgs,
@@ -75,6 +76,7 @@ import {
 // --- Main Conversation Runner ---
 
 export async function runOnboardingConversation(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     history: { role: string, parts: any[], thoughtSignature?: string }[],
     userProfile: UserProfile,
     mode: 'onboarding' | 'update',
@@ -88,7 +90,7 @@ export async function runOnboardingConversation(
     const phaseInstructions: Record<OnboardingPhase, string> = {
         identity_intro: "CURRENT FOCUS: Get their name and story. Build rapport first.",
         identity_core: "CURRENT FOCUS: Career stage, genre, goals, and DISTRIBUTOR. These shape everything.",
-        identity_branding: "CURRENT FOCUS: Visual identity — colors, fonts, aesthetic style. This powers AI image generation.",
+        identity_branding: "CURRENT FOCUS: Visual identity — colors, fonts, aesthetic style. This powers Intelligence image generation.",
         identity_visuals: "CURRENT FOCUS: Visual assets — press photos, logo, references. If they have none, get acknowledgment and move on.",
         release_intro: "CURRENT FOCUS: Transition to the current release. What are they promoting?",
         release_details: "CURRENT FOCUS: Release specifics — title, type, mood, themes.",
@@ -193,10 +195,10 @@ Artists need strong visual identity. Ask about these naturally during the conver
    - Store in \`fonts\` field
 
 4. **What to AVOID (Negative Prompt)**: "Any visual styles you want to avoid? Like 'no cartoons' or 'no neon'?"
-   - This is GOLD for AI image generation
+   - This is GOLD for Intelligence image generation
    - Store in \`negative_prompt\` field
 
-**Why this matters**: These fields power the AI image generator. Without colors/aesthetic, we can't create on-brand visuals. Make it conversational: "I noticed you said 'dark and moody' — are we talking muted earth tones or high-contrast black and white?"
+**Why this matters**: These fields power the Intelligence image generator. Without colors/aesthetic, we can't create on-brand visuals. Make it conversational: "I noticed you said 'dark and moody' — are we talking muted earth tones or high-contrast black and white?"
 
 **AFTER SILENT UPDATES (CRITICAL):**
 When you call updateProfile silently (which you should), you MUST still respond with:
@@ -283,13 +285,13 @@ ALWAYS preserve what they're NOT changing.`;
     try {
         const response = await AI.generateContent(
             contents,
-            AI_MODELS.TEXT.AGENT,
+            INTELLIGENCE_MODELS.TEXT.AGENT,
             {
                 systemInstruction,
                 tools: [{
                     functionDeclarations: ALL_ONBOARDING_TOOL_DECLARATIONS,
                 }],
-                ...AI_CONFIG.THINKING.HIGH,
+                ...INTELLIGENCE_CONFIG.THINKING.HIGH,
             },
             undefined, // systemInstruction already in config (extracted by rawGenerateContent)
             undefined, // tools already in config (extracted by rawGenerateContent)
@@ -304,8 +306,8 @@ ALWAYS preserve what they're NOT changing.`;
         if (response.response.candidates && response.response.candidates[0]?.content?.parts) {
             const parts = response.response.candidates[0].content.parts;
             for (const part of parts) {
-                if ('thoughtSignature' in part && (part as any).thoughtSignature) {
-                    thoughtSignature = (part as any).thoughtSignature;
+                if ('thoughtSignature' in part && (part as Record<string, unknown>).thoughtSignature) {
+                    thoughtSignature = (part as Record<string, unknown>).thoughtSignature as string;
                     break;
                 }
             }
@@ -330,7 +332,7 @@ ALWAYS preserve what they're NOT changing.`;
 
         // Re-throw with context so the hook can show appropriate recovery UI
         if (isTimeout) {
-            throw new Error('ONBOARDING_TIMEOUT: The AI took too long to respond. Please try again.');
+            throw new Error('ONBOARDING_TIMEOUT: The Autonomous took too long to respond. Please try again.');
         }
         if (isRateLimit) {
             throw new Error('ONBOARDING_RATE_LIMIT: Too many requests. Please wait a moment and try again.');
@@ -500,10 +502,10 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'cr
 
     const response = await AI.generateContent(
         [{ role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] }],
-        AI_MODELS.TEXT.AGENT,
+        INTELLIGENCE_MODELS.TEXT.AGENT,
         {
             systemInstruction: systemPrompt,
-            ...AI_CONFIG.THINKING.HIGH,
+            ...INTELLIGENCE_CONFIG.THINKING.HIGH,
         }
     );
     return response.response.text().trim() || "";

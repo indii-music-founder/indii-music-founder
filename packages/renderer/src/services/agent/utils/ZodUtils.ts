@@ -4,7 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType } from '../types';
 
 /**
- * Converts a Zod schema to the ToolParamters format expected by the AI SDK.
+ * Converts a Zod schema to the ToolParamters format expected by the Autonomous SDK.
  * Handles recursion and type normalization.
  */
 export function zodToToolParameters(schema: z.ZodType): ToolParameters {
@@ -39,7 +39,7 @@ function mapProperties(props: Record<string, any>): Record<string, ToolParameter
 function mapSchema(schema: any): ToolParameterSchema {
     let type = (schema.type || 'string').toUpperCase();
 
-    // Map JSON schema types to AI SDK SchemaTypes
+    // Map JSON schema types to Autonomous SDK SchemaTypes
     // Spec: 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT'
     if (type === 'CONST') type = 'STRING'; // Handle consts as string enums broadly
 

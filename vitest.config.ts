@@ -14,17 +14,14 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './packages/renderer/src'),
       '@agents': path.resolve(import.meta.dirname, './agents'),
       '@shared': path.resolve(import.meta.dirname, './packages/shared/src'),
+      '@indii/shared': path.resolve(import.meta.dirname, './packages/shared/src'),
+      'react': path.resolve(import.meta.dirname, './node_modules/react'),
+      'react-dom': path.resolve(import.meta.dirname, './node_modules/react-dom'),
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    environmentMatchGlobs: [
-      ['**/*.test.tsx', 'jsdom'],
-      ['**/*.spec.tsx', 'jsdom'],
-      ['**/*.a11y.test.tsx', 'jsdom'],
-      ['packages/renderer/src/**/*.ts', 'jsdom']
-    ],
     exclude: [
       'dist/**',
       'e2e/**',
@@ -49,6 +46,7 @@ export default defineConfig({
     },
     watch: false,
     reporters: ['default', 'github-actions'],
+    testTimeout: 30000,
     teardownTimeout: 1000,
     hookTimeout: 30000,
     pool: 'forks',

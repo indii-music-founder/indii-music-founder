@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import path from 'path';
 import type { HandlerResult } from './test-types';
@@ -12,6 +13,10 @@ const mocks = vi.hoisted(() => ({
         createReadStream: vi.fn(),
         existsSync: vi.fn(),
         realpathSync: vi.fn(),
+        promises: {
+            readFile: vi.fn().mockResolvedValue(Buffer.from('mock-proxy')),
+            unlink: vi.fn().mockResolvedValue(undefined),
+        },
         default: {
             createReadStream: vi.fn(),
             existsSync: vi.fn(),
@@ -19,11 +24,24 @@ const mocks = vi.hoisted(() => ({
         }
     },
     // Mock ffmpeg
-    ffmpeg: {
-        setFfmpegPath: vi.fn(),
-        setFfprobePath: vi.fn(),
-        ffprobe: vi.fn()
-    }
+    ffmpeg: Object.assign(
+        vi.fn(() => ({
+            audioChannels: vi.fn().mockReturnThis(),
+            audioFrequency: vi.fn().mockReturnThis(),
+            audioBitrate: vi.fn().mockReturnThis(),
+            format: vi.fn().mockReturnThis(),
+            on: vi.fn(function(this: any, event: string, cb: any) {
+                if (event === 'end') setTimeout(cb, 0);
+                return this;
+            }),
+            save: vi.fn().mockReturnThis()
+        })),
+        {
+            setFfmpegPath: vi.fn(),
+            setFfprobePath: vi.fn(),
+            ffprobe: vi.fn()
+        }
+    )
 }));
 
 // Mock 'electron'
@@ -180,7 +198,8 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
         };
         const handler = handlers['audio:analyze'];
 
-        // Match the exact error from ipc-security.ts
-        await expect(handler(maliciousEvent, '/tmp/song.mp3')).rejects.toThrow(/Security: Unauthorized sender URL/);
+        const result = await handler(maliciousEvent, '/tmp/song.mp3') as HandlerResult;
+        expect(result).toHaveProperty('success', false);
+        expect(result.error).toMatch(/Security: Unauthorized sender URL/);
     });
 });

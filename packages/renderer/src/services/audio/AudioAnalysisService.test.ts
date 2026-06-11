@@ -55,7 +55,7 @@ const { mockTF, mockEssentiaInstance, mockEssentiaWASM } = vi.hoisted(() => ({
 const _MockEssentiaClass = vi.fn().mockImplementation(() => mockEssentiaInstance);
 
 // Mock GeminiFileService
-vi.mock('@/services/ai/GeminiFileService', () => ({
+vi.mock('@/services/intelligence/GeminiFileService', () => ({
     GeminiFileService: {
         uploadFile: vi.fn().mockResolvedValue({ uri: 'mock-uri' })
     }
@@ -161,15 +161,18 @@ describe('AudioAnalysisService', () => {
         service = new AudioAnalysisService();
     });
 
-    it('should initialize Essentia correctly', async () => {
+    it('should analyze audio without loading the CSP-incompatible Essentia wrapper', async () => {
         const mockBuffer = {
             duration: 10,
             sampleRate: 44100,
             getChannelData: vi.fn(() => new Float32Array(1000).fill(0.1))
         } as unknown as AudioBuffer;
 
-        await service.analyzeBuffer(mockBuffer);
-        expect(mockEssentiaWASM).toHaveBeenCalled();
+        const result = await service.analyzeBuffer(mockBuffer);
+
+        expect(result.bpm).toBeGreaterThan(0);
+        expect(result.key).toBeTruthy();
+        expect(mockEssentiaWASM).not.toHaveBeenCalled();
     });
 
     it('should return cached analysis if available', async () => {

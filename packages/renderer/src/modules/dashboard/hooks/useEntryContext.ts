@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { memoryService } from '@/services/agent/MemoryService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { 
     Sparkles, 
     Play, 
@@ -55,7 +55,7 @@ export function useEntryContext(): EntryContext {
         .filter((s) => !s.namespace)
         .sort((a, b) => b.updatedAt - a.updatedAt)[0];
 
-    const isNew = sessionList.length === 0 && userProfile.displayName === 'New Artist';
+    const isNew = sessionList.length === 0 && !userProfile.displayName?.trim();
     const lastUpdateAge = mostRecent ? Date.now() - mostRecent.updatedAt : null;
     const isStale = lastUpdateAge ? lastUpdateAge > 7 * 86_400_000 : true;
 
@@ -76,14 +76,13 @@ export function useEntryContext(): EntryContext {
 
             try {
                 // Fetch recent high-priority memories to inject into greeting
-                const results = await memoryService.retrieveRelevantMemories(
-                    currentOrganizationId,
-                    'recent activity and current focus',
-                    1
-                );
+                const results = await alwaysOnMemoryEngine.retrieve({
+                    query: 'recent activity and current focus',
+                    limit: 1
+                });
                 
                 if (isMounted && results.length > 0) {
-                    setMemoryContext(results[0]!);
+                    setMemoryContext(results[0]!.summary || results[0]!.content);
                 }
             } catch (err) {
                 logger.error('[useEntryContext] Memory retrieval failed:', err);
@@ -101,7 +100,7 @@ export function useEntryContext(): EntryContext {
 
     if (scenario === 'new-user') {
         suggestedActions.push(
-            { id: 'brand-kit', label: 'Setup Brand Kit', prompt: 'Help me set up my brand kit and artist identity.', icon: UserPlus, variant: 'primary' },
+            { id: 'brand-kit', label: 'Setup Brand Kit', prompt: '/analyze-brand', icon: UserPlus, variant: 'primary' },
             { id: 'tour', label: 'Take a Tour', prompt: 'Show me around the studio and tell me what you can do.', icon: Sparkles, variant: 'secondary' }
         );
     } else if (scenario === 'returning-active' && mostRecent) {
@@ -112,15 +111,15 @@ export function useEntryContext(): EntryContext {
         );
     } else {
         suggestedActions.push(
-            { id: 'new-task', label: 'Start New Task', prompt: 'I want to start a new project.', icon: Sparkles, variant: 'primary' },
+            { id: 'new-task', label: 'Start New Task', prompt: '/custom-workflow', icon: Sparkles, variant: 'primary' },
             { id: 'history', label: 'View History', prompt: null, action: () => useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'archives', isRightPanelOpen: true }), icon: History, variant: 'secondary' },
-            { id: 'trends', label: 'Analyze Trends', prompt: 'What are the current trending sounds and visual styles in my genre right now?', icon: TrendingUp, variant: 'secondary' }
+            { id: 'trends', label: 'Plan Campaign', prompt: '/plan-campaign', icon: TrendingUp, variant: 'secondary' }
         );
     }
 
     return {
         scenario,
-        userName: userProfile.displayName || 'Artist',
+        userName: userProfile.displayName || '',
         lastSessionTitle: mostRecent?.title || null,
         lastSessionId: mostRecent?.id || null,
         lastSessionAge: lastUpdateAge ? Math.floor(lastUpdateAge / 86_400_000) : null,

@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
 import FileUpload from '@/components/kokonutui/file-upload';
-import { dsrService } from '@/services/ddex/DSRService';
-import { type DSRReport } from '@/services/ddex/types/dsr';
+import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
+import { type EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 interface DSRUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onProcess: (report: DSRReport) => Promise<void>;
+    onProcess: (report: EarningsReportReport) => Promise<void>;
 }
 
 export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose, onProcess }) => {
     const [file, setFile] = useState<File | null>(null);
     const [isParsing, setIsParsing] = useState(false);
-    const [parsedReport, setParsedReport] = useState<DSRReport | null>(null);
+    const [parsedReport, setParsedReport] = useState<EarningsReportReport | null>(null);
     const [error, setError] = useState<string | null>(null);
     const toast = useToast();
 
@@ -32,8 +33,8 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
             // Read file as text
             const text = await selectedFile.text();
 
-            // Basic parsing logic simulation matching dsrService capabilities
-            const result = await dsrService.ingestFlatFile(text);
+            // Basic parsing logic simulation matching earningsReportService capabilities
+            const result = await earningsReportService.ingestFlatFile(text);
 
             if (result.success && result.data) {
                 setParsedReport(result.data);
@@ -165,7 +166,8 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-800/50">
-                                                {parsedReport.transactions.slice(0, 5).map((row, i) => (
+                                                
+                                                {parsedReport.transactions.slice(0, 5).map((row: { resourceId: { isrc?: string }; usageCount: number; revenueAmount: number }, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
                                                         <td className="px-4 py-2">{row.usageCount.toLocaleString()}</td>

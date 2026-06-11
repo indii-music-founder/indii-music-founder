@@ -1,12 +1,26 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal } from 'lucide-react';
-import StudioControlsPanel from './right-panel/StudioControlsPanel';
-import WorkflowPanel from './right-panel/WorkflowPanel';
-import KnowledgePanel from './right-panel/KnowledgePanel';
-import AssetsPanel from './right-panel/AssetsPanel';
-import MarketingPanel from './right-panel/MarketingPanel';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText } from 'lucide-react';
+// Lazy-load subpanels to reduce the eager bundle footprint of RightPanel and the core entry chunk
+const StudioControlsPanel = React.lazy(() => import('./right-panel/StudioControlsPanel'));
+const WorkflowPanel = React.lazy(() => import('./right-panel/WorkflowPanel'));
+const KnowledgePanel = React.lazy(() => import('./right-panel/KnowledgePanel'));
+const AssetsPanel = React.lazy(() => import('./right-panel/AssetsPanel'));
+const ArtifactsPanel = React.lazy(() => import('./right-panel/ArtifactsPanel'));
+const MarketingPanel = React.lazy(() => import('./right-panel/MarketingPanel'));
+
+const PanelSuspense = ({ children }: { children: React.ReactNode }) => (
+    <React.Suspense fallback={
+        <div className="flex flex-col items-center justify-center h-full p-8 space-y-4 animate-pulse">
+            <div className="w-12 h-12 rounded-full bg-white/5" />
+            <div className="h-4 w-32 bg-white/5 rounded animate-pulse" />
+            <div className="h-3 w-48 bg-white/5 rounded animate-pulse" />
+        </div>
+    }>
+        {children}
+    </React.Suspense>
+);
 import { motion, AnimatePresence } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 import { ConversationHistoryList } from './ConversationHistoryList';
@@ -55,7 +69,7 @@ export default function RightPanel() {
     }, [agentHistory.length, view]);
 
     React.useEffect(() => {
-        const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge'];
+        const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge', 'marketing'];
         if (isRightPanelOpen && rightPanelTab === 'context' && !MODULES_WITH_CONTEXT.includes(currentModule)) {
             setRightPanelTab('agent');
         }
@@ -194,20 +208,48 @@ export default function RightPanel() {
 
         // TAB 2: ASSETS
         if (rightPanelTab === 'assets') {
-            return <AssetsPanel toggleRightPanel={toggleRightPanel} />;
+            return (
+                <PanelSuspense>
+                    <AssetsPanel toggleRightPanel={toggleRightPanel} />
+                </PanelSuspense>
+            );
+        }
+
+        // TAB: ARTIFACTS
+        if (rightPanelTab === 'artifacts') {
+            return (
+                <PanelSuspense>
+                    <ArtifactsPanel toggleRightPanel={toggleRightPanel} />
+                </PanelSuspense>
+            );
         }
 
         // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
-            case 'video':
-                return <StudioControlsPanel toggleRightPanel={toggleRightPanel} />;
+                return (
+                    <PanelSuspense>
+                        <StudioControlsPanel toggleRightPanel={toggleRightPanel} />
+                    </PanelSuspense>
+                );
             case 'workflow':
-                return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
+                return (
+                    <PanelSuspense>
+                        <WorkflowPanel toggleRightPanel={toggleRightPanel} />
+                    </PanelSuspense>
+                );
             case 'knowledge':
-                return <KnowledgePanel toggleRightPanel={toggleRightPanel} />;
+                return (
+                    <PanelSuspense>
+                        <KnowledgePanel toggleRightPanel={toggleRightPanel} />
+                    </PanelSuspense>
+                );
             case 'marketing':
-                return <MarketingPanel toggleRightPanel={toggleRightPanel} />;
+                return (
+                    <PanelSuspense>
+                        <MarketingPanel toggleRightPanel={toggleRightPanel} />
+                    </PanelSuspense>
+                );
             default:
                 return (
                     <div className="flex flex-col h-full">
@@ -250,6 +292,7 @@ export default function RightPanel() {
     const tabs = [
         { id: 'context', icon: SlidersHorizontal, label: 'Context Controls' },
         { id: 'assets', icon: Folder, label: 'Project Assets' },
+        { id: 'artifacts', icon: FileText, label: 'Artifacts' },
         { id: 'agent', icon: Bot, label: 'Omni Agent' }
     ] as const;
 

@@ -1,5 +1,5 @@
 /**
- * GrowthPatternService — Detects viral growth patterns in streaming data.
+ * GrowthPattingestionNotificationService — Detects viral growth patterns in streaming data.
  *
  * Each detector analyzes the 30-day stream history and cross-platform signals
  * to identify which growth archetype best describes the track's trajectory.

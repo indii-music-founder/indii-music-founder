@@ -1,7 +1,7 @@
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // ScreenwriterTools Implementation
@@ -29,14 +29,14 @@ Attempt to infer scene headers if not explicit.
 `;
     const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
-    const response = await GenAI.generateContent(
+    const response = await AutonomousIntelligence.generateContent(
       prompt,
-      AI_MODELS.TEXT.AGENT,
+      getFineTunedModel('video'),
       undefined,
       systemPrompt
     );
 
-    const textResponse = response.response.text();
+    const textResponse = getResponseText(response);
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
@@ -67,14 +67,14 @@ Return ONLY valid JSON with this structure:
 `;
     const prompt = `Analyze this script:\n\n${args.script}`;
 
-    const response = await GenAI.generateContent(
+    const response = await AutonomousIntelligence.generateContent(
       prompt,
-      AI_MODELS.TEXT.AGENT,
+      getFineTunedModel('video'),
       undefined,
       systemPrompt
     );
 
-    const textResponse = response.response.text();
+    const textResponse = getResponseText(response);
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 

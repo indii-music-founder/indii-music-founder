@@ -47,6 +47,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     FinanceAccountingAgent
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
 export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
 export type { ValidAgentId } from './types';

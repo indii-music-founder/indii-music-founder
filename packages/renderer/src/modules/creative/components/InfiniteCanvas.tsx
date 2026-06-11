@@ -445,7 +445,7 @@ export default function InfiniteCanvas() {
 
     /**
      * Draws the canvas content cleanly (no selection box, no selection borders, no tool overlays).
-     * Used for capturing clean image data before sending to AI editing.
+     * Used for capturing clean image data before sending to Autonomous editing.
      */
     const drawClean = () => {
         const canvas = canvasRef.current;
@@ -864,7 +864,20 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        const id = e.dataTransfer.getData('text/plain');
+        const rawData = e.dataTransfer.getData('text/plain');
+        let id = rawData;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let droppedPayload: any = null;
+
+        try {
+            const parsed = JSON.parse(rawData);
+            if (parsed && typeof parsed === 'object' && parsed.id) {
+                id = parsed.id;
+                droppedPayload = parsed;
+            }
+        } catch (_) {
+            // Keep original string if not valid JSON
+        }
         
         // Find in history, uploads, or file nodes
         let historyItem = state.generatedHistory.find(h => h.id === id) || state.uploadedImages.find(u => u.id === id);
@@ -884,6 +897,19 @@ export default function InfiniteCanvas() {
                     origin: 'uploaded'
                 } as HistoryItem;
             }
+        }
+
+        // If still not found and we have dropped JSON payload, reconstruct it
+        if (!historyItem && droppedPayload && droppedPayload.url) {
+            historyItem = {
+                id: droppedPayload.id,
+                url: droppedPayload.url,
+                type: droppedPayload.type || 'image',
+                prompt: droppedPayload.prompt || 'Clipboard Asset',
+                timestamp: Date.now(),
+                projectId: currentProjectId,
+                origin: 'generated'
+            } as HistoryItem;
         }
 
         if (historyItem && (historyItem.type === 'image' || historyItem.type === 'video')) { // Allow videos as static frames for now
@@ -1141,7 +1167,7 @@ export default function InfiniteCanvas() {
                             className="w-full px-3 py-2 text-sm text-white bg-purple-600 hover:bg-purple-700 rounded transition-colors flex items-center justify-center gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
-                            Adaptive Fill (AI)
+                            Adaptive Fill (Autonomous)
                         </button>
                     </div>
                     <div className="flex justify-end gap-2 mt-1">

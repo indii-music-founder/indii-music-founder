@@ -86,4 +86,45 @@ export function PropertyRow({ label, children, className = "" }: PropertyRowProp
     );
 }
 
-// ... other inputs can be added here as needed (Input, Select, Slider)
+export function PropertyInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+    return (
+        <input
+            {...props}
+            className={cn(
+                "w-full bg-[#111] border border-gray-800 rounded px-2 py-1 text-xs text-gray-200",
+                "focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+                "placeholder:text-gray-600 transition-colors",
+                props.className
+            )}
+        />
+    );
+}
+
+export function PropertySelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+    return (
+        <select
+            {...props}
+            className={cn(
+                "w-full bg-[#111] border border-gray-800 rounded px-2 py-1 text-xs text-gray-200",
+                "focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+                "appearance-none cursor-pointer transition-colors",
+                props.className
+            )}
+        >
+            {props.children}
+        </select>
+    );
+}
+
+export function PropertySlider({ value, min = 0, max = 100, onChange, className = "" }: { value: number; min?: number; max?: number; onChange: (v: number) => void; className?: string }) {
+    return (
+        <input
+            type="range"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className={cn("w-full accent-blue-500", className)}
+        />
+    );
+}

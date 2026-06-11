@@ -13,6 +13,7 @@ import {
 import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
 const StatCard = ({ 
@@ -25,7 +26,8 @@ const StatCard = ({
   title: string; 
   value: string; 
   change: number; 
-  icon: any; 
+  
+  icon: React.ElementType; 
   color: string;
 }) => (
   <motion.div 
@@ -50,10 +52,13 @@ const StatCard = ({
   </motion.div>
 );
 
-const SourceBreakdown = ({ sources, counts }: { sources: any, counts: any }) => {
-  const total = Object.values(sources).reduce((a: any, b: any) => a + b, 0) as number;
+
+const SourceBreakdown = ({ sources, counts }: { sources: Record<string, number>, counts: Record<string, number> }) => {
   
-  const sourceIcons: Record<string, any> = {
+  const total = Object.values(sources).reduce((a: number, b: number) => a + b, 0) as number;
+  
+  
+  const sourceIcons: Record<string, React.ElementType> = {
     streaming: Radio,
     merch: ShoppingBag,
     licensing: DollarSign,
@@ -69,7 +74,8 @@ const SourceBreakdown = ({ sources, counts }: { sources: any, counts: any }) => 
 
   return (
     <div className="space-y-4">
-      {Object.entries(sources).map(([key, value]: [string, any]) => {
+      
+      {Object.entries(sources).map(([key, value]: [string, number]) => {
         const percentage = total > 0 ? (value / total) * 100 : 0;
         const Icon = sourceIcons[key] || DollarSign;
         const color = sourceColors[key] || 'bg-gray-500';
@@ -121,6 +127,7 @@ export const RevenueView: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   if (loading && !stats) {

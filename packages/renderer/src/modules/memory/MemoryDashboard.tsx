@@ -27,9 +27,17 @@ import {
     RefreshCw,
     Send,
     Upload,
-    LucideIcon
+    LucideIcon,
+    Target,
+    Shield,
+    CheckCircle,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Server,
+    AlertCircle,
 } from 'lucide-react';
 import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types/AlwaysOnMemory';
+import type { Directive } from '@/services/directive/DirectiveTypes';
+import type { MemoryInboxItem } from '@/core/store/slices/memoryAgentSlice';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 // ─── Constants ──────────────────────────────────────────────────
@@ -71,6 +79,8 @@ export default function MemoryDashboard() {
         user,
         memories,
         insights,
+        directives,
+        approvals,
         engineStatus,
         memorySearchQuery,
         memoryFilterCategory,
@@ -82,6 +92,9 @@ export default function MemoryDashboard() {
         setSelectedMemoryId,
         loadAlwaysOnMemories,
         loadAlwaysOnInsights,
+        loadDirectives,
+        loadMemoryInbox,
+        updateMemoryInboxItemStatus,
         refreshAlwaysOnEngineStatus,
         ingestMemoryText,
         triggerMemoryConsolidation,
@@ -93,6 +106,8 @@ export default function MemoryDashboard() {
             user: state.user,
             memories: state.alwaysOnMemories,
             insights: state.alwaysOnInsights,
+            directives: state.activeDirectives,
+            approvals: state.memoryInboxItems,
             engineStatus: state.alwaysOnEngineStatus,
             memorySearchQuery: state.memorySearchQuery,
             memoryFilterCategory: state.memoryFilterCategory,
@@ -104,6 +119,9 @@ export default function MemoryDashboard() {
             setSelectedMemoryId: state.setSelectedMemoryId,
             loadAlwaysOnMemories: state.loadAlwaysOnMemories,
             loadAlwaysOnInsights: state.loadAlwaysOnInsights,
+            loadDirectives: state.loadDirectives,
+            loadMemoryInbox: state.loadMemoryInbox,
+            updateMemoryInboxItemStatus: state.updateMemoryInboxItemStatus,
             refreshAlwaysOnEngineStatus: state.refreshAlwaysOnEngineStatus,
             ingestMemoryText: state.ingestMemoryText,
             triggerMemoryConsolidation: state.triggerMemoryConsolidation,
@@ -122,7 +140,7 @@ export default function MemoryDashboard() {
     const [isQuerying, setIsQuerying] = useState(false);
     const [isIngesting, setIsIngesting] = useState(false);
     const [isConsolidating, setIsConsolidating] = useState(false);
-    const [activePanel, setActivePanel] = useState<'feed' | 'query' | 'ingest'>('feed');
+    const [activePanel, setActivePanel] = useState<'feed' | 'query' | 'ingest' | 'directives' | 'approvals'>('feed');
 
     // Initial load
     useEffect(() => {
@@ -131,9 +149,11 @@ export default function MemoryDashboard() {
             if (!engineStatus.isRunning) {
                 startMemoryEngine(userId);
             }
-            loadAlwaysOnMemories(userId);
-            loadAlwaysOnInsights(userId);
-            refreshAlwaysOnEngineStatus(userId);
+            loadAlwaysOnMemories();
+            loadAlwaysOnInsights();
+            loadDirectives(userId);
+            loadMemoryInbox(userId);
+            refreshAlwaysOnEngineStatus();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
@@ -141,7 +161,7 @@ export default function MemoryDashboard() {
     // Reload when filters change
     useEffect(() => {
         if (userId) {
-            loadAlwaysOnMemories(userId);
+            loadAlwaysOnMemories();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [memoryFilterCategory, memoryFilterTier, memorySearchQuery, userId]);
@@ -157,7 +177,7 @@ export default function MemoryDashboard() {
         if (!ingestText.trim() || !userId) return;
         setIsIngesting(true);
         try {
-            await ingestMemoryText(userId, ingestText.trim());
+            await ingestMemoryText(ingestText.trim());
             setIngestText('');
         } finally {
             setIsIngesting(false);
@@ -169,7 +189,7 @@ export default function MemoryDashboard() {
         setIsQuerying(true);
         setQueryAnswer('');
         try {
-            const answer = await queryAlwaysOnMemory(userId, queryText.trim());
+            const answer = await queryAlwaysOnMemory(queryText.trim());
             setQueryAnswer(answer);
         } finally {
             setIsQuerying(false);
@@ -180,7 +200,7 @@ export default function MemoryDashboard() {
         if (!userId) return;
         setIsConsolidating(true);
         try {
-            await triggerMemoryConsolidation(userId);
+            await triggerMemoryConsolidation();
         } finally {
             setIsConsolidating(false);
         }
@@ -189,16 +209,18 @@ export default function MemoryDashboard() {
     const handleDelete = useCallback(
         async (memoryId: string) => {
             if (!userId) return;
-            await deleteAlwaysOnMemory(userId, memoryId);
+            await deleteAlwaysOnMemory(memoryId);
         },
         [userId, deleteAlwaysOnMemory]
     );
 
     const handleRefresh = useCallback(() => {
         if (!userId) return;
-        loadAlwaysOnMemories(userId);
-        loadAlwaysOnInsights(userId);
-        refreshAlwaysOnEngineStatus(userId);
+        loadAlwaysOnMemories();
+        loadAlwaysOnInsights();
+        loadDirectives(userId);
+        loadMemoryInbox(userId);
+        refreshAlwaysOnEngineStatus();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
@@ -261,7 +283,7 @@ export default function MemoryDashboard() {
                         <StatBadge icon={Sparkles} label="Insights" value={engineStatus.totalInsights} />
                         <StatBadge icon={Zap} label="Unconsolidated" value={engineStatus.unconsolidatedCount} />
                         <div className="flex gap-2 ml-auto">
-                            {(['feed', 'query', 'ingest'] as const).map((panel) => (
+                            {(['feed', 'query', 'ingest', 'directives', 'approvals'] as const).map((panel) => (
                                 <button
                                     key={panel}
                                     onClick={() => setActivePanel(panel)}
@@ -270,7 +292,10 @@ export default function MemoryDashboard() {
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                         }`}
                                 >
-                                    {panel === 'feed' ? '📋 Feed' : panel === 'query' ? '🔍 Query' : '📥 Ingest'}
+                                    {panel === 'feed' ? '📋 Feed' :
+                                        panel === 'query' ? '🔍 Query' :
+                                            panel === 'ingest' ? '📥 Ingest' :
+                                                panel === 'directives' ? '🎯 Directives' : '🛡️ Approvals'}
                                 </button>
                             ))}
                         </div>
@@ -313,6 +338,16 @@ export default function MemoryDashboard() {
                                 isIngesting={isIngesting}
                                 onTextChange={setIngestText}
                                 onSubmit={handleIngest}
+                            />
+                        )}
+                        {activePanel === 'directives' && (
+                            <DirectivesPanel directives={directives} />
+                        )}
+                        {activePanel === 'approvals' && (
+                            <ApprovalsPanel
+                                approvals={approvals}
+                                onApprove={(id) => updateMemoryInboxItemStatus(userId, id, 'APPROVED')}
+                                onReject={(id) => updateMemoryInboxItemStatus(userId, id, 'REJECTED')}
                             />
                         )}
                     </div>
@@ -563,7 +598,7 @@ function QueryPanel({
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-600">
                     <Search size={40} className="opacity-20" />
                     <p className="text-sm">Ask anything about your stored memories</p>
-                    <p className="text-xs text-gray-700">The AI will search, synthesize, and cite relevant memories.</p>
+                    <p className="text-xs text-gray-700">The Autonomous will search, synthesize, and cite relevant memories.</p>
                 </div>
             )}
         </div>
@@ -806,6 +841,153 @@ function InsightsPanel({
                                 {insight.createdAt && <span>{formatDate(insight.createdAt)}</span>}
                             </div>
                         </motion.div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Directives Panel ───────────────────────────────────────────
+
+function DirectivesPanel({ directives }: { directives: Directive[] }) {
+    return (
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+                <Target size={14} />
+                <span className="font-medium">Active Directives</span>
+            </div>
+
+            {directives.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
+                    <Target size={40} className="opacity-20" />
+                    <p className="text-sm">No active directives</p>
+                    <p className="text-xs">Directives are complex tasks managed by the Agent Swarm.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {directives.map((directive) => (
+                        <div
+                            key={directive.id}
+                            className="p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-blue-500/30 transition-all group"
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                                        {directive.status}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-gray-600">ID: {directive.id.substring(0, 8)}</span>
+                            </div>
+
+                            <p className="text-sm text-gray-200 font-medium mb-4 line-clamp-2">
+                                {directive.goalAncestry?.find(g => g.type === 'task')?.description || 'Processing multi-agent task...'}
+                            </p>
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
+                                    <Sparkles size={10} />
+                                    {directive.assignedAgent}
+                                </div>
+                                {directive.requiresDigitalHandshake && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-[10px]">
+                                        <Shield size={10} />
+                                        Governed
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Approvals Panel ────────────────────────────────────────────
+
+function ApprovalsPanel({
+    approvals,
+    onApprove,
+    onReject
+}: {
+    approvals: MemoryInboxItem[];
+    onApprove: (id: string) => void;
+    onReject: (id: string) => void;
+}) {
+    return (
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+                <Shield size={14} />
+                <span className="font-medium">Digital Handshake Approvals</span>
+            </div>
+
+            {approvals.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
+                    <Shield size={40} className="opacity-20" />
+                    <p className="text-sm">No pending approvals</p>
+                    <p className="text-xs">Agents will request approval for sensitive or destructive actions.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {approvals.map((item) => (
+                        <div
+                            key={item.id}
+                            className={`p-4 rounded-xl border transition-all ${item.status === 'PENDING'
+                                ? 'bg-red-500/[0.02] border-red-500/20'
+                                : 'bg-white/[0.01] border-white/5 opacity-60'
+                                }`}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Shield size={14} className={item.status === 'PENDING' ? 'text-red-400' : 'text-gray-500'} />
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${item.status === 'PENDING' ? 'text-red-400' : 'text-gray-500'
+                                        }`}>
+                                        {item.status === 'PENDING' ? 'Action Required' : item.status}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-gray-600">Directive: {item.directiveId.substring(0, 8)}</span>
+                            </div>
+
+                            <p className="text-sm text-gray-200 font-medium mb-4">
+                                {item.actionDescription}
+                            </p>
+
+                            <div className="flex items-center gap-3 mb-4">
+                                {item.isDestructive && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-[10px]">
+                                        <AlertCircle size={10} />
+                                        Destructive
+                                    </div>
+                                )}
+                                {item.computeExceeded && (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[10px]">
+                                        <Zap size={10} />
+                                        Compute Threshold
+                                    </div>
+                                )}
+                            </div>
+
+                            {item.status === 'PENDING' && (
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => onApprove(item.id)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                                    >
+                                        <CheckCircle size={14} />
+                                        Approve Action
+                                    </button>
+                                    <button
+                                        onClick={() => onReject(item.id)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold transition-colors"
+                                    >
+                                        <X size={14} />
+                                        Reject
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </div>
             )}

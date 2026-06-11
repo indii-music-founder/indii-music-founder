@@ -24,7 +24,7 @@ export default function FoundersCheckout() {
                 className="z-10 max-w-4xl w-full text-center mt-12"
             >
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
-                    Founders Round — 10 Seats Maximum
+                    Founders Round — 11 Total Seats
                 </div>
                 
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6">
@@ -48,7 +48,7 @@ export default function FoundersCheckout() {
                         <h3 className="text-xl font-bold text-white mb-2">Cash App</h3>
                         <p className="text-gray-400 text-sm mb-6 h-12">The fastest way to secure your seat. Processed immediately during business hours.</p>
                         <div className="bg-black/50 p-4 rounded-xl border border-white/5 font-mono text-amber-400 text-lg font-bold text-center">
-                            $indiiOS
+                            $indii
                         </div>
                     </div>
 

@@ -353,6 +353,7 @@ export class MemoryConsolidator {
         userId: string,
         connections: MemoryConnection[]
     ): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const batch = writeBatch(db);
 
         for (const conn of connections) {

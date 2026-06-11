@@ -65,6 +65,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
 
     // Fulfillment Mode - Internal (self-managed) or POD (Printful, etc.)
     const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('internal');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedPODProvider, setSelectedPODProvider] = useState<PODProvider>('printful');
     const [podConfigured, setPodConfigured] = useState(false);
 
@@ -150,6 +151,11 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                     toast.error("Please add a shipping address to your profile.");
                     return;
                 }
+                const recipientName = userProfile.displayName?.trim();
+                if (!recipientName) {
+                    toast.error("Please add a profile display name before creating a production order.");
+                    return;
+                }
 
                 const order = await PrintOnDemandService.createOrder(
                     [{
@@ -160,7 +166,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         printArea: 'front'
                     }],
                     {
-                        name: userProfile.displayName || userProfile.email || 'Customer',
+                        name: recipientName,
                         address1: userProfile.shippingAddress.street,
                         city: userProfile.shippingAddress.city,
                         stateCode: userProfile.shippingAddress.state,

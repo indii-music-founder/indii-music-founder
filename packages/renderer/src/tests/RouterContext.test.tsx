@@ -26,7 +26,7 @@ vi.mock('../core/store', () => {
         authLoading: false,
         currentModule: 'dashboard',
         setModule: vi.fn(),
-        userProfile: {},
+        userProfile: { id: 'test-uid', email: 'test@test.com', displayName: 'Test User' },
         isSidebarOpen: true,
         toggleSidebar: vi.fn(),
         isAgentOpen: false,
@@ -61,6 +61,11 @@ vi.mock('../core/store', () => {
         useStore: useStoreMock,
     };
 });
+
+// Mock dynamic import utility to resolve immediately
+vi.mock('@/utils/dynamicImport', () => ({
+    importWithRetry: (fn: () => Promise<any>) => fn(),
+}));
 
 // Mock Dashboard to use useNavigate and verify it runs
 vi.mock('../modules/dashboard/Dashboard', () => ({

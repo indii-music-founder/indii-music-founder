@@ -4,6 +4,7 @@ import { AgentContext } from './types';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { workflowStateService } from './WorkflowStateService';
+import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
@@ -56,7 +57,7 @@ export class OrchestrationService {
         const execution = await workflowStateService.getExecution(userId, executionId);
         if (!execution) throw new Error(`Execution ${executionId} not found.`);
 
-        if (execution.status === 'completed' || execution.status === 'cancelled') {
+        if (execution.status === WorkflowExecutionStatusEnum.enum.COMPLETED || execution.status === WorkflowExecutionStatusEnum.enum.CANCELLED) {
             return `Workflow ${executionId} is already ${execution.status}. No steps to resume.`;
         }
 
@@ -82,6 +83,7 @@ export class OrchestrationService {
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
         let executing = true;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const processedNodes = new Set<string>();
 
         while (executing) {
@@ -94,7 +96,7 @@ export class OrchestrationService {
                 if (!stepState) return false;
                 
                 // Only process planned or failed (resumable) steps
-                if (stepState.status !== 'planned' && stepState.status !== 'failed') return false;
+                if (stepState.status !== WorkflowStepStatusEnum.enum.PLANNED && stepState.status !== WorkflowStepStatusEnum.enum.FAILED) return false;
 
                 // Identify incoming edges
                 const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
@@ -105,7 +107,7 @@ export class OrchestrationService {
                 // For non-roots, check if all upstream dependencies are resolved (complete or skipped)
                 return incomingEdges.every(edge => {
                     const depState = execution.steps[edge.from];
-                    return depState && (depState.status === 'step_complete' || depState.status === 'skipped');
+                    return depState && (depState.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || depState.status === WorkflowStepStatusEnum.enum.SKIPPED);
                 });
             });
 
@@ -113,7 +115,12 @@ export class OrchestrationService {
                 // Check if we're actually done or just stuck
                 const hasPending = workflow.steps.some(s => {
                     const status = execution.steps[s.id]?.status;
-                    return status === 'planned' || status === 'executing' || status === 'failed';
+                    return (
+                        status === WorkflowStepStatusEnum.enum.PLANNED ||
+                        status === WorkflowStepStatusEnum.enum.EXECUTING_GENERATION ||
+                        status === WorkflowStepStatusEnum.enum.AWAITING_EVALUATION ||
+                        status === WorkflowStepStatusEnum.enum.FAILED
+                    );
                 });
                 
                 if (!hasPending) {
@@ -211,6 +218,7 @@ export class OrchestrationService {
                     report += `⚠️ **Workflow execution halted.** Address failures and resume via ID: \`${executionId}\`\n`;
                     return report;
                 }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 const errorMsg = error.message || 'Batch execution exception';
                 logger.error(`[Orchestration] Critical failure in batch execution:`, error);
@@ -226,11 +234,11 @@ export class OrchestrationService {
         }
 
         const finalState = await workflowStateService.getExecution(userId, executionId);
-        const allDone = Object.values(finalState?.steps || {}).every(s => s.status === 'step_complete' || s.status === 'skipped');
+        const allDone = Object.values(finalState?.steps || {}).every(step => step.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || step.status === WorkflowStepStatusEnum.enum.SKIPPED);
         
         if (allDone) {
             report += `✅ **Graph Orchestration Complete.** All reachable nodes have been processed.`;
-        } else if (finalState?.status === 'cancelled') {
+        } else if (finalState?.status === WorkflowExecutionStatusEnum.enum.CANCELLED) {
             report += `🛑 **Workflow Cancelled.**`;
         } else {
              report += `⚠️ **Workflow terminated with unresolved nodes.** Check graph connectivity.`;

@@ -16,6 +16,7 @@ export interface StylePreset {
     motionIntensity?: 'low' | 'medium' | 'high';
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const STYLE_PRESETS: StylePreset[] = [
     { id: 'album-cover', label: 'Album Cover', icon: Disc3, prompt: 'Professional album cover art style, bold typography-ready composition, high contrast, music industry aesthetic', aspectRatio: '1:1', targetMedia: 'image' },
     { id: 'poster', label: 'Poster', icon: Image, prompt: 'Concert poster design style, bold visual impact, event-ready composition, promotional aesthetic', aspectRatio: '2:3', targetMedia: 'image' },

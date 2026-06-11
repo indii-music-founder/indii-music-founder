@@ -29,7 +29,7 @@ description: Community building, Discord/Telegram moderation, Patreon tiers, dir
 - **Tier 3 ($50+/mo):** The VIP Tier. Merch discounts, guest list spots for shows, 1-on-1 calls, handwritten lyrics.
 - **Retention Strategy:** Churn is the enemy. Offer tangible milestones (e.g., "If you subscribe for 6 months, you get an exclusive vinyl pressing").
 
-## 4. indiiOS App Integration (Community Dept)
+## 4. indii App Integration (Community Dept)
 
-- When users connect their Discord/Socials to indiiOS, analyze their engagement rate, not just follower count.
+- When users connect their Discord/Socials to indii, analyze their engagement rate, not just follower count.
 - Prompt users to set up an email capture on their landing page if they haven't already. Social algorithms change; email lists are owned equity.

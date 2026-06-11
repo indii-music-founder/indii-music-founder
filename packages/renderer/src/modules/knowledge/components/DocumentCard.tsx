@@ -7,6 +7,7 @@ interface DocumentCardProps {
     onDelete: (doc: KnowledgeDoc) => void;
     onChat: (doc: KnowledgeDoc) => void;
     onView?: (doc: KnowledgeDoc) => void;
+    key?: React.Key;
 }
 
 export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onChat, onView }) => {

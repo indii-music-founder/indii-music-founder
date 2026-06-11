@@ -4,7 +4,7 @@ import { SchedulerService } from '../services/SchedulerService';
 import type { CreateTaskRequest } from '../../src/services/scheduler/types';
 
 /**
- * IPC Handlers for the indiiOS built-in Task Scheduler.
+ * IPC Handlers for the indii built-in Task Scheduler.
  * Registered in main.ts via registerSchedulerHandlers().
  */
 export function registerSchedulerHandlers(): void {

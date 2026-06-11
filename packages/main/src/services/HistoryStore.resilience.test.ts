@@ -165,6 +165,7 @@ describe('📚 Keeper: Electron HistoryStore Resilience', () => {
         let json;
         try {
             json = JSON.parse(content);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
             throw new Error('File on disk is still invalid JSON!');
         }

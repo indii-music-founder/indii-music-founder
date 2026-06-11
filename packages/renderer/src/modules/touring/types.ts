@@ -55,8 +55,8 @@ export interface MapMarker {
     position: { lat: number; lng: number };
     title: string;
     type: 'venue' | 'gas' | 'hotel' | 'current' | 'waypoint';
+    label?: string;
     meta?: Record<string, unknown>;
-
 }
 
 // Fuel logistics returned by the fuel calculation AI
@@ -80,11 +80,21 @@ export interface NearbyPlace {
     };
 }
 
-// Logistics feasibility report returned by the AI logistics check
+// Logistics feasibility report returned by the Autonomous logistics check
 export interface LogisticsReport {
     isFeasible: boolean;
     issues: string[];
     suggestions: string[];
     summary?: string;
+}
+
+export interface EmergencyContact {
+    id: string;
+    userId: string;
+    name: string;
+    phone: string;
+    relationship: string;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
 }
 

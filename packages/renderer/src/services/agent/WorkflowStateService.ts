@@ -4,10 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 import type {
     WorkflowExecution,
     WorkflowStepExecution,
-    WorkflowExecutionStatus,
     WorkflowStep,
     WorkflowEdge,
 } from './types';
+import {
+    WorkflowExecutionSchema,
+    WorkflowExecutionStatusEnum,
+    WorkflowStepStatusEnum
+} from '@indii/shared';
 
 /**
  * WorkflowStateService — Persistent Workflow State Machine
@@ -25,8 +29,26 @@ class WorkflowStateServiceImpl {
         return new FirestoreService<WorkflowExecution>(`users/${userId}/workflowExecutions`);
     }
 
+    private normalizeExecution(execution: WorkflowExecution): WorkflowExecution {
+        return WorkflowExecutionSchema.parse({
+            edges: [],
+            ...execution,
+            steps: execution.steps || {},
+        }) as WorkflowExecution;
+    }
+
+    private serializeEdges(edges: WorkflowEdge[]): WorkflowEdge[] {
+        return edges.map(({ from, to, label, metadata }) => ({
+            from,
+            to,
+            ...(label ? { label } : {}),
+            ...(metadata ? { metadata } : {}),
+        }));
+    }
+
     /**
-     * Create a new workflow execution record with all steps initialized as 'planned'.
+     * Create a new workflow execution record with all steps initialized as WorkflowStepStatusEnum.enum.PLANNED.
+     * DEFERRAL: This write will trigger the backend orchestrator to take over.
      */
     async createExecution(
         userId: string,
@@ -45,7 +67,7 @@ class WorkflowStateServiceImpl {
                 stepId: step.id,
                 agentId: step.agentId,
                 prompt: step.prompt,
-                status: 'planned' as WorkflowExecutionStatus,
+                status: WorkflowStepStatusEnum.enum.PLANNED,
                 idempotencyKey: uuidv4(),
             };
         }
@@ -55,9 +77,9 @@ class WorkflowStateServiceImpl {
             workflowId,
             sessionId,
             userId,
-            status: 'planned',
+            status: WorkflowExecutionStatusEnum.enum.PLANNED,
             steps: stepExecutions,
-            edges,
+            edges: this.serializeEdges(edges),
             createdAt: now,
             updatedAt: now,
         };
@@ -65,6 +87,68 @@ class WorkflowStateServiceImpl {
         await service.set(id, execution);
         logger.info(`[WorkflowState] Created execution ${id} for workflow '${workflowId}' with ${steps.length} steps and ${edges.length} edges`);
         return execution;
+    }
+
+    /**
+     * Get all workflow executions for a specific user.
+     */
+    async getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
+        const service = this.getService(userId);
+        const executions = await service.list();
+        return executions.map(execution => this.normalizeExecution(execution));
+    }
+
+    /**
+     * Get a specific workflow execution by ID.
+     */
+    async getExecution(userId: string, executionId: string): Promise<WorkflowExecution | null> {
+        const service = this.getService(userId);
+        const execution = await service.get(executionId);
+        return execution ? this.normalizeExecution(execution) : null;
+    }
+
+    /**
+     * Find all non-terminal (resumable) workflow executions for a user.
+     * Returns executions with status WorkflowStepStatusEnum.enum.PLANNED, WorkflowExecutionStatusEnum.enum.EXECUTING, or WorkflowExecutionStatusEnum.enum.FAILED (can be retried).
+     */
+    async getResumableExecutions(userId: string): Promise<WorkflowExecution[]> {
+        const service = this.getService(userId);
+        const all = await service.list();
+        const executions = all.map(execution => this.normalizeExecution(execution));
+        return executions.filter(e =>
+            e.status === WorkflowExecutionStatusEnum.enum.PLANNED ||
+            e.status === WorkflowExecutionStatusEnum.enum.EXECUTING ||
+            e.status === WorkflowExecutionStatusEnum.enum.FAILED
+        );
+    }
+
+    /**
+     * Cancel a workflow execution. Terminal state — cannot be resumed.
+     */
+    async cancelExecution(userId: string, executionId: string): Promise<void> {
+        const service = this.getService(userId);
+        const execution = await service.get(executionId);
+        if (!execution) {
+            throw new Error(`Execution ${executionId} not found`);
+        }
+
+        execution.status = WorkflowExecutionStatusEnum.enum.CANCELLED;
+        execution.updatedAt = Date.now();
+
+        // Cancel any planned/executing steps
+        Object.values(execution.steps).forEach((step: WorkflowStepExecution) => {
+            if (
+                step.status === WorkflowStepStatusEnum.enum.PLANNED ||
+                step.status === WorkflowStepStatusEnum.enum.EXECUTING_GENERATION ||
+                step.status === WorkflowStepStatusEnum.enum.AWAITING_EVALUATION
+            ) {
+                step.status = WorkflowStepStatusEnum.enum.CANCELLED;
+                step.completedAt = Date.now();
+            }
+        });
+
+        await service.set(executionId, execution);
+        logger.info(`[WorkflowState] Execution ${executionId} cancelled`);
     }
 
     /**
@@ -86,13 +170,13 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        if (step.status !== 'planned' && step.status !== 'failed') {
+        if (step.status !== WorkflowStepStatusEnum.enum.PLANNED && step.status !== WorkflowStepStatusEnum.enum.FAILED) {
             throw new Error(`Step ${stepId} cannot be executed - currently ${step.status} (Idempotency Lock)`);
         }
 
-        step.status = 'executing';
+        step.status = WorkflowStepStatusEnum.enum.EXECUTING_GENERATION;
         step.startedAt = Date.now();
-        execution.status = 'executing';
+        execution.status = WorkflowExecutionStatusEnum.enum.EXECUTING;
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);
@@ -100,8 +184,8 @@ class WorkflowStateServiceImpl {
     }
 
     /**
-     * Advance a step to 'step_complete' and persist the result.
-     * If this was the last step, the entire workflow transitions to 'completed'.
+     * Advance a step to WorkflowStepStatusEnum.enum.STEP_COMPLETE and persist the result.
+     * If this was the last step, the entire workflow transitions to WorkflowExecutionStatusEnum.enum.COMPLETED.
      */
     async advanceStep(
         userId: string,
@@ -120,17 +204,17 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = 'step_complete';
+        step.status = WorkflowStepStatusEnum.enum.STEP_COMPLETE;
         step.result = result;
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
         // Check if all steps are complete or skipped
-        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
-            s.status === 'step_complete' || s.status === 'skipped'
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) =>
+            s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
         );
         if (allDone) {
-            execution.status = 'completed';
+            execution.status = WorkflowExecutionStatusEnum.enum.COMPLETED;
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
         }
 
@@ -158,17 +242,17 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = 'skipped';
+        step.status = WorkflowStepStatusEnum.enum.SKIPPED;
         step.result = reason;
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
         // Check if all steps are complete or skipped
-        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
-            s.status === 'step_complete' || s.status === 'skipped'
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) =>
+            s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
         );
         if (allDone) {
-            execution.status = 'completed';
+            execution.status = WorkflowExecutionStatusEnum.enum.COMPLETED;
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
         }
 
@@ -178,7 +262,7 @@ class WorkflowStateServiceImpl {
     }
 
     /**
-     * Mark a step as failed and set the workflow to 'failed'.
+     * Mark a step as failed and set the workflow to WorkflowExecutionStatusEnum.enum.FAILED.
      * Subsequent planned steps remain untouched for resumability.
      */
     async failStep(
@@ -198,71 +282,15 @@ class WorkflowStateServiceImpl {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
-        step.status = 'failed';
+        step.status = WorkflowStepStatusEnum.enum.FAILED;
         step.error = error;
         step.completedAt = Date.now();
-        execution.status = 'failed';
+        execution.status = WorkflowExecutionStatusEnum.enum.FAILED;
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);
         logger.warn(`[WorkflowState] Step ${stepId} (${step.agentId}) failed: ${error}`);
         return execution;
-    }
-
-    /**
-     * Get all workflow executions for a specific user.
-     */
-    async getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
-        const service = this.getService(userId);
-        return await service.list();
-    }
-
-    /**
-     * Get a specific workflow execution by ID.
-     */
-    async getExecution(userId: string, executionId: string): Promise<WorkflowExecution | null> {
-        const service = this.getService(userId);
-        const execution = await service.get(executionId);
-        return execution || null;
-    }
-
-    /**
-     * Find all non-terminal (resumable) workflow executions for a user.
-     * Returns executions with status 'planned', 'executing', or 'failed' (can be retried).
-     */
-    async getResumableExecutions(userId: string): Promise<WorkflowExecution[]> {
-        const service = this.getService(userId);
-        const all = await service.list();
-        return all.filter(e =>
-            e.status === 'planned' ||
-            e.status === 'executing' ||
-            e.status === 'failed'
-        );
-    }
-
-    /**
-     * Cancel a workflow execution. Terminal state — cannot be resumed.
-     */
-    async cancelExecution(userId: string, executionId: string): Promise<void> {
-        const service = this.getService(userId);
-        const execution = await service.get(executionId);
-        if (!execution) {
-            throw new Error(`Execution ${executionId} not found`);
-        }
-
-        execution.status = 'cancelled';
-        execution.updatedAt = Date.now();
-
-        // Cancel any planned/executing steps
-        Object.values(execution.steps).forEach((step: WorkflowStepExecution) => {
-            if (step.status === 'planned' || step.status === 'executing') {
-                step.status = 'cancelled';
-                step.completedAt = Date.now();
-            }
-        });
-
-        await service.set(executionId, execution);
-        logger.info(`[WorkflowState] Execution ${executionId} cancelled`);
     }
 }
 

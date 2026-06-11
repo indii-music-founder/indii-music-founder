@@ -15,6 +15,7 @@ interface ReleaseStatusCardProps {
     primaryMood?: string;
     vocalPresence?: string;
     marketingComment?: string;
+    key?: React.Key;
 }
 
 const getStatusColor = (status: ReleaseStatus): string => {

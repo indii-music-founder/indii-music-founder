@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Timestamp, getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc } from 'firebase/firestore';
 import { app } from '@/services/firebase';
 import { logger } from '@/utils/logger';

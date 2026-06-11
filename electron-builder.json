@@ -1,5 +1,5 @@
 {
-  "appId": "com.indii.os",
+  "appId": "com.indii.music",
   "directories": {
     "output": "dist-electron"
   },
@@ -36,39 +36,41 @@
     "entitlementsInherit": "build/entitlements.mac.plist",
     "gatekeeperAssess": false,
     "hardenedRuntime": true,
+    "icon": "build/icon.icns",
     "target": [
       "dmg",
       "zip"
     ],
 
-    "notarize": {
-      "teamId": "${APPLE_TEAM_ID}"
-    }
+    "notarize": true
   },
-  "productName": "indiiOS",
+  "productName": "indii.music",
   "protocols": [
     {
-      "name": "indiiOS Auth Protocol",
+      "name": "indii.music Auth Protocol",
       "schemes": [
-        "indii-os"
+        "indii"
       ]
     }
   ],
-  "publish": {
-    "provider": "github",
-    "owner": "the-walking-agency-det",
-    "repo": "indiiOS-Clean",
-    "releaseType": "release"
-  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "indii-music-founder",
+      "repo": "indii-music-founder",
+      "releaseType": "release"
+    }
+  ],
   "win": {
+    "artifactName": "${productName} Setup ${version}-${arch}.${ext}",
+    "icon": "build/icon.ico",
     "target": [
       "nsis"
     ],
 
     "signingHashAlgorithms": [
       "sha256"
-    ],
-    "sign": "build/sign.js"
+    ]
   },
   "nsis": {
     "oneClick": false,

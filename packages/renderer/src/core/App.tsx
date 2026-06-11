@@ -11,6 +11,7 @@ import RightPanel from './components/RightPanel';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
+
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
 import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
@@ -19,8 +20,11 @@ import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
 
 import { ApprovalModal } from './components/ApprovalModal';
+import CostWarningModal from './components/CostWarningModal';
 import { BiometricGate } from './components/auth/BiometricGate';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { OfflineBanner } from './components/OfflineBanner';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SyncQueueIndicator } from '@/components/sync/SyncQueueIndicator';
 import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
@@ -30,6 +34,7 @@ import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SessionTimeoutOverlay } from '@/components/shared/SessionTimeoutOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { getGatedModuleIds } from '@/config/featureFlags';
@@ -39,6 +44,7 @@ import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMobile } from '@/hooks/useMobile';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
@@ -48,21 +54,32 @@ import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 
+// Item 325: Import subscription types for hoisted global state
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { Subscription, UsageStats } from '@/services/subscription/types';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+import { useSubscription } from '@/modules/finance/hooks/useSubscription';
+
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
+import { BusinessActivityTracker } from '@/services/business-harness/BusinessActivityTracker';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 import { TaskPlanWidget } from './components/TaskPlanWidget';
 import { AgentCanvasPanel } from './components/AgentCanvasPanel';
+import ChatOverlay from './components/ChatOverlay';
+import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyWithRetry = (componentImport: () => Promise<any>) => {
     return lazy(() => importWithRetry(componentImport));
 };
@@ -72,7 +89,6 @@ const lazyWithRetry = (componentImport: () => Promise<any>) => {
 const CreativeStudio = lazyWithRetry(() => import('../modules/creative/CreativeStudio'));
 const LegalDashboard = lazyWithRetry(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazyWithRetry(() => import('../modules/marketing/MarketingDashboard'));
-const VideoStudio = lazyWithRetry(() => import('../modules/video/VideoStudioContainer'));
 const WorkflowLab = lazyWithRetry(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazyWithRetry(() => import('../modules/dashboard/Dashboard'));
 const KnowledgeBase = lazyWithRetry(() => import('../modules/knowledge/KnowledgeBase'));
@@ -106,10 +122,12 @@ const GrowthIntelligenceDashboard = lazyWithRetry(() => import('../modules/analy
 const DesktopDashboard = lazyWithRetry(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazyWithRetry(() => import('../modules/founders/FoundersCheckout'));
 const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersPortal'));
-const VideoPopout = lazyWithRetry(() => import('../modules/video/editor/VideoPopout'));
+const VideoPopout = lazyWithRetry(() => import('../modules/creative/video/editor/VideoPopout'));
 const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
-const MaestroModule = lazyWithRetry(() => import('../modules/maestro/MaestroModule'));
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
+const DevopsDashboard = lazyWithRetry(() => import('../modules/devops/DevopsDashboard'));
+const ScreenwriterDashboard = lazyWithRetry(() => import('../modules/screenwriter/ScreenwriterDashboard'));
+const CRMDashboard = lazyWithRetry(() => import('../modules/crm/CRMDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
 const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
@@ -127,7 +145,6 @@ interface ModuleProps {
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<ModuleProps>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
-    'video': VideoStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,
@@ -163,8 +180,10 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'founders-portal': FoundersPortal,
     'video-popout': VideoPopout,
     'registration': RegistrationCenter,
-    'maestro': MaestroModule,
     'security': SecurityDashboard,
+    'devops': DevopsDashboard,
+    'screenwriter': ScreenwriterDashboard,
+    'crm': CRMDashboard,
 };
 
 // ============================================================================
@@ -180,9 +199,9 @@ function DevPortWarning() {
 
     return (
         <div className="fixed bottom-4 right-4 z-9999 bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
-            Wrong Port: {port}
+            indii.music — Web-Only Mode ({port})
             <br />
-            <span className="font-normal opacity-80">Use :4242 for Studio</span>
+            <span className="font-normal opacity-80 text-[10px]">Use port :4242 for full Studio experience</span>
         </div>
     );
 }
@@ -191,150 +210,9 @@ function DevPortWarning() {
 // Custom Hooks
 // ============================================================================
 
-function useAppInitialization() {
-    // ⚡ Bolt Optimization: useShallow
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects } = useStore(
-        useShallow(state => ({
-            initializeAuthListener: state.initializeAuthListener,
-            loadUserProfile: state.loadUserProfile,
-            user: state.user,
-            userProfile: state.userProfile,
-            initializeHistory: state.initializeHistory,
-            loadProjects: state.loadProjects
-        }))
-    );
-
-    // 1. Initialize Auth Listener (Firebase)
-    useEffect(() => {
-        // Log removed (Platinum Polish)
-        const unsubscribe = initializeAuthListener();
-
-        return () => {
-            unsubscribe();
-        };
-    }, [initializeAuthListener]);
-
-    // Auth session health: periodically refreshes the ID token
-    // to catch expired sessions before they cause silent failures
-    useAuthHealth();
-
-
-    // 2. Load User Profile when User is Authenticated
-    useEffect(() => {
-        if (user?.uid) {
-            loadUserProfile(user.uid);
-        }
-    }, [user, loadUserProfile]);
-
-    // 3. Load Application Data (Projects, History) when Profile is ready
-    useEffect(() => {
-        if (user) {
-            let isMounted = true;
-
-            initializeHistory();
-            loadProjects();
-
-            // Re-enable Agent if needed, but keep closed by default
-            useStore.setState({ isAgentOpen: false });
-
-            // Initialize Proactive Service (Start Polling) — requires auth
-            import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                if (isMounted) proactiveService.start();
-            }).catch(err => logger.error('Failed to load ProactiveService', err));
-
-            // Initialize Asset Observer — requires auth for Firestore subscriptions
-            import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                if (isMounted) assetObserver.initialize();
-            }).catch(err => logger.error('Failed to load AssetObserver', err));
-
-            // Initialize Always-On Memory Engine — starts background consolidation
-            import('@/services/agent/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
-                if (isMounted) alwaysOnMemoryEngine.start(user.uid);
-            }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
-
-            // Initialize Push Notification foreground listener — shows toasts for incoming push messages
-            let pushUnsub: (() => void) | null = null;
-            import('@/services/notifications/PushNotificationService').then(({ pushNotificationService }) => {
-                if (isMounted) {
-                    pushUnsub = pushNotificationService.onForegroundMessage((payload) => {
-                        logger.info('[App] Push notification received in foreground:', payload?.notification?.title);
-                    });
-                }
-            }).catch(err => logger.warn('Push notifications unavailable:', err));
-
-            // Initialize Cross-Device Handoff — syncs active route to Firestore
-            let handoffUnsub: (() => void) | null = null;
-            import('@/services/collaboration/HandoffService').then(({ handoffService }) => {
-                if (isMounted) {
-                    // Sync initial state
-                    const currentModule = useStore.getState().currentModule;
-                    handoffService.syncState({ activeRoute: currentModule });
-
-                    // Listen for remote handoff from another device
-                    handoffUnsub = handoffService.listenForRemoteHandoff((state) => {
-                        logger.info('[App] Remote handoff detected:', state.activeRoute);
-                        // Could show a toast here to let user resume from another device
-                    });
-                }
-            }).catch(err => logger.warn('Handoff service unavailable:', err));
-
-            return () => {
-                isMounted = false;
-                if (pushUnsub) pushUnsub();
-                if (handoffUnsub) handoffUnsub();
-                import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                    proactiveService.dispose();
-                }).catch(() => { /* module already unloaded */ });
-                import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                    assetObserver.stop();
-                }).catch(() => { /* module already unloaded */ });
-            };
-        }
-    }, [user, initializeHistory, loadProjects]);
-
-    // Sync Auto-Update Channel preference with Electron Main Process
-    useEffect(() => {
-        if (userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
-            const channel = userProfile.preferences.updateChannel || 'stable';
-            window.electronAPI.updater.setChannel(channel).catch((err: Error) => {
-                logger.warn('[App] Failed to sync update channel:', err);
-            });
-        }
-    }, [userProfile?.preferences]);
-
-    // 4. Sidecar Health Listener (Electron only)
-    useEffect(() => {
-        const { setSidecarStatus } = useStore.getState();
-
-        // window.electronAPI is only available in the Electron environment
-        if (window.electronAPI?.sidecar?.onStatusUpdate) {
-            const removeListener = window.electronAPI.sidecar.onStatusUpdate((status) => {
-                setSidecarStatus(status as import('@/core/store/slices/sidecarSlice').SidecarStatus);
-            });
-            return () => removeListener();
-        }
-    }, []);
-
-    // 5. Network Status Listener
-    useEffect(() => {
-        const { setIsOffline } = useStore.getState();
-        const handleOnline = () => setIsOffline(false);
-        const handleOffline = () => setIsOffline(true);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-}
-
-
 // Modules that require a verified (non-anonymous) account
 const COMMERCIAL_MODULES = new Set<ModuleId>([
-    'distribution', 'finance', 'licensing', 'merch', 'publishing',
+    'distribution', 'licensing', 'merch', 'publishing',
 ]);
 
 function useOnboardingRedirect() {
@@ -430,7 +308,32 @@ function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
     );
 }
 
-function ModuleRenderer({ moduleId }: ModuleRendererProps) {
+function UpgradeGate({ onUpgrade }: { onUpgrade: () => void }) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
+            <div className="text-5xl">⭐</div>
+            <div className="text-xl font-semibold text-gray-200">Premium feature</div>
+            <p className="text-sm text-gray-500 max-w-xs">
+                This feature requires a subscription. Upgrade to Pro or Studio to unlock distribution, finance, licensing, and more.
+            </p>
+            <button
+                onClick={onUpgrade}
+                className="px-6 py-2.5 bg-dept-creative hover:bg-dept-creative-glow text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+                Upgrade Now
+            </button>
+        </div>
+    );
+}
+
+function ModuleRenderer({ 
+    moduleId, 
+    subscription, 
+    subLoading 
+}: ModuleRendererProps & { 
+    subscription: Subscription | null; 
+    subLoading: boolean 
+}) {
     const location = useLocation();
     const subPath = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
@@ -479,6 +382,13 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
         return <GuestGate onUpgrade={() => setModule('onboarding')} />;
     }
 
+    // Gate commercial modules for free-tier authenticated users
+    if (!user?.isAnonymous && !subLoading && COMMERCIAL_MODULES.has(moduleId) && !env.skipOnboarding) {
+        if (subscription?.tier === SubscriptionTier.FREE) {
+            return <UpgradeGate onUpgrade={() => setModule('finance')} />;
+        }
+    }
+
     // Special case for creative studio which needs initialMode prop
     if (moduleId === 'creative') {
         return <ModuleComponent initialMode="image" />;
@@ -504,9 +414,6 @@ export default function App() {
     // Defer non-critical startup work to avoid blocking FCP
     useEffect(() => { cleanupLocalStorage(); }, []);
 
-    // Initialize app
-    useAppInitialization();
-    useOnboardingRedirect();
     // URL sync: self-guards on authLoading internally, safe to call unconditionally here
     useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
@@ -531,140 +438,159 @@ export default function App() {
         }
     }, [isAnyPhone, currentModule]);
 
-    // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
-    // This prevents the app from flashing <LoginForm/> on page reload before the user\'s
-    // IndexedDB session is re-hydrated. authLoading starts as `true` and is set to `false`
-    // exactly once by initializeAuthListener\'s onAuthStateChanged callback.
-    if (authLoading) {
-        return <LoadingFallback />;
-    }
+    return (
+        <AppInitializationProvider>
+            {authLoading ? (
+                <LoadingFallback />
+            ) : !user ? (
+                <LoginForm />
+            ) : (
+                <MotionConfig reducedMotion="user">
+                    <ResponsiveLayoutProvider>
+                        <VoiceProvider>
+                            <ThemeProvider>
+                                <ToastProvider>
+                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                </ToastProvider>
+                            </ThemeProvider>
+                        </VoiceProvider>
+                    </ResponsiveLayoutProvider>
+                </MotionConfig>
+            )}
+        </AppInitializationProvider>
+    );
+}
 
-    if (!user) {
-        return <LoginForm />;
-    }
+/**
+ * AppContent — The main UI shell rendered once authenticated.
+ * Extracted to keep the top-level App component clean and focused on initialization.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
+    useOnboardingRedirect();
+
+    // Call subscription hook globally to leverage caching across module switches
+    const { subscription, loading: subLoading } = useSubscription();
+
+    const { isAgentOpen, toggleAgentWindow } = useStore(
+        useShallow(s => ({
+            isAgentOpen: s.isAgentOpen,
+            toggleAgentWindow: s.toggleAgentWindow,
+        }))
+    );
+    const userId = useStore(s => s.user?.uid);
 
     return (
-        // Item 276: MotionConfig reducedMotion="user" causes all Framer Motion
-        // animations to respect the OS prefers-reduced-motion setting globally.
-        <MotionConfig reducedMotion="user">
-            <ResponsiveLayoutProvider>
-                <VoiceProvider>
-                    <ThemeProvider>
-                        <ToastProvider>
-                            <OfflineBanner />
-                            <SyncQueueIndicator className="fixed top-4 right-4 z-40" />
-                        <SessionTimeoutOverlay />
-                        {/* Skip to content link for keyboard accessibility */}
-                        <a
-                            href="#main-content"
-                            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-dept-creative focus:text-white focus:rounded-lg focus:shadow-lg"
-                        >
-                            Skip to content
-                        </a>
+        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+            <BusinessActivityTracker userId={userId} currentModule={currentModule} />
+            <GlobalDropZone>
+                <ShareTargetHandler />
+                <BiometricGate>
+                    <div className="flex w-full h-full">
+                        {/* Left Sidebar - Hidden for standalone modules */}
+                        {showChrome && (
+                            <div className="hidden md:block h-full">
+                                <ErrorBoundary>
+                                    <Sidebar />
+                                </ErrorBoundary>
+                            </div>
+                        )}
 
-                        {/* AuthWrapper handles session persistence */}
-                        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
-                            <GlobalDropZone>
-                                <ShareTargetHandler />
-                                <BiometricGate>
-                                    <div className="flex w-full h-full">
-                                        {/* Left Sidebar - Hidden for standalone modules */}
-                                        {showChrome && (
-                                            <div className="hidden md:block h-full">
-                                                <ErrorBoundary>
-                                                    <Sidebar />
-                                                </ErrorBoundary>
-                                            </div>
-                                        )}
+                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
+                            {/* Module Ambient Background */}
+                            <ModuleAmbientBackground />
 
-                                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
-                                            {/* Module Ambient Background */}
-                                            <ModuleAmbientBackground />
+                            {/* Audio Visualizer (Background Wave Mesh) — lazy-loaded to defer Three.js init */}
+                            <Suspense fallback={null}>
+                                <AudioVisualizer />
+                            </Suspense>
 
-                                            {/* Audio Visualizer (Background Wave Mesh) — lazy-loaded to defer Three.js init */}
-                                            <Suspense fallback={null}>
-                                                <AudioVisualizer />
-                                            </Suspense>
+                            {/* Mobile Header — phone only */}
+                            {showChrome && (
+                                <MobileHeader />
+                            )}
 
-                                            {/* Mobile Header — phone only */}
-                                            {showChrome && (
-                                                <MobileHeader />
-                                            )}
-
-                                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
-                                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
-                                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
-                                                    <Suspense fallback={<LoadingFallback />}>
-                                                        <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                                    </Suspense>
-                                                </ModuleErrorBoundary>
-                                            </div>
-                                        </main>
-
-                                        {/* Right Panel - Hidden for standalone modules and mobile */}
-                                        {showChrome && isDesktop && (
-                                            <ErrorBoundary>
-                                                <RightPanel />
-                                            </ErrorBoundary>
-                                        )}
-                                    </div>
-                                </BiometricGate>
-
-                                {/* Mobile Tab Bar — replaces MobileNav FAB on phone viewports */}
-                                {showChrome && (
-                                    <ErrorBoundary>
-                                        <MobileTabBar />
-                                    </ErrorBoundary>
-                                )}
-
-                                {/* DevTools HUD - Only in Development */}
-                                {import.meta.env.DEV && (
-                                    <Suspense fallback={null}>
-                                        <DevPortWarning />
+                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
+                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
+                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
+                                    <Suspense fallback={<LoadingFallback />}>
+                                        <ModuleRenderer 
+                                            moduleId={currentModule as ModuleId} 
+                                            subscription={subscription} 
+                                            subLoading={subLoading} 
+                                        />
                                     </Suspense>
-                                )}
+                                </ModuleErrorBoundary>
+                            </div>
+                        </main>
 
-                                {/* Global Modals */}
-                                <ApprovalModal />
-                                <ApprovalManager />
-                                <PWAInstallPrompt />
-                                <TransmissionMonitor />
-                                <UpdaterMonitor />
+                        {/* Right Panel - Hidden for standalone modules and mobile */}
+                        {showChrome && isDesktop && (
+                            <ErrorBoundary>
+                                <RightPanel />
+                            </ErrorBoundary>
+                        )}
+                    </div>
+                </BiometricGate>
 
-                                {/* Global Command Menu (CMD+K) */}
-                                <UnifiedCommandMenu />
+                {/* Mobile Tab Bar — replaces MobileNav FAB on phone viewports */}
+                {showChrome && (
+                    <ErrorBoundary>
+                        <MobileTabBar />
+                    </ErrorBoundary>
+                )}
 
-                                {/* The Boardroom (Zen Mode) */}
-                                <BoardroomModule />
+                {/* DevTools HUD - Only in Development */}
+                {import.meta.env.DEV && (
+                    <Suspense fallback={null}>
+                        <DevPortWarning />
+                    </Suspense>
+                )}
 
-                                {/* Global Upload Manager Queue */}
-                                <UploadQueueMonitor />
-                                <BackgroundJobMonitor />
-                                <AudioPIPPlayer />
+                {/* Global Modals */}
+                <ApprovalModal />
+                <CostWarningModal />
+                <ApprovalManager />
+                <PWAInstallPrompt />
+                <TransmissionMonitor />
+                <UpdaterMonitor />
 
-                                {/* Global Keyboard Shortcuts Help (press ?) */}
-                                <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
+                {/* Global Command Menu (CMD+K) */}
+                <UnifiedCommandMenu />
 
-                                {/* GDPR Cookie Consent Banner (Item 303) */}
-                                <CookieConsentBanner />
+                {/* The Boardroom (Zen Mode) */}
+                <BoardroomModule />
 
-                                {/* Item 290: First-Run Guided Tour */}
-                                <FirstRunTour />
+                {/* Global Upload Manager Queue */}
+                <UploadQueueMonitor />
+                <BackgroundJobMonitor />
+                <AudioPIPPlayer />
 
-                                {/* Agent Alignment Steering Widget */}
-                                <AgentFeedbackWidget />
+                {/* Global Keyboard Shortcuts Help (press ?) */}
+                <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
 
-                                {/* Agent Progress Updates (P0) — floating checklist */}
-                                <TaskPlanWidget />
+                {/* GDPR Cookie Consent Banner (Item 303) */}
+                <CookieConsentBanner />
 
-                                {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
-                                <AgentCanvasPanel />
-                            </GlobalDropZone>
-                        </div>
-                    </ToastProvider>
-                </ThemeProvider>
-            </VoiceProvider>
-            </ResponsiveLayoutProvider>
-        </MotionConfig>
+                {/* Item 290: First-Run Guided Tour */}
+                <FirstRunTour />
+
+                {/* Agent Alignment Steering Widget */}
+                <AgentFeedbackWidget />
+
+                {/* Agent Progress Updates (P0) — floating checklist */}
+                <TaskPlanWidget />
+
+                {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
+                <AgentCanvasPanel />
+
+                {/* Floating Chat Agent Overlay */}
+                {isAgentOpen && (
+                    <ErrorBoundary>
+                        <ChatOverlay onClose={toggleAgentWindow} />
+                    </ErrorBoundary>
+                )}
+            </GlobalDropZone>
+        </div>
     );
 }

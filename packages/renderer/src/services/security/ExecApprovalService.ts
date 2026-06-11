@@ -49,8 +49,8 @@ export interface ApprovalResult {
 
 // ─── Storage Key ─────────────────────────────────────────────────────────────
 
-const LOCAL_STORAGE_KEY = 'indiiOS_exec_approvals';
-const SESSION_STORAGE_KEY = 'indiiOS_exec_approvals_session';
+const LOCAL_STORAGE_KEY = 'indii_exec_approvals';
+const SESSION_STORAGE_KEY = 'indii_exec_approvals_session';
 
 // ─── Default Allow-list (pre-approved safe patterns) ─────────────────────────
 

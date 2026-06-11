@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Analytics Module E2E Tests
@@ -9,13 +9,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Analytics Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to analytics module without crash', async ({ page }) => {
+    test('navigates to analytics module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-analytics"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -25,7 +25,7 @@ test.describe('Analytics Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('analytics module renders content with no JS errors', async ({ page }) => {
+    test('analytics module renders content with no JS errors', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -46,7 +46,7 @@ test.describe('Analytics Module', () => {
         expect(bodyText.length).toBeGreaterThan(20);
     });
 
-    test('analytics module shows stream or growth metrics area', async ({ page }) => {
+    test('analytics module shows stream or growth metrics area', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-analytics"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -64,7 +64,7 @@ test.describe('Analytics Module', () => {
         expect(count).toBeGreaterThanOrEqual(0); // graceful: module loaded even if data is empty
     });
 
-    test('analytics module shows platform breakdown or empty state', async ({ page }) => {
+    test('analytics module shows platform breakdown or empty state', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-analytics"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

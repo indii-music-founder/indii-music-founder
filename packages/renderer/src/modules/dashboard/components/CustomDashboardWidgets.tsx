@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import {
     Music,
     DollarSign,
@@ -15,6 +16,7 @@ import {
     LucideIcon,
     Sparkles,
 } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'motion/react';
 import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { useStore } from '@/core/store';
@@ -49,7 +51,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
-    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent AI agent tasks and completions' },
+    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
     audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
     active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
     pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },
@@ -68,7 +70,7 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w6', type: 'active_campaigns', order: 5 },
 ];
 
-export const STORAGE_KEY = 'indiiOS_custom_dashboard_widgets';
+export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
 
 export function loadWidgets(): Widget[] {
     try {
@@ -86,6 +88,7 @@ function formatCurrency(amount: number): string {
 
 /* ── Components ─────────────────────────────────────────────────── */
 
+// eslint-disable-next-line react-refresh/only-export-components
 function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
     const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
@@ -103,6 +106,7 @@ function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v)
     return <span>{displayValue}</span>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function CircularProgress({ percentage, size = 80, strokeWidth = 8, color = "currentColor" }: { percentage: number; size?: number; strokeWidth?: number; color?: string }) {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
@@ -140,6 +144,7 @@ function CircularProgress({ percentage, size = 80, strokeWidth = 8, color = "cur
 
 /* ── Individual Widget Content ─────────────────────────────────────── */
 
+// eslint-disable-next-line react-refresh/only-export-components
 function StreamsTodayWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [streamsData, setStreamsData] = useState<DashboardStreamsStats | null>(null);
@@ -208,6 +213,7 @@ function StreamsTodayWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RevenueMTDWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
@@ -235,7 +241,7 @@ function RevenueMTDWidget() {
     const monthName = now.toLocaleString('default', { month: 'long' });
 
     const displayValue = revenueData?.mtdRevenue.formatted || '--';
-    const growth = "+12.5%"; // Mock growth for visual elevation
+    const growth = '--';
 
     return (
         <div className="flex flex-col h-full justify-between group/widget">
@@ -263,7 +269,7 @@ function RevenueMTDWidget() {
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
                 <div className="flex flex-col">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Next Payout</span>
-                    <span className="text-xs font-bold text-white/60">May 21, 2026</span>
+                    <span className="text-xs font-bold text-white/60">Not scheduled</span>
                 </div>
                 <div className="w-12 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                     <div className="w-full h-full bg-linear-to-r from-green-500/20 to-emerald-500/40 animate-pulse" />
@@ -273,6 +279,7 @@ function RevenueMTDWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [release, setRelease] = useState<DashboardNextRelease | null | undefined>(undefined);
@@ -374,6 +381,7 @@ function NextReleaseWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function TopTrackWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [track, setTrack] = useState<DashboardTopTrack | null | undefined>(undefined);
@@ -445,6 +453,7 @@ function TopTrackWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function AgentActivityWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [activity, setActivity] = useState<DashboardAgentActivity | null>(null);
@@ -515,6 +524,7 @@ function AgentActivityWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function AudienceGrowthWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardAudienceStats | null>(null);
@@ -567,6 +577,7 @@ function AudienceGrowthWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function ActiveCampaignsWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardActiveCampaigns | null>(null);
@@ -618,6 +629,7 @@ function ActiveCampaignsWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function PendingTasksWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardPendingTasks | null>(null);
@@ -676,6 +688,7 @@ function PendingTasksWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function SocialEngagementWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardSocialEngagement | null>(null);
@@ -727,6 +740,7 @@ function SocialEngagementWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function BrandIdentityWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardBrandIdentity | null>(null);
@@ -789,6 +803,7 @@ function BrandIdentityWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function MerchSalesWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardMerchSales | null>(null);
@@ -843,6 +858,7 @@ function MerchSalesWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function TourStatusWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const [data, setData] = useState<DashboardTourStatus | null>(null);
@@ -906,6 +922,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     revenue_aggregated: () => <RevenueAggregatedWidget />,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RevenueAggregatedWidget() {
     const userId = useStore(useShallow((s) => s.userProfile?.id));
     const setModule = useStore(useShallow((s) => s.setModule));
@@ -919,7 +936,7 @@ function RevenueAggregatedWidget() {
                 const data = await revenueService.getUserRevenueStats(userId, '30d');
                 setStats(data);
             } catch (error) {
-                console.error('Error fetching revenue stats:', error);
+                Logger.error('CustomDashboardWidgets', 'Error fetching revenue stats', error);
             } finally {
                 setIsLoading(false);
             }
@@ -982,4 +999,3 @@ function RevenueAggregatedWidget() {
         </div>
     );
 }
-

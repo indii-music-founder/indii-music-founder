@@ -37,3 +37,10 @@ These 25 routines (Routines 76-100) are designed to test tool validation, rate l
 98. **Web3 Gas Limit Exhaustion:** Force a smart contract interaction via `Web3Tools` that intentionally exceeds the maximum gas limit to verify safe failure catching.
 99. **Canvas Layer Corruption:** Use `CanvasTools` to set the Z-index of a background image to 999999, attempting to obscure the entire UI layer.
 100. **The Universal Context Bomb:** Feed the maximum token output of every single available tool into `MemoryTools` simultaneously to overwhelm the vector database or context window.
+
+## Section 6: Hub-and-Spoke Harness System
+101. **Harness Routing Trigger:** Submit an intent that strongly maps to the Legal domain and verify the Hub correctly routes to the Legal Expert Harness rather than the Generalist Harness.
+102. **Cross-Domain Collision:** Ask a prompt that requires both Financial Escrow and Legal Contract logic. Verify the system properly chains or merges the expected harnesses.
+103. **Harness Rejection:** Provide a prompt entirely outside the music business scope (e.g., "Write me a recipe for cookies") and verify the harness routing explicitly triggers a refusal/generalist fallback.
+104. **Schema Strictness Validation:** Force a harness to return a structured response (e.g., a JSON array of deliverables) and test if the orchestrator strictly validates the output schema before returning to the UI.
+105. **Context Window Saturation:** Load maximum contextual data (profile, large project files) and trigger a heavy harness. Verify the harness does not drop or truncate the critical `expected` rules.

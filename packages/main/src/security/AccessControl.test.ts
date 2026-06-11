@@ -5,7 +5,7 @@ import path from 'path';
 const mockUserData = '/userData';
 const mockTmpDir = '/tmp';
 const mockDocuments = '/documents';
-const mockIndiiOS = path.join(mockDocuments, 'IndiiOS');
+const mockindii = path.join(mockDocuments, 'indii');
 
 vi.mock('electron', () => ({
     app: {
@@ -69,11 +69,11 @@ describe('AccessControlService', () => {
         expect(accessControlService.verifyAccess(path.join(mockTmpDir, 'staged/file.txt'))).toBe(true);
     });
 
-    it('should allow paths in Documents/IndiiOS', () => {
-        expect(accessControlService.verifyAccess(path.join(mockIndiiOS, 'Assets/Video/movie.mp4'))).toBe(true);
+    it('should allow paths in Documents/indii', () => {
+        expect(accessControlService.verifyAccess(path.join(mockindii, 'Assets/Video/movie.mp4'))).toBe(true);
     });
 
-    it('should deny paths in Documents outside IndiiOS', () => {
+    it('should deny paths in Documents outside indii', () => {
         expect(accessControlService.verifyAccess(path.join(mockDocuments, 'secret.txt'))).toBe(false);
     });
 

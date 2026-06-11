@@ -4,6 +4,7 @@ import { DistributorService } from '@/services/distribution/DistributorService';
 
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
 import type { StoreState } from '../index';
+import { getE2ELocalStorageValue, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface DistributionSlice {
     distribution: {
@@ -33,7 +34,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
     fetchDistributors: async () => {
         // E2E Mock Bypass: use pre-populated connections from localStorage to skip network calls
         try {
-            const e2eMock = localStorage.getItem('E2E_DISTRIBUTOR_CONNECTIONS');
+            const e2eMock = getE2ELocalStorageValue('E2E_DISTRIBUTOR_CONNECTIONS');
             if (e2eMock) {
                 const mockConnections = JSON.parse(e2eMock) as DistributorConnection[];
                 const available = mockConnections.map(c => c.distributorId);
@@ -161,7 +162,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         }
 
         // E2E Mock Bypass: skip real Firestore listeners
-        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+        if (isFirebaseE2EMockEnabled()) {
             set((state) => ({ distribution: { ...state.distribution, loading: false, releases: [], error: null } }));
             return () => { };
         }

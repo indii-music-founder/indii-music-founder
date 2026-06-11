@@ -8,6 +8,7 @@ interface GauntletStepProps {
     title: string;
     status: StepStatus;
     detail: string;
+    key?: React.Key;
 }
 
 /**

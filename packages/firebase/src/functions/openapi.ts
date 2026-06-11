@@ -1,7 +1,7 @@
 /**
  * OpenAPI Schema Generator
  *
- * Generates OpenAPI 3.1.0 specification for the IndiiOS Analytics API
+ * Generates OpenAPI 3.1.0 specification for the indii Analytics API
  * Includes all REST endpoints, request/response schemas, and authentication
  */
 
@@ -53,11 +53,11 @@ export function generateOpenAPISpec(): Record<string, unknown> {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'IndiiOS Analytics & Distribution API',
-      description: 'REST API for the IndiiOS platform providing analytics, distribution, and account management',
+      title: 'indii Analytics & Distribution API',
+      description: 'REST API for the indii platform providing analytics, distribution, and account management',
       version: '1.0.0',
       contact: {
-        name: 'IndiiOS Support',
+        name: 'indii Support',
         email: 'support@indii.music',
       },
       license: {

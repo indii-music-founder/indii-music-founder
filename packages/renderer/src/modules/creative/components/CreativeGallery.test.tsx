@@ -47,7 +47,7 @@ describe('CreativeGallery', () => {
 
         // Check for empty state text
         expect(screen.getByText('GALLERY IS EMPTY')).toBeInTheDocument();
-        expect(screen.getByText('Upload media or generate new AI assets to see them appear in your gallery.')).toBeInTheDocument();
+        expect(screen.getByText('Upload media or generate new Autonomous assets to see them appear in your gallery.')).toBeInTheDocument();
     });
 
     it('renders generated history items correctly', () => {

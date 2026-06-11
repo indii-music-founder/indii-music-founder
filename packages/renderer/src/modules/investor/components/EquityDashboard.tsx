@@ -10,6 +10,7 @@ interface EquityDashboardProps {
         role: string;
         clearance: string;
     };
+    key?: React.Key;
 }
 
 export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
@@ -155,7 +156,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                     </h3>
                     <div className="space-y-4 relative z-10">
                         <p className="text-xs text-[#8b949e]">
-                            <DecodeText text="Your Lifetime Utility Node is active. Generate ISRC codes and push direct-to-DSP via Merlin." delay={500} />
+                            <DecodeText text="Your Lifetime Utility Node is active. Generate identifiers and prepare distribution readiness for partner review." delay={500} />
                         </p>
 
                         <div className="p-4 border border-[#00ff66]/30 bg-black/80 shadow-[inset_0_0_20px_rgba(0,255,102,0.05)]">
@@ -173,7 +174,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                                 whileTap={{ scale: 0.98 }}
                                 className="w-full py-3 border-2 border-[#00ff66] text-[#00ff66] font-bold text-xs uppercase tracking-widest hover:bg-[#00ff66] hover:text-black transition-all duration-300 relative overflow-hidden group/btn"
                             >
-                                <span className="relative z-10">PUSH TO MERLIN NETWORK</span>
+                                <span className="relative z-10">PREPARE DISTRIBUTION REVIEW</span>
                                 <div className="absolute inset-0 bg-[#00ff66] opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                             </motion.button>
                         </div>

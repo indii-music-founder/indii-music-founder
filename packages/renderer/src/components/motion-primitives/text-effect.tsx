@@ -110,6 +110,7 @@ const presetVariants: Record<
 };
 
 const AnimationComponent: React.FC<{
+  key?: React.Key;
   segment: string;
   variants: Variants;
   per: 'line' | 'word' | 'char';

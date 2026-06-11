@@ -1,20 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { GenAI } from '@/services/ai/GenAI';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -46,6 +47,10 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     }
 }));
 
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
+}));
+
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
@@ -67,7 +72,7 @@ vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
     }
 }));
 
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: vi.fn((text: string) => text),
     }
@@ -206,6 +211,10 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
             // Use real timers for generateVideo (no onSnapshot-based job waiting)
             vi.useRealTimers();
 
+            const { httpsCallable } = await import('firebase/functions');
+            const mockGenerateVideoV3 = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+            vi.mocked(httpsCallable).mockReturnValue(mockGenerateVideoV3 as any);
+
             await VideoGeneration.generateVideo({
                 prompt: 'A Cyberpunk city',
                 cameraMovement: 'Pan Right',
@@ -213,8 +222,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 fps: 24
             });
 
-            // Inspect the call to GenAI.generateVideo (direct SDK path)
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
+            // Inspect the call to httpsCallable's returned function
+            const callArgs = mockGenerateVideoV3.mock.calls[0]![0];
 
             // Verify camera movement enrichment
             expect(callArgs.prompt).toContain('cinematic pan right camera movement');

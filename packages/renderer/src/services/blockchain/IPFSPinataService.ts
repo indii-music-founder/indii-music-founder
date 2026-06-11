@@ -54,7 +54,7 @@ export class IPFSPinataService {
 
         const body = {
             pinataContent: metadata,
-            pinataMetadata: { name: name || `indiiOS-${Date.now()}` },
+            pinataMetadata: { name: name || `indii-${Date.now()}` },
             pinataOptions: { cidVersion: 1 },
         };
 

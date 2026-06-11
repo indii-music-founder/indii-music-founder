@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **indii Growth Protocol** acts as your autonomous digital marketing agency. Native to **indiiOS**, it connects your creative assets to Meta's advertising ecosystem (specifically Instagram) to generate a targeted, algorithmic surge on Spotify.
+The **indii Growth Protocol** acts as your autonomous digital marketing agency. Native to **indii**, it connects your creative assets to Meta's advertising ecosystem (specifically Instagram) to generate a targeted, algorithmic surge on Spotify.
 
 Instead of burning hours and budget trying to manually optimize ads, you set your budget, select a timeline template, and let the **indii Conductor** handle the rest.
 
@@ -51,7 +51,7 @@ At this stage, your track has proven market validity. You can then invoke the `i
 
 ## Instructions for Use
 
-1. **Navigate to Marketing:** Open the **Marketing Dashboard** in the indiiOS right-panel sidebar.
+1. **Navigate to Marketing:** Open the **Marketing Dashboard** in the indii right-panel sidebar.
 2. **Select Asset:** Choose the track/release you want to promote and ensure your audio/video assets are loaded in the Creative Studio.
 3. **Choose the Growth Template:** From the Campaign Timeline dropdown, select **"indii Growth Protocol: 28-Day Front-Loaded"**.
 4. **Approve Budget:** Assign your total campaign budget.

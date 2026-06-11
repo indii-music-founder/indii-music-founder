@@ -1,5 +1,5 @@
 // path is dynamically imported inside createBatchDirectory to avoid Vite web-build externalization
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 /**
  * BatchDeliveryService
@@ -60,11 +60,16 @@ export class BatchDeliveryService {
   static async createBatchDirectory(
     batchId: string,
     releasePackages: string[], // Paths to individual release folders
-    outputDir: string
+    outputDir: string,
+    messageRecipient: string
   ): Promise<string> {
     // Dynamic import fs and path (Node-only, Electron context)
     const fs = await import('fs');
     const path = await import('path');
+
+    if (!messageRecipient || messageRecipient.includes('MOCK')) {
+      throw new Error('Batch delivery requires a configured recipient SystemIdentity. Mock recipients are not allowed.');
+    }
 
     const batchDir = path.join(outputDir, `Batch_${batchId}`);
     if (!fs.existsSync(batchDir)) {
@@ -81,8 +86,8 @@ export class BatchDeliveryService {
     // Generate Manifest
     const manifestXml = this.generateBatchManifest({
       batchId,
-      messageSender: DDEX_CONFIG.PARTY_ID,
-      messageRecipient: 'PADPIDA_RECIPIENT_MOCK', // Recipient should be dynamic in real use
+      messageSender: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+      messageRecipient,
       releaseCount: releasePackages.length,
       createdDateTime: new Date().toISOString()
     });

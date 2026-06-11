@@ -1,0 +1,134 @@
+--- BEGIN UNTRUSTED EXTERNAL CONTENT (source: https://github.com/indii-music-founder/indii-music-founder/actions/runs/26322232166/job/77493386142) ---
+--- BEGIN UNTRUSTED EXTERNAL C​ONTENT (source: https://github.com/indii-music-founder/indii-music-founder/actions/runs/26322232166/job/77493386142) ---
+@e1 [link] "Skip to content"
+@e2 [banner] "Global Navigation Menu"
+  @e3 [button] "Open menu"
+  @e4 [link] "Homepage (g then d)"
+  @e5 [navigation] "Breadcrumbs"
+        @e6 [link] "indii-music-founder"
+        @e7 [link] "indii-music-founder"
+  @e8 [button] "Search or jump to…": Type / to search
+  @e9 [link] "Chat with Copilot"
+  @e10 [button] "Open Copilot…"
+  @e11 [button] "Create new..."
+  @e12 [link] "All issues"
+  @e13 [link] "All pull requests"
+  @e14 [link] "All repositories"
+  @e15 [link] "You have unread notifications (g then n)"
+  @e16 [button] "Open user navigation menu"
+    @e17 [img] "User avatar"
+  @e18 [heading] "Repository navigation" [level=2]
+  @e19 [navigation] "Repository"
+        @e20 [link] "Code"
+        @e21 [link] "Issues"
+        @e22 [link] "Pull requests"
+        @e23 [link] "Agents"
+        @e24 [link] "Actions"
+        @e25 [link] "Projects"
+        @e26 [link] "Security and quality"
+        @e27 [link] "Insights"
+        @e28 [link] "Settings"
+  @e29 [link] "Deploy to Firebase Hosting"
+  @e30 [img] "failed:"
+  @e31 [button] "Re-run jobs"
+  @e32 [button] "Workflow run options"
+  @e33 [navigation] "Workflow run"
+        @e34 [link] "Summary"
+      @e35 [heading] "All jobs" [level=4]
+      @e36 [button] "Filter by job status"
+            @e37 [link] "setup"
+            @e38 [link] "unit-tests (1)"
+            @e39 [link] "unit-tests (2)"
+            @e40 [link] "unit-tests (3)"
+            @e41 [link] "unit-tests (4)"
+            @e42 [link] "build"
+            @e43 [link] "deploy-staging"
+            @e44 [link] "e2e-staging"
+            @e45 [link] "deploy-production"
+        @e46 [heading] "Run details" [level=3]
+        @e47 [list] "Run details"
+            @e48 [link] "Usage"
+            @e49 [link] "Workflow file"
+  @e50 [region] "Check run summary"
+    @e51 [region] "Annotations"
+      @e52 [button] "Open job annotations"
+      @e53 [heading] "Annotations" [level=2]
+      @e54 [text]: 1 error and 1 warning
+    @e55 [link] "unit-tests (2)"
+    @e56 [text]: failed May 22, 20269 hours ago in 3m 53s
+    @e57 [textbox] "Search"
+    @e58 [button] "Explain error"
+    @e59 [button] "Re-run this job"
+      @e60 [button] "Show options"
+        @e61 [img] "Show options"
+      @e62 [text]: Set up job 2s
+      @e63 [text]: Checkout repository 11s
+      @e64 [text]: Setup Node.js 0s
+      @e65 [text]: Restore node_modules cache 26s
+      @e66 [text]: Run unit tests (shard 2/4) 3m 13s
+      @e67 [link] "3700"
+      @e68 [text]: ✓ packages/renderer/src/modules/security/SecurityDashboard.test.tsx > SecurityDashboard > shows pending placeholders for not-yet-implemented panes 12ms
+      @e69 [link] "3701"
+      @e70 [text]: ✓ packages/renderer/src/services/agent/FinanceIntegration.test.ts > Finance Agent Integration > should audit distribution for a valid distributor 3ms
+      @e71 [link] "3702"
+      @e72 [text]: ✓ packages/renderer/src/services/agent/FinanceIntegration.test.ts > Finance Agent Integration > should return error for unknown distributor 0ms
+      @e73 [link] "3703"
+      @e74 [text]: ✓ packages/renderer/src/components/ui/DeptLoader.a11y.test.tsx > DeptLoader Accessibility > should have correct role and aria-live attributes 143ms
+      @e75 [link] "3704"
+      @e76 [text]: ✓ packages/renderer/src/components/ui/DeptLoader.a11y.test.tsx > DeptLoader Accessibility > should be accessible according to axe 56ms
+      @e77 [link] "3705"
+      @e78 [text]: ✓ packages/renderer/src/modules/dashboard/Dashboard.test.tsx > Dashboard > renders AgentWorkspace by default 68ms
+      @e79 [link] "3706"
+      @e80 [link] "3707"
+      @e81 [text]: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      @e82 [link] "3708"
+      @e83 [link] "3709"
+      @e84 [text]: FAIL packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts > Voice Interface QA > should sanitize special characters
+      @e85 [link] "3710"
+      @e86 [text]: "AppException: Intelligence Service Failure: No candidates returned from TTS fallback model"
+      @e87 [link] "3711"
+      @e88 [text]: ❯ FirebaseIntelligenceService.handleError packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts:1197:16
+      @e89 [link] "3712"
+      @e90 [text]: "1195| }"
+      @e91 [link] "3713"
+      @e92 [link] "3714"
+      @e93 [text]: 1196|
+      @e94 [link] "3715"
+      @e95 [text]: "1197| return new AppException(AppErrorCode.INTERNAL_ERROR, `Intellig…"
+      @e96 [link] "3716"
+      @e97 [text]: "| ^"
+      @e98 [link] "3717"
+      @e99 [text]: "1198| }"
+      @e100 [link] "3718"
+      @e101 [text]: 1199|
+      @e102 [link] "3719"
+      @e103 [text]: ❯ packages/renderer/src/services/intelligence/generators/SpeechGenerator.ts:82:27
+      @e104 [link] "3720"
+      @e105 [text]: ❯ CircuitBreaker.execute packages/renderer/src/services/intelligence/utils/CircuitBreaker.ts:124:28
+      @e106 [link] "3721"
+      @e107 [text]: ❯ packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts:94:24
+      @e108 [link] "3722"
+      @e109 [link] "3723"
+      @e110 [text]: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+      @e111 [link] "3724"
+      @e112 [text]: "Serialized Error: { code: 'INTERNAL_ERROR', details: { retryable: false }, toAppError: 'Function<toAppError>' }"
+      @e113 [link] "3725"
+      @e114 [text]: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+      @e115 [link] "3726"
+      @e116 [link] "3727"
+      @e117 [text]: Test Files 1 failed | 150 passed (151)
+      @e118 [link] "3728"
+      @e119 [text]: Tests 1 failed | 899 passed | 1 skipped (901)
+      @e120 [link] "3729"
+      @e121 [text]: Start at 03:27:13
+      @e122 [link] "3730"
+      @e123 [text]: Duration 192.40s (transform 7.20s, setup 15.13s, import 21.62s, tests 17.14s, environment 115.91s)
+      @e124 [link] "3731"
+      @e125 [link] "3732"
+      @e126 [text]: "Error: Process completed with exit code 1."
+    @e127 [group]: Post Restore node_modules cache 0s
+    @e128 [group]: Post Setup Node.js 0s
+      @e129 [text]: Post Checkout repository 0s
+      @e130 [text]: Complete job 0s
+--- END UNTRUSTED EXTERNAL C​ONTENT ---
+--- END UNTRUSTED EXTERNAL CONTENT ---

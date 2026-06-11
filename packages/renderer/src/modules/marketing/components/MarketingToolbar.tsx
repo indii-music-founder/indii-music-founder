@@ -5,12 +5,14 @@ interface MarketingToolbarProps {
     title?: string;
     onAction?: () => void;
     actionLabel?: string;
+    onGeoBounty?: () => void;
 }
 
 export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
     title = "Campaign Dashboard",
     onAction,
-    actionLabel = "New Campaign"
+    actionLabel = "New Campaign",
+    onGeoBounty
 }) => {
     return (
         <div className="h-16 border-b border-white/5 bg-background/20 backdrop-blur-md flex items-center justify-between px-6 flex-shrink-0 z-10">
@@ -44,6 +46,15 @@ export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
                 <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                     <Filter size={18} />
                 </button>
+
+                {onGeoBounty && (
+                    <button
+                        onClick={onGeoBounty}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition-all ml-2"
+                    >
+                        New Geo-Bounty
+                    </button>
+                )}
 
                 {onAction && (
                     <button

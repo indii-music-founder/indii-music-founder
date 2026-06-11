@@ -10,13 +10,30 @@ const mocks = vi.hoisted(() => ({
     fs: {
         createReadStream: vi.fn(),
         realpathSync: vi.fn((p) => p), // Default: path is real
-        constants: { F_OK: 0 }
+        constants: { F_OK: 0 },
+        promises: {
+            readFile: vi.fn().mockResolvedValue(Buffer.from('mock-proxy')),
+            unlink: vi.fn().mockResolvedValue(undefined),
+        }
     },
-    ffmpeg: {
-        setFfmpegPath: vi.fn(),
-        setFfprobePath: vi.fn(),
-        ffprobe: vi.fn()
-    }
+    ffmpeg: Object.assign(
+        vi.fn(() => ({
+            audioChannels: vi.fn().mockReturnThis(),
+            audioFrequency: vi.fn().mockReturnThis(),
+            audioBitrate: vi.fn().mockReturnThis(),
+            format: vi.fn().mockReturnThis(),
+            on: vi.fn(function(this: any, event: string, cb: any) {
+                if (event === 'end') setTimeout(cb, 0);
+                return this;
+            }),
+            save: vi.fn().mockReturnThis()
+        })),
+        {
+            setFfmpegPath: vi.fn(),
+            setFfprobePath: vi.fn(),
+            ffprobe: vi.fn()
+        }
+    )
 }));
 
 // Mock modules

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Audio Analyzer Module E2E Tests
@@ -6,26 +6,26 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Audio Analyzer Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to audio analyzer without crash', async ({ page }) => {
+    test('navigates to audio analyzer without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-audio-analyzer"]');
         const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        if (!visible) { test.skip(true, 'Audio mega-test live browser validation is blocked in sandbox automation'); return; }
 
         await nav.click();
         await page.waitForTimeout(2_000);
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('audio analyzer shows upload or drag area', async ({ page }) => {
+    test('audio analyzer shows upload or drag area', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-audio-analyzer"]');
         const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+        if (!visible) { test.skip(true, 'Audio mega-test live browser validation is blocked in sandbox automation'); return; }
 
         await nav.click();
         await page.waitForTimeout(2_000);

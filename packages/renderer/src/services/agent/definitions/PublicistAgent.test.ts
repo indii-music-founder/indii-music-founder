@@ -11,15 +11,15 @@ vi.mock('../../publicist/PublicistService', () => ({
 }));
 
 // Mock FirebaseAI
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mocked AI Content Response'),
+        generateText: vi.fn().mockResolvedValue('Mocked Autonomous Content Response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -71,6 +71,7 @@ describe('PublicistAgent', () => {
                 focus: 'Test'
             };
             type ResultType = { success: boolean; data: { status?: string } };
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await (PublicistAgent.functions!.create_campaign as (args: unknown) => Promise<ResultType>)(args);
 
         });
@@ -88,7 +89,7 @@ describe('PublicistAgent', () => {
             const result = await (PublicistAgent.functions!.write_press_release as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
-            expect(result.data.generated_content).toBe('Mocked AI Content Response');
+            expect(result.data.generated_content).toBe('Mocked Autonomous Content Response');
         });
     });
 
@@ -103,7 +104,7 @@ describe('PublicistAgent', () => {
             const result = await (PublicistAgent.functions!.generate_crisis_response as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
-            expect(result.data.draft_response).toBe('Mocked AI Content Response');
+            expect(result.data.draft_response).toBe('Mocked Autonomous Content Response');
         });
     });
 
@@ -118,7 +119,7 @@ describe('PublicistAgent', () => {
             const result = await (PublicistAgent.functions!.generate_social_post as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
-            expect(result.data.post_text).toBe('Mocked AI Content Response');
+            expect(result.data.post_text).toBe('Mocked Autonomous Content Response');
         });
     });
 });

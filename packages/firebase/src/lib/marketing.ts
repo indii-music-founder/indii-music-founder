@@ -1,6 +1,10 @@
 import * as functions from "firebase-functions/v1";
+import * as admin from "firebase-admin";
+import { defineString } from "firebase-functions/params";
 import { z } from "zod";
 import { geminiApiKey } from "../config/secrets";
+
+const influencerBountyBaseUrl = defineString("INFLUENCER_BOUNTY_BASE_URL");
 
 export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAILED']);
 
@@ -8,6 +12,13 @@ export const ScheduledPostSchema = z.object({
     id: z.string(),
     platform: z.enum(['Twitter', 'Instagram', 'LinkedIn']),
     copy: z.string(),
+    imageAsset: z.object({
+        assetType: z.literal('image'),
+        title: z.string(),
+        imageUrl: z.string(),
+        caption: z.string().optional(),
+    }).optional(),
+    day: z.number().optional(),
     scheduledTime: z.union([z.date(), z.string(), z.number()]).optional(),
     status: CampaignStatusSchema,
 });
@@ -20,13 +31,44 @@ export const CampaignExecutionRequestSchema = z.object({
 
 export type CampaignExecutionRequest = z.infer<typeof CampaignExecutionRequestSchema>;
 
+const SUPPORTED_SOCIAL_PLATFORMS = ['Twitter', 'Instagram'] as const;
+type SupportedCampaignPlatform = typeof SUPPORTED_SOCIAL_PLATFORMS[number];
+
+function toDeliveryPlatform(platform: SupportedCampaignPlatform): 'twitter' | 'instagram' {
+    return platform === 'Twitter' ? 'twitter' : 'instagram';
+}
+
+function scheduledAtForPost(post: z.infer<typeof ScheduledPostSchema>): admin.firestore.Timestamp {
+    if (post.scheduledTime) {
+        const date = new Date(post.scheduledTime);
+        if (!Number.isNaN(date.getTime())) {
+            return admin.firestore.Timestamp.fromDate(date);
+        }
+    }
+
+    const dayOffset = Math.max(0, (Number((post as { day?: number }).day) || 1) - 1);
+    const date = new Date();
+    date.setDate(date.getDate() + dayOffset);
+    return admin.firestore.Timestamp.fromDate(date);
+}
+
+function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' | 'tiktok' {
+    const normalized = String(platform || '').toLowerCase().trim();
+    if (normalized === 'twitter' || normalized === 'x') return 'twitter';
+    if (normalized === 'instagram' || normalized === 'ig' || normalized === 'meta_reels') return 'instagram';
+    if (normalized === 'tiktok') return 'tiktok';
+    throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Social platform '${String(platform)}' is not wired for native delivery.`
+    );
+}
+
 /**
  * Executes a social media campaign.
- * In production, this would integrate with platform APIs.
- * Currently simulates scheduling success.
+ * Queues supported posts for the scheduled social delivery worker.
  */
 export const executeCampaign = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey], timeoutSeconds: 60  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey], timeoutSeconds: 60  })
     .https.onCall(async (data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Auth required");
@@ -41,20 +83,55 @@ export const executeCampaign = functions
 
         console.log(`[Marketing] Executing Campaign ${campaignId} (DryRun: ${dryRun})`);
 
-        // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const unsupported = posts.filter(p => !SUPPORTED_SOCIAL_PLATFORMS.includes(p.platform as SupportedCampaignPlatform));
+        if (unsupported.length > 0) {
+            throw new functions.https.HttpsError(
+                "failed-precondition",
+                `Campaign contains platforms without native delivery: ${unsupported.map(p => p.platform).join(', ')}.`
+            );
+        }
 
-        // Mark all posts as "DONE" for the demo/release
-        const executedPosts = posts.map(p => ({
-            ...p,
-            status: 'DONE' as const,
-            scheduledTime: new Date().toISOString()
+        if (dryRun) {
+            return {
+                success: true,
+                posts,
+                message: "Dry run successful. Posts validated for scheduled delivery."
+            };
+        }
+
+        const db = admin.firestore();
+        const queuedPosts = await Promise.all(posts.map(async (post) => {
+            const platform = post.platform as SupportedCampaignPlatform;
+            const scheduledAt = scheduledAtForPost(post);
+            const mediaUrl = (post as { imageAsset?: { imageUrl?: string } }).imageAsset?.imageUrl;
+            const docRef = await db.collection('scheduledPosts').add({
+                userId: context.auth!.uid,
+                campaignId,
+                campaignPostId: post.id,
+                platform: toDeliveryPlatform(platform),
+                text: post.copy,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaUrl ? 'image' : null,
+                scheduledAt,
+                status: 'pending',
+                source: 'campaign_manager',
+                retryCount: 0,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            return {
+                ...post,
+                postId: docRef.id,
+                status: 'EXECUTING' as const,
+                scheduledTime: scheduledAt.toDate().toISOString()
+            };
         }));
 
         return {
             success: true,
-            posts: executedPosts,
-            message: dryRun ? "Dry run successful. Posts validated." : "Campaign posts successfully scheduled."
+            posts: queuedPosts,
+            message: "Campaign posts queued for scheduled delivery."
         };
     });
 
@@ -63,20 +140,33 @@ export const executeCampaign = functions
  * Fulfills PRODUCTION_200:141.
  */
 export const dispatchSocialPost = functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 120, memory: "512MB"  })
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 120, memory: "512MB"  })
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
-        const { mediaUrl, platform, caption: _caption } = data;
-        console.info(`[SocialPost] Dispatching to ${platform}: ${mediaUrl}`);
+        const { mediaUrl, platform, caption } = data;
+        const normalizedPlatform = normalizeDispatchPlatform(platform);
+        console.info(`[SocialPost] Queueing ${normalizedPlatform}: ${mediaUrl}`);
 
-        // Simulation of platform API handshake
-        await new Promise(r => setTimeout(r, 1500));
+        const docRef = await admin.firestore().collection('scheduledPosts').add({
+            userId: context.auth.uid,
+            platform: normalizedPlatform,
+            text: String(caption || ''),
+            mediaUrl: typeof mediaUrl === 'string' ? mediaUrl : null,
+            mediaType: typeof mediaUrl === 'string' && mediaUrl ? 'video' : null,
+            scheduledAt: admin.firestore.Timestamp.now(),
+            status: 'pending',
+            source: 'social_auto_poster',
+            retryCount: 0,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
         return {
             success: true,
-            externalId: `ext_${Date.now()}`,
+            externalId: docRef.id,
+            status: 'queued',
             timestamp: new Date().toISOString()
         };
     });
@@ -86,19 +176,47 @@ export const dispatchSocialPost = functions
  * Fulfills PRODUCTION_200:149.
  */
 export const createInfluencerBounty = functions
-    .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 60, memory: "256MB"  })
+    .region("us-central1")
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: "256MB"  })
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
         const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
-        const refCode = `REF-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
+        if (!bountyBaseUrl) {
+            try {
+                bountyBaseUrl = influencerBountyBaseUrl.value();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (e) {
+                console.warn("influencerBountyBaseUrl parameter not set.");
+            }
+        }
+        if (!bountyBaseUrl) {
+            throw new functions.https.HttpsError(
+                "failed-precondition",
+                "Influencer bounty base URL is not configured."
+            );
+        }
+
+        const refCode = `REF-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+        const link = `${bountyBaseUrl.replace(/\/$/, '')}/ref/${refCode}`;
+
+        await admin.firestore().collection('influencerBounties').doc(refCode).set({
+            userId: context.auth.uid,
+            influencerHandle,
+            trackName,
+            rewardAmount: _rewardAmount ?? null,
+            refCode,
+            link,
+            status: 'active',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
         console.info(`[Bounty] Created bounty for ${influencerHandle} on ${trackName}`);
 
         return {
             success: true,
             refCode,
-            link: `https://indii.vip/ref/${refCode}`
+            link
         };
     });

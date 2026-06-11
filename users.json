@@ -372,7 +372,7 @@
 },
 {
   "localId": "5z8y0y0A8CheC4FIAeUp6LWzGbm2",
-  "email": "marcus.deep@test.indiios.com",
+  "email": "marcus.deep@test.indii.music",
   "emailVerified": true,
   "passwordHash": "fcwNSrV/ZKaux+mtqfl026A8n+jx3f+BsPeH5ytjdUKKHHoyzuEyxuLEQ5AAOHC+bLeNoiwn2LXa7eyriHVNWg==",
   "salt": "9jjpI5pVH/f72Q==",
@@ -1105,7 +1105,7 @@
 },
 {
   "localId": "LbO5Nv4xbodIxHdcgXmNMjNuHGO2",
-  "email": "qa@indiios.com",
+  "email": "qa@indii.music",
   "emailVerified": false,
   "passwordHash": "I9gDBYMxwNlbFJL4iGS+shxMf7DZ+qpdmbk/2x2P3Z7nzxEIvAUqIGvAnawcBB7zpCn5sG9JgXMM7gA2f0b5EQ==",
   "salt": "JDn90limjhnalA==",
@@ -1586,7 +1586,7 @@
 },
 {
   "localId": "UorruDiP1PWiRakZODgKzuepV202",
-  "email": "automator@indiios.com",
+  "email": "automator@indii.music",
   "emailVerified": false,
   "passwordHash": "oIpELnxjB8nsOhmrzArew+tdbx04c9Bytp3VoSeZR9yvLApehBHpSjVp8BMxD8FmJjWEDypxHtkHzNJd+ptuXg==",
   "salt": "eHhhUBlv5YuXgg==",
@@ -2013,7 +2013,7 @@
 },
 {
   "localId": "c6po2DXZ5HbCBwsSeyZJHFvfpAi1",
-  "email": "auditor-2026-v2@indiios.com",
+  "email": "auditor-2026-v2@indii.music",
   "emailVerified": false,
   "passwordHash": "S5COr4XdSdZ9t1k7FLHDRDd+Ls63beGPyL6I+M+LUAPKQKvTzqneKs0OvuPkzH2YgxkhRIBkrwDmwhsdFRjGbA==",
   "salt": "sMPJJ8SEEk1lyg==",
@@ -2674,7 +2674,7 @@
 },
 {
   "localId": "mi3LDA8hpAMFl4Xlhw3Ill0tNvO2",
-  "email": "test-qa-001@indiios.com",
+  "email": "test-qa-001@indii.music",
   "emailVerified": false,
   "passwordHash": "AXPkjmfWRnYfcynIjwT7CbGiNjT80YKq07G/68C98IHDc0cuBGVUItgNM9qGfmbjR53wjDmWFYqskvTJr/N8wA==",
   "salt": "j92UdMaTNdAvTA==",

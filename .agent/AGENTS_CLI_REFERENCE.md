@@ -1,8 +1,8 @@
-# agents-cli Architectural Reference for indiiOS
+# agents-cli Architectural Reference for indii
 
 **Explored:** 2026-04-23  
 **Source:** https://github.com/google/agents-cli  
-**Goal:** Study design patterns applicable to indiiOS agent orchestration
+**Goal:** Study design patterns applicable to indii agent orchestration
 
 ---
 
@@ -35,7 +35,7 @@ Agent(
 - **Externalized state:** SessionService abstraction (memory, history, user context) decoupled from agent logic
 - **Tool execution model:** Tools receive `ToolContext` with session access; LLM calls them via function-calling
 
-**For indiiOS:** Your current `indii Conductor` (hub-and-spoke) mirrors this. Consider formalizing the tool injection pattern and externalizing state to a pluggable service (currently coupled to Zustand).
+**For indii:** Your current `indii Conductor` (hub-and-spoke) mirrors this. Consider formalizing the tool injection pattern and externalizing state to a pluggable service (currently coupled to Zustand).
 
 ---
 
@@ -55,7 +55,7 @@ def my_tool(query: str, ctx: ToolContext) -> str:
     return result
 ```
 
-**For indiiOS:** Your 20+ tools in `python/tools/` use this pattern. The key win: decoupled persistence lets you swap backends (in-memory → Firestore → external DB) without touching agent code.
+**For indii:** Your 20+ tools in `python/tools/` use this pattern. The key win: decoupled persistence lets you swap backends (in-memory → Firestore → external DB) without touching agent code.
 
 ---
 
@@ -82,7 +82,7 @@ def my_tool(query: str, ctx: ToolContext) -> str:
 └─────────────────┘
 ```
 
-**For indiiOS:** Your workflow automation module (`src/modules/workflow/`) uses React Flow. Consider adopting resumable checkpoint semantics if long-running tasks need interruption recovery.
+**For indii:** Your workflow automation module (`src/modules/workflow/`) uses React Flow. Consider adopting resumable checkpoint semantics if long-running tasks need interruption recovery.
 
 ---
 
@@ -108,8 +108,8 @@ agents-cli structures the **entire framework as 7 composable skills**:
 - Skills are composable but ordered — you can't merge phases but you *can* parallelize within a phase
 - Errors are **checked per-phase** before proceeding (e.g., typecheck + lint before build)
 
-**For indiiOS:** Your `.agent/` directory mirrors this structure implicitly. **Consider formalizing it:**
-- Map indiiOS features to analogous phases (onboarding ~ understand, creative studio ~ build, distribution ~ deploy)
+**For indii:** Your `.agent/` directory mirrors this structure implicitly. **Consider formalizing it:**
+- Map indii features to analogous phases (onboarding ~ understand, creative studio ~ build, distribution ~ deploy)
 - Create mandatory skill files (`.agent/skills/<feature>/SKILL.md`) that encode best practices
 - Add phase gates in CI/CD (e.g., don't deploy distribution without running DDEX validation)
 
@@ -132,7 +132,7 @@ agents-cli structures the **entire framework as 7 composable skills**:
 - Aggregate + visualize
 - Iterate on agent prompt/tools until scores improve
 
-**For indiiOS:** You have no formal evaluation loop for agents. Consider:
+**For indii:** You have no formal evaluation loop for agents. Consider:
 - Unit tests for agent tool calls (you have these — `.test.ts` files)
 - Integration tests for multi-agent flows (distribution pipeline, creative + publishing)
 - LLM-as-judge for creative quality (e.g., "rate image generation output against brand guidelines")
@@ -148,7 +148,7 @@ agents-cli structures the **entire framework as 7 composable skills**:
 | **BigQuery Analytics** | Tool usage frequency, error rates, cost per agent | Operational insights |
 | **Third-party** | DataDog, Honeycomb integration | Custom dashboards |
 
-**For indiiOS:** You have Firebase Analytics + BigQuery, but no hierarchical tracing. Consider adding structured logging for agent calls:
+**For indii:** You have Firebase Analytics + BigQuery, but no hierarchical tracing. Consider adding structured logging for agent calls:
 ```typescript
 // Pseudo-code
 traceAgent("indii-conductor", async () => {
@@ -164,7 +164,7 @@ traceAgent("indii-conductor", async () => {
 
 ## Design Trade-offs & Constraints
 
-### ✅ Strengths for indiiOS to Adopt
+### ✅ Strengths for indii to Adopt
 
 1. **Tool abstraction simplicity** — Functions + docstrings, no separate schema layer
 2. **State externalization** — Session service decouples persistence from agent logic
@@ -182,7 +182,7 @@ traceAgent("indii-conductor", async () => {
 
 ---
 
-## Specific Recommendations for indiiOS
+## Specific Recommendations for indii
 
 ### 1. Formalize Agent Contract
 
@@ -221,7 +221,7 @@ class CloudDatastoreSessionService implements SessionService { }
 
 ### 3. Adopt Phase-Gate Methodology
 
-**Map indiiOS features to agents-cli phases:**
+**Map indii features to agents-cli phases:**
 
 | Feature | Phase 0 (Understand) | Phase 4 (Evaluate) | Phase 5 (Deploy) |
 |---------|---|---|---|
@@ -283,9 +283,9 @@ trace.addChild("legal-review-agent", async (subTrace) => {
 
 ---
 
-## Comparison: agents-cli vs. indiiOS Current Architecture
+## Comparison: agents-cli vs. indii Current Architecture
 
-| Aspect | agents-cli | indiiOS (Current) | Recommended for indiiOS |
+| Aspect | agents-cli | indii (Current) | Recommended for indii |
 |--------|-----------|-------------------|------------------------|
 | **Agent Definition** | ADK: model + instructions + tools | indii Conductor service + specialist agents | Formal Agent interface + DI |
 | **Tool System** | Functions + docstrings | Python tools + MCP | Standardize on one, add type validation |

@@ -1,0 +1,50 @@
+--- packages/renderer/src/utils/e2eMode.ts
++++ packages/renderer/src/utils/e2eMode.ts
+@@ -28,34 +28,49 @@
+ };
+ 
+ export const isFirebaseE2EMockEnabled = (): boolean => {
+-    if (!isTestHarnessRuntime()) return false;
++    if (!isTestHarnessRuntime()) {
++        return false;
++    }
+ 
+     // Allow explicit override to false
+     if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK === false) {
+         return false;
+     }
+     try {
+         if (localStorage.getItem('FIREBASE_E2E_MOCK') === 'false') {
+             return false;
+         }
+     } catch {
+         // ignore
+     }
+ 
+     if (typeof window !== 'undefined' && trueLike((window as RuntimeWindow).FIREBASE_E2E_MOCK)) {
++        console.log("e2eMode returning true because window.FIREBASE_E2E_MOCK is true");
+         return true;
+     }
+ 
+     try {
+-        if (trueLike(localStorage.getItem('FIREBASE_E2E_MOCK'))) return true;
++        if (trueLike(localStorage.getItem('FIREBASE_E2E_MOCK'))) {
++            console.log("e2eMode returning true because localStorage is true");
++            return true;
++        }
+     } catch {
+         // ignore
+     }
+ 
+     try {
+-        return trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK);
++        if (trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK)) {
++            console.log("e2eMode returning true because import.meta.env.VITE_FIREBASE_E2E_MOCK is true", import.meta.env.VITE_FIREBASE_E2E_MOCK);
++            return true;
++        }
+     } catch {
+         return false;
+     }
++    
++    return false;
+ };

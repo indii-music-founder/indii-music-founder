@@ -6,6 +6,7 @@ import { DirectiveService } from '../../directive/DirectiveService';
 import type { ToolRiskTier } from '../types';
 import { getToolRiskMetadata } from '../ToolRiskRegistry';
 import type { AgentIdentityCard } from './AgentIdentity';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface HandshakeRequest {
     directiveId: string;
@@ -42,7 +43,9 @@ export class DigitalHandshake {
         actionDescription: string,
         isDestructive: boolean = false,
         toolName?: string,
-        agentIdentity?: AgentIdentityCard
+        agentIdentity?: AgentIdentityCard,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        toolArgs?: Record<string, any>
     ): Promise<boolean> {
         const { computeAllocation } = directive;
 
@@ -60,7 +63,20 @@ export class DigitalHandshake {
 
         const meta = toolName ? getToolRiskMetadata(toolName) : null;
         const resolvedRiskTier = meta?.riskTier;
-        const requiresApproval = meta?.requiresApproval ?? false;
+        let requiresApproval = meta?.requiresApproval ?? false;
+
+        // Dynamic High-Cost Intercept (Test Agent Brakes)
+        if (toolArgs) {
+            // Examples of intercepting expensive operations based on args
+            if (toolName === 'generate_video' && toolArgs.duration && toolArgs.duration > 15) {
+                requiresApproval = true;
+                logger.warn(`[DigitalHandshake] Dynamically intercepting expensive video generation`);
+            }
+            if (toolName === 'generate_image' && toolArgs.batchSize && toolArgs.batchSize > 4) {
+                requiresApproval = true;
+                logger.warn(`[DigitalHandshake] Dynamically intercepting expensive image batch`);
+            }
+        }
 
         // Resolve destructiveness: riskTier metadata takes precedence over legacy boolean
         const effectivelyDestructive = requiresApproval || isDestructive || (resolvedRiskTier === 'destructive');
@@ -105,14 +121,35 @@ export class DigitalHandshake {
         return true; // Approved to proceed
     }
 
+    private static pruneUndefined<T>(obj: T): T {
+        if (obj === null || typeof obj !== 'object' || (typeof Timestamp === 'function' && obj instanceof Timestamp)) return obj;
+        if (Array.isArray(obj)) {
+            return (obj as unknown as unknown[]).map(item => this.pruneUndefined(item)) as unknown as T;
+        }
+
+        const pruned: Record<string, unknown> = {};
+        const record = obj as Record<string, unknown>;
+        Object.keys(record).forEach(key => {
+            if (record[key] !== undefined) {
+                pruned[key] = this.pruneUndefined(record[key]);
+            }
+        });
+        return pruned as unknown as T;
+    }
+
     public static async logAuditTrail(
         userId: string,
         action: string,
         details: Record<string, unknown>,
         agentIdentity?: AgentIdentityCard
     ): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) {
+            logger.debug(`[DigitalHandshake] [E2E] Bypassing logAuditTrail write for ${action}`);
+            return;
+        }
+
         const auditRef = collection(db, `users/${userId}/agentAuditTrails`);
-        await addDoc(auditRef, {
+        await addDoc(auditRef, this.pruneUndefined({
             action,
             details,
             timestamp: Timestamp.now(),
@@ -126,22 +163,27 @@ export class DigitalHandshake {
                     attestation: agentIdentity.attestation,
                 }
             } : {}),
-        });
+        }));
     }
 
     /**
-     * Routes approval requests to the user's memory inbox (~/indiiOS/memory-inbox/).
+     * Routes approval requests to the user's memory inbox (~/indii/memory-inbox/).
      */
     private static async pingMemoryInbox(userId: string, request: HandshakeRequest): Promise<void> {
-        logger.info(`[DigitalHandshake] Pinging ~/indiiOS/memory-inbox/ for User ${userId}`);
+        logger.info(`[DigitalHandshake] Pinging ~/indii/memory-inbox/ for User ${userId}`);
+
+        if (isFirebaseE2EMockEnabled()) {
+            logger.debug(`[DigitalHandshake] [E2E] Bypassing pingMemoryInbox write`);
+            return;
+        }
 
         const inboxRef = collection(db, `users/${userId}/memoryInbox`);
 
-        await addDoc(inboxRef, {
+        await addDoc(inboxRef, this.pruneUndefined({
             type: 'DIGITAL_HANDSHAKE_REQUEST',
             ...request,
             status: 'PENDING',
             createdAt: Timestamp.now()
-        });
+        }));
     }
 }

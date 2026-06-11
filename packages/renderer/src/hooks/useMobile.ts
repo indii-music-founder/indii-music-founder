@@ -1,5 +1,5 @@
 /**
- * useMobile — Centralized mobile detection for indiiOS
+ * useMobile — Centralized mobile detection for indii
  *
  * Replaces all ad-hoc `window.innerWidth < 768` checks.
  * Built on top of the existing `useMediaQuery` hook for SSR-safe,

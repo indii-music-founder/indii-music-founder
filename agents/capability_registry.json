@@ -1,0 +1,398 @@
+{
+  "last_updated": "2026-05-20T13:07:07.926084",
+  "root": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents",
+  "agents": {
+    "indii_curriculum": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the indii_curriculum domain.",
+          "trigger_labels": [
+            "indii_curriculum",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# CURRICULUM AGENT \u2014 The Architect/Oracle\n\n## MISSION\nYou are the **Curriculum Agent (The Architect/Oracle)** \u2014 the indii system's specialist for orchestrating the creative evolution loop. You define ..."
+    },
+    "music": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/music",
+      "skills": {
+        "tools": {
+          "description": "Generates a standard metadata split sheet for a music track.",
+          "trigger_labels": [
+            "music",
+            "splits",
+            "legal"
+          ]
+        }
+      },
+      "instructions_preview": "# Sonic Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Sonic Director** for indii \u2014 an elite audio analyst, metadata specialist, and distribution quality assurance engineer. You perform professio..."
+    },
+    "publishing": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the publishing domain.",
+          "trigger_labels": [
+            "publishing",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Publishing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publishing Director** \u2014 the indii system's specialist for music publishing, composition rights, and royalty administration. You ensure ..."
+    },
+    "video": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/video",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the video domain.",
+          "trigger_labels": [
+            "video",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Video Director \u2014 System Prompt\n\n## MISSION\nYou are the **Video Director** for indii \u2014 the cinematic production specialist for independent music artists. You generate, edit, and compose high-fidelity..."
+    },
+    "merchandise": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise",
+      "skills": {
+        "tools": {
+          "description": "Calculates the profit margin for physical merchandise based on cost, price, and shipping.",
+          "trigger_labels": [
+            "merchandise",
+            "finance",
+            "profit"
+          ]
+        }
+      },
+      "instructions_preview": "# Merchandise Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Merchandise Director**, a specialist agent within the indii system. You manage the full merchandise and print-on-demand pipeline \u2014 fro..."
+    },
+    "publicist": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the publicist domain.",
+          "trigger_labels": [
+            "publicist",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# PR Director \u2014 System Prompt\n\n## MISSION\nYou are the **PR Director** \u2014 the indii system's specialist for public relations, media strategy, and narrative control. You manage the artist's public image,..."
+    },
+    "brand": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the brand domain.",
+          "trigger_labels": [
+            "brand",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Brand Manager \u2014 System Prompt\n\n## MISSION\nYou are the **Brand Manager** for indii \u2014 the guardian of every artist's identity. You ensure that every output (visuals, copy, audio positioning) is perfec..."
+    },
+    "foundational": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/foundational",
+      "skills": {},
+      "instructions_preview": ""
+    },
+    "road": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/road",
+      "skills": {
+        "tools": {
+          "description": "Optimizes tour routes and logistics between multiple cities.",
+          "trigger_labels": [
+            "road",
+            "tour",
+            "route",
+            "optimize"
+          ]
+        }
+      },
+      "instructions_preview": "# Road Manager \u2014 System Prompt\n\n## MISSION\n\nYou are the **Road Manager** \u2014 the indii system's specialist for tour logistics, venue advancing, and travel operations. You ensure every show runs smoothly..."
+    },
+    "distribution": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution",
+      "skills": {
+        "tools": {
+          "description": "Validates audio file formats and metadata against DSP standards.",
+          "trigger_labels": [
+            "distribution",
+            "audio",
+            "validate",
+            "dsp"
+          ]
+        }
+      },
+      "instructions_preview": "# Distribution Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Distribution Director**, a specialist agent within the indii system. You orchestrate the entire release distribution pipeline \u2014 from ..."
+    },
+    "default": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/default",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the default domain.",
+          "trigger_labels": [
+            "default",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Default Agent \u2014 indii Generalist\n\nYou are the **default fallback agent** for the indii platform. When no specialist agent matches the user's request, you handle it with general-purpose intelligence...."
+    },
+    "social": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/social",
+      "skills": {
+        "tools": {
+          "description": "Formats social media posts for multiple platforms (IG, TikTok, X).",
+          "trigger_labels": [
+            "social",
+            "marketing",
+            "content"
+          ]
+        }
+      },
+      "instructions_preview": "# Social Media Director \u2014 System Prompt\n\n## MISSION\nYou are the **Social Media Director** for indii \u2014 the artist's voice on every platform. You manage social presence, community engagement, content cr..."
+    },
+    "generalist": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/generalist",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the generalist domain.",
+          "trigger_labels": [
+            "generalist",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Generalist Agent\n\nYou are a generalist assistant. You handle tasks that do not fit into the other specific domain experts. You answer general questions, organize files, write documents, and help the..."
+    },
+    "indii_executor": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_executor",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the indii_executor domain.",
+          "trigger_labels": [
+            "indii_executor",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# indii Executor Agent (The Sentinel/Executor)\n\nYou are the \"Roadie\" and \"Engineer\", powered by Gemini 3 Flash. Your goal is fast, precise tool execution and OS manipulation.\n\n**Specialized Toolset:**..."
+    },
+    "marketing": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the marketing domain.",
+          "trigger_labels": [
+            "marketing",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "You are the **Music Campaign Manager**, a high-level specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
+    },
+    "finance": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance",
+      "skills": {
+        "tools": {
+          "description": "Estimates potential streaming royalties based on play counts.",
+          "trigger_labels": [
+            "finance",
+            "royalties",
+            "estimate"
+          ]
+        }
+      },
+      "instructions_preview": "You are the **Music Industry Finance Specialist**, a specialist agent within the indii system.\n\n## indii Architecture (Hub-and-Spoke)\n\nAs a specialist (spoke), you operate under strict architectural r..."
+    },
+    "licensing": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the licensing domain.",
+          "trigger_labels": [
+            "licensing",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "## MISSION\nYou are the **Licensing Director** \u2014 the indii system's specialist for rights clearance, sync licensing, and third-party content authorization. You ensure every sample, loop, and third-part..."
+    },
+    "creative": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative",
+      "skills": {
+        "tools": {
+          "description": "Technical readiness checker for the creative domain.",
+          "trigger_labels": [
+            "creative",
+            "readiness",
+            "status"
+          ]
+        }
+      },
+      "instructions_preview": "# Creative Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Creative Director** \u2014 the indii system's specialist for visual identity, image generation, and design production. Your mission is to tran..."
+    },
+    "legal": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal",
+      "skills": {
+        "tools": {
+          "description": "Generates a standard non-disclosure agreement (NDA).",
+          "trigger_labels": [
+            "legal",
+            "contract",
+            "privacy"
+          ]
+        }
+      },
+      "instructions_preview": "# Music Industry Legal Specialist \u2014 System Prompt\n\n## MISSION\n\nYou are the **Music Industry Legal Specialist** \u2014 the indii system's specialist for contract analysis, rights clearance, and IP protectio..."
+    },
+    "conductor": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor",
+      "skills": {
+        "audio_engineering": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "agent_orchestrator": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "publishing": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "fan_engagement": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "tools": {
+          "description": "Technical readiness checker for the conductor domain.",
+          "trigger_labels": [
+            "conductor",
+            "readiness",
+            "status"
+          ]
+        },
+        "digital_distribution": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "gemini_api": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "social_media": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "publishing_admin": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "artist_development": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "sync_licensing": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "workflow_builder": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "public_relations": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "history_manager": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "brand_manager": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "release_strategy": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "video_producer": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "merchandising": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "tour_management": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "legal_affairs": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "knowledge_base": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "creative_direction": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "licensing": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "music_marketing": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "music_business": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "playlist_pitching": {
+          "description": "No description found.",
+          "trigger_labels": []
+        },
+        "finance_royalties": {
+          "description": "No description found.",
+          "trigger_labels": []
+        }
+      },
+      "instructions_preview": "# indii Conductor \u2014 System Prompt\n\n## MISSION\nYou are the **indii Conductor** \u2014 the primary intelligence of indii. You are a proactive studio executive, not a static chatbot. You combine strategic rea..."
+    },
+    "analytics": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics",
+      "skills": {
+        "tools": {
+          "description": "Calculates the viral potential score of a track based on BPM and genre.",
+          "trigger_labels": [
+            "analytics",
+            "viral",
+            "score",
+            "tiktok"
+          ]
+        }
+      },
+      "instructions_preview": "# Analytics Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Analytics Director**, a specialist agent within the indii system. You are the data brain of the operation \u2014 transforming raw streaming m..."
+    }
+  }
+}

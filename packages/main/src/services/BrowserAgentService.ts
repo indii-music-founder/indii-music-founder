@@ -109,7 +109,7 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(() => '');
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => { console.warn('[BrowserAgent] extract text error:', e); return ''; });
 
         return {
             title,
@@ -141,6 +141,33 @@ export class BrowserAgentService {
                 el.value = text;
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
+            })()
+        `;
+        await this.window.webContents.executeJavaScript(script);
+    }
+
+    /**
+     * Types into the currently focused element.
+     */
+    async typeIntoActiveElement(text: string): Promise<void> {
+        if (!this.window) throw new Error('Session not started');
+
+        const script = `
+            (() => {
+                const text = ${JSON.stringify(text)};
+                const el = document.activeElement;
+                if (!el) throw new Error('No active element focused');
+                if (el && ('value' in el)) {
+                    (el as any).value = text;
+                } else if (el && el.getAttribute('contenteditable') === 'true') {
+                    el.textContent = text;
+                } else if (el) {
+                    (el as any).value = text;
+                }
+                if (el) {
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             })()
         `;
         await this.window.webContents.executeJavaScript(script);
@@ -239,13 +266,11 @@ export class BrowserAgentService {
                 // Use robust typeInto which handles waitForSelector internally
                 await this.typeInto(selector, text);
             } else if (action === 'press') {
-                const key = selector; // In Electron sendInputEvent, we usually pass the key code directly
-                // Using pressKey helper
+                const key = selector; // Pass the key code directly to Electron's input event simulator
                 await this.pressKey(key);
                 if (text) {
-                    // If text is provided with press, we assume typing after press? 
-                    // Or maybe it was a specific sequence. Keeping legacy behavior of typing afterwards.
-                    await this.typeInto(selector, text);
+                    // Type the provided text immediately into the active element following the key press sequence
+                    await this.typeIntoActiveElement(text);
                 }
             } else if (action === 'scroll') {
                 const direction = selector || 'down';

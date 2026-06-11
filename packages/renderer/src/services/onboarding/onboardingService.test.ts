@@ -2,11 +2,11 @@
 import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
 import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { GenAI as AI } from '../ai/GenAI';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
 
-// Mock AI Service
-vi.mock('../ai/GenAI', () => ({
-    GenAI: {
+// Mock Intelligence Service
+vi.mock('../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     },
     AI: {
@@ -250,7 +250,7 @@ describe('onboardingService', () => {
             vi.clearAllMocks();
         });
 
-        it('should call AI service and return text and tools', async () => {
+        it('should call Intelligence service and return text and tools', async () => {
             const mockResponse = {
                 response: {
                     text: () => 'Hello',

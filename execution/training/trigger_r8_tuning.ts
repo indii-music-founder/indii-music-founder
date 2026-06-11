@@ -21,7 +21,7 @@ async function triggerTuningJob(agentId: string) {
     });
 
     const client = await auth.getClient();
-    const projectId = 'indiios-v-1-1';
+    const projectId = 'indii-v-1-1';
     const location = 'us-central1';
     const accessToken = await client.getAccessToken();
 
@@ -30,8 +30,8 @@ async function triggerTuningJob(agentId: string) {
     }
 
     const tunedModelDisplayName = `r8-${agentId}-3.1-flash-lite-${new Date().toISOString().split('T')[0]}`;
-    const datasetGcsUri = `gs://indiios-training-data/ft_export/r8/${agentId}_train.jsonl`;
-    const evalDatasetGcsUri = `gs://indiios-training-data/ft_export/r8/${agentId}_eval.jsonl`;
+    const datasetGcsUri = `gs://indii-training-data/ft_export/r8/${agentId}_train.jsonl`;
+    const evalDatasetGcsUri = `gs://indii-training-data/ft_export/r8/${agentId}_eval.jsonl`;
 
     const url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/tuningJobs`;
 

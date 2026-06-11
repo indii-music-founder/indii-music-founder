@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@react-three/fiber" />
 
 interface ImportMetaEnv {
     // Core AI
@@ -23,6 +24,7 @@ interface ImportMetaEnv {
     readonly VITE_FCM_VAPID_KEY?: string
 
     // Functions / Backend
+    readonly VITE_FUNCTIONS_REGION?: string
     readonly VITE_FUNCTIONS_URL?: string
     readonly VITE_RAG_PROXY_URL?: string
     readonly VITE_USE_FUNCTIONS_EMULATOR?: string
@@ -94,6 +96,8 @@ interface ImportMetaEnv {
     readonly VITE_APP_VERSION?: string
     readonly VITE_SKIP_ONBOARDING?: string
     readonly VITE_EXPOSE_INTERNALS?: string
+    readonly VITE_E2E?: string
+    readonly VITE_FIREBASE_E2E_MOCK?: string
 
     // Spotify OAuth (PKCE — client ID is safe to expose, secret stays in Cloud Functions)
     readonly VITE_SPOTIFY_CLIENT_ID?: string
@@ -107,7 +111,7 @@ interface ImportMetaEnv {
     // Meta / Instagram Graph API
     readonly VITE_META_APP_ID?: string
 
-    // Legacy AI Sidecar (no longer active — kept for backward compat)
+    // Legacy Autonomous Sidecar (no longer active — kept for backward compat)
     readonly VITE_A0_BASE_URL?: string
     readonly VITE_A0_RUNTIME_ID?: string
     readonly VITE_A0_AUTH_LOGIN?: string
@@ -123,4 +127,31 @@ interface ImportMeta {
 declare module '*?raw' {
     const content: string;
     export default content;
+}
+
+declare module 'react/jsx-runtime' {
+    namespace JSX {
+        interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [elemName: string]: any;
+        }
+    }
+}
+
+declare module 'react/jsx-dev-runtime' {
+    namespace JSX {
+        interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [elemName: string]: any;
+        }
+    }
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [elemName: string]: any;
+        }
+    }
 }

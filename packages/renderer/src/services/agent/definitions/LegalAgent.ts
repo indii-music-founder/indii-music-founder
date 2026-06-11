@@ -25,7 +25,7 @@ export const LegalAgent: AgentConfig = {
             if (args.aiGenerated) {
                 risks.push("Copyright Eligibility Uncertainty");
                 risks.push("Right of Publicity (if mimicking real artist)");
-                advice += "AI generated works may not be copyrightable in some jurisdictions. Ensure you didn't just prompt 'Style of Taylor Swift'. ";
+                advice += "Intelligence generated works may not be copyrightable in some jurisdictions. Ensure you didn't just prompt 'Style of Taylor Swift'. ";
             }
 
             if (risks.length === 0) {
@@ -90,7 +90,7 @@ export const LegalAgent: AgentConfig = {
             },
             {
                 name: "draft_split_sheet",
-                description: "Generates a standard split sheet for collaborators and initiates digital signatures via Docusign API mock.",
+                description: "Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

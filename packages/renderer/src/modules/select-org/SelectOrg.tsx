@@ -46,7 +46,7 @@ export default function SelectOrg() {
             {/* Ambient Background Effects */}
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+            <div className="absolute inset-0 indii-noise-overlay opacity-[0.03] mix-blend-overlay pointer-events-none" />
 
             {/* Left Panel - Branding & Context */}
             <div className="hidden md:flex w-1/3 max-w-md relative flex-col justify-between p-12 border-r border-white/5 bg-black/40 backdrop-blur-xl z-10">
@@ -59,7 +59,7 @@ export default function SelectOrg() {
                             {isSwitching ? 'SWITCH\nSTUDIOS' : 'SELECT\nYOUR STUDIO'}
                         </h1>
                         <p className="text-gray-400 text-sm leading-relaxed">
-                            Welcome {userProfile?.displayName ? 'back, ' + userProfile.displayName : 'to indiiOS'}.
+                            Welcome {userProfile?.displayName ? 'back, ' + userProfile.displayName : 'to indii'}.
                             <br /><br />
                             Select an existing organization to orchestrate your creative agents, or establish a new studio to begin your journey.
                         </p>
@@ -195,7 +195,7 @@ export default function SelectOrg() {
                                             type="text"
                                             value={newOrgName}
                                             onChange={e => setNewOrgName(e.target.value)}
-                                            placeholder="e.g. IndiiOS Records, My Agency"
+                                            placeholder="e.g. indii Records, My Agency"
                                             autoFocus
                                             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
                                             className="w-full bg-black/40 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-4 focus:ring-purple-500/20 transition-all"

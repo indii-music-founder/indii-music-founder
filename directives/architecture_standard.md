@@ -14,6 +14,8 @@ Maintain the project's reliability by strictly enforcing the separation of Direc
 2. **Follow the Blueprint:** Every major task must have a corresponding `.md` file in `directives/`.
 3. **Mirroring:** Keep `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, and `DROID.md` in perfect sync.
 4. **The Operator Command:** Use `/opp` to trigger the Orchestration layer and assume control of the task flow.
+5. **The Hybrid Architecture Split:** Use the `AgentGraphService.ts` Swarm protocol exclusively for "Boardroom" logic (Legal, Finance, Marketing, Strategy). Use the **5-API Waterfall** (NB2 -> NB PRO -> Imagen -> Veo -> Omni Flash) exclusively for "Creative Studio" media rendering.
+6. **Payload Strictness:** Never pass raw Base64 strings in the Creative Studio pipeline. Always use Signed Cloud Storage URIs (`gs://`) to shuttle large media payloads and maintain a Thin Client model.
 
 ## Verification
 

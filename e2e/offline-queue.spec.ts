@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Item 280: Offline Queue Drain E2E Tests
@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Offline Queue Drain (Item 280)', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Start in a known state — mock Firebase auth so app loads
         await page.route('**/identitytoolkit.googleapis.com/**', async route => {
             await route.fulfill({
@@ -28,14 +28,14 @@ test.describe('Offline Queue Drain (Item 280)', () => {
             });
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(1_500);
     });
 
     // ── Core offline / online behavior ────────────────────────────────────────
 
-    test('localStorage queue is populated when offline and Firestore is unreachable', async ({ page }) => {
+    test('localStorage queue is populated when offline and Firestore is unreachable', async ({ authedPage: page }) => {
         // Intercept Firestore writes to fail (simulate offline)
         await page.route('**/firestore.googleapis.com/**', async route => {
             await route.abort('failed');
@@ -67,7 +67,7 @@ test.describe('Offline Queue Drain (Item 280)', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('online event triggers queue drain — items removed from localStorage', async ({ page }) => {
+    test('online event triggers queue drain — items removed from localStorage', async ({ authedPage: page }) => {
         let drainCallCount = 0;
 
         // Pre-populate queue
@@ -125,7 +125,7 @@ test.describe('Offline Queue Drain (Item 280)', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('app remains stable when repeatedly toggling online/offline', async ({ page }) => {
+    test('app remains stable when repeatedly toggling online/offline', async ({ authedPage: page }) => {
         for (let cycle = 0; cycle < 3; cycle++) {
             // Go offline
             await page.evaluate(() => window.dispatchEvent(new Event('offline')));
@@ -149,7 +149,7 @@ test.describe('Offline Queue Drain (Item 280)', () => {
         console.log('Online/offline cycle test passed — app stable across 3 cycles');
     });
 
-    test('stale queue items with max retries are discarded, not retried indefinitely', async ({ page }) => {
+    test('stale queue items with max retries are discarded, not retried indefinitely', async ({ authedPage: page }) => {
         // Inject items that have hit the retry ceiling
         await page.evaluate(() => {
             const staleItems = Array.from({ length: 3 }, (_, i) => ({
@@ -174,7 +174,7 @@ test.describe('Offline Queue Drain (Item 280)', () => {
 
     // ── Queue persistence across page reloads ─────────────────────────────────
 
-    test('queue survives page reload and drains on next online event', async ({ page }) => {
+    test('queue survives page reload and drains on next online event', async ({ authedPage: page }) => {
         // Seed queue
         await page.evaluate(() => {
             localStorage.setItem('metadata_offline_queue', JSON.stringify([

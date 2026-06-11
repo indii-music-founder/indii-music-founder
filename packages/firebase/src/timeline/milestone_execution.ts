@@ -16,7 +16,7 @@
 import { Inngest } from "inngest";
 import * as admin from 'firebase-admin';
 import { GoogleGenAI } from '@google/genai';
-import { FUNCTION_AI_MODELS } from '../config/models';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
 import { getGeminiApiKey } from '../config/secrets';
 
 const getDb = () => admin.firestore();
@@ -178,6 +178,9 @@ export const executeMilestoneFn = (inngestClient: Inngest) =>
                 // --------------------------------------------------------
                 const agentResult = await step.run('call-gemini-agent', async () => {
                     const apiKey = getGeminiApiKey();
+                    if (!apiKey) {
+                        throw new Error('Gemini API key is not configured.');
+                    }
                     const client = new GoogleGenAI({ apiKey });
 
                     const systemPrompt = getSystemPromptForAgent(agentId);
@@ -211,7 +214,7 @@ export const executeMilestoneFn = (inngestClient: Inngest) =>
                     ].join('\n');
 
                     const response = await client.models.generateContent({
-                        model: FUNCTION_AI_MODELS.TEXT.FAST,
+                        model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST,
                         contents: taskPrompt,
                         config: {
                             systemInstruction: systemPrompt,

@@ -54,18 +54,23 @@ export class DistroKidPackageBuilder {
             'Explicit'
         ].join(',');
 
+        const escapeCsv = (str: string) => {
+            if (!str) return '""';
+            return `"${str.replace(/"/g, '""')}"`;
+        };
+
         const csvRow = [
-            `"${metadata.artistName}"`, // Quote to handle commas
-            `"${metadata.releaseTitle || metadata.trackTitle}"`,
-            `"${metadata.releaseDate}"`,
-            `"${metadata.labelName}"`,
-            `"${metadata.upc || ''}"`,
-            `"${metadata.genre}"`,
-            `"${metadata.subGenre || ''}"`,
-            `"${metadata.language || 'English'}"`,
-            `"${metadata.trackTitle}"`,
-            `"${metadata.isrc || ''}"`,
-            `"${metadata.explicit ? 'Yes' : 'No'}"`
+            escapeCsv(metadata.artistName),
+            escapeCsv(metadata.releaseTitle || metadata.trackTitle),
+            escapeCsv(metadata.releaseDate || ''),
+            escapeCsv(metadata.labelName || ''),
+            escapeCsv(metadata.upc || ''),
+            escapeCsv(metadata.genre || ''),
+            escapeCsv(metadata.subGenre || ''),
+            escapeCsv(metadata.language || 'English'),
+            escapeCsv(metadata.trackTitle),
+            escapeCsv(metadata.isrc || ''),
+            escapeCsv(metadata.explicit ? 'Yes' : 'No')
         ].join(',');
 
         const csvPath = path.join(packagePath, 'metadata.csv');

@@ -1,4 +1,5 @@
 import { useStore } from '@/core/store';
+import { Logger } from '@/core/logger/Logger';
 import { HistoryItem } from '@/core/types/history';
 
 export const IndiiTestHarness = {
@@ -10,7 +11,9 @@ export const IndiiTestHarness = {
         store.setModule('creative');
         store.setGenerationMode('video');
         store.setViewMode('video_production');
-        console.log('[TestHarness] Director Mode Triggered: Mode set to video, ViewMode set to video_production');
+        if (import.meta.env.DEV) {
+            console.log('[TestHarness] Director Mode Triggered: Mode set to video, ViewMode set to video_production');
+        }
     },
 
     /**
@@ -41,8 +44,10 @@ export const IndiiTestHarness = {
             lastFrame,
             ingredients
         });
-        
-        console.log('[TestHarness] Video Inputs Injected:', { firstFrame, lastFrame, ingredients });
+
+        if (import.meta.env.DEV) {
+            console.log('[TestHarness] Video Inputs Injected:', { firstFrame, lastFrame, ingredients });
+        }
     },
 
     /**
@@ -55,8 +60,10 @@ export const IndiiTestHarness = {
             
             const videoInputs = store.videoInputs;
             const studioControls = store.studioControls;
-            
-            console.log('[TestHarness] Executing Direct Video Generation...', { prompt, videoInputs, studioControls });
+
+            if (import.meta.env.DEV) {
+                console.log('[TestHarness] Executing Direct Video Generation...', { prompt, videoInputs, studioControls });
+            }
             
             const generated = await VideoGeneration.generateVideo({
                 prompt,
@@ -79,11 +86,13 @@ export const IndiiTestHarness = {
                     };
                 })
             });
-            
-            console.log('[TestHarness] Video Generation Success:', generated);
-            
+
+            if (import.meta.env.DEV) {
+                console.log('[TestHarness] Video Generation Success:', generated);
+            }
+
             if (generated && generated.length > 0) {
-                 const newItems: HistoryItem[] = generated.map(g => ({
+                const newItems: HistoryItem[] = generated.map(g => ({
                     id: g.id || crypto.randomUUID(),
                     url: g.url || '',
                     type: 'video' as const,
@@ -93,16 +102,19 @@ export const IndiiTestHarness = {
                     origin: 'generated' as const
                 }));
                 newItems.forEach(item => store.addToHistory({ ...item }));
-                console.log('[TestHarness] Items added to history', newItems);
+                if (import.meta.env.DEV) {
+                    console.log('[TestHarness] Items added to history', newItems);
+                }
             }
             
         } catch (error) {
-            console.error('[TestHarness] Video Generation Failed:', error);
+            Logger.error('TestHarness', 'Video Generation Failed', error);
         }
     }
 };
 
 if (typeof window !== 'undefined') {
     // Expose for manual testing in DevTools
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).IndiiTestHarness = IndiiTestHarness;
 }

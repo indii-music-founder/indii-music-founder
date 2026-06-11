@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "lastUpdated": "2026-02-15T23:52:52.455Z",
-  "platform": "indiiOS",
+  "platform": "indii.music",
   "agents": [
     {
       "name": "Orchestrator",
@@ -11,7 +11,7 @@
     {
       "name": "Gemini",
       "role": "Creative assets",
-      "instructions": "Follow indiiOS art style & branding"
+      "instructions": "Follow indii.music art style & branding"
     },
     {
       "name": "Claude",

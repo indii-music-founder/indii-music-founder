@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import AudioAnalyzer from './AudioAnalyzer'
 import { describe, it, expect, vi } from 'vitest'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { axe } from 'vitest-axe'
 import * as matchers from 'vitest-axe/matchers'
 import React from 'react'

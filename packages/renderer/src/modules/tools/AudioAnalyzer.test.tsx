@@ -126,12 +126,13 @@ describe('AudioAnalyzer (Sonic DNA Console)', () => {
         render(<AudioAnalyzer />);
         // The file input is hidden but there is text "Import Track"
         expect(screen.getByText('Load Audio Master')).toBeInTheDocument();
-        expect(screen.getByText('Upload an audio master to extract precise metadata via AI-powered acoustic analysis.')).toBeInTheDocument();
+        expect(screen.getByText('Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.')).toBeInTheDocument();
     });
 
     it('handles file upload and triggers analysis', async () => {
         render(<AudioAnalyzer />);
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const file = new File(['dummy content'], 'test-audio.mp3', { type: 'audio/mpeg' });
         // The input is hidden, so we query by type or traverse
         // In the component: <input type="file" ... onChange={handleFileUpload} />

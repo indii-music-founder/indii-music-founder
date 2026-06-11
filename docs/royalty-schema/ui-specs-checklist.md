@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Date:** 2026-03-06  
-**For:** indiiOS Royalty Collection Feature  
+**For:** indii Royalty Collection Feature  
 **Assignee:** Ant (Claude Code)  
 **Source:** INDEX (OpenClaw)
 

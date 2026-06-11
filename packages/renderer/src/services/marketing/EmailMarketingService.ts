@@ -87,10 +87,9 @@ export class EmailMarketingService {
 
             logger.info(`[EmailMarketing] Campaign ${result.data.campaignId} successfully queued for sending.`);
             return result.data.campaignId;
-        } catch (_error: unknown) {
-            const campaignId = `camp_${Date.now()}`;
-            logger.warn(`[EmailMarketing] Deploy Cloud Function unavailable. Campaign ${campaignId} tracked locally.`);
-            return campaignId;
+        } catch (error: unknown) {
+            logger.error('[EmailMarketing] Deploy Cloud Function unavailable. No campaign was queued.', error);
+            throw error;
         }
     }
 

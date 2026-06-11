@@ -20,7 +20,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 // Configuration
-const SOURCE_SVG = path.join(__dirname, '../public/indiiOS-logo.svg');
+const SOURCE_SVG = path.join(__dirname, '../public/indii-logo.svg');
 const OUTPUT_DIR = path.join(__dirname, '../public');
 
 const ICONS = [
@@ -45,7 +45,7 @@ function log(message, color = 'reset') {
 function checkSourceExists() {
   if (!fs.existsSync(SOURCE_SVG)) {
     log(`❌ Error: Source file not found: ${SOURCE_SVG}`, 'red');
-    log('\nPlease ensure public/indiiOS-logo.svg exists.', 'yellow');
+    log('\nPlease ensure public/indii-logo.svg exists.', 'yellow');
     process.exit(1);
   }
 }
@@ -157,7 +157,7 @@ function showMaskableInfo() {
 
 async function main() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'blue');
-  log('  PWA Icon Generator for indiiOS', 'blue');
+  log('  PWA Icon Generator for indii', 'blue');
   log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'blue');
   log('', 'reset');
 

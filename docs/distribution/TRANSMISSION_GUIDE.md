@@ -1,6 +1,6 @@
 # Distribution Transmission Guide 📡
 
-**indiiOS Direct Distribution Engine - SFTP & Aspera Setup**
+**indii Proprietary Ingestion IP Distribution Engine - SFTP & Aspera Setup**
 
 ---
 
@@ -37,7 +37,7 @@
 
 ### Overview
 
-The SFTP transmission system is **fully operational** and ready for production use. It can upload DDEX packages, ITMSP bundles, and any distribution assets to SFTP-enabled servers.
+The SFTP transmission system is **fully operational** and ready for production use. It can upload proprietary ingestion packages, ITMSP bundles, and any distribution assets to SFTP-enabled servers.
 
 ### Features
 
@@ -51,7 +51,7 @@ The SFTP transmission system is **fully operational** and ready for production u
 
 ### How to Use (Development Mode)
 
-1. **Start indiiOS Studio:**
+1. **Start indii Studio:**
 
    ```bash
    npm run dev
@@ -67,7 +67,7 @@ The SFTP transmission system is **fully operational** and ready for production u
    - Port: `22` (default)
    - Username: Your SFTP username
    - Password: Your SFTP password (or use SSH Key)
-   - Local Path: Path to your DDEX/ITMSP package
+   - Local Path: Path to your proprietary ingestion package
    - Remote Path: Destination directory on server
 
 4. **Initiate Transfer:**
@@ -77,7 +77,7 @@ The SFTP transmission system is **fully operational** and ready for production u
 
 ### Supported Workflows
 
-- ✅ **DDEX to Distributors**: Upload DDEX packages to digital service providers
+- ✅ **Proprietary Ingestion to Distributors**: Upload proprietary ingestion packages to digital service providers
 - ✅ **ITMSP to Apple**: Deliver iTunes packages to Apple Music
 - ✅ **Batch Uploads**: Upload entire release directories
 - ✅ **Manual QC Results**: Transfer quality control reports
@@ -88,7 +88,7 @@ The SFTP transmission system is **fully operational** and ready for production u
 
 ### What is Aspera?
 
-IBM Aspera is an enterprise-grade file transfer protocol designed for high-speed, reliable transmission of large media files. Many major distributors (Universal, Sony, Warner) require Aspera for DDEX delivery.
+IBM Aspera is an enterprise-grade file transfer protocol designed for high-speed, reliable transmission of large media files. Many major distributors (Universal, Sony, Warner) require Aspera for proprietary ingestion delivery.
 
 ### Current Implementation Status
 
@@ -178,7 +178,7 @@ source ~/.zshrc  # or source ~/.bash_profile
 
 #### Step 4: Test Aspera Integration
 
-1. **Restart indiiOS Studio** (to pick up new PATH)
+1. **Restart indii Studio** (to pick up new PATH)
 2. Navigate to **Distribution** → **Transmission**
 3. Select **Aspera** protocol
 4. Configure connection (host, username, etc.)
@@ -199,7 +199,7 @@ When using Aspera, you may need provider-specific settings:
 - **Encryption**: `-m 10M` (min speed in Mbps)
 - **Resume on Failure**: `-k 2` (resume level)
 
-The indiiOS implementation **automatically handles these defaults**. Custom parameters can be added to `aspera_uploader.py` if needed.
+The indii implementation **automatically handles these defaults**. Custom parameters can be added to `aspera_uploader.py` if needed.
 
 ---
 
@@ -211,9 +211,9 @@ The indiiOS implementation **automatically handles these defaults**. Custom para
 
 ```bash
 # Create a test file
-echo "IndiiOS Test Package" > /tmp/test_sftp.txt
+echo "indii Test Package" > /tmp/test_sftp.txt
 
-# In indiiOS UI:
+# In indii UI:
 # - Protocol: SFTP
 # - Host: test.rebex.net (public test server)
 # - Port: 22
@@ -231,7 +231,7 @@ echo "IndiiOS Test Package" > /tmp/test_sftp.txt
 # Verify ascp is available
 ascp --version
 
-# In indiiOS UI:
+# In indii UI:
 # - Protocol: Aspera
 # - Host: aspera-test.example.com (your test server)
 # - Username: test_user
@@ -251,7 +251,7 @@ ascp --version
 #### 4. Large File Test
 
 ```bash
-# Test with a 1GB+ DDEX package
+# Test with a 1GB+ proprietary ingestion package
 # Expected: Progress updates in real-time, no timeout
 ```
 
@@ -291,7 +291,7 @@ Expected: `7/7 tests passing`
   ```
 
 - [ ] **Test Packaged App**
-  - Launch the built `.app` from `dist/mac/indiiOS.app`
+  - Launch the built `.app` from `dist/mac/indii.app`
   - Verify SFTP transmission works
   - Verify Aspera transmission works (if installed)
   - Check logs in `~/Library/Application Support/indii-os/`
@@ -357,7 +357,7 @@ Windows: %APPDATA%/indii-os/sftp_transfer.log
 
 - Follow [Installation Steps](#installation-steps) above
 - Verify installation: `which ascp` (macOS/Linux) or `where ascp` (Windows)
-- Restart indiiOS Studio after installation
+- Restart indii Studio after installation
 
 #### Issue: "Transfer timeout" (Large Files)
 
@@ -394,9 +394,9 @@ Windows: %APPDATA%/indii-os/sftp_transfer.log
 
 - **IBM Aspera Connect**: <https://www.ibm.com/aspera/connect/>
 - **Paramiko (SFTP)**: <https://www.paramiko.org/>
-- **DDEX Standards**: <https://ddex.net/>
+- **Industry Standards**: <https://ingestion.net/>
 
-### IndiiOS-Specific Files
+### indii-Specific Files
 
 - **SFTP Uploader**: `execution/distribution/sftp_uploader.py`
 - **Aspera Uploader**: `execution/distribution/aspera_uploader.py`
@@ -461,7 +461,7 @@ which ascp || echo "Aspera not found - see installation guide"
 ---
 
 **Last Updated**: January 18, 2026  
-**Maintained By**: IndiiOS Development Team  
+**Maintained By**: indii Development Team  
 **Document Location**: `docs/distribution/TRANSMISSION_GUIDE.md`
 
 ---

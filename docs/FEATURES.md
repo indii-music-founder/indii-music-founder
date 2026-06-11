@@ -1,4 +1,4 @@
-# indiiOS Feature Roadmap
+# indii Feature Roadmap
 
 ## Phase 1: Completed Core Features (The Studio Suite)
 

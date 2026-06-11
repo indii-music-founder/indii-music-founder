@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
         nodes: state.nodes,
@@ -40,12 +40,13 @@ export default function WorkflowNodeInspector() {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }],
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
             const newPrompt = (part && 'text' in part && typeof part.text === 'string') ? part.text : prompt;
             setPrompt(newPrompt);
             setAiInstruction('');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
             // logger.error("AI Refinement Error", e);
         } finally {
@@ -84,7 +85,7 @@ export default function WorkflowNodeInspector() {
 
                 <div className="bg-purple-900/10 border border-purple-500/30 rounded-lg p-3">
                     <label className="text-xs font-bold text-purple-400 uppercase mb-2 block flex items-center gap-2">
-                        <Sparkles size={12} /> AI Assistant
+                        <Sparkles size={12} /> Autonomous Assistant
                     </label>
                     <div className="flex gap-2">
                         <input

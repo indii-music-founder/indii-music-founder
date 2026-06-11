@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Edit3, Image as ImageIcon, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import { Plus, Trash2, Edit3, Image as ImageIcon, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskItem, WhiskCategory } from '@/core/store/slices/creative';
@@ -15,8 +15,8 @@ interface WhiskDropZoneProps {
     items: WhiskItem[];
     onAdd: (type: 'text' | 'image', content: string, caption?: string) => void;
     onRemove: (id: string) => void;
-    onToggle: (id: string) => void;
-    onUpdate: (id: string, updates: Partial<WhiskItem>) => void;
+    onToggle?: (id: string) => void;
+    onUpdate?: (id: string, updates: Partial<WhiskItem>) => void;
     description: string;
     accentColor?: string; // For video-related categories
     compact?: boolean;
@@ -31,11 +31,13 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
     const [inspirations, setInspirations] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+    const [editingItemId, setEditingItemId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState('');
 
     const activeItems = items.filter(i => i.checked);
     const hasItems = items.length > 0;
 
-    // Handle file upload with AI captioning
+    // Handle file upload with Autonomous captioning
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -102,7 +104,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         }
     };
 
-    // Generate AI inspiration
+    // Generate Autonomous inspiration
     const handleInspire = async () => {
         setIsInspiring(true);
         try {
@@ -182,7 +184,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                     exit={{ opacity: 0, y: -10 }}
                                     className="mb-2 p-2 rounded-lg bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30"
                                 >
-                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ AI Suggestions</p>
+                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ Autonomous Suggestions</p>
                                     <div className="space-y-1">
                                         {inspirations.map((idea, i) => (
                                             <button
@@ -283,31 +285,73 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                         >
                                             {/* Toggle Checkbox */}
                                             <button
-                                                onClick={() => onToggle(item.id)}
-                                                className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
+                                                onClick={() => onToggle?.(item.id)}
+                                                className={`shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
                                                     ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
                                                     : 'bg-transparent border-gray-600 hover:border-gray-400'
                                                     }`}
                                                 role="checkbox"
                                                 aria-checked={item.checked}
-                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.aiCaption || 'Image reference')}`}
+                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.intelligenceCaption || 'Image reference')}`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
                                             </button>
 
                                             {/* Thumbnail/Content */}
                                             <div className="flex-1 min-w-0 flex items-center gap-2">
-                                                {item.type === 'image' ? (
-                                                    <>
-                                                        <div className={`${compact ? 'w-full h-full' : 'w-12 h-12'} rounded-lg border border-gray-700 overflow-hidden bg-black flex-shrink-0 shadow-inner`}>
-                                                            <img src={item.content} className="w-full h-full object-cover" alt="" />
-                                                        </div>
-                                                        <span className="text-[10px] text-gray-300 truncate flex-1">
-                                                            {item.aiCaption || 'Image reference'}
-                                                        </span>
-                                                    </>
+                                                {editingItemId === item.id ? (
+                                                    <div className="flex items-center gap-1.5 w-full">
+                                                        <input
+                                                            type="text"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            className="flex-1 bg-black/60 border border-gray-700 rounded-md px-2 py-1 text-xs text-white outline-none focus:border-purple-500"
+                                                            autoFocus
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter' && editValue.trim()) {
+                                                                    onUpdate?.(item.id, { intelligenceCaption: editValue.trim() });
+                                                                    setEditingItemId(null);
+                                                                }
+                                                                if (e.key === 'Escape') {
+                                                                    setEditingItemId(null);
+                                                                }
+                                                            }}
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                if (editValue.trim()) {
+                                                                    onUpdate?.(item.id, { intelligenceCaption: editValue.trim() });
+                                                                    setEditingItemId(null);
+                                                                }
+                                                            }}
+                                                            className="p-1 text-green-400 hover:bg-green-500/10 rounded"
+                                                            title="Save"
+                                                        >
+                                                            <Check size={12} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingItemId(null)}
+                                                            className="p-1 text-gray-400 hover:bg-white/5 rounded"
+                                                            title="Cancel"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </div>
                                                 ) : (
-                                                    <span className="text-xs text-gray-200 truncate flex-1">{item.content}</span>
+                                                    <>
+                                                        {item.type === 'image' ? (
+                                                            <>
+                                                                <div className={`${compact ? 'w-full h-full' : 'w-12 h-12'} rounded-lg border border-gray-700 overflow-hidden bg-black shrink-0 shadow-inner`}>
+                                                                    <img src={item.content} className="w-full h-full object-cover" alt="" />
+                                                                </div>
+                                                                <span className="text-[10px] text-gray-300 truncate flex-1">
+                                                                    {item.intelligenceCaption || 'Image reference'}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-200 truncate flex-1">{item.content}</span>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
 
@@ -315,8 +359,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => {
-                                                        const newCaption = window.prompt('Edit description:', item.aiCaption || item.content);
-                                                        if (newCaption !== null) onUpdate(item.id, { aiCaption: newCaption });
+                                                        setEditingItemId(item.id);
+                                                        setEditValue(item.intelligenceCaption || item.content);
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"

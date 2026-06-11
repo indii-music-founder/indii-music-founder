@@ -26,7 +26,6 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
         setIsDeploying(true);
         try {
             const orchestrationService = new OrchestrationService();
-            // Simulate the deployment by executing the workflow
             const context = {
                 userId: userProfile.id,
                 projectId: projectId,
@@ -34,7 +33,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
             };
 
             await orchestrationService.executeWorkflow(selectedTemplate, context);
-            toast.success('indii Growth Protocol Depolyed! 28-Day algorithmic spike initiated.');
+            toast.success('indii Growth Protocol deployed.');
 
             // Auto close panel after success
             setTimeout(() => {

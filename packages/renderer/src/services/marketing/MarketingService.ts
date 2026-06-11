@@ -15,8 +15,8 @@ import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class MarketingService {
     /**
@@ -45,16 +45,16 @@ export class MarketingService {
           "summary": "string"
         }`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
+            INTELLIGENCE_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
             {
                 responseMimeType: 'application/json',
-                ...AI_CONFIG.THINKING.LOW
+                ...INTELLIGENCE_CONFIG.THINKING.LOW
             }
         );
 
-        const parsed = GenAI.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
+        const parsed = AutonomousIntelligence.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
         return {
             score: typeof parsed.score === 'number' ? parsed.score : 0,
             label: parsed.label && ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label as 'positive' | 'neutral' | 'negative' : 'neutral',
@@ -108,7 +108,11 @@ export class MarketingService {
                 const data = snapshot.data();
                 const validation = MarketingStatsSchema.safeParse(data);
                 if (validation.success) {
-                    return validation.data;
+                    return {
+                        totalReach: validation.data.totalReach ?? 0,
+                        engagementRate: validation.data.engagementRate ?? 0,
+                        activeCampaigns: validation.data.activeCampaigns ?? 0,
+                    };
                 } else {
                     logger.warn("[MarketingService] Invalid marketing stats data:", validation.error);
                 }
@@ -213,7 +217,14 @@ export class MarketingService {
      * Update Marketing Stats
      */
     static async updateMarketingStats(stats: { totalReach?: number; engagementRate?: number; activeCampaigns?: number }) {
-        // Implementation kept for compatibility
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) return;
+        try {
+            const statsRef = doc(db, 'users', userProfile.id, 'stats', 'marketing');
+            await updateDoc(statsRef, { ...stats, updatedAt: serverTimestamp() });
+        } catch (e) {
+            logger.error("MarketingService: Update stats failed", e);
+        }
     }
 
     /**

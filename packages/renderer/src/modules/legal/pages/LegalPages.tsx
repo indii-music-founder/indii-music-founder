@@ -26,7 +26,7 @@ export function TermsOfService() {
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
                     <p>
-                        By accessing or using the indiiOS platform ("Service"), you agree to be bound by these
+                        By accessing or using the indii platform ("Service"), you agree to be bound by these
                         Terms of Service ("Terms"). If you disagree with any part of the terms, you may not
                         access the Service.
                     </p>
@@ -35,7 +35,7 @@ export function TermsOfService() {
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">2. Description of Service</h2>
                     <p>
-                        indiiOS is a multi-tenant creative platform providing AI-powered tools for music production,
+                        indii is a multi-tenant creative platform providing intelligence-driven tools for music production,
                         image generation, video production, distribution, and business operations for independent
                         artists, producers, and creators.
                     </p>
@@ -50,12 +50,12 @@ export function TermsOfService() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">4. Intellectual Property</h2>
-                    <p>You retain all ownership rights to the original music, lyrics, and creative works you upload to indiiOS. By submitting content, you grant indiiOS a worldwide, non-exclusive, royalty-free license to use, reproduce, distribute, and display the content solely for the purpose of operating and providing the Service.</p>
+                    <p>You retain all ownership rights to the original music, lyrics, and creative works you upload to indii. By submitting content, you grant indii a worldwide, non-exclusive, royalty-free license to use, reproduce, distribute, and display the content solely for the purpose of operating and providing the Service.</p>
                 </section>
 
                 <section>
-                    <h2 className="text-xl font-semibold text-white mb-3">5. AI-Generated Content</h2>
-                    <p>Assets generated using our AI tools (powered by Google Gemini) are subject to the terms of the respective AI providers. While you are granted a commercial license to use the generated output, you acknowledge that under current US Copyright Office guidance, purely AI-generated works may not be eligible for copyright protection.</p>
+                    <h2 className="text-xl font-semibold text-white mb-3">5. Intelligence-Generated Content</h2>
+                    <p>Assets generated using our intelligence tools (powered by Google Gemini) are subject to the terms of the respective intelligence providers. While you are granted a commercial license to use the generated output, you acknowledge that under current US Copyright Office guidance, purely intelligence-generated works may not be eligible for copyright protection.</p>
                 </section>
 
                 <section>
@@ -67,19 +67,19 @@ export function TermsOfService() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">7. Distribution Services</h2>
-                    <p>By utilizing our distribution services, you authorize indiiOS to deliver your music to digital service providers (DSPs). You represent that you possess all necessary rights and clearances. We implement royalty splits as directed by you, but we are not liable for disputes between collaborators. Takedown requests require 3-5 business days to process across all DSPs.</p>
+                    <p>By utilizing our distribution services, you authorize indii to deliver your music to digital service providers (DSPs). You represent that you possess all necessary rights and clearances. We implement royalty splits as directed by you, but we are not liable for disputes between collaborators. Takedown requests require 3-5 business days to process across all DSPs.</p>
                 </section>
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">8. Prohibited Conduct</h2>
                     <p>Users must not upload copyrighted material they don't own or have license for,
-                        engage in prompt injection attacks against AI systems, or use the platform for
+                        engage in prompt injection attacks against intelligence systems, or use the platform for
                         illegal purposes.</p>
                 </section>
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">9. Limitation of Liability</h2>
-                    <p>To the maximum extent permitted by law, indiiOS and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages. You agree to indemnify and hold harmless indiiOS from any claims arising out of your breach of these Terms, your content, or your violation of any third-party rights.</p>
+                    <p>To the maximum extent permitted by law, indii and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages. You agree to indemnify and hold harmless indii from any claims arising out of your breach of these Terms, your content, or your violation of any third-party rights.</p>
                 </section>
 
                 <section>
@@ -136,7 +136,7 @@ export function PrivacyPolicy() {
                     <h3 className="text-base font-medium text-gray-200 mb-2 mt-4">User Content</h3>
                     <ul className="list-disc list-inside space-y-1 text-gray-400">
                         <li>Music files, images, and videos uploaded by users</li>
-                        <li>AI-generated assets created through the platform</li>
+                        <li>Intelligence-generated assets created through the platform</li>
                         <li>Release metadata and distribution information</li>
                     </ul>
                 </section>
@@ -189,7 +189,7 @@ export function PrivacyPolicy() {
                         <li>Firebase (Google) — Authentication, database, storage, hosting</li>
                         <li>Stripe — Payment processing</li>
                         <li>Sentry — Error tracking (consent-gated)</li>
-                        <li>Google Gemini — AI content generation</li>
+                        <li>Google Gemini — Intelligence content generation</li>
                         <li>DSP APIs — Music distribution (Spotify, Apple Music, etc.)</li>
                     </ul>
                 </section>
@@ -261,7 +261,7 @@ export function DMCAPolicy() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">Repeat Infringers</h2>
-                    <p>indiiOS will terminate the accounts of users who are repeat copyright infringers,
+                    <p>indii will terminate the accounts of users who are repeat copyright infringers,
                         in accordance with 17 U.S.C. § 512(i).</p>
                 </section>
             </div>

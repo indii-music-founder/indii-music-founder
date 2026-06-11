@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Loader2, Mail, Lock, LogIn, User, UserPlus, Calendar, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
  * Item 305: COPPA Age Gate Utility
@@ -51,6 +52,7 @@ export default function LoginForm() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const showGuestLogin = isFirebaseE2EMockEnabled();
 
     // Derive the view from store state + local forgot-password flag
     const view: AuthView = isForgotPassword ? 'forgot-password' : isSignUpMode ? 'signup' : 'signin';
@@ -144,7 +146,7 @@ export default function LoginForm() {
                         animate={{ scale: 1 }}
                         className="text-5xl font-black mb-2 tracking-tighter"
                     >
-                        indii<span className="text-dept-creative">OS</span>
+                        indii<span className="text-dept-creative">.music</span>
                     </motion.h1>
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>
@@ -400,22 +402,29 @@ export default function LoginForm() {
                                     </div>
                                 )}
 
-                                <div className="relative flex items-center gap-4 my-6">
-                                    <div className="h-px flex-1 bg-white/10" />
-                                    <span className="text-xs text-gray-500 font-mono">OR</span>
-                                    <div className="h-px flex-1 bg-white/10" />
-                                </div>
+                                {showGuestLogin && (
+                                    <>
+                                        <div className="relative flex items-center gap-4 my-6">
+                                            <div className="h-px flex-1 bg-white/10" />
+                                            <span className="text-xs text-gray-500 font-mono">OR</span>
+                                            <div className="h-px flex-1 bg-white/10" />
+                                        </div>
 
-                                <button
-                                    type="button"
-                                    onClick={loginAsGuest}
-                                    disabled={authLoading}
-                                    data-testid="guest-login-btn"
-                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                                >
-                                    <User className="w-5 h-5 text-amber-400" />
-                                    <span>Explore as Guest</span>
-                                </button>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                await loginAsGuest();
+                                                useStore.getState().setModule('dashboard');
+                                            }}
+                                            disabled={authLoading}
+                                            data-testid="guest-login-btn"
+                                            className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                        >
+                                            <User className="w-5 h-5 text-amber-400" />
+                                            <span>Explore as Guest</span>
+                                        </button>
+                                    </>
+                                )}
                             </motion.form>
                         </motion.div>
                     )}

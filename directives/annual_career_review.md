@@ -76,7 +76,7 @@ const works = await ISWCService.getByArtist();
 ### 5. Distribution Health
 
 - Platform coverage (territories)
-- DDEX delivery success rate
+- Proprietary Ingestion IP delivery success rate
 - Takedown/rejection count
 - AI compliance status (2026 tags)
 

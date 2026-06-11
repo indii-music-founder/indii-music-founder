@@ -1,6 +1,6 @@
 # Onboarding Module (RC1)
 
-The Onboarding module provides a structured, multi-step entry into the indiiOS ecosystem. It is designed to capture the core identity of the artist or organization and initialize the **Knowledge Base** with essential context.
+The Onboarding module provides a structured, multi-step entry into the indii ecosystem. It is designed to capture the core identity of the artist or organization and initialize the **Knowledge Base** with essential context.
 
 ## 🏁 Key Features
 - **Identity Setup:** Captures artist name, genre, and core brand mission.

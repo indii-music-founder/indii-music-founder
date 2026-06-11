@@ -30,6 +30,7 @@ describe('RealUserMonitoringService', () => {
     });
 
     it('should track metrics', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const metric = {
         name: 'LCP',
         value: 2000,

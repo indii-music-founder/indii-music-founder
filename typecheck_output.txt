@@ -1,0 +1,27 @@
+
+> indii.music@1.63.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/core/store/slices/creative/designHistorySlice.ts(38,21): error TS2339: Property 'currentProjectId' does not exist on type 'CreativeSlice'.
+packages/renderer/src/core/store/slices/creative/designHistorySlice.ts(102,37): error TS2339: Property 'currentProjectId' does not exist on type 'CreativeSlice'.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(17,17): error TS2740: Type '{ addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<Procedure>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; isMagicFillMode: boolean; }' is missing the following properties from type 'CanvasToolbarProps': setTool, undo, redo, canUndo, and 2 more.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(25,17): error TS2740: Type '{ addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<Procedure>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; isMagicFillMode: boolean; }' is missing the following properties from type 'CanvasToolbarProps': setTool, undo, redo, canUndo, and 2 more.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(31,17): error TS2740: Type '{ addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<Procedure>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; isMagicFillMode: boolean; }' is missing the following properties from type 'CanvasToolbarProps': setTool, undo, redo, canUndo, and 2 more.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(37,17): error TS2740: Type '{ addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<Procedure>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; isMagicFillMode: boolean; }' is missing the following properties from type 'CanvasToolbarProps': setTool, undo, redo, canUndo, and 2 more.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(43,17): error TS2740: Type '{ addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<Procedure>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; isMagicFillMode: boolean; }' is missing the following properties from type 'CanvasToolbarProps': setTool, undo, redo, canUndo, and 2 more.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(49,46): error TS2322: Type '{ isMagicFillMode: boolean; addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<...>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; }' is not assignable to type 'IntrinsicAttributes & CanvasToolbarProps'.
+  Property 'isMagicFillMode' does not exist on type 'IntrinsicAttributes & CanvasToolbarProps'.
+packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx(56,46): error TS2322: Type '{ isMagicFillMode: boolean; addRectangle: Mock<Procedure>; addCircle: Mock<Procedure>; addText: Mock<Procedure>; toggleMagicFill: Mock<...>; handleDetectObjects: Mock<...>; handleClearDetections: Mock<...>; }' is not assignable to type 'IntrinsicAttributes & CanvasToolbarProps'.
+  Property 'isMagicFillMode' does not exist on type 'IntrinsicAttributes & CanvasToolbarProps'.
+packages/renderer/src/modules/creative/components/CreativeNavbar.tsx(144,34): error TS2304: Cannot find name 'Layers'.
+packages/renderer/src/modules/creative/components/DesignHistoryDrawer.tsx(6,31): error TS2307: Cannot find module '../designHistorySlice' or its corresponding type declarations.
+packages/renderer/src/modules/creative/components/PhotoSourcePanel.tsx(60,21): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/renderer/src/modules/creative/components/PhotoSourcePanel.tsx(76,21): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts(157,51): error TS2554: Expected 0 arguments, but got 2.
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(201,45): error TS2551: Property 'getPointer' does not exist on type 'Canvas'. Did you mean 'getPointerId'?
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(236,45): error TS2551: Property 'getPointer' does not exist on type 'Canvas'. Did you mean 'getPointerId'?
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(272,56): error TS2554: Expected 0 arguments, but got 1.
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(927,26): error TS2554: Expected 0 arguments, but got 2.
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(959,13): error TS2353: Object literal may only specify known properties, and 'data' does not exist in type 'Partial<FabricObjectProps>'.

@@ -18,17 +18,17 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_image',
     name: 'Generate Image',
-    description: 'Generate AI images using text prompts with support for various aspect ratios and styles',
+    description: 'Generate Intelligence images using text prompts with support for various aspect ratios and styles',
     category: 'generation',
     version: '1.0.0',
-    author: 'indiiOS Core Team',
+    author: 'indii Core Team',
     isAsync: true,
     timeoutMs: 120000, // 2 minutes timeout
     cost: {
@@ -44,8 +44,8 @@ export class ImageGenerationInstrument implements Instrument {
       rateLimitPerMinute: 10
     },
     computeType: 'cloud',
-    preferredModel: AI_MODELS.IMAGE.GENERATION,
-    fallbackModels: [AI_MODELS.IMAGE.FAST],
+    preferredModel: INTELLIGENCE_MODELS.IMAGE.GENERATION,
+    fallbackModels: [INTELLIGENCE_MODELS.IMAGE.FAST],
     tags: ['ai', 'image', 'generation', 'creative'],
     examples: [
       {
@@ -151,19 +151,14 @@ export class ImageGenerationInstrument implements Instrument {
     try {
       // Get current user ID from auth
       const { auth } = await import('@/services/firebase');
-      let userId = auth.currentUser?.uid;
+      const userId = auth.currentUser?.uid;
 
       if (!userId) {
-        if (import.meta.env.DEV) {
-          logger.warn("[ImageGenerationInstrument] Anonymous user in DEV, using mock ID.");
-          userId = 'dev_user_anonymous';
-        } else {
-          return {
-            success: false,
-            error: 'User must be authenticated',
-            metadata: { executionTimeMs: Date.now() - startTime }
-          };
-        }
+        return {
+          success: false,
+          error: 'User must be authenticated',
+          metadata: { executionTimeMs: Date.now() - startTime }
+        };
       }
 
       // Check quota using subscription service

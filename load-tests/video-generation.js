@@ -25,7 +25,7 @@ export const options = {
     },
 };
 
-const BASE_URL = __ENV.FUNCTIONS_URL || 'http://127.0.0.1:5001/indiios-v-1-1/us-central1';
+const BASE_URL = __ENV.FUNCTIONS_URL || 'http://127.0.0.1:5001/indii-v-1-1/us-central1';
 
 export default function () {
     const url = `${BASE_URL}/triggerVideoJob`;

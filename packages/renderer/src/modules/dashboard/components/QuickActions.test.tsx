@@ -36,7 +36,6 @@ describe('QuickActions', () => {
         render(<QuickActions />);
 
         expect(screen.getByText('Creative')).toBeInTheDocument();
-        expect(screen.getByText('Video')).toBeInTheDocument();
         expect(screen.getByText('Marketing')).toBeInTheDocument();
         expect(screen.getByText('Publishing')).toBeInTheDocument();
         expect(screen.getByText('Workflow')).toBeInTheDocument();
@@ -47,9 +46,6 @@ describe('QuickActions', () => {
 
         fireEvent.click(screen.getByText('Creative'));
         expect(mockSetModule).toHaveBeenCalledWith('creative');
-
-        fireEvent.click(screen.getByText('Video'));
-        expect(mockSetModule).toHaveBeenCalledWith('video');
     });
 
     it('wraps buttons in tooltip triggers', () => {

@@ -1,7 +1,7 @@
 import type { AgentMessage } from '@/core/store';
 import { SummaryService } from '../utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
-import { memoryService } from '../MemoryService';
+import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 
 /**
  * HistoryManager: Manages the "Active Memory" of a conversation.
@@ -62,22 +62,20 @@ export class HistoryManager {
     async getCompiledView(): Promise<string> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const projectId = state.currentProjectId;
-        const sessionId = state.activeSessionId;
+        const userId = state.userProfile?.uid;
 
         const history = await this.getRecentHistory();
 
         // 1. Semantic Recall (Tier 2 Integration)
         let semanticRecall = '';
-        if (projectId && sessionId && history.length > 0) {
+        if (userId && history.length > 0) {
             const lastMessage = history[history.length - 1]!.text;
-            const relevant = await memoryService.retrieveRelevantMemories(projectId, {
-                query: lastMessage,
-                filters: { sessionId, types: ['session_message', 'fact'] },
-                limit: 3
-            });
+            
+            // Use the unified engine for episodic recall
+            const relevant = await alwaysOnMemoryEngine.retrieve({ query: lastMessage, limit: 3 });
+            
             if (relevant.length > 0) {
-                semanticRecall = `\n## Relevant Past Context (Semantic Recall)\n${relevant.map(r => `- ${r}`).join('\n')}\n`;
+                semanticRecall = `\n## Relevant Past Context (Semantic Recall)\n${relevant.map(r => `- ${r.summary || r.content}`).join('\n')}\n`;
             }
         }
 

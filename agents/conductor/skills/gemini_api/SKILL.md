@@ -27,7 +27,7 @@ Invoke this skill whenever the task involves:
 - Referencing a Gemini model by name (e.g. `gemini-2.5-pro`, `gemini-2.0-flash`)
 - Building a new AI feature, tool call, or prompt template
 - Updating an existing service in `src/services/ai/` or `src/services/agent/`
-- Generating DDEX metadata, audio analysis, or image/video generation calls
+- Generating Proprietary Ingestion IP metadata, audio analysis, or image/video generation calls
 - Any task that touches `VITE_API_KEY` or Gemini model config
 
 ---
@@ -81,11 +81,11 @@ gemini-api-docs: get_migration_notes("@google/genai")
 
 ---
 
-## 4. indiiOS-Specific Patterns
+## 4. indii-Specific Patterns
 
 ### AI Service Layer
 
-All Gemini calls in indiiOS route through the service layer. When updating:
+All Gemini calls in indii route through the service layer. When updating:
 
 | Service | Location |
 |---------|----------|

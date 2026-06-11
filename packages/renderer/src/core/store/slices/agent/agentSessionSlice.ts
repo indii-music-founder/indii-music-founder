@@ -52,6 +52,7 @@ export interface AgentSessionSlice {
     boardroomMessages: AgentMessage[];
     addBoardroomMessage: (msg: AgentMessage) => void;
     updateBoardroomMessage: (id: string, updates: Partial<AgentMessage>) => void;
+    removeBoardroomMessage: (id: string) => void;
 
     // Session State
     sessions: Record<string, ConversationSession>;
@@ -96,6 +97,10 @@ export function buildAgentSessionState(
             boardroomMessages: state.boardroomMessages.map(msg =>
                 msg.id === id ? { ...msg, ...updates } : msg
             )
+        })),
+
+        removeBoardroomMessage: (id) => set(state => ({
+            boardroomMessages: state.boardroomMessages.filter(msg => msg.id !== id)
         })),
 
         createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {

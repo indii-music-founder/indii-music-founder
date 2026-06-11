@@ -6,13 +6,13 @@
     "music",
     "photo"
   ],
-  "description": "AI-native creative platform for image generation, video production, music analysis, and campaign management",
+  "description": "indii.music: your independence operating system. AI-native creative platform for image generation, video production, music analysis, and campaign management",
   "display": "standalone",
   "icons": [
     {
       "purpose": "any maskable",
       "sizes": "any",
-      "src": "/indiiOS-logo.svg",
+      "src": "/indii-logo.svg",
       "type": "image/svg+xml"
     },
     {
@@ -21,17 +21,17 @@
       "type": "image/svg+xml"
     }
   ],
-  "name": "indiiOS - AI Creative Studio",
+  "name": "indii.music",
   "orientation": "portrait-primary",
   "scope": "/",
-  "short_name": "indiiOS",
+  "short_name": "indii",
   "shortcuts": [
     {
       "description": "Open Creative Studio for image generation",
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Creative Studio",
@@ -43,7 +43,7 @@
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Video Studio",
@@ -55,7 +55,7 @@
       "icons": [
         {
           "sizes": "any",
-          "src": "/indiiOS-logo.svg"
+          "src": "/indii-logo.svg"
         }
       ],
       "name": "Music Analysis",

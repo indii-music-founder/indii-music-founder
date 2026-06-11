@@ -48,7 +48,7 @@ Priority: the 6 agents stuck at exactly 50.0% + finance
 
 | Agent | Need | Session Quota | Notes |
 |-------|------|--------------|-------|
-| distribution | +41 | 2 sessions × 21 | DDEX, chain of title, ISRC collision, sub-publishing waterfall |
+| distribution | +41 | 2 sessions × 21 | Proprietary Ingestion IP, chain of title, ISRC collision, sub-publishing waterfall |
 | finance | +40 | 2 sessions × 20 | 360 deals, touring tax nexus, label deal comparison, sync licensing |
 | marketing | +35 | 2 sessions × 18 | Streaming analytics deep dive, DSP pitch, Meta Ads advanced |
 | legal | +34 | 2 sessions × 17 | Contract redlines, publishing deal structure, work-for-hire edge cases |
@@ -93,7 +93,7 @@ Examples:
 
 - [ ] All 20 agents at ≥60% expert density
 - [ ] Run `npx tsx execution/training/export_ft_dataset.ts` → `./ft_export_r7/`
-- [ ] `gcloud storage cp ft_export_r7/*.jsonl gs://indiios-training-data/ft_export/r7/`
+- [ ] `gcloud storage cp ft_export_r7/*.jsonl gs://indii-training-data/ft_export/r7/`
 - [ ] Submit 20 tuning jobs (`indii-{agent}-r7`)
 - [ ] Base models: generalist → `gemini-2.5-pro`; finance/legal/distribution/marketing/publishing/licensing/music → `gemini-2.5-flash`; rest → `gemini-2.5-flash-lite`
 - [ ] Wire endpoints into `fine-tuned-models.ts`

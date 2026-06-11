@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
  * unreleased catalog locally even without internet.
  */
 
-const DB_NAME = 'indiiOS-audio-cache';
+const DB_NAME = 'indii-audio-cache';
 const STORE_NAME = 'tracks';
 
 export interface CachedTrack {

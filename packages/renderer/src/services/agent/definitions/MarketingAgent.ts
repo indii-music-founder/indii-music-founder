@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
-import { SovereignTools } from '../tools/SovereignTools';
+import { AutonomousTools } from '../tools/AutonomousTools';
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 
 export const MarketingAgent: AgentConfig = {
@@ -25,7 +25,7 @@ Include:
 - Success Metrics (KPIs)`;
 
             try {
-                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { brief: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -41,33 +41,22 @@ Provide:
 - Best times to post`;
 
             try {
-                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
         schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
-            // Future: Call SocialService.schedulePost
-            const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
-            const confirmation = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+            void args;
             return {
-                success: true,
-                data: {
-                    status: "Scheduled",
-                    scheduled_count: args.posts.length,
-                    platform_response: confirmation
-                }
+                success: false,
+                error: 'Content scheduling requires a connected social scheduling backend. No posts were scheduled.'
             };
         },
         track_performance: async (args: { campaignId: string }) => {
-            const prompt = `Generate a realistic performance report for campaign "${args.campaignId}".Metrics: Impressions, Clicks, CTR, ROI.Return as JSON.`;
-            try {
-                const response = await GenAI.generateStructuredData(prompt, { type: 'object' });
-                return { success: true, data: response };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
+            void args;
+            return { success: false, error: 'Campaign performance requires connected analytics data. No report was generated.' };
         },
         generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
             const { useStore } = await import('@/core/store');
@@ -99,7 +88,7 @@ Provide:
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
-        create_artifact_drop: SovereignTools.create_artifact_drop!
+        create_artifact_drop: AutonomousTools.create_artifact_drop!
     },
     authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty'],
     tools: [{
@@ -191,7 +180,7 @@ Provide:
             },
             {
                 name: "create_artifact_drop",
-                description: "Creates a 'Sovereign Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
+                description: "Creates an 'Independent Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

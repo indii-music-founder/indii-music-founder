@@ -40,6 +40,7 @@ export const ThreeDCard = ({
     const mouseX = useSpring(x, { stiffness: 500, damping: 100 });
     const mouseY = useSpring(y, { stiffness: 500, damping: 100 });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [hovered, setHovered] = useState(false);
 
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
@@ -157,10 +158,8 @@ export const ThreeDCard = ({
                         transform: "translateZ(75px)",
                         transformStyle: "preserve-3d",
                     }}
-                    className="absolute inset-4 grid place-content-center rounded-xl bg-white shadow-lg"
-                >
-                    {/* Shadow/Depth layer placeholder if needed */}
-                </div>
+                    className="absolute inset-4 rounded-xl bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 opacity-50 shadow-inner pointer-events-none"
+                />
 
                 {children}
             </motion.div>
@@ -285,6 +284,7 @@ export const ThreeDCardContainer = ({
         });
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
         setIsMouseEntered(true);
         if (!containerRef.current) return;
@@ -293,6 +293,7 @@ export const ThreeDCardContainer = ({
         window.addEventListener('scroll', updateRect, { capture: true, passive: true });
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
         setIsMouseEntered(false);
@@ -346,6 +347,7 @@ export const ThreeDCardContainer = ({
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useMouseEnter = () => {
     const context = React.useContext(MouseEnterContext);
     if (context === undefined) {

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Autonomous Browser Agent is a "self-driving" browser system integrated into indiiOS. Unlike traditional scrapers that rely on fixed selectors, this agent uses visual reasoning to navigate, interact with, and extract data from any website.
+The Autonomous Browser Agent is a "self-driving" browser system integrated into indii. Unlike traditional scrapers that rely on fixed selectors, this agent uses visual reasoning to navigate, interact with, and extract data from any website.
 
 ## Architecture
 

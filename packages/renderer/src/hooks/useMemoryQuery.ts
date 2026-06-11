@@ -1,85 +1,41 @@
-/**
- * useMemoryQuery Hook
- *
- * React hook for querying memories across the 5-layer memory architecture.
- * Supports semantic search, filtering by layer, and tag-based lookups.
- */
-
 import { useState, useCallback } from 'react';
-import { getPersistentMemoryService } from '@/services/memory/PersistentMemoryService';
-import { getMemoryIndexService } from '@/services/memory/MemoryIndexService';
-import type { Memory, MemoryLayer } from '@/services/memory/PersistentMemoryService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { logger } from '@/utils/logger';
 
-interface MemoryQueryOptions {
-  layers?: MemoryLayer[];
-  tags?: string[];
-  limit?: number;
-  semanticSearch?: boolean;
-}
+export function useMemoryQuery() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [memories, setMemories] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-interface MemoryQueryResult {
-  memories: Memory[];
-  isLoading: boolean;
-  error: Error | null;
-  query: (searchQuery: string, options?: MemoryQueryOptions) => Promise<void>;
-  clearResults: () => void;
-}
-
-export function useMemoryQuery(): MemoryQueryResult {
-  const [memories, setMemories] = useState<Memory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const query = useCallback(
-    async (searchQuery: string, options: MemoryQueryOptions = {}) => {
-      const {
-        layers = ['session', 'core-vault'],
-        limit = 10,
-        semanticSearch = false
-      } = options;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        let results: Memory[] = [];
-
-        if (semanticSearch) {
-          // Use semantic search via MemoryIndexService
-          const indexService = getMemoryIndexService();
-          const semanticResults = await indexService.semanticSearch(
-            searchQuery,
-            limit
-          );
-          results = semanticResults.map((sr) => sr.memory);
-        } else {
-          // Use keyword search via PersistentMemoryService
-          const memoryService = getPersistentMemoryService();
-          results = await memoryService.search(searchQuery, layers, limit);
+    const query = useCallback(async (text: string, limit: number = 5) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const results = await alwaysOnMemoryEngine.retrieve({ query: text, limit });
+            setMemories(results);
+            return results;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            const msg = err.message || 'Failed to query memories';
+            setError(msg);
+            logger.error('[useMemoryQuery] Error:', err);
+            return [];
+        } finally {
+            setIsLoading(false);
         }
+    }, []);
 
-        setMemories(results);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
+    const clearResults = useCallback(() => {
         setMemories([]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+        setError(null);
+    }, []);
 
-  const clearResults = useCallback(() => {
-    setMemories([]);
-    setError(null);
-  }, []);
-
-  return {
-    memories,
-    isLoading,
-    error,
-    query,
-    clearResults
-  };
+    return {
+        memories,
+        isLoading,
+        error,
+        query,
+        clearResults
+    };
 }

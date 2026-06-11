@@ -140,6 +140,7 @@ export const CharacterLibrary: React.FC = () => {
         }
     }, [characterReferences.length, processFile, toast]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSelectGeneratedImage = useCallback(async (historyItem: any) => {
         if (characterReferences.length >= 3) {
             toast.error("Maximum 3 character references allowed.");

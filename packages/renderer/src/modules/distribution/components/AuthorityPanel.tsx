@@ -100,7 +100,7 @@ export const AuthorityPanel: React.FC = () => {
                 throw new Error('Missing UPC for release');
             }
 
-            const result = await distributionService.generateDDEX(releasePayload);
+            const result = await distributionService.generateIngestionNotification(releasePayload);
             setDdexXml(result);
             success('DDEX ERN 4.3 Message Generated');
         } catch (error: unknown) {
@@ -115,7 +115,7 @@ export const AuthorityPanel: React.FC = () => {
             <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-bold text-white">Authority Layer</h2>
                 <p className="text-gray-400">
-                    Industrial identity management. Generate ISRCs, UPCs, and DDEX ERN 4.3 messages for direct DSP delivery.
+                    Industrial identity management. Generate ISRCs, UPCs, and release delivery metadata for configured distribution routes.
                 </p>
             </div>
 

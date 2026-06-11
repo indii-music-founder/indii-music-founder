@@ -68,7 +68,7 @@ test.describe('Multi-Agent Swarm Delegation', () => {
             }
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
     });
 

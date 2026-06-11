@@ -8,8 +8,8 @@
  * then uses Gemini to produce a time-stamped emotional arc with tension peaks,
  * release moments, and narrative phase labels.
  */
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -76,9 +76,22 @@ export class EnergyMapService {
         technicalFeatures: AudioFeatures
     ): Promise<EmotionalNarrative> {
         return withServiceError('EnergyMap', 'mapEmotionalArc', async () => {
-            Logger.info('EnergyMap', `Mapping emotional arc for ${file.name}`);
-
             const base64Audio = await this.fileToBase64(file);
+            return this.mapEmotionalArcWithProxy(base64Audio, file.type || 'audio/mp3', technicalFeatures);
+        });
+    }
+
+    /**
+     * Generates an emotional arc using an already-compressed proxy base64 string.
+     */
+    async mapEmotionalArcWithProxy(
+        base64Audio: string,
+        mimeType: string,
+        technicalFeatures: AudioFeatures
+    ): Promise<EmotionalNarrative> {
+        return withServiceError('EnergyMap', 'mapEmotionalArcWithProxy', async () => {
+            Logger.info('EnergyMap', `Mapping emotional arc (using proxy data)`);
+
             const duration = technicalFeatures.duration;
             const segmentContext = this.formatSegments(technicalFeatures.segments);
 
@@ -114,12 +127,12 @@ RULES:
 - If the track doesn't peak emotionally, say so via trajectoryShape = 'Plateau'.
 `;
 
-            const narrative = await GenAI.generateStructuredData<EmotionalNarrative>(
+            const narrative = await AutonomousIntelligence.generateStructuredData<EmotionalNarrative>(
                 [
                     { text: prompt },
                     {
                         inlineData: {
-                            mimeType: file.type || 'audio/mp3',
+                            mimeType: mimeType,
                             data: base64Audio
                         }
                     }
@@ -127,7 +140,7 @@ RULES:
                 ENERGY_MAP_SCHEMA,
                 4096,
                 'You are an expert in music emotion analysis and narrative arc mapping.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             Logger.info('EnergyMap', `Arc mapped: ${narrative.arc.length} beats, soul peak at index ${narrative.soulPeakIndex}, shape: ${narrative.trajectoryShape}`);

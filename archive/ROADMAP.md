@@ -1,4 +1,4 @@
-# indiiOS Improvement Roadmap
+# indii Improvement Roadmap
 
 This document tracks the implementation of technical improvements and architectural upgrades.
 

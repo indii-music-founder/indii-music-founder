@@ -1,7 +1,7 @@
 # GEMINI_AUDIO_MISSION.md - The Sonic Cortex
 
 ## 🎯 OBJECTIVE
-Integrate **Gemini 3 Pro**'s native audio-understanding capabilities into the indiiOS "Sovereign Engine." Move beyond simple metadata to **Deep Sonic Reasoning**.
+Integrate **Gemini 3 Pro**'s native audio-understanding capabilities into the indii "Independent Engine." Move beyond simple metadata to **Deep Sonic Reasoning**.
 
 ## 🧠 CORE RESEARCH: GEMINI 3 AUDIO MODALITY
 Gemini 3 Pro (and the 2.5 TTS/Audio variants) does not just "transcribe" audio; it **hears** it. 
@@ -19,8 +19,8 @@ Develop the master prompt for the `AudioAnalysisService` to exploit Gemini 3's e
 - **Target:** "Describe the emotional trajectory, the production style (e.g., analog warmth vs. digital precision), and the key melodic motifs of this track."
 
 ### 2. Audio-to-Metadata Mapping
-Bridge the gap between Gemini's "Deep Description" and our **DDEX ERN 4.3** fields.
-- **Goal:** Automatically populate the `marketingComment` and `keyWords` fields in the ERN packet using Gemini's analysis.
+Bridge the gap between Gemini's "Deep Description" and our **Proprietary Ingestion IP IngestionNotification 4.3** fields.
+- **Goal:** Automatically populate the `marketingComment` and `keyWords` fields in the IngestionNotification packet using Gemini's analysis.
 
 ### 3. Verification & Compliance
 Use Gemini to "listen" for AI artifacts.

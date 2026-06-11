@@ -90,7 +90,7 @@ export const BankPanel: React.FC = () => {
                     <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
                     <p className="text-gray-500 font-medium max-w-xl">
                         Locally processed financial compliance and automated revenue splits.
-                        IndiiOS executes all logic via secure-context Python bridges.
+                        indii executes all logic via secure-context Python bridges.
                     </p>
                 </div>
 
@@ -299,7 +299,8 @@ export const BankPanel: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], i) => (
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], _i) => (
                                         <div key={user} className="flex items-center gap-4 group">
                                             <div className="w-1.5 h-1.5 rounded-full bg-dept-creative group-hover:scale-150 transition-all" />
                                             <div className="flex-1 p-4 bg-black/40 border border-white/10 rounded-xl flex items-center justify-between group-hover:border-dept-creative/30 transition-all">

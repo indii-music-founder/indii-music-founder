@@ -1,5 +1,5 @@
 /**
- * Unified Email Types for indiiOS
+ * Unified Email Types for indii
  *
  * Provider-agnostic types for Gmail and Outlook integration.
  * All provider-specific data is normalized to these shapes.

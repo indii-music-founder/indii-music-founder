@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
+import GeoBountyDeployerModal from './GeoBountyDeployerModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
-import AIGenerateCampaignModal from './AIGenerateCampaignModal';
+import IntelligenceCampaignModal from './IntelligenceCampaignModal';
 import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
 import AdBuyingPanel from './AdBuyingPanel';
 import EmailMarketingPanel from './EmailMarketingPanel';
@@ -16,7 +17,7 @@ import InfluencerBountyBoard from './InfluencerBountyBoard';
 import MomentumTracker from './MomentumTracker';
 import MultiPlatformPoster from './MultiPlatformPoster';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
-import { CampaignAsset } from '../types';
+import { CampaignAsset, CampaignStatus } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { BarChart3, Image, Sparkles, Radio } from 'lucide-react';
 import { logger } from '@/utils/logger';
@@ -33,15 +34,18 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 /*  │  Mktg    │    Campaign Manager       │   Perf       │            */
 /*  │  Sidebar │    (workspace)            │   Snapshot   │            */
 /*  │  (nav)   │                           │   Assets     │            */
-/*  │          │                           │   AI Tips    │            */
+/*  │          │                           │   Autonomous Tips    │            */
 /*  └──────────┴───────────────────────────┴──────────────┘            */
 /* ================================================================== */
 
 const CampaignDashboard: React.FC = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { campaigns, actions, isLoading } = useMarketing();
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isGeoBountyModalOpen, setIsGeoBountyModalOpen] = useState(false);
+    const [deployedBounty, setDeployedBounty] = useState<string | null>(null);
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
 
@@ -68,17 +72,22 @@ const CampaignDashboard: React.FC = () => {
         try {
             const newId = await MarketingService.createCampaign({
                 ...campaign,
-                status: campaign.status || 'pending',
+                status: campaign.status || CampaignStatus.PENDING,
             });
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
         } catch (error: unknown) {
-            logger.error("Failed to save AI campaign", error);
+            logger.error("Failed to save Autonomous campaign", error);
         }
     }, []);
 
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
+    }, []);
+
+    const handleDeployBounty = useCallback((location: string, _desc: string) => {
+        setIsGeoBountyModalOpen(false);
+        setDeployedBounty(location);
     }, []);
 
     const handleAIGenerate = useCallback(() => {
@@ -128,10 +137,16 @@ const CampaignDashboard: React.FC = () => {
                 />
 
                 {/* ── CENTER — Campaign Workspace ────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0 bg-background">
+                <div className="flex-1 flex flex-col min-w-0 bg-background relative">
+                    {deployedBounty && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-blue-500/90 text-white px-4 py-2 rounded-full font-semibold shadow-lg text-sm">
+                            Mission Active: {deployedBounty}
+                        </div>
+                    )}
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
+                        onGeoBounty={() => setIsGeoBountyModalOpen(true)}
                     />
 
                     <div className="flex-1 overflow-hidden relative">
@@ -191,7 +206,7 @@ const CampaignDashboard: React.FC = () => {
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <PerformanceSnapshotPanel campaigns={campaigns} />
                     <AssetLibraryPanel />
-                    <AISuggestionsPanel />
+                    <IntelligenceSuggestionsPanel />
                 </aside>
 
                 {isCreateModalOpen && (
@@ -202,9 +217,16 @@ const CampaignDashboard: React.FC = () => {
                 )}
 
                 {isAIModalOpen && (
-                    <AIGenerateCampaignModal
+                    <IntelligenceCampaignModal
                         onClose={() => setIsAIModalOpen(false)}
                         onSave={handleAISave}
+                    />
+                )}
+
+                {isGeoBountyModalOpen && (
+                    <GeoBountyDeployerModal
+                        onClose={() => setIsGeoBountyModalOpen(false)}
+                        onDeploy={handleDeployBounty}
                     />
                 )}
             </div>
@@ -283,11 +305,11 @@ function AssetLibraryPanel() {
     );
 }
 
-function AISuggestionsPanel() {
+function IntelligenceSuggestionsPanel() {
     return (
         <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
             <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
-                <Sparkles size={10} /> AI Suggestions
+                <Sparkles size={10} /> Autonomous Suggestions
             </h3>
             <div className="flex flex-col items-center justify-center py-4 text-center">
                 <Sparkles size={16} className="text-gray-600 mb-2" />

@@ -26,7 +26,7 @@ test.describe('Finance Module', () => {
 
         console.log('[FINANCE TEST] Navigating to Finance module...');
         // Direct navigation to Finance module for stability
-        await page.goto('/finance');
+        await page.goto('/finance', { waitUntil: 'domcontentloaded' });
 
         console.log('[FINANCE TEST] Waiting for finance-specific content...');
         // Wait for finance-specific content
@@ -54,7 +54,10 @@ test.describe('Finance Module', () => {
         await expect(recoupTab).toHaveAttribute('data-state', 'active');
     });
 
-    test('EarningsDashboard summary is visible on initial load', async ({ authedPage: page }) => {
+    test('EarningsDashboard summary is visible on selecting Earnings tab', async ({ authedPage: page }) => {
+        // Select Earnings tab first
+        await page.locator('[data-testid="finance-tab-earnings"]').click();
+
         const chart = page.locator('[data-testid="earnings-chart"]');
         // Match the heading in the tabpanel (No Reports Found) or the actual chart
         const emptyState = page.getByRole('heading', { name: /No Reports Found/i });

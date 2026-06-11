@@ -5,14 +5,14 @@ import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
     },
-    AI_MODELS: { TEXT: { AGENT: 'mock-model' } },
-    AI_CONFIG: { THINKING: { LOW: {} } }
+    INTELLIGENCE_MODELS: { TEXT: { AGENT: 'mock-model' } },
+    INTELLIGENCE_CONFIG: { THINKING: { LOW: {} } }
 }));
 
 vi.mock('@/services/MembershipService', () => ({
@@ -31,7 +31,8 @@ vi.mock('./AgentService', () => ({
     agentService: { runAgent: vi.fn() }
 }));
 vi.mock('./utils/ToolUtils', () => ({
-    toolError: (msg: string) => ({ success: false, error: msg })
+    toolError: (msg: string) => ({ success: false, error: msg }),
+    wrapTool: vi.fn((tool) => tool)
 }));
 vi.mock('./ProactiveService', () => ({
     proactiveService: { scheduleTask: vi.fn(), subscribeToEvent: vi.fn() }
@@ -61,6 +62,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
         color: 'green',
         category: 'manager',
         systemPrompt: 'You are a test agent.',
+        modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
         tools: []
     } as unknown as AgentConfig;
 
@@ -74,7 +76,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
     });
 
     it('🛑 should stop execution when budget is exceeded (Cost Circuit Breaker)', async () => {
-        const { GenAI: AI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence: AI } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // Setup: Agent wants to run 5 iterations
         // 1. First iteration: Uses 0.10. Budget OK. -> Calls Tool "dummy_tool"
@@ -119,7 +121,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
                     usageMetadata: { promptTokenCount: 2500, candidatesTokenCount: 2500, totalTokenCount: 5000 }
                 }
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>)
-            // Iteration 3: AI should NOT be called.
+            // Iteration 3: Autonomous should NOT be called.
             .mockResolvedValue({
                 response: {
                     text: () => 'This should not be reached.',
@@ -133,19 +135,22 @@ describe('BaseAgent Cost Circuit Breaker', () => {
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         // Mock Budget Check
-        // Iteration 1 check: Allowed
+        // Iteration 1 check: Start
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.90 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
-        // Iteration 2 check: Allowed
+        // Iteration 1 check: Loop Detect
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.85 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
+        // Iteration 2 check: Start
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.40 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
-        // Iteration 3 check: FAILED
+        // Iteration 2 check: Loop Detect
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.35 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
+        // Iteration 3 check: Start (FAILED)
         vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: false, remainingBudget: -0.10 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
 
         const response = await agent.execute('Run expensive task');
 
         // Assertions
-        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(3);
-        expect(response.error).toContain('Daily spend limit reached');
-        expect(response.text).toContain('paused');
+        expect(MembershipService.checkBudget).toHaveBeenCalledTimes(5);
+        expect(response.text).toContain('daily budget limit');
 
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
     });

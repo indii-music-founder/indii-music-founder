@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -28,7 +29,7 @@ import {
 
 function NoiseOverlay() {
   return (
-    <div className="absolute inset-0 opacity-[0.04] pointer-events-none z-0 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+    <div className="absolute inset-0 opacity-[0.04] pointer-events-none z-0 mix-blend-overlay indii-noise-overlay" />
   );
 }
 
@@ -129,11 +130,11 @@ const agents: AgentDef[] = [
   {
     id: 'creative',
     name: 'Creative',
-    title: 'Visual Alchemist',
+    title: 'Visual Designer',
     tagline: 'Look like the Sound.',
     description:
-      'Generate cinematic 4K album art and music videos that match your sonic DNA. High-end visual identity deployed at the speed of thought.',
-    keywords: ['4K Cinematic Art', 'Video Alchemy', 'Visual DNA', 'Style Transfer', 'Instant Creative'],
+      'Generate professional 4K album art and music videos that match your sound profile. High-end visual design ready in seconds.',
+    keywords: ['4K Professional Art', 'Video Generation', 'Visual Style', 'Style Transfer', 'Instant Delivery'],
     icon: Sparkles,
     colorClass: 'text-pink-400',
     bgClass: 'bg-pink-500/10',
@@ -146,10 +147,10 @@ const agents: AgentDef[] = [
     id: 'music',
     name: 'Music',
     title: 'Sonic Identity',
-    tagline: 'Know your DNA.',
+    tagline: 'Know your sound.',
     description:
-      'Deep audio analysis for BPM, key, mood, and energy. Ensure your mixes are industry-hardened and platform-ready before you hit upload.',
-    keywords: ['BPM & Key', 'Mood Matrix', 'Sonic Audit', 'Sonic Identity', 'Mix Hardening'],
+      'Deep audio analysis for BPM, key, mood, and energy. Ensure your mixes are finalized and platform-ready before you hit upload.',
+    keywords: ['BPM & Key', 'Mood Analysis', 'Audio Audit', 'Sound Profile', 'Mix Finalization'],
     icon: AudioWaveform,
     colorClass: 'text-cyan-400',
     bgClass: 'bg-cyan-500/10',
@@ -163,11 +164,11 @@ const agents: AgentDef[] = [
   {
     id: 'governance',
     name: 'Operations',
-    title: 'Sovereign Command',
+    title: 'Artist Dashboard',
     tagline: 'CEO Status.',
     description:
-      'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
-    keywords: ['Direct Control', 'Secure Ops', 'No Management', 'Total Independence', 'Identity Guard'],
+      'Your central control room. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
+    keywords: ['Direct Control', 'Secure Operations', 'No Management', 'Total Control', 'Identity Protection'],
     icon: ShieldCheck,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -195,11 +196,11 @@ const agents: AgentDef[] = [
   {
     id: 'legal',
     name: 'Legal',
-    title: 'Rights Guard',
+    title: 'Rights Management',
     tagline: 'Secure the Bag.',
     description:
-      'Instant automated contract review and cryptographic copyright protection. Secure your splits and your legacy without the billable hours.',
-    keywords: ['Contract System', 'Rights Registry', 'Split Protection', 'No Legal Fees', 'Legacy Guard'],
+      'Instant automated contract review and secure rights registration. Secure your splits and your permanent record without the billable hours.',
+    keywords: ['Contract System', 'Rights Registry', 'Split Protection', 'No Legal Fees', 'Secure Contracts'],
     icon: Scale,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -214,8 +215,8 @@ const agents: AgentDef[] = [
     title: 'Audience Builder',
     tagline: 'Find your 1,000 True Fans.',
     description:
-      'No more guessing where your fans are. We use high-end data to find the people who actually want to connect with your sound—and help you turn them into your tribe.',
-    keywords: ['Fan Growth', 'Audience Find', 'Targeting', 'Social Boost', 'Hype Engine'],
+      'No more guessing where your fans are. We use high-end data to find the people who actually want to connect with your sound—and help you turn them into your core audience.',
+    keywords: ['Fan Growth', 'Audience Find', 'Targeting', 'Social Boost', 'Marketing Automation'],
     icon: Megaphone,
     colorClass: 'text-rose-400',
     bgClass: 'bg-rose-500/10',
@@ -244,10 +245,10 @@ const agents: AgentDef[] = [
   {
     id: 'analytics',
     name: 'Analytics',
-    title: 'Tribe Intelligence',
-    tagline: 'Map the Momentum.',
-    description: 'See the pulse of your tribe in real-time. Know exactly where your sound is winning and which cities are ready for your next move.',
-    keywords: ['Pulse Tracking', 'Fan Mapping', 'Momentum Data', 'Growth Feed'],
+    title: 'Audience Analytics',
+    tagline: 'Growth Metrics.',
+    description: 'See your growth metrics in real-time. Know exactly where your sound is winning and which cities are ready for your next move.',
+    keywords: ['Analytics', 'Fan Mapping', 'Growth Metrics', 'Growth Feed'],
     icon: BarChart3,
     colorClass: 'text-sky-400',
     bgClass: 'bg-sky-500/10',
@@ -259,10 +260,10 @@ const agents: AgentDef[] = [
   {
     id: 'video',
     name: 'Video',
-    title: 'Visual Director',
-    tagline: 'Cinematic Alchemy.',
-    description: 'High-fidelity lyric videos and short-form social clips generated directly from your sonic DNA. Professional visuals, no production team required.',
-    keywords: ['4K Lyric Videos', 'Social Clips', 'Pro Fidelity', 'Visual Chemistry'],
+    title: 'Video Director',
+    tagline: 'Professional Video.',
+    description: 'High-quality lyric videos and short-form social clips generated directly from your sound profile. Professional visuals, no production team required.',
+    keywords: ['4K Lyric Videos', 'Social Clips', 'High Quality', 'Visual Generation'],
     icon: Video,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -274,10 +275,10 @@ const agents: AgentDef[] = [
   {
     id: 'social',
     name: 'Social',
-    title: 'Tribe Architect',
+    title: 'Community Manager',
     tagline: 'Connected, Not Consumed.',
-    description: 'Sync your social presence and keep your tribe engaged without the noise. Real connection, automated and authenticated by you.',
-    keywords: ['Unified Presence', 'Tribe Sync', 'Authentic Reach', 'Engagement Hub'],
+    description: 'Sync your social presence and keep your audience engaged without the noise. Real connection, automated and authenticated by you.',
+    keywords: ['Unified Presence', 'Community Sync', 'Authentic Reach', 'Audience Engagement'],
     icon: Share2,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -306,8 +307,8 @@ const agents: AgentDef[] = [
     name: 'Merchandise',
     title: 'Physical Identity',
     tagline: 'Wear the Sound.',
-    description: 'Design and deploy premium apparel for your tribe without inventory risks. High-end pieces, global shipping, no overhead.',
-    keywords: ['Tribe Gear', 'Physical Assets', 'No Inventory', 'Global Shipping'],
+    description: 'Design and deploy custom apparel for your fans without inventory risks. High-end pieces, global shipping, no overhead.',
+    keywords: ['Custom Merch', 'Physical Assets', 'No Inventory', 'Global Shipping'],
     icon: ShoppingBag,
     colorClass: 'text-lime-400',
     bgClass: 'bg-lime-500/10',
@@ -321,7 +322,7 @@ const agents: AgentDef[] = [
     name: 'Publicist',
     title: 'Media Machine',
     tagline: 'Control the Narrative.',
-    description: 'Your autonomous press department. Deploy professional EPKs and outreach campaigns to the blogs and platforms that matter most.',
+    description: 'Your automated press department. Deploy professional EPKs and outreach campaigns to the blogs and platforms that matter most.',
     keywords: ['Smart EPK', 'Narrative Control', 'Media Outreach', 'Press Flow'],
     icon: Newspaper,
     colorClass: 'text-teal-400',
@@ -336,8 +337,8 @@ const agents: AgentDef[] = [
     name: 'Road',
     title: 'Tour Logistics',
     tagline: 'Dominate the Stage.',
-    description: 'Venues, routes, and logistics handled autonomously. Focus on the performance while your digital tour team secures the dates.',
-    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics AI', 'Live Execution'],
+    description: 'Venues, routes, and logistics handled automatically. Focus on the performance while your tour team secures the dates.',
+    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics Intelligence', 'Live Execution'],
     icon: MapPin,
     colorClass: 'text-red-400',
     bgClass: 'bg-red-500/10',
@@ -592,7 +593,7 @@ export default function AgentGrid() {
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
           No labels. No gatekeepers. Your music, your rules. Take control 
           of your career with global distribution, smart audio 
-          analysis, and individually trained agents organized to perform specialized tasks for your team. indiiOS is your <strong>independent creative engine</strong>.
+          analysis, and individually trained agents organized to perform specialized tasks for your team. indii is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 
@@ -639,7 +640,7 @@ export default function AgentGrid() {
         <div className="flex items-center gap-10 mb-16">
           <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <span className="text-[12px] font-mono font-black tracking-[0.5em] uppercase text-gray-800">
-            Total Operational Supremacy
+            Total Control of Your Career
           </span>
           <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
@@ -665,4 +666,3 @@ export default function AgentGrid() {
     </section>
   );
 }
-

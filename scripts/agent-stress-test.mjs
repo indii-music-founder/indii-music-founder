@@ -84,7 +84,7 @@ function loadSystemPrompt(agentId) {
     }
 
     // Return a fallback generic prompt
-    return `You are the ${agentId} specialist agent within the indiiOS creative platform. Respond from your domain expertise. Be concise, actionable, and professional.`;
+    return `You are the ${agentId} specialist agent within the indii creative platform. Respond from your domain expertise. Be concise, actionable, and professional.`;
 }
 
 // ─── Agent Roster ────────────────────────────────────────────────────────────
@@ -637,7 +637,7 @@ async function runStressTest() {
 
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════╗');
-    console.log('║   🔥 indiiOS LIVE AGENT STRESS TEST                         ║');
+    console.log('║   🔥 indii LIVE AGENT STRESS TEST                           ║');
     console.log('║   Testing agent personas via system prompts + base model    ║');
     console.log('║   Model: gemini-3-flash-preview                          ║');
     console.log('╚══════════════════════════════════════════════════════════════╝');

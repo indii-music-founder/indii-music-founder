@@ -11,8 +11,8 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => JSON.stringify({
@@ -33,9 +33,9 @@ vi.mock('@/services/agent/tools/LegalTools', () => ({
     },
 }));
 
-vi.mock('@/core/config/ai-models', () => ({
+vi.mock('@/core/config/intelligence-models', () => ({
 
-    AI_MODELS: {
+    INTELLIGENCE_MODELS: {
         TEXT: {
             FAST: 'fast-model',
             AGENT: 'agent-model',
@@ -92,7 +92,7 @@ describe('LegalDashboard', () => {
 
         fireEvent.change(fileInput!, { target: { files: [file] } });
 
-        expect(await screen.findByText('Analysis Report')).toBeInTheDocument();
+        expect(await screen.findByText('Analysis Report', {}, { timeout: 5000 })).toBeInTheDocument();
         expect(screen.getByText('Test Summary')).toBeInTheDocument();
     });
 

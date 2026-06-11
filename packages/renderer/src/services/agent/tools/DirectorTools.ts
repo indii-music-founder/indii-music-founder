@@ -1,9 +1,11 @@
 import type { HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { ToolFunctionArgs, AnyToolFunction } from '../types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { MusicTools } from './MusicTools';
 import { CanvasTools } from './CanvasTools';
@@ -507,6 +509,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
  * Maps common API errors to actionable hints for the agent.
  */
 function handleGenerationError(err: unknown, toolName: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const error = err as any;
     const message = error.message || String(err);
     const lowerMessage = message.toLowerCase();

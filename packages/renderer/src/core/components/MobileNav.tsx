@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film,
     Scale, Book, DollarSign, FileText, ShoppingBag, Radio,
     Menu, X, Layout, Clock, type LucideIcon
@@ -65,7 +66,6 @@ export const MobileNav = () => {
         { id: 'agent', icon: Network, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
-        { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
     const departmentItems: NavItem[] = [
@@ -98,7 +98,7 @@ export const MobileNav = () => {
         }
     };
 
-    const MenuItem = ({ item }: { item: NavItem }) => {
+    const MenuItem = ({ item }: { key?: React.Key; item: NavItem }) => {
         const isActive = currentModule === item.id;
         const colors = getColorForModule(item.id);
 

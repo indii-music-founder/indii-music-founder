@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Creative Studio Persistence E2E Tests
@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Creative Studio', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Mock Gemini image generation API
         await page.route('**/generativelanguage.googleapis.com/**', async route => {
             await route.fulfill({
@@ -40,12 +40,10 @@ test.describe('Creative Studio', () => {
             });
         });
 
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
     });
 
-    test('creative module loads without crashing', async ({ page }) => {
+    test('creative module loads without crashing', async ({ authedPage: page }) => {
         const creativeNav = page.locator('[data-testid="nav-item-creative"]');
         const isVisible = await creativeNav.isVisible().catch(() => false);
 
@@ -53,14 +51,14 @@ test.describe('Creative Studio', () => {
             await creativeNav.click();
             await page.waitForTimeout(2_000);
         } else {
-            await page.goto('/#creative');
+            await page.goto('/#creative', { waitUntil: 'domcontentloaded' });
             await page.waitForTimeout(2_000);
         }
 
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('navigating away from creative and back preserves module availability', async ({ page }) => {
+    test('navigating away from creative and back preserves module availability', async ({ authedPage: page }) => {
         // Go to creative
         const creativeNav = page.locator('[data-testid="nav-item-creative"]');
         const creativeVisible = await creativeNav.isVisible().catch(() => false);
@@ -89,7 +87,7 @@ test.describe('Creative Studio', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('creative studio canvas or gallery renders on load', async ({ page }) => {
+    test('creative studio canvas or gallery renders on load', async ({ authedPage: page }) => {
         const creativeNav = page.locator('[data-testid="nav-item-creative"]');
         const isVisible = await creativeNav.isVisible().catch(() => false);
 
@@ -110,7 +108,7 @@ test.describe('Creative Studio', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('multiple module switches do not degrade performance', async ({ page }) => {
+    test('multiple module switches do not degrade performance', async ({ authedPage: page }) => {
         const modules = [
             '[data-testid="nav-item-creative"]',
             '[data-testid="nav-item-finance"]',

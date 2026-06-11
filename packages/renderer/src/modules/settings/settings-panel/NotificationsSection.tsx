@@ -23,7 +23,8 @@ const NotificationsSection: React.FC = () => {
         updatePreferences: s.updatePreferences,
     })));
 
-    const prefs = userProfile?.preferences || {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prefs = (userProfile?.preferences || {}) as any;
 
     // Derive values with defaults
     const pushEnabled = prefs.notifications ?? true;
@@ -89,7 +90,7 @@ const NotificationsSection: React.FC = () => {
                 <SettingRow
                     icon={AlertTriangle}
                     label="Budget Alerts"
-                    description="Warn when AI usage nears budget limits"
+                    description="Warn when intelligence usage nears budget limits"
                 >
                     <Toggle
                         enabled={budgetAlerts}

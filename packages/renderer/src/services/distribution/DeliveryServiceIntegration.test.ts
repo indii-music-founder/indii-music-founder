@@ -37,9 +37,9 @@ vi.mock('./transport/SFTPTransporter', () => ({
   }
 }));
 
-// Partially mock ernService to call through or mock as needed
-vi.mock('@/services/ddex/ERNService', () => ({
-  ernService: {
+// Partially mock ingestionNotificationService to call through or mock as needed
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+  ingestionNotificationService: {
     generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<xml>mock</xml>' }),
     parseERN: vi.fn().mockReturnValue({ success: true, data: {} }),
     validateERNContent: vi.fn().mockReturnValue({ valid: true, errors: [] })
@@ -48,7 +48,7 @@ vi.mock('@/services/ddex/ERNService', () => ({
 
 // Import service after mocks
 import { DeliveryService } from '@/services/distribution/DeliveryService';
-import { ernService } from '@/services/ddex/ERNService';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 
 describe('DeliveryService Integration with Assets', () => {
     let service: DeliveryService;
@@ -99,7 +99,7 @@ describe('DeliveryService Integration with Assets', () => {
         const result = await service.generateReleasePackage(mockMetadata, '/tmp/output', mockAssets);
 
         expect(result.success).toBe(true);
-        expect(ernService.generateERN).toHaveBeenCalledWith(mockMetadata, undefined, undefined, mockAssets);
+        expect(ingestionNotificationService.generateERN).toHaveBeenCalledWith(mockMetadata, undefined, undefined, mockAssets);
         // Verify fs calls
         // Since we mocked 'fs', the dynamic import in DeliveryService should receive our mock
         // (Note: in some environments dynamic import of node built-ins behaves differently, but vi.mock('fs') is the best attempt)
@@ -108,7 +108,21 @@ describe('DeliveryService Integration with Assets', () => {
 
     it('should handle multi-track assets', async () => {
         const mockMetadata: ExtendedGoldenMetadata = {
-            // ...
+            upc: '1234567890124',
+            trackTitle: 'Album Track',
+            releaseTitle: 'Test Album',
+            artistName: 'Test Artist',
+            isrc: 'US12346',
+            catalogNumber: 'CAT124',
+            genre: 'Pop',
+            subGenre: 'Synth Pop',
+            explicit: false,
+            releaseDate: '2023-01-01',
+            originalReleaseDate: '2023-01-01',
+            labelName: 'Test Label',
+            territories: ['Worldwide'],
+            distributionChannels: ['streaming'],
+            splits: [],
             tracks: [
                 { trackTitle: 'T1', isrc: 'US1' },
                 { trackTitle: 'T2', isrc: 'US2' }
@@ -125,7 +139,7 @@ describe('DeliveryService Integration with Assets', () => {
 
         await service.generateReleasePackage(mockMetadata, '/tmp/output', mockAssets);
 
-        expect(ernService.generateERN).toHaveBeenCalled();
+        expect(ingestionNotificationService.generateERN).toHaveBeenCalled();
         expect(mockFs.promises.copyFile).toHaveBeenCalledTimes(3); // 2 audio + 1 cover
     });
 });

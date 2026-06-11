@@ -48,7 +48,7 @@ export default function Overlays() {
             <section className="h-screen w-full flex flex-col items-center justify-center pointer-events-none">
                 <div className="text-center z-10 px-4">
                     <h1 className="text-8xl md:text-[10rem] font-bold tracking-tighter leading-none mb-8 opacity-90 mix-blend-difference">
-                        indiiOS
+                        indii
                     </h1>
                     <div className="flex flex-col gap-4 text-center">
                         <p className="text-2xl md:text-3xl font-light tracking-[0.2em] uppercase text-white/80">
@@ -84,7 +84,7 @@ export default function Overlays() {
                         indii
                     </h2>
                     <p className="text-2xl text-white/80 font-light mb-8 leading-tight">
-                        Your AI production manager.
+                        Your production manager.
                     </p>
 
                     <div className="flex flex-col items-end gap-6 text-white/50">
@@ -179,7 +179,7 @@ export default function Overlays() {
                         System Ready
                     </p>
                     <h2 className="text-6xl md:text-9xl font-bold tracking-tighter mb-4">
-                        indiiOS
+                        indii
                     </h2>
                 </div>
 

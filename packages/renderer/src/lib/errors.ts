@@ -1,5 +1,5 @@
 /**
- * Error Handling Utilities for indiiOS
+ * Error Handling Utilities for indii
  *
  * Centralizes repetitive try/catch patterns across services.
  * Uses the existing `AppException` from `@/shared/types/errors`.

@@ -28,16 +28,19 @@ vi.mock('fabric', () => {
   };
 });
 
-// Mock useStore
 vi.mock('@/core/store', () => ({
-  useStore: vi.fn(() => ({
-    userProfile: { displayName: 'Test User' },
-    generatedHistory: [],
-    uploadedImages: [],
-    currentProjectId: 'test-project',
-    organizations: [{ id: 'test-org', name: 'Test Org' }],
-    currentOrganizationId: 'test-org'
-  })),
+  useStore: vi.fn((selector) => {
+    const state = {
+      userProfile: { displayName: 'Test User' },
+      generatedHistory: [],
+      uploadedImages: [],
+      currentProjectId: 'test-project',
+      organizations: [{ id: 'test-org', name: 'Test Org' }],
+      currentOrganizationId: 'test-org',
+      consumeHandoff: vi.fn().mockReturnValue(null),
+    };
+    return selector ? selector(state) : state;
+  }),
 }));
 
 describe('MerchDesigner Accessibility', () => {
@@ -82,9 +85,9 @@ describe('MerchDesigner Accessibility', () => {
       </MemoryRouter>
     );
 
-    // Verify AI Gen button is accessible (might appear in ToolButton and AssetLibrary)
-    const aiGenBtns = screen.queryAllByRole('button', { name: /AI Gen/i });
-    expect(aiGenBtns.length).toBeGreaterThan(0);
+    // Verify Autonomous tool button is accessible (might appear in ToolButton and AssetLibrary)
+    const autonomousBtns = screen.queryAllByRole('button', { name: /Autonomous/i });
+    expect(autonomousBtns.length).toBeGreaterThan(0);
 
     // Verify Text tool
     const textBtns = screen.queryAllByRole('button', { name: /Text/i });

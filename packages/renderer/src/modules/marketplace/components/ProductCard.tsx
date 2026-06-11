@@ -33,6 +33,7 @@ interface ProductCardProps {
     variant?: 'default' | 'embedded';
     source?: string;
     sourceId?: string;
+    key?: React.Key;
 }
 
 const ProductCard = React.memo(({ product, variant = 'default', source, sourceId }: ProductCardProps) => {

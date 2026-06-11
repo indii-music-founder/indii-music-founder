@@ -1,6 +1,10 @@
-// indiiOS Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
+// indii.music Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { BigQuery } from "@google-cloud/bigquery";
+
+// Initialize Firebase Admin immediately to prevent race conditions during import analysis
+admin.initializeApp();
 
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
@@ -16,13 +20,15 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
-import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
+import { editImageFn } from "./lib/image_generation";
+export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { analyzeAudioFn } from "./lib/audio";
-import { FUNCTION_AI_MODELS } from "./config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
+import { clearbitApiKey, apolloApiKey } from "./config/secrets";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-import { generateThumbnail } from "./lib/image_resizing";
+
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
@@ -31,11 +37,9 @@ import { generateThumbnail } from "./lib/image_resizing";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
-    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-music-founder";
 }
 
-// Initialize Firebase Admin
-admin.initializeApp();
 
 // Admin Functions
 export { setGodMode } from './functions/admin/setGodMode';
@@ -45,6 +49,26 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
+export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
+
+// Security Functions
+export { persistFraudAlert } from './functions/security/persistFraudAlert';
+export { logAuditEvent } from './functions/security/logAuditEvent';
+
+// REST API Router
+export {
+    getTrack,
+    createTrack,
+    queryAnalytics,
+    updateTrack,
+    deleteTrack,
+    listTracks,
+    createDistribution,
+    getDistribution,
+    submitDistribution,
+    getProfile,
+    health,
+} from './functions/api/router';
 
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
@@ -60,6 +84,14 @@ export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
 export { processDDEXAck } from './distribution/processDDEXAck';
+export {
+    assignDistributionIdentifier,
+    recordDistributionIdentifier,
+    recordDistributionAuditEvent,
+    requestDistributionTakedown,
+    createSftpIngestionRecord,
+    updateSftpIngestionRecord,
+} from './functions/distribution/distributionRecords';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
@@ -108,6 +140,9 @@ export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
 
+// Billing / Cost Control
+export { enforceOperationCost } from './functions/billing/enforceOperationCost';
+
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';
 export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegramLink';
@@ -125,7 +160,7 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
+const ENFORCE_APP_CHECK = true;
 
 /**
  * Security Helper: Validate Organization Access
@@ -155,7 +190,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 
     // 3. Verify Membership
     if (!members.includes(userId)) {
-        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        functions.logger.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "You are not a member of this organization."
@@ -169,7 +204,7 @@ import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } fro
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
     return new Inngest({
-        id: "indii-os-functions",
+        id: "indii-music-functions",
         eventKey: inngestEventKey.value()
     });
 };
@@ -193,7 +228,7 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     // Note: If no admins exist yet, this securely defaults to deny-all.
     // Use the Firebase Admin SDK or a script to set `admin: true` on specific UIDs.
     if (!context.auth.token.admin) {
-        console.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
+        functions.logger.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
         throw new functions.https.HttpsError(
             "permission-denied",
             "Access denied: Admin privileges required."
@@ -209,18 +244,18 @@ const requireAdmin = (context: functions.https.CallableContext) => {
  */
 const getAllowedOrigins = (): string[] => {
     const origins = [
-        'https://indiios-studio.web.app',
-        'https://indiios-studio.firebaseapp.com',
-        'https://indiios-v-1-1.web.app',
-        'https://indiios-v-1-1.firebaseapp.com',
-        'https://studio.indiios.com',
-        'https://indiios.com',
+        'https://indii.music',
+        'https://indii-studio.firebaseapp.com',
+        'https://indii-v-1-1.web.app',
+        'https://indii-v-1-1.firebaseapp.com',
+        'https://studio.indii.music',
+        'https://indii.music',
         'https://indii.music',
         'https://www.indii.music',
         'https://app.indii.music',
         'https://studio.indii.music',
         'app://.',  // Electron app
-        'http://localhost:4242' // Electron Studio (Vite)
+        
     ];
 
     // Add localhost origins in emulator/development mode
@@ -253,7 +288,7 @@ const corsHandler = corsLib({
         }
 
         // Reject unauthorized origins
-        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        functions.logger.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
         callback(new Error('CORS not allowed'));
     },
     credentials: true
@@ -299,7 +334,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
         memory: "2GB",
@@ -362,13 +397,13 @@ export const triggerVideoJob = functions
             // 2. That's it — the Firestore document creation above will trigger
             //    executeVideoJob via Firestore onCreate. No self-invocation needed.
 
-            console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            functions.logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
             return { success: true, message: "Video generation job started." };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[VideoJob] Error triggering video generation:", error);
+            functions.logger.error("[VideoJob] Error triggering video generation:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue video job: ${error.message}`
@@ -387,7 +422,7 @@ export const triggerVideoJob = functions
  * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
  */
 export const executeVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
@@ -400,7 +435,7 @@ export const executeVideoJob = functions
 
         // Only process documents with status "queued"
         if (data.status !== "queued") {
-            console.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
+            functions.logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
 
@@ -410,7 +445,7 @@ export const executeVideoJob = functions
         const options = data.options || {};
 
         if (!userId || !prompt) {
-            console.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
+            functions.logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 status: "failed",
                 error: "Missing required fields: userId or prompt",
@@ -419,7 +454,7 @@ export const executeVideoJob = functions
             return;
         }
 
-        console.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
+        functions.logger.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
 
         // Run the generation
         try {
@@ -433,7 +468,7 @@ export const executeVideoJob = functions
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
-            console.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
+            functions.logger.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
     });
 
@@ -443,7 +478,7 @@ export const executeVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -592,7 +627,7 @@ export const triggerLongFormVideoJob = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[LongFormVideoJob] Error:", error);
+            functions.logger.error("[LongFormVideoJob] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
@@ -610,7 +645,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -648,12 +683,7 @@ export const renderVideo = functions
 
         try {
             // 1. Flatten Tracks to Segment List
-            // Simple logic: sort clips by startFrame.
-            // Note: This MVP implementation assumes sequential non-overlapping clips
-            // or prioritizes the first track for stitching.
-            // Google Transcoder Stitching requires a list of inputs.
-
-            // Filter only video clips
+            // Map clips to explicit Transcoder API inputs using precise frame boundaries.
             const videoClips = (project.clips as Record<string, unknown>[])
                 .filter((c: Record<string, unknown>) => c && typeof c === "object" && c.type === 'video')
                 .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(a.startFrame) - Number(b.startFrame));
@@ -700,7 +730,7 @@ export const renderVideo = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[RenderVideo] Error:", error);
+            functions.logger.error("[RenderVideo] Error:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue render job: ${error.message}`
@@ -750,10 +780,7 @@ export const inngestApi = functions
 // ----------------------------------------------------------------------------
 
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
-// Deployed to us-west1 for Model Availability
-// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
-// Deployed to us-west1 for Model Availability
-export const generateImageV3 = generateImageV3Fn();
+// Deployed to us-central1 with the rest of the Firebase Functions fleet.
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
@@ -775,8 +802,8 @@ export const generateSpeech = functions
         const { text, voice, model } = validation.data;
 
         try {
-            console.log(`[generateSpeech] Generating speech with model: ${model}`);
-            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
             const apiKey = getGeminiApiKey();
 
             // Use REST API for precise control over TTS config
@@ -810,7 +837,7 @@ export const generateSpeech = functions
             const audioContent = part?.inlineData?.data;
 
             if (!audioContent) {
-                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
@@ -818,7 +845,7 @@ export const generateSpeech = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            console.error("[generateSpeech] Error:", error);
+            functions.logger.error("[generateSpeech] Error:", error);
             throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
@@ -874,14 +901,19 @@ export const generateContentStream = functions
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
-                    console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
 
                 // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
                 const { GoogleGenAI } = await import("@google/genai");
-                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+                const apiKey = getGeminiApiKey();
+                if (!apiKey) {
+                    res.status(500).send('Gemini API key is not configured.');
+                    return;
+                }
+                const client = new GoogleGenAI({ apiKey });
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
@@ -906,7 +938,7 @@ export const generateContentStream = functions
 
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
-                console.error("[generateContentStream] Error:", error);
+                functions.logger.error("[generateContentStream] Error:", error);
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
                 } else {
@@ -918,7 +950,7 @@ export const generateContentStream = functions
 
 export const ragProxy = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
         secrets: [geminiApiKey],
         timeoutSeconds: 60
     })
@@ -940,6 +972,22 @@ export const ragProxy = functions
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
+            }
+
+            // Verify App Check manually after CORS preflight has passed
+            if (ENFORCE_APP_CHECK) {
+                const appCheckToken = req.header('x-firebase-appcheck');
+                if (!appCheckToken) {
+                    res.status(401).send('Unauthorized: Missing App Check token');
+                    return;
+                }
+                try {
+                    await admin.appCheck().verifyToken(appCheckToken);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (err) {
+                    res.status(401).send('Unauthorized: Invalid App Check token');
+                    return;
+                }
             }
 
             try {
@@ -1015,9 +1063,7 @@ import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
 
-export const imageResizing = {
-    generateThumbnail
-};
+
 
 /**
  * List GKE Clusters
@@ -1150,12 +1196,25 @@ export const executeBigQueryQuery = functions
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
         requireAdmin(context);
 
-        // SECURITY: Raw SQL execution is disabled for production safety.
-        // Developers should implement specific, parameterized query endpoints.
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Raw SQL execution is disabled in this environment for security reasons.'
-        );
+        if (!data.query) {
+             throw new functions.https.HttpsError('invalid-argument', 'Query is required.');
+        }
+
+        try {
+            const bigquery = new BigQuery();
+            const [job] = await bigquery.createQueryJob({
+                query: data.query,
+                maximumBytesBilled: "100000000" // 100MB cost limit
+            });
+            const [rows] = await job.getQueryResults({
+                maxResults: data.maxResults || 100
+            });
+            return { rows };
+        } catch (error: unknown) {
+            console.error('[executeBigQueryQuery] failed:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            throw new functions.https.HttpsError('internal', `BigQuery execution failed: ${message}`);
+        }
     });
 
 /**
@@ -1214,6 +1273,7 @@ import { getUsageStats } from "./subscription/getUsageStats";
 import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
+import { createMicroTransaction } from "./subscription/createMicroTransaction";
 
 export {
     getSubscription,
@@ -1226,7 +1286,8 @@ export {
     getUsageStats,
     trackUsage,
     stripeWebhook,
-    activateFounderPass
+    activateFounderPass,
+    createMicroTransaction
 };
 
 // ----------------------------------------------------------------------------
@@ -1404,32 +1465,32 @@ export const healthCheck = functions
     });
 
 /**
- * Health Check (Secondary Region: us-west1)
- * Part of PRODUCTION_100 Item 12 (Multi-region Deployment)
+ * Health Check (legacy export name).
+ * Deployed to us-central1 with the primary Firebase Functions fleet.
  */
 export const healthCheckWest1 = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
             status: "ok",
             timestamp: new Date().toISOString(),
-            region: "us-west1",
-            purpose: "Multi-region Failover Check"
+            region: "us-central1",
+            purpose: "Primary region health check"
         });
     });
 
 /**
  * Fan Data Enrichment Service
- * Process batches of fans to append demographic, psychographic, and interest markers.
- * Integration points: Clearbit, Apollo via AI fallback.
+ * Process batches of fans through configured third-party enrichment providers.
  */
 export const enrichFanData = functions
-    .region("us-west1")
+    .region("us-central1")
     .runWith({
         timeoutSeconds: 300,
         memory: "1GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: ENFORCE_APP_CHECK,
+        secrets: [clearbitApiKey, apolloApiKey]
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: Record<string, unknown>, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
@@ -1450,32 +1511,106 @@ export const enrichFanData = functions
         // 2. Validate Org Access
         await validateOrgAccess(context.auth.uid, orgId);
 
-        console.info(`[FanEnrichment] Processing ${fans.length} records via ${provider || 'AI_FALLBACK'}`);
+        const { getClearbitApiKey, getApolloApiKey } = await import("./config/secrets");
+        const normalizedProvider = String(provider || '').toLowerCase();
+        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
-        // 3. Enrichment Logic
-        // In production, this calls Clearbit/Apollo API. 
-        // For Alpha, we use high-fidelity mock enrichment based on industry benchmarks.
-        const results = fans.map((fan: Record<string, unknown>) => {
-            const emailDomain = (fan.email as string).split('@')[1] || '';
-            const isCorporate = !['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'].includes(emailDomain);
+        let enrichedFans = [...fans];
+        let providerUsed = 'none';
 
-            // Heuristic-based enrichment
-            return {
-                ...fan,
-                location: fan.city || (isCorporate ? 'San Francisco, CA' : 'Los Angeles, CA'),
-                ageRange: isCorporate ? '35-44' : '18-24',
-                incomeBracket: isCorporate ? '$120k-$200k' : '$40k-$65k',
-                topGenre: fan.topGenre || (isCorporate ? 'Jazz' : 'Electronic'),
-                interests: isCorporate ? ['Investing', 'Tech'] : ['Live Events', 'Gaming'],
-                lastEnriched: new Date().toISOString()
-            };
-        });
+        try {
+            if (normalizedProvider === 'clearbit') {
+                const apiKey = getClearbitApiKey();
+                if (apiKey) {
+                    providerUsed = 'clearbit';
+                    // Clearbit Enrichment API batch lookup
+                    // See https://dashboard.clearbit.com/docs#enrichment-api
+                    const batchResults = await Promise.all(fans.map(async (fan) => {
+                        try {
+                            const res = await fetch(`https://person.clearbit.com/v2/combined/find?email=${encodeURIComponent(String(fan.email || ''))}`, {
+                                headers: { 'Authorization': `Bearer ${apiKey}` },
+                                signal: AbortSignal.timeout(10000)
+                            });
+                            if (res.status === 404) return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit' };
+                            if (!res.ok) throw new Error(`Clearbit API status: ${res.status}`);
+                            const payload = await res.json() as Record<string, unknown>;
+                            const person = (payload.person || {}) as Record<string, unknown>;
+                            return {
+                                ...fan,
+                                city: fan.city || person.location || (person.geo as Record<string, unknown>)?.city || null,
+                                country: fan.country || (person.geo as Record<string, unknown>)?.countryCode || null,
+                                enrichedAt: new Date().toISOString(),
+                                enrichmentScore: person.seniority ? 85 : 50,
+                                provider: 'clearbit',
+                                bio: person.bio || null,
+                                avatar: person.avatar || null,
+                            };
+                        } catch (err) {
+                            functions.logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
+                            return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit_error' };
+                        }
+                    }));
+                    enrichedFans = batchResults;
+                } else {
+                    functions.logger.warn('[FanEnrichment] Clearbit API key missing; utilizing fallback mock simulation');
+                }
+            } else if (normalizedProvider === 'apollo') {
+                const apiKey = getApolloApiKey();
+                if (apiKey) {
+                    providerUsed = 'apollo';
+                    // Apollo People Enrichment API
+                    // See https://apolloio.github.io/apollo-api-docs/
+                    const batchResults = await Promise.all(fans.map(async (fan) => {
+                        try {
+                            const res = await fetch('https://api.apollo.io/v1/people/match', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+                                body: JSON.stringify({ api_key: apiKey, email: fan.email, first_name: fan.firstName, last_name: fan.lastName }),
+                                signal: AbortSignal.timeout(10000)
+                            });
+                            if (!res.ok) throw new Error(`Apollo API status: ${res.status}`);
+                            const payload = await res.json() as Record<string, unknown>;
+                            const person = (payload.person || {}) as Record<string, unknown>;
+                            return {
+                                ...fan,
+                                city: fan.city || person.city || null,
+                                country: fan.country || person.country || null,
+                                enrichedAt: new Date().toISOString(),
+                                enrichmentScore: person.headline ? 75 : 45,
+                                provider: 'apollo',
+                                title: person.title || null,
+                            };
+                        } catch (err) {
+                            functions.logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
+                            return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'apollo_error' };
+                        }
+                    }));
+                    enrichedFans = batchResults;
+                } else {
+                    functions.logger.warn('[FanEnrichment] Apollo API key missing; utilizing fallback mock simulation');
+                }
+            }
+
+            // Fallback mock enrichment if no API key was successfully processed
+            if (providerUsed === 'none' && (normalizedProvider === 'clearbit' || normalizedProvider === 'apollo' || normalizedProvider === 'mock')) {
+                providerUsed = 'mock';
+                enrichedFans = fans.map(fan => ({
+                    ...fan,
+                    enrichedAt: new Date().toISOString(),
+                    enrichmentScore: fan.email ? (String(fan.email).length % 50) + 40 : 50,
+                    provider: normalizedProvider
+                }));
+            }
+        } catch (error) {
+            functions.logger.error('[FanEnrichment] Enrichment routine failed completely:', error);
+            throw new functions.https.HttpsError('internal', 'Data enrichment execution failed.');
+        }
 
         return {
-            results,
+            results: enrichedFans,
             metadata: {
-                provider: provider || 'AI_FALLBACK',
-                count: results.length,
+                provider: providerUsed,
+                count: enrichedFans.length,
                 timestamp: new Date().toISOString()
             }
         };
@@ -1487,3 +1622,18 @@ export * from './mcp';
 // Agent Orchestration State Machine
 export * from './orchestration';
 export * from './pod/printful';
+
+// Payment Links
+export { createStripePaymentLinks } from './stripe/paymentLinks';
+
+// Printful POD
+export {
+    pod_printfulGetProducts,
+    pod_printfulGetProduct,
+    pod_printfulCalculatePrice,
+    pod_printfulGetShippingRates,
+    pod_printfulCreateOrder,
+    pod_printfulGetOrder,
+    pod_printfulCancelOrder,
+    pod_printfulGenerateMockup
+} from './pod/printful';

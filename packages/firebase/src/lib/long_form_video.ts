@@ -3,7 +3,7 @@ import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { Inngest } from "inngest";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI.
@@ -164,8 +164,8 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
                     const { model: requestedModel } = options || {};
                     const modelId = requestedModel === 'fast'
-                        ? FUNCTION_AI_MODELS.VIDEO.FAST
-                        : FUNCTION_AI_MODELS.VIDEO.PRO;
+                        ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+                        : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
                     const auth = new GoogleAuth({
                         scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -174,7 +174,8 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                     const projectId = await auth.getProjectId();
                     const accessToken = await client.getAccessToken();
 
-                    const triggerEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
+                    const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                    const triggerEndpoint = `https://${location}-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
                     // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
@@ -210,6 +211,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
 
                     if (!triggerResponse.ok) {
                         const errorText = await triggerResponse.text();
+                        if (triggerResponse.status === 404) {
+                            throw new Error(`failed-precondition: Veo model not found or not deployed. Status ${triggerResponse.status}. ${errorText}`);
+                        }
                         throw new Error(`Veo Trigger Segment ${i} failed: ${triggerResponse.status} ${errorText}`);
                     }
 
@@ -231,8 +235,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                         const client = await auth.getClient();
                         const accessToken = await client.getAccessToken();
 
+                        const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
                         const statusResponse = await fetch(
-                            `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`,
+                            `https://${location}-aiplatform.googleapis.com/v1beta/${operationName}`,
                             {
                                 headers: {
                                     'Authorization': `Bearer ${accessToken.token}`
@@ -242,6 +247,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                         if (!statusResponse.ok) {
                             if (statusResponse.status >= 400 && statusResponse.status < 500) {
                                 const errorText = await statusResponse.text();
+                                if (statusResponse.status === 404) {
+                                    throw new Error(`failed-precondition: Vertex AI API Error: ${statusResponse.status} ${errorText}`);
+                                }
                                 throw new Error(`Vertex AI API Error: ${statusResponse.status} ${errorText}`);
                             }
                             return { done: false };
@@ -307,7 +315,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                                     const transcoder = new TranscoderServiceClient();
                                     try {
                                         const projectId = await auth.getProjectId();
-                                        const location = 'us-central1';
+                                        const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
                                         const bucket = admin.storage().bucket();
                                         const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
@@ -464,7 +472,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = admin.app().options.projectId;
-            const location = 'us-central1';
+            const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
             const bucket = admin.storage().bucket();
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 

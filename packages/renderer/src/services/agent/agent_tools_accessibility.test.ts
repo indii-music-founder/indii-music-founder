@@ -10,6 +10,7 @@ import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
 import { agentRegistry } from './registry';
 import { AGENT_CONFIGS } from './agentConfig';
 import { VALID_AGENT_IDS } from './types';
+import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -29,9 +30,9 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
-        generateContent: vi.fn().mockResolvedValue({ text: () => 'Mock AI Response' }),
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
+        generateContent: vi.fn().mockResolvedValue({ text: () => 'Mock Autonomous Response' }),
         generateContentStream: vi.fn(),
         parseJSON: vi.fn()
     }
@@ -165,15 +166,42 @@ describe('Agent Tool Accessibility Audit', () => {
 
             // console.log('═══════════════════════════════════════════════════════════');
 
-            const overLimitAgents = auditResults.filter(a => a.overLimit);
-            if (overLimitAgents.length > 0) {
-                console.log(`\n⚠️ ${overLimitAgents.length} agents are OVER the ${CURRENT_LIMIT}-tool limit:`);
-                overLimitAgents.forEach(a => {
-                    console.log(`   - ${a.name}: Has ${a.configuredTools} + ${SUPERPOWER_TOOL_COUNT} superpowers = ${a.configuredTools + SUPERPOWER_TOOL_COUNT} total`);
+            auditResults.forEach(result => {
+                expect(result.effectiveTools).toBeLessThanOrEqual(CURRENT_LIMIT);
+            });
+        });
+
+        it('should preserve every specialist-declared tool in the assembled runtime pool', () => {
+            const cutOffTools: Array<{ agent: string; tool: string }> = [];
+
+            AGENT_CONFIGS.forEach(config => {
+                const declaredTools = config.tools.flatMap(t => t.functionDeclarations || []);
+                const assembledTools = ToolPoolAssembler.assemble(
+                    declaredTools,
+                    {
+                        agentId: config.id,
+                        moduleContext: config.id,
+                        isReadOnly: false,
+                    }
+                );
+                const assembledNames = new Set(assembledTools.map(tool => tool.name));
+
+                declaredTools.forEach(tool => {
+                    if (!assembledNames.has(tool.name)) {
+                        cutOffTools.push({ agent: config.id, tool: tool.name });
+                    }
                 });
-            } else {
-                console.log('\n✅ All agents are within the tool limit');
-            }
+            });
+
+            expect(cutOffTools).toHaveLength(0);
+        });
+
+        it('should verify runtime registry contains no unknown agent IDs', () => {
+            const validIds = new Set<string>(VALID_AGENT_IDS);
+            const registeredIds = agentRegistry.getAll().map(agent => agent.id);
+            const unknownIds = registeredIds.filter(id => !validIds.has(id));
+
+            expect(unknownIds).toHaveLength(0);
         });
 
         it('should verify all VALID_AGENT_IDS have registered loaders', async () => {
@@ -231,8 +259,33 @@ describe('Agent Tool Accessibility Audit', () => {
                 // console.log('   ✅ All declared tools have implementations');
             }
 
-            // This is a warning, not a failure - some tools might be in TOOL_REGISTRY
-            expect(missingImplementations.length).toBeLessThanOrEqual(20); // Allow flexibility as codebase grows
+            expect(missingImplementations).toHaveLength(0);
+        });
+
+        it('should verify all loaded runtime agents can resolve declared tool handlers', async () => {
+            const missingRuntimeHandlers: Array<{ agent: string; tool: string }> = [];
+
+            for (const agentId of VALID_AGENT_IDS) {
+                const agent = await agentRegistry.getAsync(agentId);
+                expect(agent, `Expected registry to load ${agentId}`).toBeDefined();
+
+                const runtimeAgent = agent as unknown as {
+                    tools?: Array<{ functionDeclarations?: Array<{ name: string }> }>;
+                    functions?: Record<string, unknown>;
+                };
+                const declaredTools = runtimeAgent.tools
+                    ?.flatMap(toolGroup => toolGroup.functionDeclarations || [])
+                    .map(tool => tool.name) || [];
+                const localFunctions = Object.keys(runtimeAgent.functions || {});
+
+                declaredTools.forEach(tool => {
+                    if (!localFunctions.includes(tool) && !TOOL_REGISTRY[tool]) {
+                        missingRuntimeHandlers.push({ agent: agentId, tool });
+                    }
+                });
+            }
+
+            expect(missingRuntimeHandlers).toHaveLength(0);
         });
     });
 });

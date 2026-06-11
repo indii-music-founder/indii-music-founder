@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to indiiOS are documented in this file.
+All notable changes to indii are documented in this file.
 
 ## [Unreleased]
 

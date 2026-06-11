@@ -4,7 +4,7 @@ import { freezeAgentConfig } from '../FreezeDiagnostic';
 import systemPrompt from '@agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalTools } from "../tools/LegalTools";
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
@@ -75,17 +75,17 @@ export const LicensingAgent: AgentConfig = {
 
                 // Support PDF/Image analysis via Multimodal
                 // We use generateText but include the image part if it's text-based image, 
-                // but since GenAI.generateText takes string, we need to inspect if we can pass parts.
-                // The current GenAI.generateText is wrapper for simple text.
+                // but since AutonomousIntelligence.generateText takes string, we need to inspect if we can pass parts.
+                // The current AutonomousIntelligence.generateText is wrapper for simple text.
                 // We should use generateStructuredData or raw generateContent for multimodal.
 
                 // Using generateStructuredData for clean output, passing the file as inline data.
 
                 // Note: Real multimodal passing requires using generateContent with parts.
-                // Upgrading to use the raw GenAI.generateContent to pass image/pdf parts.
+                // Upgrading to use the raw AutonomousIntelligence.generateContent to pass image/pdf parts.
 
                 // Wait, let's look at the original code. It passed 'user' role parts.
-                // We should use GenAI.generateContent directly if we want to pass a Part.
+                // We should use AutonomousIntelligence.generateContent directly if we want to pass a Part.
 
                 // UPGRADE:
                 // We will assume file_data is base64.
@@ -93,7 +93,7 @@ export const LicensingAgent: AgentConfig = {
                 // Actually, let's use a text-only prompt for now if the file_data is just text content? 
                 // The args say 'file_data' base64. It's likely an image or PDF.
 
-                // Let's use GenAI.generateContent to handle the multimodal input.
+                // Let's use AutonomousIntelligence.generateContent to handle the multimodal input.
 
                 /* 
                    We need to bypass the simple generateText helper and go to generateContent 
@@ -106,12 +106,12 @@ export const LicensingAgent: AgentConfig = {
                 // Let's assume we can use analyzeImage logic if it's an image, or just raw generateContent.
 
                 /* 
-                   Code Correction: current `GenAI.analyzeImage` takes (prompt, base64image). 
+                   Code Correction: current `AutonomousIntelligence.analyzeImage` takes (prompt, base64image). 
                    If mime_type is pdf, analyzeImage might not work depending on implementation.
                    However, Gemone 3 supports PDF as image.
                 */
 
-                const responseText = await GenAI.analyzeImage(prompt, args.file_data);
+                const responseText = await AutonomousIntelligence.analyzeImage(prompt, args.file_data);
 
                 return {
                     success: true,

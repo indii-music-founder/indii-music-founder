@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect } from 'react';
 
 import { motion } from 'motion/react';
-import { Navigation, Gauge, Zap, Fuel, Clock, Crosshair } from 'lucide-react';
+import { Navigation, Fuel, Clock, Crosshair } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
@@ -9,26 +11,13 @@ import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
 
-interface FuelStats {
-    milesDriven: number;
-    fuelLevelPercent: number;
-    tankSizeGallons: number;
-    mpg: number;
-    gasPricePerGallon: number;
-    userId: string;
-}
-
 interface OnTheRoadTabProps {
     currentLocation: string;
     setCurrentLocation: (loc: string) => void;
     handleFindGasStations: () => void;
     isFindingPlaces: boolean;
     nearbyPlaces: NearbyPlace[];
-    fuelStats: FuelStats;
-    setFuelStats: (stats: FuelStats) => void;
-    handleCalculateFuel: () => void;
-    isCalculatingFuel: boolean;
-    fuelLogistics: FuelLogistics | null;
+    fuelLogistics?: FuelLogistics | null;
 
     itinerary: Itinerary | null;
 }
@@ -39,18 +28,13 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     handleFindGasStations,
     isFindingPlaces,
     nearbyPlaces,
-    fuelStats,
-    setFuelStats,
-    handleCalculateFuel,
-    isCalculatingFuel,
     fuelLogistics,
     itinerary
 }) => {
+    const { t } = useTranslation();
     // Find next stop logic
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
-
-    // Simulate telemetry updates
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
@@ -67,13 +51,10 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
         );
     };
 
-    const estimatedRange = fuelStats.tankSizeGallons * fuelStats.mpg * (fuelStats.fuelLevelPercent / 100);
-    const range = fuelLogistics?.currentRangeMiles ?? estimatedRange;
-    const status = fuelLogistics?.status ?? (estimatedRange < 50 ? 'LOW' : 'GOOD');
+    const range = fuelLogistics?.currentRangeMiles ?? 200;
 
     return (
         <div className="flex flex-col gap-6 h-full">
-            {/* ... rest of existing imports and logic ... */}
             {/* Top Row: Command Center & Map */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
                 {/* Main Telemetry / Command Center */}
@@ -81,7 +62,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Live Feed</span>
+                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Route View</span>
                         </div>
                     </div>
 
@@ -122,24 +103,14 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 {/* Map Display */}
                 <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
                     <TourMap
+                        currentLocation={currentLocation}
                         // Map nearby places to markers
                         markers={[
-                            ...(currentLocation ? [{
-                                position: {
-                                    lat: Number(currentLocation.split(',')[0]),
-                                    lng: Number(currentLocation.split(',')[1])
-                                },
-                                title: "My Location",
-                                type: 'current' as const
-                            }] : []),
-                            ...(nextStop ? [{
-                                // We don't have coords for stops yet unless we geocode, so we fall back to string location for this mixed mode
-                                // But since we are upgrading, let's rely on the location string prop for the destination
-                                // and markers for the POIs
-                                position: { lat: 0, lng: 0 }, // Placeholder, won't render without valid coords
+                            ...(nextStop && nextStop.coordinates ? [{
+                                position: nextStop.coordinates,
                                 title: nextStop.city,
                                 type: 'venue' as const
-                            }] : []).filter(m => m.position.lat !== 0),
+                            }] : []),
                             ...nearbyPlaces.map(p => ({
                                 position: p.geometry.location,
                                 title: p.name,
@@ -147,11 +118,8 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             }))
                         ]}
                         // Also pass locations for the fallback geocoding of the destination which might not have coords yet
-                        locations={nextStop ? [nextStop.city] : []}
-                        center={currentLocation ? {
-                            lat: Number(currentLocation.split(',')[0]),
-                            lng: Number(currentLocation.split(',')[1])
-                        } : undefined}
+                        locations={nextStop && !nextStop.coordinates ? [nextStop.city] : []}
+                        center={currentLocation || undefined}
                         rangeRadiusMiles={range}
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
@@ -171,76 +139,8 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 </Card>
             </div>
 
-            {/* Bottom Row: Fuel & Logistics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-[300px]">
-                {/* Fuel Telemetry */}
-                <Card className="bg-[#161b22] border-gray-800 shadow-xl flex flex-col gap-4">
-                    <CardHeader className="pb-0 flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                                <Gauge className="text-orange-500" size={18} />
-                                Data Telemetry
-                            </CardTitle>
-                            <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Vehicle Stats</p>
-                        </div>
-                        <Button
-                            onClick={handleCalculateFuel}
-                            disabled={isCalculatingFuel}
-                            variant="secondary"
-                            size="sm"
-                            className="text-xs uppercase font-bold tracking-wider"
-                            isLoading={isCalculatingFuel}
-                        >
-                            {!isCalculatingFuel && <Zap size={14} className="text-orange-500 mr-2" />}
-                            Recalculate
-                        </Button>
-                    </CardHeader>
-
-                    <CardContent className="flex-col gap-4">
-                        <div className="grid grid-cols-2 gap-4 mt-2">
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-gray-500 font-bold uppercase">Fuel Level (%)</label>
-                                <input
-                                    type="number"
-                                    value={fuelStats.fuelLevelPercent}
-                                    onChange={(e) => setFuelStats({ ...fuelStats, fuelLevelPercent: Number(e.target.value) })}
-                                    className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-gray-500 font-bold uppercase">MPG (Avg)</label>
-                                <input
-                                    type="number"
-                                    value={fuelStats.mpg}
-                                    onChange={(e) => setFuelStats({ ...fuelStats, mpg: Number(e.target.value) })}
-                                    className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Calculated Stats */}
-                        <div className="mt-auto bg-bg-dark/50 border border-gray-800 rounded-lg p-4 grid grid-cols-3 gap-2">
-                            <div className="text-center">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold">Range</div>
-                                <div className={`text-xl font-mono font-bold ${range < 50 ? 'text-red-500 animate-pulse' : 'text-green-500'}`}>
-                                    {Math.round(range)} <span className="text-[10px]">mi</span>
-                                </div>
-                            </div>
-                            <div className="text-center border-l border-gray-800">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold">Status</div>
-                                <div className="text-xl font-mono font-bold text-white">
-                                    {status}
-                                </div>
-                            </div>
-                            <div className="text-center border-l border-gray-800">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold">Fill Cost</div>
-                                <div className="text-xl font-mono font-bold text-blue-400">
-                                    ${fuelLogistics?.costToFill ?? '--'}
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Bottom Row: Logistics Grid */}
+            <div className="grid grid-cols-1 gap-6 flex-1 min-h-[300px]">
 
                 {/* Logistics Radar */}
                 <Card className="bg-[#161b22] border-gray-800 shadow-xl flex flex-col gap-4">
@@ -256,7 +156,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="Current Location..."
+                                placeholder={t('touring.hints.current_location')}
                                 value={currentLocation}
                                 onChange={(e) => setCurrentLocation(e.target.value)}
                                 className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"

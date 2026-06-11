@@ -109,7 +109,7 @@ The email list is the most valuable asset — owns the relationship.
 
 ```
 Month 1 — Solidify Foundation
-- Complete Brand Kit in indiiOS (Identity Core, Visual DNA)
+- Complete Brand Kit in indii (Identity Core, Visual DNA)
 - Choose 2 primary platforms (depth > breadth)
 - Release 1 piece of content per week (can be low-production)
 - Register with PRO and distributor

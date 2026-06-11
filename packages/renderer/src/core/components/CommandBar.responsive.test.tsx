@@ -94,7 +94,7 @@ vi.mock('@/services/agent/AgentService', () => ({
     agentService: { sendMessage: vi.fn() },
 }));
 
-vi.mock('@/services/ai/VoiceService', () => ({
+vi.mock('@/services/intelligence/VoiceService', () => ({
     serverTimestamp: vi.fn(),
     voiceService: {
         isSupported: vi.fn(() => true),
