@@ -11,9 +11,15 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onRequest } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions';
 import * as express from 'express';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
+
+function maskId(id: string): string {
+  if (!id) return '';
+  return id.length > 4 ? `${id.slice(0, 4)}***` : '***';
+}
 
 const db = admin.firestore();
 
@@ -30,6 +36,7 @@ interface Webhook {
 interface WebhookEvent {
   eventId: string;
   webhookId: string;
+  userId: string;
   eventType: string;
   payload: Record<string, unknown>;
   timestamp: string;
@@ -54,7 +61,12 @@ function generateSignature(secret: string, payload: string): string {
  */
 export function verifySignature(secret: string, signature: string, payload: string): boolean {
   const expected = generateSignature(secret, payload);
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  const sigBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (sigBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
 }
 
 /**
@@ -134,7 +146,7 @@ async function scheduleRetry(
     nextRetry,
     error: null,
   });
-  console.log(`[WebhookDispatcher] Scheduled retry for ${event.eventId} in ${backoffMs}ms`);
+  logger.info(`[WebhookDispatcher] Scheduled retry for ${event.eventId} in ${backoffMs}ms`);
 }
 
 /**
@@ -150,7 +162,7 @@ async function markFailed(
     reason,
   });
   await db.collection('webhook_queue').doc(event.eventId).delete();
-  console.error(`[WebhookDispatcher] Webhook ${event.eventId} moved to dead letter: ${reason}`);
+  logger.error(`[WebhookDispatcher] Webhook ${event.eventId} moved to dead letter: ${reason}`);
 }
 
 /**
@@ -171,7 +183,7 @@ async function processWebhookDelivery(
 
   if (result.success) {
     await db.collection('webhook_queue').doc(event.eventId).delete();
-    console.log(`[WebhookDispatcher] Webhook ${event.eventId} delivered successfully`);
+    logger.info(`[WebhookDispatcher] Webhook ${event.eventId} delivered successfully`);
     return;
   }
 
@@ -209,7 +221,7 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
         .get();
 
       if (webhookSnapshot.empty) {
-        console.log(`[WebhookDispatcher] No webhooks for event type: ${eventType}`);
+        logger.info(`[WebhookDispatcher] No webhooks for event type: ${eventType} and user: ${maskId(userId)}`);
         return;
       }
 
@@ -222,11 +234,13 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
         webhookEvents.push({
           eventId,
           webhookId: webhook.id,
+          userId,
           eventType,
           payload: eventData.data || {},
           timestamp: new Date().toISOString(),
           attempt: 0,
           maxAttempts: 3,
+          nextRetry: new Date().toISOString(),
         });
       });
 
@@ -237,9 +251,9 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
       });
       await batch.commit();
 
-      console.log(`[WebhookDispatcher] Queued ${webhookEvents.length} webhooks`);
+      logger.info(`[WebhookDispatcher] Queued ${webhookEvents.length} webhooks for user ${maskId(userId)}`);
     } catch (err) {
-      console.error('[WebhookDispatcher] Event trigger failed:', err);
+      logger.error('[WebhookDispatcher] Event trigger failed:', err);
     }
   });
 
@@ -264,7 +278,7 @@ export const processWebhookQueue = onSchedule(
         .get();
 
       if (snapshot.empty) {
-        console.log('[WebhookDispatcher] No webhooks to process');
+        logger.info('[WebhookDispatcher] No webhooks to process');
         return;
       }
 
@@ -272,13 +286,13 @@ export const processWebhookQueue = onSchedule(
         const event = doc.data() as WebhookEvent;
 
         const webhook = await db
-          .collection('users').doc(event.webhookId.split('-')[0])
+          .collection('users').doc(event.userId)
           .collection('webhooks').doc(event.webhookId)
           .get();
 
         if (!webhook.exists) {
           await db.collection('webhook_queue').doc(doc.id).delete();
-          console.warn(`[WebhookDispatcher] Webhook not found: ${event.webhookId}`);
+          logger.warn(`[WebhookDispatcher] Webhook not found: ${event.webhookId} for user ${maskId(event.userId)}`);
           continue;
         }
 
@@ -291,7 +305,7 @@ export const processWebhookQueue = onSchedule(
         await processWebhookDelivery(event, webhookData);
       }
     } catch (err) {
-      console.error('[WebhookDispatcher] Queue processing failed:', err);
+      logger.error('[WebhookDispatcher] Queue processing failed:', err);
     }
   }
 );
@@ -301,9 +315,18 @@ export const processWebhookQueue = onSchedule(
  */
 export const createWebhook = onRequest(async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, url, secret, events } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized: Missing or invalid authorization header' });
+      return;
+    }
+    const token = authHeader.split('Bearer ')[1]!;
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userId = decodedToken.uid;
 
-    if (!userId || !url || !secret || !Array.isArray(events)) {
+    const { url, secret, events } = req.body;
+
+    if (!url || !secret || !Array.isArray(events)) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -322,7 +345,7 @@ export const createWebhook = onRequest(async (req: express.Request, res: express
     await db.collection('users').doc(userId).collection('webhooks').doc(webhookId).set(webhook);
     res.status(201).json({ ...webhook, id: webhookId });
   } catch (err) {
-    console.error('[WebhookDispatcher] Create webhook failed:', err);
+    logger.error('[WebhookDispatcher] Create webhook failed:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

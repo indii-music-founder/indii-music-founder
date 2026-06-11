@@ -107,7 +107,13 @@ export const reportBugFn = functions
 
         // 2. GitHub integration (server-side token via centralized secrets)
         const resolvedGithubToken = getGithubToken();
-        const githubRepo = process.env.GITHUB_REPO || 'indii-music-founder/indii-music-founder';
+        const githubRepo = process.env.GITHUB_REPO;
+        if (!githubRepo) {
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                'GITHUB_REPO environment variable is not configured.'
+            );
+        }
 
         if (resolvedGithubToken) {
             try {

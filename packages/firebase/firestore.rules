@@ -857,14 +857,15 @@ service cloud.firestore {
     match /distribution_tasks/{taskId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow update: if ((isVerifiedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId) || (isGuest() && resource.data.userId == 'founder-demo-uid' && request.resource.data.userId == resource.data.userId));
+      allow delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /distribution_takedowns/{releaseId}/{allPaths=**} {
       allow read: if canReadDistributionRelease(releaseId);
       allow create, update, delete: if false;
     }
     match /isrc_pool/{docId} {
-      allow read: if isAuthenticated() || isGuest();
+      allow read: if false;
       allow create, update, delete: if false;
     }
     match /isrc_registry/{docId} {
@@ -873,7 +874,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /upc_pool/{docId} {
-      allow read: if isAuthenticated() || isGuest();
+      allow read: if false;
       allow create, update, delete: if false;
     }
     match /upc_registry/{docId} {
@@ -884,7 +885,8 @@ service cloud.firestore {
     match /campaigns/{campaignId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow update: if ((isVerifiedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId) || (isGuest() && resource.data.userId == 'founder-demo-uid' && request.resource.data.userId == resource.data.userId));
+      allow delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /publicist_campaigns/{campaignId} {
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
@@ -915,7 +917,8 @@ service cloud.firestore {
     match /bountyLinks/{bountyId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow update: if ((isVerifiedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId) || (isGuest() && resource.data.userId == 'founder-demo-uid' && request.resource.data.userId == resource.data.userId));
+      allow delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
     }
     match /scheduled_posts/{postId} {
       allow read, update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || (isGuest() && resource.data.authorId == 'founder-demo-uid');
@@ -970,8 +973,8 @@ service cloud.firestore {
     }
     match /agent_tasks/{traceId}/{allPaths=**} {
       allow read: if (isAuthenticated() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
-      allow create: if (isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isGuest() && request.resource.data.userId == 'founder-demo-uid');
-      allow update, delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+      allow create: if (isVerifiedUser() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
+      allow update, delete: if (isVerifiedUser() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
     }
 
     // =========================================================================

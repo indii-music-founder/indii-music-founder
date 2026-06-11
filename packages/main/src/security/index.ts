@@ -40,7 +40,7 @@ export function configureSecurity(session: Session) {
 
         const connectSrc = isDev
             ? "* ws: http: https:"
-            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com";
+            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-v-1-1.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com";
 
         const mediaSrc = isDev
             ? "*"
