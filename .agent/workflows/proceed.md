@@ -38,9 +38,4 @@ Perform a rigorous automated scan against our core development constraints:
   ```
 - Invoke `/middle` or `/go` to resume execution loops.
 
-
-## Elevate and Polish (The `/better` Audit)
-At the conclusion of this workflow, automatically execute the `/better` workflow to:
-1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
-2. Elevate the codebase to Platinum Quality Standards.
-3. Apply any necessary micro-refactors or polish before proceeding.
+> **Note on polish:** Do NOT run `/better` here — `/proceed` is a read-only audit gate, and the execution loops it hands off to already handle polish (`/go` per task, `/end` for the final pass).

@@ -1,11 +1,11 @@
 ---
+description: Scours the repository for unfinished work, TODOs, and stubs using a swarm of agents, aggregates them for human approval, and then fixes them.
+---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
-description: Scours the repository for unfinished work, TODOs, and stubs using a swarm of agents, aggregates them for human approval, and then fixes them.
----
 
 // turbo-all
 

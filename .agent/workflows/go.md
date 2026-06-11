@@ -59,7 +59,7 @@ If agent reports being stuck, blocked, or unable to proceed:
 ## 4. Re-evaluation Logic
 
 - **Success Standard:** Compare delivered vs. promised.
-- **Three-Strike Rule:** If fixing the SAME issue fails 3x, **STOP** and request user help.
+- **Strike Ladder (shared with `/middle`, `/issue`, `/better`):** Strike 2 = pivot — if the same fix fails verification twice, abandon the approach and propose a fundamentally different one. Strike 3 = escalate — if the pivot also fails, **STOP** and request user help with a detailed blocker description.
 - **Max Recursion Depth:** If `/go` called >12x within a session, **STOP** and ask for scope review.
 - **Strategy Failure:** Update `implementation_plan.md` immediately if approach fails.
 - **Completion Detection:** If the agent says work is done, verify against the active objective and invoke `/ci-validate`.
@@ -89,7 +89,7 @@ If agent reports being stuck, blocked, or unable to proceed:
    - If found: Apply documented solution verbatim
    - If novel: Propose safest minimal fix, test locally, document for ledger
 4. **Re-attempt Task:** Retry with fix applied
-5. **If Still Stuck:** After 3x attempts, call user with detailed blocker description
+5. **If Still Stuck:** Apply the Strike Ladder — pivot to a fundamentally different approach after 2 failed attempts; after the 3rd failure, call the user with a detailed blocker description
 
 ## 7. Final Verification (The Gauntlet)
 
@@ -125,9 +125,4 @@ If agent reports being stuck, blocked, or unable to proceed:
 | Need multi-task completion loop | `/go` (one task per invocation, recursive) |
 | Want to unstick and push through blockers | `/go` (Error Ledger + fix protocol) |
 
-
-## Elevate and Polish (The `/better` Audit)
-At the conclusion of this workflow, automatically execute the `/better` workflow to:
-1. Audit the changes and additions from every angle (Performance, DevEx, Architecture).
-2. Elevate the codebase to Platinum Quality Standards.
-3. Apply any necessary micro-refactors or polish before proceeding.
+> **Note on polish:** `/better` runs exactly once per task, in Step 5 of the Execution Loop, scoped to the files just modified. Do NOT run an additional whole-session `/better` pass when the loop exits — that belongs to `/end`.
