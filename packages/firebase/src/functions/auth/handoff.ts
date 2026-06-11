@@ -5,6 +5,55 @@ import * as express from 'express';
 
 const db = admin.firestore();
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_ATTEMPTS_PER_WINDOW = 10; // max 10 requests per minute
+
+/**
+ * Clean and extract IP from request
+ */
+function getClientIp(req: Request): string {
+    const rawIp = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+    const firstIp = Array.isArray(rawIp) ? rawIp[0] : rawIp.split(',')[0].trim();
+    return firstIp || 'unknown';
+}
+
+/**
+ * Firestore-based IP Rate Limiting middleware helper
+ */
+async function isRateLimited(ip: string, action: string): Promise<boolean> {
+    const cleanIp = ip.replace(/[^a-zA-Z0-9]/g, '_');
+    const docRef = db.collection('rate_limits').doc(`${action}_${cleanIp}`);
+    
+    try {
+        return await db.runTransaction(async (tx) => {
+            const snap = await tx.get(docRef);
+            const now = Date.now();
+            
+            if (snap.exists) {
+                const data = snap.data();
+                if (data) {
+                    const { windowStart, count } = data;
+                    if (now - windowStart < RATE_LIMIT_WINDOW_MS) {
+                        if (count >= MAX_ATTEMPTS_PER_WINDOW) {
+                            return true;
+                        }
+                        tx.update(docRef, { count: count + 1 });
+                    } else {
+                        tx.set(docRef, { windowStart: now, count: 1 });
+                    }
+                }
+            } else {
+                tx.set(docRef, { windowStart: now, count: 1 });
+            }
+            return false;
+        });
+    } catch (err) {
+        console.error(`[RateLimit] Transaction error for ${ip} / ${action}:`, err);
+        // Fallback to allow request in case of database issues
+        return false;
+    }
+}
+
 /**
  * Creates a short-lived handoff code for cross-device or cross-origin authentication.
  * Used by the login bridge (landing page) to hand off credentials to the desktop app.
@@ -25,12 +74,18 @@ export const createHandoffCode = onRequest({ cors: true }, async (req: Request, 
         return;
     }
 
+    const ip = getClientIp(req);
+    if (await isRateLimited(ip, 'create_handoff')) {
+        res.status(429).send('Too Many Requests. Please wait a minute and try again.');
+        return;
+    }
+
     try {
         // 2. Verify the ID token to ensure the request is legitimate
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const userId = decodedToken.uid;
 
-        // 3. Generate a secure random code
+        // 3. Generate a secure random code (64 hex characters)
         const code = crypto.randomBytes(32).toString('hex');
 
         // 4. Store in Firestore with a short TTL (5 minutes)
@@ -69,6 +124,18 @@ export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, 
         return;
     }
 
+    // Security check: Validate 64-hex format for the handoff code to prevent key traversal/SQLi-like attempts
+    if (typeof code !== 'string' || !/^[a-fA-F0-9]{64}$/.test(code)) {
+        res.status(400).send('Invalid code format');
+        return;
+    }
+
+    const ip = getClientIp(req);
+    if (await isRateLimited(ip, 'redeem_handoff')) {
+        res.status(429).send('Too Many Requests. Please wait a minute and try again.');
+        return;
+    }
+
     try {
         // 2. Lookup the code
         const docRef = db.collection('auth_handoffs').doc(code);
@@ -93,11 +160,12 @@ export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, 
             return;
         }
 
-        // 4. Return tokens and delete the code (one-time use)
-        const { idToken, accessToken } = data;
+        // 4. Return tokens, custom token, and delete the code (one-time use)
+        const { idToken, accessToken, userId } = data;
+        const customToken = await admin.auth().createCustomToken(userId);
         await docRef.delete();
 
-        res.status(200).json({ idToken, accessToken });
+        res.status(200).json({ idToken, accessToken, customToken });
     } catch (err) {
         console.error('Error redeeming handoff code:', err);
         res.status(500).send('Internal Server Error');

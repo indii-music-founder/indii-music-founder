@@ -17,6 +17,9 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { Inngest } from 'inngest';
+import { defineSecret } from 'firebase-functions/params';
+
+const inngestEventKey = defineSecret('INNGEST_EVENT_KEY');
 
 const db = admin.firestore();
 
@@ -64,7 +67,10 @@ let inngestClient: Inngest | null = null;
 
 function getInngest(): Inngest {
     if (!inngestClient) {
-        const eventKey = process.env.INNGEST_EVENT_KEY || '';
+        const eventKey = inngestEventKey.value();
+        if (!eventKey) {
+            throw new Error('INNGEST_EVENT_KEY secret is not configured.');
+        }
         inngestClient = new Inngest({
             id: 'indii-os-timeline-poller',
             eventKey,
