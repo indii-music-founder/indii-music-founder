@@ -21,9 +21,8 @@ All skills are in `.agent/skills/<name>/SKILL.md`. Read the SKILL.md before exec
 | `@hunter.md` | `/hunter` | HTTP error code sweep — 401, 403, 404, 410, 413, 422, 429, 500, 502, 503, 504 across full stack |
 | `@test.md` | `/test` | Smart test runner — maps modified files to correct test suite (Vitest/Playwright/pytest) |
 | `@auto_qa.md` | `/auto_qa` | Autonomous visual QA — browser-based UI validation, writes results to AGENT_BRIDGE.md |
-| `@better_agents.md` | `/better_agents` | Scaffold new specialist agents using LangWatch Better Agents CLI |
-| `@brand_kit.md` | `/brand_kit` | Brand Kit + Onboarding system reference — AI-driven artist identity collection |
-| `@live_test_creative_director.md` | `/live_test_creative_director` | Stress-test image generation pipeline end-to-end at localhost:4242 |
+| `@ci-validate.md` | `/ci-validate` | Pre-push CI validation — runs typecheck, lint, and all test shards |
+
 
 ---
 

@@ -1,14 +1,36 @@
 {
   "schemaVersion": "1.0.0",
-  "agentId": "conductor",
+  "agentId": "generalist",
   "displayName": "indii Conductor",
-  "description": "indii Conductor \u2014 central orchestration hub",
-  "capabilities": [],
+  "description": "indii Conductor — central orchestration hub and creative orchestrator.",
+  "capabilities": [
+    {
+      "name": "delegate_task",
+      "description": "Delegate a task to a specialized spoke agent.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "consult_specialist",
+      "description": "Consult a specialized agent via the A2A protocol.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "propose_plan",
+      "description": "Propose a structured Living Plan for a high-level goal.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +41,10 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "manager"
+  },
+  "promptVersion": "1.55.3-conductor",
+  "trainingModel": "conductor"
 }

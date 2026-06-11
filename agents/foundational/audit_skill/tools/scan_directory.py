@@ -24,8 +24,30 @@ def scan_indii_directory(root_path: str) -> str:
                 inst_path = os.path.join(agent_path, "prompt.md")
                 
             if os.path.exists(inst_path):
-                with open(inst_path, 'r') as f:
+                with open(inst_path, 'r', encoding='utf-8') as f:
                     architecture[agent_dir]["instructions_preview"] = f.read(200) + "..."
+
+            # Read agent_card.json capabilities if available
+            card_path = os.path.join(agent_path, "agent_card.json")
+            card_data = None
+            if os.path.exists(card_path):
+                try:
+                    with open(card_path, 'r', encoding='utf-8') as f:
+                        card_data = json.load(f)
+                except Exception as e:
+                    print(f"Warning: failed to parse agent_card.json for {agent_dir}: {e}", file=sys.stderr)
+
+            if card_data:
+                if not architecture[agent_dir]["instructions_preview"] and "description" in card_data:
+                    architecture[agent_dir]["instructions_preview"] = card_data["description"][:200] + "..."
+                
+                for cap in card_data.get("capabilities", []):
+                    cap_name = cap.get("name")
+                    if cap_name:
+                        architecture[agent_dir]["skills"][cap_name] = {
+                            "description": cap.get("description", "No description found."),
+                            "trigger_labels": [cap_name]
+                        }
 
             skills_path = os.path.join(agent_path, "skills")
             if os.path.exists(skills_path):
@@ -37,7 +59,7 @@ def scan_indii_directory(root_path: str) -> str:
                         desc_file = os.path.join(skill_path, "description.txt")
                         if os.path.exists(desc_file):
                             try:
-                                with open(desc_file, 'r') as f:
+                                with open(desc_file, 'r', encoding='utf-8') as f:
                                     lines = f.readlines()
                                     for line in lines:
                                         if line.startswith("description:"):
@@ -68,7 +90,7 @@ if __name__ == "__main__":
                 "root": args.root,
                 "agents": data
             }
-            with open(args.output, 'w') as f:
+            with open(args.output, 'w', encoding='utf-8') as f:
                 json.dump(final_output, f, indent=2)
             print(f"Success: Registry saved to {args.output}")
         except Exception as e:
