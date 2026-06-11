@@ -138,6 +138,26 @@ These skills reside inside `.agent/skills/` and are actively used by the agent s
 
 ---
 
+## External & Vendored Skill Registries
+
+Beyond `.agent/skills/`, three additional skill registries exist. They are part of the active suite — the "not listed = deprecated" rule does NOT apply to their contents.
+
+### `.agents/skills/` — Vendored Third-Party Skills (READ-ONLY)
+- **What:** Upstream skills installed from GitHub (`firebase/agent-skills`, `arcjet/skills`) and pinned by `skills-lock.json` (source + content hash per skill).
+- **Contents:** `firebase-security-rules-auditor` (used by `/db-sync`), `firebase-firestore`, `firebase-auth-basics`, `firebase-basics`, `firebase-ai-logic-basics`, `firebase-crashlytics`, `firebase-data-connect`, `firebase-hosting-basics`, `firebase-app-hosting-basics`, `firebase-remote-config-basics`, `developing-genkit-js`, `developing-genkit-python`, `arcjet`.
+- **Rule:** NEVER edit these files in place — they are hash-verified and will be overwritten on update. Update from upstream via the skills installer, which also rewrites `skills-lock.json`.
+
+### `skills/` — Proprietary Product Skills
+- **What:** Indii-built, mission-critical product specs that double as skills.
+- **Contents:** `direct-distribution` — the Direct Distribution Engine (Industrial V3): DDEX ERN 4.3, Aspera/Transporter delivery, QC forensics, ISRC authority, tax/payout, Merlin/MLC. Pairs with `directives/direct_distribution_engine.md`.
+- **Rule:** Editable, but treat as covenant documents — keep implementation status tables truthful.
+
+### `~/.agents/skills/` + `.agents/workflows/graphify.md` — Graphify (User-Global)
+- **What:** `/graphify` turns a folder into a navigable knowledge graph (`graphify-out/`). The repo carries the workflow pointer and rules (`.agents/rules/graphify.md`); the skill itself lives in the user's home directory and may not exist on every machine.
+- **Rule:** Prefer graphify MCP tools / CLI over grep for cross-module architecture questions when `graphify-out/` exists.
+
+---
+
 ## Testing & Quality Assurance Commands
 
 ### `/mega` — Mega Stress Test Orchestrator
