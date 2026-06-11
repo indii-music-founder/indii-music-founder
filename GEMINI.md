@@ -564,6 +564,17 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
+## Skill Registries
+
+Four skill registries exist — do not confuse them. All are active; the "not listed = deprecated" rule in `WIIL-skill.md` does NOT apply to vendored or proprietary registries.
+
+| Registry | Contents | Edit policy |
+| --- | --- | --- |
+| `.agent/skills/` | Indii-authored agent skills (hunter, walk, go, tdd, zoom-out, …) | Editable — ours |
+| `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. The lock intentionally lists some skills that are not installed (genkit-dart, genkit-go, xcode) — do not "fix" the drift or reinstall them. |
+| `skills/` | Proprietary product skills — `direct-distribution` (Direct Distribution Engine V3; pairs with `directives/direct_distribution_engine.md`) | Editable, but a covenant doc — keep status tables truthful |
+| `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/workflows/graphify.md` + `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.

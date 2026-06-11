@@ -19,3 +19,11 @@ matching workflow file. Common commands include:
 
 When a workflow references another slash command, open the corresponding file in
 `.agent/workflows/` and follow its local instructions.
+
+## Skill Registries
+
+Four registries: `.agent/skills/` (indii-authored, editable), `.agents/skills/`
+(vendored third-party, pinned by `skills-lock.json` — READ-ONLY, never edit in
+place), `skills/` (proprietary — `direct-distribution`), and `~/.agents/skills/`
+(user-global, e.g. graphify — may be absent). Full details in CLAUDE.md
+"Skill Registries" and `.agent/workflows/WIIL-skill.md`.
