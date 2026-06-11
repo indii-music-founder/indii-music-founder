@@ -36,6 +36,7 @@ Signal "we're done" and leave a perfectly clean repository and environment:
 - Invoke the **`/ci-validate`** command.
 - This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
 - **Do not exit this phase until the CI script passes flawlessly.**
+- **Push Commits to GitHub (MANDATORY):** Once all CI validation checks pass flawlessly, you MUST run `git push origin $(git branch --show-current)` to ensure all local commits are pushed to GitHub, synchronizing the work and triggering the remote deployment pipeline.
 
 
 ## Elevate and Polish (The `/better` Audit)
