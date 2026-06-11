@@ -1,42 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-11 14:56 EDT
+**Updated:** 2026-06-11 14:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-82e06b401 chore: session checkpoint [14:54]
-e42f95590 chore: session checkpoint [14:51]
-fdf2b1c99 chore: session checkpoint [14:47]
+8afd7bd4b docs(workflows): repair frontmatter, kill /better cascade, fix stale monorepo paths
+b90038cdb chore: session checkpoint [14:56]
+9bfcac500 chore: session checkpoint [14:54]
+3e29045a8 chore: session checkpoint [14:51]
+b9b57ae9d chore: session checkpoint [14:47]
+9fa34cfb2 Merge pull request #160 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
+dbb81005d Merge pull request #159 from indii-music-founder/main
 99f3a8999 chore: session checkpoint [12:19]
 1ecb605d8 Merge pull request #158 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
 9f063db56 chore: session checkpoint [11:52]
-d12ac4c08 docs: add mandatory push commits step to /end workflow
-836200deb chore: session checkpoint [11:48]
-b6d3a6ba0 chore: session checkpoint [11:48]
-e78223e5d docs: add error ledger entries for Zustand 5, Vite imports, and Heartbeat presence
 ```
 
 ## Working State
 ```
- M .agent/workflows/WIIL-skill.md
- M .agent/workflows/better.md
- M .agent/workflows/ci-validate.md
- M .agent/workflows/end.md
- M .agent/workflows/factory.md
- M .agent/workflows/finish.md
- M .agent/workflows/get-git.md
- M .agent/workflows/go.md
- M .agent/workflows/hunter.md
- M .agent/workflows/issue-sweep.md
- M .agent/workflows/issue.md
- M .agent/workflows/mega-test.md
- M .agent/workflows/mega.md
- M .agent/workflows/middle.md
- M .agent/workflows/opp.md
- M .agent/workflows/proceed.md
- M .agent/workflows/real.md
- M .agent/workflows/skill-skill.md
- M .agent/workflows/start.md
+clean working tree
 ```
 
 ## Decisions
