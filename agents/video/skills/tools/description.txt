@@ -1,2 +1,0 @@
-description: Technical readiness checker for the video domain.
-trigger_labels: ["video", "readiness", "status"]

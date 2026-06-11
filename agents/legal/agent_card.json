@@ -1,14 +1,43 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "legal",
-  "displayName": "Legal Agent",
-  "description": "Legal specialist \u2014 contracts, rights, compliance",
-  "capabilities": [],
+  "displayName": "Legal Director",
+  "description": "Automated copyright clearance, rights management, and contract analysis.",
+  "capabilities": [
+    {
+      "name": "analyze_rights",
+      "description": "Analyze the copyright status of a track based on its composition.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "browser_tool",
+      "description": "Research copyright databases or legal precedents.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "document_query",
+      "description": "Analyze a legal document (PDF/Text) for clauses.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "draft_split_sheet",
+      "description": "Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +48,14 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "department",
+    "workerIds": [
+      "legal.contracts",
+      "legal.compliance"
+    ]
+  },
+  "promptVersion": "1.55.3-legal",
+  "trainingModel": "legal"
 }

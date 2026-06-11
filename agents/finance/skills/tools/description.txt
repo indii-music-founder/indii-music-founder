@@ -1,2 +1,0 @@
-description: Estimates potential streaming royalties based on play counts.
-trigger_labels: ["finance", "royalties", "estimate"]

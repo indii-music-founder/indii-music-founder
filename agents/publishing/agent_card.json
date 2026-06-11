@@ -1,14 +1,57 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "publishing",
-  "displayName": "Publishing Agent",
-  "description": "Publishing specialist \u2014 splits, registrations, royalties",
-  "capabilities": [],
+  "displayName": "Publishing Director",
+  "description": "Manages musical rights, royalties, and catalog administration.",
+  "capabilities": [
+    {
+      "name": "analyze_contract",
+      "description": "Analyze a publishing contract.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "register_work",
+      "description": "Register a new musical work with PROs.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "check_pro_catalog",
+      "description": "Queries PROs (ASCAP/BMI) for existing catalog matches to prevent duplicate registration.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "package_release_assets",
+      "description": "Prepare audio, artwork, and metadata for distribution delivery review.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "pro_scraper",
+      "description": "Audit public repertories (ASCAP/BMI) for catalog accuracy.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "payment_gate",
+      "description": "Authorize fees for song registration.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +62,10 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "department"
+  },
+  "promptVersion": "1.55.3-publishing",
+  "trainingModel": "publishing"
 }

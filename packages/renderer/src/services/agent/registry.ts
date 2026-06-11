@@ -155,32 +155,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
 
-        // Register Analytics Agent (Intelligence Analytics Specialist)
-        try {
-            const analyticsMeta = {
-                id: 'analytics',
-                name: 'Intelligence Analytics Specialist',
-                description: 'Analyzes audience intelligence, streaming data, and career metrics for independent artists.',
-                color: '#9C27B0',
-                category: 'specialist',
-                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
-            } as SpecializedAgent;
 
-            this.registerLazy(analyticsMeta, async () => {
-                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
-                return SpecialistAgentFactory.createBaseAgent({
-                    id: 'analytics',
-                    name: 'Analytics',
-                    description: 'Intelligence Analytics Specialist',
-                    color: '#9C27B0',
-                    category: 'specialist',
-                    systemPrompt: 'You are the Intelligence Analytics Specialist for indii. Your role is to analyze audience intelligence, streaming data, and career metrics to provide insights for independent artists.',
-                    tools: []
-                });
-            });
-        } catch (e: unknown) {
-            logger.warn("[AgentRegistry] Failed to register Analytics agent:", e);
-        }
 
         // Register metadata-only worker entries from DEPARTMENTS
         try {

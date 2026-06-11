@@ -53,6 +53,8 @@ export const AgentCardSchema = z.object({
   }),
   roster: RosterSchema.optional(),
   harness: HarnessCardSchema.optional(),
+  promptVersion: z.string().optional(),
+  trainingModel: z.string().optional(),
 });
 
 

@@ -1,14 +1,43 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "analytics",
-  "displayName": "Analytics Agent",
-  "description": "Analytics agent \u2014 metrics and observability",
-  "capabilities": [],
+  "displayName": "Intelligence Analytics Specialist",
+  "description": "Analyzes audience intelligence, streaming data, and career metrics for independent artists.",
+  "capabilities": [
+    {
+      "name": "calculate_viral_potential_score",
+      "description": "Predict viral potential based on tempo/BPM, genre, and mood using historical artist distributions.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "benchmark_release_velocity",
+      "description": "Compare current release streaming trajectory (24h, 7d, 30d) against artist historical baseline.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "detect_streaming_anomalies",
+      "description": "Scan streaming event logs for sudden spikes or drop-offs to detect potential botting or viral events.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "run_cohort_analysis",
+      "description": "Run cohort retention queries to track weekly user listening activity.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "read",
   "sla": {
@@ -19,5 +48,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "specialist",
+    "departmentId": "marketing"
+  },
+  "promptVersion": "1.55.3-analytics",
+  "trainingModel": "marketing"
 }
