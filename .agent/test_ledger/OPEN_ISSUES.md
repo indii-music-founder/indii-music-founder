@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-05-07T13:19:00Z
+> **Last updated:** 2026-06-11T14:10Z
 > **Commit:** `main` — indiiCONTROLLER relay fix + pre-existing test issues logged
 > **Current UX Score:** In Progress
 
@@ -3837,3 +3837,522 @@ Caller can decide whether to retry, surface error, or silently log.
   - `e2e/mega-stress-test-v4.spec.ts`
   - `e2e/mobile-remote.spec.ts`
 - **Next Steps:** Use the `//issue` workflow so the Fix Agent can triage and resolve these failures.
+
+
+--- Content imported from .agent/PREEXISTING_ISSUES.md ---
+
+# Pre-existing Test Infrastructure Issues
+
+**Status:** Documented 2026-06-03 during PR #136 (Firebase initialization fixes)
+**Related PR:** #136 — Firebase module-level initialization fix
+**Branch:** codex/live-runtime-blockers
+
+---
+
+## Issue 1: gateway.integration.test.ts — Missing Storage Bucket Configuration
+
+**Severity:** High (integration test blocks creative gateway verification)
+**File:** `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts`
+**Error:** `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.`
+
+### Root Cause
+The test setup in `packages/firebase/src/test/integration.setup.ts` initializes Firestore but does not configure Firebase Storage with a valid `storageBucket` option. The `gateway.ts` function calls `getStorage().bucket()` without arguments, which requires a default bucket to be configured.
+
+### Fix Direction
+1. Update `integration.setup.ts` to pass `storageBucket` in the `admin.initializeApp()` config
+2. Use a test-safe bucket name (e.g., `test-bucket` or mock the storage service)
+3. Verify the test setup provides both `db` (Firestore) and `storage` references
+4. Rerun `npm test -- --run` to confirm gateway.integration.test.ts passes
+
+### Files to Touch
+- `packages/firebase/src/test/integration.setup.ts`
+- `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts` (if needed for mock assertions)
+
+---
+
+## Issue 2: AgentExecutor.integration.test.ts — GeneralistAgent Filter Error
+
+**Severity:** High (agent pipeline test failure)
+**File:** `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts` (line 642)
+**Error:** `TypeError: Cannot read properties of undefined (reading 'filter')`
+
+### Root Cause
+In `GeneralistAgent.execute()`, a chain call attempts to filter an undefined value. This appears to be in a message history or content extraction path where a variable is not initialized or a prior operation returned `undefined`.
+
+### Fix Direction
+1. Inspect `GeneralistAgent.ts` line 642 and surrounding context to identify which variable is undefined
+2. Add null-coalescing or optional-chaining (`?.`) before the `.filter()` call
+3. Add a guard clause to verify the value exists before filtering
+4. Add a unit test for the edge case that triggers this error
+5. Rerun `npm test -- --run` to confirm the test passes
+
+### Files to Touch
+- `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`
+- `packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts` (for test harness context)
+
+---
+
+## How to Proceed
+
+1. Create a new branch off `main`:
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b fix/integration-test-infrastructure
+   ```
+
+2. Fix Issue 1 (Storage bucket) first — simpler and unblocks creative gateway tests
+
+3. Fix Issue 2 (GeneralistAgent) — requires code inspection to identify the undefined chain
+
+4. Run `npm test -- --run` after each fix to verify progress
+
+5. Create a single PR with both fixes labeled `fix(testing): resolve integration test infrastructure failures`
+
+---
+
+## Additional Context
+
+- **Commit:** `09f22b1f2` (Firebase initialization fix that exposed these issues)
+- **ERROR_LEDGER Entry:** Added to `.agent/skills/error_memory/ERROR_LEDGER.md` under "2026-06-03 Pre-existing Integration Test Failures"
+- **Token Status:** Created 2026-06-03 11:07 EDT — handoff at ~165k tokens used
+
+
+--- Content imported from memory/BROWSER_ISSUES.md ---
+
+# Browser Interaction Log - Copyright Office Portal
+**Target:** https://publicrecords.copyright.gov/
+**Last Attempt:** 2026-02-03 11:15 AM EST
+
+## Issues Encountered
+- **CDP Bridge Instability:** Repeated "tab not found" errors even when the tab is visible in the `tabs` list.
+- **Service Timeouts:** The `browser.act` tool timed out (20s) when trying to `fill` or `type` into the search box [ref=e43].
+- **Anti-Bot/Complex UI:** The site uses multiple nested iframes (demdex.net) and heavy JavaScript, which appears to be interfering with the CDP execution thread.
+
+## Insights
+- Standard CDP `fill` actions are failing; the site might be intercepting high-level events.
+- Window management on this portal is non-standard (opens secondary windows for results), which likely breaks the session attachment for the browser tool.
+- **Bypass Strategy:** Offload browser execution to external automation (Antigravity ID) via markdown file handoff.
+
+## Conclusion
+Paused browser-based attempts for this portal. Moving to code-side logic and documentation prep.
+
+
+--- Content imported from artifacts/mega_test_audio_loop_2026-06-06_14-36-22_issue-187-regression.md ---
+
+# MegaTestAudioLoop Audio Harness + Browser Regression Reconfirm
+
+**Date:** 2026-06-06T14:36:22Z  
+**Plan:** `.agent/workflows/mega-test.md` scoped to audio systems / `.agent/test_ledger/MEGA_STRESS_TEST_V11.md` Routine 113 context  
+**Modules Targeted:** Audio Analyzer ingestion, local technical analysis, semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff
+
+## Summary
+
+This run remained observational and did not modify product code. The scoped audio harness still passed all non-browser coverage, but compliant live-browser validation is still blocked. Because `ISSUE-187` is already marked fixed in the ledger, this run treats the reproduced block as a regression and logs `ISSUE-188`.
+
+## Run Evidence
+
+- `npm run dev:web` failed before Vite startup because `tsx scripts/production-gate.ts --dev` could not create its IPC pipe:
+  - `Error: listen EPERM: operation not permitted /var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/tsx-502/41896.pipe`
+- Direct Vite fallback also failed:
+  - `npx vite --config packages/renderer/vite.config.ts --port 4243`
+  - `Error: listen EPERM: operation not permitted 127.0.0.1:4243`
+- `python3 execution/run_department_test.py audio-analyzer` results:
+  - Unit Tests: `PASS`
+  - Python Checks: `PASS`
+  - E2E Tests: `FAIL`
+  - Scoped totals: `21` test files passed, `135` tests passed
+  - Playwright phase failed because the configured web server could not bind `127.0.0.1:4242`
+- Fresh browser attempts failed before navigation:
+  - `http://127.0.0.1:4242/audio-analyzer`
+  - `https://indii-music-founder.web.app/audio-analyzer`
+  - Both were rejected by browser security policy before any page rendered
+
+## Coverage Delta
+
+- Reconfirmed the scoped audio harness still covers Audio Analyzer UI logic, local audio analysis, semantic Audio DNA support, MusicLibrary persistence, distribution/DDEX ingestion, Firebase audio helpers, agent audio tools, and audio IPC security.
+- Reconfirmed no net-new product-level audio failures were observable from this environment because no live page could be rendered.
+- Logged `ISSUE-188` because the exact live-browser validation block remains reproducible after `ISSUE-187` was marked fixed.
+
+## Screenshots
+
+No new meaningful UI screenshot could be captured in this run. The in-app browser rejected both target routes before navigation, so no page state rendered for screenshotting.
+
+
+--- Content imported from archive/analysis/issue_analysis.md ---
+
+# Issue Analysis: AudioAnalysisService Patch Extraction Bug
+
+## Investigation
+
+A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
+
+### Steps Taken
+
+1. **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
+   - The file has approximately 222 lines.
+   - It uses `essentia.js` for feature extraction.
+   - It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
+   - The referenced line 232 does not exist.
+
+2. **Codebase Search**: Performed `grep` searches for key terms:
+   - `PATCH_frames`: 0 results.
+   - `melSpectrogram`: 0 results.
+   - `"Audio too short"`: 0 results.
+
+3. **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
+
+## Conclusion
+
+The reported issue is **Invalid**. The code referenced in the issue description (specifically the patch extraction loop and the `PATCH_frames` variable) does not exist in the current codebase. It is likely that the report refers to a different version of the code, a missing feature, or is hallucinated.
+
+Therefore, no fix can be proposed or implemented.
+
+
+--- Content imported from docs/issue_analysis.md ---
+
+# Issue Analysis: AudioAnalysisService Patch Extraction Bug
+
+## Investigation
+A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
+
+### Steps Taken:
+1.  **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
+    -   The file has approximately 222 lines.
+    -   It uses `essentia.js` for feature extraction.
+    -   It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
+    -   The referenced line 232 does not exist.
+
+2.  **Codebase Search**: Performed `grep` searches for key terms:
+    -   `PATCH_frames`: 0 results.
+    -   `melSpectrogram`: 0 results.
+    -   `"Audio too short"`: 0 results.
+
+3.  **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
+
+## Conclusion
+The reported issue is **Invalid**. The code referenced in the issue description (specifically the patch extraction loop and the `PATCH_frames` variable) does not exist in the current codebase. It is likely that the report refers to a different version of the code, a missing feature, or is hallucinated.
+
+Therefore, no fix can be proposed or implemented.
+
+
+
+### ISSUE-367: Webhook queue lookup derives userId from webhookId
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** webhooks
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:274-283` (processWebhookQueue)
+- **Summary:** `event.webhookId.split('-')[0]` is used as the users-doc id, but webhookId is a Firestore auto-id that never encodes userId. This causes lookup to fail and queued webhooks to be incorrectly deleted as "not found".
+- **Builder Directive:** Store userId on the WebhookEvent at queue time (:222-230) and use it for the lookup.
+---
+
+### ISSUE-368: Queued webhook events never match the queue query
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** webhooks
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:222-230, 260-264`
+- **Summary:** Events are queued without a `nextRetry` field, but the query excludes missing fields (`where('nextRetry','<=',now)`). Thus, initial delivery never triggers.
+- **Builder Directive:** Set `nextRetry` to `now` at enqueue.
+---
+
+### ISSUE-369: createWebhook endpoint has no authentication
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** webhooks
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:302-328`
+- **Summary:** Anyone can POST and register a webhook for an arbitrary userId, exfiltrating that user's event payloads.
+- **Builder Directive:** Require verified ID token; derive userId from token.
+---
+
+### ISSUE-370: verifySignature throws on length mismatch
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** webhooks
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:55-58`
+- **Summary:** `crypto.timingSafeEqual` throws when buffer lengths differ.
+- **Builder Directive:** Length-check first, return false.
+---
+
+### ISSUE-371: Firestore rules — cross-user read/write on agent collections
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** firestore
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/firestore.rules:633-638` (agent_traces, agent_tasks/{traceId}/**)
+- **Summary:** Rule uses `isAuthenticated()` only, with no ownership predicate.
+- **Builder Directive:** Add ownership predicate to ensure users only access their own documents.
+---
+
+### ISSUE-372: Firestore rules — cross-user access on distribution/marketing collections
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** firestore
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/firestore.rules:545-549`, `:550-552`, `:553-555`, `:556-559`, `:564-567`, `:572-574`, `:594-596`, `:606-609`
+- **Summary:** Any authenticated user can read/mutate any user's docs (distribution_audit, distribution_tasks, distribution_takedowns, isrc_pool, upc_pool, campaigns, bountyLinks, legal_audit_ledger). Pools are drainable.
+- **Builder Directive:** Add proper ownership and role-based access predicates.
+---
+
+### ISSUE-373: Module-switch subscription teardown is dead code
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** core/store
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:110-131` (setModule)
+- **Summary:** The `.then()` resolves after the synchronous `set()` at :133, so `get().currentModule` already equals the new module. The `currentModule !== module` guard is always false, and `clearSubscriptionsByPrefix` never runs.
+- **Builder Directive:** Capture the outgoing module synchronously before `set()` and pass it into the async cleanup.
+---
+
+### ISSUE-374: Null deref + permanently wedged agent on store-import failure
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:84-94, 120` (sendMessage)
+- **Summary:** Import failure silently caught leaves `useStore` null. `useStore.getState()` at :120 then throws outside the try at :174, so `this.isProcessing` is never reset, rejecting all subsequent messages.
+- **Builder Directive:** Fail fast or guard all uses; reset `isProcessing` in a finally block.
+---
+
+### ISSUE-375: Unmemoized object selector → infinite re-render under Zustand 5
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** founders
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/modules/founders/FoundersPortal.tsx:9-12`
+- **Summary:** Selector returns a fresh object each call without `useShallow`. Zustand 5 uses `Object.is` resulting in a `useSyncExternalStore` re-render loop (“maximum update depth”).
+- **Builder Directive:** Wrap selector in `useShallow` (pattern: DesktopDashboard.tsx:10-15).
+---
+
+### ISSUE-376: Handoff code endpoint: no format validation, no rate limit
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** auth
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/auth/handoff.ts:59-70` (redeemHandoffCode)
+- **Summary:** Handoff code is only truthiness-checked, CORS-open, with unlimited attempts against token-bearing `auth_handoffs` docs.
+- **Builder Directive:** Validate 64-hex format, add per-IP rate limiting.
+---
+
+### ISSUE-377: Desktop broadcasts online:false on every module switch / agent toggle
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** mobile-remote
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:219-255`
+- **Summary:** The `useFirestoreRelay` state-push effect dependencies run the unmount cleanup on every navigation, writing `online:false` to the relay doc, followed by `online:true`. Phone reacts by un-pairing and re-pairing constantly.
+- **Builder Directive:** Split into a mount-once heartbeat effect with offline-write only on true unmount; phone side should debounce/grace-window offline transitions.
+---
+
+### ISSUE-378: Phone auth check is non-reactive — subscription never starts on cold load
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** mobile-remote
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:143-148`
+- **Summary:** `remoteRelayService.isAuthenticated()` evaluated during render, not subscribed. On cold start, `isAuth` is false and never re-renders when auth completes, leaving the app stuck on disconnect screen.
+- **Builder Directive:** Track auth via `onAuthStateChanged` state (pattern: useRemoteCommandListener.ts:590-599).
+---
+
+### ISSUE-379: Commands silently dropped when relay is busy
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** mobile-remote
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:276-279`
+- **Summary:** A command arriving while `isProcessing.current` is true is skipped and stays pending forever (onSnapshot won’t re-fire). Phone waits indefinitely.
+- **Builder Directive:** Queue skipped commands or re-scan pending docs after each completion.
+---
+
+### ISSUE-380: online flag is trust-forever boolean — stale state after desktop crash
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** mobile-remote
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/services/agent/RemoteRelayService.ts:67-73, 315-323`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:62-69`
+- **Summary:** Crashed desktop stays “online”. QR carries no payload and implicitly requires the phone to be signed into the same Firebase account with no error surfaced when it isn't.
+- **Builder Directive:** Phone should treat timestamp older than ~15s as offline; QR should carry a handoff/pairing token; add error callback + signed-out messaging.
+---
+
+### ISSUE-381: Committed auth export with credentials
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** security
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `users.json` (repo root)
+- **Summary:** File contains 25 passwordHash + salt entries, 50 emails.
+- **Builder Directive:** Remove, gitignore, rotate affected accounts.
+---
+
+### ISSUE-382: Path traversal in PythonBridge
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** main/python
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/main/src/utils/python-bridge.ts:13-19, 46` (runScript)
+- **Summary:** `category/scriptName` joined unvalidated. `../` escapes execution directory, leading to arbitrary script execution if reachable from IPC.
+- **Builder Directive:** Validate segments against an allowlist/regex and verify resolved path stays under base dir.
+---
+
+### ISSUE-383: Shell interpolation in rotation script
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** scripts
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `scripts/rotate-keys.ts:42, 46` (rotateServiceAccountKey)
+- **Summary:** `execSync` is used with template-interpolated CLI input.
+- **Builder Directive:** Use `execFileSync` with arg arrays.
+---
+
+### ISSUE-384: No timeout on Gemini step
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** timeline
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/timeline/milestone_execution.ts:179-235` (call-gemini-agent step)
+- **Summary:** `generateContent` has no AbortSignal/timeout. A hung call blocks until function-level timeout.
+- **Builder Directive:** Add abort timeout consistent with deliverScheduledPosts pattern.
+---
+
+### ISSUE-385: Inngest key from raw env with silent empty fallback
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** timeline
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/timeline/pollTimelineMilestones.ts:66-70` (getInngest)
+- **Summary:** `process.env.INNGEST_EVENT_KEY || ''` silently builds an unauthenticated client.
+- **Builder Directive:** Use `defineSecret`; throw on missing key.
+---
+
+### ISSUE-386: console.log/PII in Cloud Functions logs
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** cloud-functions
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/stripe/webhookHandler.ts:55,101,126,240,283`, `packages/firebase/src/functions/webhooks/dispatcher.ts:137,153,174,212,240`
+- **Summary:** Raw console calls are dumping `userIds` to logs.
+- **Builder Directive:** Switch to `firebase-functions/logger`, redact identifiers.
+---
+
+### ISSUE-387: Broad prod connect-src
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** security
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/main/src/security/index.ts:43`
+- **Summary:** Wildcard `https://*.cloudfunctions.net` allows any GCP project's functions.
+- **Builder Directive:** Pin to project-specific Cloud Functions/Run origins.
+---
+
+### ISSUE-388: Fire-and-forget queue persistence
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/agent/agentTaskSlice.ts:56-60` (addBatchTask)
+- **Summary:** `persistQueueToFirestore()` is un-awaited. Failures log internally, meaning restart guarantees are silently broken.
+- **Builder Directive:** Surface failures (retry or user-visible state).
+---
+
+### ISSUE-389: No retry on profile persistence
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** profile
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/profileSlice.ts:85,94,103,158,249,259`
+- **Summary:** `saveProfileToStorage(...).catch(log)` silently loses profile changes on transient failure.
+- **Builder Directive:** Add bounded retry/backoff and failure surfacing.
+---
+
+### ISSUE-390: Side effects inside set() updater
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** core/store
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/subscriptionSlice.ts:77-85` (clearSubscriptionsByPrefix)
+- **Summary:** Unsubscribe functions invoked inside the updater. This works but breaks updater purity.
+- **Builder Directive:** Execute unsubscribes before set(), mirroring `clearSubscription`.
+---
+
+### ISSUE-391: In-place mutation of state array
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** core/store
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:102-106` (setModule, _navigationHistory)
+- **Summary:** `history.push(module)` mutates the array held in state before set() re-commits the same reference, breaking reference-equality subscribers.
+- **Builder Directive:** Copy-on-write the history array.
+---
+
+### ISSUE-392: Blocking window.confirm in store action
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** core/store
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:93-99` (setModule)
+- **Summary:** Synchronous native dialog inside a state setter blocks the renderer.
+- **Builder Directive:** Route through async modal/confirmation state.
+---
+
+### ISSUE-393: useStore: any + as any[] in agent critical path
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:84, 213-214` (also :420,602,713,1280,1312,1356)
+- **Summary:** Defeats type checking on message dispatch.
+- **Builder Directive:** Type the dynamic store import via `typeof import('@/core/store')`.
+---
+
+### ISSUE-394: Uncached dynamic store imports
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:86`
+- **Summary:** `sendMessage` bypasses the existing module cache.
+- **Builder Directive:** Reuse `moduleImportCache` for all dynamic imports in this service.
+---
+
+### ISSUE-395: Emoji in production logs
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:105,146`
+- **Summary:** 🔒/⚡ in logger output breaks log hygiene standards.
+- **Builder Directive:** Replace with ASCII tags.
+---
+
+### ISSUE-396: Legacy repo fallback
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** agent
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `packages/firebase/src/functions/agent/reportBugFn.ts:99`
+- **Summary:** `GITHUB_REPO` falls back to new-detroit-music-llc/indiiOS-Alpha-Electron; bug reports file against wrong repo when env unset.
+- **Builder Directive:** Require env; fail loudly.
+---
+
+### ISSUE-397: Orphaned test file
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** testing
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `e2e_interop.test.ts` (repo root)
+- **Summary:** Imports vitest but matches no vitest.workspace.ts include glob, so it never runs.
+- **Builder Directive:** Relocate into packages/renderer/src/** or add include.
+---
+
+### ISSUE-398: Dead root artifacts
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** repository
+- **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
+- **Target Coordinates:** `ReceiptOCR.tsx`, `patch.js/patch.cjs`, `test-fabric-img.ts`, `test-puppeteer.cjs`, `test-pw.mjs`, `get_github_log.js`, `parse_eslint.py`, `parse_fatal.py`, `settings.json`, `state.json`, `tsc_output*.txt`, `test-output*.txt`, `ci_*` logs.
+- **Summary:** Dead duplicate files, old CI logs, and test artifacts clutter the root.
+- **Builder Directive:** Delete or archive.
+---

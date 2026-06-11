@@ -12,7 +12,7 @@ import {
     onSnapshot,
     Timestamp
 } from 'firebase/firestore';
-import { VehicleStats, Itinerary, EmergencyContact } from '@/modules/touring/types';
+import { Itinerary, EmergencyContact } from '@/modules/touring/types';
 import { TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';

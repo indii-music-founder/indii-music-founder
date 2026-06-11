@@ -1,4 +1,9 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 description: Git Repository Sync, Pre-Push Validation, and Background Cron Monitor. Runs git fetch/pull/rebase, runs typecheck & Vitest validation on ahead commits, pushes verified changes, and reschedules the dynamic polling backoff cron job.
 ---
 
@@ -57,7 +62,7 @@ If validation fails, the push is blocked to protect the remote build.
 If safe to proceed, execute `/issue sync` to:
 
 1. Fetch the latest open issues from GitHub.
-2. Append them to `OPEN_ISSUES.md` (idempotently).
+2. Append them to `.agent/test_ledger/OPEN_ISSUES.md` (idempotently).
 3. Automatically attempt to fix them.
 
 ## 5. Post-Push CI Health Check

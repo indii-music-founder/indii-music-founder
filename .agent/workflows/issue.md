@@ -1,7 +1,12 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 name: /issue
 description: >
-  The Fix Agent. Scans OPEN_ISSUES.md for unresolved issues, triages by severity,
+  The Fix Agent. Scans .agent/test_ledger/OPEN_ISSUES.md for unresolved issues, triages by severity,
   diagnoses root causes in source code, applies surgical fixes, verifies them,
   and marks issues as FIXED. This is the counterpart to /mega and /real which
   only find issues — /issue is the one that resolves them.
@@ -10,10 +15,10 @@ description: >
 
 # /issue — Automated Issue Resolution Agent
 
-> **Purpose:** Read `OPEN_ISSUES.md`, pick up unresolved issues, and fix them.
+> **Purpose:** Read `.agent/test_ledger/OPEN_ISSUES.md`, pick up unresolved issues, and fix them.
 > **Mode:** ENGINEERING — full source code access, full terminal access.
 > **Counterpart:** `/mega` and `/real` find issues. `/issue` fixes them.
-> **Output:** Code patches + updated issue statuses in `OPEN_ISSUES.md`.
+> **Output:** Code patches + updated issue statuses in `.agent/test_ledger/OPEN_ISSUES.md`.
 
 ---
 
@@ -26,7 +31,7 @@ description: >
 3. **You prioritize by severity.** 🔴 HIGH first, then 🟡 MEDIUM, then 🟢 LOW.
 4. **You follow the Two-Strike Rule.** If a fix fails verification twice,
    STOP and re-diagnose from scratch (see Section 4.3).
-5. **You update OPEN_ISSUES.md** after every fix with status, commit hash, and
+5. **You update .agent/test_ledger/OPEN_ISSUES.md** after every fix with status, commit hash, and
    a 1-line description of what you changed.
 6. **You do NOT delete or rewrite issues.** You only update the `Status` field
    and append fix notes.
@@ -44,7 +49,7 @@ description: >
 /issue low                   → Fix only 🟢 LOW severity issues
 /issue triage                → Don't fix — just read and prioritize the backlog
 /issue count                 → Quick count of OPEN issues by severity
-/issue sync                  → Fetch open issues from GitHub, append to OPEN_ISSUES.md, and begin fixing
+/issue sync                  → Fetch open issues from GitHub, append to .agent/test_ledger/OPEN_ISSUES.md, and begin fixing
 ```
 
 ---
@@ -58,7 +63,7 @@ If invoked as `/issue sync`:
    - *Fallback:* If the tool fails or the API is unreachable, log the error and proceed to Step 2. Do not crash the workflow.
 2. Read the current contents of `.agent/test_ledger/OPEN_ISSUES.md`.
 3. For each GitHub issue returned, check if its HTML URL or Issue Number already exists in the file (idempotency check).
-4. For each NEW issue, append it to the bottom of `OPEN_ISSUES.md` in this format:
+4. For each NEW issue, append it to the bottom of `.agent/test_ledger/OPEN_ISSUES.md` in this format:
    ```markdown
    ### GH-ISSUE-<number>: <title>
    - **Status:** OPEN
@@ -68,7 +73,7 @@ If invoked as `/issue sync`:
    ```
 5. Once appended, proceed to Step 2.
 
-### Step 2 — Read the full OPEN_ISSUES.md
+### Step 2 — Read the full .agent/test_ledger/OPEN_ISSUES.md
 
 ```bash
 cat .agent/test_ledger/OPEN_ISSUES.md
@@ -161,7 +166,7 @@ After applying the fix:
 4. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
    the original steps and confirm the issue is resolved
 
-### 3.5 Update OPEN_ISSUES.md
+### 3.5 Update .agent/test_ledger/OPEN_ISSUES.md
 
 After a successful fix, update the issue entry:
 
@@ -337,7 +342,7 @@ Input file:
 
 Output:
   Code patches in the relevant source files
-  Updated statuses in OPEN_ISSUES.md
+  Updated statuses in .agent/test_ledger/OPEN_ISSUES.md
   New regression routines in V7 (if applicable)
 ```
 
@@ -349,7 +354,7 @@ Output:
 |-------------|---------------|
 | Fixing all issues in one giant commit | Each issue gets its own atomic fix. Easier to revert. |
 | Skipping verification after a fix | Every fix must pass typecheck + lint + tests. |
-| Deleting issue entries from OPEN_ISSUES.md | Never delete. Only update status. The history is sacred. |
+| Deleting issue entries from .agent/test_ledger/OPEN_ISSUES.md | Never delete. Only update status. The history is sacred. |
 | "Fixing" a UI bug by hiding the element | Address the root cause. Never suppress symptoms. |
 | Refactoring an entire file to fix one bug | Surgical precision. Change the minimum lines needed. |
 | Ignoring the Error Ledger | Always check `.agent/skills/error_memory/ERROR_LEDGER.md` first. |

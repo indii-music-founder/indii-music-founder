@@ -1,4 +1,9 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 description: >-
   End-to-end issue sweep — branch uncommitted work → fix all CodeRabbit and Sentry issues →
   validate → generate the next Regression Gauntlet mega test plan → execute it via /mega-test →
@@ -23,7 +28,7 @@ description: >-
 
 - You must have a clean or partially-dirty working tree (uncommitted changes are handled in Phase 1).
 - `GITHUB_TOKEN` and `SENTRY_TOKEN` must be set in `.env`.
-- The `OPEN_ISSUES.md` ledger must exist at `.agent/test_ledger/OPEN_ISSUES.md`.
+- The `.agent/test_ledger/OPEN_ISSUES.md` ledger must exist at `.agent/test_ledger/OPEN_ISSUES.md`.
 - The most recent Mega Stress Test plan must exist at `.agent/test_ledger/MEGA_STRESS_TEST_V*.md`.
 
 ---
@@ -83,7 +88,7 @@ For each issue returned:
 1. Read the culprit file using `view_file`.
 2. Analyze the stack trace in the Sentry issue body.
 3. Apply the fix using `replace_file_content` or `multi_replace_file_content`.
-4. Log the fix: add a new `ISSUE-NNN` entry to `OPEN_ISSUES.md` marked `✅ FIXED`.
+4. Log the fix: add a new `ISSUE-NNN` entry to `.agent/test_ledger/OPEN_ISSUES.md` marked `✅ FIXED`.
 
 If Sentry returns zero issues, note "Sentry: clean slate ✅" and proceed.
 
@@ -253,7 +258,7 @@ The new plan must follow this structure:
 ## Execution Notes
 - Run against production build AND dev build separately.
 - Console errors are disqualifying for <specific sections>.
-- For any ❌ FAIL, add a REGRESSION entry to OPEN_ISSUES.md.
+- For any ❌ FAIL, add a REGRESSION entry to .agent/test_ledger/OPEN_ISSUES.md.
 - Chaos Finale: combine routines <A>, <B>, <C> simultaneously for 5 minutes.
 ```
 
@@ -282,11 +287,11 @@ git push
 
 ---
 
-## Phase 6: Update OPEN_ISSUES.md
+## Phase 6: Update .agent/test_ledger/OPEN_ISSUES.md
 
 ### Step 16 — Mark newly fixed issues
 
-For each issue fixed in this sweep, update its status line in `OPEN_ISSUES.md`:
+For each issue fixed in this sweep, update its status line in `.agent/test_ledger/OPEN_ISSUES.md`:
 
 ```diff
 - - **Status:** OPEN
@@ -368,7 +373,7 @@ The `/mega-test` workflow will:
 1. Confirm the dev server is running at `localhost:4242`.
 2. Execute each routine using the browser subagent (5–10 routines per call).
 3. Record PASS / PARTIAL / FAIL / OPEN per routine.
-4. File any new regressions to `OPEN_ISSUES.md` as `[REGRESSION]` entries.
+4. File any new regressions to `.agent/test_ledger/OPEN_ISSUES.md` as `[REGRESSION]` entries.
 5. Produce a test execution report artifact.
 
 **Minimum acceptable result:** Zero `❌ FAIL [REGRESSION]` verdicts.
@@ -445,7 +450,7 @@ The sweep is **complete** when ALL of the following are true:
 | All fixes committed and pushed | ✅ |
 | New Mega Stress Test version generated and committed | ✅ |
 | `/mega-test` executed — zero REGRESSION verdicts | ✅ |
-| `OPEN_ISSUES.md` updated with new fix statuses | ✅ |
+| `.agent/test_ledger/OPEN_ISSUES.md` updated with new fix statuses | ✅ |
 | `REAL_TEST_HISTORY.md` updated | ✅ |
 | Sweep + test report produced | ✅ |
 
@@ -464,7 +469,7 @@ The sweep is **complete** when ALL of the following are true:
 │  Phase 3: Fix CodeRabbit PR comments                                   │
 │  Phase 4: Validate (typecheck + lint)                                  │
 │  Phase 5: Generate next Mega Stress Test plan ──→ MEGA_STRESS_TEST_VN  │
-│  Phase 6: Update OPEN_ISSUES.md ledger                                 │
+│  Phase 6: Update .agent/test_ledger/OPEN_ISSUES.md ledger                                 │
 │  Phase 7b: Generate E2E Playwright spec (optional)                     │
 │  Phase 8: /mega-test vN ──→ browser execution of all new routines      │
 │  Phase 9: Final sweep + test report                                    │

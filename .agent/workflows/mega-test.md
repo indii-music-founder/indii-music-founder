@@ -1,19 +1,24 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 name: /mega-test
 description: >
   Execute a specific version of the Mega Stress Test Plan using the browser subagent,
   measuring against 11 dimensions including deep technical architecture, asset generation,
   and real artifact validation.
   Runs numbered routines sequentially, documents pass/fail per routine, logs new issues
-  to OPEN_ISSUES.md, and produces a structured test report.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to OPEN_ISSUES.md for a fixing agent.
+  to .agent/test_ledger/OPEN_ISSUES.md, and produces a structured test report.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
 ---
 
 # /mega-test — Multi-Dimensional Mega Stress Test Execution Protocol
 
 > **Purpose:** Execute numbered routines from a specific Mega Stress Test plan file against the live running application using the browser subagent. Evaluate the application across 11 critical dimensions.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
-> **Output:** Multi-dimensional pass/fail report + all new issues → `OPEN_ISSUES.md`
+> **Output:** Multi-dimensional pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES.md`
 
 ---
 
@@ -27,11 +32,11 @@ You DO:
 - Validate real outputs (images, videos, PDFs) end-to-end
 - Screenshot every meaningful state, error toast, and failure
 - Report PASS, PARTIAL, or FAIL per routine with dimensional scores
-- Append new issues to `OPEN_ISSUES.md` using the standard format
+- Append new issues to `.agent/test_ledger/OPEN_ISSUES.md` using the standard format
 
 You do NOT:
 - Read source code
-- Modify any files (except appending to `OPEN_ISSUES.md` and the test report)
+- Modify any files (except appending to `.agent/test_ledger/OPEN_ISSUES.md` and the test report)
 - Run terminal commands other than checking the app is running
 - Diagnose root causes or suggest code fixes
 - Skip routines because they "seem fine" — every routine must execute
@@ -74,7 +79,7 @@ cat .agent/test_ledger/MEGA_STRESS_TEST_V<N>_*.md
 ```
 Build a mental checklist of modules, actions, and PASS conditions.
 
-### Step 3 — Read OPEN_ISSUES.md
+### Step 3 — Read .agent/test_ledger/OPEN_ISSUES.md
 ```bash
 tail -30 .agent/test_ledger/OPEN_ISSUES.md
 ```
@@ -110,7 +115,7 @@ For each routine in the test plan:
 4. **Observe** — watch for PASS/FAIL conditions across all 11 Dimensions.
 5. **Screenshot** — capture final state (pass or fail).
 6. **Record** — append to running test report with dimensional scores.
-7. **Log issues** — if FAIL or PARTIAL, append to `OPEN_ISSUES.md`.
+7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES.md`.
 
 ### 2.2 Browser Subagent Usage Rules
 When calling `browser_subagent`:
@@ -277,7 +282,7 @@ Maintain a running report, finalize as an artifact `artifacts/mega_v<N>_<date>_r
 
 ---
 
-## 6. ISSUE FILING FORMAT (OPEN_ISSUES.md)
+## 6. ISSUE FILING FORMAT (.agent/test_ledger/OPEN_ISSUES.md)
 
 Append to `.agent/test_ledger/OPEN_ISSUES.md`. DO NOT edit existing entries.
 

@@ -1,10 +1,15 @@
 ---
+
+> [!IMPORTANT]
+> **CRITICAL ISSUE TRACKING RULE:**
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+
 name: /real
 description: >
   Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios.
   Can be vague (AI figures out what to test) or specific (user directs the test).
   Always exhausts the system until completion or documented failure.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to OPEN_ISSUES.md for a separate fixing agent.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a separate fixing agent.
 ---
 
 # /real — Real-Life Scenario Testing
@@ -73,7 +78,7 @@ If no ledger exists, create one and start with the **highest-risk user journey**
 4. Audio analysis (upload → DNA extraction)
 5. Financial workflows (royalty splits → payout preview)
 
-### 1.3 Check OPEN_ISSUES.md
+### 1.3 Check .agent/test_ledger/OPEN_ISSUES.md
 
 Before starting, read `.agent/test_ledger/OPEN_ISSUES.md`. If previously-reported issues have been marked `FIXED`, **retest those first** as regression checks before moving on to new scenarios.
 
@@ -121,7 +126,7 @@ When something fails:
 2. **DOCUMENT** — what was the action? what was the error? was there a toast?
 3. **RETRY ONCE** — try the exact same action again. Is it reproducible?
 4. **WORKAROUND** — try to achieve the same goal through a different path
-5. **LOG** — add to OPEN_ISSUES.md with severity rating
+5. **LOG** — add to .agent/test_ledger/OPEN_ISSUES.md with severity rating
 
 **You do NOT try to fix it. You do NOT read source code. You move on.**
 
@@ -325,7 +330,7 @@ At the end of each test, rate each of these dimensions **(1-5)**:
 - **2/5** = Significant problems. Users would complain.
 - **1/5** = Broken. This dimension is failing.
 
-**If ANY dimension is below 5, there MUST be at least one issue filed in OPEN_ISSUES.md explaining why.**
+**If ANY dimension is below 5, there MUST be at least one issue filed in .agent/test_ledger/OPEN_ISSUES.md explaining why.**
 
 The goal is to drive every dimension to 5. The test agent keeps running `/real` until 30/30 is achieved.
 
@@ -373,7 +378,7 @@ After every run, append to `.agent/test_ledger/REAL_TEST_HISTORY.md`:
 
 ---
 
-## 8. THE ISSUES HANDOFF — OPEN_ISSUES.md
+## 8. THE ISSUES HANDOFF — .agent/test_ledger/OPEN_ISSUES.md
 
 This is the **critical output** of every `/real` run. It lives at:
 ```
