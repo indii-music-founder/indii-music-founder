@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 14:59 EDT
+**Updated:** 2026-06-11 15:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d4a4b4676 docs(skills): fix stale monorepo paths and outdated references
+1e9cd4a96 chore: session checkpoint [14:59]
 8afd7bd4b docs(workflows): repair frontmatter, kill /better cascade, fix stale monorepo paths
 b90038cdb chore: session checkpoint [14:56]
 9bfcac500 chore: session checkpoint [14:54]
@@ -12,8 +14,6 @@ b9b57ae9d chore: session checkpoint [14:47]
 9fa34cfb2 Merge pull request #160 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
 dbb81005d Merge pull request #159 from indii-music-founder/main
 99f3a8999 chore: session checkpoint [12:19]
-1ecb605d8 Merge pull request #158 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
-9f063db56 chore: session checkpoint [11:52]
 ```
 
 ## Working State
