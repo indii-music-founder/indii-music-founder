@@ -1,8 +1,8 @@
 /**
- * AI Model Configuration for Cloud Functions
+ * Intelligence Model Configuration for Cloud Functions
  * 
  * Centralized model IDs to avoid hardcoding and ensure consistency.
- * These should align with the client-side AI_MODELS config where applicable.
+ * These should align with the client-side INTELLIGENCE_MODELS config where applicable.
  * 
  * Nano Banana Model Tiers:
  *   LEGACY  → gemini-2.5-flash-image       (OG, high-volume / low-latency)
@@ -10,12 +10,12 @@
  *   PRO     → gemini-3-pro-image-preview     (Nano Banana Pro, highest fidelity)
  */
 
-export const FUNCTION_AI_MODELS = {
+export const FUNCTION_INTELLIGENCE_MODELS = {
     IMAGE: {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
-        GENERATION: 'gemini-3.1-pro-image',
+        GENERATION: 'gemini-3-pro-image-preview',
         /** Nano Banana 2 — fast + quality, grounding, 4K */
-        FAST: 'gemini-3.1-flash-image',
+        FAST: 'gemini-3.1-flash-image-preview',
         /** Nano Banana OG — legacy, high-volume / low-latency */
         LEGACY: 'gemini-2.5-flash-image',
     },
@@ -44,7 +44,7 @@ export const FUNCTION_AI_MODELS = {
  * When Google ships model updates, change THIS object and everything adapts.
  */
 export const NANO_BANANA_CAPABILITIES = {
-    [FUNCTION_AI_MODELS.IMAGE.GENERATION]: {
+    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION]: {
         tier: 'pro' as const,
         displayName: 'Nano Banana Pro',
         maxResolution: '4K',
@@ -58,7 +58,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'always_on',
     },
-    [FUNCTION_AI_MODELS.IMAGE.FAST]: {
+    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST]: {
         tier: 'fast' as const,
         displayName: 'Nano Banana 2',
         maxResolution: '4K',
@@ -72,7 +72,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'minimal',
     },
-    [FUNCTION_AI_MODELS.IMAGE.LEGACY]: {
+    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.LEGACY]: {
         tier: 'legacy' as const,
         displayName: 'Nano Banana',
         maxResolution: '1K',
@@ -92,7 +92,7 @@ export const NANO_BANANA_CAPABILITIES = {
 export type NanoBananaTier = 'legacy' | 'fast' | 'pro';
 
 /** Valid model identifiers specifically for image-related operations. */
-export type NanoBananaModelId = typeof FUNCTION_AI_MODELS.IMAGE[keyof typeof FUNCTION_AI_MODELS.IMAGE];
+export type NanoBananaModelId = typeof FUNCTION_INTELLIGENCE_MODELS.IMAGE[keyof typeof FUNCTION_INTELLIGENCE_MODELS.IMAGE];
 
-/** Full type metadata for all registered Cloud Function AI models. */
-export type FunctionAIModels = typeof FUNCTION_AI_MODELS;
+/** Full type metadata for all registered Cloud Function Intelligence models. */
+export type FunctionIntelligenceModels = typeof FUNCTION_INTELLIGENCE_MODELS;

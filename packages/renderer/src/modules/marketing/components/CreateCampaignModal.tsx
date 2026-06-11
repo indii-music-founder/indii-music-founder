@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';

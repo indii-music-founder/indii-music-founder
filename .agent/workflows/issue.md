@@ -44,13 +44,31 @@ description: >
 /issue low                   → Fix only 🟢 LOW severity issues
 /issue triage                → Don't fix — just read and prioritize the backlog
 /issue count                 → Quick count of OPEN issues by severity
+/issue sync                  → Fetch open issues from GitHub, append to OPEN_ISSUES.md, and begin fixing
 ```
 
 ---
 
 ## 2. INITIALIZATION
 
-### Step 1 — Read the full OPEN_ISSUES.md
+### Step 1 — GitHub Sync (if `/issue sync` invoked)
+
+If invoked as `/issue sync`:
+1. Use the `call_mcp_tool` tool with `ServerName: github` and `ToolName: list_issues` for `owner: "indii-music-founder"` and `repo: "indii-music-founder"`, `state: "open"`.
+   - *Fallback:* If the tool fails or the API is unreachable, log the error and proceed to Step 2. Do not crash the workflow.
+2. Read the current contents of `.agent/test_ledger/OPEN_ISSUES.md`.
+3. For each GitHub issue returned, check if its HTML URL or Issue Number already exists in the file (idempotency check).
+4. For each NEW issue, append it to the bottom of `OPEN_ISSUES.md` in this format:
+   ```markdown
+   ### GH-ISSUE-<number>: <title>
+   - **Status:** OPEN
+   - **Severity:** 🟡 MEDIUM (or 🔴 HIGH if labeled 'severity:critical'/'severity:major', etc.)
+   - **Link:** <html_url>
+   - **Summary:** <brief excerpt of body>
+   ```
+5. Once appended, proceed to Step 2.
+
+### Step 2 — Read the full OPEN_ISSUES.md
 
 ```bash
 cat .agent/test_ledger/OPEN_ISSUES.md
@@ -63,14 +81,14 @@ Parse every issue. Build a work queue sorted by:
 
 Within the same severity, sort by issue number (oldest first).
 
-### Step 2 — Filter by invocation mode
+### Step 3 — Filter by invocation mode
 
 - If `/issue` (no args): queue = all OPEN issues
 - If `/issue 45`: queue = [ISSUE-045] only
 - If `/issue high`: queue = all OPEN 🔴 HIGH issues
 - If `/issue triage`: skip to Section 5 (Triage Mode)
 
-### Step 3 — Check the Error Ledger
+### Step 4 — Check the Error Ledger
 
 Before touching any code:
 ```bash
@@ -79,7 +97,7 @@ cat .agent/skills/error_memory/ERROR_LEDGER.md
 Cross-reference the issue descriptions against known error patterns.
 If a match exists, apply the documented fix verbatim.
 
-### Step 4 — Print the work queue
+### Step 5 — Print the work queue
 
 Show the user exactly what will be fixed and in what order:
 

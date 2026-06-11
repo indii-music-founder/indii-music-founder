@@ -69,5 +69,6 @@
   ],
   "vitest.configSearchPatterns": [
     "vitest.workspace.ts"
-  ]
+  ],
+  "npm.packageManager": "npm"
 }

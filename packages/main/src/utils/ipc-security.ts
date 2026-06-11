@@ -3,6 +3,28 @@ import { IpcMainInvokeEvent, app } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+function safeFileURLToPath(urlStr: string): string {
+    if (typeof fileURLToPath === 'function') {
+        return fileURLToPath(urlStr);
+    }
+    // Fallback for test environments where fileURLToPath import is mocked or missing
+    if (urlStr.startsWith('file://')) {
+        let p = urlStr.substring(7);
+        // Remove localhost if present
+        if (p.startsWith('localhost')) {
+            p = p.substring(9);
+        }
+        // Decode URI components
+        p = decodeURIComponent(p);
+        // Convert Windows path if needed
+        if (/^\/[A-Za-z]:/.test(p)) {
+            p = p.substring(1);
+        }
+        return p;
+    }
+    return urlStr;
+}
+
 export function validateSender(event: IpcMainInvokeEvent): void {
     const frame = event.senderFrame;
     if (!frame) {
@@ -17,7 +39,7 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     // 1. Allow Electron Production (File Protocol) - STRICT CHECK
     if (url.startsWith('file://')) {
         try {
-            const filePath = fileURLToPath(url);
+            const filePath = safeFileURLToPath(url);
             const appPath = app.getAppPath();
 
             // Security: Ensure filePath is within appPath
@@ -42,7 +64,7 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     }
 
     // 2. Allow Deep Links
-    if (url.startsWith('indii-os:')) return;
+    if (url.startsWith('indii:')) return;
 
     // 3. Allow Dev Server (Strict Origin Check)
     let devServerUrl = process.env.VITE_DEV_SERVER_URL;

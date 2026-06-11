@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Send, Sparkles, MessageSquare, Bot, X } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useEntryContext, type QuickAction } from '../hooks/useEntryContext';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
@@ -28,7 +30,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
 
     const [input, setInput] = useState('');
     const [isDismissed, setIsDismissed] = useState(() => {
-        return localStorage.getItem('indiiOS_entryOverlay_dismissed') === 'true';
+        return localStorage.getItem('indii_entryOverlay_dismissed') === 'true';
     });
     const [isCollapsed, setIsCollapsed] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +51,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     };
 
     const getGreeting = () => {
-        if (scenario === 'new-user') return `Welcome to indiiOS, ${userName}.`;
+        if (scenario === 'new-user') return `Welcome to indii, ${userName}.`;
         if (scenario === 'returning-active') return `Welcome back, ${userName}.`;
         return `Good to see you, ${userName}.`;
     };
@@ -57,14 +59,14 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     const getSubtext = () => {
         if (isLoading) return 'Scanning memory...';
         if (memoryContext) return memoryContext;
-        if (scenario === 'new-user') return "I'm your AI creative engine. What should we build first?";
+        if (scenario === 'new-user') return "I'm your creative engine. What should we build first?";
         if (scenario === 'returning-active') return "Ready to pick up where we left off?";
         return "What are we working on today?";
     };
 
     const handleDismiss = () => {
         setIsDismissed(true);
-        localStorage.setItem('indiiOS_entryOverlay_dismissed', 'true');
+        localStorage.setItem('indii_entryOverlay_dismissed', 'true');
     };
 
     if (isBoardroomMode || isDismissed) {
@@ -74,7 +76,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                     <button 
                         onClick={() => {
                             setIsDismissed(false);
-                            localStorage.removeItem('indiiOS_entryOverlay_dismissed');
+                            localStorage.removeItem('indii_entryOverlay_dismissed');
                         }}
                         className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1 uppercase tracking-widest font-bold"
                     >
@@ -99,6 +101,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                 <button 
                     onClick={handleDismiss}
                     className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/20 hover:text-white/60 hover:bg-white/10 transition-all opacity-0 group-hover/overlay:opacity-100 z-50"
+                    aria-label="Dismiss Entry Assistant"
                 >
                     <X size={14} />
                 </button>
@@ -137,6 +140,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                         <button 
                             onClick={() => setIsCollapsed(!isCollapsed)}
                             className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all sm:hidden"
+                            aria-label={isCollapsed ? "Expand Entry Assistant" : "Collapse Entry Assistant"}
                         >
                             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                         </button>
@@ -160,6 +164,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask me anything — stats, royalties, or start a new project..."
                                         className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-5 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-hidden focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
+                                        data-testid="main-prompt-input"
                                     />
                                     <button
                                         type="submit"
@@ -170,6 +175,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                                 ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" 
                                                 : "bg-white/5 text-white/20 opacity-50"
                                         )}
+                                        aria-label="Send message"
                                     >
                                         <Send size={18} />
                                     </button>

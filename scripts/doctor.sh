@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────────────────
-# scripts/doctor.sh — Environment Health Checker for indiiOS
+# scripts/doctor.sh — Environment Health Checker for indii
 #
 # Usage: npm run doctor
 #

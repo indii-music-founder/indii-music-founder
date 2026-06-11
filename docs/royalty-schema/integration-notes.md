@@ -2,23 +2,23 @@
 
 **Document Version:** 1.0  
 **Date:** 2026-03-05  
-**For:** indiiOS Platform Integration
+**For:** indii Platform Integration
 
 ---
 
 ## Overview
 
-This document describes how the royalty collection schema fits into the existing indiiOS architecture, including agent responsibilities, data flow, and implementation priorities.
+This document describes how the royalty collection schema fits into the existing indii architecture, including agent responsibilities, data flow, and implementation priorities.
 
 ---
 
-## 1. Current indiiOS Architecture
+## 1. Current indii Architecture
 
 ### 1.1 Existing Agents
 
 | Agent | Current Role | Royalty Integration |
 |-------|--------------|---------------------|
-| **Publishing Agent** | PRO registration, ISWC codes, split sheets, DDEX | **Primary owner** of royalty registration workflows |
+| **Publishing Agent** | PRO registration, ISWC codes, split sheets, Proprietary Ingestion IP | **Primary owner** of royalty registration workflows |
 | **Finance Agent** | Budget analysis, metadata auditing, receipt scanning | **Primary owner** of royalty tracking, payments, statements |
 | **Legal Agent** | Contract review, rights management | Copyright registration, sync licensing |
 | **Marketing Agent** | Campaigns, release coordination | Release gating, "sell before you stream" enforcement |
@@ -41,7 +41,7 @@ From codebase analysis:
 - Handles PRO registration
 - Manages ISWC codes
 - Creates split sheets
-- DDEX integration
+- Proprietary Ingestion IP integration
 
 **Additions Needed:**
 

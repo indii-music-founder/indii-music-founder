@@ -133,7 +133,7 @@ export class AppleMusicService {
 
         this._kit = await window.MusicKit.configure({
             developerToken: devToken,
-            app: { name: 'indiiOS', build: '1.0.0' },
+            app: { name: 'indii', build: '1.0.0' },
         });
     }
 

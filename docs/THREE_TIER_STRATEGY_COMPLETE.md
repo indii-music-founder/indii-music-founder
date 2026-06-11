@@ -1,6 +1,6 @@
-# indiiOS Three-Tier Strategy - Implementation Complete
+# indii Three-Tier Strategy - Implementation Complete
 
-**Project:** indiiOS - The Operating System for Independent Artists  
+**Project:** indii - The Operating System for Independent Artists  
 **Strategy:** Multi-Tier Product Deployment for Music Industry  
 **Date Completed:** 2026-01-05  
 **Status:** ✅ Phase 1 & 2 Complete  
@@ -9,11 +9,11 @@
 
 ## Executive Summary
 
-Successfully implemented a **comprehensive three-tier product strategy** for indiiOS that serves the entire music industry spectrum:
+Successfully implemented a **comprehensive three-tier product strategy** for indii that serves the entire music industry spectrum:
 
-- ✅ **Tier 1: indiiOS Free (Web)** - Entry-level, forever free
-- ✅ **Tier 2: indiiOS Pro (Web)** - Professional subscription
-- ✅ **Tier 3: indiiOS Studio (Desktop)** - Privacy-first, hybrid offering
+- ✅ **Tier 1: indii Free (Web)** - Entry-level, forever free
+- ✅ **Tier 2: indii Pro (Web)** - Professional subscription
+- ✅ **Tier 3: indii Studio (Desktop)** - Privacy-first, hybrid offering
 
 **Total Implementation:** ~5,500 lines of production-ready code across 8 weeks of work.
 
@@ -63,24 +63,24 @@ Successfully implemented a **comprehensive three-tier product strategy** for ind
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     indiiOS Ecosystem                          │
+│                     indii Ecosystem                          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
-│  Tier 1: indiiOS Free (Web) - 2GB/50 images/5min video        │
+│  Tier 1: indii Free (Web) - 2GB/50 images/5min video        │
 │  ┌─────────────────────┐                                     │
 │  │ • Basic Features    │                                     │
 │  │ • Cloud-Only        │                                     │
 │  │ • Free Forever      │                                     │
 │  └─────────────────────┘                                     │
 │           ↓ Upsell                                            │
-│  Tier 2: indiiOS Pro (Web) - 50GB/500 images/30min video      │
+│  Tier 2: indii Pro (Web) - 50GB/500 images/30min video      │
 │  ┌─────────────────────┐                                     │
 │  │ • Enhanced Features │                                     │
 │  │ • $19/mo or $190/yr  │                                     │
 │  │ • Cloud Power       │                                     │
 │  └─────────────────────┘                                     │
 │           ↓ Upgrade                                           │
-│  Tier 3: indiiOS Studio (Desktop) - Privacy-first Hybrid      │
+│  Tier 3: indii Studio (Desktop) - Privacy-first Hybrid      │
 │  ┌────────────────────────────────────────────────┐         │
 │  │  Variant 3A: TypeScript Native (Recommended)   │         │
 │  │  • Instrument layer for agent powers           │         │
@@ -454,7 +454,7 @@ ImageGenerationService ← ImageGenerationInstrument ← ← ← ← ← ←
 
 ## Conclusion
 
-**Mission Accomplished:** indiiOS now has a robust, scalable, music-industry-ready three-tier product strategy.
+**Mission Accomplished:** indii now has a robust, scalable, music-industry-ready three-tier product strategy.
 
 ### What You Have:
 1. ✅ **Complete subscription system** (Stripe, quota enforcement, usage tracking)

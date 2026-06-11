@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Star, X, Loader2 } from 'lucide-react';
@@ -13,6 +14,7 @@ interface CreateContactModalProps {
 }
 
 export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, onClose, userId }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [outlet, setOutlet] = useState('');
     const [role, setRole] = useState<Contact['role']>('Journalist');
@@ -100,7 +102,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g. Test Journalist"
+                                    placeholder={t('publicist.hints.contact_name')}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                     autoFocus
                                 />
@@ -113,7 +115,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                                     type="text"
                                     value={outlet}
                                     onChange={(e) => setOutlet(e.target.value)}
-                                    placeholder="e.g. Pitchfork / Rolling Stone"
+                                    placeholder={t('publicist.hints.contact_outlet')}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                 />
                             </div>

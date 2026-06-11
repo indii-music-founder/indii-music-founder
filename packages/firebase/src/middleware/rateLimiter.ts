@@ -24,7 +24,7 @@ export async function checkRateLimit(
 }
 
 export function withRateLimit<T>(
-    handler: (data: T, ctx: functions.https.CallableContext) => Promise<any>,
+    handler: (data: T, ctx: functions.https.CallableContext) => Promise<unknown>,
     config: { endpoint: string; maxRequests?: number }
 ) {
     return async (data: T, ctx: functions.https.CallableContext) => {

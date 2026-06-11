@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Publicist Module E2E Tests
@@ -6,13 +6,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Publicist Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to publicist module without crash', async ({ page }) => {
+    test('navigates to publicist module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-publicist"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -22,7 +22,7 @@ test.describe('Publicist Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('publicist module has content', async ({ page }) => {
+    test('publicist module has content', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-publicist"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

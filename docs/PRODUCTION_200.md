@@ -1,4 +1,4 @@
-# indiiOS: The 200-Point Production Readiness Checklist (Parts 3 & 4)
+# indii: The 200-Point Production Readiness Checklist (Parts 3 & 4)
 
 This document contains **Part 3** and **Part 4** of the master production readiness checklist (Items 101-200). These encompass ALL NEW NEEDS beyond the initial 100-point phase, focusing on advanced AI integration, specialized multi-agent workflows, enterprise scale, and deep music industry integrations.
 
@@ -36,7 +36,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **125. Limited Drop Campaigns:** Workflow system to countdown drops, lock pre-sales, and notify superfans.
 - [x] **126. Web3 Authentication/Wallet Connnect:** Allow signing in via MetaMask/WalletConnect to gate experiences.
 - [x] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
-- [x] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
+- [x] **128. Blockchain Royalty Tracing:** Mirror traditional Proprietary Ingestion IP splits to a private ledger or IPFS pinning for indisputable rights tracking.
 - [x] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
 - [x] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 
@@ -98,9 +98,9 @@ This document contains **Part 3** and **Part 4** of the master production readin
 
 ### B2B Connections & Distributor Tech (171-180)
 
-- [x] **171. Custom DDEX/ERN 4.2 Exporter:** Upgrade the metadata engine to support full DDEX ERN 4.2 compliance for direct DSP ingestion. *(Wired: ERNService.generateERN() integration in DistributionTools.ts)*
+- [ ] **171. Custom Proprietary Ingestion IP/IngestionNotification 4.2 Exporter:** Metadata generation is wired, but direct DSP ingestion compliance requires live partner validation before it is marked production complete. *(Wired: IngestionNotificationService.generateIngestionNotification() integration in DistributionTools.ts)*
 - [x] **172. Automated ISRC/UPC Generation:** Hook into the US ISRC agency API for instant, validated generation. *(Wired: IdentifierService.nextISRC() in DistributionTools.ts)*
-- [x] **173. SFTP Ingestion Engine:** Automate the direct SFTP pipeline to drop structured folders for direct DSPs (avoiding aggregators). *(Wired: Electron IPC sftpUpload with fallback in DistributionTools.ts)*
+- [ ] **173. SFTP Ingestion Engine:** SFTP folder/export flow is wired, but direct DSP endpoint delivery requires verified credentials, acknowledgements, and tester evidence before it is marked production complete. *(Wired: Electron IPC sftpUpload in DistributionTools.ts)*
 - [x] **174. Quality Control (QC) Visualizer:** A strictly-enforced gateway matching audio true peaks, artwork resolution, and explicit tagging perfectly before delivery.
 - [x] **175. Content ID Opt-out/In Toggle:** Automated delivery parameters specifying YouTube Content ID boundaries per track.
 - [x] **176. Sync Metadata Scrubber:** Auto-populate `ID3` tagging on downloadable WAV/MP3 files exported from the studio. *(Wired: ID3 tag write + Firestore audit trail in MusicTools.ts)*

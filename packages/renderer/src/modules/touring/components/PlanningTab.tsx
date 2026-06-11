@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -44,6 +46,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     logisticsReport,
     onUpdateStop
 }) => {
+    const { t } = useTranslation();
     const [selectedStop, setSelectedStop] = useState<ItineraryStop | null>(null);
 
 
@@ -97,7 +100,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         type="text"
                                         value={newLocation}
                                         onChange={(e) => setNewLocation(e.target.value)}
-                                        placeholder="Enter City, State (e.g. Austin, TX)"
+                                        placeholder={t('touring.hints.city_state_example')}
                                         className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all font-mono"
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
                                     />
@@ -167,16 +170,16 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 {/* Right: Interactive Map */}
                 <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
                     <TourMap
-                        // If we have an itinerary, use the stops as markers, otherwise use raw locations
-                        markers={itinerary ? itinerary.stops.map((stop, idx) => ({
-                            position: { lat: 0, lng: 0 }, // Placeholder for geocoding fallback in legacy mode
-                            title: `${idx + 1}. ${stop.venue || stop.city}`,
+                        // If stops have non-zero coordinates, pass them as markers, otherwise they are geocoded via locations list
+                        markers={itinerary ? itinerary.stops.filter(s => s.coordinates && s.coordinates.lat !== 0).map((stop, idx) => ({
+                            position: stop.coordinates!,
+                            title: stop.venue || stop.city,
                             type: 'venue' as const,
+                            label: (idx + 1).toString(),
                             meta: stop as unknown as Record<string, unknown>
-
                         })) : []}
-                        locations={selectedStop ? [selectedStop.city] : (itinerary ? [] : locations)}
-                        center={selectedStop ? undefined : undefined} // Map will handle fitBounds
+                        locations={selectedStop ? [selectedStop.city] : (itinerary ? itinerary.stops.map(s => s.city) : locations)}
+                        center={selectedStop ? (selectedStop.coordinates || selectedStop.city) : undefined}
                     />
 
                     {/* Floating Info Overlay */}

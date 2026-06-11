@@ -1,4 +1,4 @@
-import { test as base, Page } from "@playwright/test";
+import { test as base, Page, Route, Request } from "@playwright/test";
 
 /**
  * Auth fixture — bypasses Firebase auth for E2E tests using state injection.
@@ -50,6 +50,31 @@ export type AuthFixtures = {
 
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
+    // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
+    const originalRoute = page.route.bind(page);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (page as any).route = (url: string | RegExp | ((url: URL) => boolean), handler: (route: Route, request: Request) => void, options?: { times?: number }) => {
+      return originalRoute(url, async (route: Route) => {
+        const req = route.request();
+        const originalFulfill = route.fulfill.bind(route);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        route.fulfill = async (fulfillOptions: any) => {
+          const reqHeaders = req.headers();
+          const reqOrigin = reqHeaders['origin'] || reqHeaders['Origin'] || 'https://indii-music-studio.web.app';
+          const patchedHeaders = {
+            ...fulfillOptions.headers,
+            "Access-Control-Allow-Origin": reqOrigin,
+            "Access-Control-Allow-Credentials": "true",
+          };
+          return originalFulfill({
+            ...fulfillOptions,
+            headers: patchedHeaders
+          });
+        };
+        return handler(route);
+      }, options);
+    };
+
     // Log browser console messages to terminal for CI debugging
     page.on("console", (msg) => {
       const type = msg.type();
@@ -119,7 +144,7 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
-    await page.route("**/*.cloudfunctions.net/**", async (route) => {
+    const handleCloudFunction = async (route: Route) => {
       const url = route.request().url();
       console.log(
         `[E2E] CATCH-ALL intercepted (cloudfunctions): ${route.request().method()} ${url}`,
@@ -142,13 +167,73 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
+      if (url.includes("getSubscription")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              id: 'mock-sub-global',
+              userId: 'test-user-uid-e2e',
+              tier: 'pro_monthly',
+              status: 'active',
+              currentPeriodStart: Date.now(),
+              currentPeriodEnd: Date.now() + 30 * 86400000,
+              cancelAtPeriodEnd: false,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            },
+          }),
+        });
+        return;
+      }
+
+      if (url.includes("getUsageStats")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              tier: 'pro_monthly',
+              resetDate: Date.now() + 30 * 86400000,
+              imagesGenerated: 0,
+              imagesRemaining: 100,
+              imagesPerMonth: 100,
+              videoDurationSeconds: 0,
+              videoDurationMinutes: 0,
+              videoRemainingMinutes: 10,
+              videoTotalMinutes: 10,
+              aiChatTokensUsed: 0,
+              aiChatTokensRemaining: 100000,
+              aiChatTokensPerMonth: 100000,
+              storageUsedGB: 0,
+              storageRemainingGB: 10,
+              storageTotalGB: 10,
+              projectsCreated: 0,
+              projectsRemaining: 10,
+              maxProjects: 10,
+              teamMembersUsed: 1,
+              teamMembersRemaining: 4,
+              maxTeamMembers: 5
+            },
+          }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         headers: corsHeaders,
         contentType: "application/json",
         body: JSON.stringify({ data: {} }),
       });
-    });
+    };
+
+    await page.route("**/*.cloudfunctions.net/**", handleCloudFunction);
+    await page.route("**/127.0.0.1:5001/**", handleCloudFunction);
+    await page.route("**/localhost:5001/**", handleCloudFunction);
 
     // Intercept ALL Firestore traffic to prevent offline hangs.
     // This covers addDoc/updateDoc writes that block the submission pipeline.
@@ -161,28 +246,40 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
-      // Handle Listen/WebChannel streams (long-polling)
       if (
         url.includes(":listen") ||
         url.includes("/Listen/") ||
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        // Return 403 Permission Denied to terminate the connection instantly 
-        // and tell the client NOT to retry the stream, avoiding 400 Bad Request noise.
-        await route.fulfill({
-          status: 403,
-          headers: corsHeaders,
-          contentType: "application/json",
-          body: JSON.stringify({
-            error: {
-              code: 403,
-              message: "Permission Denied",
-              status: "PERMISSION_DENIED"
-            }
-          })
-        });
+        await route.abort('failed');
         return;
+      }
+
+      // Handle batchGet for user profile
+      if (url.includes("batchGet") || url.includes("documents:get")) {
+          await route.fulfill({
+            status: 200,
+            headers: corsHeaders,
+            contentType: "application/json",
+            body: JSON.stringify([
+              {
+                found: {
+                  name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
+                  fields: {
+                    uid: { stringValue: "test-user-uid-e2e" },
+                    email: { stringValue: "e2e@indii.test" },
+                    displayName: { stringValue: "E2E Test User" },
+                    onboardingCompleted: { booleanValue: true },
+                  },
+                  createTime: "2024-01-01T00:00:00.000Z",
+                  updateTime: "2024-01-01T00:00:00.000Z",
+                },
+                readTime: "2024-01-01T00:00:00.000Z"
+              }
+            ]),
+          });
+          return;
       }
 
       // Mock User Profile reads
@@ -274,15 +371,30 @@ export const test = base.extend<AuthFixtures>({
 
         const postData = route.request().postData() || "";
         const hasUpdateProfileTool = postData.includes("updateProfile");
+        const hasSeatFinanceTool = postData.toLowerCase().includes("financial department") || postData.toLowerCase().includes("finance");
 
         const parts: Array<{
           text?: string;
           functionCall?: Record<string, unknown>;
-        }> = [
-            {
-              text: "Awesome! I've updated your brand kit with those details. You're ready to go!",
-            },
-          ];
+        }> = [];
+
+        if (hasSeatFinanceTool) {
+          parts.push({
+            text: "Calling seat_agent for finance.",
+          });
+          parts.push({
+            functionCall: {
+              name: "seat_agent",
+              args: {
+                targetAgentId: "finance"
+              }
+            }
+          });
+        } else {
+          parts.push({
+            text: "Awesome! I've updated your brand kit with those details. You're ready to go!",
+          });
+        }
 
         if (hasUpdateProfileTool) {
           parts.push({
@@ -376,7 +488,7 @@ export const test = base.extend<AuthFixtures>({
               fileSearchStores: [
                 {
                   name: "fileSearchStores/mock-e2e-store",
-                  displayName: "indiiOS Default Store",
+                  displayName: "indii Default Store",
                 },
               ],
             }),
@@ -485,7 +597,7 @@ export const test = base.extend<AuthFixtures>({
           fileSearchStores: [
             {
               name: "fileSearchStores/mock-e2e-store",
-              displayName: "indiiOS Default Store",
+              displayName: "indii Default Store",
             },
           ],
         }),
@@ -510,9 +622,9 @@ export const test = base.extend<AuthFixtures>({
           contentType: "application/json",
           body: JSON.stringify({
             localId: "test-user-uid-e2e",
-            email: "e2e@indiios.test",
+            email: "e2e@indii.test",
             displayName: "E2E Test User",
-            idToken: "mock-id-token-e2e",
+            idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
             refreshToken: "mock-refresh-token-e2e",
             expiresIn: "3600",
           }),
@@ -530,9 +642,10 @@ export const test = base.extend<AuthFixtures>({
             users: [
               {
                 localId: "test-user-uid-e2e",
-                email: "e2e@indiios.test",
+                email: "e2e@indii.test",
                 displayName: "E2E Test User",
                 emailVerified: true,
+                providerUserInfo: []
               },
             ],
           }),
@@ -567,7 +680,7 @@ export const test = base.extend<AuthFixtures>({
           expires_in: "3600",
           token_type: "Bearer",
           refresh_token: "mock-refresh-token-e2e",
-          id_token: "mock-id-token-e2e",
+          id_token: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
           user_id: "test-user-uid-e2e",
           project_id: "mock-project",
         }),
@@ -597,18 +710,21 @@ export const test = base.extend<AuthFixtures>({
     await page.route("**/firebaselogging.googleapis.com/**", async (route) => {
       await route.fulfill({ status: 200, headers: corsHeaders, body: "{}" });
     });
-    await page.route("**/firebase.googleapis.com/**", async (route) => {
-      if (route.request().method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
-        return;
+    await page.route(
+      url => url.hostname.includes('firebase.googleapis.com') || url.hostname.includes('content-firebaseappcheck.googleapis.com'),
+      async (route) => {
+        if (route.request().method() === "OPTIONS") {
+          await route.fulfill({ status: 204, headers: corsHeaders });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
+        });
       }
-      await route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: "application/json",
-        body: JSON.stringify({ token: "mock-app-check-token", ttl: "3600s" }),
-      });
-    });
+    );
 
     // Intercept Firebase Installations API
     await page.route("**/*installations.googleapis.com/**", async (route) => {
@@ -696,10 +812,10 @@ export const test = base.extend<AuthFixtures>({
       w.FIREBASE_E2E_MOCK = true;
       w.FIREBASE_USER_MOCK = {
         uid: "test-user-uid-e2e",
-        email: "e2e@indiios.test",
+        email: "e2e@indii.test",
         displayName: "E2E Test User",
         isAnonymous: false,
-        getIdToken: () => Promise.resolve("mock-id-token-e2e"),
+        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature"),
       };
 
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
@@ -708,10 +824,10 @@ export const test = base.extend<AuthFixtures>({
         // Prevent onboarding wizard from hijacking navigation
         localStorage.setItem("onboarding_dismissed", "true");
         // Dismiss the first-run guided tour overlay
-        localStorage.setItem("indiiOS_tour_completed_v1", "true");
+        localStorage.setItem("indii_tour_completed_v1", "true");
         // Dismiss cookie consent banner so it doesn't overlay test targets
         // IMPORTANT: Must match ConsentPreferences interface exactly (requires version >= 1)
-        localStorage.setItem("indiiOS_cookie_consent", JSON.stringify({
+        localStorage.setItem("indii_cookie_consent", JSON.stringify({
           essential: true,
           analytics: false,
           errorTracking: false,
@@ -731,9 +847,69 @@ export const test = base.extend<AuthFixtures>({
         // Ignore if localStorage is unavailable
       }
 
+      // Inject CSS override to prevent any driver.js or driver overlays from intercepting pointer events during E2E tests
+      try {
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .driver-overlay, .driver-popover, .driver-overlay-animated, .driver-popover-arrow, .driver-popover-backdrop {
+            display: none !important;
+            pointer-events: none !important;
+          }
+        `;
+        document.documentElement.appendChild(style);
+      } catch (e) {
+        // Ignore errors
+      }
     });
 
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    // Explicitly write localStorage values on the page origin to guarantee they are set
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("onboarding_dismissed", "true");
+        localStorage.setItem("indii_tour_completed_v1", "true");
+        localStorage.setItem("indii_cookie_consent", JSON.stringify({
+          essential: true,
+          analytics: false,
+          errorTracking: false,
+          marketing: false,
+          timestamp: new Date().toISOString(),
+          version: 1,
+        }));
+      } catch (e) {
+        console.error("Failed to set localStorage in authedPage evaluation:", e);
+      }
+    });
+
+    // Wait for either the dashboard button OR the email input to be visible, showing the page has loaded
+    const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first();
+    const emailInput = page.locator('input[type="email"]').first();
+    
+    try {
+      // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
+      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 10000 });
+    } catch (e) {
+      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 10s.");
+    }
+    
+    if (await emailInput.isVisible().catch(() => false)) {
+      console.log("[E2E] App login form visible. Performing manual login...");
+      await emailInput.fill('e2e@indii.test');
+      const passwordInput = page.locator('input[type="password"]').first();
+      if (await passwordInput.isVisible().catch(() => false)) {
+          await passwordInput.fill('password123');
+      }
+      await page.locator('form button[type="submit"]').first().click();
+      
+      // Wait for dashboard to be visible to confirm login
+      await dashboardBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+          console.log("[E2E] Dashboard not found after manual login click!");
+      });
+    } else if (await dashboardBtn.isVisible().catch(() => false)) {
+      console.log("[E2E] Dashboard already visible. Already authenticated.");
+    }
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);

@@ -1,5 +1,6 @@
 import { FunctionDeclaration } from '../types';
 import { VALID_AGENT_IDS_LIST } from '../types';
+import { ARTIFACT_TOOL_DECLARATIONS } from '../tools/ArtifactTools';
 
 /**
  * SUPERPOWER_TOOLS defines the advanced cross-cutting capabilities available to all agents.
@@ -181,7 +182,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
     // ── Timeline Orchestrator Tools ─────────────────────────────────────────
     {
         name: 'create_timeline',
-        description: 'Create a progressive, multi-phase campaign timeline. Supports pre-built templates (single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w) or fully custom AI-generated plans.',
+        description: 'Create a progressive, multi-phase campaign timeline. Supports pre-built templates (single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w) or fully custom Intelligence-generated plans.',
         parameters: {
             type: 'OBJECT',
             properties: {
@@ -192,7 +193,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
                 templateId: { type: 'STRING', description: 'Optional template ID: single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w, or custom.' },
                 platforms: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Target platforms (e.g., ["Instagram", "TikTok", "Twitter"]).' },
                 releaseId: { type: 'STRING', description: 'Optional: ID of the release this timeline supports.' },
-                customInstructions: { type: 'STRING', description: 'Optional: custom AI instructions for plan generation.' },
+                customInstructions: { type: 'STRING', description: 'Optional: custom Autonomous instructions for plan generation.' },
                 assetStrategy: { type: 'STRING', description: 'Asset preference: create_new, use_existing, or auto.' }
             },
             required: ['goal', 'domain', 'durationWeeks', 'startDate']
@@ -283,5 +284,27 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             type: 'OBJECT',
             properties: {}
         }
-    }
+    },
+    {
+        name: 'audit_architecture',
+        description: 'Scans the INDII agent directory to map the current state and capabilities. Use this to audit existing agents and prevent redundant tool creation.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {}
+        }
+    },
+    {
+        name: 'update_agent_memory',
+        description: "Updates an agent's persistent procedural knowledge (instructions.md). Use this to remember user preferences or enforce new rules across sessions.",
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                agentId: { type: 'STRING', description: "The ID of the agent to update (e.g., 'merchandise', 'generalist')." },
+                action: { type: 'STRING', enum: ['add', 'remove'], description: "Whether to add a new instruction or remove an existing string." },
+                knowledge: { type: 'STRING', description: "The specific procedural instruction or rule to persist." }
+            },
+            required: ['agentId', 'action', 'knowledge']
+        }
+    },
+    ...ARTIFACT_TOOL_DECLARATIONS as unknown as FunctionDeclaration[]
 ];

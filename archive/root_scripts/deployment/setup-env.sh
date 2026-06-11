@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick setup script for .env configuration
 
-echo "🔧 indiiOS Environment Setup"
+echo "🔧 indii Environment Setup"
 echo "======================================"
 echo ""
 
@@ -48,7 +48,7 @@ if [ $required_missing -gt 0 ]; then
     echo ""
     echo "To add keys:"
     echo "  1. Get Gemini API key: https://aistudio.google.com/app/apikey"
-    echo "  2. Get Firebase config: https://console.firebase.google.com/project/indiios-v-1-1/settings/general"
+    echo "  2. Get Firebase config: https://console.firebase.google.com/project/indii-v-1-1/settings/general"
     echo "  3. Edit .env: nano .env"
     echo ""
     exit 1

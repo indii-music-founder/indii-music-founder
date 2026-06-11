@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Knowledge Base Module E2E Tests
@@ -6,13 +6,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Knowledge Base Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to knowledge base without crash', async ({ page }) => {
+    test('navigates to knowledge base without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-knowledge"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -22,7 +22,7 @@ test.describe('Knowledge Base Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('knowledge base has searchable content', async ({ page }) => {
+    test('knowledge base has searchable content', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-knowledge"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

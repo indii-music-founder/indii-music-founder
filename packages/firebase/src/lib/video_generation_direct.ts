@@ -11,7 +11,7 @@
 
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
-import { FUNCTION_AI_MODELS } from "../config/models";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 /**
  * Sleep helper.
@@ -82,15 +82,15 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ── Step 2: Initialize SDK ─────────────────────────────────────────
         const { model: requestedModel } = options || {};
         const modelId = requestedModel === 'fast'
-            ? FUNCTION_AI_MODELS.VIDEO.FAST
-            : FUNCTION_AI_MODELS.VIDEO.PRO;
+            ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+            : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indiios-v-1-1';
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
         const ai = new GoogleGenAI({
             vertexai: true,
             project: projectId,
-            location: 'us-central1',
+            location: process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1',
         });
 
         console.log(`[VideoGenDirect] Using Vertex AI SDK with model: ${modelId}, project: ${projectId}`);
@@ -237,7 +237,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indiios-alpha-electron.appspot.com').replace('.appspot.com', '');
+        const targetBucketName = process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-music-founder.firebasestorage.app';
 
         // Check for bytesBase64Encoded or videoBytes inline first
         const videoObj = video as Record<string, unknown>;
@@ -270,7 +270,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             console.log(`[VideoGenDirect] Attempting SDK file download for: ${videoObj.name}`);
             try {
                 const tmpPath = `/tmp/${jobId}.mp4`;
-                // Cast to any for the external API call where the SDK type is complex
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 await ai.files.download({ file: videoObj as any, downloadPath: tmpPath });
 
                 // Read from tmp and upload to Storage

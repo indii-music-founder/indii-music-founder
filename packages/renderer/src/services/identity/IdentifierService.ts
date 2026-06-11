@@ -133,6 +133,14 @@ export class IdentifierService {
     }
 
     /**
+     * Validate an ISWC.
+     * Format: T-000.000.000-C, allowing compact separators from upstream systems.
+     */
+    static validateISWC(iswc: string): boolean {
+        return /^T[- ]?\d{3}[. ]?\d{3}[. ]?\d{3}[- ]?\d$/.test(iswc.trim().toUpperCase());
+    }
+
+    /**
      * Calculate GTIN Check Digit (Luhn-like).
      */
     private static calculateGTINCheckDigit(payload: string): number {

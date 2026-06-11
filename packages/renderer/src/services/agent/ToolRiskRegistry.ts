@@ -44,6 +44,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     core_vault_history: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'View version history of an authoritative fact' },
     captains_log_read: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read operational logs from Layer 4' },
     list_tasks: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List project tasks' },
+    audit_architecture: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Map the agent ecosystem and capabilities' },
 
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -73,6 +74,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     list_timeline_templates: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     list_timelines: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     get_timeline_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
+    get_release_harness_run: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read saved release harness output' },
 
     // Music (read)
     verify_metadata_golden: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -100,6 +102,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     set_mode: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     update_prompt: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     delegate_task: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    consult_specialist: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Consult specialist via A2A' },
+    'a2a:consult': { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'A2A routing call' },
+    seat_agent: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Seat agent at boardroom table' },
+    unseat_agent: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Remove agent from boardroom table' },
     request_approval: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     agent_negotiate: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     initiate_voice_conversation: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
@@ -138,6 +144,19 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     schedule_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     create_campaign_brief: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    compile_release_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Compile and optionally save a release strategy draft' },
+    generate_release_identifiers: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate ISRC, UPC, catalog identifiers, and ISWC work drafts without store delivery' },
+    create_timeline_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft timeline from harness output' },
+    create_campaign_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft campaign brief from harness output' },
+    create_identity_protection_profile: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create or draft a creator identity protection profile without granting AI rights' },
+    assess_digital_replica_risk: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Assess creator protection readiness without legal advice or filing' },
+    classify_replica_incident: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Classify and route suspected AI identity misuse' },
+    generate_evidence_packet: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft an evidence packet for platform or attorney review' },
+    prepare_digital_replica_takedown: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft a legal/platform notice only; sending requires user approval outside this tool' },
+    review_ai_voice_likeness_clause: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Review contract text for AI voice/likeness risk flags' },
+    create_ai_voice_license_terms: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draft license terms only; does not authorize use' },
+    monitor_identity_misuse: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Stage manual identity monitoring; biometric monitoring requires separate approval' },
+    escalate_to_attorney: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Prepare attorney escalation packet without contacting counsel automatically' },
 
     // Brand
     generate_brand_guidelines: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
@@ -221,6 +240,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Code Execution (destructive — runs arbitrary code on host)
     execute_code: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Executes arbitrary Python code via the sidecar — requires explicit user approval' },
+    update_agent_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: "Permanently modify an agent's system instructions (brain surgery)" },
 
     // =========================================================================
     // WRITE — OpenClaw Gap Tools
@@ -232,6 +252,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Notifications (write — sends alerts to the user)
     send_notification: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Send notification to user outside app' },
+
+    // Foundational (Artifacts)
+    create_artifact: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create an artifact document to present structured information to the user' },
+    multi_replace_file_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Modify multiple non-contiguous blocks of text in a single file' },
 };
 
 /**

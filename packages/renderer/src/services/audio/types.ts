@@ -57,7 +57,7 @@ export interface AudioSemanticData {
         era: string;        // e.g., "Late 90s Boom Bap", "Modern Hyperpop", "70s Soul"
         quality: string;    // e.g., "Bedroom Producer", "Professional Studio", "Lo-Fi Aesthetic"
         mixBalance: string; // e.g., "Bass-Forward", "Vocal-Forward", "Balanced"
-        aiArtifacts: boolean; // True if quantization/AI artifacts are audible (Goal 3 compliance)
+        aiArtifacts: boolean; // True if quantization/Intelligence artifacts are audible (Goal 3 compliance)
     };
 
     visualImagery: {
@@ -79,6 +79,9 @@ export interface AudioIntelligenceProfile {
     id: string;             // Content hash — fingerprint from FingerprintService
     technical: DeepAudioFeatures; // BPM, Key, Energy — from Essentia.js WASM
     semantic: AudioSemanticData; // Mood, Genre, Imagery, Prompts — from Gemini 3 Pro
+    emotionalNarrative?: import('@/services/audio/EnergyMapService').EmotionalNarrative; // Session 2
+    marketingCopy?: import('@/services/marketing/AutoCopywriter').MarketingCopyPackage; // Session 4
+    styleComparison?: import('@/services/audio/StyleMemoryStore').StyleComparisonResult; // Session 5
     analyzedAt: number;
     modelVersion: string;   // e.g., "gemini-3.1-pro-preview"
 }

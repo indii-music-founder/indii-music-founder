@@ -22,7 +22,7 @@ import { useState, useEffect, useCallback } from 'react';
  *   );
  */
 
-const STORAGE_KEY = 'indiiOS_first_run_tips';
+const STORAGE_KEY = 'indii_first_run_tips';
 
 interface TipState {
     [tipId: string]: boolean; // true = dismissed
@@ -48,6 +48,7 @@ function saveTipState(state: TipState): void {
 /**
  * Hook to manage a single first-run tooltip
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFirstRunTip(tipId: string) {
     const [shouldShow, setShouldShow] = useState(false);
 
@@ -73,6 +74,7 @@ export function useFirstRunTip(tipId: string) {
 /**
  * Reset all tips (useful for testing or "replay tour" feature)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function resetAllTips(): void {
     localStorage.removeItem(STORAGE_KEY);
 }
@@ -81,7 +83,7 @@ export function resetAllTips(): void {
 export const TIPS = {
     COMMAND_BAR: 'command-bar',
     MODULE_SWITCHER: 'module-switcher',
-    AI_CHAT: 'ai-chat',
+    INTELLIGENCE_CHAT: 'intelligence-chat',
     CREATIVE_STUDIO: 'creative-studio',
     DISTRIBUTION: 'distribution',
     VIDEO_STUDIO: 'video-studio',

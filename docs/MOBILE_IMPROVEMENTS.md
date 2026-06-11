@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the comprehensive mobile UX upgrades implemented to transform indiiOS into a polished, native-feeling mobile web app.
+This document details the comprehensive mobile UX upgrades implemented to transform indii into a polished, native-feeling mobile web app.
 
 ## Implemented Improvements
 
@@ -199,7 +199,7 @@ getBatteryStatus() // Get battery level & charging state
 
 **Features:**
 
-- ✅ Custom app title ("indiiOS")
+- ✅ Custom app title ("indii")
 - ✅ Black translucent status bar
 - ✅ Touch icon (180x180)
 - ✅ Splash screen support
@@ -319,7 +319,7 @@ import { nativeShare, canShare } from '@/lib/mobile';
 if (canShare({ url: currentUrl })) {
     await nativeShare({
         title: 'Check out my creation',
-        text: 'Made with indiiOS',
+        text: 'Made with indii',
         url: window.location.href
     });
 }

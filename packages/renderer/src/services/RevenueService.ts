@@ -94,8 +94,10 @@ export class RevenueService {
       const salesByProduct: Record<string, number> = {};
       const historyMap = new Map<string, number>();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const processSnapshots = (snapshots: { snapshot: any, type: 'revenue' | 'earnings' | 'merch' }[]) => {
         snapshots.forEach(({ snapshot, type }) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           snapshot.docs.forEach((doc: any) => {
             const data = doc.data();
             if (!data) return;
@@ -140,7 +142,7 @@ export class RevenueService {
 
             let dateObj = new Date();
             if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-              dateObj = data.createdAt.toDate();
+              dateObj = typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : (data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt));
             } else if (data.timestamp) {
               dateObj = new Date(data.timestamp);
             }
@@ -164,7 +166,9 @@ export class RevenueService {
       let previousRevenue = 0;
       let previousUnits = 0;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const processPrevious = (snapshot: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         snapshot.docs.forEach((doc: any) => {
           const data = doc.data();
           if (!data) return;

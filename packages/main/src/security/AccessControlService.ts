@@ -35,7 +35,7 @@ class AccessControlService {
      * 1. The path was explicitly granted access (e.g. via file dialog).
      * 2. The path is within the App's User Data directory.
      * 3. The path is within the OS Temporary Directory.
-     * 4. The path is within the App's Documents/IndiiOS directory.
+     * 4. The path is within the App's Documents/indii directory.
      */
     verifyAccess(filePath: string): boolean {
         try {
@@ -73,7 +73,7 @@ class AccessControlService {
             const allowedRoots = [
                 app.getPath('userData'),
                 os.tmpdir(),
-                path.join(app.getPath('documents'), 'IndiiOS')
+                path.join(app.getPath('documents'), 'indii')
             ].map(p => {
                  try {
                     // Try to resolve root to handle symlinks (e.g. /var/tmp -> /private/var/tmp)

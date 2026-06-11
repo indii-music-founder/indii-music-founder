@@ -1,7 +1,7 @@
 /**
  * ViralScoreService — Music Growth Intelligence Engine
  *
- * Implements the viral score formula defined in the IndiiOS Growth Intelligence spec.
+ * Implements the viral score formula defined in the indii Growth Intelligence spec.
  *
  * indii Growth Protocol v2.0 — Save Rate is the DOMINANT KPI.
  * Updated weights (v2.0): 0.45*save_rate + 0.20*completion_rate + 0.15*repeat_listener_ratio

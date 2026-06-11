@@ -39,6 +39,13 @@ interface VoiceSpeechRecognitionInstance {
     stop: () => void;
 }
 
+declare global {
+    interface Window {
+        SpeechRecognition?: new () => VoiceSpeechRecognitionInstance;
+        webkitSpeechRecognition?: new () => VoiceSpeechRecognitionInstance;
+    }
+}
+
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,9 +72,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognitionCtor) {
-                const recognitionInstance = new SpeechRecognitionCtor() as unknown as VoiceSpeechRecognitionInstance;
+                const recognitionInstance = new SpeechRecognitionCtor();
                 recognitionInstance.continuous = true;
                 recognitionInstance.interimResults = true;
                 recognitionInstance.lang = 'en-US';
@@ -125,6 +132,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useVoice = () => {
     const context = useContext(VoiceContext);
     if (!context) throw new Error('useVoice must be used within VoiceProvider');

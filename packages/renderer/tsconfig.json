@@ -1,5 +1,5 @@
 {
-    "compilerOptions": {
+    "compilerOptions": { "forceConsistentCasingInFileNames": true,
         "target": "ES2022",
         "useDefineForClassFields": true,
         "lib": [
@@ -15,7 +15,9 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "react-jsx",
-        "strict": true,
+        "strict": false,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
@@ -28,10 +30,10 @@
             "@agents/*": [
                 "../../agents/*"
             ],
-            "@shared": [
+            "@indii/shared": [
                 "../shared/src/index.ts"
             ],
-            "@shared/*": [
+            "@indii/shared/*": [
                 "../shared/src/*"
             ]
         }

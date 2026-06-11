@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -12,8 +12,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }
@@ -54,7 +54,7 @@ describe('GeneralistAgent Routing Logic', () => {
     });
 
     /**
-     * Helper to mock AI responses for routing tests
+     * Helper to mock Intelligence responses for routing tests
      */
     const mockDelegationResponse = (targetAgentId: string, task: string) => {
         let callCount = 0;
@@ -94,7 +94,7 @@ describe('GeneralistAgent Routing Logic', () => {
     };
 
     /**
-     * Helper to mock multiple turns of AI conversation
+     * Helper to mock multiple turns of Autonomous conversation
      */
     const mockMultiTurnResponse = (turns: Array<{ text?: string, functionCalls?: any[] }>) => {
         let callCount = 0;
@@ -127,7 +127,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'music'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('routes Legal-specific tasks (Contract Review) to the Legal Agent', async () => {
@@ -140,7 +140,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'legal'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('routes Tour Promotion to Marketing Agent (Tie-breaker rule)', async () => {
@@ -155,7 +155,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'marketing'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('routes Analytics queries to the Analytics Agent', async () => {
@@ -168,7 +168,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'analytics'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('routes Licensing queries (Sample Clearance) to the Licensing Agent', async () => {
@@ -181,7 +181,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'licensing'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('handles ambiguous requests via Hub Orchestration (Creative + Social + Video)', async () => {
@@ -228,8 +228,8 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('Create content for my new release');
 
         expect(delegateSpy).toHaveBeenCalledTimes(2);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'creative' }), undefined);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), undefined);
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'creative' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), expect.anything());
     });
 
     it('handles triple-parallel routing (Brand + Marketing + Social)', async () => {
@@ -275,9 +275,9 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('I need a full brand identity and social rollout for my new tour');
 
         expect(delegateSpy).toHaveBeenCalledTimes(3);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), undefined);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), undefined);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), undefined);
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), expect.anything());
     });
 
     it('handles sequential multi-agent orchestration (Legal -> Marketing)', async () => {
@@ -299,8 +299,8 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('Review this agreement and then plan a rollout');
 
         expect(delegateSpy).toHaveBeenCalledTimes(2);
-        expect(delegateSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({ targetAgentId: 'legal' }), undefined);
-        expect(delegateSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({ targetAgentId: 'marketing' }), undefined);
+        expect(delegateSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({ targetAgentId: 'legal' }), expect.anything());
+        expect(delegateSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({ targetAgentId: 'marketing' }), expect.anything());
     });
 
     it('passes sharedContext during delegation when relevant', async () => {
@@ -339,7 +339,7 @@ describe('GeneralistAgent Routing Logic', () => {
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'brand',
             sharedContext: 'Artist style: Cyberpunk, Neon colors'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('prioritizes Finance over Video for budget-related creative questions (Ambiguity Protocol)', async () => {
@@ -353,7 +353,7 @@ describe('GeneralistAgent Routing Logic', () => {
         // Protocol: "Money or contracts involved -> Finance or Legal first"
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'finance'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('integrates tool results into routing decisions (Recall -> Delegate)', async () => {
@@ -378,7 +378,7 @@ describe('GeneralistAgent Routing Logic', () => {
         expect(recallSpy).toHaveBeenCalled();
         expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
             targetAgentId: 'social'
-        }), undefined);
+        }), expect.anything());
     });
 
     it('orchestrates a full "Social Media Launch" involving multiple specialist turns', async () => {
@@ -404,9 +404,9 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('I want to launch my social media site');
 
         expect(delegateSpy).toHaveBeenCalledTimes(3);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), undefined);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), undefined);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), undefined);
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), expect.anything());
     });
 
     describe('Phase 2 Keywords & Migration Logic', () => {
@@ -416,11 +416,11 @@ describe('GeneralistAgent Routing Logic', () => {
             const { TOOL_REGISTRY } = await import('../tools');
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
-            await agent.execute('I want to move my catalog from DistroKid to indiiOS. How do I start the takeover?');
+            await agent.execute('I want to move my catalog from DistroKid to indii. How do I start the takeover?');
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'distribution'
-            }), undefined);
+            }), expect.anything());
         });
 
         it('routes Historical Royalties to Finance Agent', async () => {
@@ -433,7 +433,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'finance'
-            }), undefined);
+            }), expect.anything());
         });
 
         it('routes Sonic DNA Training to Music Agent', async () => {
@@ -446,7 +446,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'music'
-            }), undefined);
+            }), expect.anything());
         });
 
         it('routes Brand Voice Training to Brand Agent', async () => {
@@ -459,7 +459,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'brand'
-            }), undefined);
+            }), expect.anything());
         });
 
         it('routes Visual Style Reference to Director Agent', async () => {
@@ -472,7 +472,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'director'
-            }), undefined);
+            }), expect.anything());
         });
 
         it('handles Team Management directly as a Hub task', async () => {
@@ -488,16 +488,16 @@ describe('GeneralistAgent Routing Logic', () => {
         });
 
         it('routes Native Platform actions to Social Agent', async () => {
-            mockDelegationResponse('social', 'Post exclusive update to indiiOS feed');
+            mockDelegationResponse('social', 'Post exclusive update to indii feed');
             
             const { TOOL_REGISTRY } = await import('../tools');
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
-            await agent.execute('Post an exclusive update to my indiiOS feed.');
+            await agent.execute('Post an exclusive update to my indii feed.');
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'social'
-            }), undefined);
+            }), expect.anything());
         });
     });
 });

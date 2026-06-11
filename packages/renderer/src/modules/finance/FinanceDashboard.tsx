@@ -13,6 +13,7 @@ import { SplitSheetEscrow } from './components/SplitSheetEscrow';
 import { ReceiptOCR } from './components/ReceiptOCR';
 import { LabelDealRecoupment } from './components/LabelDealRecoupment';
 import { RevenueView } from './components/RevenueView';
+import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
 import { useFinance } from './hooks/useFinance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
@@ -108,6 +109,9 @@ export default function FinanceDashboard() {
                         <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <FileText size={14} /> {t('finance.tabs.expenses')}
                         </TabsTrigger>
+                        <TabsTrigger value="hidden-costs" data-testid="finance-tab-hidden-costs" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Sparkles size={14} /> Hidden Costs
+                        </TabsTrigger>
                         <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Scale size={14} /> {t('finance.tabs.merch')}
                         </TabsTrigger>
@@ -159,6 +163,11 @@ export default function FinanceDashboard() {
                         <TabsContent value="expenses" className="mt-0 outline-none">
                             <ModuleErrorBoundary moduleName="Finance / Expenses">
                                 <ExpenseTracker />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="hidden-costs" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Hidden Costs">
+                                <HiddenCostHarnessPanel expenses={expenses} />
                             </ModuleErrorBoundary>
                         </TabsContent>
                         <TabsContent value="merch" className="mt-0 outline-none">
@@ -283,7 +292,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
     const netIncome = totalRevenue - totalExpenses;
     const pendingCount = earningsSummary?.byPlatform?.filter(p => p.revenue === 0).length ?? 0;
 
-    // indiiOS Dividend — 20% management fee saved by using indiiOS instead of an external manager
+    // indii Dividend — 20% management fee saved by using indii instead of an external manager
     const MANAGEMENT_FEE_RATE = 0.20;
     const dividendSaved = totalRevenue * MANAGEMENT_FEE_RATE;
 
@@ -313,7 +322,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
                         </div>
                     ))}
 
-                    {/* indiiOS Dividend Widget — Fees Saved vs. External Management */}
+                    {/* indii Dividend Widget — Fees Saved vs. External Management */}
                     {totalRevenue > 0 && (
                         <motion.div
                             initial={{ opacity: 0, y: 4 }}
@@ -325,7 +334,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-emerald-400 truncate">{formatCurrency(dividendSaved)}</p>
-                                <p className="text-[10px] text-gray-500">Fees Saved (indiiOS Dividend)</p>
+                                <p className="text-[10px] text-gray-500">Fees Saved (indii Dividend)</p>
                             </div>
                             <span className="text-[10px] font-bold text-emerald-400/70">20% saved</span>
                         </motion.div>
@@ -378,8 +387,12 @@ function RecentTransactionsPanel({ earningsSummary, expenses, loading }: RecentT
     }, [earningsSummary, expenses]);
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3 ledger-container" data-testid="cfo-ledger">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Recent Transactions</h3>
+            <div className="flex items-center justify-between py-1 px-2 mb-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-white/5">
+                <span>Source</span>
+                <span>Amount</span>
+            </div>
             {loading ? <LoadingSpinner /> : transactions.length === 0 ? (
                 <EmptyState message="No transactions yet. Earnings and expenses will appear here." />
             ) : (

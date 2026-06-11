@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import type { TrackReport, BreakoutAlert } from '@/services/analytics/types';
 import type { VitalsReport, RequestTrace, BundleMetrics } from '@/services/observability';
-import type { AnalyticsEvent } from '@indiios/shared';
+import type { AnalyticsEvent } from '@indii/shared';
 
 export interface AnalyticsSlice {
     // Selected track for detail view

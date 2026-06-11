@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import SalesAnalytics from './SalesAnalytics';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { DashboardService } from '@/services/dashboard/DashboardService';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { vi } from 'vitest';

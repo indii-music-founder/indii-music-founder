@@ -58,13 +58,20 @@ test.describe('Prompt Builder Hardening', () => {
             }
         });
 
-        // Navigate to creative module
-        await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        // Wait for the app container from the initial page load in the authedPage fixture
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+
+        // Navigate client-side to creative module via Zustand store
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
 
         // Ensure Direct mode is active
         const directBtn = page.locator('[data-testid="direct-view-btn"]');
-        await directBtn.waitFor({ state: 'attached', timeout: 30_000 });
+        await directBtn.waitFor({ state: 'visible', timeout: 30_000 });
         if (await directBtn.isVisible().catch(() => false)) {
             await directBtn.click();
             await page.waitForTimeout(1_000);
@@ -105,15 +112,17 @@ test.describe('Prompt Builder Hardening', () => {
         const promptEngLabel = page.getByText('Prompt Engineering');
         await expect(promptEngLabel).toBeVisible({ timeout: 5_000 });
 
-        // Navigate away to Dashboard via URL
-        await page.goto('/dashboard');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // Navigate away to Dashboard programmatically via Zustand store
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setModule('dashboard');
+        });
+        await page.waitForTimeout(1_000);
 
-        // Navigate back to Creative
-        await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // Navigate back to Creative programmatically via Zustand store
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setModule('creative');
+        });
+        await page.waitForTimeout(1_000);
 
         // Re-enter Direct mode
         const directBtnReturn = page.locator('[data-testid="direct-view-btn"]');
@@ -294,7 +303,10 @@ test.describe('Prompt Builder Hardening', () => {
                 expect(val1).toContain('Base prompt');
                 expect(val1).toContain('Arri Alexa LF');
 
-                // The dropdown closes after click (setOpenCategory(null))
+                // The dropdown stays open, click outside to close it
+                await promptInput.click();
+                await page.waitForTimeout(300);
+
                 // Open Layout category for a second tag
                 const layoutCat = page.locator('[data-testid="category-Layout-trigger"]');
                 if (await layoutCat.isVisible().catch(() => false)) {
@@ -309,6 +321,10 @@ test.describe('Prompt Builder Hardening', () => {
                         const val2 = await promptInput.inputValue();
                         expect(val2).toContain('Arri Alexa LF');
                         expect(val2).toContain('Film Strip');
+                        
+                        // Close Layout category
+                        await promptInput.click();
+                        await page.waitForTimeout(300);
                     }
                 }
             }

@@ -1,6 +1,6 @@
 # Landing Page Refinement Plan
 
-This document tracks the execution of the three visual refinement projects for the indiiOS landing page.
+This document tracks the execution of the three visual refinement projects for the indii landing page.
 
 ## Project 1: "Kinetic Intelligence" (Billboard Upgrade)
 

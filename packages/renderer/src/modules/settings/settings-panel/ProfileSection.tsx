@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Profile Settings Section
  *
@@ -9,19 +10,22 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Camera, Save, X, RefreshCw } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
+import { UserProfile } from '@/types/User';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import { doc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { db, auth } from '@/services/firebase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';
 import { SectionHeader } from './SettingsShared';
 
 const ProfileSection: React.FC = () => {
-    const { user, userProfile } = useStore(useShallow((s: StoreState) => ({
+    const { t } = useTranslation();
+    const { user, userProfile, setUserProfile } = useStore(useShallow((s: StoreState) => ({
         user: s.user,
         userProfile: s.userProfile,
+        setUserProfile: s.setUserProfile,
     })));
     const { showToast } = useToast();
 
@@ -43,13 +47,19 @@ const ProfileSection: React.FC = () => {
             if (displayName !== user.displayName) {
                 await updateProfile(user, { displayName });
             }
-            // Update Firestore user document
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
+            
+            // Systematically update the userProfile through setUserProfile store action
+            const updatedProfile = {
+                ...(userProfile || {}),
+                id: user.uid,
+                uid: user.uid,
+                email: user.email || (userProfile?.email || ''),
                 displayName,
                 bio,
-                updatedAt: new Date().toISOString(),
-            });
+            };
+
+            await setUserProfile(updatedProfile as unknown as UserProfile);
+
             setDirty(false);
             showToast('Profile updated', 'success');
             logger.info('[Settings] Profile updated');
@@ -68,7 +78,7 @@ const ProfileSection: React.FC = () => {
 
     return (
         <div>
-            <SectionHeader title="Profile" description="Manage your personal information and how others see you." />
+            <SectionHeader title={t('settings.sections.profile.title')} description={t('settings.sections.profile.description')} />
 
             {/* Avatar */}
             <div className="flex items-center gap-5 mb-8">
@@ -89,8 +99,8 @@ const ProfileSection: React.FC = () => {
                     </button>
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-white">{displayName || 'No name set'}</p>
-                    <p className="text-xs text-slate-500">{user?.email || 'No email'}</p>
+                    <p className="text-sm font-medium text-white">{displayName || t('settings.profile.noName')}</p>
+                    <p className="text-xs text-slate-500">{user?.email || t('settings.profile.noEmail')}</p>
                     <p className="text-xs text-slate-600 mt-1">
                         UID: {user?.uid?.substring(0, 8)}...
                     </p>
@@ -100,37 +110,37 @@ const ProfileSection: React.FC = () => {
             {/* Form */}
             <div className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-1.5">Display Name</label>
+                    <label className="text-sm font-medium text-slate-300 block mb-1.5">{t('settings.profile.displayName')}</label>
                     <input
                         type="text"
                         value={displayName}
                         onChange={(e) => { setDisplayName(e.target.value); setDirty(true); }}
                         className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all"
-                        placeholder="Your display name"
+                        placeholder={t('settings.hints.display_name')}
                     />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-1.5">Bio</label>
+                    <label className="text-sm font-medium text-slate-300 block mb-1.5">{t('settings.profile.bio')}</label>
                     <textarea
                         value={bio}
                         onChange={(e) => { setBio(e.target.value); setDirty(true); }}
                         rows={3}
                         className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all resize-none"
-                        placeholder="Tell us about yourself..."
+                        placeholder={t('settings.hints.bio_desc')}
                     />
-                    <p className="text-xs text-slate-600 mt-1">{bio.length}/280 characters</p>
+                    <p className="text-xs text-slate-600 mt-1">{t('settings.profile.characters', { count: bio.length })}</p>
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-1.5">Email</label>
+                    <label className="text-sm font-medium text-slate-300 block mb-1.5">{t('settings.profile.email')}</label>
                     <input
                         type="email"
                         value={user?.email || ''}
                         disabled
                         className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
                     />
-                    <p className="text-xs text-slate-600 mt-1">Email cannot be changed directly. Contact support.</p>
+                    <p className="text-xs text-slate-600 mt-1">{t('settings.profile.emailCannotChange')}</p>
                 </div>
 
                 {dirty && (
@@ -141,7 +151,7 @@ const ProfileSection: React.FC = () => {
                             className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-black px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
                         >
                             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-                            {saving ? 'Saving...' : 'Save Changes'}
+                            {saving ? t('settings.profile.saving') : t('settings.profile.saveChanges')}
                         </button>
                         <button
                             onClick={() => {
@@ -151,7 +161,7 @@ const ProfileSection: React.FC = () => {
                             }}
                             className="flex items-center gap-2 text-slate-400 hover:text-white px-4 py-2 rounded-xl text-sm transition-colors"
                         >
-                            <X size={14} /> Cancel
+                            <X size={14} /> {t('settings.profile.cancel')}
                         </button>
                     </motion.div>
                 )}

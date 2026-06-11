@@ -1,6 +1,9 @@
 import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { auth } from '@/services/firebase';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -9,6 +12,9 @@ import {
     ToolDefinition,
     FunctionDeclaration,
     AgentContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Directive,
+    AgentCard,
     VALID_AGENT_IDS,
     ValidAgentId,
     AnyToolFunction,
@@ -19,7 +25,8 @@ import {
     ToolFunctionResult,
     validateHubAndSpoke
 } from './types';
-import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
@@ -34,7 +41,6 @@ import { getDepartmentOf, isHead, sameDepartment } from './departments';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
-import { getPersistentMemoryService } from '@/services/memory/PersistentMemoryService';
 import { getReflectionLoop } from './ReflectionLoop';
 
 export class BaseAgent implements SpecializedAgent {
@@ -45,13 +51,16 @@ export class BaseAgent implements SpecializedAgent {
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
     public tools: ToolDefinition[];
+    /** Swarm identity card for A2A communication */
+    public card?: AgentCard;
     protected functions: Record<string, AnyToolFunction> = {};
     /** Explicit allowlist of tool names. Populated from AgentConfig.authorizedTools.
      *  If undefined, all declared functionDeclarations are allowed. */
     protected authorizedTools?: string[];
-    /** Fine-tuned model endpoint for this agent. When set and feature flag is enabled,
-     *  this model is used instead of the default AI_MODELS.TEXT.AGENT. */
-    protected modelId?: string;
+    /** Fine-tuned Vertex endpoint for this agent. Agent execution must never
+     *  silently downgrade to a base Gemini model. */
+    protected modelId: string;
+    private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -95,8 +104,13 @@ export class BaseAgent implements SpecializedAgent {
         // Store explicit tool allowlist from config (undefined = infer from declarations)
         this.authorizedTools = config.authorizedTools;
 
-        // Store fine-tuned model ID if specified, otherwise check registry
-        this.modelId = config.modelId || getFineTunedModel(config.id as ValidAgentId);
+        // Store fine-tuned model ID if specified, otherwise resolve from the
+        // strict registry. Missing entries are migration defects.
+        const modelId = config.modelId || getFineTunedModel(config.id as ValidAgentId);
+        if (!modelId) {
+            throw new Error(`[BaseAgent] Missing fine-tuned model endpoint for agent "${config.id}"`);
+        }
+        this.modelId = modelId;
 
         // Accept pre-minted identity card if provided
         if (config.identityCard) {
@@ -125,10 +139,10 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 // Phase 2: Check for delegation loops
-                const traceId = context?.traceId || 'unknown';
-                const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
+                const swarmId = context?.swarmId || context?.traceId || 'unknown';
+                const delegationCheck = DelegationLoopDetector.recordDelegation(swarmId, targetAgentId);
                 if (delegationCheck.isLoop) {
-                    logger.warn(`[BaseAgent] Delegation loop detected: ${traceId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
+                    logger.warn(`[BaseAgent] Delegation loop detected in swarm ${swarmId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
                     return toolError(
                         `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
                         'DELEGATION_LOOP'
@@ -138,13 +152,14 @@ export class BaseAgent implements SpecializedAgent {
                 // Conversation Mode scope enforcement (Phase 1: hierarchical agent system).
                 // Three modes — direct (no delegation), department (intra-dept only),
                 // boardroom (heads only, must be seated). See docs/plans/hierarchical-agents.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const ctxRecord = context as Record<string, any>;
                 const mode = ctxRecord?.conversationMode as ('direct' | 'department' | 'boardroom' | undefined);
 
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
                     const errorMsg = `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`;
-                    
+
                     const { events } = await import('@/core/events');
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.` });
 
@@ -196,7 +211,7 @@ export class BaseAgent implements SpecializedAgent {
                         this.identityCard,
                         'delegate_task',
                         targetAgentId,
-                        traceId
+                        context?.traceId
                     );
                 }
 
@@ -234,13 +249,14 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 // Conversation Mode scope enforcement (Phase 1: hierarchical agent system).
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const ctxRecord = context as Record<string, any>;
                 const mode = ctxRecord?.conversationMode as ('direct' | 'department' | 'boardroom' | undefined);
 
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
                     const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
-                    
+
                     const { events } = await import('@/core/events');
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult experts in Direct Mode.` });
 
@@ -324,52 +340,12 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError(`Consultation failed: ${message}`, 'EXECUTION_ERROR');
                 }
             },
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
-                const { targetAgentId, payload } = args as { targetAgentId: string; payload: Record<string, unknown> };
-
-                // GEAP: Record consultation provenance for audit trail
-                if (this.identityCard) {
-                    agentIdentityService.recordDelegation(
-                        this.identityCard,
-                        'consult_specialist',
-                        targetAgentId,
-                        context?.traceId
-                    );
-                }
-
-                try {
-                    if (!VALID_AGENT_IDS.includes(targetAgentId as typeof VALID_AGENT_IDS[number])) {
-                        return toolError(`Invalid agent ID: ${targetAgentId}`, 'INVALID_ARGS');
-                    }
-
-                    const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
-                    if (hubSpokeError) {
-                        logger.warn(`[BaseAgent] Hub-and-spoke violation in consult_specialist: ${this.id} -> ${targetAgentId}`);
-                        return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
-                    }
-
-                    // A2A Swarm Request
-                    const { a2aClient } = await import('./a2a/A2AClient');
-                    const directive = {
-                        id: crypto.randomUUID(),
-                        type: 'A2A_CONSULTATION',
-                        title: `Consult ${targetAgentId}`,
-                        status: 'in_progress',
-                        steps: [],
-                        createdAt: Date.now(),
-                        updatedAt: Date.now()
-                    };
-                    
-                    const response = await a2aClient.invoke(targetAgentId, 'execute', payload, directive as any);
-                    return {
-                        success: true,
-                        data: response,
-                        message: `Consulted specialist ${targetAgentId}`
-                    };
-                } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : String(err);
-                    return toolError(`Specialist consultation failed: ${message}`, 'EXECUTION_ERROR');
-                }
+                // Delegate to the shared SwarmTools implementation
+                const { consult_specialist: swarmToolImpl } = await import('./tools/SwarmTools');
+                const task = typeof args.task === 'string' ? args.task : '';
+                return swarmToolImpl({ ...args, task }, { ...context, agentIdentity: this.identityCard || undefined });
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
@@ -407,7 +383,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
-                const { GenAI } = await import('@/services/ai/GenAI');
+                const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
                 const { audioService } = await import('@/services/audio/AudioService');
 
                 const VOICE_MAP: Record<string, string> = {
@@ -421,7 +397,7 @@ export class BaseAgent implements SpecializedAgent {
                 const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
 
                 try {
-                    const response = await GenAI.generateSpeech(text, selectedVoice);
+                    const response = await AutonomousIntelligence.generateSpeech(text, selectedVoice);
                     await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
                     return {
                         success: true,
@@ -442,8 +418,8 @@ export class BaseAgent implements SpecializedAgent {
 
     /**
      * Common method to execute a task using the agent's capabilities.
-     * This method handles the AI interaction loop, tool calls, and progress reporting.
-     * 
+     * This method handles the Autonomous interaction loop, tool calls, and progress reporting.
+     *
      * @param task The mission or objective to achieve
      * @param context Execution context (org, project, brand, etc.)
      * @param onProgress Callback for granular progress events (thought, tool use, tokens)
@@ -497,7 +473,6 @@ export class BaseAgent implements SpecializedAgent {
     ): Promise<void> {
         try {
             const streamingService = getAgentStreamingService();
-            const memoryService = getPersistentMemoryService();
             const reflectionService = getReflectionLoop();
 
             // Build context for streaming
@@ -518,16 +493,17 @@ export class BaseAgent implements SpecializedAgent {
                     onToken: (token, index) => {
                         callbacks?.onToken?.(token, index);
                     },
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     onComplete: async (metadata) => {
                         const fullText = streamingService.getState().tokens.join('');
 
                         // Store in memory (Phase 2 integration)
                         try {
-                            await memoryService.write(
-                                'session',
-                                `agent-response-${this.id}`,
-                                { response: fullText, task, metadata },
-                                ['agent-output', this.id, task.substring(0, 50)]
+                            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                            await alwaysOnMemoryEngine.ingest(
+                                `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
+                                'agent_output',
+                                'context'
                             );
                         } catch (err) {
                             logger.warn('[BaseAgent] Failed to store streaming response in memory', err);
@@ -564,8 +540,8 @@ export class BaseAgent implements SpecializedAgent {
      * Internal execution method (separated to support locking mechanism)
      */
     protected async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
-        // Lazy import AI Service to prevent circular deps during registry loading
-        const { GenAI } = await import('@/services/ai/GenAI');
+        // Lazy import Intelligence Service to prevent circular deps during registry loading
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // GEAP Agent Identity: Mint cryptographic identity on first execution.
         // Uses static WeakMap for deduplication — survives Object.freeze (FreezeDiagnostic).
@@ -632,13 +608,14 @@ export class BaseAgent implements SpecializedAgent {
         // BOARDROOM: Seating Manifest Injection
         let boardroomSection = '';
         let delegationScopeSection = '';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ctxRecord = context as Record<string, any>;
-        
+
         if (ctxRecord?.conversationMode === 'boardroom') {
             const { agentRegistry } = await import('./registry');
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
-            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
+            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.\n`;
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {
@@ -652,7 +629,7 @@ export class BaseAgent implements SpecializedAgent {
         // KEEPER: Intelligent Context Truncation
         // Prefer structured history with token-aware truncation over raw character slicing.
         if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
-            const { ContextManager } = await import('@/services/ai/context/ContextManager');
+            const { ContextManager } = await import('@/services/intelligence/context/ContextManager');
             // Convert AgentMessage[] to Content[] for ContextManager
             const contentHistory = context.chatHistory.map(msg => ({
                 role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
@@ -740,7 +717,7 @@ export class BaseAgent implements SpecializedAgent {
 
         const _accumulatedResponse = '';
         let iterations = 0;
-        const MAX_ITERATIONS = 15;
+        const MAX_ITERATIONS = 8; // Lowered from 15 for safety against runaway costs
         const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];
         let lastToolResult: ToolFunctionResult | undefined = undefined;
         let currentThoughtSignature: string | undefined = undefined;
@@ -764,42 +741,45 @@ export class BaseAgent implements SpecializedAgent {
 
         try {
             while (iterations < MAX_ITERATIONS) {
-                // LEDGER: Circuit Breaker - Check daily spend limit before execution
-                const budgetCheck = await MembershipService.checkBudget(0);
-                if (!budgetCheck.allowed) {
-                    const tier = await MembershipService.getCurrentTier();
-                    const tierName = MembershipService.getTierDisplayName(tier);
-                    const limits = MembershipService.getLimits(tier);
+                // Phase 3: High-frequency call detection (Rate Limiting)
+                const now = Date.now();
+                if (Array.isArray(this.llmCallHistory)) {
+                    this.llmCallHistory.push(now);
+                    // Keep history within last minute
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    this.llmCallHistory = this.llmCallHistory.filter((t, idx) => {
+                        return now - t < 60000;
+                    });
+                } else {
+                    this.llmCallHistory = [now];
+                }
 
-                    // Diagnostic: capture email state for debugging false-positive denials
-                    try {
-                        const { useStore } = await import('@/core/store');
-                        const state = useStore.getState();
-                        const profileEmail = state.userProfile?.email || '(empty)';
-                        const authEmail = (state as unknown as { user?: { email?: string | null } }).user?.email || '(no auth user)';
-                        logger.warn(
-                            `[BaseAgent] Budget DENIED in ${this.id}. ` +
-                            `profileEmail=${profileEmail}, authEmail=${authEmail}, ` +
-                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
-                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
-                        );
-                    } catch {
-                        logger.warn(
-                            `[BaseAgent] Daily spend limit reached in ${this.id}. ` +
-                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
-                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
-                        );
-                    }
-
+                if (this.llmCallHistory.length > 20) {
+                    logger.error(`[BaseAgent] HIGH FREQUENCY DETECTED: ${this.id} attempted > 20 calls in 1 minute. Aborting to prevent burn.`);
                     executionContext.rollback();
                     return {
-                        text: `Task paused: You've reached your daily AI spend limit ` +
-                              `($${limits.maxDailySpend.toFixed(2)}/day on the ${tierName} plan). ` +
-                              `Your budget resets at midnight UTC. ` +
+                        text: 'Task aborted: High-frequency LLM call pattern detected (>20 calls/min). Safety circuit breaker triggered.',
+                        error: 'High-frequency Abort',
+                        toolCalls
+                    };
+                }
+
+                // Phase 2: Integrated budget circuit breaker check
+                const budgetCheck = await MembershipService.checkBudget(0.01);
+                if (!budgetCheck.allowed) {
+                    logger.warn(`[BaseAgent] Budget circuit breaker triggered for ${this.id}.`);
+                    const tier = await MembershipService.getCurrentTier();
+                    executionContext.rollback();
+                    return {
+                        text: (budgetCheck.requiresApproval
+                            ? 'Task paused: The next step exceeds the $0.50 auto-approval threshold. Please review and authorize the next action in the Ledger.'
+                            : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.') +
+                            ' \n\nHint: ' + (budgetCheck.requiresApproval
+                            ? 'Approval Required' :
                               (tier === 'free' ? 'Upgrade to Pro for a $10/day limit.' :
                                tier === 'pro' ? 'Upgrade to Founder for a $500/day limit.' :
-                               'Contact support if you need a higher limit.'),
-                        error: 'Daily spend limit reached',
+                               'Contact support if you need a higher limit.')),
+                        error: budgetCheck.requiresApproval ? 'Approval Required' : 'Daily spend limit reached',
                         toolCalls
                     };
                 }
@@ -811,17 +791,34 @@ export class BaseAgent implements SpecializedAgent {
                 const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
                 // Only scan the new task/input to prevent false positives from the agent's own history
                 // (e.g., identity locks repeating "ignore previous instructions")
-                const armorResult = await ModelArmor.scanInput(fullPrompt, getDefaultPolicy());
+                const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
                 if (!armorResult.allowed) {
                     executionContext.rollback();
                     return { text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
+                }
+
+                const finalAttachments = [...(attachments || [])];
+
+                // Auto-inject the latest generated artifact if it's the creative agent and the user asks to look at something
+                if (finalAttachments.length === 0 && ['creative', 'brand'].includes(this.id) && context?.chatHistory) {
+                    const { useStore } = await import('@/core/store');
+                    const generatedHistory = useStore.getState().generatedHistory || [];
+                    if (generatedHistory.length > 0) {
+                        const lastItem = generatedHistory[generatedHistory.length - 1];
+                        if (lastItem && lastItem.url && lastItem.url.startsWith('data:image/')) {
+                            const match = lastItem.url.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+                            if (match && match[1] && match[2]) {
+                                finalAttachments.push({ mimeType: match[1], base64: match[2] });
+                            }
+                        }
+                    }
                 }
 
                 const requestContents = [{
                     role: 'user' as const,
                     parts: [
                         { text: fullPrompt },
-                        ...(attachments || []).map(a => ({
+                        ...finalAttachments.map(a => ({
                             inlineData: { mimeType: a.mimeType, data: a.base64 }
                         }))
                     ]
@@ -847,21 +844,21 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 }
 
-                // Resolve model: fine-tuned endpoint > default base model
-                const resolvedModel = this.modelId || AI_MODELS.TEXT.AGENT;
-                if (iterations === 1 && this.modelId) {
-                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${this.modelId}`);
+                const resolvedModel = this.modelId;
+                if (iterations === 1) {
+                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${resolvedModel}`);
                 }
 
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
-                const result = await GenAI.generateContent(
+                logger.debug(`BaseAgent calling AutonomousIntelligence.generateContent for ${this.id}, iteration ${iterations}`);
+                const result = await AutonomousIntelligence.generateContent(
                     requestContents,
-                    resolvedModel, // modelOverride — fine-tuned or base
-                    { ...AI_CONFIG.THINKING.LOW }, // config
+                    resolvedModel, // modelOverride — strict fine-tuned endpoint
+                    { ...INTELLIGENCE_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
-                    iterationTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
+                    iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
                     { thoughtSignature: currentThoughtSignature } // options
                 );
 
@@ -901,7 +898,7 @@ export class BaseAgent implements SpecializedAgent {
                 // LEDGER: Record Spend based on Token Usage
                 const usage = response.usage?.();
                 if (usage && context?.userId) {
-                    const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
+                    const pricing = MODEL_PRICING[INTELLIGENCE_MODELS.TEXT.AGENT];
                     // Ensure we are using a text model pricing schema (input/output)
                     if (pricing && 'input' in pricing && 'output' in pricing) {
                         const inputCost = ((usage.promptTokenCount || 0) / 1000000) * pricing.input;
@@ -920,7 +917,7 @@ export class BaseAgent implements SpecializedAgent {
                     const { name, args } = functionCall;
 
                     // Phase 2: Advanced loop detection
-                    const loopCheck = this.loopDetector.detectLoop(name, args);
+                    const loopCheck = await this.loopDetector.detectLoop(name, args);
                     if (loopCheck.isLoop) {
                         logger.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
                         logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
@@ -994,7 +991,7 @@ export class BaseAgent implements SpecializedAgent {
                             });
                         }
                     } else {
-                        const { TOOL_REGISTRY } = await import('./tools');
+                        const { TOOL_REGISTRY } = await import('./tools/index');
                         if (TOOL_REGISTRY[name]) {
                             try {
                                 // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
@@ -1054,7 +1051,9 @@ export class BaseAgent implements SpecializedAgent {
                         ? result
                         : (result.success === false
                             ? `Error: ${result.error || result.message}`
-                            : `Success: ${JSON.stringify(result.data || result)}`);
+                            : (result.message
+                                ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${JSON.stringify(result.data || result)}`
+                                : `Success: ${JSON.stringify(result.data || result)}`));
 
                     // Update prompt with tool result for next iteration
                     fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
@@ -1066,12 +1065,26 @@ export class BaseAgent implements SpecializedAgent {
                         content: outputText
                     });
 
+                    // Phase 2: DNA Infusion - Planning Mode Halting
+                    const resultStatus = result && typeof result === 'object'
+                        ? (result as { status?: unknown }).status
+                        : undefined;
+                    if (resultStatus === 'AWAITING_HUMAN' || resultStatus === 'awaiting_approval') {
+                        logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
+                        await executionContext.rollback();
+                        return {
+                            text: `Execution paused: The agent drafted an artifact or plan and is awaiting your explicit approval to proceed.`,
+                            toolCalls,
+                            error: 'AWAITING_USER_APPROVAL'
+                        };
+                    }
+
                     if (name === 'speak') {
                         // Keep going - don't let speak terminate the agent turn
                         continue;
                     }
 
-                    // For most tools, we continue to let the AI process the result
+                    // For most tools, we continue to let the Autonomous process the result
                     continue;
                 } else {
                     let finalResponse = response.text?.() || '';
@@ -1127,4 +1140,3 @@ export class BaseAgent implements SpecializedAgent {
         }
     }
 }
-

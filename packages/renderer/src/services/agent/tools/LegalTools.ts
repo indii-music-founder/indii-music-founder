@@ -1,10 +1,10 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
-import { AI_MODELS } from '@/core/config/ai-models';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // Types for LegalTools
@@ -36,14 +36,14 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
         const prompt = `Draft a ${args.type} between ${args.parties.join(' and ')}.
 Key Terms: ${args.terms}`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT,
+            getFineTunedModel('legal'),
             undefined,
             systemPrompt
         );
 
-        const content = response.response.text();
+        const content = getResponseText(response);
 
         // Auto-persist the contract
         const title = `${args.type} - ${args.parties.join(' & ')}`;
@@ -138,35 +138,11 @@ Key Terms: ${args.terms}`;
                 sentTo: result.data.sentTo
             }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
         } catch (error: unknown) {
-            logger.warn(`[LegalTools] ${provider} Cloud Function unavailable, using local tracking:`, error);
-            const envelopeId = `env-${crypto.randomUUID()}`;
-
-            // Persist signature request to Firestore for manual follow-up
-            try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, doc, setDoc } = await import('firebase/firestore');
-                const userId = auth.currentUser?.uid;
-                if (userId) {
-                    await setDoc(doc(collection(db, `users/${userId}/signature_requests`)), {
-                        contractId: args.contractId,
-                        provider,
-                        envelopeId,
-                        signers: args.signers,
-                        status: 'pending_manual',
-                        createdAt: new Date().toISOString()
-                    });
-                }
-            } catch (e: unknown) {
-                logger.warn('[LegalTools] Failed to persist signature request:', e);
-            }
-
-            return toolSuccess({
-                contractId: args.contractId,
-                provider,
-                envelopeId,
-                status: 'queued',
-                sentTo: args.signers.map(s => s.email)
-            }, `Digital signature requests queued via ${provider} for ${args.signers.length} signers. Deploy Cloud Function 'sendForDigitalSignature' for live ${provider} integration.`);
+            logger.warn(`[LegalTools] ${provider} digital signature request failed:`, error);
+            return toolError(
+                `Digital signature request failed: ${error instanceof Error ? error.message : String(error)}. No envelope was created or queued.`,
+                'DIGITAL_SIGNATURE_UNAVAILABLE'
+            );
         }
     }),
 
@@ -219,7 +195,7 @@ Signature: ____________________________
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
-        store.setRegistrationAIMessage(
+        store.setRegistrationIntelligenceMessage(
             `Opening Library of Congress (eCO) copyright registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill everything I know from your catalog — you'll only need to confirm a couple of details.`
         );
 
@@ -227,7 +203,7 @@ Signature: ____________________________
             module: 'registration',
             orgId: 'loc',
             trackId: args.trackId ?? null,
-        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The AI co-pilot is pre-filling your catalog data now.`);
+        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The Autonomous co-pilot is pre-filling your catalog data now.`);
     }),
 
     start_pro_registration: wrapTool('start_pro_registration', async (args: {
@@ -242,7 +218,7 @@ Signature: ____________________________
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
-        store.setRegistrationAIMessage(
+        store.setRegistrationIntelligenceMessage(
             `Opening ${orgName} work registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill your contributor splits and metadata — just confirm your IPI number.`
         );
 

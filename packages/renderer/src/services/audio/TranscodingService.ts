@@ -42,7 +42,7 @@ export class TranscodingService {
         // Check for Electron Native Transcoding capability
         if (typeof window !== 'undefined' && window.electronAPI?.audio && 'transcode' in window.electronAPI.audio) {
             try {
-                const result = await window.electronAPI.audio.transcode(options);
+                const result = await window.electronAPI!.audio.transcode(options);
                 return result.success;
             } catch (error: unknown) {
                 logger.error('[TranscodingService] Native transcode failed:', error);

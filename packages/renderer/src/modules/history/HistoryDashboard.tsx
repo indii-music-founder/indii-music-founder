@@ -4,15 +4,18 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate } from '@/lib/utils';
 import { MessageSquare, Trash2, Clock, Search, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';
 
 export default function HistoryDashboard() {
     const {
         sessions,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         activeSessionId,
         setActiveSession,
         deleteSession,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         updateSessionTitle,
         fileNodes
     } = useStore(
@@ -165,7 +168,7 @@ export default function HistoryDashboard() {
                                                     <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
                                                 </div>
 
-                                                <div className="bg-surface/30 border border-white/5 rounded-xl p-4 hover:bg-surface/50 transition-colors flex items-center justify-between group-hover:border-white/10">
+                                                <div className="border rounded-xl p-4 transition-all flex items-center justify-between bg-surface/30 border-white/5 hover:bg-surface/50 group-hover:border-white/10">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center flex-shrink-0">
                                                             {item.type === 'agent' ? <Bot size={20} className="text-purple-400" /> : getFileIcon(item.fileType || 'file')}
@@ -216,6 +219,7 @@ export default function HistoryDashboard() {
                     </div>
                 </div>
             </div>
+
         </div>
     );
 }

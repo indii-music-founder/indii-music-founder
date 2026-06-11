@@ -7,6 +7,16 @@ import { useToast } from '@/core/context/ToastContext';
 // Mock dependencies
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
+vi.mock('@/services/firebase', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/services/firebase')>(),
+    auth: {
+        currentUser: {
+            uid: 'test-user-id',
+            isAnonymous: false
+        }
+    },
+    functionsWest1: {}
+}));
 
 describe('BrandAssetsDrawer', () => {
     const mockUpdateBrandKit = vi.fn();
@@ -17,6 +27,8 @@ describe('BrandAssetsDrawer', () => {
 
     const defaultStore = {
         userProfile: {
+            id: 'test-user-id',
+            email: 'artist@indii.test',
             brandKit: {
                 brandAssets: [
                     { url: 'http://test.com/asset1.png', description: 'Asset 1' }

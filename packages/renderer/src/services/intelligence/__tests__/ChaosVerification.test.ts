@@ -1,0 +1,162 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AutonomousIntelligence } from '../AutonomousIntelligence';
+import { wcpInstance } from '../../agent/WebSocketControlPlane';
+import { Content } from 'firebase/ai';
+
+// Mock firebase/ai at the top level to avoid vitest warnings
+const { mockGenerate } = vi.hoisted(() => ({
+    mockGenerate: vi.fn()
+}));
+
+vi.mock('firebase/ai', async (importOriginal) => {
+    const actual = await importOriginal() as Record<string, unknown>;
+    return {
+        ...actual,
+        getGenerativeModel: () => ({
+            generateContent: mockGenerate
+        })
+    };
+});
+
+// Mock WCP for connection failure scenarios
+vi.mock('../../agent/WebSocketControlPlane', () => ({
+    wcpInstance: {
+        connectionState: 'disconnected',
+        route: vi.fn(),
+        on: vi.fn(() => () => { }),
+        broadcast: vi.fn(),
+    }
+}));
+
+describe('ChaosVerification', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('WebSocket Control Plane Connection Failures', () => {
+        it('should surface ECONNREFUSED when WCP route is called while disconnected', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP route failed: ECONNREFUSED — control plane offline')
+            );
+
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'ping' })).rejects.toThrow('ECONNREFUSED');
+        });
+
+        it('should handle timeout on long-running WCP route requests', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP route failed: Execution timeout after 30s')
+            );
+
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'task' })).rejects.toThrow('timeout');
+        });
+
+        it('should handle internal server error bubbled through WCP', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP Internal Error: Upstream agent returned 500')
+            );
+
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'task' })).rejects.toThrow('500');
+        });
+    });
+
+    describe('Native AutonomousIntelligence Fallback Logic', () => {
+        it('should gracefully handle tool execution failure and propagate error', async () => {
+            vi.mocked(wcpInstance.route).mockResolvedValueOnce({
+                message: 'I tried to use a tool but it failed.',
+                attachments: []
+            });
+
+            const response = await wcpInstance.route('session-1', { agentId: 'generalist', message: 'tool_call' }) as { message: string };
+            expect(response.message).toContain('failed');
+        });
+    });
+
+    describe('FirebaseIntelligenceService Race Conditions', () => {
+        it('should NOT coalesce requests with different multimodal data', async () => {
+            // This test verifies if different binary payloads are correctly distinguished in the request coalescing map
+            const rawGenerateSpy = vi.spyOn(AutonomousIntelligence as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
+
+            const promptA: Content[] = [{
+                role: 'user',
+                parts: [{ text: 'Analyze this image' }, { inlineData: { mimeType: 'image/png', data: 'IMAGE_A_DATA' } }]
+            }];
+
+            const promptB: Content[] = [{
+                role: 'user',
+                parts: [{ text: 'Analyze this image' }, { inlineData: { mimeType: 'image/png', data: 'IMAGE_B_DATA' } }]
+            }];
+
+            // We mock the internal execution to see if it's called twice
+            // Note: rawGenerateContent uses this.rateLimiter, this.contentBreaker etc.
+            // We need to mock the underlying model.generateContent or similar if possible
+            // but for a quick check, we can just see if the Map 'activeRequests' handles them as different keys.
+
+            const activeRequests = (AutonomousIntelligence as unknown as { activeRequests: Map<any, any> }).activeRequests;
+
+            // Start Request A (don't wait)
+            const promiseA = AutonomousIntelligence.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
+            const keyA = Array.from(activeRequests.keys())[0];
+
+            // Start Request B
+            const promiseB = AutonomousIntelligence.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
+            const keyB = Array.from(activeRequests.keys()).find(k => k !== keyA);
+
+            // If keyB is undefined or same as keyA, we have a collision
+            expect(keyB).toBeDefined();
+            expect(keyB).not.toBe(keyA);
+
+            // Cleanup
+            promiseA.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseA cleanup error:', err); });
+            promiseB.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseB cleanup error:', err); });
+            void rawGenerateSpy;
+        });
+
+        it('should handle Autonomous Generation Timeout via AbortSignal', async () => {
+            // Test that the 'timeout' option correctly triggers the AbortController
+            const start = Date.now();
+            const timeout = 100; // 100ms
+
+            // Mock ensureInitialized to bypass bootstrap
+            vi.spyOn(AutonomousIntelligence as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+
+            // Mock a long running operation (e.g. rateLimiter.acquire)
+            vi.spyOn((AutonomousIntelligence as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+
+            const promise = AutonomousIntelligence.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
+
+            await expect(promise).rejects.toThrow('AI Request timed out');
+            const end = Date.now();
+            expect(end - start).toBeLessThan(700); // Should have aborted well before 700ms
+        });
+
+        it('should succeed after retry for transient 503 errors', async () => {
+            mockGenerate.mockReset();
+
+            // Allow enough successful responses for any extra retry attempts
+            mockGenerate
+                .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+                .mockResolvedValue({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: 'Recovered!' }] } }],
+                        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+                        text: () => 'Recovered!'
+                    }
+                });
+
+            // Mock ensureInitialized to return a custom object with generateContent
+            vi.spyOn(AutonomousIntelligence as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            (AutonomousIntelligence as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
+
+            // Reset circuit breaker state from any prior test
+            (AutonomousIntelligence as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
+
+            // Trigger
+            const result = await AutonomousIntelligence.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
+
+            // The first call fails with 503, then at least one subsequent call succeeds.
+            // The exact count depends on internal retry/circuit-breaker timing (2 or 3).
+            expect(mockGenerate.mock.calls.length).toBeGreaterThanOrEqual(2);
+            expect(result.response.text()).toBe('Recovered!');
+        });
+    });
+});

@@ -1,4 +1,4 @@
-# indiiOS Production Work Order
+# indii Production Work Order
 
 **Phase 1 — Ship Blockers + Critical Quality**
 
@@ -208,7 +208,7 @@ Replace each `placeholder` with contextually appropriate default text, hint text
 | `TimelineTools.ts` | Timeline event creation/retrieval |
 | `ScreenwriterTools.ts` / `ProducerTools.ts` | Video production pipeline |
 | `NarrativeTools.ts` | Story/content generation |
-| `HiveTools.ts` / `SovereignTools.ts` / `SqueezerTools.ts` | Specialized agent capabilities |
+| `HiveTools.ts` / `IndependentTools.ts` / `SqueezerTools.ts` | Specialized agent capabilities |
 | `UniversalTools.ts` | Cross-cutting utility operations |
 | `ToolValidator.ts` | Tool validation framework (internal) |
 | `CoreTools.ts` | Core agent operations |
@@ -241,7 +241,7 @@ Replace `Math.random` with proper ID generation in non-test service files.
 **Prioritize by impact:**
 
 1. Agent service files (where type errors propagate to AI responses)
-2. Distribution/DDEX (where type errors corrupt industry-standard XML)
+2. Distribution/Proprietary Ingestion IP (where type errors corrupt industry-standard XML)
 3. Payment/subscription (where type errors affect billing)
 4. AI service files (where type errors affect model calls)
 
@@ -251,7 +251,7 @@ Replace `Math.random` with proper ID generation in non-test service files.
 
 | Task | Detail |
 |------|--------|
-| **SFTP test against real DSP** | Set up a test SFTP endpoint that mirrors DSP delivery specs. Validate full pipeline: DDEX XML gen → audio file packaging → metadata attachment → SFTP upload → delivery confirmation |
+| **SFTP test against real DSP** | Set up a test SFTP endpoint that mirrors DSP delivery specs. Validate full pipeline: Proprietary Ingestion IP XML gen → audio file packaging → metadata attachment → SFTP upload → delivery confirmation |
 | **Per-DSP adapter configs** | Create delivery spec configs for: Spotify, Apple Music, Tidal, Amazon Music, Deezer, YouTube Music. Each has unique format, codec, metadata, and artwork requirements |
 | **DSP compliance coaching** | After DNA extraction, compare track specs (LUFS, sample rate, bit depth, codec) against the selected DSP's delivery requirements. Flag mismatches with actionable guidance |
 
@@ -287,6 +287,37 @@ Replace `Math.random` with proper ID generation in non-test service files.
 
 ---
 
+## WO-11: Synthetic Training Corpus Purge
+
+| Task | Detail |
+|------|--------|
+| **Corpus quarantine** | Treat `docs/agent-training/datasets/*.jsonl` as synthetic internal training data until each example is provenance-reviewed |
+| **Identity cleanup** | Remove generated personas, placeholder artist names, and any examples with no real account/email provenance |
+| **Harness update** | Update `packages/renderer/src/test/harness-datasets.test.ts` and dataset quality tests after the purge so CI tracks the smaller trusted corpus |
+
+---
+
+## WO-12: Official Official Secret Rotation
+
+| Task | Detail |
+|------|--------|
+| **Rotate All Secrets** | Execute a complete rotation of all production secrets prior to the "Official Official" launch. Ensure no legacy or compromised keys exist. |
+| **Verify SECRET_INVENTORY.md** | Cross-check the master list in `docs/SECRET_INVENTORY.md` to ensure all rotating keys are successfully migrated to Secret Manager. |
+| **License & Account Payments** | Pay/renew licenses mapped in the Inventory (Apple Developer, Microsoft Partner, GCP Billing, Firebase Blaze, etc.) to lift infrastructure blockers. |
+
+---
+
+## WO-13: Guest Auth Retirement and Anonymous User Cleanup
+
+| Task | Detail |
+|------|--------|
+| **Anonymous auth audit** | Create an admin-only dry-run script that lists Firebase Auth users with anonymous provider state and no real email/provider identity |
+| **Firestore orphan audit** | Cross-reference audited Auth UIDs with `users/{uid}` docs, user subcollections, and Storage prefixes; output JSON/CSV for review |
+| **Confirmed purge** | Add a separate `--confirm` deletion mode that removes only reviewed anonymous/no-email users and matching orphan records |
+| **Production guard verification** | Confirm production UI cannot call `signInAnonymously()` and anonymous sessions cannot write cloud profile, storage, project, relay, brand, or commercial records |
+
+---
+
 ## Summary
 
 | WO | Description | Scope |
@@ -301,3 +332,6 @@ Replace `Math.random` with proper ID generation in non-test service files.
 | WO-8 | Payment validation | 3 sub-tasks |
 | WO-9 | App Check enforcement | 3 sub-tasks |
 | WO-10 | MusicAgent scope correction | 3 sub-tasks |
+| WO-11 | Synthetic training corpus purge | 3 sub-tasks |
+| WO-12 | Official Official Secret Rotation | 3 sub-tasks |
+| WO-13 | Guest auth retirement and anonymous user cleanup | 4 sub-tasks |

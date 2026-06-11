@@ -135,7 +135,9 @@ export class AgentStreamingService {
 
   private connectStream(
     endpoint: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     requestBody: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     idToken: string
   ): void {
     try {

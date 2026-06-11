@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 
 export default function FoundersPortal() {
-    const { userProfile, setModule } = useStore(state => ({
-        userProfile: state.userProfile,
-        setModule: state.setModule
-    }));
+    const { userProfile, setModule } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            setModule: state.setModule
+        }))
+    );
 
     const [isMacLoading, setIsMacLoading] = useState(false);
     const [isWinLoading, setIsWinLoading] = useState(false);
@@ -34,7 +38,7 @@ export default function FoundersPortal() {
                 setError(data.message || 'Failed to generate download link.');
             }
         } catch (err) {
-            console.error('Download error:', err);
+            Logger.error('FoundersPortal', 'Download error', err);
             setError(err instanceof Error ? err.message : 'An error occurred while preparing the download.');
         } finally {
             if (platform === 'mac') setIsMacLoading(false);
@@ -65,7 +69,7 @@ export default function FoundersPortal() {
                 </div>
 
                 <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
-                    Download <span className="text-amber-400">indiiOS</span>.
+                    Download <span className="text-amber-400">indii</span>.
                 </h1>
 
                 {!isFounder ? (
@@ -147,7 +151,7 @@ export default function FoundersPortal() {
                         </div>
 
                         <p className="mt-8 text-gray-500 text-xs font-mono">
-                            By downloading indiiOS, you agree to the Founders Agreement and Alpha Testing terms.
+                            By downloading indii, you agree to the Founders Agreement and Alpha Testing terms.
                         </p>
                     </>
                 )}

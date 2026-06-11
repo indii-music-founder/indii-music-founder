@@ -15,6 +15,7 @@ import { auth, db } from '@/services/firebase';
 import { collection, addDoc, setDoc, getDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export type AssetType = 'audio' | 'image' | 'video' | 'document' | 'workflow' | 'project' | 'campaign' | 'other';
 
@@ -48,7 +49,7 @@ interface QueuedSave {
     docId?: string;
 }
 
-const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
+const QUEUE_KEY = 'indii_pendingMetadataSaves';
 const MAX_QUEUE_SIZE = 10;
 
 /**
@@ -267,6 +268,21 @@ class MetadataPersistenceService {
             updatedAt: serverTimestamp(),
         };
 
+        // E2E Mock: Bypass Firebase
+        if (isFirebaseE2EMockEnabled()) {
+            logger.info(`[MetadataPersistence] 🧪 E2E Mock: Bypassing Firestore save for ${assetType} to ${collectionPath}`);
+            const mockDocId = `mock-${Date.now()}`;
+            try {
+               const mockKey = `E2E_MOCK_METADATA_${userId}_${mockDocId}`;
+               localStorage.setItem(mockKey, JSON.stringify(enrichedData));
+            } catch (_e) { /* ignore */ }
+
+            if (showToasts) {
+                events.emit('SYSTEM_ALERT', { level: 'success', message: '✅ Saved successfully (E2E Mock)' });
+            }
+            return { success: true, docId: mockDocId, retryable: false };
+        }
+
         // 3. Attempt save with retries
         let lastError: Error | null = null;
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -355,6 +371,17 @@ class MetadataPersistenceService {
             ...data,
             updatedAt: serverTimestamp(),
         };
+
+        if (isFirebaseE2EMockEnabled()) {
+            logger.info(`[MetadataPersistence] 🧪 E2E Mock: Bypassing Firestore update for ${collectionPath}/${docId}`);
+            try {
+                const mockKey = `E2E_MOCK_METADATA_${this.checkAuth().userId}_${docId}`;
+                const existing = localStorage.getItem(mockKey);
+                const updated = existing ? { ...JSON.parse(existing), ...enrichedData } : enrichedData;
+                localStorage.setItem(mockKey, JSON.stringify(updated));
+            } catch (_e) { /* ignore */ }
+            return { success: true, docId, retryable: false };
+        }
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {

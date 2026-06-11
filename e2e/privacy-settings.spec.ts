@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Privacy Settings Panel E2E Tests (Items 277, 306, 307)
@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Privacy Settings Panel', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Mock Firebase Functions calls so deletion/export don't hit real CF
         await page.route('**/cloudfunctions.net/**', async route => {
             await route.fulfill({
@@ -22,7 +22,7 @@ test.describe('Privacy Settings Panel', () => {
             });
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(1_500);
     });
@@ -46,7 +46,7 @@ test.describe('Privacy Settings Panel', () => {
         }
     }
 
-    test('Privacy & Data section heading is present', async ({ page }) => {
+    test('Privacy & Data section heading is present', async ({ authedPage: page }) => {
         await navigateToPrivacySettings(page);
 
         // Look for the privacy heading
@@ -58,7 +58,7 @@ test.describe('Privacy Settings Panel', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Export My Data button is present and labelled', async ({ page }) => {
+    test('Export My Data button is present and labelled', async ({ authedPage: page }) => {
         await navigateToPrivacySettings(page);
 
         const exportBtn = page.locator('button:has-text("Download My Data"), button[aria-label*="Export" i]').first();
@@ -75,7 +75,7 @@ test.describe('Privacy Settings Panel', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Delete My Account button opens confirmation flow', async ({ page }) => {
+    test('Delete My Account button opens confirmation flow', async ({ authedPage: page }) => {
         await navigateToPrivacySettings(page);
 
         const deleteBtn = page.locator('button:has-text("Delete My Account"), button[aria-label*="deletion" i]').first();
@@ -120,7 +120,7 @@ test.describe('Privacy Settings Panel', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('account deletion section has no a11y violations on confirm input', async ({ page }) => {
+    test('account deletion section has no a11y violations on confirm input', async ({ authedPage: page }) => {
         await navigateToPrivacySettings(page);
 
         const deleteBtn = page.locator('button:has-text("Delete My Account")').first();

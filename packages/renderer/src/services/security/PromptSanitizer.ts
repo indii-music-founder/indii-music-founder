@@ -127,7 +127,7 @@ export class PromptSanitizer {
 
     /**
      * Sanitize a prompt and throw if it's blocked.
-     * Convenience method for use in AI service entry points.
+     * Convenience method for use in Intelligence service entry points.
      */
     static sanitizeOrThrow(prompt: string): string {
         const result = this.sanitize(prompt);

@@ -307,6 +307,7 @@ export class InstagramAnalyticsService {
      * Build PlatformData for the analytics engine from Instagram Reels insights.
      */
     async buildPlatformData(): Promise<PlatformData> {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { igUserId } = await this._getValidToken();
         const reels = await this.getReels(20);
 
@@ -334,7 +335,9 @@ export class InstagramAnalyticsService {
             if (result.status === 'fulfilled') {
                 totalPlays  += result.value.plays;
                 totalSaves  += result.value.saved + result.value.shares;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 totalShares += result.value.shares;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 successCount++;
             }
         }

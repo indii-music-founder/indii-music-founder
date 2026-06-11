@@ -54,19 +54,46 @@ describe('WorkflowStateService', () => {
                 userId,
                 'CAMPAIGN_LAUNCH',
                 mockSteps,
-                [], // No edges
+                [{ from: 'step_0', to: 'step_1', condition: () => true }], // Conditions are runtime-only.
                 'session-123'
             );
 
+            const savedDoc = mockSet.mock.calls[0]![1] as WorkflowExecution;
             expect(execution.id).toBe('test-execution-id');
             expect(execution.workflowId).toBe('CAMPAIGN_LAUNCH');
             expect(execution.userId).toBe(userId);
-            expect(execution.status).toBe('planned');
+            expect(execution.status).toBe('PLANNED');
             expect(Object.keys(execution.steps)).toHaveLength(3);
-            expect(execution.steps['step_0']!.status).toBe('planned');
-            expect(execution.steps['step_1']!.status).toBe('planned');
-            expect(execution.steps['step_2']!.status).toBe('planned');
+            expect(execution.steps['step_0']!.status).toBe('PLANNED');
+            expect(execution.steps['step_1']!.status).toBe('PLANNED');
+            expect(execution.steps['step_2']!.status).toBe('PLANNED');
+            expect(savedDoc.edges).toEqual([{ from: 'step_0', to: 'step_1' }]);
+            expect(savedDoc.edges[0]!.condition).toBeUndefined();
             expect(mockSet).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('getExecution', () => {
+        it('should normalize legacy lowercase status records from Firestore', async () => {
+            mockGet.mockResolvedValue({
+                id: 'legacy-exec',
+                workflowId: 'CAMPAIGN_LAUNCH',
+                userId,
+                status: 'executing',
+                steps: {
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', idempotencyKey: 'test-key-0' },
+                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'awaiting_approval', idempotencyKey: 'test-key-1' },
+                },
+                createdAt: 1000,
+                updatedAt: 1000,
+            });
+
+            const execution = await workflowStateService.getExecution(userId, 'legacy-exec');
+
+            expect(execution?.status).toBe('EXECUTING');
+            expect(execution?.steps['step_0']!.status).toBe('STEP_COMPLETE');
+            expect(execution?.steps['step_1']!.status).toBe('AWAITING_HUMAN');
+            expect(execution?.edges).toEqual([]);
         });
     });
 
@@ -76,11 +103,11 @@ describe('WorkflowStateService', () => {
                 id: 'exec-1',
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
-                status: 'executing',
+                status: 'EXECUTING',
                 steps: {
-                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'executing', startedAt: 1000, idempotencyKey: 'test-key-0' },
-                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'planned', idempotencyKey: 'test-key-1' },
-                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'EXECUTING_GENERATION', startedAt: 1000, idempotencyKey: 'test-key-0' },
+                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'PLANNED', idempotencyKey: 'test-key-1' },
+                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'PLANNED', idempotencyKey: 'test-key-2' },
                 },
                 edges: [],
                 createdAt: 1000,
@@ -91,9 +118,9 @@ describe('WorkflowStateService', () => {
 
             const result = await workflowStateService.advanceStep(userId, 'exec-1', 'step_0', 'Brand audit complete');
 
-            expect(result.steps['step_0']!.status).toBe('step_complete');
+            expect(result.steps['step_0']!.status).toBe('STEP_COMPLETE');
             expect(result.steps['step_0']!.result).toBe('Brand audit complete');
-            expect(result.status).toBe('executing');
+            expect(result.status).toBe('EXECUTING');
             expect(mockSet).toHaveBeenCalledOnce();
         });
 
@@ -102,11 +129,11 @@ describe('WorkflowStateService', () => {
                 id: 'exec-2',
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
-                status: 'executing',
+                status: 'EXECUTING',
                 steps: {
-                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
-                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-1' },
-                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'executing', startedAt: 2000, idempotencyKey: 'test-key-2' },
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'STEP_COMPLETE', result: 'Done', idempotencyKey: 'test-key-0' },
+                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'STEP_COMPLETE', result: 'Done', idempotencyKey: 'test-key-1' },
+                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'EXECUTING_GENERATION', startedAt: 2000, idempotencyKey: 'test-key-2' },
                 },
                 edges: [],
                 createdAt: 1000,
@@ -117,8 +144,8 @@ describe('WorkflowStateService', () => {
 
             const result = await workflowStateService.advanceStep(userId, 'exec-2', 'step_2', 'Social posts drafted');
 
-            expect(result.steps['step_2']!.status).toBe('step_complete');
-            expect(result.status).toBe('completed');
+            expect(result.steps['step_2']!.status).toBe('STEP_COMPLETE');
+            expect(result.status).toBe('COMPLETED');
         });
     });
 
@@ -128,11 +155,11 @@ describe('WorkflowStateService', () => {
                 id: 'exec-3',
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
-                status: 'executing',
+                status: 'EXECUTING',
                 steps: {
-                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
-                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'executing', startedAt: 1500, idempotencyKey: 'test-key-1' },
-                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'STEP_COMPLETE', result: 'Done', idempotencyKey: 'test-key-0' },
+                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'EXECUTING_GENERATION', startedAt: 1500, idempotencyKey: 'test-key-1' },
+                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'PLANNED', idempotencyKey: 'test-key-2' },
                 },
                 edges: [],
                 createdAt: 1000,
@@ -143,10 +170,10 @@ describe('WorkflowStateService', () => {
 
             const result = await workflowStateService.failStep(userId, 'exec-3', 'step_1', 'API timeout');
 
-            expect(result.steps['step_1']!.status).toBe('failed');
+            expect(result.steps['step_1']!.status).toBe('FAILED');
             expect(result.steps['step_1']!.error).toBe('API timeout');
-            expect(result.steps['step_2']!.status).toBe('planned'); // Preserved for resume
-            expect(result.status).toBe('failed');
+            expect(result.steps['step_2']!.status).toBe('PLANNED'); // Preserved for resume
+            expect(result.status).toBe('FAILED');
         });
     });
 
@@ -156,11 +183,11 @@ describe('WorkflowStateService', () => {
                 id: 'exec-4',
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
-                status: 'executing',
+                status: 'EXECUTING',
                 steps: {
-                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
-                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'planned', idempotencyKey: 'test-key-1' },
-                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'STEP_COMPLETE', result: 'Done', idempotencyKey: 'test-key-0' },
+                    'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'PLANNED', idempotencyKey: 'test-key-1' },
+                    'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'PLANNED', idempotencyKey: 'test-key-2' },
                 },
                 edges: [],
                 createdAt: 1000,
@@ -172,21 +199,21 @@ describe('WorkflowStateService', () => {
             await workflowStateService.cancelExecution(userId, 'exec-4');
 
             const savedDoc = mockSet.mock.calls[0]![1] as WorkflowExecution;
-            expect(savedDoc.status).toBe('cancelled');
-            expect(savedDoc.steps['step_0']!.status).toBe('step_complete'); // Already complete — not cancelled
-            expect(savedDoc.steps['step_1']!.status).toBe('cancelled');
-            expect(savedDoc.steps['step_2']!.status).toBe('cancelled');
+            expect(savedDoc.status).toBe('CANCELLED');
+            expect(savedDoc.steps['step_0']!.status).toBe('STEP_COMPLETE'); // Already complete — not cancelled
+            expect(savedDoc.steps['step_1']!.status).toBe('CANCELLED');
+            expect(savedDoc.steps['step_2']!.status).toBe('CANCELLED');
         });
     });
 
     describe('getResumableExecutions', () => {
         it('should return only non-terminal executions', async () => {
             const executions: WorkflowExecution[] = [
-                { id: '1', workflowId: 'A', userId, status: 'completed', steps: {}, edges: [], createdAt: 1, updatedAt: 1 },
-                { id: '2', workflowId: 'B', userId, status: 'failed', steps: {}, edges: [], createdAt: 2, updatedAt: 2 },
-                { id: '3', workflowId: 'C', userId, status: 'cancelled', steps: {}, edges: [], createdAt: 3, updatedAt: 3 },
-                { id: '4', workflowId: 'D', userId, status: 'planned', steps: {}, edges: [], createdAt: 4, updatedAt: 4 },
-                { id: '5', workflowId: 'E', userId, status: 'executing', steps: {}, edges: [], createdAt: 5, updatedAt: 5 },
+                { id: '1', workflowId: 'A', userId, status: 'COMPLETED', steps: {}, edges: [], createdAt: 1, updatedAt: 1 },
+                { id: '2', workflowId: 'B', userId, status: 'FAILED', steps: {}, edges: [], createdAt: 2, updatedAt: 2 },
+                { id: '3', workflowId: 'C', userId, status: 'CANCELLED', steps: {}, edges: [], createdAt: 3, updatedAt: 3 },
+                { id: '4', workflowId: 'D', userId, status: 'PLANNED', steps: {}, edges: [], createdAt: 4, updatedAt: 4 },
+                { id: '5', workflowId: 'E', userId, status: 'EXECUTING', steps: {}, edges: [], createdAt: 5, updatedAt: 5 },
             ];
 
             mockList.mockResolvedValue(executions);

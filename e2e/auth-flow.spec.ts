@@ -1,12 +1,80 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 // Configuration
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
+
+const origin = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+
+const corsHeaders = {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+};
+
+const mockFirestoreUserDoc = async (route: any) => {
+    const url = route.request().url();
+    if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+    }
+    if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?') || url.includes(':write') || url.includes('/Write/')) {
+        await route.abort('failed');
+        return;
+    }
+    const postData = route.request().postData() || '';
+    const isUserDoc = url.includes('/documents/users/test-user-uid-e2e') || postData.includes('test-user-uid-e2e');
+
+    if (isUserDoc) {
+        if (url.includes('batchGet') || url.includes('runQuery')) {
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify([{
+                    found: {
+                        name: 'projects/mock/databases/(default)/documents/users/test-user-uid-e2e',
+                        fields: {
+                            uid: { stringValue: 'test-user-uid-e2e' },
+                            displayName: { stringValue: 'E2E Test User' },
+                            membershipTier: { stringValue: 'pro' },
+                            onboardingCompleted: { booleanValue: true },
+                        }
+                    },
+                    readTime: new Date().toISOString()
+                }])
+            });
+            return;
+        }
+        await route.fulfill({
+            status: 200,
+            headers: corsHeaders,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                name: 'projects/mock/databases/(default)/documents/users/test-user-uid-e2e',
+                fields: {
+                    uid: { stringValue: 'test-user-uid-e2e' },
+                    displayName: { stringValue: 'E2E Test User' },
+                    membershipTier: { stringValue: 'pro' },
+                    onboardingCompleted: { booleanValue: true },
+                },
+            }),
+        });
+        return;
+    }
+    await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
+};
 
 test.describe('Authentication Flow', () => {
     test.setTimeout(60000);
 
     test.beforeEach(async ({ page }) => {
+        // Bypass onboarding screen if Firestore marks client offline and defaults to pending profile
+        await page.addInitScript(() => {
+            window.localStorage.setItem('onboarding_dismissed', 'true');
+            (window as any).FIREBASE_E2E_MOCK = false;
+        });
+
         // Capture browser logs for debugging
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
@@ -14,13 +82,14 @@ test.describe('Authentication Flow', () => {
         // Mock Firebase Installations API to prevent 403 Permission Denied in staging
         await page.route('**/*installations.googleapis.com/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
             await route.fulfill({
                 status: 200,
-                contentType: 'application/json',
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                headers: corsHeaders,
                 body: JSON.stringify({
                     name: 'projects/mock-project/installations/mock-installation',
                     fid: 'mock-installation-id',
@@ -33,10 +102,10 @@ test.describe('Authentication Flow', () => {
         // Mock RAG Proxy to prevent CORS errors during background initialization
         await page.route('**/*ragProxy*/**', async route => {
             if (route.request().method() === 'OPTIONS') {
-                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': '*' } });
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
-            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
     });
 
@@ -82,7 +151,8 @@ test.describe('Authentication Flow', () => {
         await page.route('**/securetoken.googleapis.com/**', async route => {
             await route.fulfill({
                 status: 200,
-                contentType: 'application/json',
+                    headers: corsHeaders,
+                    contentType: 'application/json',
                 body: JSON.stringify({ access_token: 'mock', expires_in: '3600', token_type: 'Bearer' })
             });
         });
@@ -109,94 +179,176 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Invalid credentials correctly rejected');
     });
 
-    test('Valid credentials authenticate successfully (mock)', async ({ page }) => {
-        // Uses mock auth injection instead of real Firebase credentials.
-        // Inject the same mock state the auth fixture uses.
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
-
+    test('Valid credentials authenticate successfully', async ({ page }) => {
         // Mock Firestore to prevent network hangs
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
+
+        // Mock Identity Toolkit for successful login
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
-            if (url.includes('/users/test-user-uid-e2e')) {
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
-                        name: 'projects/mock/databases/(default)/documents/users/test-user-uid-e2e',
-                        fields: {
-                            uid: { stringValue: 'test-user-uid-e2e' },
-                            displayName: { stringValue: 'E2E Test User' },
-                            membershipTier: { stringValue: 'pro' },
-                            onboardingCompleted: { booleanValue: true },
-                        },
-                    }),
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
                 });
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        });
-
-        await page.goto(BASE_URL);
-        await page.waitForLoadState('domcontentloaded');
-
-        // Mock auth should auto-login — verify we reach the dashboard
-        await expect(
-            page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()
-        ).toBeVisible({ timeout: 30000 });
-        console.log('[Auth] Mock login successful — dashboard reached');
-    });
-
-    test('Logout clears session (mock)', async ({ page }) => {
-        // Inject mock auth state
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
-
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
+                    })
+                });
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
         });
 
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
+
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
+
+        // Wait for dashboard
+        await expect(
+            page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()
+        ).toBeVisible({ timeout: 15000 });
+        console.log('[Auth] Login successful — dashboard reached');
+    });
+
+    test('Logout clears session (mock)', async ({ authedPage: page }) => {
+        // Mock Firestore
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
+
+        // Mock Identity Toolkit and secure token
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
+                    })
+                });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
+        });
+
+        await page.goto(BASE_URL);
+        await page.waitForLoadState('domcontentloaded');
+
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
 
         // Wait for dashboard
         await expect(
@@ -228,37 +380,104 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Logout flow completed');
     });
 
-    test('Session persists on page reload (mock)', async ({ page }) => {
-        // Inject mock auth state
-        await page.addInitScript(() => {
-            const w = window as unknown as Record<string, unknown>;
-            w.FIREBASE_E2E_MOCK = true;
-            w.FIREBASE_USER_MOCK = {
-                uid: 'test-user-uid-e2e',
-                email: 'e2e@indiios.test',
-                displayName: 'E2E Test User',
-                isAnonymous: false,
-                getIdToken: () => Promise.resolve('mock-id-token-e2e'),
-            };
-            try {
-                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
-                localStorage.setItem('onboarding_dismissed', 'true');
-                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
-                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
-            } catch { /* ignore */ }
-        });
+    test('Session persists on page reload (mock)', async ({ authedPage: page }) => {
+        // Mock Firestore
+        await page.route('**/firestore.googleapis.com/**', mockFirestoreUserDoc);
 
-        await page.route('**/firestore.googleapis.com/**', async route => {
-            const url = route.request().url();
-            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
+        // Mock Identity Toolkit and secure token
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
                 return;
             }
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: "test-user-uid-e2e",
+                        email: "e2e@indii.test",
+                        displayName: "E2E Test User",
+                        idToken: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkIiwic3ViIjoidGVzdC11c2VyLXVpZCIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoxODAwMDAwMDAwLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0QGV4YW1wbGUuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.signature",
+                        refreshToken: "mock-refresh-token-e2e",
+                        expiresIn: "3600",
+                    })
+                });
+                return;
+            }
+            // For page reload, it might verify the token
+            if (url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                        }]
+                    })
+                });
+                return;
+            }
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: "test-user-uid-e2e",
+                            email: "e2e@indii.test",
+                            displayName: "E2E Test User",
+                            emailVerified: true,
+                            providerUserInfo: []
+                        }]
+                    })
+                });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token',
+                    id_token: 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QifQ.signature',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
         });
 
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
+
+        // Check if we need to login manually
+        const emailInput = page.locator('input[type="email"]').first();
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await emailInput.fill('e2e@indii.test');
+            const passwordInput = page.locator('input[type="password"]').first();
+            if (await passwordInput.isVisible().catch(() => false)) {
+                await passwordInput.fill('password123');
+            }
+            await page.locator('form button[type="submit"]').first().click();
+        }
 
         // Wait for dashboard
         await expect(

@@ -1,10 +1,20 @@
 ---
-description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indiiOS stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
+description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
 ---
 
 # /hunter — Full-Spectrum Bug Hunter
 
-> **PERSONA:** You are the Hunter. Your mission: find every bug that could surface randomly in production — from XSS to stale closures to floating-point rounding in royalty splits. You do NOT stop at reporting. **You FIX every issue you find, then verify and commit.**
+> **PERSONA:** You are the Hunter. Your mission: find every bug that could surface randomly in production — from XSS to stale closures to floating-point rounding in royalty splits.
+
+## Mode Selection (NEW)
+
+- **HUNT** (default): Find ALL bugs + fix + verify + commit in this session.
+- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: findings doc + GitHub issues.
+
+Infer from context:
+- Explicit "audit" or "find-only" → AUDIT mode
+- `/hunter` alone → HUNT mode (legacy default)
+- If ambiguous, ask
 
 // turbo-all
 
@@ -115,6 +125,19 @@ grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '
 - Math.random() in render → Replace with deterministic seeded RNG or frame-based calculation
 - Date.now() in render → Move to useEffect or useMemo
 
+### 1.8 Anti-AI Slop (Clean-Up Scan)
+```bash
+# Lazy AI placeholders
+grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+
+# AI conversational boilerplate
+grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+```
+
+**AUTO-FIX:** For each finding:
+- Boilerplate text → Delete the text from the file completely.
+- Lazy placeholders (`// ... rest of code`) → You MUST read the original file, synthesize the missing logic, and implement it fully. NEVER just delete the placeholder without implementing the code.
+
 ---
 
 ## Phase 2: Small Game (Deep Logic Read)
@@ -201,41 +224,66 @@ npm run build:studio 2>&1 | tail -20
 cd functions && npx tsc --noEmit 2>&1 | tail -20 && cd ..
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indiios-v-1-1
+firebase firestore:rules validate --project indii-v-1-1
 ```
 
 If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if a fix fails twice, stop, log extensively, and propose an alternative approach.
 
 ---
 
-## Phase 4: Commit & Log
+## Phase 4: Output
 
-### Commit all fixes
-```bash
-git add -A && git commit -m "fix(hunter): [summary of all fixes applied]" && git push origin main
-```
+### HUNT Mode (fix + commit)
 
-### Update Error Ledger
-Add ALL findings to `.agent/skills/error_memory/ERROR_LEDGER.md`:
-```
-## [DATE] Hunter Session
-- SEVERITY: [Critical|High|Medium|Low]
-- FILE: [path]
-- BUG: [description]
-- FIX: [what was changed]
-```
+1. **Commit all fixes:**
+   ```bash
+   git add -A && git commit -m "fix(hunter): [summary of all fixes applied]" && git push origin [branch]
+   ```
 
-### Update mem0
-```
-mcp_mem0_add-memory(
-  content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
-  userId="indiiOS-errors"
-)
-```
+2. **Update Error Ledger** (`.agent/skills/error_memory/ERROR_LEDGER.md`):
+   ```
+   ## [DATE] Hunter Session
+   - SEVERITY: [Critical|High|Medium|Low]
+   - FILE: [path]
+   - BUG: [description]
+   - FIX: [what was changed]
+   ```
+
+3. **Update mem0:**
+   ```
+   mcp_mem0_add-memory(
+     content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
+     userId="indii-errors"
+   )
+   ```
+
+### AUDIT Mode (find-only + handoff)
+
+1. **Consolidated findings doc** (`.agent/test_ledger/HUNT_AUDIT_<timestamp>.md`):
+   - House style: status | severity | module | evidence | files | fix direction | verified?
+   - One section per Big/Small Game phase so the fix agent can work methodically
+   - Include any "false leads" you discarded (grep artifacts, etc.) so fix agent doesn't re-check them
+
+2. **GitHub issues** (label `triage/ready-for-agent`):
+   - One issue per Critical/High finding
+   - Body = finding block + fix direction + acceptance criteria
+   - Cross-link to findings doc
+
+3. **Report:**
+   ```
+   ✅ AUDIT COMPLETE
+   - Findings: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
+   - Issues: #<issue>, #<issue>, ... (highest severity)
+   - Hand off — do not commit, push, or modify code
+   ```
+
+Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent owns that.
 
 ---
 
-## IMPORTANT: Autonomy Rules
+## IMPORTANT: Mode-Specific Rules
+
+### HUNT Mode (autonomous fix-all)
 
 1. **DO NOT ASK** before fixing a bug. If you found it, fix it.
 2. **DO NOT REPORT AND WAIT.** The output of this workflow is committed code, not a list of issues.
@@ -243,3 +291,10 @@ mcp_mem0_add-memory(
 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
 6. **Check deployed state.** If a bug involves configuration (API keys, env vars), verify the production deployment matches local config.
+
+### AUDIT Mode (find-only)
+
+1. **DO NOT FIX.** Document only.
+2. **DO NOT COMMIT.** Hand off the findings doc + GitHub issues to the fixing agent.
+3. **DO NOT LOG to Error Ledger / mem0.** The fixing agent owns the record-keeping after they fix.
+4. **Every finding gets characterized.** Severity, evidence, files, fix direction, verified-or-recon.

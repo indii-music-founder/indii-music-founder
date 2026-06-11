@@ -68,6 +68,7 @@ function CanvasCard({
     item: CanvasItem;
     onDismiss?: (id: string) => void;
     onExpand?: (item: CanvasItem) => void;
+    key?: React.Key;
 }) {
     return (
         <motion.div

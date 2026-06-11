@@ -200,7 +200,11 @@ export class StorageQuotaService {
             videoCount: (data.videoCount as number) || 0,
             imageCount: (data.imageCount as number) || 0,
             scanDate: (data.scanDate as string) || '',
-            updatedAt: data.updatedAt ? (data.updatedAt as { toDate: () => Date }).toDate() : null,
+            updatedAt: data.updatedAt 
+                ? (typeof (data.updatedAt as { toDate?: () => Date }).toDate === 'function' ? (data.updatedAt as { toDate: () => Date }).toDate() 
+                   : (data.updatedAt as { seconds?: number }).seconds !== undefined ? new Date((data.updatedAt as { seconds: number }).seconds * 1000) 
+                   : new Date(data.updatedAt as string | number))
+                : null,
             tier: resolvedTier,
             limitGB,
             usedPercent,

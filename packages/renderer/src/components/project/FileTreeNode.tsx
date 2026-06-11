@@ -37,6 +37,7 @@ function getFileIconColor(type?: FileNode['fileType']) {
 }
 
 interface FileTreeNodeProps {
+    key?: React.Key;
     node: FileNode;
     depth?: number;
     nodeChildrenMap: Map<string, FileNode[]>;

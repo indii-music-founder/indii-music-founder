@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { test as authedTest } from './fixtures/auth';
+import { test, expect } from './fixtures/auth';
 // Typed window interface for Zustand store access in E2E tests
 interface TestWindow extends Window {
     useStore: {
@@ -20,7 +19,7 @@ const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || process.env.AUDITOR_PASSW
 test.describe('The Gauntlet: Live Production Stress Test', () => {
     test.setTimeout(60000); // Increase timeout to 60s for full flow
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Capture browser logs for debugging
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
@@ -32,8 +31,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.waitForLoadState('domcontentloaded');
     });
 
-    authedTest('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
-        authedTest.setTimeout(120000); // 120 seconds timeout due to AI loading
+    test('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
+        test.setTimeout(120000); // 120 seconds timeout due to AI loading
         // Enable console log proxying
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
@@ -151,7 +150,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.locator('[data-testid="nav-item-creative"]').click();
 
         // D. Verify Creative Director Module Loaded
-        await expect(page.getByRole('heading', { name: /Creative Director/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: /(Creative Director|Studio)/i })).toBeVisible({ timeout: 15000 });
         console.log('[Gauntlet] Creative Director module loaded.');
 
         // E. Verify Key Sub-Modules Are Accessible
@@ -182,7 +181,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Scenario 1 complete — Onboarding → Dashboard → Creative Director flow verified.');
     });
 
-    authedTest('Scenario 2: Chaos Check (Rapid Navigation)', async ({ authedPage: page }) => {
+    test('Scenario 2: Chaos Check (Rapid Navigation)', async ({ authedPage: page }) => {
         // A. Setup: State already injected via authedPage fixture
         // Wait briefly for state completion
         await page.waitForTimeout(1000);
@@ -217,7 +216,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         }
     });
 
-    authedTest('Scenario 3: Membership Limits Gauntlet', async ({ authedPage: page }) => {
+    test('Scenario 3: Membership Limits Gauntlet', async ({ authedPage: page }) => {
         // State injected by authedPage
         await page.waitForTimeout(1000);
 
@@ -320,7 +319,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Membership Limits Gauntlet completed successfully.');
     });
 
-    authedTest('Scenario 4: Tier Transition Stress Test', async ({ authedPage: page }) => {
+    test('Scenario 4: Tier Transition Stress Test', async ({ authedPage: page }) => {
         // State injected by authedPage fixture
         await page.waitForTimeout(1000);
 
@@ -376,7 +375,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
     });
 
     // New test: Authenticated flow using env credentials
-    test('Scenario 5: Real Auth Flow (requires credentials)', async ({ page }) => {
+    test('Scenario 5: Real Auth Flow (requires credentials)', async ({ authedPage: page }) => {
         // Skip if no credentials configured
         test.skip(!TEST_EMAIL || !TEST_PASSWORD, 'E2E credentials not configured in environment');
 

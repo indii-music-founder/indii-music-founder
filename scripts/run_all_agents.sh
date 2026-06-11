@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${YELLOW}====================================================${NC}"
-echo -e "${YELLOW}    indiiOS AGENT PROTOCOL RUNNER  ${NC}"
+echo -e "${YELLOW}    indii AGENT PROTOCOL RUNNER  ${NC}"
 echo -e "${YELLOW}====================================================${NC}"
 
 # Function to run a specific test agent

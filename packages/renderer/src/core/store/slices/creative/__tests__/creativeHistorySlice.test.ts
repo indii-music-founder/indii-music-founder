@@ -1,5 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
 
 vi.mock('@/core/store', () => ({

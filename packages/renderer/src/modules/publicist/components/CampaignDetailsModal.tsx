@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Trash2, Calendar, BarChart2 } from 'lucide-react';
+import { X, Save, Trash2, Calendar, BarChart2, Disc } from 'lucide-react';
 import { Campaign } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
@@ -13,9 +13,11 @@ interface CampaignDetailsModalProps {
     userId: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOpen, onClose, campaign, userId }) => {
     const [status, setStatus] = useState<Campaign['status']>('Draft');
     const [progress, setProgress] = useState(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isSaving, setIsSaving] = useState(false);
     const toast = useToast();
 
@@ -44,7 +46,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
         }
     };
 
-    const StatusBadge = ({ s }: { s: string }) => {
+    const StatusBadge = ({ s }: { s: string; key?: React.Key }) => {
         const isActive = status === s;
         return (
             <button
@@ -78,11 +80,17 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                     >
                         {/* Header Image */}
                         <div className="h-40 relative bg-slate-900 overflow-hidden">
-                            <img
-                                src={campaign.coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2670&auto=format&fit=crop"}
-                                alt="Cover"
-                                className="w-full h-full object-cover opacity-60"
-                            />
+                            {campaign.coverUrl ? (
+                                <img
+                                    src={campaign.coverUrl}
+                                    alt="Cover"
+                                    className="w-full h-full object-cover opacity-60"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                                    <Disc className="text-slate-700" size={48} />
+                                </div>
+                            )}
                             <div className="absolute inset-0 bg-linear-to-t from-slate-950 to-transparent" />
                             <button
                                 onClick={onClose}

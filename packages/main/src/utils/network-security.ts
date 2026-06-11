@@ -191,6 +191,7 @@ export function validateSafeUrl(urlString: string): void {
     let url: URL;
     try {
         url = new URL(urlString);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) { throw new Error('Invalid URL'); }
 
     const hostname = url.hostname;

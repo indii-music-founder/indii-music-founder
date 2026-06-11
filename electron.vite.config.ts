@@ -1,5 +1,6 @@
+
 /**
- * electron.vite.config.ts — Build orchestrator for the indiiOS monorepo.
+ * electron.vite.config.ts — Build orchestrator for the indii monorepo.
  *
  * Three build targets:
  *   - Main:     packages/main/src/main.ts     → Node.js, CJS output
@@ -46,6 +47,7 @@ export default defineConfig({
                     'electron-log',
                     'electron-squirrel-startup',
                     '@modelcontextprotocol/sdk',
+                    'libsodium-wrappers',
                 ],
             },
         },
@@ -94,8 +96,9 @@ export default defineConfig({
         ],
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),
-            // WO-14: Warn when any chunk exceeds 1 MB (unminified).
-            chunkSizeWarningLimit: 1000,
+            sourcemap: true,
+            // WO-14: Warn when any chunk exceeds 2.5 MB (unminified).
+            chunkSizeWarningLimit: 2500,
             rollupOptions: {
                 input: {
                     index: resolve(__dirname, 'packages/renderer/index.html'),
@@ -129,38 +132,77 @@ export default defineConfig({
                         if (!m) return undefined;
                         const pkg = m[1];
 
-                        // Three.js — 3D module only
+                        // Three.js and react-three packages
                         if (pkg === 'three' || pkg.startsWith('@react-three/')) {
                             return 'vendor-three';
                         }
-                        // Remotion — video rendering, only loaded by video module
-                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
-                            return 'vendor-remotion';
-                        }
-                        // Fabric.js — canvas, only creative module
+                        // Fabric.js
                         if (pkg === 'fabric') {
                             return 'vendor-fabric';
                         }
-                        // Audio analysis — only audio/tools module
+                        // Audio analysis
                         if (pkg === 'wavesurfer.js' || pkg === 'wavesurfer' || pkg === 'essentia.js' || pkg.startsWith('essentia')) {
                             return 'vendor-audio';
                         }
-                        // Recharts — data visualisation, only finance/analytics
-                        if (pkg === 'recharts') {
+                        // Recharts & D3 dependencies
+                        if (pkg === 'recharts' || pkg.startsWith('d3-')) {
                             return 'vendor-recharts';
                         }
-                        // Framer Motion — animations, separate for cache stability
+                        // Framer Motion
                         if (pkg === 'framer-motion' || pkg === 'motion') {
                             return 'vendor-motion';
                         }
-                        // Firebase SDK — large auth/firestore/storage bundle
+                        // Firebase SDK
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
-                        // React ecosystem: ONLY the core React runtime + router.
-                        // Do NOT include anything that depends on d3, zustand, or
-                        // use-sync-external-store — those must live in the default
-                        // chunks to prevent cyclic chunk imports.
+                        // Lucide icons
+                        if (pkg === 'lucide-react') {
+                            return 'vendor-lucide';
+                        }
+                        // PDFJS Dist
+                        if (pkg === 'pdfjs-dist') {
+                            return 'vendor-pdfjs';
+                        }
+                        // Tesseract OCR
+                        if (pkg === 'tesseract.js' || pkg.startsWith('tesseract.js-')) {
+                            return 'vendor-tesseract';
+                        }
+                        // React Flow
+                        if (pkg === 'reactflow' || pkg.startsWith('@reactflow/')) {
+                            return 'vendor-reactflow';
+                        }
+                        // Collaborative editing (Yjs)
+                        if (pkg === 'yjs' || pkg === 'y-websocket' || pkg === 'y-protocols') {
+                            return 'vendor-yjs';
+                        }
+                        // Remotion
+                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
+                            return 'vendor-remotion';
+                        }
+                        // Google Gen AI SDK
+                        if (pkg === '@google/genai') {
+                            return 'vendor-genai';
+                        }
+                        // Internationalization (i18n)
+                        if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
+                            return 'vendor-i18n';
+                        }
+                        // UI Utilities & Primitives
+                        if (
+                            pkg === 'react-virtuoso' ||
+                            pkg === 'tailwind-merge' ||
+                            pkg === 'driver.js' ||
+                            pkg === 'clsx' ||
+                            pkg === 'classnames' ||
+                            pkg.startsWith('@radix-ui/') ||
+                            pkg === 'zod' ||
+                            pkg === 'zod-to-json-schema' ||
+                            pkg === 'zustand'
+                        ) {
+                            return 'vendor-ui';
+                        }
+                        // React ecosystem: core React runtime strictly isolated to prevent circular ESM imports
                         if (
                             pkg === 'react' ||
                             pkg === 'react-dom' ||

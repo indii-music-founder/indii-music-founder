@@ -31,12 +31,6 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'linear-gradient(135deg, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'waves', opacity: 0.3, blendMode: 'screen' }
     },
-    'video': {
-        officeName: 'Video Editing Bay',
-        accent: '#00ff66', // Green (Shares with Creative)
-        backgroundGradient: 'radial-gradient(circle at 100% 50%, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'geometric', opacity: 0.1 }
-    },
     'legal': {
         officeName: 'Legal & IP Department',
         accent: '#455A64', // Slate (Official)
@@ -240,17 +234,20 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 30% 70%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 },
     },
-    'maestro': {
-        officeName: 'Maestro Orchestrator',
-        accent: '#00ff66', // Green (Strategic/High-level)
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.1), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'vectors', opacity: 0.3 }
-    },
+
     'security': {
         officeName: 'Security & Compliance',
         accent: '#ef4444', // Red for security
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(239, 68, 68, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.2 }
+    },
+    devops: { officeName: 'DevOps', accent: '#9333ea', backgroundGradient: 'linear-gradient(to bottom, #100b1a, #0b0712)', ambientConfig: { type: 'particles', opacity: 0.1 } },
+    screenwriter: { officeName: 'Screenwriter', accent: '#9333ea', backgroundGradient: 'linear-gradient(to bottom, #100b1a, #0b0712)', ambientConfig: { type: 'particles', opacity: 0.1 } },
+    crm: {
+        officeName: 'Superfan CRM',
+        accent: '#8b5cf6', // violet-500
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(139, 92, 246, 0.08), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 }
     }
 };
 

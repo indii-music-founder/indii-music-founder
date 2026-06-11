@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
  *   - marketing: Third-party marketing pixels (future)
  */
 
-const CONSENT_STORAGE_KEY = 'indiiOS_cookie_consent';
+const CONSENT_STORAGE_KEY = 'indii_cookie_consent';
 
 export interface ConsentPreferences {
     essential: boolean; // Always true, cannot be toggled
@@ -41,6 +41,7 @@ const DEFAULT_PREFERENCES: ConsentPreferences = {
  * Read consent preferences from localStorage.
  * Returns null if no consent has been given yet.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getConsentPreferences(): ConsentPreferences | null {
     try {
         const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
@@ -57,6 +58,7 @@ export function getConsentPreferences(): ConsentPreferences | null {
 /**
  * Check if a specific consent category has been granted.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function hasConsent(category: keyof Omit<ConsentPreferences, 'timestamp' | 'version'>): boolean {
     const prefs = getConsentPreferences();
     if (!prefs) return false;
@@ -127,8 +129,12 @@ export function CookieConsentBanner() {
     const [preferences, setPreferences] = useState<ConsentPreferences>({ ...DEFAULT_PREFERENCES });
 
     useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+        let active = true;
+
         // Honor env var bypass (dev convenience/E2E tests)
         import('@/config/env').then(({ env }) => {
+            if (!active) return;
             if (env.skipOnboarding) {
                 setVisible(false);
                 return;
@@ -138,10 +144,16 @@ export function CookieConsentBanner() {
             const existing = getConsentPreferences();
             if (!existing) {
                 // Small delay so it doesn't flash on initial load
-                const timer = setTimeout(() => setVisible(true), 800);
-                return () => clearTimeout(timer);
+                timer = setTimeout(() => {
+                    if (active) setVisible(true);
+                }, 800);
             }
         });
+
+        return () => {
+            active = false;
+            if (timer) clearTimeout(timer);
+        };
     }, []);
 
     const handleAcceptAll = useCallback(() => {
@@ -233,7 +245,7 @@ export function CookieConsentBanner() {
                                         label="Essential"
                                         description="Authentication, navigation, and core app functionality."
                                         checked={true}
-                                        onChange={() => { }}
+                                        onChange={(v) => logger.debug('[CookieConsent] Essential consent changed (ignored as disabled):', v)}
                                         disabled
                                     />
                                     <ConsentToggle

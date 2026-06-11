@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Live Agent Daisy Chain Report</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #0b1020; color: #e5e7eb; }
+    main { max-width: 1120px; margin: 0 auto; padding: 40px 24px; }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    .meta { color: #94a3b8; margin-bottom: 28px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .panel { border: 1px solid rgba(148, 163, 184, .24); background: rgba(15, 23, 42, .82); border-radius: 8px; padding: 16px; }
+    .label { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .value { font-size: 22px; margin-top: 8px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 8px; }
+    th, td { padding: 12px; border-bottom: 1px solid rgba(148, 163, 184, .18); text-align: left; vertical-align: top; }
+    th { color: #67e8f9; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Live Agent Daisy Chain Report</h1>
+    <div class="meta">Trace live-chain-1780866554672 for Neon Altar Pre-Save Sprint</div>
+    <section class="grid">
+      <div class="panel"><div class="label">Shared User Pointer</div><div class="value">user.profile</div></div>
+      <div class="panel"><div class="label">Assets</div><div class="value">2</div></div>
+      <div class="panel"><div class="label">Budget</div><div class="value">$2,400</div></div>
+    </section>
+    <table>
+      <thead><tr><th>Agent</th><th>Reads</th><th>Writes</th><th>Summary</th></tr></thead>
+      <tbody>
+    <tr>
+      <td>keeper</td>
+      <td>none</td>
+      <td>user.profile</td>
+      <td>Resolved user profile, brand kit, release details, and user info lookup pointer.</td>
+    </tr>
+    <tr>
+      <td>creative</td>
+      <td>user.profile</td>
+      <td>assets.generated</td>
+      <td>Generated campaign visuals and stored asset IDs for downstream agents.</td>
+    </tr>
+    <tr>
+      <td>marketing</td>
+      <td>user.profile, assets.generated</td>
+      <td>campaign.primary</td>
+      <td>Created the pre-save campaign linked to generated asset IDs and launch dates.</td>
+    </tr>
+    <tr>
+      <td>social</td>
+      <td>campaign.primary, assets.generated</td>
+      <td>social.calendar</td>
+      <td>Built social calendar from the shared campaign and asset set.</td>
+    </tr>
+    <tr>
+      <td>publicist</td>
+      <td>user.profile, campaign.primary, assets.generated</td>
+      <td>press.release</td>
+      <td>Drafted press release using user bio, release details, campaign title, and generated assets.</td>
+    </tr>
+    <tr>
+      <td>finance</td>
+      <td>campaign.primary</td>
+      <td>finance.spendPlan</td>
+      <td>Allocated campaign budget from the campaign record so finance reads the same source marketing wrote.</td>
+    </tr>
+    <tr>
+      <td>qa</td>
+      <td>user.profile, assets.generated, campaign.primary, social.calendar, press.release, finance.spendPlan</td>
+      <td>qa.lineage</td>
+      <td>Verified every downstream agent could read the data written by earlier agents.</td>
+    </tr></tbody>
+    </table>
+  </main>
+</body>
+</html>

@@ -6,10 +6,13 @@ import { env } from '@/config/env';
 
 import { MapMarker } from '../types';
 
+const MAPS_LIBRARIES: ("places")[] = ["places"];
+
 interface TourMapProps {
     locations?: string[]; // Legacy/Simple mode
     markers?: MapMarker[]; // Rich mode (Performance)
-    center?: { lat: number; lng: number };
+    center?: { lat: number; lng: number } | string;
+    currentLocation?: { lat: number; lng: number } | string;
     rangeRadiusMiles?: number;
 }
 
@@ -64,10 +67,16 @@ const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' 
 };
 
 // ─── Internal Map Component ────────────────────────────────────────────────────
-const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ locations = [], markers = [], center, rangeRadiusMiles, onAuthFailure }) => {
+const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ locations = [], markers = [], center, currentLocation, rangeRadiusMiles, onAuthFailure }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
     const markersRef = useRef<google.maps.Marker[]>([]);
+    const circlesRef = useRef<google.maps.Circle[]>([]);
+    const prevCenterRef = useRef<string | { lat: number; lng: number }>();
+    const prevMarkersJsonRef = useRef<string>('');
+    const prevLocationsJsonRef = useRef<string>('');
+    const prevCurrentLocationJsonRef = useRef<string>('');
+    const prevRangeRadiusRef = useRef<number>();
 
     // Detect Google Maps auth failure via global callback + MutationObserver
     useEffect(() => {
@@ -106,10 +115,26 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
     // Initialize Map
     useEffect(() => {
-        if (ref.current && !map) {
+        let active = true;
+        let initialMap: google.maps.Map | undefined;
+
+        if (ref.current && ref.current.isConnected && !map) {
             try {
-                const initialMap = new google.maps.Map(ref.current, {
-                    center: center || { lat: 39.8283, lng: -98.5795 },
+                // Safely resolve initial center coordinates
+                let initialCenter: google.maps.LatLngLiteral = { lat: 39.8283, lng: -98.5795 };
+                if (center) {
+                    if (typeof center === 'object' && !isNaN(center.lat) && !isNaN(center.lng)) {
+                        initialCenter = center;
+                    } else if (typeof center === 'string') {
+                        const parts = center.split(',').map(p => p.trim());
+                        if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+                            initialCenter = { lat: Number(parts[0]), lng: Number(parts[1]) };
+                        }
+                    }
+                }
+
+                initialMap = new google.maps.Map(ref.current, {
+                    center: initialCenter,
                     zoom: 4,
                     styles: [
                         { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
@@ -195,35 +220,127 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                     zoomControl: true,
                     backgroundColor: '#0d1117'
                 });
-                setMap(initialMap);
+                if (active) {
+                    setMap(initialMap);
+                } else {
+                    google.maps.event.clearInstanceListeners(initialMap);
+                }
             } catch (err: unknown) {
                 logger.error('[TourMap] Failed to initialize Google Maps:', err);
                 onAuthFailure();
             }
-        } else if (map && center) {
+        }
+
+        return () => {
+            active = false;
+            if (initialMap) {
+                google.maps.event.clearInstanceListeners(initialMap);
+            }
+            if (map) {
+                google.maps.event.clearInstanceListeners(map);
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ref, map, onAuthFailure]);
+
+    // Center and Zoom Updates
+    useEffect(() => {
+        if (!map || !center) return;
+
+        // Check if center has changed to avoid overriding user's manual dragging/zooming on unrelated renders
+        const isSame = (
+            typeof center === 'string' && typeof prevCenterRef.current === 'string' && center === prevCenterRef.current
+        ) || (
+            typeof center === 'object' && typeof prevCenterRef.current === 'object' &&
+            center !== null && prevCenterRef.current !== null &&
+            center.lat === prevCenterRef.current.lat && center.lng === prevCenterRef.current.lng
+        );
+
+        if (isSame) return;
+        prevCenterRef.current = center;
+
+        let active = true;
+
+        if (typeof center === 'string') {
+            const parts = center.split(',').map(p => p.trim());
+            if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+                map.panTo({ lat: Number(parts[0]), lng: Number(parts[1]) });
+                map.setZoom(14);
+            } else {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: center }, (results, status) => {
+                    if (active && status === 'OK' && results && results[0]) {
+                        map.panTo(results[0].geometry.location);
+                        map.setZoom(14);
+                    }
+                });
+            }
+        } else if (!isNaN(center.lat) && !isNaN(center.lng)) {
             map.panTo(center);
             map.setZoom(14);
         }
-    }, [ref, map, center, onAuthFailure]);
+
+        return () => {
+            active = false;
+        };
+    }, [map, center]);
 
     // Update Markers and Range Ring
     useEffect(() => {
         if (!map) return;
 
+        const markersJson = JSON.stringify(markers);
+        const locationsJson = JSON.stringify(locations);
+        const currentLocationJson = JSON.stringify(currentLocation);
+
+        if (
+            markersJson === prevMarkersJsonRef.current &&
+            locationsJson === prevLocationsJsonRef.current &&
+            currentLocationJson === prevCurrentLocationJsonRef.current &&
+            rangeRadiusMiles === prevRangeRadiusRef.current
+        ) {
+            return;
+        }
+
+        prevMarkersJsonRef.current = markersJson;
+        prevLocationsJsonRef.current = locationsJson;
+        prevCurrentLocationJsonRef.current = currentLocationJson;
+        prevRangeRadiusRef.current = rangeRadiusMiles;
+
+        let active = true;
+
         // Clear existing markers
-        markersRef.current.forEach(marker => marker.setMap(null));
+        markersRef.current.forEach(marker => {
+            google.maps.event.clearInstanceListeners(marker);
+            marker.setMap(null);
+        });
         markersRef.current = [];
+
+        // Clear existing circles
+        circlesRef.current.forEach(circle => {
+            google.maps.event.clearInstanceListeners(circle);
+            circle.setMap(null);
+        });
+        circlesRef.current = [];
 
         const bounds = new google.maps.LatLngBounds();
 
         // 1. Handle Pre-defined Markers (Performance Optimization)
         if (markers && markers.length > 0) {
             markers.forEach((m: MapMarker) => {
+                if (!m.position || isNaN(m.position.lat) || isNaN(m.position.lng)) return;
+                if (m.position.lat === 0 && m.position.lng === 0) return; // Skip Null Island placeholders
+
                 const marker = new google.maps.Marker({
                     position: m.position,
                     map,
                     title: m.title,
                     animation: google.maps.Animation.DROP,
+                    label: m.label ? {
+                        text: m.label,
+                        color: "white",
+                        fontWeight: "bold"
+                    } : undefined,
                     icon: m.type === 'current' ? {
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 8,
@@ -244,7 +361,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
                 // Range Ring Logic
                 if (m.type === 'current' && rangeRadiusMiles) {
-                    new google.maps.Circle({
+                    const circle = new google.maps.Circle({
                         strokeColor: "#F59E0B",
                         strokeOpacity: 0.8,
                         strokeWeight: 2,
@@ -254,6 +371,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                         center: m.position,
                         radius: rangeRadiusMiles * 1609.34
                     });
+                    circlesRef.current.push(circle);
                 }
 
                 const infoWindow = new google.maps.InfoWindow({
@@ -269,14 +387,73 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
             });
         }
 
-        // 2. Handle String Locations (Fallback / Touring Mode)
+        // Helper to draw a current location marker
+        const drawCurrentLocation = (pos: google.maps.LatLng | google.maps.LatLngLiteral) => {
+            const marker = new google.maps.Marker({
+                position: pos,
+                map,
+                title: "My Location",
+                animation: google.maps.Animation.DROP,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: "#3B82F6",
+                    fillOpacity: 1,
+                    strokeColor: "white",
+                    strokeWeight: 2,
+                }
+            });
+            markersRef.current.push(marker);
+            bounds.extend(pos);
+
+            if (rangeRadiusMiles) {
+                const circle = new google.maps.Circle({
+                    strokeColor: "#F59E0B",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    fillColor: "#F59E0B",
+                    fillOpacity: 0.15,
+                    map,
+                    center: pos,
+                    radius: rangeRadiusMiles * 1609.34
+                });
+                circlesRef.current.push(circle);
+            }
+        };
+
+        const promises: Promise<void>[] = [];
+
+        // 2. Handle currentLocation prop (geocode or parse)
+        if (currentLocation) {
+            if (typeof currentLocation === 'string') {
+                const parts = currentLocation.split(',').map(p => p.trim());
+                if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+                    drawCurrentLocation({ lat: Number(parts[0]), lng: Number(parts[1]) });
+                } else {
+                    const geocoder = new google.maps.Geocoder();
+                    const p = new Promise<void>((resolve) => {
+                        geocoder.geocode({ address: currentLocation }, (results, status) => {
+                            if (active && status === 'OK' && results && results[0]) {
+                                drawCurrentLocation(results[0].geometry.location);
+                            }
+                            resolve();
+                        });
+                    });
+                    promises.push(p);
+                }
+            } else if (!isNaN(currentLocation.lat) && !isNaN(currentLocation.lng)) {
+                drawCurrentLocation(currentLocation);
+            }
+        }
+
+        // 3. Handle String Locations (Fallback / Touring Mode)
         if (locations && locations.length > 0) {
             const geocoder = new google.maps.Geocoder();
 
-            const geocodeProms = locations.map((location, index) => {
-                return new Promise<void>((resolve) => {
+            locations.forEach((location, index) => {
+                const p = new Promise<void>((resolve) => {
                     geocoder.geocode({ address: location }, (results, status) => {
-                        if (status === 'OK' && results && results[0]) {
+                        if (active && status === 'OK' && results && results[0]) {
                             const position = results[0].geometry.location;
                             const marker = new google.maps.Marker({
                                 position,
@@ -294,34 +471,49 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                         resolve();
                     });
                 });
+                promises.push(p);
             });
+        }
 
-            if (markers.length === 0) {
-                Promise.all(geocodeProms).then(() => {
-                    if (!bounds.isEmpty()) {
-                        map.fitBounds(bounds);
-                        if (locations.length === 1) map.setZoom(10);
+        // Adjust map bounds when all promises complete
+        if (promises.length > 0) {
+            Promise.all(promises).then(() => {
+                if (active && !bounds.isEmpty()) {
+                    map.fitBounds(bounds);
+                    const totalItems = (locations?.length || 0) + (currentLocation ? 1 : 0);
+                    if (totalItems === 1) {
+                        map.setZoom(12);
                     }
-                });
-            }
-        }
-
-        // Immediate FitBounds for Markers
-        if (markers.length > 0 && !bounds.isEmpty()) {
+                }
+            });
+        } else if (active && !bounds.isEmpty()) {
             map.fitBounds(bounds);
-            if (markers.length === 1 && markers[0]!.type === 'current') {
-                map.setZoom(15);
-            } else if (markers.length === 1) {
-                map.setZoom(rangeRadiusMiles ? 10 : 12);
+            const activeMarkersCount = markersRef.current.length;
+            if (activeMarkersCount === 1) {
+                map.setZoom(12);
             }
         }
 
-    }, [map, locations, markers, rangeRadiusMiles]);
+        return () => {
+            active = false;
+            markersRef.current.forEach(marker => {
+                google.maps.event.clearInstanceListeners(marker);
+                marker.setMap(null);
+            });
+            markersRef.current = [];
+            circlesRef.current.forEach(circle => {
+                google.maps.event.clearInstanceListeners(circle);
+                circle.setMap(null);
+            });
+            circlesRef.current = [];
+        };
+    }, [map, locations, markers, currentLocation, rangeRadiusMiles]);
 
     return <div ref={ref} className="w-full h-full rounded-xl overflow-hidden" />;
 };
 
 // ─── TourMap Wrapper ───────────────────────────────────────────────────────────
+
 export const TourMap: React.FC<TourMapProps> = (props) => {
     const apiKey = env.googleMapsApiKey;
     const [authFailed, setAuthFailed] = useState(false);
@@ -345,19 +537,18 @@ export const TourMap: React.FC<TourMapProps> = (props) => {
     }
 
     const renderMapStatus = (status: Status) => {
+        if (status === Status.LOADING) {
+            return (
+                <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                </div>
+            );
+        }
         if (status === Status.FAILURE) {
             return <MapUnavailableFallback reason="load_failure" />;
         }
-        return (
-            <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
-                <Loader2 className="animate-spin text-blue-500" size={32} />
-            </div>
-        );
+        return <MapComponent {...props} onAuthFailure={handleAuthFailure} />;
     };
 
-    return (
-        <Wrapper apiKey={apiKey} render={renderMapStatus}>
-            <MapComponent {...props} onAuthFailure={handleAuthFailure} />
-        </Wrapper>
-    );
+    return <Wrapper apiKey={apiKey} render={renderMapStatus} libraries={MAPS_LIBRARIES} />;
 };

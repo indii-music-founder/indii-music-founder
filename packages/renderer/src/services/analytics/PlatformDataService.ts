@@ -40,8 +40,8 @@ export interface PlatformConnectionStatus {
     spotify: boolean;
     youtube: boolean;
     tiktok: boolean;
-    apple_music: boolean;   // placeholder — MusicKit OAuth TBD
-    instagram: boolean;     // placeholder — Meta API TBD
+    apple_music: boolean;
+    instagram: boolean;
 }
 
 // ── Internal merge helper ─────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ function emptyHistory(): StreamDataPoint[] {
 }
 
 /** Merge two StreamDataPoint[] arrays by summing fields on matching dates */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mergeHistories(a: StreamDataPoint[], b: StreamDataPoint[]): StreamDataPoint[] {
     const map = new Map<string, StreamDataPoint>();
     for (const point of a) {
@@ -145,14 +146,8 @@ export class PlatformDataService {
             return this._buildSpotifyLedCatalogue(status);
         }
 
-        // YouTube-only fallback: create a single synthetic "channel" track
-        if (status.youtube) {
-            return this._buildYouTubeOnlyCatalogue(status);
-        }
-
-        // TikTok-only fallback: create a single synthetic "account" track
-        if (status.tiktok) {
-            return this._buildTikTokOnlyCatalogue();
+        if (status.youtube || status.tiktok) {
+            logger.warn('[PlatformDataService] Spotify track catalog is required before building track-level analytics. Refusing to synthesize channel/account records as tracks.');
         }
 
         return [];
@@ -222,6 +217,8 @@ export class PlatformDataService {
                         streams: Math.round(ytPlatform.streams * shareRatio),
                         saves: Math.round(ytPlatform.saves * shareRatio),
                         completionRate: ytPlatform.completionRate,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from channel metrics',
                     });
                 }
 
@@ -232,6 +229,8 @@ export class PlatformDataService {
                         saves: Math.round(ttPlatform.saves * shareRatio),
                         completionRate: ttPlatform.completionRate,
                         creatorCount: Math.round((ttPlatform.creatorCount ?? 0) * shareRatio),
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
@@ -242,6 +241,8 @@ export class PlatformDataService {
                         saves: Math.round(igPlatform.saves * shareRatio),
                         completionRate: igPlatform.completionRate,
                         creatorCount: 0,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
@@ -251,6 +252,8 @@ export class PlatformDataService {
                         streams: Math.round(amPlatform.streams * shareRatio),
                         saves: Math.round(amPlatform.saves * shareRatio),
                         completionRate: amPlatform.completionRate,
+                        isSynthetic: true,
+                        syntheticLabel: 'Estimated from account metrics',
                     });
                 }
 
@@ -274,80 +277,6 @@ export class PlatformDataService {
         );
 
         return catalogue;
-    }
-
-    // ── YouTube-only fallback ─────────────────────────────────────────────────
-
-    private async _buildYouTubeOnlyCatalogue(
-        status: PlatformConnectionStatus
-    ): Promise<TrackAnalytics[]> {
-        const channel = await youTubeAnalyticsService.getChannel();
-
-        const [ytPlatform, ytHistory, ytRegions, ttPlatform] = await Promise.allSettled([
-            youTubeAnalyticsService.buildPlatformData(),
-            youTubeAnalyticsService.buildStreamHistory(channel.id),
-            youTubeAnalyticsService.buildRegionData(channel.id),
-            status.tiktok ? tikTokAnalyticsService.buildPlatformData() : Promise.resolve(null),
-        ]);
-
-        const platforms: PlatformData[] = [];
-        if (ytPlatform.status === 'fulfilled') platforms.push(ytPlatform.value);
-        if (ttPlatform.status === 'fulfilled' && ttPlatform.value) platforms.push(ttPlatform.value);
-
-        const history = ytHistory.status === 'fulfilled'
-            ? ytHistory.value
-            : emptyHistory();
-
-        const regions = ytRegions.status === 'fulfilled' ? ytRegions.value : [];
-
-        return [{
-            trackId: `yt-channel-${channel.id}`,
-            trackName: channel.snippet.title,
-            artistName: channel.snippet.title,
-            coverUrl: undefined,
-            releaseDate: new Date().toISOString().split('T')[0]!,
-            genre: 'Music',
-            totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
-            platforms,
-            history,
-            creatorCount: 0,
-            regions,
-        }];
-    }
-
-    // ── TikTok-only fallback ──────────────────────────────────────────────────
-
-    private async _buildTikTokOnlyCatalogue(): Promise<TrackAnalytics[]> {
-        const [userInfo, ttPlatform, ttHistory] = await Promise.allSettled([
-            tikTokAnalyticsService.getUserInfo(),
-            tikTokAnalyticsService.buildPlatformData(),
-            tikTokAnalyticsService.buildStreamHistory(),
-        ]);
-
-        const displayName = userInfo.status === 'fulfilled'
-            ? userInfo.value.display_name
-            : 'TikTok Account';
-
-        const platforms: PlatformData[] = [];
-        if (ttPlatform.status === 'fulfilled') platforms.push(ttPlatform.value);
-
-        const history = ttHistory.status === 'fulfilled'
-            ? ttHistory.value
-            : emptyHistory();
-
-        return [{
-            trackId: 'tt-account',
-            trackName: displayName,
-            artistName: displayName,
-            coverUrl: undefined,
-            releaseDate: new Date().toISOString().split('T')[0]!,
-            genre: 'Music',
-            totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
-            platforms,
-            history,
-            creatorCount: 0,
-            regions: [],
-        }];
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

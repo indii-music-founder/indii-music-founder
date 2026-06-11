@@ -40,9 +40,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // UI State
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string>('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
+    const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
 
     // Data State
     const [prompt, setPrompt] = useState('');
@@ -74,7 +78,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 try {
                     const json = await canvasOps.toJSON();
                     if (json) {
-                        await saveCanvasStateToStorage(item.id, json);
+                        await saveCanvasStateToStorage(item.id, JSON.stringify(json));
                     }
                 } catch (err: unknown) {
                     logger.warn('[CreativeStudio] Auto-save failed', err);
@@ -127,19 +131,41 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     };
 
     const toggleMagicFill = () => {
-        const newMode = !isMagicFillMode;
-        setIsMagicFillMode(newMode);
-
-        if (isMagicFillMode) {
+        const newTool = activeTool === 'brush' ? 'select' : 'brush';
+        setActiveTool(newTool);
+        
+        if (activeTool === 'brush') {
             setGeneratedCandidates([]);
         }
 
-        canvasOps.setMagicFillMode(newMode, activeColor);
+        canvasOps.setTool(newTool, activeColor);
 
-        if (newMode) {
+        if (newTool === 'brush') {
             toast.info(`Annotating with ${activeColor.name}. Describe your edit.`);
             setMagicFillPrompt(definitions[activeColor.id] || '');
         }
+    };
+
+    const handleSetTool = (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => {
+        setActiveTool(tool);
+        canvasOps.setTool(tool, activeColor);
+        if (tool === 'brush') {
+            setMagicFillPrompt(definitions[activeColor.id] || '');
+        }
+    };
+
+    const handleAddRectangle = () => canvasOps.addRectangle(activeColor.hex);
+    const handleAddCircle = () => canvasOps.addCircle(activeColor.hex);
+    const handleAddText = () => canvasOps.addText('New Text', activeColor.hex);
+
+    const handleUndo = () => {
+        canvasOps.undo();
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    const handleRedo = () => {
+        canvasOps.redo();
+        setHistoryTrigger(prev => prev + 1);
     };
 
     const handleUpdateDefinition = (colorId: string, prompt: string) => {
@@ -432,7 +458,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             // 4. Persist canvas state (annotations / layers) for reload
             const json = await canvasOps.toJSON();
-            if (json) await saveCanvasStateToStorage(item.id, json);
+            if (json) await saveCanvasStateToStorage(item.id, JSON.stringify(json));
             toast.success('Saved to gallery & cloud!');
         } catch {
             toast.warning('Stored to disk only.');
@@ -453,7 +479,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
             const { mimeType, base64 } = await fetchAsBase64(item.url);
             const caption = await ImageGeneration.captionImage({ mimeType, data: base64 }, 'subject');
-            useStore.getState().updateWhiskItem('subject', whiskId, { aiCaption: caption });
+            useStore.getState().updateWhiskItem('subject', whiskId, { intelligenceCaption: caption });
             toast.success("Essence locked!");
         } catch {
             toast.warning("Manual check required.");
@@ -546,7 +572,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         // State
         isProcessing,
         processingStatus,
-        isMagicFillMode,
+        isMagicFillMode: activeTool === 'brush',
         isSelectingEndFrame,
         isDefinitionsOpen,
         prompt,
@@ -583,5 +609,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,
+        handleUndo,
+        handleRedo,
+        canUndo: canvasOps.canUndo(),
+        canRedo: canvasOps.canRedo(),
+        activeTool,
+        handleSetTool,
+        handleAddRectangle,
+        handleAddCircle,
+        handleAddText,
     };
 }

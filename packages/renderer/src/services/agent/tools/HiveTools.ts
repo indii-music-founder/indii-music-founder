@@ -6,53 +6,28 @@
  * and semantically-indexed memories for intent-based retrieval.
  */
 
-import { memoryService } from '../MemoryService';
-import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { logger } from '@/utils/logger';
+import { wrapTool } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 export const HiveTools = {
     /**
-     * Semantically search the Deep Hive for relevant cross-session memories.
-     * Uses vector similarity to find memories matching the user's intent.
+     * Search the 'Hive Mind' (Shared Memory) for relevant context.
      */
-    hive_search: wrapTool(
-        'hive_search',
-        async (
-            args: { query: string; limit?: number },
-            _context?: AgentContext,
-            toolContext?: ToolExecutionContext
-        ) => {
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
-            const projectId = state.currentProjectId;
-
-            if (!projectId) {
-                return toolError('No active project. Open a project first.', 'NO_PROJECT');
+    search_hive: wrapTool('search_hive', async (args: { query: string, limit?: number }) => {
+        const { query, limit = 5 } = args;
+        try {
+            const results = await alwaysOnMemoryEngine.retrieve({ query, limit: limit || 5 });
+            
+            if (results.length === 0) {
+                return 'No relevant shared context found in the Hive.';
             }
 
-            if (!args.query || args.query.trim().length < 2) {
-                return toolError('Query must be at least 2 characters.', 'INVALID_INPUT');
-            }
-
-            try {
-                const memories = await memoryService.retrieveRelevantMemories(
-                    projectId,
-                    args.query.trim(),
-                    args.limit || 10
-                );
-
-                return {
-                    query: args.query.trim(),
-                    memories,
-                    memoryCount: memories.length,
-                    message: memories.length > 0
-                        ? `Found ${memories.length} relevant memories for "${args.query}".`
-                        : `No relevant memories found for "${args.query}".`,
-                };
-            } catch (error: unknown) {
-                return toolError(`Hive search failed: ${error}`, 'SEARCH_FAILED');
-            }
+            return `Hive Results:\n${results.map(r => `- [${r.category}] ${r.summary || r.content}`).join('\n')}`;
+        } catch (error: unknown) {
+            logger.error('[HiveTools] Search failed:', error);
+            throw error;
         }
-    ),
+    })
 } satisfies Record<string, AnyToolFunction>;

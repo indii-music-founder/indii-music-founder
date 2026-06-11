@@ -10,6 +10,7 @@ interface OrgStatusCardProps {
   confirmationNumber?: string;
   isSelected: boolean;
   onSelect: () => void;
+  key?: React.Key;
 }
 
 const STATUS_CONFIG: Record<RegistrationStatus, {

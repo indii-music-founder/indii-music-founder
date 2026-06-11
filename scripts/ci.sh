@@ -7,6 +7,15 @@ echo "======================================"
 
 fail=0
 
+echo "--> Step 0: Preflight Config Check"
+if ! npm run preflight:dev; then
+  echo "❌ Preflight config check failed."
+  fail=1
+else
+  echo "✅ Preflight config check passed."
+fi
+
+
 echo "--> Step 1: Duplicate Identifier Check in appSlice.ts"
 if [ -f packages/renderer/src/core/store/slices/appSlice.ts ]; then
   duplicates=$(grep -rn "^  _last\|^  _cached\|^  current\|^  is" packages/renderer/src/core/store/slices/appSlice.ts | sort | uniq -d)
@@ -41,20 +50,19 @@ else
   echo "✅ Typecheck passed."
 fi
 
-echo "--> Step 4: Running Sharded Tests"
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4 &
-PID1=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4 &
-PID2=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=3/4 &
-PID3=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=4/4 &
-PID4=$!
+echo "--> Step 4: Flowchart Syntax & Sanity Check"
+if ! node scripts/validate-flowcharts.js; then
+  echo "❌ Flowchart validation failed."
+  fail=1
+else
+  echo "✅ Flowchart validation passed."
+fi
 
-wait $PID1 || fail=1
-wait $PID2 || fail=1
-wait $PID3 || fail=1
-wait $PID4 || fail=1
+echo "--> Step 5: Running Sharded Tests (Sequentially to prevent CPU starvation)"
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=1/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=2/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=3/4 || fail=1
+npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=4/4 || fail=1
 
 if [ $fail -ne 0 ]; then
   echo "❌ CI Validation FAILED."
@@ -63,3 +71,4 @@ else
   echo "✅ All CI checks passed successfully! Ready to push."
   exit 0
 fi
+

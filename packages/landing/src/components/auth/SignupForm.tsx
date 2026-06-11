@@ -55,7 +55,7 @@ export default function SignupForm() {
             <div className="text-center">
                 <h2 className="text-3xl font-bold tracking-tight text-white">Create account</h2>
                 <p className="mt-2 text-sm text-gray-400">
-                    Start your journey with indiiOS
+                    Start your journey with indii
                 </p>
             </div>
 

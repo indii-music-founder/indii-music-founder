@@ -59,7 +59,7 @@ export default function FounderBadge() {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    const verifyUrl = `https://github.com/the-walking-agency-det/indiiOS-Clean/blob/main/src/config/founders.ts`;
+    const verifyUrl = `https://github.com/indii-music-founder/indii-music-founder/blob/main/packages/renderer/src/config/founders.ts`;
 
     return (
         <motion.div
@@ -74,7 +74,7 @@ export default function FounderBadge() {
                     <span className="text-amber-300 font-bold text-sm tracking-wide">Founding Member</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30">
-                    <span className="text-amber-400 font-mono text-xs font-bold">SEAT #{founder.seat}</span>
+                    <span className="text-amber-400 font-mono text-xs font-bold">SEAT #{founder.seat === 11 ? 'ii' : founder.seat}</span>
                 </div>
             </div>
 

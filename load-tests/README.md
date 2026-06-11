@@ -24,7 +24,7 @@ Validates health endpoint handles sustained traffic within latency thresholds.
 k6 run load-tests/health-check.js
 
 # Against production:
-k6 run -e FUNCTIONS_URL=https://us-central1-indiios-v-1-1.cloudfunctions.net load-tests/health-check.js
+k6 run -e FUNCTIONS_URL=https://us-central1-indii-v-1-1.cloudfunctions.net load-tests/health-check.js
 ```
 
 - **Load:** 100 concurrent users

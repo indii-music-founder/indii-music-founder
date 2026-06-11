@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 /**
  * Requirement 169: Native Share Sheet Integration
  * This component acts as the receiver for the PWA Web Share Target API.
- * When a user shares a file from their OS (iOS/Android) to the indiiOS app,
+ * When a user shares a file from their OS (iOS/Android) to the indii app,
  * the service worker routes the POST request here.
  */
 
@@ -18,17 +18,35 @@ export const ShareTargetReceiver: React.FC = () => {
     useEffect(() => {
         const handleSharedContent = async () => {
             try {
-                // In a true Service Worker implementation, the SW intercepts the POST
-                // and caches the files in IndexedDB, then redirects here.
-                // We read from the known DB cache or URL params.
+                // Check if IndexedDB has any cached shared files from the service worker
+                let hasFiles = false;
+                try {
+                    const dbRequest = window.indexedDB.open('keyval-store');
+                    dbRequest.onsuccess = () => {
+                        const db = dbRequest.result;
+                        if (db.objectStoreNames.contains('keyval')) {
+                            const transaction = db.transaction('keyval', 'readonly');
+                            const store = transaction.objectStore('keyval');
+                            const getRequest = store.get('shared-files');
+                            getRequest.onsuccess = () => {
+                                if (getRequest.result) {
+                                    hasFiles = true;
+                                    setMessage('Processing shared media files from device...');
+                                    setTimeout(() => {
+                                        navigate('/?module=tools&shared=true');
+                                    }, 1500);
+                                }
+                            };
+                        }
+                    };
+                } catch (e) {
+                    logger.debug('[ShareTarget] IndexedDB check bypassed', e);
+                }
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const title = urlParams.get('title');
                 const text = urlParams.get('text');
                 const url = urlParams.get('url');
-
-                // Simulate reading cached file from SW
-                const hasFiles = false; // Would check IndexedDB in reality
 
                 if (!title && !text && !url && !hasFiles) {
                     setStatus('error');
@@ -42,11 +60,6 @@ export const ShareTargetReceiver: React.FC = () => {
                     setTimeout(() => {
                         // Pass the shared link directly into the chat input via query param
                         navigate(`/?initialPrompt=${encodeURIComponent(`Analyze this shared content: ${title || ''} ${text || ''} ${url || ''}`)}`);
-                    }, 1500);
-                } else if (hasFiles) {
-                    setMessage('Processing shared media files...');
-                    setTimeout(() => {
-                        navigate('/?module=tools');
                     }, 1500);
                 }
 
@@ -90,7 +103,7 @@ export const ShareTargetReceiver: React.FC = () => {
                     </div>
                 )}
 
-                <h2 className="text-xl font-bold mb-2">indiiOS Share Hub</h2>
+                <h2 className="text-xl font-bold mb-2">indii Share Hub</h2>
                 <p className="text-gray-400">{message}</p>
 
                 {status === 'error' && (

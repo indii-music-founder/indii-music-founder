@@ -13,7 +13,7 @@ test.describe('Distribution Pipeline Secondary Tests', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
         });
 
-        await page.goto('/distribution');
+        await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle');
 
         // Wait for module header

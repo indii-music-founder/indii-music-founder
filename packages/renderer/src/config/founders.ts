@@ -3,7 +3,7 @@
  * FOUNDERS COVENANT
  * New Detroit Music LLC — chartered 2024
  *
- * This file is a permanent, append-only record of indiiOS founding members.
+ * This file is a permanent, append-only record of indii.music founding members.
  * It is committed to the git repository as cryptographic proof of agreement.
  *
  * Governance rules (enforced by New Detroit Music LLC):
@@ -30,7 +30,9 @@ export const AGREEMENT_VERSION = '1.0.0';
 export const AGREEMENT_TERMS = {
   price_usd: 2500,
   payment_type: 'one_time' as const,
-  seats_total: 10,
+  seats_total: 11,
+  paid_seats_total: 10,
+  reserved_internal_seats: 1,
   access: 'lifetime' as const,
   desktop_delivery: ['macOS DMG', 'Windows EXE'] as const,
   // API costs (Gemini, Vertex AI, etc.) are passed through at cost — no markup.
@@ -44,7 +46,7 @@ export const AGREEMENT_TERMS = {
   // Investment Rollover: The initial $2,500 acts as a credited basis for any future
   // investment rounds. (e.g. A subsequent $5,000 investment yields a $7,500 return basis).
   investment_rollover_basis: true,
-  indiiOS_entity: 'New Detroit Music LLC',
+  indii_music_entity: 'New Detroit Music LLC',
   covenant_established: '2026-03-17',
 } as const;
 
@@ -53,7 +55,7 @@ export const AGREEMENT_TERMS = {
  * All fields are set at the time of joining and never modified.
  */
 export interface FounderRecord {
-  /** Permanent seat number 1–10 */
+  /** Permanent paid seat number. The internal i-i Founder seat is reserved separately. */
   seat: number;
   /** Public display name or handle chosen by the founder */
   name: string;
@@ -62,13 +64,14 @@ export interface FounderRecord {
   /** SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}") — the founder's receipt */
   verificationHash: string;
   /** Firestore UID of the founder's account (for internal verification) */
-  uid: string;
+  uid?: string;
 }
 
 /**
  * THE FOUNDERS
  *
- * Seats 1–10. Each entry below represents a permanent covenant between
+ * The i-i Founder seat is the builder's reserved internal seat; seats #2-#11
+ * are the paid Founder buy-in seats. Each entry below represents a permanent covenant between
  * New Detroit Music LLC and the named individual. This array is the on-chain record.
  *
  * New entries are appended automatically by the activateFounderPass
@@ -78,7 +81,7 @@ export const FOUNDERS: FounderRecord[] = [
   // ── Founder entries are appended here automatically ──
   // Example structure (do not modify existing entries):
   // {
-  //   seat: 1,
+  //   seat: 2,
   //   name: 'Artist Name',
   //   joinedAt: '2026-03-17T00:00:00.000Z',
   //   verificationHash: 'abc123...',
@@ -86,9 +89,14 @@ export const FOUNDERS: FounderRecord[] = [
   // },
 ];
 
-/** Number of remaining founder seats (0–10) */
+const occupiedFounderSeats = Math.max(
+  FOUNDERS.length,
+  AGREEMENT_TERMS.reserved_internal_seats
+);
+
+/** Number of remaining paid founder seats (0-10) */
 export const FOUNDERS_SEATS_REMAINING: number =
-  AGREEMENT_TERMS.seats_total - FOUNDERS.length;
+  AGREEMENT_TERMS.seats_total - occupiedFounderSeats;
 
 /** Whether the founders program is still open */
 export const FOUNDERS_PROGRAM_OPEN: boolean = FOUNDERS_SEATS_REMAINING > 0;

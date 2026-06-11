@@ -56,6 +56,7 @@ export class AudioFidelityFeature {
     const { filePath, targetStandard, pythonPath } = validation.data;
 
     // 2. Path resolution
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const path = await import('path');
     // NOTE: In a hybrid app, we import from the electron utils if in Node context
     // This assumes the feature is executing in the main process as per its design note.

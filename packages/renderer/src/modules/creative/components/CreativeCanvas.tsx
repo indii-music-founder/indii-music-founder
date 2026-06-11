@@ -6,6 +6,8 @@ import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
 import { CanvasViewport } from './CanvasViewport';
+import { CanvasActionRail } from './CanvasActionRail';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { canvasOps } from '../services/CanvasOperationsService';
 import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
 
@@ -29,6 +31,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         endFrameItem,
         magicFillPrompt,
         isHighFidelity,
+        processingStatus,
         canvasEl,
         generatedHistory,
 
@@ -40,6 +43,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setIsHighFidelity,
         setGeneratedCandidates,
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         toggleMagicFill,
         handleDetectObjects,
         handleUpdateDefinition,
@@ -49,10 +53,18 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
-        handleRefine,
         handleCreateLastFrame,
         handleFlattenCanvas,
         batchExportDimensions,
+        handleUndo,
+        handleRedo,
+        canUndo,
+        canRedo,
+        activeTool,
+        handleSetTool,
+        handleAddRectangle,
+        handleAddCircle,
+        handleAddText,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     if (!item) return null;
@@ -72,61 +84,95 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     setMagicFillPrompt={setMagicFillPrompt}
                     handleMagicFill={handleMagicFill}
                     isProcessing={isProcessing}
-                    saveCanvas={saveCanvas}
-                    item={item}
-                    endFrameItem={endFrameItem}
-                    setEndFrameItem={setEndFrameItem}
-                    setIsSelectingEndFrame={setIsSelectingEndFrame}
-                    handleAnimate={handleAnimate}
-                    onClose={onClose}
-                    onSendToWorkflow={onSendToWorkflow}
-                    onRefine={handleRefine}
-                    onCreateLastFrame={handleCreateLastFrame}
+                    processingStatus={processingStatus}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
-                    batchExportDimensions={batchExportDimensions}
-                    flattenCanvas={handleFlattenCanvas}
                 />
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Sidebar: Tools & Annotations */}
-                    <aside className="hidden md:flex border-r border-gray-800 bg-[#0a0a0a] flex-col items-center">
-                        <CanvasToolbar
-                            addRectangle={() => canvasOps.addRectangle()}
-                            addCircle={() => canvasOps.addCircle()}
-                            addText={() => canvasOps.addText()}
-                            toggleMagicFill={toggleMagicFill}
-                            handleDetectObjects={handleDetectObjects}
-                            handleClearDetections={handleClearDetections}
+                <div className="flex-1 relative overflow-hidden bg-[#060608]">
+                    <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 md:grid-cols-[72px_minmax(0,1fr)_72px]">
+                        <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
+                            <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                <CanvasToolbar
+                                    addRectangle={handleAddRectangle}
+                                    addCircle={handleAddCircle}
+                                    addText={handleAddText}
+                                    setTool={handleSetTool}
+                                    undo={handleUndo}
+                                    redo={handleRedo}
+                                    canUndo={canUndo}
+                                    canRedo={canRedo}
+                                    activeTool={activeTool}
+                                    handleDetectObjects={handleDetectObjects}
+                                    handleClearDetections={handleClearDetections}
+                                    orientation="vertical"
+                                />
+                                <div className="my-2 h-px w-8 bg-white/10" />
+                                <AnnotationPalette
+                                    activeColor={activeColor}
+                                    onColorSelect={setActiveColor}
+                                    colorDefinitions={definitions}
+                                    onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                                    orientation="vertical"
+                                />
+                            </div>
+                        </aside>
+
+                        {/* Stage: Main Viewport */}
+                        <CanvasViewport
+                            item={item}
+                            canvasRef={canvasEl}
                             isMagicFillMode={isMagicFillMode}
+                            activeColor={activeColor}
+                            generatedCandidates={generatedCandidates}
+                            onCandidateSelect={handleCandidateSelect}
+                            onCloseCandidates={() => setGeneratedCandidates([])}
+                            isSelectingEndFrame={isSelectingEndFrame}
+                            setIsSelectingEndFrame={setIsSelectingEndFrame}
+                            generatedHistory={generatedHistory}
+                            onEndFrameSelect={(histItem) => {
+                                setEndFrameItem(histItem as { id: string; url: string; prompt: string; type: 'image' | 'video' });
+                                setIsSelectingEndFrame(false);
+                            }}
                         />
-                        <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">
-                            <AnnotationPalette
-                                activeColor={activeColor}
-                                onColorSelect={setActiveColor}
-                                colorDefinitions={definitions}
-                                onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+
+                        <div className="z-30 hidden min-h-0 flex-col items-center justify-center border-l border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
+                            <CanvasActionRail
+                                item={item}
+                                endFrameItem={endFrameItem}
+                                setEndFrameItem={setEndFrameItem}
+                                setIsSelectingEndFrame={setIsSelectingEndFrame}
+                                handleAnimate={handleAnimate}
+                                onClose={onClose}
+                                onSendToWorkflow={onSendToWorkflow}
+                                onCreateLastFrame={handleCreateLastFrame}
+                                isProcessing={isProcessing}
+                                processingStatus={processingStatus}
+                                saveCanvas={saveCanvas}
+                                batchExportDimensions={batchExportDimensions}
+                                flattenCanvas={handleFlattenCanvas}
                             />
                         </div>
-                    </aside>
+                    </div>
 
-                    {/* Stage: Main Viewport */}
-                    <CanvasViewport
-                        item={item}
-                        canvasRef={canvasEl}
-                        isMagicFillMode={isMagicFillMode}
-                        activeColor={activeColor}
-                        generatedCandidates={generatedCandidates}
-                        onCandidateSelect={handleCandidateSelect}
-                        onCloseCandidates={() => setGeneratedCandidates([])}
-                        isSelectingEndFrame={isSelectingEndFrame}
-                        setIsSelectingEndFrame={setIsSelectingEndFrame}
-                        generatedHistory={generatedHistory}
-                        onEndFrameSelect={(histItem) => {
-                            setEndFrameItem(histItem as { id: string; url: string; prompt: string; type: 'image' | 'video' });
-                            setIsSelectingEndFrame(false);
-                        }}
-                    />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/35 to-transparent md:inset-x-[72px]" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent md:inset-x-[72px]" />
+
+                    <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
+                        <CanvasToolbar
+                            addRectangle={handleAddRectangle}
+                            addCircle={handleAddCircle}
+                            addText={handleAddText}
+                            setTool={handleSetTool}
+                            undo={handleUndo}
+                            redo={handleRedo}
+                            canUndo={canUndo}
+                            canRedo={canRedo}
+                            activeTool={activeTool}
+                            handleDetectObjects={handleDetectObjects}
+                            handleClearDetections={handleClearDetections}
+                        />
+                    </div>
 
                     {/* Right Panel: Contextual Options */}
                     <EditDefinitionsPanel

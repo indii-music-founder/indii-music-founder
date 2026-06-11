@@ -64,6 +64,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             setModule: state.setModule
         }))
     );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -386,6 +387,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             if (newBio) {
                 setUserProfile({ ...userProfile, bio: newBio });
             }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error: unknown) {
             // silent catch
         } finally {

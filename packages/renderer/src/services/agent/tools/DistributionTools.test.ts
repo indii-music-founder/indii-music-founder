@@ -29,8 +29,8 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => new Date().toISOString())
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({
             success: true,
             xml: '<ern:NewReleaseMessage>...</ern:NewReleaseMessage>'
@@ -51,12 +51,13 @@ if (typeof window !== 'undefined') {
     (window as unknown as { electronAPI?: unknown }).electronAPI = undefined; // Disable by default for tests that expect JS fallback
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function enableElectron() {
     (window as unknown as { electronAPI?: unknown }).electronAPI = {
         distribution: {
             generateISRC: vi.fn().mockResolvedValue({ isrc: 'USIND2600001' }),
             registerRelease: vi.fn().mockResolvedValue({ success: true }),
-            generateDDEX: vi.fn().mockResolvedValue('<xml>...</xml>'),
+            generateIngestionNotification: vi.fn().mockResolvedValue('<xml>...</xml>'),
             calculateTax: vi.fn().mockResolvedValue({ report: { withholding_rate: 0 } }),
             certifyTax: vi.fn().mockResolvedValue({ report: { certified: true, payout_status: 'ACTIVE' } }),
             executeWaterfall: vi.fn().mockResolvedValue({ report: { net_revenue: 9000 } }),
@@ -99,15 +100,16 @@ describe('DistributionTools', () => {
             expect(parsed.data.isrc).toMatch(/^USIND26\d{5}$/);
             expect(parsed.data.track_title).toBe('Test Track');
             expect(parsed.data.registry_status).toBe('REGISTERED');
-        }, 10000); // 10s timeout to avoid flaky cold-start failures
+        });
     });
 
     describe('certify_tax_profile', () => {
-        it('should certify valid US SSN format', async () => {
+        it('should require the Bank Layer for tax certification', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: true,
                 country: 'US',
                 tin: '123-45-6789',
@@ -115,13 +117,11 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.success).toBe(true);
-            expect(parsed.data.form_type).toBe('W-9');
-            expect(parsed.data.tin_valid).toBe(true);
-            expect(parsed.data.payout_status).toBe('ACTIVE');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should reject invalid TIN format', async () => {
+        it('should require legal name for certification', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
@@ -134,16 +134,15 @@ describe('DistributionTools', () => {
 
             const parsed = result;
             expect(parsed.success).toBe(false);
-            expect(parsed.data.tin_valid).toBe(false);
-            expect(parsed.data.payout_status).toBe('HELD');
-            expect(parsed.data.tin_message).toContain('TIN Match Fail');
+            expect(parsed.metadata?.errorCode).toBe('LEGAL_NAME_REQUIRED');
         });
 
-        it('should require perjury signature for certification', async () => {
+        it('should not locally certify missing perjury signature', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: true,
                 country: 'US',
                 tin: '123-45-6789',
@@ -152,15 +151,15 @@ describe('DistributionTools', () => {
 
             const parsed = result;
             expect(parsed.success).toBe(false);
-            expect(parsed.data.certified).toBe(false);
-            expect(parsed.data.payout_status).toBe('HELD');
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should select W-8BEN for foreign individuals', async () => {
+        it('should not locally select W-8BEN for foreign individuals', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: false,
                 isEntity: false,
                 country: 'UK',
@@ -169,14 +168,16 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.data.form_type).toBe('W-8BEN');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
 
-        it('should select W-8BEN-E for foreign entities', async () => {
+        it('should not locally select W-8BEN-E for foreign entities', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
+                fullName: 'Test User',
                 isUsPerson: false,
                 isEntity: true,
                 country: 'DE',
@@ -185,7 +186,8 @@ describe('DistributionTools', () => {
             });
 
             const parsed = result;
-            expect(parsed.data.form_type).toBe('W-8BEN-E');
+            expect(parsed.success).toBe(false);
+            expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
         });
     });
 
@@ -315,7 +317,11 @@ describe('DistributionTools', () => {
                 title: 'Test Track',
                 artist: 'Test Artist',
                 upc: '012345678905',
-                isrc: 'INVALID'
+                isrc: 'INVALID',
+                label: 'Test Label',
+                genre: 'Rock',
+                language: 'eng',
+                releaseDate: '2026-01-01'
             });
 
             const parsed = result;
@@ -332,7 +338,11 @@ describe('DistributionTools', () => {
                 title: 'Test Track',
                 artist: 'Test Artist',
                 upc: '123456789',
-                isrc: 'USIND2600001'
+                isrc: 'USIND2600001',
+                label: 'Test Label',
+                genre: 'Rock',
+                language: 'eng',
+                releaseDate: '2026-01-01'
             });
 
             const parsed = result;

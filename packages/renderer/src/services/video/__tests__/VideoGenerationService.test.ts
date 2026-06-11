@@ -1,21 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn().mockResolvedValue('gs://mock-bucket/mock-uri')
+    }
+}));
+
+vi.mock('@/services/image/ImageGenerationService', () => ({
+    ImageGeneration: {
+        generateImages: vi.fn().mockResolvedValue([{ url: 'https://grounded-image.png' }])
+    }
+}));
+
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -36,6 +48,11 @@ vi.mock('@/services/firebase', () => ({
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
+}));
+
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallable
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
@@ -72,10 +89,19 @@ vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
 }));
 
 // Mock InputSanitizer
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: vi.fn((text: string) => text),
         sanitizePrompt: vi.fn((text: string) => text),
+    }
+}));
+
+// Mock CostControlService
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ allowed: true }),
+        releaseReservation: vi.fn().mockResolvedValue(undefined),
+        confirmUsage: vi.fn().mockResolvedValue(undefined),
     }
 }));
 
@@ -97,10 +123,10 @@ describe('VideoGenerationService', () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0]!.id).toBeDefined();
-            expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
-            // Verify it calls the direct SDK path, not Cloud Functions
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(result[0]!.id).toBe('mock-job-id');
+            expect(result[0]!.url).toBe('');
+            // Verify it calls the Cloud Functions, not direct SDK path
+            expect(mockHttpsCallable).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -114,13 +140,14 @@ describe('VideoGenerationService', () => {
                 .rejects.toThrow(/Quota exceeded/);
         });
 
-        it('should analyze temporal context when firstFrame is provided', async () => {
+        it('should upload firstFrame as reference media', async () => {
             await VideoGeneration.generateVideo({
                 prompt: 'test video',
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(GenAI.analyzeImage).toHaveBeenCalled();
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {
@@ -132,7 +159,7 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(GenAI.generateVideo).toHaveBeenCalled();
+            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
         });
     });
 
@@ -221,4 +248,165 @@ describe('VideoGenerationService', () => {
                 .rejects.toThrow(`Video generation timeout for Job ID: ${mockJobId}`);
         });
     });
+
+    describe('Parameter Forwarding & Image Sources', () => {
+        it('should forward all parameters to gateway payload in generateVideo', async () => {
+            const options = {
+                prompt: 'cinematic video of a cat',
+                firstFrame: 'data:image/png;base64,start',
+                lastFrame: 'data:image/png;base64,end',
+                referenceImages: [
+                    { image: { uri: 'data:image/png;base64,ref1' }, referenceType: 'asset' as const }
+                ],
+                aspectRatio: '16:9' as const,
+                model: 'veo-3.1-generate-preview',
+                resolution: '1080p' as const,
+                duration: 6,
+                personGeneration: 'allow_adult' as const,
+                negativePrompt: 'blurry',
+                seed: 42
+            };
+
+            await VideoGeneration.generateVideo(options);
+
+            expect(mockHttpsCallable).toHaveBeenCalledWith({
+                prompt: expect.stringContaining('cinematic video of a cat'),
+                firstFrameUri: 'gs://mock-bucket/mock-uri',
+                lastFrameUri: 'gs://mock-bucket/mock-uri',
+                referenceUris: ['gs://mock-bucket/mock-uri'],
+                aspectRatio: '16:9',
+                model: 'veo-3.1-generate-preview',
+                resolution: '1080p',
+                durationSeconds: 6,
+                personGeneration: 'allow_adult',
+                negativePrompt: 'blurry',
+                seed: 42
+            });
+        });
+
+        it('should handle gs:// URIs and HTTP URLs in MediaGenerator', async () => {
+            const { generateVideo } = await import('../../intelligence/generators/MediaGenerator');
+            
+            // Mock global fetch
+            const mockFetchResponse = {
+                ok: true,
+                blob: vi.fn().mockResolvedValue({
+                    type: 'image/png',
+                    arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+                })
+            };
+            const originalFetch = global.fetch;
+            global.fetch = vi.fn().mockResolvedValue(mockFetchResponse);
+
+            try {
+                const mockClient = {
+                    models: {
+                        generateVideos: vi.fn().mockResolvedValue({
+                            name: 'mock-op-name',
+                            done: true,
+                            response: {
+                                generatedVideos: [{
+                                    video: {
+                                        uri: 'https://mock-uri',
+                                        mimeType: 'video/mp4'
+                                    }
+                                }]
+                            }
+                        })
+                    }
+                } as any;
+
+                // 1. Test gs:// URI input
+                await generateVideo(mockClient, {
+                    prompt: 'test',
+                    image: { imageBytes: 'gs://bucket/frame.png', mimeType: 'image/png' },
+                    config: {
+                        lastFrame: 'gs://bucket/last.png',
+                        referenceImages: [
+                            { image: { uri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
+                        ]
+                    }
+                });
+
+                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
+                    model: expect.any(String),
+                    prompt: 'test',
+                    image: { gcsUri: 'gs://bucket/frame.png' },
+                    config: expect.objectContaining({
+                        lastFrame: { gcsUri: 'gs://bucket/last.png' },
+                        referenceImages: [
+                            { image: { gcsUri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
+                        ]
+                    })
+                });
+
+                // 2. Test HTTP URL input
+                await generateVideo(mockClient, {
+                    prompt: 'test',
+                    image: { imageBytes: 'https://example.com/frame.png', mimeType: 'image/png' }
+                });
+
+                expect(global.fetch).toHaveBeenCalledWith('https://example.com/frame.png');
+                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
+                    model: expect.any(String),
+                    prompt: 'test',
+                    image: { imageBytes: expect.any(String), mimeType: 'image/png' },
+                    config: expect.any(Object)
+                });
+            } finally {
+                global.fetch = originalFetch;
+            }
+        });
+    });
+
+    describe('Google Grounding Pre-flight & Long Form References', () => {
+        it('should trigger pre-flight Imagen 4 generation when useGrounding is true and firstFrame is empty', async () => {
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+
+            await VideoGeneration.generateVideo({
+                prompt: 'grounded location video',
+                useGrounding: true
+            });
+
+            expect(ImageGeneration.generateImages).toHaveBeenCalledWith({
+                prompt: 'grounded location video',
+                count: 1,
+                aspectRatio: '16:9',
+                useGoogleSearch: true,
+                model: 'imagen-4.0-generate-001'
+            });
+
+            // Ensure the generated image was uploaded
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalledWith(
+                'test-user',
+                'https://grounded-image.png',
+                'image'
+            );
+        });
+
+        it('should forward reference images in generateLongFormVideo', async () => {
+            const spyGenerateVideo = vi.spyOn(AutonomousIntelligence, 'generateVideo').mockResolvedValue('https://storage.googleapis.com/segment-video.mp4');
+
+            await VideoGeneration.generateLongFormVideo({
+                prompt: 'long video with refs',
+                totalDuration: 10,
+                referenceImages: [
+                    { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
+                ],
+                personGeneration: 'allow_adult'
+            });
+
+            expect(spyGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
+                config: expect.objectContaining({
+                    referenceImages: [
+                        { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
+                    ]
+                })
+            }));
+
+            spyGenerateVideo.mockRestore();
+        });
+    });
 });
+

@@ -42,35 +42,42 @@ export class HistoryStore {
     }
 
     get(sessionId: string): SessionData | null {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         const sessions = this.store.get('sessions');
         return sessions[sessionId] || null;
     }
 
     getAll(): SessionData[] {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         const sessions = this.store.get('sessions');
         return Object.values(sessions);
     }
 
     save(sessionId: string, data: SessionData): void {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         const sessions = this.store.get('sessions');
         const existing = sessions[sessionId] || {};
         sessions[sessionId] = { ...existing, ...data };
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         this.store.set('sessions', sessions);
     }
 
     delete(sessionId: string): void {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         const sessions = this.store.get('sessions');
         delete sessions[sessionId];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         this.store.set('sessions', sessions);
     }
 
     clearAll(): void {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         this.store.clear();
     }

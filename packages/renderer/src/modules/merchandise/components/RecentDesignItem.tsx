@@ -40,7 +40,8 @@ export const RecentDesignItem = React.memo(({ product, onClick }: RecentDesignIt
                 <h5 className="text-sm font-medium text-white group-hover:text-[#FFE135]">{product.title}</h5>
                 <p className="text-xs text-neutral-500">
                     {product.createdAt && typeof product.createdAt === 'object' && 'toDate' in product.createdAt ?
-                        `Added ${(product.createdAt as Timestamp).toDate().toLocaleDateString()}` :
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        `Added ${(typeof (product.createdAt as any).toDate === 'function' ? (product.createdAt as any).toDate() : new Date(product.createdAt as any)).toLocaleDateString()}` :
                         'Just now'
                     }
                 </p>

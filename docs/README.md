@@ -1,8 +1,8 @@
 # Documentation Index
 
-**Last Updated:** 2026-03-19
+**Last Updated:** 2026-05-16
 
-This directory contains detailed architectural and technical documentation for indiiOS.
+This directory contains detailed architectural and technical documentation for indii.
 
 ---
 
@@ -11,7 +11,8 @@ This directory contains detailed architectural and technical documentation for i
 | Document | Description |
 |----------|-------------|
 | [APP_OVERVIEW.md](./APP_OVERVIEW.md) | Product surfaces, repository structure, extension guide |
-| [AGENT_SYSTEM_ARCHITECTURE.md](./AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke model, specialists, tool calling |
+| [AGENT_SYSTEM_ARCHITECTURE.md](./AGENT_SYSTEM_ARCHITECTURE.md) | Swarm protocol, foundational skills, tool calling |
+| [CAPABILITY_DEPLOYMENT.md](../brain/8b951874-3f4c-4ba3-a1cc-952202c6f4a6/CAPABILITY_DEPLOYMENT.md) | Autonomous agent seeding and capability registry |
 | [BACKEND_ARCHITECTURE.md](./BACKEND_ARCHITECTURE.md) | Firebase Functions, Vertex AI, hybrid architecture |
 
 ## 🔐 Security
@@ -48,7 +49,7 @@ This directory contains detailed architectural and technical documentation for i
 |----------|-------------|
 | [component-kit-research.md](./component-kit-research.md) | UI library analysis |
 | [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
-| [DDEX_IMPLEMENTATION_PLAN.md](./DDEX_IMPLEMENTATION_PLAN.md) | Distribution infrastructure |
+| [Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md](./Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |
 
 ## 🗄️ Archive
 

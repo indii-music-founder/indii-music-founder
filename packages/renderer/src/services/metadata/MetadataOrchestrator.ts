@@ -7,7 +7,7 @@ import { Logger } from '@/core/logger/Logger';
 /**
  * MetadataOrchestrator
  * The "Grand Central Station" for music metadata.
- * Coordinates between AI analysis, industry identifiers, and persistence.
+ * Coordinates between Intelligence analysis, industry identifiers, and persistence.
  */
 export class MetadataOrchestrator {
     /**
@@ -16,21 +16,25 @@ export class MetadataOrchestrator {
     async createGoldenMetadata(file: File, initialData: Partial<ExtendedGoldenMetadata> = {}): Promise<ExtendedGoldenMetadata> {
         Logger.info('MetadataOrchestrator', `Creating golden metadata for ${file.name}`);
 
-        // 1. Run AI Intelligence (Technical + Semantic)
+        // 1. Run Autonomous Intelligence (Technical + Semantic)
         const profile = await audioIntelligence.analyze(file);
+        const artistName = initialData.artistName?.trim();
+        if (!artistName) {
+            throw new Error('Artist name is required to create golden metadata.');
+        }
         
         // 2. Auto-generate Industry Identifiers if missing
         const isrc = initialData.isrc || await IdentifierService.nextISRC();
         const upc = initialData.upc || (initialData.releaseType !== 'Single' ? await IdentifierService.nextUPC() : undefined);
 
-        // 3. Map AI results to Golden Metadata Schema
+        // 3. Map Intelligence results to Golden Metadata Schema
         const metadata: ExtendedGoldenMetadata = {
             ...INITIAL_METADATA,
             ...initialData,
             id: profile.id,
             masterFingerprint: profile.id,
             trackTitle: initialData.trackTitle || file.name.replace(/\.[^/.]+$/, ""), // Strip extension
-            artistName: initialData.artistName || 'Unknown Artist',
+            artistName,
             isrc,
             upc,
             genre: profile.semantic.ddexGenre,
@@ -47,11 +51,11 @@ export class MetadataOrchestrator {
             durationFormatted: this.formatDuration(profile.technical.duration),
             releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
-            isGolden: true, // Mark as Golden since it's AI-verified and ID-assigned
-            aiGeneratedContent: {
-                isFullyAIGenerated: false, // Default to false unless specified
-                isPartiallyAIGenerated: true,
-                aiToolsUsed: [profile.modelVersion],
+            isGolden: true, // Mark as Golden since it's Intelligence-verified and ID-assigned
+            aiGeneratedContent: initialData.aiGeneratedContent || {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false,
+                aiToolsUsed: [],
                 humanContribution: 'Original recording provided by user.'
             }
         };

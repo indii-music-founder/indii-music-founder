@@ -8,8 +8,8 @@ import {
     orderBy,
     limit as firestoreLimit,
 } from 'firebase/firestore';
-import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
-import { APPROVED_MODELS } from '@/core/config/ai-models';
+import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import type {
@@ -276,9 +276,9 @@ export class MemorySearch {
             candidates = candidates.filter(m => m.importance >= filters.minImportance!);
         }
         if (filters.tags?.length) {
-            const tagSet = new Set(filters.tags.map(t => t.toLowerCase()));
-            candidates = candidates.filter(m =>
-                (m.tags || []).some(t => tagSet.has(t.toLowerCase()))
+            const tagSet = new Set(filters.tags.filter(Boolean).map(t => t.toLowerCase()));
+            candidates = candidates.filter(m => 
+                (m.tags || []).some(t => t && tagSet.has(t.toLowerCase()))
             );
         }
         if (filters.dateRange) {

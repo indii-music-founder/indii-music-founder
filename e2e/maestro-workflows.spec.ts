@@ -64,7 +64,7 @@ test.describe('Maestro Batch Orchestration', () => {
             });
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });

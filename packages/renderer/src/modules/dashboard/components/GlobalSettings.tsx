@@ -19,7 +19,8 @@ export default function GlobalSettings() {
     );
     const { i18n } = useTranslation();
 
-    const preferences = userProfile?.preferences || {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const preferences = (userProfile?.preferences || {}) as any;
     const darkMode = preferences.theme === 'dark';
     const highFidelity = preferences.highFidelityMode === true;
 
@@ -30,7 +31,8 @@ export default function GlobalSettings() {
             preferences: {
                 ...preferences,
                 theme: newTheme
-            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
         });
     };
 
@@ -40,7 +42,8 @@ export default function GlobalSettings() {
             preferences: {
                 ...preferences,
                 highFidelityMode: !highFidelity
-            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
         });
     };
 

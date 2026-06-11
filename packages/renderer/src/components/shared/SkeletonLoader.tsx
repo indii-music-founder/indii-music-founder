@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
  */
 
 interface SkeletonProps {
+    key?: React.Key;
     className?: string;
 }
 

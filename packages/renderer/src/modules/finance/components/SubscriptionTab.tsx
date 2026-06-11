@@ -89,7 +89,17 @@ export const SubscriptionTab = () => {
                             <RefreshCw size={16} className="text-dept-creative" />
                             Resource Allowance
                         </h3>
-                        <span className="text-xs text-gray-500">Resets monthly</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-500">Resets monthly</span>
+                            <button
+                                onClick={() => refresh()}
+                                className="flex items-center gap-1.5 text-xs font-semibold bg-white/5 hover:bg-white/10 active:bg-white/15 text-slate-300 hover:text-white px-2 py-1 rounded-lg transition-all border border-white/5 cursor-pointer"
+                                title="Sync subscription & limits"
+                            >
+                                <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+                                Sync Limits
+                            </button>
+                        </div>
                     </div>
 
                     {!usage ? (

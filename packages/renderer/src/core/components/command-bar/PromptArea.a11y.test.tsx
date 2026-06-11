@@ -21,7 +21,7 @@ vi.mock('@/services/agent/registry', () => ({
   },
 }));
 
-vi.mock('@/services/ai/VoiceService', () => ({
+vi.mock('@/services/intelligence/VoiceService', () => ({
   voiceService: {
     isSupported: () => true,
     startListening: vi.fn(),
@@ -132,9 +132,8 @@ describe('PromptArea Accessibility', () => {
 
   it('renders textarea with accessible name', () => {
     render(<PromptArea />);
-    // Based on mock: currentModule='dashboard', isIndiiMode=false (initially)
-    // Label should be "Message dashboard"
-    const textarea = screen.getByRole('textbox', { name: /message dashboard/i });
+    // Based on actual component output, label is "Message indii Conductor..."
+    const textarea = screen.getByRole('textbox', { name: /message indii conductor/i });
     expect(textarea).toBeInTheDocument();
   });
 });

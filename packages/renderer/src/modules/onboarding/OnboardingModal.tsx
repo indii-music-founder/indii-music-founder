@@ -10,7 +10,7 @@ import {
     calculateProfileStatus,
     TopicKey
 } from '@/services/onboarding/onboardingService';
-import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music } from 'lucide-react';
+import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
@@ -18,6 +18,8 @@ import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 import { secureRandomPick } from '@/utils/crypto-random';
+import { voiceService } from '@/services/intelligence/VoiceService';
+import { cn } from '@/lib/utils';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
@@ -33,15 +35,32 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     const [files, setFiles] = useState<ConversationFile[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isListening, setIsListening] = useState(false);
+
+    const handleMicClick = () => {
+        if (isListening) {
+            voiceService.stopListening();
+            setIsListening(false);
+        } else {
+            if (voiceService.isSupported()) {
+                setIsListening(true);
+                voiceService.startListening((text) => {
+                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                    setIsListening(false);
+                }, () => setIsListening(false));
+            }
+        }
+    };
+
+    // Cleanup voice listening on close/unmount
+    useEffect(() => {
+        return () => {
+            voiceService.stopListening();
+        };
+    }, []);
 
     // Dynamic opening greetings - more natural and varied
-    const OPENING_GREETINGS = [
-        "Hey — let's update your profile. What's changed since we last talked? New release brewing, or just tweaking the brand?",
-        "Back for round two. What are we working on — new music, new direction, or just tidying things up?",
-        "Good to see you again. What needs an update — the artist identity stuff or the current release details?",
-        "Alright, let's do this. What's on the agenda — adding new info, changing direction, or prepping for something new?",
-        "Quick check-in time. What's new in your world? I'll help you get it captured.",
-    ];
+    const OPENING_GREETINGS = t('onboarding.greetings', { returnObjects: true }) as string[];
 
     // Initial greeting
     useEffect(() => {
@@ -160,12 +179,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             const _errorMessage = error instanceof Error ? error.message : String(error);
             // Optionally logs to a tracking service if needed, but avoiding console log spam here.
 
-            const errorResponses = [
-                `Hmm, something went sideways on my end. Mind trying that again?`,
-                `Tech hiccup — my bad. Hit me with that one more time?`,
-                `Lost the thread there for a second. What were you saying?`,
-                `Connection blip. Run that by me again?`,
-            ];
+            const errorResponses = t('onboarding.errors', { returnObjects: true }) as string[];
             setHistory(prev => [...prev, { role: 'model', parts: [{ text: secureRandomPick(errorResponses) ?? '' }] }]);
         } finally {
             setIsProcessing(false);
@@ -201,7 +215,14 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f0f0f]">
-                        {history.map((msg, idx) => (
+                        {history.filter(msg => {
+                            if (msg.role !== 'user' && msg.role !== 'model') return false;
+                            const hasText = msg.parts.some((p: { text?: string }) => p.text);
+                            // OnboardingModal doesn't seem to render toolCalls, but let's be safe
+                            return hasText;
+                        }).map((msg, idx) => {
+                            const textPart = msg.parts.find((p: { text?: string }) => p.text)?.text;
+                            return (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-xl ${msg.role === 'user'
                                     ? 'bg-white text-black rounded-tr-none'
@@ -209,18 +230,18 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     }`}>
                                     {msg.role === 'model' ? (
                                         <TextEffect per='char' preset='fade'>
-                                            {msg.parts[0]!.text}
+                                            {textPart || ''}
                                         </TextEffect>
                                     ) : (
-                                        msg.parts[0]!.text
+                                        textPart || ''
                                     )}
                                 </div>
                             </div>
-                        ))}
+                        )})}
                         {isProcessing && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-800 text-gray-400 p-3 rounded-xl rounded-tl-none animate-pulse">
-                                    {secureRandomPick([t('onboarding.processing'), 'One sec...', 'Mmm...', 'Okay...'])}
+                                    {secureRandomPick([t('onboarding.processing'), ...(t('onboarding.processingOptions', { returnObjects: true }) as string[])])}
                                 </div>
                             </div>
                         )}
@@ -272,6 +293,22 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             >
                                 <Paperclip size={20} />
                             </button>
+                            {voiceService.isSupported() && (
+                                <button
+                                    onClick={handleMicClick}
+                                    className={cn(
+                                        "min-w-11 min-h-11 flex items-center justify-center rounded-lg transition-colors",
+                                        isListening
+                                            ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                            : "text-gray-400 hover:text-white hover:bg-gray-800"
+                                    )}
+                                    aria-label={t('onboarding.voiceInput')}
+                                    title={t('onboarding.voiceInput')}
+                                    type="button"
+                                >
+                                    <Mic size={20} className={cn(isListening && "animate-pulse")} />
+                                </button>
+                            )}
                             <input
                                 type="text"
                                 data-testid="prompt-input"

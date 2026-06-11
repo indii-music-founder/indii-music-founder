@@ -19,10 +19,13 @@ import { pushNotificationService } from '@/services/notifications/PushNotificati
 import { EmailService } from '@/services/email/EmailService';
 import type { EmailAccount } from '@/services/email/types';
 import { SectionHeader, SettingRow } from './SettingsShared';
+import { useTranslation } from 'react-i18next';
 
 const ConnectionsSection: React.FC = () => {
+    const { t } = useTranslation();
     const { showToast } = useToast();
     const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loading, setLoading] = useState(true);
     const [connecting, setConnecting] = useState<string | null>(null);
 
@@ -71,8 +74,8 @@ const ConnectionsSection: React.FC = () => {
     return (
         <div>
             <SectionHeader
-                title="Connected Services"
-                description="Manage email integrations and linked accounts."
+                title={t('settings.sections.connections.title')}
+                description={t('settings.sections.connections.description')}
             />
 
             <div className="space-y-1">
@@ -81,20 +84,20 @@ const ConnectionsSection: React.FC = () => {
                     icon={Mail}
                     label="Gmail"
                     description={isConnected('gmail')
-                        ? emailAccounts.find(a => a.provider === 'gmail')?.email || 'Connected'
-                        : 'Not connected'
+                        ? emailAccounts.find(a => a.provider === 'gmail')?.email || t('settings.connections.connected')
+                        : t('settings.connections.notConnected')
                     }
                 >
                     {isConnected('gmail') ? (
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-emerald-400 flex items-center gap-1">
-                                <Check size={12} /> Connected
+                                <Check size={12} /> {t('settings.connections.connected')}
                             </span>
                             <button
                                 onClick={() => handleDisconnect('gmail')}
                                 className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
                             >
-                                Disconnect
+                                {t('settings.connections.disconnect')}
                             </button>
                         </div>
                     ) : (
@@ -108,7 +111,7 @@ const ConnectionsSection: React.FC = () => {
                             ) : (
                                 <ExternalLink size={12} />
                             )}
-                            Connect
+                            {t('settings.connections.connect')}
                         </button>
                     )}
                 </SettingRow>
@@ -118,20 +121,20 @@ const ConnectionsSection: React.FC = () => {
                     icon={Mail}
                     label="Outlook"
                     description={isConnected('outlook')
-                        ? emailAccounts.find(a => a.provider === 'outlook')?.email || 'Connected'
-                        : 'Not connected'
+                        ? emailAccounts.find(a => a.provider === 'outlook')?.email || t('settings.connections.connected')
+                        : t('settings.connections.notConnected')
                     }
                 >
                     {isConnected('outlook') ? (
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-emerald-400 flex items-center gap-1">
-                                <Check size={12} /> Connected
+                                <Check size={12} /> {t('settings.connections.connected')}
                             </span>
                             <button
                                 onClick={() => handleDisconnect('outlook')}
                                 className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
                             >
-                                Disconnect
+                                {t('settings.connections.disconnect')}
                             </button>
                         </div>
                     ) : (
@@ -145,7 +148,7 @@ const ConnectionsSection: React.FC = () => {
                             ) : (
                                 <ExternalLink size={12} />
                             )}
-                            Connect
+                            {t('settings.connections.connect')}
                         </button>
                     )}
                 </SettingRow>
@@ -153,8 +156,8 @@ const ConnectionsSection: React.FC = () => {
                 {/* Push Notifications Token */}
                 <SettingRow
                     icon={Smartphone}
-                    label="Push Notifications"
-                    description="Browser/native push via Firebase Cloud Messaging"
+                    label={t('settings.connections.pushNotifications')}
+                    description={t('settings.connections.pushDesc')}
                 >
                     <button
                         onClick={async () => {
@@ -167,13 +170,13 @@ const ConnectionsSection: React.FC = () => {
                         }}
                         className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
                     >
-                        <Bell size={12} /> Enable
+                        <Bell size={12} /> {t('settings.connections.enable')}
                     </button>
                 </SettingRow>
             </div>
 
             <p className="text-xs text-slate-600 mt-4">
-                Connected accounts are secured via OAuth 2.0. Refresh tokens are stored server-side and never exposed to the browser.
+                {t('settings.connections.securityNote')}
             </p>
         </div>
     );

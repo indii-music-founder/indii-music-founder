@@ -1,7 +1,7 @@
 /**
  * Synthetic Training Data Generator
  *
- * Uses Gemini Pro to generate high-quality training examples for each indiiOS agent.
+ * Uses Gemini Pro to generate high-quality training examples for each indii agent.
  * Appends directly to docs/agent-training/datasets/<agent_id>.jsonl
  *
  * Usage:
@@ -70,7 +70,7 @@ const AGENT_TOPICS: Record<string, string[]> = {
         'opting human catalogs out of AI training datasets',
     ],
     distribution: [
-        'DDEX ERN 4.3 required fields for a single release',
+        'Proprietary Ingestion IP Ingestion Protocol 4.3 required fields for a single release',
         'ISRC assignment and format validation',
         'UPC vs ISRC — what each identifies',
         'metadata QC failures on major DSPs and how to fix them',
@@ -323,12 +323,29 @@ async function generateExamples(
         const batchCount = Math.min(BATCH_SIZE, toGenerateTotal - totalAppended);
         console.log(`  → Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(toGenerateTotal / BATCH_SIZE)} (${batchCount} examples)...`);
 
-        const styleReference = existing.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
+        const conversationalExamples = existing.filter((e: any) => e.expected && e.expected.output_sample);
+        // If no conversational examples exist, use a hardcoded minimal valid structure
+        let styleReference = '';
+        if (conversationalExamples.length > 0) {
+            styleReference = conversationalExamples.slice(0, 3).map(e => JSON.stringify(e)).join('\n');
+        } else {
+            styleReference = JSON.stringify({
+                agent_id: agentId,
+                scenario_id: `${agentId}_example_001`,
+                category: 'general_inquiry',
+                quality_tier: 'gold',
+                source: 'manual',
+                input: { user_message: 'Example user question here', context: {} },
+                expected: { output_sample: 'Example detailed response here in 2-4 paragraphs.' },
+                adversarial: false
+            });
+        }
+        
         const agentTopicList = topics.join('\n- ');
 
-        const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indiiOS.
+        const prompt = `You are generating high-quality training data for an AI agent called "${agentId}" that works in the music industry platform indii.
 
-CONTEXT: indiiOS is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
+CONTEXT: indii is a MUSIC BUSINESS app for HUMAN-MADE music ONLY. 
 ARCHITECTURE: Boardroom Swarm protocol (Swarm-native specialists).
 REASONING: Agents operate in three modes:
 - Mode A (Curriculum): Pedagogical, teaching the artist.
@@ -359,7 +376,7 @@ Requirements:
 Output ONLY the JSON lines, one per line, no other text.`;
 
         const result = await genAI.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-2.5-flash',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { temperature: 0.8 }
         });
@@ -427,7 +444,7 @@ async function main(): Promise<void> {
         ? KNOWN_AGENTS
         : agentArg.split(',').map(s => s.trim()).filter(id => KNOWN_AGENTS.includes(id));
 
-    console.log(`\n📚 indiiOS Synthetic Training Data Generator`);
+    console.log(`\n📚 indii Synthetic Training Data Generator`);
     console.log(`   Target: ${TARGET_EXAMPLES_PER_AGENT} examples/agent | Generating: ${countArg} per agent`);
     console.log(`   Agents: ${agents.join(', ')}\n`);
 

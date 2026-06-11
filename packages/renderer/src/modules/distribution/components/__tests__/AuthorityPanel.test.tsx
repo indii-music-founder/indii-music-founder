@@ -17,7 +17,7 @@ vi.mock('@/services/distribution/DistributionService', () => ({
     distributionService: {
         assignISRCs: vi.fn(),
         generateUPC: vi.fn(),
-        generateDDEX: vi.fn(),
+        generateIngestionNotification: vi.fn(),
     },
 }));
 
@@ -90,7 +90,7 @@ describe('AuthorityPanel', () => {
             }
         };
         (DistributionSyncService.getRelease as import("vitest").Mock).mockResolvedValue(mockReleaseData);
-        (distributionService.generateDDEX as import("vitest").Mock).mockResolvedValue('<DDEX>XML Content</DDEX>');
+        (distributionService.generateIngestionNotification as import("vitest").Mock).mockResolvedValue('<DDEX>XML Content</DDEX>');
 
         render(<AuthorityPanel />);
 
@@ -102,7 +102,7 @@ describe('AuthorityPanel', () => {
 
         await waitFor(() => {
             expect(DistributionSyncService.getRelease).toHaveBeenCalledWith('rel-1');
-            expect(distributionService.generateDDEX).toHaveBeenCalled();
+            expect(distributionService.generateIngestionNotification).toHaveBeenCalled();
         });
 
         expect(screen.getByTestId('authority-ddex-output')).toHaveTextContent('<DDEX>XML Content</DDEX>');

@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}  PWA Icon Generator for indiiOS${NC}"
+echo -e "${BLUE}  PWA Icon Generator for indii${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
@@ -41,13 +41,13 @@ else
 fi
 
 # Source SVG
-SOURCE_SVG="public/indiiOS-logo.svg"
+SOURCE_SVG="public/indii-logo.svg"
 
 # Check if source exists
 if [ ! -f "$SOURCE_SVG" ]; then
     echo -e "${RED}❌ Error: Source file not found: $SOURCE_SVG${NC}"
     echo ""
-    echo "Please ensure public/indiiOS-logo.svg exists."
+    echo "Please ensure public/indii-logo.svg exists."
     exit 1
 fi
 

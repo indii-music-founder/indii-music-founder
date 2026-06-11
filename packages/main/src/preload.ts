@@ -36,11 +36,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         // No need for IPC - it works natively in Electron's Chromium
         logout: () => ipcRenderer.invoke('auth:logout'),
         onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null } | null) => void) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const handler = (_event: unknown, tokens: any) => callback(tokens);
             ipcRenderer.on('auth:user-update', handler);
             return () => ipcRenderer.removeListener('auth:user-update', handler);
         },
         onError: (callback: (data: { message: string }) => void) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const handler = (_event: unknown, data: any) => callback(data);
             ipcRenderer.on('auth:error', handler);
             return () => ipcRenderer.removeListener('auth:error', handler);
@@ -99,6 +101,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
         saveHistory: (id: string, data: unknown) => ipcRenderer.invoke('agent:save-history', id, data),
         getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
+        scanDirectory: () => ipcRenderer.invoke('agent:scan-directory'),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        createArtifact: (filename: string, content: string, options: any) => ipcRenderer.invoke('agent:create-artifact', filename, content, options),
+        listArtifacts: () => ipcRenderer.invoke('agent:list-artifacts'),
+        readArtifact: (filename: string) => ipcRenderer.invoke('agent:read-artifact', filename),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        multiReplaceFileContent: (args: any) => ipcRenderer.invoke('agent:multi-replace-file-content', args),
+        updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content),
+        getCapabilityRegistry: () => ipcRenderer.invoke('agent:get-capability-registry'),
     },
 
     // Video (Local Asset Management)
@@ -162,6 +173,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         check: () => ipcRenderer.invoke('updater:check'),
         install: () => ipcRenderer.invoke('updater:install'),
         setChannel: (channel: 'stable' | 'beta') => ipcRenderer.invoke('updater:set-channel', channel),
+        setSource: (source: 'github' | 'firebase') => ipcRenderer.invoke('updater:set-source', source),
+        getConfig: () => ipcRenderer.invoke('updater:get-config'),
         onChecking: (callback: () => void) => {
             ipcRenderer.on('updater:checking', callback);
             return () => ipcRenderer.removeListener('updater:checking', callback);
@@ -213,6 +226,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('scheduler:neural-sync', handler);
             return () => ipcRenderer.removeListener('scheduler:neural-sync', handler);
         },
+    },
+
+    // DAW Integration
+    daw: {
+        start: () => ipcRenderer.invoke('daw:start'),
+        stop: () => ipcRenderer.invoke('daw:stop'),
+        getState: () => ipcRenderer.invoke('daw:get-state'),
+        onStateChanged: (callback: (state: unknown) => void) => {
+            const handler = (_event: unknown, state: unknown) => callback(state);
+            ipcRenderer.on('daw:state-changed', handler);
+            return () => ipcRenderer.removeListener('daw:state-changed', handler);
+        }
     },
 
     // AI Sidecar

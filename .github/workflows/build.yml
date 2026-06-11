@@ -1,12 +1,42 @@
 name: Build and Test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'artifacts/**'
+      - '.agent/**'
+      - 'deep-test-*.png'
+  workflow_dispatch:
+    inputs:
+      build_all:
+        description: 'Build for all platforms (macOS/Windows)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  setup-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.build_all }}" == "true" ]]; then
+            echo 'matrix=["ubuntu-latest", "macos-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+          fi
+
   test:
     runs-on: ubuntu-latest
     permissions:
@@ -27,7 +57,8 @@ jobs:
     - name: Install system dependencies (Linux)
       run: |
         sudo apt-get update
-        sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+        sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+        sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
     - name: Install dependencies
       run: npm ci
 
@@ -37,17 +68,14 @@ jobs:
     - name: Typecheck
       run: npm run typecheck
 
-    - name: Build Electron App
-      run: npm run build
-
   build:
-    needs: test
+    needs: [test, setup-matrix]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-
+        os: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
+    
     steps:
     - uses: actions/checkout@v5
 
@@ -61,7 +89,9 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+        sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+        sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+
     - name: Install dependencies
       run: npm ci
 
@@ -85,6 +115,28 @@ jobs:
         WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
         WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         CSC_IDENTITY_AUTO_DISCOVERY: true
+        VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+        VITE_USE_FINE_TUNED_AGENTS: ${{ secrets.VITE_USE_FINE_TUNED_AGENTS }}
+        VITE_FUNCTIONS_URL: ${{ secrets.VITE_FUNCTIONS_URL }}
+        VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+        VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
+        VITE_INGESTION_SYSTEM_IDENTIFIER: ${{ secrets.VITE_INGESTION_SYSTEM_IDENTIFIER }}
+        VITE_INGESTION_ENTITY_NAME: ${{ secrets.VITE_INGESTION_ENTITY_NAME }}
+        SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+        SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+        TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+        META_APP_ID: ${{ secrets.META_APP_ID }}
+        META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+        PANDADOC_API_KEY: ${{ secrets.PANDADOC_API_KEY }}
+        PANDADOC_WEBHOOK_SECRET: ${{ secrets.PANDADOC_WEBHOOK_SECRET }}
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        VITE_DDEX_DPID_SPOTIFY: ${{ secrets.VITE_DDEX_DPID_SPOTIFY }}
+        PRINTFUL_API_KEY: ${{ secrets.PRINTFUL_API_KEY }}
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4

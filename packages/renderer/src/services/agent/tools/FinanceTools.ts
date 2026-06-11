@@ -1,9 +1,9 @@
-import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
 const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -37,7 +37,7 @@ let _ecbCache = loadEcbCache();
 
 export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
 
         // Construct Multimodal Prompt
         const prompt = `You are an expert accountant. Extract the following data from this receipt image:
@@ -49,7 +49,7 @@ export const FinanceTools = {
         
         Output strictly in JSON format: { "vendor": string, "date": string, "amount": number, "category": string, "description": string }`;
 
-        const res = await GenAI.generateContent(
+        const res = await AutonomousIntelligence.generateContent(
             [
                 {
                     role: 'user',
@@ -59,11 +59,11 @@ export const FinanceTools = {
                     ]
                 }
             ],
-            AI_MODELS.TEXT.AGENT
+            getFineTunedModel('finance')
         );
 
         // Access the text from the response object
-        const text = res.response.text();
+        const text = getResponseText(res);
 
         return {
             raw_data: text,
@@ -83,8 +83,8 @@ export const FinanceTools = {
         return {
             status: "READY_FOR_AUDIT",
             distributor: distConfig.name,
-            party_id: distConfig.ddexPartyId,
-            message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.ddexPartyId}. Ready to generate ERN.`
+            party_id: distConfig.systemIdentifier,
+            message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.systemIdentifier}. Ready to generate ERN.`
         };
     }),
 
@@ -204,16 +204,11 @@ export const FinanceTools = {
                 status: result.data.status
             }, `$${args.holdAmount} successfully held in Stripe Connect escrow account (${result.data.escrowAccount}) until mathematical split sign-off is complete from all parties.`);
         } catch (error: unknown) {
-            // Graceful fallback if Cloud Function not yet deployed
-            logger.warn('[FinanceTools] Escrow Cloud Function unavailable, using local tracking:', error);
-            const escrowAccount = `acct_${crypto.randomUUID().slice(0, 8)}`;
-            return toolSuccess({
-                trackId: args.trackId,
-                escrowAccount,
-                heldAmount: args.holdAmount,
-                pendingSignaturesFrom: args.parties,
-                status: 'FUNDS_TRACKED_LOCALLY'
-            }, `$${args.holdAmount} tracked for escrow in local ledger (${escrowAccount}). Deploy Cloud Function 'initiateSplitEscrow' for live Stripe integration.`);
+            logger.warn('[FinanceTools] Escrow Cloud Function unavailable:', error);
+            return toolError(
+                'Escrow initiation failed: initiateSplitEscrow is unavailable or misconfigured. No funds were held.',
+                'ESCROW_UNAVAILABLE'
+            );
         }
     }),
 
@@ -253,21 +248,8 @@ export const FinanceTools = {
         // Multi-Currency Ledger (Item 153)
         // Fetches live exchange rates from the European Central Bank (free, no key required).
         // ECB publishes daily EUR-based rates; we compute cross-rates for any pair.
-        const fallbackExchangeRates: Record<string, number> = {
-            'USD_EUR': 0.92,
-            'EUR_USD': 1.09,
-            'USD_GBP': 0.79,
-            'GBP_USD': 1.27,
-            'USD_JPY': 149.50,
-            'JPY_USD': 0.0067,
-            'USD_CAD': 1.36,
-            'CAD_USD': 0.74,
-            'USD_AUD': 1.53,
-            'AUD_USD': 0.65,
-        };
-
         let rate: number;
-        let source = 'fallback';
+        let source = 'ECB';
 
         // Validate ISO 4217 currency codes
         const src = args.sourceCurrency.toUpperCase();
@@ -326,12 +308,11 @@ export const FinanceTools = {
                 logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
             }
         } catch (error: unknown) {
-            logger.warn('[FinanceTools] ECB API unavailable, using fallback rates:', error);
-            const pair = `${src}_${tgt}`;
-            rate = fallbackExchangeRates[pair] || 1.0;
-            if (rate === 1.0 && src !== tgt) {
-                source = 'fallback (unknown pair)';
-            }
+            logger.warn('[FinanceTools] ECB API unavailable:', error);
+            return toolError(
+                `Currency conversion failed because live ECB rates are unavailable for ${src}->${tgt}.`,
+                'EXCHANGE_RATE_UNAVAILABLE'
+            );
         }
 
         const converted = args.amount * rate;
@@ -371,14 +352,10 @@ export const FinanceTools = {
             }, `Stripe Connect custom account onboarding initiated for ${args.email}. Account ID: ${result.data.accountId}.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Stripe Connect Cloud Function unavailable:', error);
-            const accountId = `acct_${crypto.randomUUID().slice(0, 16).replace(/-/g, '')}`;
-            return toolSuccess({
-                email: args.email,
-                role: args.role,
-                assignedSplit: args.splitPercentage,
-                stripeConnectAccountId: accountId,
-                status: 'Onboarding link generated (local mode)'
-            }, `Stripe Connect onboarding initiated for ${args.email}. Deploy Cloud Function 'createStripeConnectAccount' for live integration.`);
+            return toolError(
+                'Stripe Connect onboarding failed: createStripeConnectAccount is unavailable or misconfigured. No account was created.',
+                'STRIPE_CONNECT_UNAVAILABLE'
+            );
         }
     }),
 
@@ -398,22 +375,16 @@ export const FinanceTools = {
             }, `Automated tax form collection initiated for ${args.payees.length} payees. Payouts locked until validated.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Tax forms Cloud Function unavailable:', error);
-            const requests = args.payees.map(p => ({
-                name: p.name,
-                email: p.email,
-                formTypeRequested: p.isUsPerson ? 'W-9' : 'W-8BEN',
-                status: 'Requested (local mode)'
-            }));
-            return toolSuccess({
-                payeesProcessed: args.payees.length,
-                requests
-            }, `Tax form collection initiated for ${args.payees.length} payees. Deploy Cloud Function 'requestTaxForms' for real email dispatch.`);
+            return toolError(
+                'Tax form collection failed: requestTaxForms is unavailable or provider configuration is missing. No tax form requests were sent.',
+                'TAX_FORMS_UNAVAILABLE'
+            );
         }
     }),
 
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
         // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
 
         const prompt = `
         You are a music industry financial analyst. The following CSV files have been uploaded 
@@ -428,20 +399,20 @@ export const FinanceTools = {
         `;
 
         try {
-            const response = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
-            const analysisText = response.response.text();
+            const response = await AutonomousIntelligence.generateContent(prompt, getFineTunedModel('finance'));
+            const analysisText = getResponseText(response);
 
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
                 normalizationAnalysis: analysisText,
-                status: 'Normalized into standard indiiOS ledger format'
+                status: 'Normalized into standard indii ledger format'
             }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
-            return toolSuccess({
-                filesProcessed: args.csvFiles.length,
-                status: 'Normalized into standard indiiOS ledger format (basic mode)'
-            }, `Successfully ingested ${args.csvFiles.length} CSV statements. AI-enhanced normalization unavailable.`);
+            return toolError(
+                'Distributor statement normalization failed; no basic-mode ingest was performed.',
+                'STATEMENT_NORMALIZATION_FAILED'
+            );
         }
     })
 } satisfies Record<string, AnyToolFunction>;

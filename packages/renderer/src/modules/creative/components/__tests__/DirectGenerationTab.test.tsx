@@ -16,26 +16,75 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => mockToastObject)
 }));
 
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(),
+    httpsCallable: () => mockHttpsCallable
+}));
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(),
+        onSnapshot: vi.fn((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    data: () => ({
+                        status: 'completed',
+                        progress: 100,
+                        resultUri: 'https://test.com/video.mp4'
+                    })
+                });
+            }, 10);
+            return () => {};
+        })
+    };
+});
+
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    getDownloadURL: vi.fn().mockResolvedValue('https://test.com/video.mp4')
+}));
+
 vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
         synthesizeWhiskPrompt: vi.fn((p) => p),
-        synthesizeVideoPrompt: vi.fn((p) => p)
+        synthesizeVideoPrompt: vi.fn((p) => p),
+        getSourceMedia: vi.fn(() => [])
     }
 }));
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: vi.fn()
+        generateVideo: vi.fn().mockResolvedValue([{ id: 'mock-job-id', url: '', prompt: 'A cinematic drone shot' }]),
+        subscribeToJob: vi.fn((jobId, callback) => {
+            setTimeout(() => {
+                callback({
+                    id: jobId,
+                    status: 'completed',
+                    progress: 100,
+                    videoUrl: 'https://test.com/video.mp4',
+                    output: {
+                        url: 'https://test.com/video.mp4',
+                        metadata: { mime_type: 'video/mp4', quality: 'pro' }
+                    }
+                });
+            }, 10);
+            return () => {};
+        })
     }
 }));
 
 import { create } from 'zustand';
 
 const useMockStore = create<any>((set) => ({
-    studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+    studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
     creativePrompt: '',
     setCreativePrompt: (val: string) => set({ creativePrompt: val }),
-    addToHistory: vi.fn(),
+    addToHistory: vi.fn((item) => set((state: any) => ({ generatedHistory: [...(state.generatedHistory || []), item] }))),
     currentProjectId: 'test-project',
     whiskState: {},
     setSelectedItem: vi.fn(),
@@ -45,7 +94,13 @@ const useMockStore = create<any>((set) => ({
     generationMode: 'image',
     setGenerationMode: (val: string) => set({ generationMode: val }),
     isPromptBuilderOpen: false,
-    togglePromptBuilder: () => set((state: any) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen }))
+    togglePromptBuilder: () => set((state: any) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
+    characterReferences: [],
+    addCharacterReference: vi.fn(),
+    removeCharacterReference: vi.fn(),
+    updateCharacterReference: vi.fn(),
+    addUploadedImage: vi.fn(),
+    generatedHistory: []
 }));
 
 // Use a simplified store mock
@@ -58,21 +113,24 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock dynamic import for DirectImageGenerator
-vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
+vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
     generateImageDirectly: vi.fn()
 }));
 
 describe('DirectGenerationTab', () => {
     beforeEach(() => {
+        vi.useRealTimers();
         vi.clearAllMocks();
         useMockStore.setState({
-            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
             creativePrompt: '',
             currentProjectId: 'test-project',
             whiskState: {},
             videoInputs: { ingredients: [] },
             generationMode: 'image',
-            isPromptBuilderOpen: false
+            isPromptBuilderOpen: false,
+            characterReferences: [],
+            generatedHistory: []
         });
     });
 
@@ -96,10 +154,13 @@ describe('DirectGenerationTab', () => {
     });
 
     it('handles image generation successfully', async () => {
-        const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-        (generateImageDirectly as import("vitest").Mock).mockResolvedValue(['data:image/png;base64,test']);
-
+        vi.useFakeTimers();
         render(<DirectGenerationTab />);
+        
+        // Ensure image mode is selected
+        const imageBtn = screen.getByTestId('direct-image-mode-btn');
+        fireEvent.click(imageBtn);
+        
         const input = screen.getByTestId('direct-prompt-input');
         const generateBtn = screen.getByTestId('direct-generate-btn');
 
@@ -109,17 +170,21 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        await waitFor(() => {
-            expect(generateImageDirectly).toHaveBeenCalled();
+        expect(mockHttpsCallable).toHaveBeenCalled();
+        const imagePayload = mockHttpsCallable.mock.calls[0]?.[0];
+        expect(imagePayload).not.toHaveProperty('referenceUri');
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(3010);
         });
 
-        expect(screen.getByRole('img')).toBeDefined();
+        // Results grid should show the image
+        const img = document.querySelector('img');
+        expect(img).toBeTruthy();
     });
 
     it('handles video generation successfully', async () => {
-        const mockVideoResult = [{ id: 'job-123', url: 'https://test.com/video.mp4' }];
-        (VideoGeneration.generateVideo as import("vitest").Mock).mockResolvedValue(mockVideoResult);
-
+        vi.useFakeTimers();
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
 
@@ -132,21 +197,29 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        await waitFor(() => {
-            expect(VideoGeneration.generateVideo).toHaveBeenCalled();
+        expect(VideoGeneration.generateVideo).toHaveBeenCalled();
+        expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: 'A cinematic drone shot',
+            aspectRatio: '16:9',
+            model: 'fast',
+            resolution: '1080p',
+            duration: 6,
+            personGeneration: 'allow_adult',
+        }));
+
+        // Fast-forward all pending timers including the 10ms subscription callback
+        // and the 3000ms job cleanup timer.
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(3010);
         });
 
         // Results grid should show the video
-        // Note: querySelector('video') might be safer if getByRole('video') fails in jsdom
-        await waitFor(() => {
-            const video = document.querySelector('video');
-            expect(video).toBeTruthy();
-        });
+        const video = document.querySelector('video');
+        expect(video).toBeTruthy();
     });
 
     it('displays error message when generation fails', async () => {
-        const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-        (generateImageDirectly as import("vitest").Mock).mockRejectedValue(new Error('API Timeout'));
+        mockHttpsCallable.mockRejectedValueOnce(new Error('API Error'));
 
         const mockToast = useToast();
 
@@ -158,7 +231,53 @@ describe('DirectGenerationTab', () => {
         });
 
         await waitFor(() => {
-            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: API Timeout');
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: API Error');
+        });
+    });
+
+    it('surfaces Firebase callable details when the public message is internal', async () => {
+        mockHttpsCallable.mockRejectedValueOnce({
+            code: 'functions/internal',
+            message: 'internal',
+            details: { cause: 'Gemini model is not available in this project or region' },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Gemini model is not available in this project or region');
+        });
+    });
+
+    it('surfaces depleted Google AI Studio prepayment credits as a billing blocker', async () => {
+        mockHttpsCallable.mockRejectedValueOnce({
+            code: 'functions/resource-exhausted',
+            message: 'Image generation failed: {"error":{"code":429,"message":"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ","status":"RESOURCE_EXHAUSTED"}}',
+            details: {
+                cause: 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.',
+            },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(
+                'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.'
+            );
         });
     });
 });

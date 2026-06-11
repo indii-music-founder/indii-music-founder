@@ -1,6 +1,6 @@
 # Sync Services
 
-Offline-first data synchronization for indiiOS, enabling seamless operation when network connectivity is unavailable.
+Offline-first data synchronization for indii, enabling seamless operation when network connectivity is unavailable.
 
 ## Services
 

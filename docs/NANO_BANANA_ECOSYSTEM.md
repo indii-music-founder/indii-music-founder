@@ -1,7 +1,7 @@
 # The Definitive Guide to the Nano Banana Ecosystem
 
 > **True North Document** — This is the canonical reference for all image generation
-> capabilities in indiiOS. All UI controls, backend parameters, and creative workflows
+> capabilities in indii. All UI controls, backend parameters, and creative workflows
 > MUST align with the specifications documented here.
 >
 > Last Updated: 2026-05-02
@@ -22,7 +22,7 @@
 10. [API Configuration Reference](#10-api-configuration-reference)
 11. [Pricing & Performance](#11-pricing--performance)
 12. [Content Provenance & Safety](#12-content-provenance--safety)
-13. [indiiOS Implementation Mapping](#13-indiios-implementation-mapping)
+13. [indii Implementation Mapping](#13-indii-implementation-mapping)
 
 ---
 
@@ -38,7 +38,7 @@ adopted it as a formal brand pillar for their generative vision strategy.
 | **Nano Banana Pro** | `gemini-3-pro-image-preview` | Gemini 3 Pro | Nov 2025 | Maximum quality, advanced reasoning, studio-grade control |
 | **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Gemini 3.1 Flash | Feb 2026 | Speed + quality, high-volume production, precise instruction following |
 
-### indiiOS Model Constants
+### indii Model Constants
 
 ```typescript
 // packages/renderer/src/core/config/ai-models.ts
@@ -489,7 +489,7 @@ safetySettings: [
 
 ---
 
-## 13. indiiOS Implementation Mapping
+## 13. indii Implementation Mapping
 
 ### UI Controls → API Parameters
 

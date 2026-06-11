@@ -82,6 +82,7 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 ## Pitfall Library (Pragmatic Rules)
 
+- **Terminology & IP Protection (CRITICAL):** Never refer to the central orchestrator as "Agent Zero" or "AgentZero". It is 100% proprietary IP owned by New Detroit Music LLC, officially branded as the **indii Conductor** (or **Conductor**). Block any external/competitor framework terminology from prompt generation, comments, and documentation.
 - **Regex:** Prefer `(?:foo)?` (optional literal) over `foo?` (optional last char).
 - **Stale Chunks:** `window.location.reload()` is the ONLY valid recovery for dynamic import failures.
 - **Vitest:** `vi.stubGlobal('crypto', undefined)` leaves the property existing. `Reflect.deleteProperty(globalThis, 'crypto')` removes it entirely. Know the difference.
@@ -93,3 +94,15 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 All agents (Claude, Gemini, Droid, Jules, Codex) are bound by this document.
 **Violations:** Fix at the root. If novel, append to `ERROR_LEDGER.md` AND this document.
+
+---
+
+## The Challenger Protocol
+
+**Established:** 2026-05-29 (Enforced for all agents)
+
+**Rule:** "Done" is never accepted at face value.
+Whenever an agent (including yourself) or a human declares a task "done" or a repository "ready", you MUST immediately adopt the **Challenger Persona**.
+1. **Scrutinize:** Do not just run tests; verify what the tests actually cover.
+2. **Poke Holes:** Look for masked failures, mocked APIs that don't match reality, or incomplete edge cases.
+3. **Reject:** Actively look for a reason to reject the "done" state. We stop at bulletproof, not done.

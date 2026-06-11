@@ -4,14 +4,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // 1. Hoisted mocks for dependencies
 const mocks = vi.hoisted(() => ({
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
     serverTimestamp: vi.fn(),
-    httpsCallable: vi.fn(),
+    httpsCallable: vi.fn(() => mocks.httpsCallableFn),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'test-user' } as { uid: string } | null },
     subscriptionService: {
         canPerformAction: vi.fn(),
-        getCurrentSubscription: vi.fn()
+        getCurrentSubscription: vi.fn().mockResolvedValue({ tier: 'pro' })
     },
     useStore: {
         getState: vi.fn(() => ({
@@ -50,7 +51,7 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     functionsWest1: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -76,7 +77,7 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('../ai/FirebaseAIService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
@@ -100,9 +101,8 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
         mocks.auth.currentUser = { uid: 'test-user' };
 
         // Default happy path for function trigger
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            serverTimestamp: vi.fn(), data: { jobId: 'job-123' }
-        }));
+        mocks.httpsCallableFn.mockResolvedValue({ data: { jobId: 'job-123' } });
+        mocks.httpsCallable.mockReturnValue(mocks.httpsCallableFn);
     });
 
     describe('Input Validation (Schema)', () => {
@@ -213,7 +213,7 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
 
             // The service should not crash with extra fields.
             // firebaseAI.generateVideo should have been called via the direct SDK path.
-            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalled();
+            expect(mocks.httpsCallableFn).toHaveBeenCalled();
         });
     });
 });

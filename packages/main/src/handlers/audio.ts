@@ -7,10 +7,12 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { apiService } from '../services/APIService';
-import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
+import { AudioLookupSchema } from '../utils/validation';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
 import { accessControlService } from '../security/AccessControlService';
+import { masteringService } from '../services/MasteringService';
+import os from 'os';
 
 import { z } from 'zod';
 
@@ -48,52 +50,71 @@ const calculateFileHash = (filePath: string): Promise<string> => {
     });
 };
 
+
+
 export function registerAudioHandlers() {
     ipcMain.handle('audio:analyze', async (event, filePath) => {
         log.info('Audio analysis requested for:', filePath);
 
         try {
             validateSender(event);
-            // Validation
-            const rawPath = AudioAnalyzeSchema.parse(filePath);
-
+            const validatedPath = validateSafeAudioPath(filePath);
+            
             // SECURITY: Verify Access Authorization
-            if (!accessControlService.verifyAccess(rawPath)) {
-                throw new Error(`Security Violation: Access to ${rawPath} is denied. File was not authorized by user.`);
+            if (!accessControlService.verifyAccess(validatedPath)) {
+                throw new Error(`Security Violation: Access to ${validatedPath} is denied. File was not authorized by user.`);
             }
 
-            // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files)
-            const validatedPath = validateSafeAudioPath(rawPath);
-
-            // Parallel execution: Hash + Metadata
             const [hash, probeData] = await Promise.all([
                 calculateFileHash(validatedPath),
-                new Promise<{ format: Record<string, unknown>; streams: unknown[] }>((resolve, reject) => {
+                new Promise<{ format: ffmpeg.FfprobeFormat; streams: ffmpeg.FfprobeStream[] }>((resolve, reject) => {
                     ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
-                        else resolve(metadata); // full object: { format, streams }
+                        else resolve({ format: metadata.format, streams: metadata.streams });
                     });
                 })
             ]);
 
-            log.info("Analysis Complete. Hash:", hash.substring(0, 8) + "...");
+            log.info("Generating compressed MP3 proxy for cloud analysis...");
+            const tempProxyPath = path.join(os.tmpdir(), `${hash}_proxy.mp3`);
+            
+            await new Promise<void>((resolve, reject) => {
+                ffmpeg(validatedPath)
+                    .audioChannels(1)
+                    .audioFrequency(32000)
+                    .audioBitrate('64k')
+                    .format('mp3')
+                    .on('end', () => resolve())
+                    .on('error', (err) => reject(new Error(`FFmpeg proxy generation failed: ${err.message}`)))
+                    .save(tempProxyPath);
+            });
+
+            const proxyBuffer = await fs.promises.readFile(tempProxyPath);
+            const proxyBase64 = proxyBuffer.toString('base64');
+            
+            // Clean up the temp file silently
+            fs.promises.unlink(tempProxyPath).catch(err => log.warn('Failed to delete temp proxy file:', err));
+
+            log.info(`Analysis Complete. Hash: ${hash.substring(0, 8)}... Proxy Size: ${(proxyBuffer.length / 1024).toFixed(1)} KB`);
 
             return {
                 status: 'success',
                 hash,
                 metadata: {
-                    duration: probeData.format.duration,
-                    format: probeData.format.format_name,
-                    bitrate: probeData.format.bit_rate
+                    duration: probeData.format.duration ? Number(probeData.format.duration) : 0,
+                    format: probeData.format.format_name ?? '',
+                    bitrate: probeData.format.bit_rate ? Number(probeData.format.bit_rate) : 0
                 },
-                streams: probeData.streams ?? []
+                streams: probeData.streams ?? [],
+                features: null, // Basic features will be extracted via Web Audio API in Renderer
+                proxyBase64
             };
         } catch (error) {
             log.error("Audio analysis failed:", error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
-            throw error;
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
 
@@ -159,37 +180,7 @@ export function registerAudioHandlers() {
 
         try {
             validateSender(event);
-
-            // Re-introduced logic locally instead of relying on a missing MasteringService
-            const getFilterForStyle = (s: string) => {
-                const styles: Record<string, string> = {
-                    'warm': 'equalizer=f=100:width_type=h:width=200:g=2, equalizer=f=10000:width_type=h:width=2000:g=-2',
-                    'punchy': 'compand=attacks=0:points=-80/-90|-40/-40|0/-10|20/-5',
-                    'bright': 'equalizer=f=5000:width_type=h:width=1000:g=3'
-                };
-                return styles[s] || 'anull';
-            };
-            const filter = getFilterForStyle(style);
-
-            // Ensure output directory exists
-            const outputDir = path.dirname(outputPath);
-            if (!fs.existsSync(outputDir)) {
-                fs.mkdirSync(outputDir, { recursive: true });
-            }
-
-            return new Promise((resolve) => {
-                ffmpeg(inputPath)
-                    .audioFilters(filter)
-                    .on('end', () => {
-                        log.info('[Main] Mastering finished');
-                        resolve({ success: true, path: outputPath });
-                    })
-                    .on('error', (err) => {
-                        log.error('[Main] Mastering failed:', err);
-                        resolve({ success: false, error: err.message });
-                    })
-                    .save(outputPath);
-            });
+            return await masteringService.masterAudio(inputPath, outputPath, style);
         } catch (error) {
             log.error('[Main] Audio mastering setup failed:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };

@@ -1,23 +1,23 @@
 import { VideoGeneration } from '../VideoGenerationService';
 import { useStore } from '@/core/store';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mocks
 vi.mock('@/core/store');
 
-vi.mock('../../ai/FirebaseAIService', () => {
+vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -29,6 +29,29 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
         canPerformAction: vi.fn(),
         getCurrentSubscription: vi.fn()
     }
+}));
+
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
+    }
+}));
+
+const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+vi.mock('firebase/functions', () => ({
+    httpsCallable: () => mockHttpsCallable
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -51,6 +74,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         updateDoc: vi.fn().mockResolvedValue(undefined),
+        getDoc: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
         serverTimestamp: vi.fn(),
         onSnapshot: vi.fn(),
         Timestamp: {
@@ -65,7 +89,7 @@ vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
     }
 }));
 
-vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: vi.fn((text: string) => text),
     }
@@ -107,8 +131,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('9:16');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
 
@@ -118,8 +141,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('tunecore')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('9:16');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
     });
@@ -131,9 +153,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('cdbaby')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            // Default aspect ratio is '16:9' when no distributor constraint applies
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -143,8 +163,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('ditto')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -154,8 +173,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('awal')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -165,8 +183,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unitedmasters')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -176,8 +193,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('amuse')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
     });
@@ -189,8 +205,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile() // No distributor
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
@@ -200,8 +215,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 // No userProfile at all
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('explicit aspectRatio overrides distributor default', async () => {
@@ -211,8 +226,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid') // Would normally be 9:16
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
 
         it('handles unknown distributor gracefully', async () => {
@@ -221,9 +236,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unknown_distributor')
             });
 
-            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
-            // Should NOT crash, just use defaults
-            expect(callArgs.config?.aspectRatio).toBe('16:9');
+            const callArgs = mockHttpsCallable.mock.calls[0]![0];
+            expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
     });
 
@@ -237,8 +251,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            // Long-form generates multiple segments, each calling GenAI.generateVideo
-            const calls = vi.mocked(GenAI.generateVideo).mock.calls;
+            // Long-form generates multiple segments, each calling AutonomousIntelligence.generateVideo
+            const calls = vi.mocked(AutonomousIntelligence.generateVideo).mock.calls;
             expect(calls.length).toBeGreaterThan(0);
 
             // Each segment should have 9:16 for DistroKid

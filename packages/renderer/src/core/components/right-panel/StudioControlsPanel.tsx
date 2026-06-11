@@ -1,15 +1,17 @@
-import { useState, useMemo } from 'react';
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2 } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { useState, useMemo, useEffect } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
 import { StoreState } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
 import { z } from 'zod';
-import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/creative/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
@@ -21,27 +23,32 @@ interface StudioControlsPanelProps {
 
 const SectionCard = ({ title, icon, children, isOpen, onToggle }: { title: React.ReactNode, icon: React.ReactNode, children: React.ReactNode, isOpen: boolean, onToggle: () => void }) => {
     return (
-        <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-3">
+        <div className="mb-4">
             <button 
                 onClick={onToggle}
-                className="w-full p-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+                className="w-full py-2 px-1 flex items-center justify-between group"
             >
-                <div className="flex items-center gap-2 text-[11px] font-bold text-white tracking-wide uppercase">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-300 tracking-wider uppercase transition-colors group-hover:text-white">
                     {icon}
                     {title}
                 </div>
                 <ChevronDown size={14} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
-            <motion.div
-                initial={false}
-                animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="overflow-hidden"
-            >
-                <div className="p-3 pt-0 mt-1">
-                    {children}
-                </div>
-            </motion.div>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                    >
+                        <div className="pt-2 pb-1 space-y-3">
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -51,7 +58,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const {
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
-        videoInputs, setVideoInput
+        videoInputs, setVideoInput, viewMode
     } = useStore(useShallow((state: StoreState) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
@@ -63,13 +70,20 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         setPreciseReference: state.setPreciseReference,
         setTargetMedia: state.setTargetMedia,
         videoInputs: state.videoInputs,
-        setVideoInput: state.setVideoInput
+        setVideoInput: state.setVideoInput,
+        viewMode: state.viewMode
     })));
     const toast = useToast();
 
 
 
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
+    const [prevViewMode, setPrevViewMode] = useState(viewMode);
+
+    if (viewMode !== prevViewMode) {
+        setPrevViewMode(viewMode);
+        setExpandedSection(viewMode === 'omni' ? 'omni_lab' : 'mixer');
+    }
 
     const estimatedCost = useMemo(() => {
         if (!whiskState || whiskState.targetMedia === 'image') return null;
@@ -77,31 +91,32 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         if (studioControls?.model === 'fast') return is4k ? 0.15 : 0.08;
         if (studioControls?.model === 'pro') return is4k ? 0.80 : 0.50;
         return 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [whiskState?.targetMedia, studioControls?.model, studioControls?.resolution]);
 
     if (!whiskState) return null;
 
     return (
-        <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
+        <div className="flex flex-col h-full bg-[#060608]/95 border-l border-white/5 backdrop-blur-xl relative z-10">
+            <div className="p-4 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <div className="p-1.5 bg-purple-500/10 rounded-lg">
-                        <Sliders size={14} className="text-purple-400" />
+                    <div className="p-1.5 bg-white/5 rounded-lg border border-white/10">
+                        <Sliders size={14} className="text-gray-300" />
                     </div>
                     Studio Controls
                 </h3>
                 <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-black/40 p-1 rounded-lg border border-white/5">
+                    <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setActiveTab('create')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="Create"
                         >
                             <Wand2 size={14} />
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="History"
                         >
                             <History size={14} />
@@ -119,20 +134,205 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                    {viewMode === 'omni' && (
+                        <SectionCard
+                            isOpen={expandedSection === 'omni_lab'}
+                            onToggle={() => setExpandedSection(expandedSection === 'omni_lab' ? '' : 'omni_lab')}
+                            title={
+                                <div className="flex items-center justify-between w-full">
+                                    <span>Omni Stage Controls</span>
+                                    <span className="text-[9px] text-purple-400 font-mono font-medium ml-2 bg-purple-500/10 px-1.5 py-0.5 rounded animate-pulse">
+                                        V2V Active
+                                    </span>
+                                </div>
+                            }
+                            icon={<Sparkles className="text-purple-400" size={14} />}
+                        >
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Pipeline Mode</span>
+                                    <div className="grid grid-cols-2 gap-1 p-1 bg-black/60 rounded-lg border border-white/5 font-mono text-[9px]">
+                                        <button
+                                            onClick={() => setStudioControls({ omniPipelineMode: 'pure-omni' })}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            Pure Omni
+                                        </button>
+                                        <button
+                                            onClick={() => setStudioControls({ omniPipelineMode: 'hybrid-veo' })}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            Hybrid Veo
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
+                                            <Eye size={11} className={studioControls.characterXRay ? 'text-emerald-400' : 'text-gray-400'} />
+                                            Character X-Ray
+                                        </span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Lock skeletal posture</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setStudioControls({ characterXRay: !studioControls.characterXRay })}
+                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.characterXRay ? 'bg-emerald-600' : 'bg-gray-800'}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.characterXRay ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Performance Pose Preset</span>
+                                    <select
+                                        value={studioControls.activePosePreset}
+                                        onChange={(e) => setStudioControls({ activePosePreset: e.target.value })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="guitar_solo">Guitar Solo</option>
+                                        <option value="mic_stand_lean">Mic Stand Lean</option>
+                                        <option value="dj_stance">DJ Mixer Deck</option>
+                                        <option value="vocal_belting">Vocal Belting</option>
+                                        <option value="t_pose">Skeletal T-Pose</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
+                                        <span>Pose Preservation</span>
+                                        <span className="text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0" max="1" step="0.05"
+                                        value={studioControls.posePreservation}
+                                        onChange={(e) => setStudioControls({ posePreservation: parseFloat(e.target.value) })}
+                                        className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
+                                        <span>Beat Motion Pulse</span>
+                                        <span className="text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0" max="1" step="0.05"
+                                        value={studioControls.beatPulse}
+                                        onChange={(e) => setStudioControls({ beatPulse: parseFloat(e.target.value) })}
+                                        className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase font-mono tracking-widest">
+                                        <span>Waveform Theme Color</span>
+                                        <span className="font-mono text-purple-400 text-[8px]">{studioControls.visualizerColor}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-1.5 bg-black/40 rounded-lg border border-white/5">
+                                        <input
+                                            type="color"
+                                            value={studioControls.visualizerColor}
+                                            onChange={(e) => setStudioControls({ visualizerColor: e.target.value })}
+                                            className="w-6 h-5 rounded border border-white/20 bg-transparent outline-none cursor-pointer"
+                                        />
+                                        <div className="flex gap-1.5">
+                                            {['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map((color) => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => setStudioControls({ visualizerColor: color })}
+                                                    className="w-4 h-4 rounded-full border border-white/10"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 border-t border-white/5 pt-3">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-purple-400" /> Kinetic Lyric Text</span>
+                                    <textarea
+                                        value={studioControls.lyricsText}
+                                        onChange={(e) => setStudioControls({ lyricsText: e.target.value })}
+                                        rows={2}
+                                        placeholder="Type song lyrics to overlay..."
+                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-purple-500/30"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Typography Style</span>
+                                    <select
+                                        value={studioControls.typographyStyle}
+                                        
+                                        onChange={(e) => setStudioControls({ typographyStyle: e.target.value as 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic' })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="cyberpunk">Cyberpunk Glitch</option>
+                                        <option value="kinetic-neon">Kinetic Neon Grid</option>
+                                        <option value="liquid-gold">Volumetric Liquid Gold</option>
+                                        <option value="minimal-infographic">Minimalist Layout</option>
+                                    </select>
+                                </div>
+
+                                <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono flex items-center gap-1">
+                                        <Languages size={11} className="text-purple-400" />
+                                        Lip-Sync Dubbing
+                                    </span>
+                                    <select
+                                        value={studioControls.selectedLanguage}
+                                        onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
+                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                    >
+                                        <option value="es">Spanish Dub</option>
+                                        <option value="ja">Japanese Dub</option>
+                                        <option value="fr">French Dub</option>
+                                        <option value="de">German Dub</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
+                                            <Shield size={11} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
+                                            Synth ID Mark
+                                        </span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Secure digital watermark</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}
+                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.synthIdEnabled ? 'bg-emerald-600' : 'bg-gray-800'}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.synthIdEnabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
+                        </SectionCard>
+                    )}
+
                     <SectionCard
                         isOpen={expandedSection === 'mixer'}
                         onToggle={() => setExpandedSection(expandedSection === 'mixer' ? '' : 'mixer')}
                         title={<div className="flex items-center justify-between w-full">
                             <span>Reference Mixer</span>
-                            {((whiskState.subjects?.filter(i => i.checked).length || 0) +
-                                (whiskState.scenes?.filter(i => i.checked).length || 0) +
-                                (whiskState.styles?.filter(i => i.checked).length || 0) +
-                                (whiskState.motion?.filter(i => i.checked).length || 0)) > 0 && (
+                            
+                            {((whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.scenes?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                
+                                (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)) > 0 && (
                                     <span className="text-[9px] text-purple-400 normal-case ml-2">
-                                        {(whiskState.subjects?.filter(i => i.checked).length || 0) +
-                                            (whiskState.scenes?.filter(i => i.checked).length || 0) +
-                                            (whiskState.styles?.filter(i => i.checked).length || 0) +
-                                            (whiskState.motion?.filter(i => i.checked).length || 0)} locked
+                                        
+                                        {(whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.scenes?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
+                                            
+                                            (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)} locked
                                     </span>
                                 )}
                         </div>}
@@ -239,8 +439,15 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         items={videoInputs.firstFrame ? [{ id: 'ff', type: 'image', content: videoInputs.firstFrame.url, checked: true, category: 'subject' }] : []}
                                                         onAdd={(type, content) => setVideoInput('firstFrame', { id: `ff_${Date.now()}`, type: 'image', url: content, prompt: 'Start frame', timestamp: Date.now(), projectId: '' })}
                                                         onRemove={() => setVideoInput('firstFrame', null)}
-                                                        onToggle={() => { }}
-                                                        onUpdate={() => { }}
+                                                        onToggle={() => {}}
+                                                        onUpdate={(id, updates) => {
+                                                            if (videoInputs.firstFrame) {
+                                                                setVideoInput('firstFrame', {
+                                                                    ...videoInputs.firstFrame,
+                                                                    prompt: updates.intelligenceCaption || updates.content || videoInputs.firstFrame.prompt
+                                                                });
+                                                            }
+                                                        }}
                                                         description="Drop start"
                                                         compact={true}
                                                     />
@@ -253,8 +460,15 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         items={videoInputs.lastFrame ? [{ id: 'lf', type: 'image', content: videoInputs.lastFrame.url, checked: true, category: 'subject' }] : []}
                                                         onAdd={(type, content) => setVideoInput('lastFrame', { id: `lf_${Date.now()}`, type: 'image', url: content, prompt: 'End frame', timestamp: Date.now(), projectId: '' })}
                                                         onRemove={() => setVideoInput('lastFrame', null)}
-                                                        onToggle={() => { }}
-                                                        onUpdate={() => { }}
+                                                        onToggle={() => {}}
+                                                        onUpdate={(id, updates) => {
+                                                            if (videoInputs.lastFrame) {
+                                                                setVideoInput('lastFrame', {
+                                                                    ...videoInputs.lastFrame,
+                                                                    prompt: updates.intelligenceCaption || updates.content || videoInputs.lastFrame.prompt
+                                                                });
+                                                            }
+                                                        }}
                                                         description="Drop end"
                                                         compact={true}
                                                     />
@@ -312,9 +526,11 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             </div>
                             <div className="pt-2 border-t border-white/10">
                                 <WhiskPresetStyles onSelectPreset={(preset) => {
-                                    const exists = whiskState.styles.some(s => s.content === preset.prompt);
+                                    
+                                    const exists = whiskState.styles.some((s: { content: string }) => s.content === preset.prompt);
                                     if (exists) {
-                                        const item = whiskState.styles.find(s => s.content === preset.prompt);
+                                        
+                                        const item = whiskState.styles.find((s: { content: string, id: string }) => s.content === preset.prompt);
                                         if (item) toggleWhiskItem('style', item.id);
                                     } else {
                                         addWhiskItem('style', 'text', preset.prompt, preset.label);

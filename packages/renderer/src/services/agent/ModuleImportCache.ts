@@ -16,6 +16,7 @@
  */
 
 interface ModuleImportRequest {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     promise: Promise<any>;
     refCount: number;
 }
@@ -30,6 +31,7 @@ class ModuleImportCache {
      * Multiple simultaneous requests for the same module share the same promise.
      * Unrelated modules are fetched concurrently (no global queue).
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async import<T = any>(moduleId: string, importFn: () => Promise<T>): Promise<T> {
         // Cache-hit: attach to the in-flight promise
         if (this.cache.has(moduleId)) {
@@ -80,6 +82,7 @@ class ModuleImportCache {
      * Import with exponential backoff retry on transient failures.
      * Retries up to 3 times with 100ms, 200ms, 400ms delays.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private async importWithRetry<T = any>(importFn: () => Promise<T>, attempt = 1): Promise<T> {
         try {
             return await importFn();
@@ -112,3 +115,8 @@ class ModuleImportCache {
 }
 
 export const moduleImportCache = new ModuleImportCache();
+
+if (typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).moduleImportCache = moduleImportCache;
+}

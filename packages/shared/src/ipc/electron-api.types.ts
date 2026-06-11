@@ -1,5 +1,5 @@
 /**
- * @indiios/shared — ElectronAPI IPC Type Contracts
+ * @indii/shared — ElectronAPI IPC Type Contracts
  *
  * These interfaces define the complete IPC surface area exposed by the
  * Electron Main process via contextBridge.exposeInMainWorld('electronAPI', {...}).
@@ -40,10 +40,12 @@ export interface ElectronCredentialsAPI {
 }
 
 export interface ElectronAudioAPI {
-    analyze: (filePath: string) => Promise<unknown>;
-    getMetadata: (hash: string) => Promise<unknown>;
-    transcode: (options: unknown) => Promise<unknown>;
-    master: (options: unknown) => Promise<unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    analyze: (filePath: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getMetadata: (hash: string) => Promise<any>;
+    transcode: (options: unknown) => Promise<{ success: boolean; error?: string }>;
+    master: (options: unknown) => Promise<{ success: boolean; path?: string; error?: string }>;
 }
 
 export interface ElectronNetworkAPI {
@@ -51,11 +53,14 @@ export interface ElectronNetworkAPI {
 }
 
 export interface ElectronSFTPAPI {
-    connect: (config: SFTPConfig) => Promise<unknown>;
-    connectDistributor: (distributorId: string) => Promise<unknown>;
-    uploadDirectory: (localPath: string, remotePath: string) => Promise<unknown>;
+    connect: (config: SFTPConfig) => Promise<{ success: boolean; error?: string }>;
+    connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string }>;
+    uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; error?: string; files?: string[] }>;
     disconnect: () => Promise<unknown>;
     isConnected: () => Promise<boolean>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listDirectory: (remotePath: string) => Promise<{ success: boolean; files?: any[]; error?: string }>;
+    readFile: (remotePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
 }
 
 export interface ElectronBrandAPI {
@@ -71,17 +76,26 @@ export interface ElectronMarketingAPI {
 }
 
 export interface ElectronSecurityAPI {
-    rotateCredentials: (data: unknown) => Promise<unknown>;
-    scanVulnerabilities: (data: unknown) => Promise<unknown>;
+    rotateCredentials: (data: { serviceName: string }) => Promise<{ success: boolean; error?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    scanVulnerabilities: (data: { scope: string }) => Promise<{ success: boolean; scan?: { scope: string; vulnerabilities: any[]; score: number }; error?: string }>;
 }
 
 export interface ElectronAgentAPI {
-    navigateAndExtract: (url: string) => Promise<unknown>;
-    performAction: (action: string, selector: string, text?: string) => Promise<unknown>;
-    captureState: () => Promise<unknown>;
-    saveHistory: (id: string, data: unknown) => Promise<unknown>;
-    getHistory: (id: string) => Promise<unknown>;
-    deleteHistory: (id: string) => Promise<unknown>;
+    navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
+    performAction: (action: string, selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
+    captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
+    saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
+    getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
+    deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
+    listArtifacts: () => Promise<{ success: boolean; data?: { filename: string }[]; error?: string }>;
+    readArtifact: (filename: string) => Promise<{ success: boolean; data?: string; error?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createArtifact: (filename: string, content: string, options?: { artifactType?: string, requestFeedback?: boolean }) => Promise<{ success: boolean; error?: string; data?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    multiReplaceFileContent: (args: unknown) => Promise<{ success: boolean; error?: string; data?: any }>;
+    scanDirectory: () => Promise<{ success: boolean; data?: unknown; error?: string }>;
+    updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
 }
 
 export interface ElectronVideoAPI {
@@ -90,27 +104,42 @@ export interface ElectronVideoAPI {
 }
 
 export interface ElectronDistributionAPI {
-    stageRelease: (releaseId: string, files: { type: string; data: string; name: string }[]) => Promise<unknown>;
-    runForensics: (filePath: string) => Promise<unknown>;
-    packageITMSP: (releaseId: string) => Promise<unknown>;
-    calculateTax: (data: unknown) => Promise<unknown>;
-    certifyTax: (userId: string, data: unknown) => Promise<unknown>;
-    executeWaterfall: (data: unknown) => Promise<unknown>;
-    validateMetadata: (metadata: unknown) => Promise<unknown>;
-    generateISRC: (options?: unknown) => Promise<unknown>;
-    generateUPC: (options?: unknown) => Promise<unknown>;
-    registerRelease: (metadata: unknown, releaseId?: string) => Promise<unknown>;
-    generateDDEX: (metadata: unknown) => Promise<unknown>;
-    generateContentIdCSV: (data: unknown) => Promise<unknown>;
-    generateBWARM: (data: unknown) => Promise<unknown>;
-    checkMerlinStatus: (data: unknown) => Promise<unknown>;
-    transmit: (config: unknown) => Promise<unknown>;
-    submitRelease: (releaseData: unknown) => Promise<unknown>;
-    onSubmitProgress: (callback: (data: unknown) => void) => () => void;
-    onTransmitProgress: (callback: (data: unknown) => void) => () => void;
-    packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => Promise<unknown>;
-    deliverApple: (command: string, bundlePath: string) => Promise<unknown>;
-    validateXSD: (xmlContent: string) => Promise<unknown>;
+    stageRelease: (releaseId: string, files: { type: string; data: string; name: string }[]) => Promise<{ success: boolean; error?: string; itmspPath?: string; packagePath?: string; files?: string[]; message?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    runForensics: (filePath: string) => Promise<{ success: boolean; error?: string; report?: any }>;
+    packageITMSP: (releaseId: string) => Promise<{ success: boolean; error?: string; packagePath?: string; itmspPath?: string; files?: string[]; message?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    calculateTax: (data: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    certifyTax: (userId: string, data: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    executeWaterfall: (data: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    validateMetadata: (metadata: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    generateISRC: (options?: unknown) => Promise<{ success: boolean; error?: string; isrc?: string }>;
+    generateUPC: (options?: unknown) => Promise<{ success: boolean; error?: string; upc?: string }>;
+    registerRelease: (metadata: unknown, releaseId?: string) => Promise<{ success: boolean; error?: string }>;
+    generateDDEX: (metadata: unknown) => Promise<{ success: boolean; error?: string; xml?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    generateIngestionNotification: (metadata: any) => Promise<{ success: boolean; error?: string; xml?: string }>;
+    generateContentIdCSV: (data: unknown) => Promise<{ success: boolean; error?: string; csvData?: string; csv?: string }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    generateBWARM: (data: unknown) => Promise<{ success: boolean; error?: string; csv?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    checkMerlinStatus: (data: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transmit: (config: unknown) => Promise<{ success: boolean; error?: string; report?: any }>;
+    submitRelease: (releaseData: unknown) => Promise<{ success: boolean; error?: string; report?: { sftp_skipped?: boolean } }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSubmitProgress: (callback: (data: any) => void) => () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onTransmitProgress: (callback: (data: any) => void) => () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    deliverApple: (command: string, bundlePath: string) => Promise<{ success: boolean; error?: string; report?: any }>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    validateXSD: (xmlContent: string) => Promise<{ success: boolean; error?: string; report?: any }>;
 }
 
 export interface ElectronRemoteAPI {
@@ -122,6 +151,15 @@ export interface ElectronUpdaterAPI {
     check: () => Promise<{ available: boolean; version?: string; error?: string }>;
     install: () => Promise<void>;
     setChannel: (channel: 'stable' | 'beta') => Promise<void>;
+    setSource: (source: 'github' | 'firebase') => Promise<void>;
+    getConfig: () => Promise<{
+        channel: 'stable' | 'beta';
+        source: 'github' | 'firebase';
+        isAvailable: boolean;
+        releaseName?: string;
+        releaseNumber?: number;
+        technicalVersion?: string;
+    }>;
     onChecking: (callback: () => void) => () => void;
     onAvailable: (callback: (info: unknown) => void) => () => void;
     onNotAvailable: (callback: () => void) => () => void;

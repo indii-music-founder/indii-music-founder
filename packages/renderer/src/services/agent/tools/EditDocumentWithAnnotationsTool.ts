@@ -1,9 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 
 /**
  * Tool for editing documents (PDFs, text files) using structured annotations.
- * Enables AI-driven refinement of specific document sections based on coordinates or highlights.
+ * Enables Intelligence-driven refinement of specific document sections based on coordinates or highlights.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const EditDocumentWithAnnotationsTool: any = {
     name: 'edit_document_with_annotations',
     description: 'Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.',
@@ -40,14 +43,16 @@ export const EditDocumentWithAnnotationsTool: any = {
         required: ['documentId', 'annotations']
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: async (args: any) => {
-        console.log('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
+        logger.debug('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
         
         let spatialPrompt = `Spatial Document Edit Request for ID: ${args.documentId}\n`;
         if (args.globalInstruction) {
             spatialPrompt += `Global Instruction: ${args.globalInstruction}\n\n`;
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args.annotations.forEach((ann: any, idx: number) => {
             const typeLabel = ann.type === 'highlight' ? 'HIGHLIGHT' : 'STICKY NOTE';
             let coordStr = `(x: ${ann.x}, y: ${ann.y}`;
@@ -63,12 +68,26 @@ export const EditDocumentWithAnnotationsTool: any = {
             spatialPrompt += '\n';
         });
 
-        // Simulation for Phase 4 initial scaffolding
+        let summary = "AI has processed the document highlights and instructions. The revised document will be generated shortly.";
+        
+        try {
+            const systemPrompt = "You are an expert document editor. Summarize the requested spatial document edits and provide a short plan of action.";
+            const response = await AutonomousIntelligence.generateContent(
+                spatialPrompt,
+                undefined,
+                undefined,
+                systemPrompt
+            );
+            summary = getResponseText(response);
+        } catch (e) {
+            logger.warn('[EditDocumentWithAnnotationsTool] Intelligence generation failed, using fallback summary.', e);
+        }
+
         return {
             success: true,
             message: `Document edit request processed for ${args.documentId}. Applied ${args.annotations.length} annotations.`,
             newDocumentId: `edited-${args.documentId}-${uuidv4().slice(0, 8)}`,
-            summary: "AI has processed the document highlights and instructions. The revised document will be generated shortly.",
+            summary,
             spatialPromptContext: spatialPrompt
         };
     }

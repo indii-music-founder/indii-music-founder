@@ -25,6 +25,7 @@ interface FeedItem {
 }
 
 export default function ActivityFeed() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { agentHistory, sessions } = useStore(
         useShallow((s) => ({
             agentHistory: s.agentHistory,

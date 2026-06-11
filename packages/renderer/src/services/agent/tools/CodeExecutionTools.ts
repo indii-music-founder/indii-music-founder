@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
@@ -7,7 +8,7 @@ import { logger } from '@/utils/logger';
  *
  * Enables agents to write and execute arbitrary Python scripts via a
  * native execution layer. This is the indii Conductor "computer as a tool" capability
- * adapted for indiiOS — the agent writes its own code when no pre-built
+ * adapted for indii — the agent writes its own code when no pre-built
  * tool exists for a task.
  *
  * SECURITY: Gated through ToolRiskRegistry as HIGH risk.

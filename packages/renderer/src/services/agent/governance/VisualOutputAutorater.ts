@@ -1,6 +1,6 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { db, auth } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
@@ -131,7 +131,23 @@ export class VisualOutputAutorater {
      */
     static async evaluateImage(input: VisualEvaluationInput): Promise<VisualEvaluationScore | null> {
         try {
-            const prompt = this.buildEvaluationPrompt(input.originalBrief);
+            const promptText = this.buildEvaluationPrompt(input.originalBrief);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const parts: any[] = [{ text: promptText }];
+
+            if (input.imageBytes) {
+                // Strip data URL prefix if present
+                const base64Data = input.imageBytes.includes('base64,') 
+                    ? input.imageBytes.split('base64,')[1] 
+                    : input.imageBytes;
+
+                parts.push({
+                    inlineData: {
+                        data: base64Data,
+                        mimeType: input.mimeType || 'image/png'
+                    }
+                });
+            }
 
             const schema: JSONSchemaObject = {
                 type: 'object',
@@ -147,12 +163,12 @@ export class VisualOutputAutorater {
                 required: ['subjectMatch', 'sceneMatch', 'moodMatch', 'technicalAdherence', 'overallPass', 'gapsFound', 'correctivePrompt'],
             };
 
-            const result = await GenAI.generateStructuredData<VisualEvaluationScore>(
-                prompt,
+            const result = await AutonomousIntelligence.generateStructuredData<VisualEvaluationScore>(
+                parts,
                 schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
             );
 
             if (!result) {
@@ -267,7 +283,7 @@ export class VisualOutputAutorater {
                 correctivePrompt: score?.correctivePrompt || null,
                 metadata: {
                     evaluatedAt: new Date().toISOString(),
-                    autoraterModel: AI_MODELS.TEXT.FAST,
+                    autoraterModel: INTELLIGENCE_MODELS.TEXT.FAST,
                     version: '1.0.0',
                 },
                 createdAt: serverTimestamp(),
@@ -302,7 +318,7 @@ export class VisualOutputAutorater {
      */
     private static buildEvaluationPrompt(originalBrief: string): string {
         return `
-You are an expert Visual Quality Autorater for a creative AI platform. Your job is to evaluate whether a generated image faithfully matches the user's original brief.
+You are an expert Visual Quality Autorater for a creative platform. Your job is to evaluate whether a generated image faithfully matches the user's original brief.
 
 ORIGINAL BRIEF:
 "${originalBrief}"

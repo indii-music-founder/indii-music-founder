@@ -23,17 +23,28 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
+import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
-    const uid = auth.currentUser?.uid;
+    const uid = getRealAuthenticatedUserId(auth.currentUser);
     if (!uid) return;
+    
+    // Skip diagnostics in E2E tests to prevent Firestore invalid segment errors
+    // when project ID is mocked/missing
+    if (isFirebaseE2EMockEnabled()) {
+        return;
+    }
+
     try {
         await setDoc(doc(db, 'users', uid, 'remote-relay', 'diagnostics'), {
             stage,
@@ -44,6 +55,22 @@ async function writeDiagnostic(stage: string, details?: Record<string, unknown>)
     } catch {
         // Silent — diagnostics should never crash the app
     }
+}
+
+function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
+    const state = useStore.getState();
+    const messages = state.conversationMode === 'boardroom'
+        ? state.boardroomMessages
+        : state.agentHistory;
+
+    return [...messages]
+        .reverse()
+        .find(message =>
+            message.role === 'model' &&
+            Boolean(message.text?.trim()) &&
+            message.timestamp >= startedAt &&
+            !message.isStreaming
+        );
 }
 
 // ---------------------------------------------------------------------------
@@ -203,6 +230,7 @@ function useFirestoreRelay(enabled: boolean) {
 
     // Diagnostic: log every enabled transition
     useEffect(() => {
+        if (!enabled) return;
         logger.info(`[RemoteRelay/Firestore] ⚡ Hook enabled state: ${enabled}`);
         writeDiagnostic('hook_enabled_changed', { enabled });
     }, [enabled]);
@@ -216,6 +244,17 @@ function useFirestoreRelay(enabled: boolean) {
     );
 
     // Push desktop state to Firestore
+    const currentModuleRef = useRef(currentModule);
+    const isAgentProcessingRef = useRef(isAgentProcessing);
+    const activeSessionIdRef = useRef(activeSessionId);
+
+    useEffect(() => {
+        currentModuleRef.current = currentModule;
+        isAgentProcessingRef.current = isAgentProcessing;
+        activeSessionIdRef.current = activeSessionId;
+    }, [currentModule, isAgentProcessing, activeSessionId]);
+
+    // 1. Loop effect - runs every 5 seconds while enabled
     useEffect(() => {
         if (!enabled) return;
         let active = true;
@@ -223,13 +262,13 @@ function useFirestoreRelay(enabled: boolean) {
         const pushState = async () => {
             try {
                 await remoteRelayService.pushDesktopState({
-                    currentModule: currentModule || 'dashboard',
-                    isAgentProcessing,
-                    activeSessionId: activeSessionId || '',
+                    currentModule: currentModuleRef.current || 'dashboard',
+                    isAgentProcessing: isAgentProcessingRef.current,
+                    activeSessionId: activeSessionIdRef.current || '',
                     online: true,
                 });
             } catch (error: unknown) {
-                logger.warn('[RemoteRelay/Firestore] State push failed:', error);
+                logger.warn('[RemoteRelay/Firestore] Loop state push failed:', error);
             }
         };
 
@@ -242,16 +281,37 @@ function useFirestoreRelay(enabled: boolean) {
         };
         loop();
 
-        // Mark offline on unmount
         return () => {
             active = false;
             remoteRelayService.pushDesktopState({
-                currentModule: currentModule || 'dashboard',
+                currentModule: currentModuleRef.current || 'dashboard',
                 isAgentProcessing: false,
-                activeSessionId: activeSessionId || '',
+                activeSessionId: activeSessionIdRef.current || '',
                 online: false,
-            }).catch(() => { });
+            }).catch((err: unknown) => {
+                logger.warn('[RemoteRelay] Failed to push offline status during cleanup:', err);
+            });
         };
+    }, [enabled]);
+
+    // 2. Immediate push effect - pushes immediately on state change, but never writes online: false
+    useEffect(() => {
+        if (!enabled) return;
+
+        const pushStateImmediate = async () => {
+            try {
+                await remoteRelayService.pushDesktopState({
+                    currentModule: currentModule || 'dashboard',
+                    isAgentProcessing,
+                    activeSessionId: activeSessionId || '',
+                    online: true,
+                });
+            } catch (error: unknown) {
+                logger.warn('[RemoteRelay/Firestore] Immediate state push failed:', error);
+            }
+        };
+
+        pushStateImmediate();
     }, [enabled, currentModule, isAgentProcessing, activeSessionId]);
 
     // Listen for commands from phone
@@ -272,11 +332,52 @@ function useFirestoreRelay(enabled: boolean) {
         // Safety timeout ref: auto-reset isProcessing after 2 min if agent hangs
         let processingTimeout: ReturnType<typeof setTimeout> | null = null;
 
+        // ─── DESKTOP & CLOUD: ATOMIC FIRST-WINS CLAIM ─────────────────────
+        // Both desktop and cloud try to process commands. The first one to flip
+        // pending → processing wins via atomicity. This ensures:
+        // - Desktop claims first if online (fast, free when you're home)
+        // - Cloud claims if desktop doesn't claim fast (needed when away, requires
+        //   Blaze billing)
+        // - No double-spend: exactly one processor per command
+
+
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
+            if (!command.text) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring empty command ${command.id}`);
+                return;
+            }
+
             if (isProcessing.current) {
                 writeDiagnostic('command_skipped_busy', { commandId: command.id });
                 return;
             }
+
+            // Atomic claim: try to flip pending → processing. First one wins.
+            const uid = getRealAuthenticatedUserId(auth.currentUser);
+            if (!uid) return;
+
+            let claimed = false;
+            try {
+                claimed = await runTransaction(db, async (tx) => {
+                    const cmdRef = doc(db, 'users', uid, 'remote-relay-commands', command.id);
+                    const cmdSnap = await tx.get(cmdRef);
+                    if (cmdSnap.exists() && cmdSnap.data()?.status === 'pending') {
+                        tx.update(cmdRef, { status: 'processing' });
+                        return true;
+                    }
+                    return false;
+                });
+            } catch (err) {
+                logger.warn('[RemoteRelay] Atomic claim failed:', err);
+                return;
+            }
+
+            if (!claimed) {
+                writeDiagnostic('command_skipped_not_claimed', { commandId: command.id });
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} already claimed`);
+                return;
+            }
+
             isProcessing.current = true;
 
             // Safety: auto-unlock after 2 minutes so one stuck command can't block the relay forever
@@ -287,15 +388,62 @@ function useFirestoreRelay(enabled: boolean) {
                 }
             }, 120_000);
 
-            // When phone sends "auto" (no targetAgentId), route through the generalist orchestrator
-            // NOT whatever agent the desktop session happened to be using last.
-            // When phone explicitly picks an agent (brand, road-manager, etc.), use that directly.
-            const targetAgent = command.targetAgentId || 'generalist';
-            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
-            writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50), agent: targetAgent || 'auto' });
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
+            writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
             try {
-                // Mark as processing
-                await remoteRelayService.markCommandProcessing(command.id);
+                // ─── Standard Agent Chat Route ───────────────────────────
+                if (!command.text.startsWith('[')) {
+                    const startedAt = Date.now();
+                    logger.info(`[RemoteRelay/Firestore] 💬 Agent chat: "${command.text.substring(0, 50)}"`);
+                    writeDiagnostic('agent_chat_started', {
+                        commandId: command.id,
+                        targetAgentId: command.targetAgentId || 'auto',
+                    });
+
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        'Processing in desktop studio…',
+                        command.targetAgentId,
+                        true
+                    );
+
+                    const commandResult = await entryCommandService.handleInput(command.text, {
+                        source: 'mobile',
+                        includeUserMessage: true,
+                        remoteCommandId: command.id,
+                    });
+                    if (commandResult.handled) {
+                        await remoteRelayService.sendResponse(
+                            command.id,
+                            commandResult.responseText || 'Workflow command handled.',
+                            commandResult.agentId || command.targetAgentId || 'generalist',
+                            false
+                        );
+                        await remoteRelayService.markCommandCompleted(command.id);
+                        writeDiagnostic('entry_command_done', { commandId: command.id });
+                        isProcessing.current = false;
+                        return;
+                    }
+
+                    await agentService.sendMessage(
+                        command.text,
+                        undefined,
+                        command.targetAgentId,
+                        { source: 'mobile-remote' }
+                    );
+
+                    const response = findLatestRemoteAgentResponse(startedAt);
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        response?.text?.trim() || 'Done.',
+                        response?.agentId || command.targetAgentId || 'generalist',
+                        false
+                    );
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    writeDiagnostic('agent_chat_done', { commandId: command.id });
+                    isProcessing.current = false;
+                    return;
+                }
 
                 // ─── Image Generation Route ──────────────────────────────
                 if (command.text.startsWith('[GENERATE_IMAGE]')) {
@@ -398,149 +546,17 @@ function useFirestoreRelay(enabled: boolean) {
                     return;
                 }
 
-                // ─── Standard Agent Chat Route ───────────────────────────
-                // Send "processing" indicator
+                logger.warn(`[RemoteRelay/Firestore] ⚠️ Unhandled desktop-only command prefix: ${command.text?.substring(0, 30)}`);
+                writeDiagnostic('command_unhandled_prefix', {
+                    commandId: command.id,
+                    text: command.text?.substring(0, 50),
+                });
                 await remoteRelayService.sendResponse(
                     command.id,
-                    '⏳ Processing...',
+                    '⚠️ This action could not be handled on the desktop. Please try again.',
                     undefined,
-                    true
+                    false
                 );
-                writeDiagnostic('chat_processing_sent', { commandId: command.id });
-
-                // Pre-check: is the agent service available?
-                const agentBusy = (agentService as unknown as { isProcessing: boolean }).isProcessing;
-                if (agentBusy) {
-                    writeDiagnostic('agent_busy_reset', { commandId: command.id });
-                    // Force-reset the agent's processing lock — it may be stale from a previous crash
-                    (agentService as unknown as { isProcessing: boolean }).isProcessing = false;
-                }
-
-                // ─── CRITICAL: Override desktop's conversationMode ────────────
-                // The phone's intent (targetAgentId) must drive routing, NOT
-                // whatever mode the desktop UI happens to be in.
-                // Save and restore the desktop state so the local user is unaffected.
-                const storeSnapshot = useStore.getState();
-                const originalMode = storeSnapshot.conversationMode;
-                const originalDeptId = storeSnapshot.activeDepartmentId;
-                const originalAgentId = storeSnapshot.directTargetAgentId;
-                const originalProvider = storeSnapshot.activeAgentProvider;
-
-                // Force 'direct' mode with 'native' provider for remote commands.
-                // 'native' ensures the standard orchestrator routes via forcedAgentId
-                // instead of hitting handleDirectChatFlow (which ignores forcedAgentId).
-                useStore.setState({
-                    conversationMode: 'direct',
-                    activeAgentProvider: 'native',
-                    directTargetAgentId: targetAgent || null,
-                });
-                writeDiagnostic('mode_override_applied', {
-                    commandId: command.id,
-                    originalMode,
-                    overrideMode: 'direct',
-                    overrideProvider: 'native',
-                    targetAgent,
-                });
-
-                // Run through the FULL agent pipeline with targeted agent
-                const stateBefore = useStore.getState();
-                const historyLengthBefore = stateBefore.agentHistory.length;
-                const boardroomLengthBefore = stateBefore.boardroomMessages?.length || 0;
-                writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, boardroomLengthBefore, agent: targetAgent || 'auto' });
-
-                try {
-                    // Race the agent call against a 45s timeout
-                    // If Gemini API or warmup hangs, we abort and tell the phone
-                    let callTimeoutId: ReturnType<typeof setTimeout>;
-                    const timeoutPromise = new Promise((_, reject) => {
-                        callTimeoutId = setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000);
-                    });
-
-                    await Promise.race([
-                        agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' }),
-                        timeoutPromise
-                    ]);
-                    clearTimeout(callTimeoutId!);
-                } catch (sendErr: unknown) {
-                    writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
-                    // Send error response to phone so user isn't stuck forever
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        `❌ ${sendErr instanceof Error ? sendErr.message : 'Agent call failed'}. Try again.`,
-                        undefined,
-                        false
-                    );
-                    await remoteRelayService.markCommandCompleted(command.id);
-                    return; // Skip the response polling — we already sent an error
-                } finally {
-                    // ─── RESTORE desktop state after agent call ──────────────
-                    useStore.setState({
-                        conversationMode: originalMode,
-                        activeDepartmentId: originalDeptId,
-                        directTargetAgentId: originalAgentId,
-                        activeAgentProvider: originalProvider,
-                    });
-                    writeDiagnostic('mode_override_restored', {
-                        commandId: command.id,
-                        restoredMode: originalMode,
-                    });
-                }
-
-                writeDiagnostic('agent_send_complete', { 
-                    commandId: command.id, 
-                    historyLengthAfter: useStore.getState().agentHistory.length,
-                    boardroomLengthAfter: useStore.getState().boardroomMessages?.length || 0
-                });
-
-                // Wait for a NEW response to appear (only entries AFTER our send)
-                // Increased to 30 attempts × 1s = 30s max wait
-                let lastResponse: { text?: string; agentId?: string } | undefined;
-                for (let attempt = 0; attempt < 30; attempt++) {
-                    const state = useStore.getState();
-                    const newHistoryEntries = state.agentHistory.slice(historyLengthBefore);
-                    const newBoardroomEntries = (state.boardroomMessages || []).slice(boardroomLengthBefore);
-                    
-                    const newEntries = [...newHistoryEntries, ...newBoardroomEntries]
-                        .sort((a, b) => a.timestamp - b.timestamp);
-
-                    const candidate = newEntries
-                        .filter(m => m.role === 'model' && m.text && !m.isStreaming)
-                        .slice(-1)[0];
-                        
-                    if (candidate && candidate.text && candidate.text.length > 5) {
-                        lastResponse = candidate;
-                        break;
-                    }
-                    if (attempt === 10) {
-                        writeDiagnostic('response_wait_slow', {
-                            commandId: command.id,
-                            newEntriesCount: newEntries.length,
-                            totalHistory: state.agentHistory.length,
-                            totalBoardroom: state.boardroomMessages?.length || 0
-                        });
-                    }
-                    await delay(1000);
-                }
-
-                if (lastResponse) {
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        lastResponse.text || 'No response',
-                        lastResponse.agentId,
-                        false
-                    );
-                    logger.info(`[RemoteRelay/Firestore] 🖥️→📱 Response sent (${lastResponse.text?.length} chars)`);
-                } else {
-                    logger.warn('[RemoteRelay/Firestore] No response found in agentHistory after 10s');
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        '⚠️ Agent processed but no response was captured. Please try again.',
-                        undefined,
-                        false
-                    );
-                }
-
-                // Mark command as completed
                 await remoteRelayService.markCommandCompleted(command.id);
             } catch (error: unknown) {
                 logger.error('[RemoteRelay/Firestore] Command failed:', error);
@@ -568,7 +584,9 @@ function useFirestoreRelay(enabled: boolean) {
         if (!enabled) return;
         let active = true;
 
-        const cleanup = () => remoteRelayService.cleanupOld(24).catch(() => { });
+        const cleanup = () => remoteRelayService.cleanupOld(24).catch((err: unknown) => {
+            logger.warn('[RemoteRelay] Periodic old command cleanup failed:', err);
+        });
 
         const loop = async () => {
             cleanup();
@@ -587,18 +605,24 @@ function useFirestoreRelay(enabled: boolean) {
 // Main Hook — auto-selects Firestore or HTTP based on auth
 // ---------------------------------------------------------------------------
 export function useRemoteCommandListener() {
+    const { user } = useStore(useShallow(state => ({ user: state.user })));
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         logger.info('[RemoteRelay] 🔐 Setting up auth listener...');
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             logger.info(`[RemoteRelay] 🔐 Auth state changed: ${user ? 'SIGNED IN (' + user.uid.substring(0, 8) + ')' : 'SIGNED OUT'}`);
-            setIsAuthenticated(!!user);
+            setIsAuthenticated(!isAnonymousOrDemoUser(user));
         });
         return unsubscribe;
     }, []);
 
+    // Disable remote command listener completely for guest sessions or mock user to prevent
+    // console permission errors and unneeded firestore polling.
+    const isGuest = isAnonymousOrDemoUser(user);
+    const shouldEnableRelay = isAuthenticated && !isGuest;
+
     // Use Firestore relay when authenticated.
-    useFirestoreRelay(isAuthenticated);
+    useFirestoreRelay(shouldEnableRelay);
     useHttpRelayFallback(false); // HTTP relay fallback disabled to prevent 404 spam in dev
 }

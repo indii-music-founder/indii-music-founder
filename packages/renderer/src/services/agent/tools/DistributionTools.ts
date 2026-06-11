@@ -3,13 +3,14 @@
  * DistributionTools.ts
  * 
  * Tool implementations for the Direct Distribution Engine.
- * Wired to actual services: ERNService, IdentifierService, RoyaltyService.
+ * Wired to actual services: IngestionNotificationService, IdentifierService, RoyaltyService.
  */
 
 import { IdentifierService } from '@/services/identity/IdentifierService';
-import { ernService, ERNService } from '@/services/ddex/ERNService';
-import { db, auth } from '@/services/firebase';
+import { ingestionNotificationService, IngestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { db, auth, functions } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -22,24 +23,30 @@ import { logger } from '@/utils/logger';
  */
 const prepare_release = wrapTool('prepare_release', async (args: {
     title: string;
-    artist: string;
-    upc: string;
-    isrc: string;
-    label?: string;
-    releaseType?: string;
-}) => {
-    const { title, artist, upc, isrc, label = 'indii Records', releaseType = 'Single' } = args;
+	    artist: string;
+	    upc: string;
+	    isrc: string;
+	    label: string;
+	    genre: string;
+	    language: string;
+	    releaseDate: string;
+	    releaseType?: string;
+	}) => {
+	    const { title, artist, upc, isrc, label, genre, language, releaseDate, releaseType = 'Single' } = args;
+	    if (!label || !genre || !language || !releaseDate) {
+	        return toolError('Distribution preparation requires label, genre, language, and release date. No placeholder metadata was generated.', 'MISSING_RELEASE_METADATA');
+	    }
 
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const rawDdex = await window.electronAPI.distribution.generateDDEX({
+            const rawDdex = await window.electronAPI.distribution.generateIngestionNotification({
                 releaseId: `rel-${isrc}`,
                 title,
                 artists: [artist],
                 upc,
                 tracks: [{
-                    // Minimal track mock to satisfy type
+                    // Minimal track payload for metadata-only preflight.
                     title,
                     isrc,
                     duration: 0,
@@ -47,7 +54,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                     artistNames: [artist]
                 }],
                 label: label,
-                genre: 'Pop'
+	                genre
             });
 
             return toolSuccess({
@@ -74,15 +81,15 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             artistName: artist,
             isrc,
             upc,
-            labelName: label,
-            releaseType: releaseType as 'Single' | 'EP' | 'Album',
-            genre: 'Pop',
-            subGenre: '',
-            language: 'eng',
-            releaseDate: new Date().toISOString().split('T')[0]!,
+	            labelName: label,
+	            releaseType: releaseType as 'Single' | 'EP' | 'Album',
+	            genre,
+	            subGenre: '',
+	            language,
+	            releaseDate,
             explicit: false,
             tracks: [],
-            splits: [{ legalName: artist, role: 'performer', percentage: 100, email: '' }],
+            splits: [],
             pro: 'None',
             publisher: 'Self-Published',
             containsSamples: false,
@@ -93,13 +100,13 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             aiGeneratedContent: { isFullyAIGenerated: false, isPartiallyAIGenerated: false }
         };
 
-        const ernResult = await ernService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: false });
+        const ernResult = await ingestionNotificationService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: false });
         if (!ernResult.success) return toolError(ernResult.error || 'ERN Generation Failed', 'ERN_ERROR');
 
         // Persist (Mirroring existing logic)
         const userId = auth.currentUser?.uid;
         if (userId) {
-            await setDoc(doc(collection(db, 'ddexReleases')), {
+            await setDoc(doc(collection(db, 'proprietaryIngestionReleases')), {
                 userId, title, artist, upc, isrc, label, releaseType,
                 ernXml: ernResult.xml, status: 'STAGED', createdAt: serverTimestamp()
             });
@@ -141,19 +148,8 @@ const run_audio_qc = wrapTool('run_audio_qc', async (args: {
         }, `Audio QC completed for ${filePath}`);
     }
 
-    // Browser fallback - return basic validation
-    return toolSuccess({
-        file: filePath,
-        environment: 'browser',
-        checks: {
-            bit_depth: { value: 'unknown', status: 'SKIPPED' },
-            sample_rate: { value: 'unknown', status: 'SKIPPED' },
-            spectral_cutoff: { detected: false, status: 'SKIPPED' },
-            atmos_compliance: checkAtmos ? { status: 'SKIPPED', reason: 'Requires Electron' } : null
-        },
-        overall: 'PARTIAL',
-        warnings: ['Full audio QC requires Electron environment']
-    }, `Audio QC partial — full analysis requires Electron environment.`);
+    void checkAtmos;
+    return toolError('Audio QC requires the Electron desktop bridge. No browser-only QC report was generated.', 'QC_BRIDGE_REQUIRED');
 });
 
 /**
@@ -201,9 +197,14 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
 
         const userId = auth.currentUser?.uid;
         if (userId) {
-            await setDoc(doc(collection(db, 'isrc_registry')), {
-                isrc, trackTitle, artist, year, userId,
-                orgId: 'personal', status: 'REGISTERED', createdAt: serverTimestamp()
+            const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+            await recordIdentifier({
+                type: 'isrc',
+                isrc,
+                releaseId: `generated-${isrc}`,
+                trackTitle,
+                artistName: artist,
+                metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
             });
         }
 
@@ -224,15 +225,18 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
  */
 const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     userId: string;
+    fullName?: string;
     isUsPerson: boolean;
     isEntity?: boolean;
     country: string;
     tin: string;
     signedUnderPerjury: boolean;
 }) => {
-    const { userId, isUsPerson, isEntity = false, country, tin, signedUnderPerjury } = args;
+    const { userId, fullName, isUsPerson, country, tin, signedUnderPerjury } = args;
+    if (!fullName?.trim()) {
+        return toolError('Legal name is required to certify a tax profile.', 'LEGAL_NAME_REQUIRED');
+    }
 
-    // 1. Try Bank Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             // Calculate status first
@@ -240,7 +244,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
 
             // Certify - remove userId from the data object as it's passed as first arg
             const certResult = await window.electronAPI.distribution.certifyTax(userId, {
-                fullName: 'Unknown User', // Required by interface fallback
+                fullName: fullName.trim(),
                 country,
                 taxId: tin,
                 usPerson: isUsPerson,
@@ -256,65 +260,16 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
                 };
             }
         } catch (e: unknown) {
-            logger.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Bank Layer certification failed:', e);
+            return toolError('Tax certification failed in the Bank Layer. No certification was recorded.', 'TAX_CERTIFICATION_FAILED');
         }
     }
 
-    // 2. Fallback to JS Service
-    let tinValid = false;
-    let tinMessage = 'Unknown';
-    if (!tin) {
-        tinMessage = 'Missing TIN';
-    } else if (isUsPerson) {
-        tinValid = /^\d{3}-\d{2}-\d{4}$/.test(tin) || /^\d{2}-\d{7}$/.test(tin);
-        tinMessage = tinValid ? 'Valid US TIN' : 'TIN Match Fail (Invalid Format)';
-    } else {
-        tinValid = tin.length >= 8;
-        tinMessage = tinValid ? 'Valid Foreign TIN' : 'TIN Match Fail (Invalid Foreign Format)';
-    }
-
-    const certified = signedUnderPerjury && tinValid;
-
-    // Determine form type
-    let formType = 'Unknown';
-    if (isUsPerson) {
-        formType = 'W-9';
-    } else if (isEntity) {
-        formType = 'W-8BEN-E';
-    } else {
-        formType = 'W-8BEN';
-    }
-
-    // Determine payout status
-    let payoutStatus = 'HELD';
-    if (certified) {
-        payoutStatus = 'ACTIVE';
-    }
-
-    if (!certified) {
-        return {
-            success: false,
-            error: `Certification failed: ${tinMessage}`,
-            message: `Certification failed: ${tinMessage}`,
-            data: {
-                form_type: formType,
-                tin_valid: tinValid,
-                payout_status: payoutStatus,
-                tin_message: tinMessage,
-                certified: certified,
-                withholding_rate: isUsPerson ? 0 : 30
-            }
-        };
-    }
-
-    return toolSuccess({
-        form_type: formType,
-        tin_valid: tinValid,
-        payout_status: payoutStatus,
-        tin_message: tinMessage,
-        certified: certified,
-        withholding_rate: isUsPerson ? 0 : 30
-    }, `Tax profile certified. Form: ${formType}, Status: ${payoutStatus}.`);
+    void isUsPerson;
+    void country;
+    void tin;
+    void signedUnderPerjury;
+    return toolError('Tax certification requires the Electron Bank Layer. No browser-only certification was recorded.', 'TAX_BANK_LAYER_REQUIRED');
 });
 
 /**
@@ -493,7 +448,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             const result = await window.electronAPI.distribution.checkMerlinStatus({
-                tracks: [], // Add required 'tracks' array (empty for simple pre-check if supported by python, or mock)
+                tracks: [],
                 ...args
             });
 
@@ -540,8 +495,8 @@ export const DistributionTools = {
 
         // 2. Call Cloud Function for DSP-specific ingestion pipeline
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const distributeVideo = httpsCallable(functions, 'distributeVideoToDSP');
             const result = await distributeVideo({
                 releaseDocId: videoReleaseRef.id,
@@ -574,23 +529,30 @@ export const DistributionTools = {
     }),
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
-        // Wire to ERNService for ERN export (Item 171)
+        // Wire to IngestionNotificationService for ERN export (Item 171)
+        const trackTitle = args.metadata?.title || args.metadata?.trackTitle;
+        const artistName = args.metadata?.artist || args.metadata?.artistName;
+        const labelName = args.metadata?.label || args.metadata?.labelName;
+        if (!trackTitle || !artistName || !args.metadata?.isrc || !args.metadata?.upc || !labelName || !args.metadata?.genre || !args.metadata?.releaseDate || !args.metadata?.language) {
+            return toolError('ERN export requires track title, artist name, ISRC, UPC, label name, genre, release date, and language. No placeholder metadata was generated.', 'MISSING_RELEASE_METADATA');
+        }
+
         // Build ExtendedGoldenMetadata from the provided metadata
         const meta: ExtendedGoldenMetadata = {
             id: args.releaseId,
-            trackTitle: args.metadata?.title || args.metadata?.trackTitle || 'Untitled',
-            artistName: args.metadata?.artist || args.metadata?.artistName || 'Unknown Artist',
-            isrc: args.metadata?.isrc || '',
-            upc: args.metadata?.upc || '',
-            labelName: args.metadata?.label || args.metadata?.labelName || 'indii Records',
+            trackTitle,
+            artistName,
+            isrc: args.metadata.isrc,
+            upc: args.metadata.upc,
+            labelName,
             releaseType: args.metadata?.releaseType || 'Single',
-            genre: args.metadata?.genre || 'Pop',
+            genre: args.metadata.genre,
             subGenre: args.metadata?.subGenre || '',
-            language: args.metadata?.language || 'eng',
-            releaseDate: args.metadata?.releaseDate || new Date().toISOString().split('T')[0],
+            language: args.metadata.language,
+            releaseDate: args.metadata.releaseDate,
             explicit: args.metadata?.explicit ?? false,
             tracks: args.metadata?.tracks || [],
-            splits: args.metadata?.splits || [{ legalName: args.metadata?.artistName || 'Artist', role: 'performer', percentage: 100, email: '' }],
+            splits: args.metadata?.splits || [],
             pro: args.metadata?.pro || 'None',
             publisher: args.metadata?.publisher || 'Self-Published',
             containsSamples: args.metadata?.containsSamples ?? false,
@@ -602,13 +564,13 @@ export const DistributionTools = {
         };
 
         try {
-            const result = await ernService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
+            const result = await ingestionNotificationService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
             if (!result.success) {
                 return toolError(result.error || 'ERN generation failed', 'ERN_ERROR');
             }
 
             // Validate the generated XML
-            const validationErrors = ERNService.validateERNXML(result.xml || '');
+            const validationErrors = IngestionNotificationService.validateERNXML(result.xml || '');
 
             return toolSuccess({
                 releaseId: args.releaseId,
@@ -616,7 +578,7 @@ export const DistributionTools = {
                 isValid: validationErrors.length === 0,
                 validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
                 xmlLength: result.xml?.length || 0,
-            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via ERNService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
+            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
         } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
         }
@@ -631,13 +593,16 @@ export const DistributionTools = {
             // Persist to Firestore registry
             const uid = auth.currentUser?.uid;
             if (uid) {
-                await addDoc(collection(db, 'upc_registry'), {
+                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                await recordIdentifier({
+                    type: 'upc',
                     upc,
+                    releaseId: `generated-${upc}`,
                     releaseTitle: args.releaseTitle,
-                    recordLabel: args.recordLabel,
-                    userId: uid,
-                    status: 'REGISTERED',
-                    createdAt: serverTimestamp(),
+                    metadataSnapshot: {
+                        recordLabel: args.recordLabel,
+                        source: 'DistributionTools.generate_upc',
+                    },
                 });
             }
 
@@ -657,14 +622,17 @@ export const DistributionTools = {
         const uid = auth.currentUser?.uid;
         if (!uid) return toolError('User not authenticated');
 
-        // 1. Log the ingestion attempt to Firestore
-        const ingestionRef = await addDoc(collection(db, 'sftp_ingestions'), {
-            userId: uid,
+        const createSftpIngestion = httpsCallable(functions, 'createSftpIngestionRecord');
+        const updateSftpIngestion = httpsCallable(functions, 'updateSftpIngestionRecord');
+        const ingestionResult = await createSftpIngestion({
             targetDSP: args.targetDSP,
             releaseFolder: args.releaseFolder,
-            status: 'INITIATED',
-            createdAt: serverTimestamp(),
         });
+        const ingestionData = ingestionResult.data as { ingestionId?: string };
+        const ingestionId = ingestionData.ingestionId;
+        if (!ingestionId) {
+            return toolError('SFTP ingestion did not return a server id.', 'SFTP_RECORD_ERROR');
+        }
 
         // 2. Try Electron IPC for actual SFTP transfer
         if (typeof window !== 'undefined' && window.electronAPI) {
@@ -679,18 +647,17 @@ export const DistributionTools = {
                     throw new Error(result.error || 'SFTP upload failed');
                 }
 
-                // Update status on success
-                await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+                await updateSftpIngestion({
+                    ingestionId,
                     status: 'TRANSFERRED',
                     filesTransferred: result.files?.length || 0,
-                    completedAt: serverTimestamp(),
-                }, { merge: true });
+                });
 
                 return toolSuccess({
                     dsp: args.targetDSP,
                     folderPath: args.releaseFolder,
                     sftpStatus: 'Transferred Successfully',
-                    ingestionId: ingestionRef.id,
+                    ingestionId,
                     timestamp: new Date().toISOString(),
                     engine: 'Electron SFTP',
                 }, `Direct SFTP pipeline successfully delivered "${args.releaseFolder}" to ${args.targetDSP} via Electron IPC.`);
@@ -701,41 +668,42 @@ export const DistributionTools = {
 
         // 3. Fallback: Cloud Function for server-side SFTP
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
             const result = await sftpDeliver({
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 targetDSP: args.targetDSP,
                 releaseFolder: args.releaseFolder,
             });
             const data = result.data as Record<string, unknown>;
 
-            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+            await updateSftpIngestion({
+                ingestionId,
                 status: data.status || 'TRANSFERRED',
-                completedAt: serverTimestamp(),
-            }, { merge: true });
+            });
 
             return toolSuccess({
                 dsp: args.targetDSP,
                 folderPath: args.releaseFolder,
                 sftpStatus: data.status || 'Transferred',
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 timestamp: new Date().toISOString(),
                 engine: 'Cloud Function',
             }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
         } catch (cfError: unknown) {
             logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
             // Mark as pending for manual processing
-            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+            await updateSftpIngestion({
+                ingestionId,
                 status: 'PENDING_MANUAL',
-            }, { merge: true });
+            });
 
             return toolSuccess({
                 dsp: args.targetDSP,
                 folderPath: args.releaseFolder,
                 sftpStatus: 'PENDING_MANUAL',
-                ingestionId: ingestionRef.id,
+                ingestionId,
                 note: 'SFTP engine unavailable. Ingestion saved — will be processed when SFTP credentials are configured.',
             }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP credentials to enable automated delivery.`);
         }
@@ -759,7 +727,7 @@ export const DistributionTools = {
             return toolError(`Release ${args.trackId} not found`);
         }
 
-        // Persist flag to Firestore release record — ERNMapper reads this on next delivery
+        // Persist flag to Firestore release record — IngestionNotificationMapper reads this on next delivery
         await setDoc(releaseRef, {
             'metadata.youtubeContentIdOptIn': args.optIn,
             'metadata.youtubeContentIdPolicy': args.optIn ? policy : null,
@@ -781,7 +749,6 @@ export const DistributionTools = {
         const uid = auth.currentUser?.uid;
         if (!uid) return toolError('User not authenticated');
 
-        // 1. Update release status in Firestore
         const releaseRef = doc(db, 'releases', args.releaseId);
         const releaseSnap = await getDoc(releaseRef);
 
@@ -789,30 +756,22 @@ export const DistributionTools = {
             return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
         }
 
-        // Mark release as takedown-in-progress
-        await setDoc(releaseRef, {
-            status: 'TAKEDOWN_REQUESTED',
-            takedownReason: args.reason,
-            takedownRequestedAt: serverTimestamp(),
-            takedownRequestedBy: uid,
-        }, { merge: true });
-
-        // 2. Create takedown audit record
-        const takedownRef = await addDoc(collection(db, 'takedown_requests'), {
+        const requestTakedown = httpsCallable(functions, 'requestDistributionTakedown');
+        const takedownResult = await requestTakedown({
             releaseId: args.releaseId,
             reason: args.reason,
-            requestedBy: uid,
-            status: 'INITIATED',
-            createdAt: serverTimestamp(),
         });
+        const takedownData = takedownResult.data as { takedownId?: string };
+        const takedownId = takedownData.takedownId;
+        if (!takedownId) {
+            return toolError('Takedown request did not return a server id.', 'TAKEDOWN_ERROR');
+        }
 
-        // 3. Notify distributors via Cloud Function
+        // 2. Notify distributors via Cloud Function
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
             const processTakedown = httpsCallable(functions, 'processReleaseTakedown');
             const result = await processTakedown({
-                takedownId: takedownRef.id,
+                takedownId,
                 releaseId: args.releaseId,
                 reason: args.reason,
             });
@@ -821,7 +780,7 @@ export const DistributionTools = {
             return toolSuccess({
                 releaseId: args.releaseId,
                 reason: args.reason,
-                takedownId: takedownRef.id,
+                takedownId,
                 status: data.status || 'PROCESSING',
                 distributorsNotified: data.distributorsNotified || 0,
                 estimatedRemovalTime: '24-48 hours',
@@ -832,7 +791,7 @@ export const DistributionTools = {
             return toolSuccess({
                 releaseId: args.releaseId,
                 reason: args.reason,
-                takedownId: takedownRef.id,
+                takedownId,
                 status: 'RECORDED_PENDING_NOTIFICATION',
                 note: 'Takedown recorded in system. Distributor notifications will be sent when Cloud Function is deployed.',
                 estimatedRemovalTime: '24-48 hours after notification',

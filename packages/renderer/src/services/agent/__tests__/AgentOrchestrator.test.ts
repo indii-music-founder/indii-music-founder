@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentOrchestrator } from '../components/AgentOrchestrator';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { agentRegistry } from '../registry';
 import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn()
     }
 }));
@@ -136,7 +136,7 @@ describe('AgentOrchestrator', () => {
             expect(result).toBe('generalist');
         });
 
-        it('falls back to generalist on AI error', async () => {
+        it('falls back to generalist on Autonomous error', async () => {
             vi.mocked(AI.generateContent).mockRejectedValue(new Error('API Error'));
 
             const result = await orchestrator.determineAgent(
@@ -206,7 +206,7 @@ describe('AgentOrchestrator', () => {
             expect(result).toBe('generalist');
         });
 
-        it('passes context to AI prompt', async () => {
+        it('passes context to Intelligence prompt', async () => {
             mockRouting('music');
 
             await orchestrator.determineAgent(
@@ -229,7 +229,7 @@ describe('AgentOrchestrator', () => {
             );
         });
 
-        it('includes user query in AI prompt', async () => {
+        it('includes user query in Intelligence prompt', async () => {
             mockRouting('legal');
 
             await orchestrator.determineAgent(

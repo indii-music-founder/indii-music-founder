@@ -1,7 +1,7 @@
-# indiiOS Design Manifesto: The Resonant Interface (v2026.1)
+# indii Design Manifesto: The Resonant Interface (v2026.1)
 
 ## 1. Vision & Metaphilosophy
-The **indiiOS** interface is a **resonant environment** for creativity, designed for the **2026 Machine Experience (MX)**. We bridge the gap between **Hyper-real AI Perfection** and **Raw Human Authenticity**.
+The **indii** interface is a **resonant environment** for creativity, designed for the **2026 Machine Experience (MX)**. We bridge the gap between **Hyper-real AI Perfection** and **Raw Human Authenticity**.
 
 ### Core Pillars
 *   **Subliminal (MX)**: The UI nudges more than it notifies. It recedes to let the creator's content lead.
@@ -12,7 +12,7 @@ The **indiiOS** interface is a **resonant environment** for creativity, designed
 ---
 
 ## 2. The "Drippy" Aesthetic
-The signature visual style of indiiOS is the **Drippy 2026 Aesthetic**—a fusion of high-intensity glassmorphism and liquid physics.
+The signature visual style of indii is the **Drippy 2026 Aesthetic**—a fusion of high-intensity glassmorphism and liquid physics.
 
 ### Visual Components
 *   **The "Wet Look"**: High-saturation backdrop blurs (`blur-xl`), increased contrast (`saturate-200`), and ultra-thin translucent borders.
@@ -73,7 +73,7 @@ The primary container for all content. It must include:
 ---
 
 ## 6. Sonic OS Identity
-The UI is the visual representation of the **indiiOS Sonic DNA**.
+The UI is the visual representation of the **indii Sonic DNA**.
 *   **Audio Visualizers**: Real-time 4K synthesis of audio into visual manifests.
 *   **Sonic Feedback**: Buttons "click," panels "whoosh," and the system "hums" with potential energy.
 
@@ -83,7 +83,7 @@ The UI is the visual representation of the **indiiOS Sonic DNA**.
 While aesthetics are "drippy" and "resonant," the interface must remain functionally ironclad.
 
 ### A. Safety Patterns
-*   **ConfirmDialog**: All destructive actions (Delete, Remove, Cancel) must utilize the `ConfirmDialog` component. It uses the Radix `Dialog` primitive but follows the indiiOS aesthetic (glassmorphism + loading states).
+*   **ConfirmDialog**: All destructive actions (Delete, Remove, Cancel) must utilize the `ConfirmDialog` component. It uses the Radix `Dialog` primitive but follows the indii aesthetic (glassmorphism + loading states).
 *   **Data Loss Prevention**: The `useConfirmDialog` hook is the mandatory pattern for stateful confirmation flows.
 
 ### B. Compliance UI

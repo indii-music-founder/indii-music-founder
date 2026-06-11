@@ -1,7 +1,7 @@
 /**
  * TokenGatedPreview — Item 130 (PRODUCTION_200)
  * Generate hidden landing pages where only proven token/NFT holders
- * can stream unreleased tracks. Includes fan-side preview mockup.
+ * can stream unreleased tracks.
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -65,7 +65,7 @@ function FanPreviewMockup({ track, walletConnected }: { track: GatedTrack; walle
                             <Unlock size={12} />
                             Access Granted — Token #{track.tokenId} verified
                         </div>
-                        {/* Mock waveform */}
+                        {/* Locked-preview waveform visualization */}
                         <div className="relative bg-white/5 rounded-xl overflow-hidden h-14 flex items-center px-4 gap-3">
                             <button
                                 onClick={() => setPlaying(p => !p)}
@@ -114,7 +114,6 @@ function FanPreviewMockup({ track, walletConnected }: { track: GatedTrack; walle
 export function TokenGatedPreview() {
     const [tracks, setTracks] = useState<GatedTrack[]>([]);
     const [selectedId, setSelectedId] = useState<string>('');
-    const [fanPreviewWallet, setFanPreviewWallet] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const selected = tracks.find(t => t.id === selectedId) ?? tracks[0];
@@ -127,23 +126,6 @@ export function TokenGatedPreview() {
 
     const togglePublish = (id: string) => {
         setTracks(prev => prev.map(t => t.id === id ? { ...t, published: !t.published } : t));
-    };
-
-    const handleAdd = () => {
-        const newTrack: GatedTrack = {
-            id: String(Date.now()),
-            title: 'New Unreleased Track',
-            duration: '0:00',
-            bpm: 120,
-            key: 'C',
-            contractAddress: '0x1a2b...9f3c',
-            tokenId: String(tracks.length + 1).padStart(3, '0'),
-            previewSlug: `indii.vip/gate/new-track-${Date.now()}`,
-            fanViews: 0,
-            published: false,
-        };
-        setTracks(prev => [...prev, newTrack]);
-        setSelectedId(newTrack.id);
     };
 
     const handleDelete = (id: string) => {
@@ -162,10 +144,10 @@ export function TokenGatedPreview() {
                     </p>
                 </div>
                 <button
-                    onClick={handleAdd}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFE135]/10 border border-[#FFE135]/20 rounded-lg text-[11px] font-bold text-[#FFE135] hover:bg-[#FFE135]/20 transition-all"
+                    disabled
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold text-neutral-500 cursor-not-allowed"
                 >
-                    <Plus size={12} /> Add Track
+                    <Plus size={12} /> Token-gate backend required
                 </button>
             </div>
 
@@ -254,26 +236,23 @@ export function TokenGatedPreview() {
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Fan Preview</span>
                             <button
-                                onClick={() => setFanPreviewWallet(p => !p)}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${fanPreviewWallet
-                                    ? 'bg-green-500/20 border border-green-500/30 text-green-400'
-                                    : 'bg-white/5 border border-white/10 text-neutral-500 hover:text-white'
-                                    }`}
+                                disabled
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all bg-white/5 border border-white/10 text-neutral-500 cursor-not-allowed"
                             >
                                 <Wallet size={10} />
-                                {fanPreviewWallet ? 'Wallet Connected' : 'Simulate Wallet'}
+                                Wallet verification required
                             </button>
                         </div>
 
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={selected.id + String(fanPreviewWallet)}
+                                key={selected.id}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <FanPreviewMockup track={selected} walletConnected={fanPreviewWallet} />
+                                <FanPreviewMockup track={selected} walletConnected={false} />
                             </motion.div>
                         </AnimatePresence>
 

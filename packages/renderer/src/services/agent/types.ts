@@ -7,6 +7,10 @@ export type { AgentMessage };
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
 import type { AgentIdentityCard } from './governance/AgentIdentity';
+import { AgentCard } from './a2a/AgentCard';
+export type { AgentCard };
+import type { Directive } from '@/services/directive/DirectiveTypes';
+export type { Directive };
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -67,7 +71,7 @@ export interface ToolDefinition {
  * This is the single source of truth for agent ID validation.
  *
  * IMPORTANT: Keep this in sync when adding new agents.
- * Used to prevent AI hallucination of non-existent agent IDs.
+ * Used to prevent Autonomous hallucination of non-existent agent IDs.
  */
 export const VALID_AGENT_IDS = [
     'marketing',
@@ -94,6 +98,7 @@ export const VALID_AGENT_IDS = [
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
     'music',        // Sonic Director - Audio Analysis & Metadata
+    'analytics',    // Intelligence Analytics Specialist
     'curriculum',   // Music Education Specialist
     'keeper',       // Context Integrity Guardian
     'generalist'  // indii Conductor (Hub)
@@ -103,7 +108,7 @@ export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 
 /**
  * Comma-separated list of valid agent IDs for use in tool descriptions.
- * Prevents AI from hallucinating non-existent agent names.
+ * Prevents Autonomous from hallucinating non-existent agent names.
  */
 export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 
@@ -212,6 +217,7 @@ export interface AgentContext {
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
     traceId?: string;
+    swarmId?: string | null;
     attachments?: { mimeType: string; base64: string }[];
     systemPrompt?: string;
     whiskState?: WhiskState;
@@ -252,6 +258,12 @@ export interface AgentContext {
     contextSummary?: string;
     /** Active session ID */
     sessionId?: string;
+    /** Current directive guiding agent behavior */
+    directive?: Directive;
+    /** Streaming runner for progressive specialist delegation */
+    streamAgent?: (agentId: string, task: string, onChunk: (chunk: string) => void) => Promise<void>;
+    /** Emit a single token to the user-facing UI during streaming */
+    emitToken?: (token: string) => void;
 }
 
 export type AgentRunner = (
@@ -280,28 +292,6 @@ export interface ProactiveTask {
 // Using types from @/modules/workflow/types via imports above
 
 // ============================================================================
-// Memory & Knowledge Types
-// ============================================================================
-
-export interface UserMemory {
-    id: string;
-    content: string;
-    type: 'fact' | 'preference' | 'rule' | 'summary';
-    timestamp: any; // Firestore Timestamp
-    metadata?: Record<string, any>;
-    important?: boolean;
-    consolidated?: boolean;
-    sourceIds?: string[];
-}
-
-export interface KnowledgeItem {
-    id: string;
-    title: string;
-    content: string;
-    type: string;
-}
-
-// ============================================================================
 // Tool Function Types
 // ============================================================================
 
@@ -312,6 +302,8 @@ export interface ToolFunctionResult {
     data?: any;
     error?: string;
     message?: string;
+    /** Allows tools to set explicit execution states (e.g., pausing for approval) */
+    status?: WorkflowExecutionStatus;
     /** URLs of generated or modified assets (images, audio, etc.) */
     urls?: string[];
     /** URL of a generated document (PDF, etc.) */
@@ -356,11 +348,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  * Uses contravariance to accept more specific arg types
  */
 
-export type AnyToolFunction = (
-    args: any,
-    context?: AgentContext,
-    toolContext?: ToolExecutionContext
-) => Promise<ToolFunctionResult>;
+export type AnyToolFunction = (...args: any[]) => Promise<ToolFunctionResult>;
 
 // ============================================================================
 // Agent Configuration Types
@@ -381,9 +369,10 @@ export interface AgentConfig {
      *  An empty array [] means the agent has NO tool access at runtime.
      */
     authorizedTools?: string[];
-    /** Optional fine-tuned model endpoint. When set and the feature flag
-     *  VITE_USE_FINE_TUNED_AGENTS is enabled, BaseAgent will use this model
-     *  instead of the default AI_MODELS.TEXT.AGENT. Format:
+    /** Optional explicit fine-tuned model endpoint. When omitted, BaseAgent
+     *  resolves a required Vertex endpoint from fine-tuned-models.ts.
+     *  Agent execution must not silently downgrade to a base Gemini model.
+     *  Format:
      *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
      */
     modelId?: string;
@@ -430,6 +419,8 @@ export interface SpecializedAgent {
     description: string;
     color: string;
     category: AgentCategory;
+    /** Swarm identity card for A2A communication */
+    card?: AgentCard;
     execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
 }
 
@@ -443,125 +434,24 @@ export interface AgentRegistryProvider {
 // Workflow Execution State Machine (Priority 1: Agentic Harness Primitive #4)
 // ============================================================================
 
-/**
- * Lifecycle status for a workflow execution or individual step.
- * Transitions: planned → executing → step_complete | failed | cancelled
- * Terminal states: completed, failed, cancelled
- */
-export type WorkflowExecutionStatus =
-    | 'planned'
-    | 'executing'
-    | 'step_complete'
-    | 'awaiting_approval'
-    | 'completed'
-    | 'failed'
-    | 'cancelled'
-    | 'skipped';
+import type {
+    WorkflowExecutionStatus,
+    WorkflowStepStatus,
+    WorkflowEdge,
+    WorkflowStep,
+    WorkflowStepExecution,
+    WorkflowExecution
+} from '@indii/shared';
 
-export interface WorkflowEdge {
-    from: string;
-    to: string;
-    condition?: (execution: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
-    label?: string; // Human-readable label for the transition
-    metadata?: Record<string, any>; // Arbitrary metadata for the transition
-}
+export type {
+    WorkflowExecutionStatus,
+    WorkflowStepStatus,
+    WorkflowEdge,
+    WorkflowStep,
+    WorkflowStepExecution,
+    WorkflowExecution
+};
 
-export interface WorkflowStep {
-    id: string; // Unique identifier for the step within the workflow
-    agentId: string;
-    prompt: string;
-    priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
-    timeoutMs?: number; // Optional timeout for this specific step
-    retryCount?: number; // How many times to retry on failure
-}
-
-/**
- * Persisted state for a single step within a workflow execution.
- */
-export interface WorkflowStepExecution {
-    stepId: string;
-    agentId: string;
-    prompt: string;
-    status: WorkflowExecutionStatus;
-    idempotencyKey: string;
-    result?: string;
-    error?: string;
-    startedAt?: number;
-    completedAt?: number;
-}
-
-/**
- * Persisted state for an entire workflow run.
- * Stored in Firestore under `users/{userId}/workflowExecutions/{id}`.
- */
-export interface WorkflowExecution {
-    id: string;
-    workflowId: string;
-    sessionId?: string;
-    userId: string;
-    status: WorkflowExecutionStatus;
-    steps: Record<string, WorkflowStepExecution>;
-    edges: WorkflowEdge[];
-    createdAt: number;
-    updatedAt: number;
-}
-
-// ============================================================================
-// Phase 2: Agent Orchestration & Memory Types
-// ============================================================================
-
-/**
- * The 5 memory layers in the IndiiOS Persistent Memory hierarchy.
- * Each layer has different persistence, TTL, and authority semantics.
- */
-export type MemoryLayer = 'scratchpad' | 'session' | 'vault' | 'captains_log' | 'rag_index';
-
-/**
- * A single memory entry that can exist in any of the 5 layers.
- * This is the universal currency of the PersistentMemoryService facade.
- */
-export interface MemoryEntry {
-    /** Unique identifier within the layer */
-    id: string;
-    /** Which memory layer this entry belongs to */
-    layer: MemoryLayer;
-    /** Lookup key (e.g., "artist_name", "preferred_genre") */
-    key: string;
-    /** The stored value (type depends on the layer) */
-    value: unknown;
-    /** Provenance and lifecycle metadata */
-    metadata: {
-        createdAt: number;
-        updatedAt: number;
-        /** Which agent wrote this entry (null = user-written) */
-        agentId?: string;
-        /** Project scope (null = global) */
-        projectId?: string;
-        /** Time-to-live in milliseconds (only for scratchpad/session layers) */
-        ttl?: number;
-        /** Source of truth for conflict resolution */
-        source?: 'user' | 'agent' | 'webhook' | 'import' | 'onboarding';
-    };
-}
-
-/**
- * Assembled context window from all 5 memory layers.
- * Used by agents to receive structured memory before execution.
- */
-export interface ContextWindow {
-    /** In-memory task-scoped key-value pairs */
-    scratchpad: Record<string, unknown>;
-    /** Recent session memories (last 24h) */
-    sessionMemories: MemoryEntry[];
-    /** Authoritative facts from CORE Vault */
-    vaultFacts: string[];
-    /** Recent Captain's Log entries */
-    recentLogs: string[];
-    /** Semantically matched RAG results */
-    ragResults: MemoryEntry[];
-    /** Estimated token count of the full context window */
-    totalTokenEstimate: number;
-}
 
 /**
  * A single frame in the multi-turn context stack.
@@ -676,7 +566,7 @@ export interface GraphExecutionState {
     executionId: string;
     /** Map of node ID to its current execution status and output. */
     nodeStates: Record<string, {
-        status: WorkflowExecutionStatus;
+        status: WorkflowStepStatus;
         output?: string;
         error?: string;
         startedAt?: number;

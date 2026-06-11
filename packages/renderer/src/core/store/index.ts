@@ -6,7 +6,7 @@ export { createAppSlice };
 import { ProfileSlice, createProfileSlice } from './slices/profileSlice';
 import { AgentSlice, createAgentSlice } from './slices/agent';
 import { CreativeSlice, createCreativeSlice } from './slices/creative';
-export type { CanvasImage, ShotItem } from './slices/creative';
+export type { CanvasImage, ShotItem, DesignVersion } from './slices/creative';
 export type { HistoryItem } from '@/core/types/history';
 import { WorkflowSlice, createWorkflowSlice } from './slices/workflowSlice';
 import { AuthSlice, createAuthSlice } from './slices/authSlice';
@@ -31,6 +31,7 @@ import { RegistrationSlice, createRegistrationSlice } from './slices/registratio
 import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
 import { AgentMemoryState, createAgentMemorySlice } from './slices/agentMemorySlice';
+import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -62,7 +63,8 @@ export interface StoreState extends
     RegistrationSlice,
     AgentPlanSlice,
     AgentCanvasSlice,
-    AgentMemoryState { }
+    AgentMemoryState,
+    HandoffSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -101,6 +103,7 @@ export const useStore = create<StoreState>()(
                 ...createAgentPlanSlice(...a),
                 ...createAgentCanvasSlice(...a),
                 ...createAgentMemorySlice(...a),
+                ...createHandoffSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
@@ -109,7 +112,7 @@ export const useStore = create<StoreState>()(
             return store;
         },
         {
-            name: 'indiios-app-storage',
+            name: 'indii-app-storage',
             storage: createJSONStorage(() => SecureZustandStorage),
             partialize: (state) => ({
                 isSidebarOpen: state.isSidebarOpen,
@@ -128,7 +131,5 @@ export const useStore = create<StoreState>()(
 
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
-    if (import.meta.env.DEV) {
-        window.useStore = useStore;
-    }
+    window.useStore = useStore;
 }

@@ -1,0 +1,233 @@
+{
+  "traceId": "live-chain-1780866554672",
+  "userPointer": "user.profile",
+  "campaign": {
+    "id": "campaign-neon-altar-presave",
+    "assetType": "campaign",
+    "title": "Neon Altar Pre-Save Sprint",
+    "description": "A connected 21-day pre-save campaign using generated cover art, vertical teasers, press copy, and budget allocation.",
+    "durationDays": 21,
+    "startDate": "2026-05-29",
+    "endDate": "2026-06-19",
+    "budget": 2400,
+    "status": "PENDING",
+    "attachedAssets": [
+      "asset-cover-neon-altar",
+      "asset-vertical-teaser-neon-altar"
+    ],
+    "posts": [
+      {
+        "id": "post-ig-teaser-01",
+        "platform": "Instagram",
+        "copy": "The first signal from Neon Altar is live. Pre-save now and step into the chrome room.",
+        "imageAsset": {
+          "assetType": "image",
+          "title": "Neon Altar vertical teaser",
+          "imageUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221080%22%20height%3D%221920%22%20viewBox%3D%220%200%201080%201920%22%3E%0A%20%20%3Crect%20width%3D%221080%22%20height%3D%221920%22%20fill%3D%22%23090B14%22%2F%3E%0A%20%20%3ClinearGradient%20id%3D%22beam%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2300F5D4%22%2F%3E%0A%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF4D8D%22%2F%3E%0A%20%20%3C%2FlinearGradient%3E%0A%20%20%3Crect%20x%3D%2296%22%20y%3D%22140%22%20width%3D%22888%22%20height%3D%221640%22%20rx%3D%2242%22%20fill%3D%22none%22%20stroke%3D%22url(%23beam)%22%20stroke-width%3D%2214%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M210%201260%20C360%20980%20720%20980%20870%201260%22%20fill%3D%22none%22%20stroke%3D%22%23F8FAFC%22%20stroke-width%3D%2216%22%20opacity%3D%220.78%22%2F%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%22760%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22118%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3ENEON%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%22900%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22118%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3EALTAR%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%221110%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2242%22%20letter-spacing%3D%2210%22%20fill%3D%22%2300F5D4%22%3EPRE-SAVE%20NOW%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%221560%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2234%22%20fill%3D%22%23FF4D8D%22%3EJUNE%2019%2C%202026%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "caption": "Vertical teaser for Instagram Reels."
+        },
+        "day": 1,
+        "scheduledTime": "2026-05-29T18:00:00.000Z",
+        "status": "PENDING"
+      },
+      {
+        "id": "post-tw-cover-02",
+        "platform": "Twitter",
+        "copy": "Neon Altar arrives June 19. Cover art by the indii campaign chain. Pre-save link in bio.",
+        "imageAsset": {
+          "assetType": "image",
+          "title": "Neon Altar cover reveal",
+          "imageUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%223000%22%20height%3D%223000%22%20viewBox%3D%220%200%203000%203000%22%3E%0A%20%20%3Crect%20width%3D%223000%22%20height%3D%223000%22%20fill%3D%22%23080A12%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%221500%22%20cy%3D%221500%22%20r%3D%22980%22%20fill%3D%22none%22%20stroke%3D%22%2300F5D4%22%20stroke-width%3D%2230%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%221500%22%20cy%3D%221500%22%20r%3D%22720%22%20fill%3D%22none%22%20stroke%3D%22%23FF4D8D%22%20stroke-width%3D%2218%22%20opacity%3D%220.65%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M520%201910%20C980%201290%202020%201290%202480%201910%22%20fill%3D%22none%22%20stroke%3D%22%23F8FAFC%22%20stroke-width%3D%2226%22%20opacity%3D%220.72%22%2F%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%221440%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22236%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3ENEON%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%221680%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22236%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3EALTAR%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%222020%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2272%22%20letter-spacing%3D%2218%22%20fill%3D%22%2300F5D4%22%3EMARA%20VALE%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "caption": "Cover reveal for X."
+        },
+        "day": 4,
+        "scheduledTime": "2026-06-01T16:00:00.000Z",
+        "status": "PENDING"
+      },
+      {
+        "id": "post-email-presave-03",
+        "platform": "Email",
+        "subject": "Enter the Neon Altar",
+        "copy": "You are on the first-listener list. Pre-save Neon Altar before it drops June 19.",
+        "imageAsset": {
+          "assetType": "image",
+          "title": "Neon Altar email header",
+          "imageUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%223000%22%20height%3D%223000%22%20viewBox%3D%220%200%203000%203000%22%3E%0A%20%20%3Crect%20width%3D%223000%22%20height%3D%223000%22%20fill%3D%22%23080A12%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%221500%22%20cy%3D%221500%22%20r%3D%22980%22%20fill%3D%22none%22%20stroke%3D%22%2300F5D4%22%20stroke-width%3D%2230%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%221500%22%20cy%3D%221500%22%20r%3D%22720%22%20fill%3D%22none%22%20stroke%3D%22%23FF4D8D%22%20stroke-width%3D%2218%22%20opacity%3D%220.65%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M520%201910%20C980%201290%202020%201290%202480%201910%22%20fill%3D%22none%22%20stroke%3D%22%23F8FAFC%22%20stroke-width%3D%2226%22%20opacity%3D%220.72%22%2F%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%221440%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22236%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3ENEON%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%221680%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22236%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3EALTAR%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%221500%22%20y%3D%222020%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2272%22%20letter-spacing%3D%2218%22%20fill%3D%22%2300F5D4%22%3EMARA%20VALE%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "caption": "Email header creative."
+        },
+        "day": 10,
+        "scheduledTime": "2026-06-07T15:00:00.000Z",
+        "status": "PENDING"
+      },
+      {
+        "id": "post-linkedin-story-04",
+        "platform": "LinkedIn",
+        "copy": "Independent release ops in motion: assets, press, social, and spend plan are connected for Neon Altar.",
+        "imageAsset": {
+          "assetType": "image",
+          "title": "Neon Altar campaign operations card",
+          "imageUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221080%22%20height%3D%221920%22%20viewBox%3D%220%200%201080%201920%22%3E%0A%20%20%3Crect%20width%3D%221080%22%20height%3D%221920%22%20fill%3D%22%23090B14%22%2F%3E%0A%20%20%3ClinearGradient%20id%3D%22beam%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2300F5D4%22%2F%3E%0A%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF4D8D%22%2F%3E%0A%20%20%3C%2FlinearGradient%3E%0A%20%20%3Crect%20x%3D%2296%22%20y%3D%22140%22%20width%3D%22888%22%20height%3D%221640%22%20rx%3D%2242%22%20fill%3D%22none%22%20stroke%3D%22url(%23beam)%22%20stroke-width%3D%2214%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M210%201260%20C360%20980%20720%20980%20870%201260%22%20fill%3D%22none%22%20stroke%3D%22%23F8FAFC%22%20stroke-width%3D%2216%22%20opacity%3D%220.78%22%2F%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%22760%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22118%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3ENEON%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%22900%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%22118%22%20font-weight%3D%22800%22%20fill%3D%22%23F8FAFC%22%3EALTAR%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%221110%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2242%22%20letter-spacing%3D%2210%22%20fill%3D%22%2300F5D4%22%3EPRE-SAVE%20NOW%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%22540%22%20y%3D%221560%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2234%22%20fill%3D%22%23FF4D8D%22%3EJUNE%2019%2C%202026%3C%2Ftext%3E%0A%3C%2Fsvg%3E",
+          "caption": "Operations-focused campaign post."
+        },
+        "day": 14,
+        "scheduledTime": "2026-06-11T14:30:00.000Z",
+        "status": "PENDING"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "agentId": "keeper",
+      "reads": [],
+      "writes": [
+        "user.profile"
+      ],
+      "summary": "Resolved user profile, brand kit, release details, and user info lookup pointer."
+    },
+    {
+      "agentId": "creative",
+      "reads": [
+        "user.profile"
+      ],
+      "writes": [
+        "assets.generated"
+      ],
+      "summary": "Generated campaign visuals and stored asset IDs for downstream agents."
+    },
+    {
+      "agentId": "marketing",
+      "reads": [
+        "user.profile",
+        "assets.generated"
+      ],
+      "writes": [
+        "campaign.primary"
+      ],
+      "summary": "Created the pre-save campaign linked to generated asset IDs and launch dates."
+    },
+    {
+      "agentId": "social",
+      "reads": [
+        "campaign.primary",
+        "assets.generated"
+      ],
+      "writes": [
+        "social.calendar"
+      ],
+      "summary": "Built social calendar from the shared campaign and asset set."
+    },
+    {
+      "agentId": "publicist",
+      "reads": [
+        "user.profile",
+        "campaign.primary",
+        "assets.generated"
+      ],
+      "writes": [
+        "press.release"
+      ],
+      "summary": "Drafted press release using user bio, release details, campaign title, and generated assets."
+    },
+    {
+      "agentId": "finance",
+      "reads": [
+        "campaign.primary"
+      ],
+      "writes": [
+        "finance.spendPlan"
+      ],
+      "summary": "Allocated campaign budget from the campaign record so finance reads the same source marketing wrote."
+    },
+    {
+      "agentId": "qa",
+      "reads": [
+        "user.profile",
+        "assets.generated",
+        "campaign.primary",
+        "social.calendar",
+        "press.release",
+        "finance.spendPlan"
+      ],
+      "writes": [
+        "qa.lineage"
+      ],
+      "summary": "Verified every downstream agent could read the data written by earlier agents."
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-cover-neon-altar",
+      "kind": "cover_art",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/artifacts/live-agent-daisy-chain/neon-altar-cover.svg",
+      "caption": "Neon Altar"
+    },
+    {
+      "id": "asset-vertical-teaser-neon-altar",
+      "kind": "vertical_teaser",
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/artifacts/live-agent-daisy-chain/neon-altar-vertical-teaser.svg",
+      "caption": "Chrome lettering, black negative space, electric cyan and hot pink lighting."
+    }
+  ],
+  "socialCalendar": [
+    {
+      "day": 1,
+      "platform": "Instagram",
+      "postId": "post-ig-teaser-01",
+      "assetId": "asset-vertical-teaser-neon-altar",
+      "copy": "The first signal from Neon Altar is live. Pre-save now and step into the chrome room."
+    },
+    {
+      "day": 4,
+      "platform": "Twitter",
+      "postId": "post-tw-cover-02",
+      "assetId": "asset-cover-neon-altar",
+      "copy": "Neon Altar arrives June 19. Cover art by the indii campaign chain. Pre-save link in bio."
+    },
+    {
+      "day": 10,
+      "platform": "Email",
+      "postId": "post-email-presave-03",
+      "assetId": "asset-vertical-teaser-neon-altar",
+      "copy": "You are on the first-listener list. Pre-save Neon Altar before it drops June 19."
+    },
+    {
+      "day": 14,
+      "platform": "LinkedIn",
+      "postId": "post-linkedin-story-04",
+      "assetId": "asset-vertical-teaser-neon-altar",
+      "copy": "Independent release ops in motion: assets, press, social, and spend plan are connected for Neon Altar."
+    }
+  ],
+  "pressRelease": {
+    "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/artifacts/live-agent-daisy-chain/press-release.md",
+    "headline": "Mara Vale Announces \"Neon Altar\"",
+    "campaignId": "campaign-neon-altar-presave",
+    "assetIds": [
+      "asset-cover-neon-altar",
+      "asset-vertical-teaser-neon-altar"
+    ]
+  },
+  "finance": {
+    "campaignId": "campaign-neon-altar-presave",
+    "budget": 2400,
+    "allocations": {
+      "paidSocial": 1440,
+      "creatorBounties": 480,
+      "publicistPush": 300,
+      "contingency": 180
+    },
+    "source": "campaign.primary.budget"
+  },
+  "qa": {
+    "ready": true,
+    "requiredReads": [
+      "user.profile",
+      "assets.generated",
+      "campaign.primary",
+      "social.calendar",
+      "press.release",
+      "finance.spendPlan"
+    ],
+    "missingReads": []
+  }
+}

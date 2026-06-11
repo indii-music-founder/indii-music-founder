@@ -33,6 +33,7 @@ vi.mock('../EarningsService', () => {
 vi.stubGlobal('electronAPI', {
     sftp: {
         connect: vi.fn().mockResolvedValue(true),
+        connectDistributor: vi.fn().mockResolvedValue({ success: true }),
         uploadDirectory: vi.fn().mockResolvedValue({ success: true, files: ['Metadata.xml', '01_Track.wav'] }),
         isConnected: vi.fn().mockResolvedValue(true),
         disconnect: vi.fn().mockResolvedValue(true)
@@ -58,8 +59,8 @@ vi.mock('ssh2-sftp-client', () => {
     };
 });
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
     }
 }));
@@ -218,7 +219,7 @@ describe('Distribution Adapters', () => {
 
         it('should successfully build DDEX package and simulate upload', async () => {
             const adapter = new CDBabyAdapter();
-            await adapter.connect({ username: 'test-user', apiKey: 'test-key' });
+            await adapter.connect({ username: 'test-user', apiKey: 'test-key', sftpHost: 'mock-sftp-host.cdbaby.com' });
 
             const result = await adapter.createRelease(mockMetadata, mockAssets);
 

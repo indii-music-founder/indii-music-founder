@@ -67,6 +67,7 @@ export const useProjectSlice = create<ProjectSlice>()(
           const project = state.projects.get(projectId);
           if (!project) return state;
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const updated = { ...project, status, updatedAt: new Date() as any };
           const newProjects = new Map(state.projects);
           newProjects.set(projectId, updated);

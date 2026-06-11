@@ -29,26 +29,26 @@ describe('DeepLink Handler Security', () => {
 
     describe('isDeepLinkSafe', () => {
         it('should allow valid simple URLs', () => {
-            handleDeepLink('indii-os://callback', mockWindow);
+            handleDeepLink('indii://callback', mockWindow);
             expect(mockWindow.webContents.send).toHaveBeenCalled();
         });
 
         it('should allow URLs with valid query parameters', () => {
-            handleDeepLink('indii-os://callback?token=abc-123&uid=456', mockWindow);
+            handleDeepLink('indii://callback?token=abc-123&uid=456', mockWindow);
             expect(mockWindow.webContents.send).toHaveBeenCalled();
         });
 
         it('should allow URLs with a valid hostname', () => {
-            handleDeepLink('indii-os://app/callback', mockWindow);
+            handleDeepLink('indii://app/callback', mockWindow);
             expect(mockWindow.webContents.send).toHaveBeenCalled();
         });
 
         it('should allow URLs with encoded valid characters', () => {
-            handleDeepLink('indii-os://callback?q=hello%20world', mockWindow);
+            handleDeepLink('indii://callback?q=hello%20world', mockWindow);
             expect(mockWindow.webContents.send).toHaveBeenCalled();
         });
 
-        it('should reject non-indii-os protocols', () => {
+        it('should reject non-indii protocols', () => {
             handleDeepLink('http://example.com/callback', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
@@ -78,7 +78,7 @@ describe('DeepLink Handler Security', () => {
 
             privateIps.forEach(ip => {
                 vi.clearAllMocks();
-                handleDeepLink(`indii-os://${ip}/callback`, mockWindow);
+                handleDeepLink(`indii://${ip}/callback`, mockWindow);
                 expect(mockWindow.webContents.send).not.toHaveBeenCalled();
             });
         });
@@ -87,26 +87,26 @@ describe('DeepLink Handler Security', () => {
             // Note: URL parsing encodes < and > in search part, but we can test other ways to break the regex
 
             // XSS attempts that break the allowed char set
-            handleDeepLink('indii-os://callback;javascript:alert(1)', mockWindow);
+            handleDeepLink('indii://callback;javascript:alert(1)', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
-            handleDeepLink('indii-os://callback"onmouseover="alert(1)', mockWindow);
+            handleDeepLink('indii://callback"onmouseover="alert(1)', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
-            handleDeepLink('indii-os://callback?token=123"onmouseover="alert(1)', mockWindow);
+            handleDeepLink('indii://callback?token=123"onmouseover="alert(1)', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
-            handleDeepLink('indii-os://callback?token=123\'', mockWindow);
+            handleDeepLink('indii://callback?token=123\'', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
-            handleDeepLink('indii-os://callback?token=123{', mockWindow);
+            handleDeepLink('indii://callback?token=123{', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
 
             // Path traversal attempts
-            handleDeepLink('indii-os://callback/../../../etc/passwd', mockWindow);
+            handleDeepLink('indii://callback/../../../etc/passwd', mockWindow);
             // new URL() handles ../../ but if we have non-standard characters, it should block it
 
-            handleDeepLink('indii-os://callback/\u0000', mockWindow);
+            handleDeepLink('indii://callback/\u0000', mockWindow);
             expect(mockWindow.webContents.send).not.toHaveBeenCalled();
         });
 
@@ -122,14 +122,14 @@ describe('DeepLink Handler Security', () => {
     describe('window handling', () => {
         it('should restore minimized window', () => {
             mockWindow.isMinimized.mockReturnValue(true);
-            handleDeepLink('indii-os://callback', mockWindow);
+            handleDeepLink('indii://callback', mockWindow);
             expect(mockWindow.restore).toHaveBeenCalled();
             expect(mockWindow.show).toHaveBeenCalled();
             expect(mockWindow.focus).toHaveBeenCalled();
         });
 
         it('should not throw if window is null', () => {
-            expect(() => handleDeepLink('indii-os://callback', null)).not.toThrow();
+            expect(() => handleDeepLink('indii://callback', null)).not.toThrow();
         });
     });
 });

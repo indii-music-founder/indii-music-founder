@@ -22,38 +22,8 @@ import { logger } from '@/utils/logger';
  *
  * In production, supply the compiled bytecode via VITE_SONGSHARES_BYTECODE env var.
  * Generate it from: `npx hardhat compile` → read `artifacts/contracts/SongShares.sol/SongShares.json`.bytecode
- *
- * The inline fallback below is a minimal ERC-1155 contract compiled from OpenZeppelin v5.1:
- *   - constructor(string memory uri_) sets the metadata URI
- *   - mint(), burn(), safeTransferFrom() are public
- *   - No owner restrictions (permissionless minting for MVP)
- *
- * Source contract (Solidity 0.8.24):
- *   pragma solidity ^0.8.24;
- *   import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
- *   contract SongShares is ERC1155 {
- *       constructor() ERC1155("https://indii-os.web.app/api/token/{id}.json") {}
- *       function mint(address to, uint256 id, uint256 amount, bytes memory data) public {
- *           _mint(to, id, amount, data);
- *       }
- *   }
  */
-const SONGSHARES_BYTECODE: string =
-    import.meta.env.VITE_SONGSHARES_BYTECODE ||
-    // Minimal compiled ERC-1155 constructor bytecode (OpenZeppelin v5.1, solc 0.8.24, optimizer 200 runs)
-    // The full bytecode is ~6 KB. Hex prefix + constructor + runtime code.
-    '0x60806040523480156200001157600080fd5b506040518060600160405280603681526020016200' +
-    '1a9960369139620000378162000041565b5062000090565b600262000055828262000137565b5050' +
-    '565b634e487b7160e01b600052604160045260246000fd5b600181811c908216806200008857' +
-    '607f821691505b602082108103620000a957634e487b7160e01b600052602260045260246000fd5b' +
-    '50919050565b601f821115620000fd57600081815260208120601f850160051c81016020861015' +
-    '620000d85750805b601f850160051c820191505b81811015620000f95782815560010162000' +
-    '0e4565b5050505b505050565b81516001600160401b038111156200011e576200011e62000059' +
-    '565b62000136816200012f845462000073565b84620000af565b6020601f8211600181146200016e' +
-    '5760008315620001555750848201515b600019600385901b1c1916600184901b178455620000f95' +
-    '65b600084815260208120601f198516915b82811015620001a057878501518255602094850194600' +
-    '1909201910162000180565b5084821015620001c05786840151600019600387901b60f8161c19165' +
-    '5b505060018360011b0184555050505050565b611ac180620001d86000396000f3fe';
+const SONGSHARES_BYTECODE = import.meta.env.VITE_SONGSHARES_BYTECODE as string | undefined;
 
 // window.ethereum type is declared in WalletConnectPanel.tsx (global augmentation)
 
@@ -80,10 +50,20 @@ export class SmartContractService {
     private readonly LEDGER_COLLECTION = 'ledger';
     private readonly CONTRACTS_COLLECTION = 'smart_contracts';
 
+    private getSongSharesBytecode(): string {
+        if (!SONGSHARES_BYTECODE) {
+            throw new Error('VITE_SONGSHARES_BYTECODE is required before deploying or minting SongShares contracts.');
+        }
+        if (!SONGSHARES_BYTECODE.startsWith('0x')) {
+            throw new Error('VITE_SONGSHARES_BYTECODE must be a hex string prefixed with 0x.');
+        }
+        return SONGSHARES_BYTECODE;
+    }
+
     /**
      * Item 237 — Deploy a Smart Contract for Royalty Splits via window.ethereum.
      * Uses eth_sendTransaction to deploy a real ERC-1155 contract on the connected chain.
-     * Falls back to a Firestore-only ledger record if no wallet is connected.
+     * Missing wallet/provider configuration is a hard failure.
      */
     async deploySplitContract(config: SplitContractConfig): Promise<string> {
         logger.info(`[SmartContract] Deploying Split Contract for ISRC: ${config.isrc}...`);
@@ -110,7 +90,7 @@ export class SmartContractService {
                 method: 'eth_sendTransaction',
                 params: [{
                     from,
-                    data: SONGSHARES_BYTECODE,
+                    data: this.getSongSharesBytecode(),
                     gas: '0x7A120', // 500,000 gas — sufficient for ERC-1155 constructor + storage init
                 }],
             }) as string;
@@ -119,9 +99,7 @@ export class SmartContractService {
             contractAddress = await this.waitForDeployment(txHash);
             logger.info(`[SmartContract] Deployed at ${contractAddress} (tx: ${txHash})`);
         } else {
-            // No wallet — record intent to Firestore, deploy when wallet connects
-            logger.warn('[SmartContract] No wallet available — recording deployment intent to Firestore');
-            contractAddress = `pending:${config.isrc}:${Date.now()}`;
+            throw new Error('No wallet provider available. Connect MetaMask or WalletConnect before deploying contracts.');
         }
 
         // Persist Contract Config to Firestore
@@ -129,7 +107,7 @@ export class SmartContractService {
             ...config,
             contractAddress,
             deployedAt: Timestamp.now(),
-            status: contractAddress.startsWith('pending:') ? 'pending_wallet' : 'active',
+            status: 'active',
         });
 
         // Record in Immutable Chain of Custody
@@ -177,9 +155,7 @@ export class SmartContractService {
         logger.info(`[SmartContract] Executing Payout of ${amountUSDC} USDC via ${contractAddress}`);
 
         if (contractAddress.startsWith('pending:')) {
-            logger.warn('[SmartContract] Contract not yet deployed — payout recorded to ledger only.');
-            await this.recordToLedger('SPLIT_EXECUTION', contractAddress, `Payout of ${amountUSDC} USDC recorded (pending deployment)`);
-            return true;
+            throw new Error('Cannot execute payout for a pending contract. Deploy the contract on-chain first.');
         }
 
         if (typeof window !== 'undefined' && window.ethereum) {
@@ -209,13 +185,11 @@ export class SmartContractService {
                 return true;
             } catch (error: unknown) {
                 logger.error('[SmartContract] On-chain payout failed:', error);
-                // Fall through to Firestore-only record
+                throw error instanceof Error ? error : new Error(`On-chain payout failed: ${String(error)}`);
             }
         }
 
-        // Firestore-only fallback
-        await this.recordToLedger('SPLIT_EXECUTION', contractAddress, `Distributed ${amountUSDC} USDC (off-chain record)`);
-        return true;
+        throw new Error('No wallet provider available. Connect MetaMask or WalletConnect before executing payouts.');
     }
 
     /**
@@ -239,7 +213,7 @@ export class SmartContractService {
                     method: 'eth_sendTransaction',
                     params: [{
                         from: accounts[0],
-                        data: SONGSHARES_BYTECODE + totalShares.toString(16).padStart(64, '0'),
+                        data: this.getSongSharesBytecode() + totalShares.toString(16).padStart(64, '0'),
                         gas: '0x7A120', // 500,000 gas — sufficient for ERC-1155 constructor + storage init
                     }],
                 }) as string;
@@ -247,13 +221,11 @@ export class SmartContractService {
                 tokenContract = await this.waitForDeployment(txHash);
                 logger.info(`[SmartContract] SongShares token deployed at ${tokenContract}`);
             } catch (error: unknown) {
-                logger.warn('[SmartContract] On-chain minting failed, using Firestore-only tracking:', error);
-                tokenContract = `pending:token:${isrc}:${Date.now()}`;
+                logger.error('[SmartContract] On-chain minting failed:', error);
+                throw error instanceof Error ? error : new Error(`On-chain token minting failed: ${String(error)}`);
             }
         } else {
-            // No wallet — generate pending token record
-            tokenContract = `pending:token:${isrc}:${Date.now()}`;
-            logger.warn('[SmartContract] No wallet available — token recorded to Firestore only.');
+            throw new Error('No wallet provider available. Connect MetaMask or WalletConnect before minting tokens.');
         }
 
         await this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);
@@ -276,9 +248,8 @@ export class SmartContractService {
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (__e: unknown) {
-            // Fallback if SubtleCrypto unavailable (e.g., non-secure context)
-            hash = `sha256_${crypto.randomUUID().replace(/-/g, '')}`;
+        } catch (error: unknown) {
+            throw new Error(`Unable to create SHA-256 ledger hash: ${error instanceof Error ? error.message : String(error)}`);
         }
 
         const entry: LedgerEntry = {
@@ -294,6 +265,7 @@ export class SmartContractService {
             logger.info(`[Blockchain Ledger] New Block: ${entry.hash.slice(0, 16)}... | ${action} | ${entityId}`);
         } catch (error: unknown) {
             logger.error('[Blockchain Ledger] Failed to persist entry:', error);
+            throw error instanceof Error ? error : new Error(`Failed to persist ledger entry: ${String(error)}`);
         }
     }
 
@@ -312,7 +284,7 @@ export class SmartContractService {
             return snapshot.docs.map(doc => doc.data() as LedgerEntry);
         } catch (error: unknown) {
             logger.error('[SmartContract] Failed to fetch chain of custody:', error);
-            return [];
+            throw error instanceof Error ? error : new Error(`Failed to fetch chain of custody: ${String(error)}`);
         }
     }
 }

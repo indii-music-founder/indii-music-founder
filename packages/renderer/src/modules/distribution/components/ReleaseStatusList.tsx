@@ -18,6 +18,7 @@ interface ReleaseStatusListProps {
     onViewReport: (releaseId: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ReleaseStatusList({ releases, onDeliver, onViewReport }: ReleaseStatusListProps) {
     if (releases.length === 0) {
         return (
@@ -90,7 +91,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
     );
 }
 
-function StatusBadge({ distributorId, status }: { distributorId: string; status: string }) {
+function StatusBadge({ distributorId, status }: { distributorId: string; status: string; key?: React.Key }) {
     const config = getStatusConfig(status);
 
     return (

@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
-import { 
-    AgentGraph, 
-    GraphNode, 
-    GraphExecutionState, 
+import {
+    AgentGraph,
+    GraphNode,
+    GraphExecutionState,
     AgentContext,
 } from '../types';
 import { agentGraphStateService } from './AgentGraphStateService';
@@ -16,8 +16,8 @@ import { memoryBankService } from '../memory/MemoryBankService';
  *
  * Pillar 3: Graph-Based Orchestration
  *
- * This service manages the execution of complex, multi-agent networks where 
- * workflows are defined as graphs. It handles parallel execution, 
+ * This service manages the execution of complex, multi-agent networks where
+ * workflows are defined as graphs. It handles parallel execution,
  * data mapping between nodes, and conditional branching.
  */
 export class AgentGraphService {
@@ -34,8 +34,8 @@ export class AgentGraphService {
      * Executes an entire AgentGraph from scratch.
      */
     async executeGraph(
-        graph: AgentGraph, 
-        context: AgentContext, 
+        graph: AgentGraph,
+        context: AgentContext,
         initialInput?: string,
         existingExecutionId?: string
     ): Promise<string> {
@@ -43,7 +43,7 @@ export class AgentGraphService {
         if (!userId) throw new Error('userId is required for graph execution');
 
         const traceId = context.traceId || uuidv4();
-        
+
         let executionId = existingExecutionId;
         if (!executionId) {
             const state = await this.createExecution(userId, graph);
@@ -51,13 +51,14 @@ export class AgentGraphService {
         }
 
         logger.info(`[AgentGraph] Starting graph execution: ${graph.name} (${graph.id}), trace: ${traceId}, execution: ${executionId}`);
-        
+
         AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_STARTED', graph.id, executionId, `Name: ${graph.name}`);
 
         try {
             const result = await this.runGraphLoop(userId, graph, executionId, context, traceId, initialInput);
             AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', graph.id, executionId);
             return result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
             throw error;
@@ -68,7 +69,7 @@ export class AgentGraphService {
     /**
      * Resumes a previously interrupted graph execution.
      * Pillar 3: Persistence & Scalability
-     * 
+     *
      * @param executionId The ID of the execution to resume.
      * @param context The context for execution.
      * @param graph Optional graph definition. If not provided, it must be retrievable from state or registry.
@@ -82,7 +83,7 @@ export class AgentGraphService {
 
         logger.info(`[AgentGraph] Resuming graph execution: ${executionId}, state: ${state.status}`);
 
-        const graphToUse = graph; 
+        const graphToUse = graph;
         if (!graphToUse) throw new Error(`Graph definition required to resume execution ${executionId}`);
 
         return await this.runGraphLoop(userId, graphToUse, executionId, context, context.traceId || uuidv4());
@@ -95,25 +96,25 @@ export class AgentGraphService {
     async retryNode(userId: string, executionId: string, nodeId: string): Promise<void> {
         logger.info(`[AgentGraph] Retrying node ${nodeId} in execution ${executionId}`);
         await agentGraphStateService.updateNodeStatus(userId, executionId, nodeId, {
-            status: 'planned',
+            status: 'PLANNED',
             error: undefined
         });
         // Note: The main loop (if running) will pick this up automatically.
     }
 
     /**
-     * Resets a node and all its downstream descendants to 'planned' state.
+     * Resets a node and all its downstream descendants to 'PLANNED' state.
      * Useful for correcting a path and re-running.
      */
     async resetBranch(userId: string, executionId: string, nodeId: string, graph: AgentGraph): Promise<void> {
         logger.info(`[AgentGraph] Resetting branch starting at ${nodeId}`);
-        
+
         const descendants = this.getDescendants(nodeId, graph);
         const nodesToReset = [nodeId, ...descendants];
 
         for (const id of nodesToReset) {
             await agentGraphStateService.updateNodeStatus(userId, executionId, id, {
-                status: 'planned',
+                status: 'PLANNED',
                 output: undefined,
                 error: undefined,
                 startedAt: undefined,
@@ -135,7 +136,7 @@ export class AgentGraphService {
             const children = graph.edges
                 .filter(e => e.sourceId === current)
                 .map(e => e.targetId);
-            
+
             for (const child of children) {
                 descendants.push(child);
                 queue.push(child);
@@ -159,7 +160,7 @@ export class AgentGraphService {
         let running = true;
         let lastOutput = '';
         let iteration = 0;
-        const MAX_ITERATIONS = 1000; // Safety break
+        const MAX_ITERATIONS = 50; // Safety break - lowered from 1000 to prevent expensive runaways
 
         // Preserve initial input in state for resumption
         if (initialInput) {
@@ -170,7 +171,7 @@ export class AgentGraphService {
             iteration++;
             if (iteration > MAX_ITERATIONS) {
                 logger.error(`[AgentGraph] Execution ${executionId} exceeded MAX_ITERATIONS (${MAX_ITERATIONS}). Potential cycle detected.`);
-                await agentGraphStateService.finalizeStatus(userId, executionId, 'failed');
+                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
                 throw new Error('Maximum graph iterations exceeded');
             }
 
@@ -180,7 +181,7 @@ export class AgentGraphService {
             // If we are resuming, pull initialInput from state if not provided
             const inputToUse = initialInput || state.metadata?.initialInput;
 
-            if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+            if (state.status === 'COMPLETED' || state.status === 'FAILED' || state.status === 'CANCELLED') {
                 running = false;
                 break;
             }
@@ -189,18 +190,18 @@ export class AgentGraphService {
             const readyNodes: GraphNode[] = [];
             const nodesToSkip: string[] = [];
             let isWaitingForApproval = false;
-            
+
             for (const node of graph.nodes) {
                 const nodeState = state.nodeStates[node.id];
-                
+
                 // HITL check: If any node is waiting for approval, the loop pauses execution
-                if (nodeState?.status === 'awaiting_approval') {
+                if (nodeState?.status === 'AWAITING_HUMAN') {
                     isWaitingForApproval = true;
                     continue;
                 }
 
                 // Only consider nodes that haven't been processed yet
-                if (!nodeState || (nodeState.status !== 'planned' && nodeState.status !== 'failed')) continue;
+                if (!nodeState || (nodeState.status !== 'PLANNED' && nodeState.status !== 'FAILED')) continue;
 
                 // Entry node is always ready if it's planned
                 if (node.id === graph.entryNodeId) {
@@ -212,7 +213,7 @@ export class AgentGraphService {
                 const incomingEdges = graph.edges.filter(e => e.targetId === node.id);
                 if (incomingEdges.length === 0) {
                     logger.warn(`[AgentGraph] Node ${node.id} is unreachable (no incoming edges and not entry node).`);
-                    continue; 
+                    continue;
                 }
 
                 const parentStates = incomingEdges.map(edge => ({
@@ -220,15 +221,15 @@ export class AgentGraphService {
                     sourceState: state.nodeStates[edge.sourceId]
                 }));
 
-                const allParentsProcessed = parentStates.every(p => 
-                    p.sourceState && (p.sourceState.status === 'step_complete' || p.sourceState.status === 'skipped' || p.sourceState.status === 'failed')
+                const allParentsProcessed = parentStates.every(p =>
+                p.sourceState && (p.sourceState.status === 'STEP_COMPLETE' || p.sourceState.status === 'SKIPPED' || p.sourceState.status === 'FAILED')
                 );
 
                 if (!allParentsProcessed) continue;
 
                 // Evaluate wait condition and edge logic
                 const validEdges = parentStates.filter(p => {
-                    if (!p.sourceState || p.sourceState.status !== 'step_complete') return false;
+                    if (!p.sourceState || p.sourceState.status !== 'STEP_COMPLETE') return false;
                     return this.evaluateCondition(p.edge.condition, p.sourceState.output || '');
                 });
 
@@ -254,7 +255,7 @@ export class AgentGraphService {
             // 2. Handle Skips
             for (const nodeId of nodesToSkip) {
                 await agentGraphStateService.updateNodeStatus(userId, executionId, nodeId, {
-                    status: 'skipped',
+                    status: 'SKIPPED',
                     completedAt: Date.now()
                 });
             }
@@ -267,16 +268,16 @@ export class AgentGraphService {
             }
 
             if (readyNodes.length === 0) {
-                const hasPlanned = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'planned');
-                const hasExecuting = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'executing');
+                const hasPlanned = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'PLANNED');
+                const hasExecuting = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'EXECUTING_GENERATION');
 
                 if (!hasPlanned && !hasExecuting) {
                     logger.info(`[AgentGraph] Execution ${executionId} complete (no more nodes to process).`);
-                    await agentGraphStateService.finalizeStatus(userId, executionId, 'completed');
+                    await agentGraphStateService.finalizeStatus(userId, executionId, 'COMPLETED');
                     running = false;
                 } else if (!hasExecuting) {
                     logger.warn(`[AgentGraph] Graph execution ${executionId} stuck: unreachable planned nodes remaining.`);
-                    await agentGraphStateService.finalizeStatus(userId, executionId, 'completed');
+                    await agentGraphStateService.finalizeStatus(userId, executionId, 'COMPLETED');
                     running = false;
                 } else {
                     // Wait for background tasks to complete
@@ -287,10 +288,10 @@ export class AgentGraphService {
 
             // 3. Prepare tasks for ready nodes with Memory Bank Integration
             logger.info(`[AgentGraph] Iteration ${iteration}: Starting ${readyNodes.length} nodes in parallel: ${readyNodes.map(n => n.id).join(', ')}`);
-            
+
             const tasks = await Promise.all(readyNodes.map(async (node) => {
                 const prompt = this.resolveNodePrompt(node, graph, state, inputToUse);
-                
+
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution
                 let memoryContext = '';
                 try {
@@ -304,11 +305,11 @@ export class AgentGraphService {
                     nodeId: node.id,
                     agentId: node.agentId,
                     prompt,
-                    context: { 
-                        ...context, 
-                        ...node.contextOverrides, 
+                    context: {
+                        ...context,
+                        ...node.contextOverrides,
                         memoryContext,
-                        traceId: `${traceId}/${node.id}` 
+                        traceId: `${traceId}/${node.id}`
                     },
                 };
             }));
@@ -316,7 +317,7 @@ export class AgentGraphService {
             // 4. Mark nodes as executing
             for (const node of readyNodes) {
                 await agentGraphStateService.updateNodeStatus(userId, executionId, node.id, {
-                    status: 'executing',
+                    status: 'EXECUTING_GENERATION',
                     startedAt: Date.now()
                 });
                 AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, node.id, executionId);
@@ -327,14 +328,14 @@ export class AgentGraphService {
                 const results = await Promise.all(tasks.map(async (task) => {
                     try {
                         const response = await agentService.delegateTask(task.agentId, task.prompt, task.context);
-                        
+
                         // GEAP Pillar 2: SCALE - Commit output to Memory Bank
                         try {
                             await memoryBankService.addMemory(userId, `[Graph Node: ${task.nodeId}] Result: ${response.slice(0, 500)}`);
                         } catch (memErr) {
                             logger.warn(`[AgentGraph] Memory storage failed for node ${task.nodeId}`, memErr);
                         }
-                        
+
                         return { nodeId: task.nodeId, success: true, output: response };
                     } catch (err: unknown) {
                         const error = err instanceof Error ? err : new Error(String(err));
@@ -347,36 +348,36 @@ export class AgentGraphService {
                 for (const res of results) {
                     if (res.success) {
                         await agentGraphStateService.updateNodeStatus(userId, executionId, res.nodeId, {
-                            status: 'step_complete',
+                            status: 'STEP_COMPLETE',
                             output: res.output,
                             completedAt: Date.now()
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_COMPLETED', graph.id, res.nodeId, executionId);
-                        lastOutput = res.output || ''; 
+                        lastOutput = res.output || '';
                     } else {
                         await agentGraphStateService.updateNodeStatus(userId, executionId, res.nodeId, {
-                            status: 'failed',
+                            status: 'FAILED',
                             error: res.error,
                             completedAt: Date.now()
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_FAILED', graph.id, res.nodeId, executionId, res.error);
-                        
+
                         if (res.error) {
                             // Path Pruning: If a node fails, prune its descendants and mark them as skipped.
                             // The graph execution continues for other branches unless all paths are blocked.
                             logger.warn(`[AgentGraph] Node ${res.nodeId} failed. Pruning descendants.`);
                             await this.pruneDescendants(userId, executionId, res.nodeId, graph);
-                            
+
                             // Check if there are any nodes still planned or executing
                             const latestState = await agentGraphStateService.getExecution(userId, executionId);
                             const hasActiveNodes = latestState && Object.values(latestState.nodeStates).some(
-                                s => s.status === 'planned' || s.status === 'executing'
+                                s => s.status === 'PLANNED' || s.status === 'EXECUTING_GENERATION'
                             );
 
                             if (!hasActiveNodes) {
                                 logger.info(`[AgentGraph] No more active nodes after pruning. Finalizing graph ${executionId}.`);
-                                const hasCompletions = latestState && Object.values(latestState.nodeStates).some(s => s.status === 'step_complete');
-                                await agentGraphStateService.finalizeStatus(userId, executionId, hasCompletions ? 'completed' : 'failed');
+                                const hasCompletions = latestState && Object.values(latestState.nodeStates).some(s => s.status === 'STEP_COMPLETE');
+                                await agentGraphStateService.finalizeStatus(userId, executionId, hasCompletions ? 'COMPLETED' : 'FAILED');
                                 break;
                             }
                             continue;
@@ -386,13 +387,13 @@ export class AgentGraphService {
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
                 logger.error(`[AgentGraph] Critical loop failure in ${executionId}:`, error);
-                await agentGraphStateService.finalizeStatus(userId, executionId, 'failed');
+                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
                 throw error;
             }
         }
 
         const finalReport = `Graph execution finished. Final output snippet: ${lastOutput.slice(0, 200)}...`;
-        
+
         // GEAP Pillar 2: SCALE - Index completed graph for future RAG retrieval
         try {
             const inputToUse = initialInput || (await agentGraphStateService.getExecution(userId, executionId))?.metadata?.initialInput;
@@ -412,7 +413,7 @@ export class AgentGraphService {
      */
     private evaluateCondition(condition: string | undefined, output: string): boolean {
         if (!condition) return true;
-        
+
         try {
             const regex = new RegExp(condition, 'i');
             return regex.test(output);
@@ -436,13 +437,13 @@ export class AgentGraphService {
 
         // 2. Resolve data flow from parents
         const parentEdges = graph.edges.filter(e => e.targetId === node.id);
-        
+
         for (const edge of parentEdges) {
             const parentState = state.nodeStates[edge.sourceId];
-            if (!parentState || parentState.status !== 'step_complete') continue;
+            if (!parentState || parentState.status !== 'STEP_COMPLETE') continue;
 
             const parentOutput = parentState.output || '';
-            
+
             // Handle specific input mappings (Pillar 3: Data Flow)
             if (edge.inputMapping && Object.keys(edge.inputMapping).length > 0) {
                 for (const [sourceKey, targetPlaceholder] of Object.entries(edge.inputMapping)) {
@@ -478,7 +479,7 @@ export class AgentGraphService {
         while ((match = globalPlaceholderRegex.exec(prompt)) !== null) {
             const [fullMatch, nodeId, path] = match as unknown as [string, string, string];
             const sourceState = state.nodeStates[nodeId];
-            
+
             if (sourceState && sourceState.output) {
                 try {
                     const parsed = JSON.parse(sourceState.output);
@@ -492,7 +493,7 @@ export class AgentGraphService {
             }
         }
 
-        // 4. Final Cleanup: If any placeholders remain from non-existent inputs, 
+        // 4. Final Cleanup: If any placeholders remain from non-existent inputs,
         // we might want to warn or strip them. For now, leave them as is for visibility.
         return prompt;
     }
@@ -500,6 +501,7 @@ export class AgentGraphService {
     /**
      * Safely retrieves a nested value from an object using a dot-notated path.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private getNestedValue(obj: any, path: string): any {
         if (!path || !obj) return undefined;
         return path.split('.').reduce((prev, curr) => {
@@ -528,7 +530,7 @@ export class AgentGraphService {
                 if (!visited.has(descId)) {
                     logger.debug(`[AgentGraph] Pruning node ${descId} (descendant of ${failedNodeId})`);
                     await agentGraphStateService.updateNodeStatus(userId, executionId, descId, {
-                        status: 'skipped',
+                        status: 'SKIPPED',
                         error: `Skipped due to upstream failure in node: ${failedNodeId}`
                     });
                     queue.push(descId);

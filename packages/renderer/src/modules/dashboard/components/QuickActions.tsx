@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Sparkles, Film, Megaphone, Book, GitBranch, Scale,
     DollarSign, Globe, Network, Briefcase, FileText, Users,
     type LucideIcon
@@ -29,7 +30,6 @@ interface QuickAction {
  */
 const ACTIONS: QuickAction[] = [
     { id: 'creative', name: 'Creative', icon: Sparkles, hint: 'AI image generation studio' },
-    { id: 'video', name: 'Video', icon: Film, hint: 'AI video production' },
     { id: 'marketing', name: 'Marketing', icon: Megaphone, hint: 'Campaigns & brand copy' },
     { id: 'distribution', name: 'Distribution', icon: Globe, hint: 'Release management' },
     { id: 'finance', name: 'Finance', icon: DollarSign, hint: 'Revenue & royalties' },
@@ -55,7 +55,8 @@ export default function QuickActions() {
                     const colors = getColorForModule(action.id);
 
                     return (
-                        <Tooltip key={action.id}>
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        <Tooltip {...({ key: action.id } as any)}>
                             <TooltipTrigger asChild>
                                 <motion.button
                                     onClick={() => setModule(action.id)}

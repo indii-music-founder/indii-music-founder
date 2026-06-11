@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useFinance } from './useFinance';
 import { financeService } from '@/services/finance/FinanceService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Sentry from '@sentry/react';
 
 // Mock dependencies

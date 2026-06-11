@@ -156,7 +156,7 @@
 - [x] analytics-queries.ts helper (400 LOC) ✅
 
 **Phase 4.1: SDK ✅ (1/1)**
-- [x] SDK package (@indiios/sdk) (2,500 LOC) ✅
+- [x] SDK package (@indii/sdk) (2,500 LOC) ✅
 
 **Phase 4.2-4.3: Cloud Functions ✅ (3/3)**
 - [x] APIRouter Cloud Function (360 LOC) ✅
@@ -487,7 +487,7 @@ When context window approaches limit:
 
 1. **4.0-4.1:** Analytics foundations + SDK
    - EventBusService, API schemas, analytics-queries
-   - @indiios/sdk with full REST client (2,500 LOC)
+   - @indii/sdk with full REST client (2,500 LOC)
    - Smart retry logic, type-safe operations
 
 2. **4.2-4.3:** Cloud Functions Backend

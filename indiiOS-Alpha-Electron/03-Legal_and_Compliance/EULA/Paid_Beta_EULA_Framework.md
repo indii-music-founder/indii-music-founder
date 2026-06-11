@@ -1,7 +1,7 @@
 # End User License Agreement (EULA) - Paid Beta Outline
 
 **1. Software Status: "As-Is" Alpha/Beta Architecture**
-* The Software ("indiiOS-Alpha-Electron") is a pre-release, highly unstable product provided strictly on an "AS-IS" basis.
+* The Software ("indii-Alpha-Electron") is a pre-release, highly unstable product provided strictly on an "AS-IS" basis.
 * The User acknowledges the 260,000 LOC architecture is subject to breaking changes, resets, and potential complete failure without prior notice.
 
 **2. Capital Classification: Non-Refundable Fee**

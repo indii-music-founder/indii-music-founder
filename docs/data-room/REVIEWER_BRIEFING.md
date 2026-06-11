@@ -1,7 +1,7 @@
 # Independent Reviewer Briefing Pack
 
 **For:** Third-party technical reviewer (Embedded, SIG, or equivalent)  
-**From:** William Roberts, New Detroit Music LLC (indiiOS)  
+**From:** William Roberts, New Detroit Music LLC (indii)  
 **Engagement:** Independent code review for acquisition readiness  
 **Timeline:** 2–3 weeks from this briefing
 
@@ -11,9 +11,9 @@
 
 **Valuation Thesis:**
 
-indiiOS is worth $X because it owns three durable assets:
+indii is worth $X because it owns three durable assets:
 
-1. **DDEX Direct-Distribution Rail** — Real, spec-compliant music distribution to 8 DSPs (Spotify, Apple Music, Amazon Music, Tidal, Deezer, CDBaby, DistroKid, Symphonic, etc.) via ERN/DSR/MEAD/RIN submission. Party ID `PA-DPIDA-2025122604-E` is active and registered to New Detroit Music LLC.
+1. **Proprietary Ingestion IP Distribution Rail** — Real, spec-compliant music distribution to 8 DSPs (Spotify, Apple Music, Amazon Music, Tidal, Deezer, CDBaby, DistroKid, Symphonic, etc.) via electronic metadata and sales reporting submission. Proprietary Ingestion ID `PA-DPIDA-2025122604-E` is active and registered to New Detroit Music LLC.
 
 2. **17-Agent Vertex AI Fine-Tuned Fleet** — 16 live R7 endpoints (legal, brand, marketing, music, video, social, publishing, finance, licensing, distribution, publicist, road, touring, workflow, observability, and 1 undefined). Models are fine-tuned (not base), trained on 2,000+ gold examples, and enforce role-based tool access.
 
@@ -25,11 +25,11 @@ indiiOS is worth $X because it owns three durable assets:
 
 ## Context: 3-Layer Architecture
 
-indiiOS operates on a proven separation of concerns:
+indii operates on a proven separation of concerns:
 
 ### Layer 1: Directive (Determinism at the Peak)
 
-Standard Operating Procedures (SOPs) in `directives/` define specific goals, tool selection, expected outputs. Examples: `direct_distribution_engine.md`, `agent_stability.md`.
+Standard Operating Procedures (SOPs) in `directives/` define specific goals, tool selection, expected outputs. Examples: `proprietary_ingestion_engine.md`, `agent_stability.md`.
 
 ### Layer 2: Orchestration (Decision Making)
 
@@ -45,7 +45,7 @@ Python/TypeScript scripts in `execution/` handle API interactions, data processi
 
 ## The Repository
 
-**Location:** `https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron`  
+**Location:** `https://github.com/the-walking-agency-det/indii-Alpha-Electron`  
 **Branch:** `main`  
 **Tech Stack:**
 - Frontend: React 18 + Vite 6.4 + Tailwind 4.1 + Zustand
@@ -103,10 +103,10 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 3. **Fallback Logic** — Simulate Vertex outage, confirm automatic fallback to free Gemini API
 4. **Prompt Injection** — Test Unicode escapes, zero-width chars, "ignore above" prompts, confirm all neutralized
 
-### DDEX (3 gates)
-5. **ERN Spec Compliance** — Generate one ERN per DSP, validate against XSD, confirm structure is standard (not custom)
-6. **SFTP Delivery** — Deliver test ERN to test SFTP target, confirm file arrives, no creds in logs, retry works
-7. **Party ID Verification** — Verify Party ID is registered to New Detroit Music LLC via DDEX portal or Inc. contact
+### Ingestion (3 gates)
+5. **IngestionNotification Spec Compliance** — Generate one IngestionNotification per DSP, validate against XSD, confirm structure is standard (not custom)
+6. **SFTP Delivery** — Deliver test IngestionNotification to test SFTP target, confirm file arrives, no creds in logs, retry works
+7. **Proprietary Ingestion ID Verification** — Verify Proprietary Ingestion ID is registered to New Detroit Music LLC via the global metadata authority portal or contact
 
 ### Payments (3 gates)
 8. **Stripe Idempotency** — Fire duplicate webhooks, confirm Firestore state updates only once (no double-debit)
@@ -122,11 +122,11 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 ## Access & Logistics
 
 **GitHub Access:**
-- You will be added as a read-only collaborator to `the-walking-agency-det/indiiOS-Alpha-Electron`
+- You will be added as a read-only collaborator to `the-walking-agency-det/indii-Alpha-Electron`
 - All code is public-facing (standard practice for early-stage startups)
 
 **GCP Project Access:**
-- Firebase Project ID: `indiios-v-1-1`
+- Firebase Project ID: `indii-v-1-1`
 - GCP Project: `223837784072`
 - You will receive Viewer IAM role (read-only)
 - Can inspect: Firestore rules, Storage rules, Cloud Functions, Vertex AI endpoints, billing
@@ -135,9 +135,9 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 - Test keys for webhook testing (idempotency verification)
 - Sample test account with pre-populated data for escrow math verification
 
-**DDEX Access:**
-- Party ID `PA-DPIDA-2025122604-E` is live and owned by New Detroit Music LLC
-- You can contact DDEX Inc. directly (contact info in code comments) to verify registration
+**Global Metadata Authority Access:**
+- Proprietary Ingestion ID `PA-DPIDA-2025122604-E` is live and owned by New Detroit Music LLC
+- You can contact the global metadata authority directly (contact info in code comments) to verify registration
 
 **NDA/Confidentiality:**
 - This repository and all findings are confidential until William decides to shop the company
@@ -150,12 +150,12 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 | Week | Task | Notes |
 |------|------|-------|
 | 1 | Codebase orientation, architecture deep-dive | Read CLAUDE.md, GEMINI.md, directives/ |
-| 2 | DDEX subsystem verification (gates 5–7) | Party ID check, ERN generation, SFTP test |
+| 2 | Ingestion subsystem verification (gates 5–7) | Proprietary Ingestion ID check, IngestionNotification generation, SFTP test
 | 2–3 | Agent fleet verification (gates 1–4) | Endpoint testing, prompt injection, fallback |
 | 3 | Payments & security (gates 8–12) | Stripe testing, Firestore rule audit, DR check |
 | 3–4 | Report writing & findings | Critical/Major/Minor/Informational by severity |
 
-**Parallel Where Possible:** DDEX and Agent testing can happen in parallel (weeks 2–3).
+**Parallel Where Possible:** Proprietary Ingestion IP and Agent testing can happen in parallel (weeks 2–3).
 
 ---
 
@@ -184,7 +184,7 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 
 5. Sign-Off (1 page)
    - Your name, firm, date
-   - Statement: "I have reviewed the indiiOS codebase and confirm/contradict the claims in the valuation thesis."
+   - Statement: "I have reviewed the indii codebase and confirm/contradict the claims in the valuation thesis."
 
 ---
 
@@ -193,7 +193,7 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 **Must Read (in order):**
 1. `CLAUDE.md` — Architecture overview (30 min)
 2. `docs/data-room/INDEPENDENT_REVIEW_SCOPE.md` — Your exact scope (20 min)
-3. `src/services/ddex/` — DDEX implementations (code review, 1–2 hours)
+3. `src/services/distribution/proprietary-ingestion/` — Proprietary ingestion implementations (code review, 1–2 hours)
 4. `src/services/agent/fine-tuned-models.ts` — Agent endpoint registry (code review, 30 min)
 5. `functions/src/stripe/` — Stripe implementation (code review, 1 hour)
 

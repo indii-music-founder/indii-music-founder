@@ -12,7 +12,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
  *
  * Route map:
  *   /merch          → MerchDashboard (3-panel layout: sidebar + workspace + right panel)
- *   /merch/design   → MerchDesigner (Fabric.js canvas + AI generation + Showroom)
+ *   /merch/design   → MerchDesigner (Fabric.js canvas + Autonomous generation + Showroom)
  *   /merch/*        → Redirect to /merch
  */
 export default function MerchStudio() {

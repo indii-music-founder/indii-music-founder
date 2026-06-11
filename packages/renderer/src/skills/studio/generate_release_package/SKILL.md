@@ -2,7 +2,7 @@
 name: generate_release_package
 description: Creates the text and visual assets required to publish a song.
 metadata:
-  indii_os:
+  indii_music:
     requires:
       models: ["gemini-pro"]
     context: "Publishing Studio"

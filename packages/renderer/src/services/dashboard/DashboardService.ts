@@ -13,6 +13,7 @@ export interface ProjectMetadata {
     lastModified: number;
     assetCount: number;
     thumbnail?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
 
@@ -536,7 +537,7 @@ export class DashboardService {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `indiios-backup-${Date.now()}.json`;
+        link.download = `indii-backup-${Date.now()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

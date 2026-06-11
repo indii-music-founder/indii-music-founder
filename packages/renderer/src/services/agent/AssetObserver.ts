@@ -5,7 +5,7 @@ import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
 
 /**
- * AssetObserver monitors the Creative History for newly completed AI assets.
+ * AssetObserver monitors the Creative History for newly completed Autonomous assets.
  * When a high-fidelity asset is finalized, it notifies indii Conductor to initiate
  * a proactive "Handover" conversation with the user.
  */

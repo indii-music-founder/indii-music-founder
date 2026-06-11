@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully consolidated the Mastra Agent system with the indiiOS custom agent system to eliminate duplicate code and fix mock API issues.
+Successfully consolidated the Mastra Agent system with the indii custom agent system to eliminate duplicate code and fix mock API issues.
 
 ## Changes Made
 
@@ -15,7 +15,7 @@ Successfully consolidated the Mastra Agent system with the indiiOS custom agent 
 - Basic instructions without workflow guidance
 
 **After:**
-- Integrated with existing `DirectorTools` from indiiOS system
+- Integrated with existing `DirectorTools` from indii system
 - Created Mastra-compatible wrappers for:
   - `generateImageTool` - Real image generation via ImageGenerationService
   - `searchKnowledgeTool` - Knowledge base search for brand guidelines

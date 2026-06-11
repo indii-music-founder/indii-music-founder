@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { env } from '@/config/env';
-
-const render = (status: Status) => {
-    if (status === Status.LOADING) return <div className="h-full w-full flex items-center justify-center bg-gray-900 text-gray-500">Loading Maps...</div>;
-    if (status === Status.FAILURE) return <div className="h-full w-full flex items-center justify-center bg-gray-900 text-red-500">Error Loading Maps</div>;
-    return <></>;
-};
 
 interface MapProps {
     center: google.maps.LatLngLiteral;
@@ -33,7 +26,7 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
                         elementType: "labels.text.fill",
                         stylers: [{ color: "#d59563" }],
                     },
-                    // ... more dark mode styles can be added
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
                 ]
             }));
         }
@@ -84,15 +77,13 @@ export default function MapsComponent() {
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render}>
-            <Map
-                center={{ lat: 40.7128, lng: -74.0060 }}
-                zoom={11}
-                markers={[
-                    { position: { lat: 40.7128, lng: -74.0060 }, title: "Campaign HQ" },
-                    { position: { lat: 40.7580, lng: -73.9855 }, title: "Times Square Activation" }
-                ]}
-            />
-        </Wrapper>
+        <Map
+            center={{ lat: 40.7128, lng: -74.0060 }}
+            zoom={11}
+            markers={[
+                { position: { lat: 40.7128, lng: -74.0060 }, title: "Campaign HQ" },
+                { position: { lat: 40.7580, lng: -73.9855 }, title: "Times Square Activation" }
+            ]}
+        />
     );
 }

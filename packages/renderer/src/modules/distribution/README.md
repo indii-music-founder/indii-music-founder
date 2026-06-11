@@ -1,6 +1,6 @@
 # Distribution & DDEX Module (RC1)
 
-The Distribution module is the "Last Mile" of the indiiOS creative process. It transforms artistic assets (Audio, Artwork, Metadata) into standardized digital releases for global delivery to streaming services (DSPs) like Spotify, Apple Music, and TIDAL.
+The Distribution module is the "Last Mile" of the indii creative process. It transforms artistic assets (Audio, Artwork, Metadata) into standardized digital releases for global delivery to streaming services (DSPs) like Spotify, Apple Music, and TIDAL.
 
 ## 🚀 Key Features
 - **DDEX Engine:** Full support for **DDEX ERN (Electronic Release Notification)** 4.3 and 3.8. Generates compliant XML messages for high-fidelity ingestion at major aggregators.

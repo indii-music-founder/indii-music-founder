@@ -5,9 +5,12 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { getRealUserMonitoringService, getCoreWebVitalsReporter, getRequestTracingService, getBundleAnalysisService } from '@/services/observability';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { RUMSnapshot, VitalsReport } from '@/services/observability';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Search } from 'lucide-react';
+import { Search, MessageSquareWarning, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { AdminLockScreen } from './AdminLockScreen';
 
 interface MetricPoint {
   timestamp: string;
@@ -26,6 +29,14 @@ interface RequestMetrics {
 
 export const ObservabilityDashboard: React.FC = () => {
   const [rumSnapshot, setRumSnapshot] = useState<RUMSnapshot | null>(null);
+
+  // Zustand Store for Agent Feedback
+  const { pendingFeedbackEvents } = useStore(
+    useShallow((state) => ({
+      pendingFeedbackEvents: state.pendingFeedbackEvents,
+    }))
+  );
+
   const [vitalsReport, setVitalsReport] = useState<VitalsReport | null>(null);
   const [metricHistory, setMetricHistory] = useState<MetricPoint[]>([]);
   const [requestMetrics, setRequestMetrics] = useState<RequestMetrics>({ totalTraces: 0, errorCount: 0, avgDuration: 0 });
@@ -115,134 +126,179 @@ export const ObservabilityDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Performance Monitoring</h1>
-        <p className="text-slate-400">Real User Monitoring (RUM) Dashboard</p>
-      </div>
-
-      {/* ISSUE-041: Query Input for Custom PromQL/LogQL Queries */}
-      <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Search Metrics & Logs
-        </label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search by timestamp, metric value, or enter PromQL queries (e.g., 'LCP > 2500')"
-            value={queryInput}
-            onChange={(e) => handleQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
+    <AdminLockScreen>
+      <div className="p-6 space-y-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Performance Monitoring</h1>
+          <p className="text-slate-400">Real User Monitoring (RUM) Dashboard</p>
         </div>
-        {queryInput && (
-          <div className="mt-2 text-xs text-slate-400">
-            Found {filteredMetrics.length} matching metric(s)
-          </div>
-        )}
-      </div>
 
-      {vitalsReport && (
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-semibold text-white mb-4">Core Web Vitals</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            {vitalsReport.vitals.map(vital => (
-              <div key={vital.metric} className="bg-slate-700 rounded p-4">
-                <div className="text-xs text-slate-400 mb-1">{vital.metric}</div>
-                <div className="text-2xl font-bold text-white">{vital.value.toFixed(0)}</div>
-                <div className="text-xs text-slate-400 mt-1">{vital.threshold}ms threshold</div>
-                <div className={`inline-block mt-2 px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeClass(vital.status)}`}>
-                  {vital.status}
-                </div>
-              </div>
-            ))}
+        {/* ISSUE-041: Query Input for Custom PromQL/LogQL Queries */}
+        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Search Metrics & Logs
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by timestamp, metric value, or enter PromQL queries (e.g., 'LCP > 2500')"
+              value={queryInput}
+              onChange={(e) => handleQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
-          {vitalsReport.warnings.length > 0 && (
-            <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded">
-              <div className="text-sm font-semibold text-red-200 mb-2">⚠️ Issues Found</div>
-              <ul className="text-xs text-red-300 space-y-1">
-                {vitalsReport.warnings.map((warning, idx) => (
-                  <li key={idx}>• {warning}</li>
-                ))}
-              </ul>
+          {queryInput && (
+            <div className="mt-2 text-xs text-slate-400">
+              Found {filteredMetrics.length} matching metric(s)
             </div>
           )}
         </div>
-      )}
 
-      {metricHistory.length > 0 && (
+        {vitalsReport && (
+          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h2 className="text-xl font-semibold text-white mb-4">Core Web Vitals</h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+              {vitalsReport.vitals.map(vital => (
+                <div key={vital.metric} className="bg-slate-700 rounded p-4">
+                  <div className="text-xs text-slate-400 mb-1">{vital.metric}</div>
+                  <div className="text-2xl font-bold text-white">{vital.value.toFixed(0)}</div>
+                  <div className="text-xs text-slate-400 mt-1">{vital.threshold}ms threshold</div>
+                  <div className={`inline-block mt-2 px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeClass(vital.status)}`}>
+                    {vital.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {vitalsReport.warnings.length > 0 && (
+              <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded">
+                <div className="text-sm font-semibold text-red-200 mb-2">⚠️ Issues Found</div>
+                <ul className="text-xs text-red-300 space-y-1">
+                  {vitalsReport.warnings.map((warning, idx) => (
+                    <li key={idx}>• {warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {metricHistory.length > 0 && (
+          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h2 className="text-xl font-semibold text-white mb-4">Metric Trends</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={metricHistory}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis dataKey="timestamp" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
+                <Legend />
+                {metricHistory.some(p => p.lcp !== undefined) && <Line type="monotone" dataKey="lcp" stroke="#10b981" name="LCP" />}
+                {metricHistory.some(p => p.inp !== undefined) && <Line type="monotone" dataKey="inp" stroke="#3b82f6" name="INP" />}
+                {metricHistory.some(p => p.fcp !== undefined) && <Line type="monotone" dataKey="fcp" stroke="#8b5cf6" name="FCP" />}
+                {metricHistory.some(p => p.ttfb !== undefined) && <Line type="monotone" dataKey="ttfb" stroke="#f59e0b" name="TTFB" />}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-semibold text-white mb-4">Metric Trends</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={metricHistory}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis dataKey="timestamp" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
-              <Legend />
-              {metricHistory.some(p => p.lcp !== undefined) && <Line type="monotone" dataKey="lcp" stroke="#10b981" name="LCP" />}
-              {metricHistory.some(p => p.inp !== undefined) && <Line type="monotone" dataKey="inp" stroke="#3b82f6" name="INP" />}
-              {metricHistory.some(p => p.fcp !== undefined) && <Line type="monotone" dataKey="fcp" stroke="#8b5cf6" name="FCP" />}
-              {metricHistory.some(p => p.ttfb !== undefined) && <Line type="monotone" dataKey="ttfb" stroke="#f59e0b" name="TTFB" />}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <h2 className="text-xl font-semibold text-white mb-4">Request Tracing</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-slate-700 rounded p-4">
-            <div className="text-xs text-slate-400 mb-1">Total Requests</div>
-            <div className="text-2xl font-bold text-white">{requestMetrics.totalTraces}</div>
-          </div>
-          <div className="bg-slate-700 rounded p-4">
-            <div className="text-xs text-slate-400 mb-1">Errors</div>
-            <div className="text-2xl font-bold text-red-400">{requestMetrics.errorCount}</div>
-          </div>
-          <div className="bg-slate-700 rounded p-4">
-            <div className="text-xs text-slate-400 mb-1">Avg Duration</div>
-            <div className="text-2xl font-bold text-white">{requestMetrics.avgDuration.toFixed(0)}ms</div>
-          </div>
-        </div>
-      </div>
-
-      {bundleMetrics && (
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-semibold text-white mb-4">Bundle Analysis</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={[{ name: 'Bundle', jsSize: bundleMetrics.jsSize, cssSize: bundleMetrics.cssSize }]}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis dataKey="name" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} 
-                formatter={(value: any) => [`${(Number(value) / 1024).toFixed(1)} KB`, 'Size']}
-              />
-              <Legend />
-              <Bar dataKey="jsSize" fill="#3b82f6" name="JS" />
-              <Bar dataKey="cssSize" fill="#10b981" name="CSS" />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="mt-4 pt-4 border-t border-slate-700">
-            <div className="text-sm text-slate-400">
-              Total: <span className="text-white font-semibold">{formatSize(bundleMetrics.totalSize)}</span>
+          <h2 className="text-xl font-semibold text-white mb-4">Request Tracing</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-slate-700 rounded p-4">
+              <div className="text-xs text-slate-400 mb-1">Total Requests</div>
+              <div className="text-2xl font-bold text-white">{requestMetrics.totalTraces}</div>
+            </div>
+            <div className="bg-slate-700 rounded p-4">
+              <div className="text-xs text-slate-400 mb-1">Errors</div>
+              <div className="text-2xl font-bold text-red-400">{requestMetrics.errorCount}</div>
+            </div>
+            <div className="bg-slate-700 rounded p-4">
+              <div className="text-xs text-slate-400 mb-1">Avg Duration</div>
+              <div className="text-2xl font-bold text-white">{requestMetrics.avgDuration.toFixed(0)}ms</div>
             </div>
           </div>
         </div>
-      )}
 
-      {rumSnapshot && (
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-xs text-slate-400 space-y-1">
-            <div>Session ID: <code className="text-slate-300">{rumSnapshot.sessionId}</code></div>
-            <div>Page Load Time: {rumSnapshot.pageLoadTime.toFixed(0)}ms</div>
-            <div>URL: {rumSnapshot.url}</div>
+        {bundleMetrics && (
+          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h2 className="text-xl font-semibold text-white mb-4">Bundle Analysis</h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={[{ name: 'Bundle', jsSize: bundleMetrics.jsSize, cssSize: bundleMetrics.cssSize }]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis dataKey="name" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} 
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: any) => [`${(Number(value) / 1024).toFixed(1)} KB`, 'Size']}
+                />
+                <Legend />
+                <Bar dataKey="jsSize" fill="#3b82f6" name="JS" />
+                <Bar dataKey="cssSize" fill="#10b981" name="CSS" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <div className="text-sm text-slate-400">
+                Total: <span className="text-white font-semibold">{formatSize(bundleMetrics.totalSize)}</span>
+              </div>
+            </div>
           </div>
+        )}
+
+        {rumSnapshot && (
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="text-xs text-slate-400 space-y-1">
+              <div>Session ID: <code className="text-slate-300">{rumSnapshot.sessionId}</code></div>
+              <div>Page Load Time: {rumSnapshot.pageLoadTime.toFixed(0)}ms</div>
+              <div>URL: {rumSnapshot.url}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Agent Insights & Feedback Feed */}
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquareWarning className="text-indigo-400" size={24} />
+            <h2 className="text-xl font-semibold text-white">Agent Activity & Feedback</h2>
+          </div>
+          
+          {!pendingFeedbackEvents || pendingFeedbackEvents.length === 0 ? (
+            <div className="text-slate-500 text-center py-8 bg-slate-900/50 rounded-lg border border-slate-700/50 border-dashed">
+              No recent agent activity or user feedback to display.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingFeedbackEvents.map((event) => (
+                <div key={event.id} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 flex gap-4 items-start">
+                  <div className={`p-2 rounded-lg ${event.rating === 'positive' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {event.rating === 'positive' ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-sm font-semibold text-white truncate">
+                        {event.actionContext.agentId} <span className="text-slate-400 font-normal">executed</span> {event.actionContext.actionType}
+                      </h4>
+                      <span className="text-xs text-slate-500 shrink-0 ml-2">
+                        {new Date(event.createdAt.toMillis()).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    {event.comment && (
+                      <p className="text-sm text-slate-300 mt-2 bg-slate-800/50 p-3 rounded-md border border-slate-700">
+                        "{event.comment}"
+                      </p>
+                    )}
+                    <div className="mt-2 text-xs text-slate-500 truncate">
+                      {event.actionContext.contentSummary}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </AdminLockScreen>
   );
 };
 

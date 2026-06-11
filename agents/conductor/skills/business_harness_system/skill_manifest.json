@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "skillId": "business_harness_system",
+  "displayName": "Business Harness System",
+  "canonicalFile": "SKILL.md",
+  "supportedAliases": ["skill.markdown"],
+  "appliesToAgents": ["conductor", "keeper", "music", "legal", "distribution", "finance", "merchandise", "marketing", "publishing", "licensing"],
+  "ownedHarnessDomains": ["boardroom_meta"],
+  "supportingHarnessDomains": [
+    "artist_memory",
+    "song_dna",
+    "creator_protection",
+    "distribution_ddex",
+    "release",
+    "finance",
+    "activity_time_value",
+    "road_travel",
+    "gear_asset",
+    "merch_pod",
+    "marketing_growth",
+    "fan_crm",
+    "publishing_rights",
+    "collaboration_splits",
+    "licensing_sync",
+    "royalty_revenue",
+    "legal_compliance",
+    "creative_production",
+    "opportunity",
+    "education_curriculum",
+    "security_trust"
+  ],
+  "toolRefs": [
+    "list_harness_catalog",
+    "compile_harness",
+    "get_harness_run",
+    "list_harness_runs",
+    "get_harness_context_for_agent",
+    "create_boardroom_decision",
+    "explain_approval_gates",
+    "create_harness_agent_brief"
+  ],
+  "mcpServers": ["indii-harness"],
+  "riskRules": [
+    "No external execution or delivery without user approval gate verification.",
+    "Draft-only compilation runs when save parameter is false."
+  ]
+}

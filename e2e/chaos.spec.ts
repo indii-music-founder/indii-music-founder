@@ -17,7 +17,7 @@ test.describe('Chaos — Offline and Network Failures', () => {
         // Block all Firestore requests
         await page.route('**/firestore.googleapis.com/**', route => route.abort());
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
 
@@ -35,7 +35,7 @@ test.describe('Chaos — Offline and Network Failures', () => {
         await page.route('**/aiplatform.googleapis.com/**', route => route.abort());
         await page.route('**/localhost:50080/**', route => route.abort());
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
 
@@ -48,7 +48,7 @@ test.describe('Chaos — Offline and Network Failures', () => {
         await page.route('**/stripe.com/**', route => route.abort());
         await page.route('**/inngest.com/**', route => route.abort());
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(3_000);
 
@@ -60,7 +60,7 @@ test.describe('Chaos — Rapid Navigation', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ authedPage: page }) => {
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
@@ -105,7 +105,7 @@ test.describe('Chaos — Error Boundaries', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ authedPage: page }) => {
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });

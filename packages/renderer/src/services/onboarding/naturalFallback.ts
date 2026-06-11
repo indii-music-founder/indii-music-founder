@@ -2,7 +2,7 @@
  * Natural Fallback Response Generator
  *
  * Replaces robotic "I processed that" messages with human, contextual responses.
- * Used when the AI model silently updates the profile and we need conversational feedback.
+ * Used when the Autonomous model silently updates the profile and we need conversational feedback.
  */
 
 export type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor' | 'colorPalette' | 'typography' | 'aestheticStyle';
@@ -187,7 +187,7 @@ export function generateNaturalFallback(
     return response;
 }
 
-// Generates a fallback when the AI returns nothing (edge case)
+// Generates a fallback when the Autonomous returns nothing (edge case)
 // These pivot to a question-answer format to get the conversation moving
 export function generateEmptyResponseFallback(): string {
     const responses = [

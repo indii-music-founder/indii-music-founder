@@ -40,12 +40,12 @@ describe('OrchestrationService', () => {
             id: 'exec-1',
             workflowId: 'CAMPAIGN_LAUNCH',
             userId: 'test-user',
-            status: 'planned',
+            status: 'PLANNED',
             steps: {
-                'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'planned' } as WorkflowStepExecution,
-                'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'planned' } as WorkflowStepExecution,
-                'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'planned' } as WorkflowStepExecution,
-                'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'planned' } as WorkflowStepExecution,
+                'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'PLANNED' } as WorkflowStepExecution,
+                'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'PLANNED' } as WorkflowStepExecution,
+                'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'PLANNED' } as WorkflowStepExecution,
+                'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['CAMPAIGN_LAUNCH']!.edges,
             createdAt: 1000,
@@ -58,10 +58,10 @@ describe('OrchestrationService', () => {
             .mockResolvedValue({
                 ...mockExecution,
                 steps: {
-                    'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete' } as WorkflowStepExecution,
-                    'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'step_complete' } as WorkflowStepExecution,
-                    'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'step_complete' } as WorkflowStepExecution,
-                    'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'step_complete' } as WorkflowStepExecution,
+                    'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
                 }
             }); // Subsequent loops
 
@@ -88,11 +88,11 @@ describe('OrchestrationService', () => {
             id: 'exec-2',
             workflowId: 'AI_MERCH_DROP',
             userId: 'test-user',
-            status: 'planned',
+            status: 'PLANNED',
             steps: {
-                'design_concepts': { stepId: 'design_concepts', agentId: 'creative', prompt: 'Generate designs', status: 'planned' } as WorkflowStepExecution,
-                'pricing_strategy': { stepId: 'pricing_strategy', agentId: 'marketing', prompt: 'Product description', status: 'planned' } as WorkflowStepExecution,
-                'teaser_campaign': { stepId: 'teaser_campaign', agentId: 'social', prompt: 'Teaser campaign', status: 'planned' } as WorkflowStepExecution,
+                'design_concepts': { stepId: 'design_concepts', agentId: 'creative', prompt: 'Generate designs', status: 'PLANNED' } as WorkflowStepExecution,
+                'pricing_strategy': { stepId: 'pricing_strategy', agentId: 'marketing', prompt: 'Product description', status: 'PLANNED' } as WorkflowStepExecution,
+                'teaser_campaign': { stepId: 'teaser_campaign', agentId: 'social', prompt: 'Teaser campaign', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['AI_MERCH_DROP']!.edges,
             createdAt: 1000,
@@ -103,9 +103,9 @@ describe('OrchestrationService', () => {
         vi.mocked(workflowStateService.getExecution).mockResolvedValue(mockExecution);
         vi.mocked(workflowStateService.failStep).mockResolvedValue({
             ...mockExecution,
-            status: 'failed' as const,
+            status: 'FAILED' as const,
             steps: {
-                'design_concepts': { ...mockExecution.steps['design_concepts']!, status: 'failed' as const, error: 'Generation failed' },
+                'design_concepts': { ...mockExecution.steps['design_concepts']!, status: 'FAILED' as const, error: 'Generation failed' },
                 'pricing_strategy': mockExecution.steps['pricing_strategy']!,
                 'teaser_campaign': mockExecution.steps['teaser_campaign']!,
             },
@@ -149,10 +149,10 @@ describe('OrchestrationService', () => {
             id: 'exec-3',
             workflowId: 'INDII_GROWTH_PROTOCOL',
             userId: 'test-user',
-            status: 'planned',
+            status: 'PLANNED',
             steps: {
-                'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'planned' } as WorkflowStepExecution,
-                'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'planned' } as WorkflowStepExecution,
+                'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'PLANNED' } as WorkflowStepExecution,
+                'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['INDII_GROWTH_PROTOCOL']!.edges,
             createdAt: 1000,
@@ -165,8 +165,8 @@ describe('OrchestrationService', () => {
             .mockResolvedValue({
                 ...mockExecution,
                 steps: {
-                    'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'step_complete' } as WorkflowStepExecution,
-                    'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'step_complete' } as WorkflowStepExecution,
+                    'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
                 }
             });
         vi.mocked(workflowStateService.advanceStep).mockResolvedValue(mockExecution);
@@ -222,12 +222,12 @@ describe('OrchestrationService', () => {
             id: 'exec-parallel',
             workflowId: 'PARALLEL_WORKFLOW',
             userId: 'test-user',
-            status: 'planned',
+            status: 'PLANNED',
             steps: {
-                'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'planned' } as WorkflowStepExecution,
-                'step2a': { stepId: 'step2a', agentId: 'agent2', prompt: 'prompt2a', status: 'planned' } as WorkflowStepExecution,
-                'step2b': { stepId: 'step2b', agentId: 'agent3', prompt: 'prompt2b', status: 'planned' } as WorkflowStepExecution,
-                'step3': { stepId: 'step3', agentId: 'agent4', prompt: 'prompt3', status: 'planned' } as WorkflowStepExecution,
+                'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'PLANNED' } as WorkflowStepExecution,
+                'step2a': { stepId: 'step2a', agentId: 'agent2', prompt: 'prompt2a', status: 'PLANNED' } as WorkflowStepExecution,
+                'step2b': { stepId: 'step2b', agentId: 'agent3', prompt: 'prompt2b', status: 'PLANNED' } as WorkflowStepExecution,
+                'step3': { stepId: 'step3', agentId: 'agent4', prompt: 'prompt3', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['PARALLEL_WORKFLOW']!.edges,
             createdAt: 1000,
@@ -241,26 +241,26 @@ describe('OrchestrationService', () => {
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' }
                 }
             }) // Loop 2: step2a and step2b
             .mockResolvedValueOnce({
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' },
-                    'step2a': { ...mockExecution.steps['step2a']!, status: 'step_complete' },
-                    'step2b': { ...mockExecution.steps['step2b']!, status: 'step_complete' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' },
+                    'step2a': { ...mockExecution.steps['step2a']!, status: 'STEP_COMPLETE' },
+                    'step2b': { ...mockExecution.steps['step2b']!, status: 'STEP_COMPLETE' }
                 }
             }) // Loop 3: step3
             .mockResolvedValue({
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' },
-                    'step2a': { ...mockExecution.steps['step2a']!, status: 'step_complete' },
-                    'step2b': { ...mockExecution.steps['step2b']!, status: 'step_complete' },
-                    'step3': { ...mockExecution.steps['step3']!, status: 'step_complete' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' },
+                    'step2a': { ...mockExecution.steps['step2a']!, status: 'STEP_COMPLETE' },
+                    'step2b': { ...mockExecution.steps['step2b']!, status: 'STEP_COMPLETE' },
+                    'step3': { ...mockExecution.steps['step3']!, status: 'STEP_COMPLETE' }
                 }
             }); // Final loop and completion check
 
@@ -309,11 +309,11 @@ describe('OrchestrationService', () => {
             id: 'exec-cond',
             workflowId: 'CONDITIONAL_WORKFLOW',
             userId: 'test-user',
-            status: 'planned',
+            status: 'PLANNED',
             steps: {
-                'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'planned' } as WorkflowStepExecution,
-                'step2': { stepId: 'step2', agentId: 'agent2', prompt: 'prompt2', status: 'planned' } as WorkflowStepExecution,
-                'step3': { stepId: 'step3', agentId: 'agent3', prompt: 'prompt3', status: 'planned' } as WorkflowStepExecution,
+                'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'PLANNED' } as WorkflowStepExecution,
+                'step2': { stepId: 'step2', agentId: 'agent2', prompt: 'prompt2', status: 'PLANNED' } as WorkflowStepExecution,
+                'step3': { stepId: 'step3', agentId: 'agent3', prompt: 'prompt3', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['CONDITIONAL_WORKFLOW']!.edges,
             createdAt: 1000,
@@ -327,24 +327,24 @@ describe('OrchestrationService', () => {
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' }
                 }
             }) // Loop 2: evaluates step2 (skips)
             .mockResolvedValueOnce({
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' },
-                    'step2': { ...mockExecution.steps['step2']!, status: 'skipped' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' },
+                    'step2': { ...mockExecution.steps['step2']!, status: 'SKIPPED' }
                 }
             }) // Loop 3: step3 runs
             .mockResolvedValue({
                 ...mockExecution,
                 steps: {
                     ...mockExecution.steps,
-                    'step1': { ...mockExecution.steps['step1']!, status: 'step_complete' },
-                    'step2': { ...mockExecution.steps['step2']!, status: 'skipped' },
-                    'step3': { ...mockExecution.steps['step3']!, status: 'step_complete' }
+                    'step1': { ...mockExecution.steps['step1']!, status: 'STEP_COMPLETE' },
+                    'step2': { ...mockExecution.steps['step2']!, status: 'SKIPPED' },
+                    'step3': { ...mockExecution.steps['step3']!, status: 'STEP_COMPLETE' }
                 }
             });
 

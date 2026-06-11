@@ -3,7 +3,7 @@ import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause } from 'lucide-react';
 
 interface AudioWaveformViewerProps {
-    audioUrl?: string; // If no url is provided, use a placeholder or silent dummy
+    audioUrl?: string;
     height?: number;
     waveColor?: string;
     progressColor?: string;
@@ -22,6 +22,10 @@ export const AudioWaveformViewer: React.FC<AudioWaveformViewerProps> = ({
 
     useEffect(() => {
         if (!containerRef.current) return;
+        Promise.resolve().then(() => {
+            setIsReady(false);
+            setIsPlaying(false);
+        });
 
         const ws = WaveSurfer.create({
             container: containerRef.current,
@@ -46,15 +50,7 @@ export const AudioWaveformViewer: React.FC<AudioWaveformViewerProps> = ({
         ws.on('pause', () => setIsPlaying(false));
         ws.on('finish', () => setIsPlaying(false));
 
-        if (audioUrl) {
-            ws.load(audioUrl);
-        } else {
-            // For mock demo, normally we'd pass a blob URL.
-            // But since we want something interactive that doesn't fail, we load a data URL.
-            // A short empty WAV file base64
-            const emptyWav = "data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==";
-            ws.load(emptyWav);
-        }
+        if (audioUrl) ws.load(audioUrl);
 
         return () => {
             ws.destroy();
@@ -76,7 +72,13 @@ export const AudioWaveformViewer: React.FC<AudioWaveformViewerProps> = ({
             >
                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
             </button>
-            <div className="flex-1 overflow-hidden" ref={containerRef} />
+            <div className="flex-1 overflow-hidden" ref={containerRef}>
+                {!audioUrl && (
+                    <div className="h-full min-h-16 flex items-center text-sm text-gray-500">
+                        No audio loaded.
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

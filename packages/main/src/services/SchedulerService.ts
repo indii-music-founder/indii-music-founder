@@ -11,7 +11,7 @@ import type {
 } from './scheduler/types';
 
 /**
- * indiiOS Built-in Task Scheduler
+ * indii Built-in Task Scheduler
  *
  * A first-party, zero-dependency cron/task scheduler running in the
  * Electron main process. Uses Node.js setInterval/setTimeout under the hood,
@@ -59,7 +59,7 @@ const timers = new Map<string, NodeJS.Timeout>();
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function generateId(): string {
-    return `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    return `task_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
 }
 
 function computeNextRunAt(schedule: ScheduleInterval, fromNow: Date = new Date()): Date {
@@ -98,6 +98,7 @@ function computeNextRunAt(schedule: ScheduleInterval, fromNow: Date = new Date()
     throw new Error('Invalid schedule type');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function msUntilNext(nextRunAt: string): number {
     const ms = new Date(nextRunAt).getTime() - Date.now();
     return Math.max(ms, 0);
@@ -331,7 +332,7 @@ export const SchedulerService = {
         // Optional desktop notification
         if (task.notify && Notification.isSupported()) {
             const notif = new Notification({
-                title: `indiiOS Scheduler`,
+                title: `indii Scheduler`,
                 body: `Task "${task.name}" completed`,
                 icon: path.join(app.getAppPath(), 'public/icon-192.png'),
                 silent: true,
@@ -356,7 +357,7 @@ export const SchedulerService = {
     },
 
     /**
-     * Register built-in indiiOS system tasks.
+     * Register built-in indii system tasks.
      * Called once from main.ts after start().
      */
     registerBuiltInTasks(): void {

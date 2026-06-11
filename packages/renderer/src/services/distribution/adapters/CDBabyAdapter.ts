@@ -12,8 +12,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 export class CDBabyAdapter extends BaseDistributorAdapter {
@@ -67,7 +67,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
         try {
             // 1. Generate DDEX ERN
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'cdbaby', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'cdbaby', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -127,10 +127,16 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
                 logger.info(`[CDBaby] Files staged at ${stagingValues.packagePath}.`);
 
-                // 4. Transmission (Simulation for now, or real if SFTP credentials exist)
-                if (this.credentials?.sftpHost) {
-                    await this.uploadBundle(stagingValues.packagePath, `/upload/${releaseId}`);
+                // 4. Transmission
+                if (!this.credentials?.sftpHost) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        errors: [{ code: 'CONNECTION_ERROR', message: 'CDBaby SFTP credentials missing; staged package was not delivered.' }]
+                    };
                 }
+
+                await this.uploadBundle(stagingValues.packagePath, `/upload/${releaseId}`);
 
                 return {
                     success: true,
@@ -145,16 +151,11 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
                 };
             }
 
-            // Fallback for non-Electron environment
             return {
-                success: true,
+                success: false,
                 releaseId: metadata.id,
-                distributorReleaseId: `CDB-${Date.now()}`,
-                status: 'validating',
-                metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                    reviewRequired: true,
-                }
+                status: 'failed',
+                errors: [{ code: 'ELECTRON_BRIDGE_UNAVAILABLE', message: 'CDBaby delivery requires the Electron distribution bridge.' }]
             };
         } catch (e: unknown) {
             return {
@@ -181,7 +182,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         try {
             const result = await window.electronAPI.sftp.listDirectory(`/status/`);
             if (result.success && result.files) {
-                const statusFile = result.files.find(f => f.name.includes(releaseId));
+                const statusFile = result.files.find((f: { name: string }) => f.name.includes(releaseId));
                 if (statusFile) {
                     if (statusFile.name.includes('DELIVERED')) return 'live';
                     if (statusFile.name.includes('ERROR')) return 'failed';
@@ -197,8 +198,9 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'UNSUPPORTED', message: 'CDBaby takedown delivery is currently unsupported by the API; please use the CDBaby dashboard.' }]
         };
     }
 
@@ -226,8 +228,8 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
             const fileResult = await window.electronAPI.sftp.readFile(remotePath);
 
             if (fileResult.success && fileResult.content) {
-                const { dsrService } = await import('@/services/ddex/DSRService');
-                const parsed = await dsrService.ingestFlatFile(fileResult.content);
+                const { earningsReportService } = await import('@/services/distribution/proprietary-ingestion/EarningsReportService');
+                const parsed = await earningsReportService.ingestFlatFile(fileResult.content);
                 
                 if (parsed.success && parsed.data) {
                     const txn = parsed.data.transactions.filter(t => 

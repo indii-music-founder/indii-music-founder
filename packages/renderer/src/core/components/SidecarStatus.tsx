@@ -53,7 +53,7 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
         <div
             role="status"
             aria-live="polite"
-            aria-label={`AI Sidecar status: ${current.label}`}
+            aria-label={`Autonomous Sidecar status: ${current.label}`}
             className={cn(
                 "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 transition-all duration-300",
                 collapsed ? "p-1 justify-center" : "px-3 py-2"
@@ -72,7 +72,7 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
                 <>
                     <div className="flex flex-col min-w-[70px]">
                         <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground leading-none">
-                            AI Sidecar
+                            Autonomous Sidecar
                         </span>
                         <span className={cn("text-xs font-medium leading-tight mt-0.5", current.color)}>
                             {current.label}

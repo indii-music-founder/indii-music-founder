@@ -139,6 +139,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolution & Defect Elimination', () => {
     });
 
     // 3. Setup Population (All need evaluation)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const population: AgentGene[] = [
       { ...baseGene, id: 'p1', fitness: undefined }, // Will become toxic
       { ...baseGene, id: 'p2', fitness: 100 },       // Elite

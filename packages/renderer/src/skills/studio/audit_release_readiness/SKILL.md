@@ -2,7 +2,7 @@
 name: audit_release_readiness
 description: Acts as a Label Executive to verify if a project is commercially ready for distribution.
 metadata:
-  indii_os:
+  indii_music:
     requires:
       tools: ["scan_audio_dna"] # Dependencies on other internal skills
     context: "Executive Suite"

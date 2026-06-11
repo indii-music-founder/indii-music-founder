@@ -8,7 +8,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { StorageService } from '@/services/StorageService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
@@ -39,6 +39,7 @@ export type WizardStep =
   | 'distribution'
   | 'ai_disclosure'
   | 'assets'
+  | 'harness'
   | 'review'
   | 'submitting'
   | 'complete';
@@ -50,7 +51,7 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
   isrc: '',
   explicit: false,
   genre: '',
-  splits: [{ legalName: '', role: 'performer', percentage: 100, email: '' }],
+  splits: [],
   pro: 'None',
   publisher: 'Self-Published',
   containsSamples: false,
@@ -60,8 +61,8 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
   releaseDate: new Date().toISOString().split('T')[0],
   territories: ['Worldwide'],
   distributionChannels: ['streaming', 'download'],
-  labelName: DDEX_CONFIG.PARTY_NAME,
-  dpid: DDEX_CONFIG.PARTY_ID,
+  labelName: INGESTION_CONFIG.ENTITY_NAME,
+  dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
   aiGeneratedContent: {
     isFullyAIGenerated: false,
     isPartiallyAIGenerated: false,
@@ -115,7 +116,7 @@ export interface UseDDEXReleaseReturn {
   resetWizard: () => void;
 }
 
-const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'review'];
+const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'harness', 'review'];
 
 /**
  * Extract real audio metadata (sample rate, bit depth) from a File using the Web Audio API.
@@ -318,12 +319,16 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         break;
 
       case 'ai_disclosure':
-        // AI disclosure is optional, no required fields
+        // Autonomous disclosure is optional, no required fields
         break;
 
       case 'assets':
         if (!assets.audioFile) errors.push('Audio file is required');
         if (!assets.coverArt) errors.push('Cover art is required');
+        break;
+
+      case 'harness':
+        // Harness compilation is recommended but non-blocking; review still gates release submission.
         break;
 
       case 'review':
@@ -402,7 +407,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       };
 
       // Save to Firestore
-      const docRef = await addDoc(collection(db, 'ddexReleases'), {
+      const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
         ...releaseRecord,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -410,7 +415,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
       // Update status to validating
       // Update status to complete
-      await updateDoc(doc(db, 'ddexReleases', docRef.id), {
+      await updateDoc(doc(db, 'proprietaryIngestionReleases', docRef.id), {
         status: 'metadata_complete',
         updatedAt: serverTimestamp()
       });

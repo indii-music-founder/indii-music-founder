@@ -85,7 +85,7 @@ registerRoute(
 // Item 340: Push notification handler
 self.addEventListener('push', (event: PushEvent) => {
     const data = event.data?.json() as { title?: string; body?: string; icon?: string } | null;
-    const title = data?.title ?? 'indiiOS';
+    const title = data?.title ?? 'indii.music';
     const options: NotificationOptions = {
         body: data?.body ?? 'You have a new notification',
         icon: data?.icon ?? '/icons/icon-192x192.png',

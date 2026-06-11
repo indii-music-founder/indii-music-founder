@@ -4,7 +4,7 @@
  * Covers:
  * - Signature verification (valid + invalid)
  * - Idempotency guard (duplicate event rejection)
- * - checkout.session.completed (subscription + founder pass)
+ * - checkout.session.completed (subscription)
  * - customer.subscription.created / updated / deleted
  * - invoice.paid (with ledger entry)
  * - invoice.payment_failed (with dunning notification)
@@ -265,28 +265,6 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         expect(mocks.mockDb.collection).toHaveBeenCalledWith('subscriptions');
     });
 
-    // ── checkout.session.completed — Founder Pass ────────────────────────────
-
-    it('should handle checkout.session.completed for a founder pass', async () => {
-        const session: Partial<Stripe.Checkout.Session> = {
-            id: 'cs_founder_001',
-            payment_intent: 'pi_founder_001',
-            metadata: { userId: 'user-123', type: 'founder_pass' },
-        };
-        const event: Partial<Stripe.Event> = {
-            id: 'evt_checkout_founder',
-            type: 'checkout.session.completed',
-            data: { object: session as Stripe.Checkout.Session },
-        };
-        mocks.mockConstructEvent.mockReturnValue(event);
-
-        const { req, res, jsonFn } = makeReqRes(event);
-        await stripeWebhook(req, res);
-
-        expect(jsonFn).toHaveBeenCalledWith({ received: true });
-        expect(mocks.mockDb.collection).toHaveBeenCalledWith('founder_pending_activations');
-    });
-
     // ── customer.subscription.created ────────────────────────────────────────
 
     it('should handle customer.subscription.created', async () => {
@@ -472,6 +450,6 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(statusFn).not.toHaveBeenCalled();
-        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+        expect(jsonFn).toHaveBeenCalledWith({ received: true, status: 'unhandled_event', type: 'payment_intent.created' });
     });
 });

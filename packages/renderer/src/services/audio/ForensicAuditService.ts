@@ -3,7 +3,7 @@
  *
  * Hardens Goal 3 "Soul Certification" by running a deep forensic pass
  * over submitted audio to detect:
- * - AI-generated audio artifacts (quantization anomalies, robotic phrasing,
+ * - Intelligence-generated audio artifacts (quantization anomalies, robotic phrasing,
  *   phase-perfect loops, sterile transients)
  * - Sample integrity issues (unlicensed sample fingerprints, lifted stems)
  * - Technical certification blockers (clipping, phase issues, mono incompatibility)
@@ -11,8 +11,8 @@
  * This is the quality gate between creation and DDEX distribution.
  * A track that fails CANNOT proceed to distribution without human sign-off.
  */
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
@@ -30,7 +30,7 @@ export interface ArtifactFinding {
     /** Short machine-readable label */
     type:
     | 'quantization_grid_lock'  // Every element snapped — zero human feel
-    | 'phase_perfect_loop'      // Pixel-perfect loop boundary = AI/DAW clone
+    | 'phase_perfect_loop'      // Pixel-perfect loop boundary = Autonomous/DAW clone
     | 'sterile_transient'       // No transient smear — mathematically clean
     | 'robotic_phrasing'        // Vocal/melody timing that's inhuman
     | 'frequency_void'          // Unnatural absence in a frequency band
@@ -47,10 +47,10 @@ export interface ArtifactFinding {
 export interface SoulCertificationResult {
     /** Overall pass/fail for DDEX distribution */
     certificationStatus: 'CERTIFIED' | 'CONDITIONAL' | 'BLOCKED';
-    /** Overall AI artifact severity across the whole track */
+    /** Overall Autonomous artifact severity across the whole track */
     overallArtifactSeverity: ArtifactSeverity;
-    /** Probability (0.0–1.0) that this track is fully or partially AI-generated */
-    aiGenerationProbability: number;
+    /** Probability (0.0–1.0) that this track is fully or partially Intelligence-generated */
+    autonomousGenerationProbability: number;
     /** Specific findings with timestamps */
     findings: ArtifactFinding[];
     /** Total count of findings by severity */
@@ -72,7 +72,7 @@ const FORENSIC_SCHEMA: Schema = {
     properties: {
         certificationStatus: { type: 'STRING' },
         overallArtifactSeverity: { type: 'STRING' },
-        aiGenerationProbability: { type: 'NUMBER' },
+        autonomousGenerationProbability: { type: 'NUMBER' },
         findings: {
             type: 'ARRAY',
             items: {
@@ -100,7 +100,7 @@ const FORENSIC_SCHEMA: Schema = {
         recommendation: { type: 'STRING' }
     },
     required: [
-        'certificationStatus', 'overallArtifactSeverity', 'aiGenerationProbability',
+        'certificationStatus', 'overallArtifactSeverity', 'autonomousGenerationProbability',
         'findings', 'findingCounts', 'auditorNote', 'recommendation'
     ]
 } as unknown as Schema;
@@ -122,7 +122,7 @@ export class ForensicAuditService {
             const base64Audio = await this.fileToBase64(file);
 
             const prompt = `
-You are a forensic audio engineer and AI detection specialist with 15+ years in music mastering and digital forensics.
+You are a forensic audio engineer and Intelligence detection specialist with 15+ years in music mastering and digital forensics.
 Your mandate is to protect the integrity of music distribution. You answer only to the truth of what you hear.
 
 LISTEN FORENSICALLY to this audio file (${Math.round(technicalFeatures.duration)}s, ${technicalFeatures.bpm.toFixed(0)} BPM, ${technicalFeatures.key} ${technicalFeatures.scale}).
@@ -131,12 +131,12 @@ LISTEN FORENSICALLY to this audio file (${Math.round(technicalFeatures.duration)
 
 Conduct a sweep for the following categories. Be rigorous. Be specific. Be honest.
 
-**CATEGORY 1: AI Generation Artifacts**
+**CATEGORY 1: Autonomous Generation Artifacts**
 - Quantization Grid Lock: Does EVERY rhythmic element lock perfectly to the grid with zero deviation?
-  Human music has micro-timing variation (±5–20ms). AI music is mathematically perfect.
+  Human music has micro-timing variation (±5–20ms). Intelligence music is mathematically perfect.
 - Sterile Transients: Are drum/percussion hits too clean? No room reflections, no stick noise, no human inconsistency?
 - Robotic Phrasing: Do melodic or vocal elements have inhuman timing precision or unnatural pitch consistency?
-- Phase-Perfect Loops: Listen for loop points — do they connect with zero crossfade artifact? This indicates sample/AI looping.
+- Phase-Perfect Loops: Listen for loop points — do they connect with zero crossfade artifact? This indicates sample/Autonomous looping.
 - Frequency Voids: Are there suspiciously absent frequency bands that suggest algorithmic generation (e.g., missing room tone, dead mid-range)?
 
 **CATEGORY 2: Sample Integrity**
@@ -158,22 +158,22 @@ For each finding:
 - 'severity': minor / moderate / severe
 
 For the overall result:
-- 'aiGenerationProbability': Your honest estimate (0.0 = human, 1.0 = full AI). This is probabilistic — be calibrated.
+- 'autonomousGenerationProbability': Your honest estimate (0.0 = human, 1.0 = full Autonomous). This is probabilistic — be calibrated.
 - 'certificationStatus':
-  - 'CERTIFIED': No blockers, AI probability < 0.4, minor issues only
-  - 'CONDITIONAL': Moderate issues or AI probability 0.4–0.7 — human review required
-  - 'BLOCKED': Severe issues or AI probability > 0.7 or technical blockers present
+  - 'CERTIFIED': No blockers, Intelligence probability < 0.4, minor issues only
+  - 'CONDITIONAL': Moderate issues or Intelligence probability 0.4–0.7 — human review required
+  - 'BLOCKED': Severe issues or Intelligence probability > 0.7 or technical blockers present
 - 'recommendation': Map to exactly one of: 'clear_for_distribution', 'human_review_required', 'block_until_resolved'
 - 'auditorNote': Write as a professional mastering engineer would — direct, specific, no fluff. Address the artist directly.
 
 CRITICAL RULES:
 - If nothing is wrong, say so clearly. Do NOT invent findings to seem thorough.
 - A 'CERTIFIED' result with zero findings is a VALID and VALUABLE outcome.
-- Be fair — human music can be tight without being AI. Context matters.
+- Be fair — human music can be tight without being Autonomous. Context matters.
 - 0.01% phase shift detection standard: Log any phase anomalies, no matter how small.
 `;
 
-            const result = await GenAI.generateStructuredData<SoulCertificationResult>(
+            const result = await AutonomousIntelligence.generateStructuredData<SoulCertificationResult>(
                 [
                     { text: prompt },
                     {
@@ -186,12 +186,12 @@ CRITICAL RULES:
                 FORENSIC_SCHEMA,
                 8192, // Higher budget — forensic reasoning is complex
                 'You are a forensic audio engineer. Precision and honesty are your only directives.',
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
 
             Logger.info(
                 'ForensicAudit',
-                `Audit complete: ${result.certificationStatus} | AI probability: ${(result.aiGenerationProbability * 100).toFixed(0)}% | Findings: ${result.findings.length}`
+                `Audit complete: ${result.certificationStatus} | Intelligence probability: ${(result.autonomousGenerationProbability * 100).toFixed(0)}% | Findings: ${result.findings.length}`
             );
 
             return result;

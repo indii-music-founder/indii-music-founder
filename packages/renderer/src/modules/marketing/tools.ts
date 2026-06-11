@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '../../services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export const MARKETING_TOOLS = {
     generate_campaign_strategy: async (args: { product_name: string, target_audience: string, goal: string }) => {
@@ -23,9 +23,10 @@ export const MARKETING_TOOLS = {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
-            return res.response.text() || "Failed to generate strategy.";
+            const rawText = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
+            return rawText || "Failed to generate strategy.";
         } catch (_e: unknown) {
             return JSON.stringify({ error: "AI Service Unavailable" });
         }
@@ -34,7 +35,7 @@ export const MARKETING_TOOLS = {
 }
 
 export const MARKETING_MANAGER_PROMPT = `
-You are the "Chief Marketing Officer" (CMO) for indiiOS.
+You are the "Chief Marketing Officer" (CMO) for indii.
 Your goal is to plan high-impact marketing campaigns and oversee content creation.
 
 CAPABILITIES:

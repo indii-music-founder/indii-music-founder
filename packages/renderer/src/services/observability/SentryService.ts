@@ -1,26 +1,34 @@
 import * as Sentry from '@sentry/react';
 import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
+import { Logger } from '@/core/logger/Logger';
+
+const TAG = 'SentryService';
+
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 const ENVIRONMENT = import.meta.env.MODE ?? 'development';
-const RELEASE = `indiios@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
+const RELEASE = `indii@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
 const DEBUG = import.meta.env.DEV && import.meta.env.VITE_DEBUG_SENTRY === 'true';
+
+let isInitialized = false;
 
 /** Initialize Sentry for the React renderer. Call once before ReactDOM.render(). */
 export function initSentry(): void {
+    if (isInitialized) return;
+    
     // Item 303: Gate Sentry initialization on cookie consent.
     const consent = getConsentPreferences();
     if (!consent?.errorTracking) {
-        if (DEBUG) console.log('[Sentry] Initialization skipped: No consent for error tracking.');
+        if (DEBUG) Logger.info(TAG, '[Sentry] Initialization skipped: No consent for error tracking.');
         return;
     }
 
     if (!SENTRY_DSN) {
-        if (DEBUG) console.warn('[Sentry] Initialization skipped: No VITE_SENTRY_DSN configured.');
+        if (DEBUG) Logger.warn(TAG, '[Sentry] Initialization skipped: No VITE_SENTRY_DSN configured.');
         return;
     }
 
-    if (DEBUG) console.log(`[Sentry] Initializing for ${ENVIRONMENT} (${RELEASE})...`);
+    if (DEBUG) Logger.info(TAG, `[Sentry] Initializing for ${ENVIRONMENT} (${RELEASE})...`);
 
     Sentry.init({
         dsn: SENTRY_DSN,
@@ -81,6 +89,7 @@ export function initSentry(): void {
     if (typeof window !== 'undefined') {
         (window as unknown as Record<string, unknown>).__sentryInstance = Sentry;
     }
+    isInitialized = true;
 }
 
 /**

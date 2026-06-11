@@ -34,7 +34,7 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
                     if (sampleRate < 44100 || bitsPerSample < 16) {
                         return resolve({
                             valid: false,
-                            error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below IndiiOS minimums (44.1kHz 16-bit).`
+                            error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below indii minimums (44.1kHz 16-bit).`
                         });
                     }
                 } catch (err: unknown) {
@@ -104,8 +104,11 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                 updateUploadStatus
             } = useStore.getState();
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let imagesVideoCount = 0;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let audioCount = 0;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let docCount = 0;
 
             for (const file of files) {
@@ -144,7 +147,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                         type: itemType
                     }]);
 
-                    // Simulate upload delay and progress using async delay to avoid unmanaged intervals
+                    // Local import progress using async delay to avoid unmanaged intervals
                     (async () => {
                         await delay(rand() * 1000);
                         updateUploadStatus(queueId, 'uploading');
@@ -162,7 +165,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                             }
                         }
 
-                        // Actually read the file when "upload" finishes
+                        // Read the local file when import progress finishes
                         const reader = new FileReader();
                         reader.onload = (e) => {
                             const result = e.target?.result as string;
@@ -217,7 +220,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
             (async () => {
                 await delay(500);
                 if (files.length > 0) {
-                    toast.success(`Queued ${files.length} file(s) for upload...`);
+                    toast.success(`Queued ${files.length} file(s) for local import...`);
                 }
             })();
         };

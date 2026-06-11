@@ -7,10 +7,20 @@
 
 import { onRequest, Request, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import type { CreateTrack, CreateDistribution } from '@indiios/shared';
 import type * as express from 'express';
+import {
+  protectAuthenticatedApiRequest,
+  protectPublicApiRequest,
+  type ArcjetProtectionResult,
+} from '../security/arcjet';
 
-const db = admin.firestore();
+// Defer firestore initialization until first use (for test compatibility)
+function getDb() {
+  return admin.firestore();
+}
+
+type CreateTrack = Record<string, unknown>;
+type CreateDistribution = Record<string, unknown>;
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -39,7 +49,7 @@ async function verifyAuth(req: Request): Promise<string> {
 
 // Response helpers
 function generateRequestId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${crypto.randomUUID().split('-')[0]}`;
 }
 
 function respond<T>(data: T, requestId: string): ApiResponse<T> {
@@ -58,6 +68,18 @@ function errorResponse(code: string, message: string, requestId: string): ApiRes
   };
 }
 
+async function rejectIfArcjetDenied(
+  resultPromise: Promise<ArcjetProtectionResult>,
+  res: express.Response,
+  requestId: string,
+): Promise<boolean> {
+  const result = await resultPromise;
+  if (result.allowed) return false;
+
+  res.status(result.status).json(errorResponse(result.code, result.message, requestId));
+  return true;
+}
+
 // GET /api/tracks/:id - Get track details
 export const getTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
@@ -68,6 +90,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
 
     if (!trackId) {
@@ -75,7 +98,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
       return;
     }
 
-    const doc = await db.collection('users').doc(userId).collection('tracks').doc(trackId).get();
+    const doc = await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).get();
     if (!doc.exists) {
       res.status(404).json(errorResponse('NOT_FOUND', 'Track not found', requestId));
       return;
@@ -101,9 +124,10 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackData = req.body as CreateTrack;
 
-    const trackId = db.collection('_').doc().id;
+    const trackId = getDb().collection('_').doc().id;
     const track = {
       id: trackId,
       ...trackData,
@@ -111,12 +135,14 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
       updatedAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
     res.status(201).json(respond(track, requestId));
   } catch (err) {
+    console.error("Router error:", err);
     if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
+      console.error('CREATE TRACK ERROR:', err);
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
     }
   }
@@ -132,12 +158,13 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const query = req.query as Record<string, unknown>;
 
     const limit = Math.min(Number(query.limit) || 100, 1000);
     const offset = Number(query.offset) || 0;
 
-    const snapshot = await db
+    const snapshot = await getDb()
       .collection('users')
       .doc(userId)
       .collection('events')
@@ -166,6 +193,7 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -175,8 +203,8 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
     const updateData = req.body;
     const updateWithTimestamp = { ...updateData, updatedAt: new Date().toISOString() };
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).update(updateWithTimestamp);
-    const updated = await db.collection('users').doc(userId).collection('tracks').doc(trackId).get();
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).update(updateWithTimestamp);
+    const updated = await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).get();
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
@@ -198,13 +226,14 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const trackId = req.path.split('/').pop();
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
       return;
     }
 
-    await db.collection('users').doc(userId).collection('tracks').doc(trackId).delete();
+    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).delete();
     res.status(204).send();
   } catch (err) {
     if (err instanceof HttpsError) {
@@ -225,11 +254,12 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const query = req.query as Record<string, unknown>;
     const limit = Math.min(Number(query.limit) || 50, 1000);
     const offset = Number(query.offset) || 0;
 
-    const snapshot = await db
+    const snapshot = await getDb()
       .collection('users').doc(userId).collection('tracks')
       .orderBy('createdAt', 'desc')
       .limit(limit + offset)
@@ -256,9 +286,10 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distData = req.body as CreateDistribution;
 
-    const distId = db.collection('_').doc().id;
+    const distId = getDb().collection('_').doc().id;
     const distribution = {
       id: distId,
       ...distData,
@@ -267,10 +298,10 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
       updatedAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(userId).collection('distributions').doc(distId).set(distribution);
+    await getDb().collection('users').doc(userId).collection('distributions').doc(distId).set(distribution);
 
     // Publish analytics event
-    await db.collection('events').add({
+    await getDb().collection('events').add({
       userId,
       eventType: 'distribution_started',
       distributionId: distId,
@@ -297,13 +328,14 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distId = req.path.split('/').pop();
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
       return;
     }
 
-    const doc = await db.collection('users').doc(userId).collection('distributions').doc(distId).get();
+    const doc = await getDb().collection('users').doc(userId).collection('distributions').doc(distId).get();
     if (!doc.exists) {
       res.status(404).json(errorResponse('NOT_FOUND', 'Distribution not found', requestId));
       return;
@@ -329,13 +361,14 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const distId = req.path.split('/')[req.path.split('/').length - 2];
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
       return;
     }
 
-    const ref = db.collection('users').doc(userId).collection('distributions').doc(distId);
+    const ref = getDb().collection('users').doc(userId).collection('distributions').doc(distId);
     await ref.update({ status: 'submitted', updatedAt: new Date().toISOString() });
     const updated = await ref.get();
 
@@ -359,6 +392,7 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
     }
 
     const userId = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
     const userRecord = await admin.auth().getUser(userId);
 
     const profile = {
@@ -379,8 +413,10 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
 });
 
 // Health check endpoint (no auth required)
-export const health = onRequest((_req: Request, res: express.Response) => {
+export const health = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
+  if (await rejectIfArcjetDenied(protectPublicApiRequest(req), res, requestId)) return;
+
   res.status(200).json({
     status: 'ok',
     version: '1.0.0',

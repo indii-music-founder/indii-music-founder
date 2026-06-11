@@ -17,6 +17,7 @@ import { LucideIcon } from 'lucide-react';
 
 export type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'security';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [];
 // NOTE: The actual SECTIONS array is defined below after icon imports in the barrel index.
 // This placeholder is here for type safety; the real data lives in the parent SettingsPanel.

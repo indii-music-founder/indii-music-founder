@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# indiiOS commit-msg hook — enforces Conventional Commits format.
+# indii commit-msg hook — enforces Conventional Commits format.
 # Pattern: <type>(<optional scope>): <description>
 # Examples: feat(agent): add Conductor retry logic
 #           fix: resolve boardroom pipeline hang

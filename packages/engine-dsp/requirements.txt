@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+librosa
+aubio
+numpy
+soundfile
+python-multipart
+google-cloud-storage
+pydantic

@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export const CinematicTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Mock Cinematic App Transitions (Item 196)
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.98, y: 10 }}

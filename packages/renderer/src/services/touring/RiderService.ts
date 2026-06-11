@@ -39,23 +39,29 @@ export const RiderService = {
             orderBy('createdAt', 'desc')
         );
 
-        return onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(doc => {
-                const data = doc.data();
-                try {
-                    // Runtime validation
-                    // We parse with passthrough to allow extra fields like id which we add manually
-                    RiderItemSchema.passthrough().parse(data);
-                    return {
-                        id: doc.id,
-                        ...data
-                    } as RiderItem;
-                } catch (error: unknown) {
-                    logger.warn(`Skipping invalid rider item ${doc.id}:`, error);
-                    return null;
-                }
-            }).filter((item): item is RiderItem => item !== null);
-            callback(items);
+        return onSnapshot(q, {
+            next: (snapshot) => {
+                const items = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    try {
+                        // Runtime validation
+                        // We parse with passthrough to allow extra fields like id which we add manually
+                        RiderItemSchema.passthrough().parse(data);
+                        return {
+                            id: doc.id,
+                            ...data
+                        } as RiderItem;
+                    } catch (error: unknown) {
+                        logger.warn(`Skipping invalid rider item ${doc.id}:`, error);
+                        return null;
+                    }
+                }).filter((item): item is RiderItem => item !== null);
+                callback(items);
+            },
+            error: (error) => {
+                logger.error("Error in subscribeToRiderItems listener:", error);
+                callback([]);
+            }
         });
     },
 

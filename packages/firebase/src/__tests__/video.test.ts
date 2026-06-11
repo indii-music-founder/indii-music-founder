@@ -109,6 +109,13 @@ vi.mock('firebase-functions/v1', () => {
     const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
 
     const builder: Record<string, unknown> = {
+        logger: {
+            log: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn(),
+        },
         region: vi.fn().mockReturnThis(),
         runWith: vi.fn().mockReturnThis(),
         pubsub: {
@@ -152,7 +159,9 @@ vi.mock('../stripe/config', () => ({
 
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
-    defineSecret: vi.fn(() => ({ value: mocks.secrets.value }))
+    defineSecret: vi.fn(() => ({ value: mocks.secrets.value })),
+    defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
+    defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
 // Mock MCP module — initializes @modelcontextprotocol/sdk Server at load time which
@@ -166,26 +175,7 @@ vi.mock('../orchestration', () => ({
     orchestrationListener: vi.fn()
 }));
 
-// ─── Native & Third-Party Module Mocks (CI linux-x64 safety) ─────────────────
-// The barrel file (index.ts) transitively imports sharp via lib/image_resizing.ts.
-// On CI (ubuntu-latest) the sharp native binary for linux-x64 may not be installed.
-vi.mock('sharp', () => {
-    const sharpInstance = {
-        resize: vi.fn().mockReturnThis(),
-        jpeg: vi.fn().mockReturnThis(),
-        png: vi.fn().mockReturnThis(),
-        webp: vi.fn().mockReturnThis(),
-        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock')),
-        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
-        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
-    };
-    return { default: vi.fn(() => sharpInstance) };
-});
 
-// Mock image_resizing to cut the sharp dependency chain entirely
-vi.mock('../lib/image_resizing', () => ({
-    generateThumbnail: vi.fn().mockResolvedValue('https://mock-thumbnail.com/thumb.jpg'),
-}));
 
 // Mock cors (imported at top of index.ts)
 vi.mock('cors', () => ({
@@ -209,6 +199,7 @@ vi.mock('firebase-functions/v2/storage', () => ({
 vi.mock('firebase-functions/v2/firestore', () => ({
     onDocumentCreated: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
     onDocumentUpdated: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+    onDocumentWritten: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
 }));
 vi.mock('firebase-functions/v2/scheduler', () => ({
     onSchedule: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),

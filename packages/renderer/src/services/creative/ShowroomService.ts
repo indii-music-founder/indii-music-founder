@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { HistoryItem } from '@/core/types/history';
 
 /**
@@ -61,7 +61,7 @@ export class ShowroomService {
             model: 'pro', // Nano Banana Pro (gemini-3-pro-image-preview)
             sourceImages: [{
                 mimeType: 'image/png', // Most showroom assets are transparent PNGs
-                data: assetData as any
+                data: assetData as string
             }],
             imageSize: '2k',
             aspectRatio: '16:9'
@@ -114,7 +114,7 @@ export class ShowroomService {
         const results = await this.videoService.generateVideo({
             prompt,
             firstFrame: options.mockup.url, // Seed the video with the mockup from Stage 1
-            model: AI_MODELS.VIDEO.PRO, // Veo 3.1
+            model: INTELLIGENCE_MODELS.VIDEO.PRO, // Veo 3.1
             duration: 8,
             resolution: '1080p',
             aspectRatio: '16:9'

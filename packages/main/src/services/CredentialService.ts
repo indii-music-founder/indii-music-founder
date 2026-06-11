@@ -2,7 +2,7 @@ import { safeStorage } from 'electron';
 import keytar from 'keytar';
 type DistributorId = string;
 
-const SERVICE_NAME = 'IndiiOS_Distribution';
+const SERVICE_NAME = 'indii_Distribution';
 
 export interface Credentials {
     apiKey?: string;

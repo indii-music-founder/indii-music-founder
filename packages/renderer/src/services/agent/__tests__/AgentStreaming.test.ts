@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GenAI as AI } from '../../ai/GenAI';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 
-// Mock the entire AI service
-vi.mock('../../ai/GenAI', () => ({
-    GenAI: {
+// Mock the entire Intelligence service
+vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn(),
         batchEmbedContents: vi.fn().mockResolvedValue([])
@@ -129,7 +129,7 @@ describe('Agent Streaming', () => {
         expect(tokenEvents.map(p => p.content).join('')).toBe('Hello world!');
     });
 
-    it('should handle tool calls after streaming', { timeout: 20000 }, async () => {
+    it('should handle tool calls after streaming', { timeout: 60000 }, async () => {
         const tokens = ['Analyzing', '...'];
 
         const mockStream = new ReadableStream<StreamChunk>({

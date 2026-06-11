@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Files Module E2E Tests
@@ -8,13 +8,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Files Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to files module without crash', async ({ page }) => {
+    test('navigates to files module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-files"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -24,7 +24,7 @@ test.describe('Files Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('files module renders file browser shell', async ({ page }) => {
+    test('files module renders file browser shell', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -41,7 +41,7 @@ test.describe('Files Module', () => {
         expect(fatal).toHaveLength(0);
     });
 
-    test('files module shows upload action or file list area', async ({ page }) => {
+    test('files module shows upload action or file list area', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-files"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -57,7 +57,7 @@ test.describe('Files Module', () => {
         expect(hasFilesContent).toBe(true);
     });
 
-    test('files module sidebar filter tabs are interactive', async ({ page }) => {
+    test('files module sidebar filter tabs are interactive', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-files"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -75,7 +75,7 @@ test.describe('Files Module', () => {
         }
     });
 
-    test('files module upload button is present', async ({ page }) => {
+    test('files module upload button is present', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-files"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

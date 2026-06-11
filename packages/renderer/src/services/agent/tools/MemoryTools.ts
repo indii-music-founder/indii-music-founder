@@ -1,108 +1,151 @@
-// useStore removed
 
-import { memoryService } from '@/services/agent/MemoryService';
-import { wrapTool, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import type { AlwaysOnMemoryCategory } from '@/types/AlwaysOnMemory';
 
-// ============================================================================
-// Types for MemoryTools
-// ============================================================================
-
+/**
+ * MemoryTools - Unified tools for interacting with the Always-On Memory system.
+ * 
+ * Supports both legacy project-scoped tools and new persistent user-centric tools.
+ * All operations are backed by the AlwaysOnMemoryEngine singleton (v1.63.0).
+ */
 export const MemoryTools = {
-    save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
-        // Phase 3.6: Use execution context when available, fallback to direct store
-        const currentProjectId = toolContext
-            ? toolContext.get('currentProjectId')
-            : useStore.getState().currentProjectId;
+    // ========================================================================
+    // Legacy / Project-Scoped Memory
+    // ========================================================================
 
-        if (!currentProjectId) {
-            return toolError("No active project found to save memory to.", "PROJ_REQUIRED");
-        }
+    save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' | 'preference' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
+        const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
         try {
-            await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
-        } catch (e: unknown) {
-            logger.error('[MemoryTools] save_memory failed internally: (Non-blocking)', e);
-        }
+            // Map legacy types
+            const categoryMap: Record<string, AlwaysOnMemoryCategory> = {
+                'fact': 'fact',
+                'summary': 'summary',
+                'rule': 'preference',
+                'preference': 'preference'
+            };
 
-        return {
-            content: args.content,
-            type: args.type || 'fact',
-            message: `Memory processed: "${args.content}"`
-        };
+            const result = await alwaysOnMemoryEngine.ingest(
+                args.content,
+                'agent_extraction',
+                categoryMap[args.type || 'fact'] || 'fact'
+            );
+
+            return {
+                content: args.content,
+                projectId,
+                engineResponse: result,
+                message: `Memory stored via AlwaysOnMemoryEngine.`
+            };
+        } catch (e: unknown) {
+            logger.error('[MemoryTools] save_memory failed:', e);
+            return toolError("Failed to save memory to engine.", "ENGINE_ERROR");
+        }
     }),
 
     recall_memories: wrapTool('recall_memories', async (args: { query: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const { useStore } = await import('@/core/store');
-        // Phase 3.6: Use execution context when available, fallback to direct store
-        const currentProjectId = toolContext
-            ? toolContext.get('currentProjectId')
-            : useStore.getState().currentProjectId;
+        const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
-        if (!currentProjectId) {
-            return toolError("No active project found to recall memories from.", "PROJ_REQUIRED");
-        }
-
-        const memories = await memoryService.retrieveRelevantMemories(currentProjectId, args.query);
-        return {
-            memories,
-            message: memories.length > 0 ? `Retrieved ${memories.length} relevant memories.` : "No relevant memories found."
-        };
-    }),
-
-    verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
-        const { GenAI } = await import('@/services/ai/GenAI'); // Lazy load to avoid cycle
-        const prompt = `
-        Verify if the following content meets the goal:
-        Goal: ${args.goal}
-        Content: ${args.content}
-        
-        Return JSON: { score: number (1-10), pass: boolean, reason: string }
-        `;
-
-        const response = await GenAI.rawGenerateContent(
-            [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.FAST,
-            { responseMimeType: 'application/json' }
-        );
-
-        // rawGenerateContent returns WrappedResponse with getText() helper
-        const text = (typeof response === 'object' && response !== null && 'getText' in response && typeof (response as { getText: () => string }).getText === 'function')
-            ? (response as { getText: () => string }).getText()
-            : '{}';
-
-        let verification;
         try {
-            verification = JSON.parse(text);
-        } catch (_e: unknown) {
-            logger.error('[MemoryTools] Failed to parse verification JSON:', text);
-            verification = { score: 0, pass: false, reasoning: 'Failed to parse AI response' };
+            const result = await alwaysOnMemoryEngine.query(args.query);
+            return {
+                answer: result,
+                projectId,
+                message: "Retrieved synthesized answer from AlwaysOnMemoryEngine."
+            };
+        } catch (e: unknown) {
+            logger.error('[MemoryTools] recall_memories failed:', e);
+            return toolError("Failed to query memory engine.", "ENGINE_ERROR");
         }
-
-        return {
-            verification,
-            message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
-        };
     }),
 
-    read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
-        // Phase 3.6: Use execution context when available, fallback to direct store
-        const history = (toolContext
-            ? toolContext.get('agentHistory')
-            : useStore.getState().agentHistory) || [];
+    // ========================================================================
+    // Persistent / User-Centric Memory (Always-On)
+    // ========================================================================
 
-        const recentHistory = history.slice(-10); // Show a bit more than 5
-        return {
-            history: recentHistory.map(h => ({
-                role: h.role,
-                text: h.text.substring(0, 100) // Increase snippet size
-            })),
-            message: `Retrieved ${recentHistory.length} most recent history items.`
-        };
+    save_user_memory: wrapTool('save_user_memory', async (args: { 
+        content: string; 
+        category?: AlwaysOnMemoryCategory; 
+        importance?: string; 
+        tags?: string[] 
+    }) => {
+        try {
+            const summary = await alwaysOnMemoryEngine.ingest(
+                args.content,
+                'user_input',
+                args.category
+            );
+            return toolSuccess({ summary }, `Successfully saved to persistent memory.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Failed to save user memory: ${error.message}`, 'STORAGE_ERROR');
+        }
+    }),
+
+    search_user_memory: wrapTool('search_user_memory', async (args: { 
+        query: string; 
+        categories?: AlwaysOnMemoryCategory[]; 
+        limit?: number 
+    }) => {
+        try {
+            const answer = await alwaysOnMemoryEngine.query(args.query);
+            return toolSuccess({ answer }, `Memory search complete.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Failed to search user memory: ${error.message}`, 'QUERY_ERROR');
+        }
+    }),
+
+    get_user_context: wrapTool('get_user_context', async () => {
+        try {
+            const status = await alwaysOnMemoryEngine.getStatus();
+            // We synthesize a context summary for the agent
+            const answer = await alwaysOnMemoryEngine.query("Summarize the user's primary goals, preferences, and current creative focus based on all memories.");
+            return toolSuccess({ context: answer, engineStatus: status }, `User context retrieved.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Failed to get user context: ${error.message}`, 'CONTEXT_ERROR');
+        }
+    }),
+
+    list_user_memories: wrapTool('list_user_memories', async (args: { 
+        categories?: AlwaysOnMemoryCategory[]; 
+        limit?: number 
+    }) => {
+        try {
+            const memories = await alwaysOnMemoryEngine.getAllMemories(args.limit || 20, { 
+                category: args.categories?.[0] 
+            });
+            return toolSuccess({ memories }, `Found ${memories.length} memories.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Failed to list memories: ${error.message}`, 'LIST_ERROR');
+        }
+    }),
+
+    delete_user_memory: wrapTool('delete_user_memory', async (args: { memoryId: string }) => {
+        try {
+            await alwaysOnMemoryEngine.deleteMemory(args.memoryId);
+            return toolSuccess({ memoryId: args.memoryId }, `Memory deleted.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Failed to delete memory: ${error.message}`, 'DELETE_ERROR');
+        }
+    }),
+
+    consolidate_user_memories: wrapTool('consolidate_user_memories', async () => {
+        try {
+            const result = await alwaysOnMemoryEngine.consolidateNow();
+            return toolSuccess({ result }, `Consolidation complete.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            return toolError(`Consolidation failed: ${error.message}`, 'CONSOLIDATE_ERROR');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;

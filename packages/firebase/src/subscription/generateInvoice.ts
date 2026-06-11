@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Firebase Cloud Function: Generate Invoice
  *
@@ -40,7 +41,7 @@ export const generateInvoice = onCall({
     secrets: [stripeSecretKey],
     timeoutSeconds: 30,
     memory: '256MiB',
-    enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+    enforceAppCheck: true,
 }, async (request) => {
     const { invoiceId } = request.data as { invoiceId?: string };
 

@@ -18,8 +18,8 @@ vi.mock('fs', () => ({
     ...mockFs
 }));
 
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
+vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationService', () => ({
+    ingestionNotificationService: {
         generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN>Mock XML</ERN>' }),
         parseERN: vi.fn().mockResolvedValue({ success: true, data: {} }),
         validateERNContent: vi.fn().mockReturnValue({ valid: true, errors: [] })

@@ -27,7 +27,8 @@ export const UpdaterMonitor: React.FC = () => {
                 setStatus('checking');
                 setIsVisible(true);
             }),
-            api.updater.onAvailable((info: { version: string }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            api.updater.onAvailable((info: any) => {
                 logger.info(`[Updater] Update available: ${info.version}`);
                 setVersion(info.version);
                 setStatus('available');
@@ -37,17 +38,20 @@ export const UpdaterMonitor: React.FC = () => {
                 logger.info('[Updater] No update available');
                 setTimeout(() => setIsVisible(false), 3000);
             }),
-            api.updater.onProgress((data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            api.updater.onProgress((data: any) => {
                 setStatus('downloading');
                 setProgress(data as UpdateProgress);
                 setIsVisible(true);
             }),
-            api.updater.onDownloaded((info: { version: string }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            api.updater.onDownloaded((info: any) => {
                 logger.info(`[Updater] Update downloaded: ${info.version}`);
                 setStatus('downloaded');
                 setIsVisible(true);
             }),
-            api.updater.onError((err: { message: string }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            api.updater.onError((err: any) => {
                 logger.error('[Updater] Error:', err.message);
                 setError(err.message);
                 setStatus('error');

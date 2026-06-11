@@ -35,7 +35,7 @@ description: Master guide to music revenue streams, DSP payouts, recoupment math
   - **1 Million Streams on Spotify = ~$4,000 Total Master Revenue.**
 - **The Threshold Rule (Spotify 2024):** Tracks with under 1,000 streams in a 12-month period no longer generate royalties.
 
-## 4. indiiOS App Integration (Finance Dept)
+## 4. indii App Integration (Finance Dept)
 
 - Always analyze the artist's `FinanceSlice` to flag uncollected revenue streams.
 - If they have DSP streams but no PRO listed, alert them they are losing Performance Royalties.

@@ -8,7 +8,7 @@ export const CreativeCard: AgentCard = {
     capabilities: [
     {
         "name": "generate_image",
-        "description": "Generate AI images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.",
+        "description": "Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
@@ -85,5 +85,14 @@ export const CreativeCard: AgentCard = {
         modeStream: {
             firstByteMs: 500
         }
+    },
+    harness: {
+        ownedHarnessDomains: ['creative_production'],
+        supportingHarnessDomains: ['artist_memory', 'song_dna', 'merch_pod', 'release'],
+        skillRefs: ['agents/creative/skills/business_harness/SKILL.md'],
+        mcpServers: ['indii-harness'],
+        approvalAuthority: 'draft',
+        blockedActions: ['distribute', 'spend_money']
     }
 };
+

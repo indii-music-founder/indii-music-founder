@@ -1,6 +1,0 @@
-
-> indiios-monorepo@1.57.1 typecheck:renderer
-> tsc -b packages/renderer
-
-packages/renderer/src/services/agent/AgentService.ts(915,21): error TS2322: Type '"success" | "logic"' is not assignable to type '"error" | "logic" | "tool" | "tool_result" | undefined'.
-  Type '"success"' is not assignable to type '"error" | "logic" | "tool" | "tool_result" | undefined'.

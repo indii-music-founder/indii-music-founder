@@ -1,6 +1,8 @@
-import { getFirestore, collection, addDoc, getDocs, query, where, limit, runTransaction } from 'firebase/firestore';
-import { app, auth } from '@/services/firebase';
+import { getFirestore, collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { app, auth, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface UPCRecord {
     id?: string;
@@ -30,31 +32,24 @@ export class UPCService {
      * Uses a Firestore transaction to prevent double-assignment.
      */
     async assignNextUPC(releaseId: string): Promise<string> {
-        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+        if (isFirebaseE2EMockEnabled()) {
             return '123456789012';
         }
 
         try {
-            return await runTransaction(this.db, async (transaction) => {
-                const q = query(this.poolRef, where('status', '==', 'available'), limit(1));
-                const snapshot = await getDocs(q);
-
-                if (snapshot.empty) {
-                    throw new Error('UPC pool is exhausted. Please add more UPC codes to the pool.');
-                }
-
-                const upcDoc = snapshot.docs[0]!;
-                const upcData = upcDoc.data() as UPCRecord;
-
-                transaction.update(upcDoc.ref, {
-                    status: 'assigned',
-                    assignedTo: releaseId,
-                    assignedAt: new Date(),
-                });
-
-                logger.info(`[UPC] Assigned ${upcData.upc} to release ${releaseId}`);
-                return upcData.upc;
+            const assign = httpsCallable(functions, 'assignDistributionIdentifier');
+            const result = await assign({
+                type: 'upc',
+                assignedTo: releaseId,
+                releaseId,
             });
+            const data = result.data as { upc?: string };
+            if (!data.upc) {
+                throw new Error('UPC assignment did not return a code.');
+            }
+
+            logger.info(`[UPC] Assigned ${data.upc} to release ${releaseId}`);
+            return data.upc;
         } catch (error: unknown) {
             logger.error('[UPC] Assignment failed:', error);
             throw error;
@@ -66,24 +61,25 @@ export class UPCService {
      * UPCs are 12-digit numeric strings (EAN-13 compatible when prefixed with 0).
      */
     async seedPool(upcs: string[]): Promise<void> {
-        for (const upc of upcs) {
-            if (!this.isValidUPC(upc)) {
-                logger.warn(`[UPC] Skipping invalid UPC: ${upc}`);
-                continue;
-            }
-            await addDoc(this.poolRef, {
-                upc,
-                status: 'available',
-            });
-        }
-        logger.info(`[UPC] Seeded ${upcs.length} UPCs into the pool.`);
+        void upcs;
+        throw new Error('UPC pool seeding is a backend/admin operation.');
     }
 
     /** Record a UPC assignment in the registry for audit trail. Returns the new document ID. */
     async recordAssignment(data: Omit<UPCRegistryEntry, 'id'>): Promise<string> {
-        const docRef = await addDoc(this.registryRef, data);
+        const record = httpsCallable(functions, 'recordDistributionIdentifier');
+        const result = await record({
+            type: 'upc',
+            upc: data.upc,
+            releaseId: data.releaseId,
+            releaseTitle: data.releaseTitle,
+        });
+        const response = result.data as { id?: string };
+        if (!response.id) {
+            throw new Error('UPC registry write did not return a document id.');
+        }
         logger.info(`[UPC] Recorded assignment for ${data.upc}`);
-        return docRef.id;
+        return response.id;
     }
 
     /** Look up a registry record by UPC string. Returns null if not found. */

@@ -1,10 +1,10 @@
-# indiiOS — Tech Stack
+# indii — Tech Stack
 
 > **Verified against** root `package.json`, `packages/*/package.json`, `electron.vite.config.ts`, `firebase.json`, `tsconfig.json`, and `.github/workflows/deploy.yml` at v1.55.3.
 
 ## Monorepo
 
-- **Root:** `indiios-monorepo` v1.55.3
+- **Root:** `indii-monorepo` v1.55.3
 - **Type:** ES module
 - **Node engine:** `>=22.0.0`
 - **Workspaces (6 packages):**
@@ -51,7 +51,7 @@
 | 3D | Three.js + @react-three/fiber + @react-three/drei | 0.182.0 / 8.18.0 / 9.122.0 |
 | Video | Remotion (core, cloudrun, renderer, bundler, player) | 4.0.445 |
 | Audio waveform | wavesurfer.js | 7.11.1 |
-| Audio analysis | essentia.js | 0.1.3 |
+| Audio analysis | essentia.js + Python (YAMNet ONNX) | 0.1.3 |
 | OCR | tesseract.js | 6.0.1 |
 | PDF | pdfjs-dist | 5.4.449 |
 | Charts | Recharts | 3.6.0 |
@@ -129,7 +129,7 @@
 ## Database and storage
 
 - **Firestore** — custom-claims auth, organization membership model, soft-delete on long-lived docs
-- **Firebase Storage** — bucket `indiios-alpha-electron`, rules enforce auth + org membership + size / content-type limits
+- **Firebase Storage** — bucket `indii-alpha-electron`, rules enforce auth + org membership + size / content-type limits
 - **Firestore Emulator** — `localhost:8080`, single-project mode for local dev
 - **BigQuery** — revenue analytics warehouse
 

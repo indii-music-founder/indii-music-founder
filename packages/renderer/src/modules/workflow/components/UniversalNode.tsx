@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Extended asset shape for workflow node results.
- * Covers AI-generated images, concept sets, videos, and generic outputs.
+ * Covers Intelligence-generated images, concept sets, videos, and generic outputs.
  * AnyAsset already has `[key: string]: unknown` but these helpers
  * make the property access explicit and TypeScript-checked.
  */
@@ -41,9 +41,11 @@ const statusConfig: Record<Status, StatusStyle> = {
 // Combine types for props
 type UniversalNodeData = DepartmentNodeData | LogicNodeData;
 
+
 const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => {
-    const { nodes } = useStore(useShallow(state => ({
-        nodes: state.nodes
+    
+    const { setSelectedNodeId } = useStore(useShallow(state => ({
+        setSelectedNodeId: state.setSelectedNodeId
     })));
 
     // 1. Resolve Definition
@@ -101,7 +103,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     imageUrl: firstImage.imageUrl || `data:${firstImage.mimeType || 'image/png'};base64,${firstImage.bytesBase64Encoded || firstImage.base64}`,
                     aiMetadata: rawResult.aiMetadata,
                     aiGenerationInfo: rawResult.aiGenerationInfo,
-                    title: 'AI Generated Artwork'
+                    title: 'Autonomous Generated Artwork'
                 };
             } else {
                 asset = rawResult as WorkflowResultAsset;
@@ -117,7 +119,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 <img src={asset.imageUrl ?? ''} alt="Result" className="w-full h-full object-cover" />
                 {asset.aiMetadata && (
                     <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
-                        AI Provenance Locked
+                        Autonomous Provenance Locked
                     </div>
                 )}
             </div>
@@ -129,7 +131,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     <img src={firstConcept?.imageUrl} alt="Result" className="w-full h-full object-cover" />
                     {firstConcept?.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
-                            AI Provenance Locked
+                            Autonomous Provenance Locked
                         </div>
                     )}
                 </div>
@@ -147,7 +149,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     {asset.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
-                            AI Provenance Locked
+                            Autonomous Provenance Locked
                         </div>
                     )}
                 </div>
@@ -158,10 +160,13 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 
+    /**
+     * Handles clicking the edit button. Sets this node as the selected node
+     * in the store, which opens/focuses the Node Inspector sidebar.
+     */
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        // Placeholder for openPromptEditor action
-        // logger.debug("Edit node:", id);
+        setSelectedNodeId(id);
     };
 
     // 3. Dynamic Handle Calculation
@@ -241,7 +246,8 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
                 {/* Output Handles Column */}
                 <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative">
-                    {outputs.map((output, i) => (
+                    
+                    {outputs.map((output, _i) => (
                         <div key={output.id} className="relative group flex items-center justify-center h-4">
                             <Handle
                                 type="source"

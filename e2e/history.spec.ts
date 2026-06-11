@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * History Module E2E Tests
@@ -9,13 +9,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('History Module', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage: page }) => {
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigates to history module without crash', async ({ page }) => {
+    test('navigates to history module without crash', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-history"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -25,7 +25,7 @@ test.describe('History Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('history module loads without JS errors', async ({ page }) => {
+    test('history module loads without JS errors', async ({ authedPage: page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
 
@@ -42,7 +42,7 @@ test.describe('History Module', () => {
         expect(fatal).toHaveLength(0);
     });
 
-    test('history module shows unified activity feed label', async ({ page }) => {
+    test('history module shows unified activity feed label', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-history"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -58,7 +58,7 @@ test.describe('History Module', () => {
         expect(hasHistory).toBe(true);
     });
 
-    test('history module filter tabs are clickable', async ({ page }) => {
+    test('history module filter tabs are clickable', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-history"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }
@@ -76,7 +76,7 @@ test.describe('History Module', () => {
         }
     });
 
-    test('history module search input accepts text', async ({ page }) => {
+    test('history module search input accepts text', async ({ authedPage: page }) => {
         const nav = page.locator('[data-testid="nav-item-history"]');
         const visible = await nav.isVisible().catch(() => false);
         if (!visible) { test.skip(); return; }

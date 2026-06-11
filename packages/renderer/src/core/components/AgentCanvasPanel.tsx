@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
@@ -14,7 +15,7 @@ import {
     Trash2,
     PanelRightClose,
 } from 'lucide-react';
-import type { CanvasPushPayload, ChartPayload, TablePayload, CardPayload, MarkdownPayload } from '@/types/AgentCanvas';
+import type { CanvasPushPayload, ChartPayload, TablePayload, CardPayload, MarkdownPayload, HtmlPayload } from '@/types/AgentCanvas';
 
 /**
  * AgentCanvasPanel — Agent-to-UI Push (A2UI)
@@ -238,9 +239,10 @@ const PanelContent: React.FC<{ panel: CanvasPushPayload }> = ({ panel }) => {
             return <MarkdownRenderer data={panel.data as MarkdownPayload} />;
         case 'html':
             return (
-                <div className="bg-white/5 rounded-xl p-4 text-center text-zinc-500 text-sm">
-                    HTML rendering coming soon
-                </div>
+                <div 
+                    className="bg-white/5 rounded-xl p-4 text-sm text-zinc-300 prose prose-invert"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((panel.data as HtmlPayload).content || 'HTML rendering unsupported') }} 
+                />
             );
         default:
             return (

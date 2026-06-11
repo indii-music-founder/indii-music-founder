@@ -44,7 +44,7 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 | # | Field | Your Answer | Status |
 |---|-------|------------|--------|
 | F6 | **DMCA designated agent name** — Who will receive copyright takedown notices? (Can be you, a co-founder, or a registered agent service like CT Corporation.) | `_________________________________` | 🔴 |
-| F7 | **DMCA agent email** | `dmca@indiios.com` (create this alias) | 🟡 |
+| F7 | **DMCA agent email** | `dmca@indii.music` (create this alias) | 🟡 |
 | F8 | **DMCA agent phone** — Required by the Copyright Office. Can be a Google Voice number. | `_________________________________` | 🔴 |
 | F9 | **DMCA registration** — Register at [copyright.gov/dmca-directory](https://www.copyright.gov/dmca-directory/) | `[ ] Done` | 🔴 |
 
@@ -55,11 +55,11 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 3. Create a copyright.gov account (if you don't have one)
 4. Fill in:
    - **Service Provider:** New Detroit Music LLC
-   - **Alternative Names:** indiiOS, indiios.com
+   - **Alternative Names:** indii, indii.music
    - **Agent Name:** (your answer to F6)
    - **Agent Address:** (your answer to F2)
    - **Agent Phone:** (your answer to F8)
-   - **Agent Email:** dmca@indiios.com
+   - **Agent Email:** dmca@indii.music
 5. Pay $6
 6. Save your confirmation number
 
@@ -71,10 +71,10 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 
 | # | Email | Purpose | Status |
 |---|-------|---------|--------|
-| F10 | `legal@indiios.com` | Contact address in Terms of Service footer | `[ ] Created` | 🔴 |
-| F11 | `privacy@indiios.com` | Contact address in Privacy Policy (GDPR requirement) | `[ ] Created` | 🔴 |
-| F12 | `dmca@indiios.com` | DMCA takedown notice submissions | `[ ] Created` | 🔴 |
-| F13 | `support@indiios.com` | General user support (used in error pages) | `[ ] Created` | 🔴 |
+| F10 | `legal@indii.music` | Contact address in Terms of Service footer | `[ ] Created` | 🔴 |
+| F11 | `privacy@indii.music` | Contact address in Privacy Policy (GDPR requirement) | `[ ] Created` | 🔴 |
+| F12 | `dmca@indii.music` | DMCA takedown notice submissions | `[ ] Created` | 🔴 |
+| F13 | `support@indii.music` | General user support (used in error pages) | `[ ] Created` | 🔴 |
 
 ---
 

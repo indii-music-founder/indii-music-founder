@@ -10,7 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 try {
-    const serviceAccount = JSON.parse(fs.readFileSync('/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/indiios-v-1-1-4e76d9bc5462.json', 'utf8'));
+    const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './service-account.json';
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     initializeApp({ credential: cert(serviceAccount) });
 } catch (e) {
     initializeApp();

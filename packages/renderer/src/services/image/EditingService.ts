@@ -1,9 +1,9 @@
-import { GenAI } from '../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
-import { InputSanitizer } from '../ai/utils/InputSanitizer';
+import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart } from '@/shared/types/ai.dto';
-import { editImageDirectly } from '@/services/ai/generators/DirectImageEditor';
+import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';
 
 
 // Data URI regex - strict pattern for image MIME types
@@ -229,9 +229,9 @@ export class EditingService {
         parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
 
         // Use rawGenerateContent with DIRECT image model (NOT text model)
-        const response = await GenAI.rawGenerateContent(
+        const response = await AutonomousIntelligence.rawGenerateContent(
             [{ role: 'user', parts }],
-            AI_MODELS.IMAGE.DIRECT_PRO,
+            INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
             { responseModalities: ['IMAGE'] },
             undefined,
             undefined,
@@ -282,7 +282,7 @@ export class EditingService {
             required: ['scenes']
         };
 
-        const plan = await GenAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
+        const plan = await AutonomousIntelligence.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${sanitizedPrompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -292,7 +292,7 @@ export class EditingService {
         for (let i = 0; i < options.count; i++) {
             // Step 2: Analyze Context (if prev image exists)
             if (previousImage) {
-                visualContext = await GenAI.analyzeImage(
+                visualContext = await AutonomousIntelligence.analyzeImage(
                     `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.`,
                     previousImage.data,
                     previousImage.mimeType
@@ -310,9 +310,9 @@ export class EditingService {
             parts.push({ text: promptText });
 
             // Use rawGenerateContent with DIRECT image model (NOT text model)
-            const response = await GenAI.rawGenerateContent(
+            const response = await AutonomousIntelligence.rawGenerateContent(
                 [{ role: 'user', parts }],
-                AI_MODELS.IMAGE.DIRECT_PRO,
+                INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
                 { responseModalities: ['IMAGE'] },
                 undefined,
                 undefined,
@@ -346,8 +346,8 @@ export class EditingService {
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const modelId = options.model === 'pro'
-            ? AI_MODELS.IMAGE.DIRECT_PRO
-            : AI_MODELS.IMAGE.DIRECT_FAST;
+            ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
+            : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
         const parts: import('firebase/ai').Part[] = [
             { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },
@@ -357,7 +357,7 @@ export class EditingService {
             { text: '[Style Reference - apply this visual style]' },
         ];
 
-        const response = await GenAI.rawGenerateContent(
+        const response = await AutonomousIntelligence.rawGenerateContent(
             [{ role: 'user', parts }],
             modelId,
             { responseModalities: ['IMAGE'] },

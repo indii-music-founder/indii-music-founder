@@ -9,6 +9,7 @@ const BrowserAgentTester: React.FC = () => {
     const [goal, setGoal] = useState('Find the capacity of "Saint Andrew\'s Hall" in Detroit');
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { logAction } = useAgentStore();
@@ -128,8 +129,8 @@ const BrowserAgentTester: React.FC = () => {
                             {logs.map((log, i) => (
                                 <div key={i} className={
                                     log.includes('[ERROR]') ? 'text-red-400' :
-                                        log.includes('[Driver] AI Thought') ? 'text-blue-400' :
-                                            log.includes('[Driver] AI Action') ? 'text-cyan-400 font-bold' :
+                                        log.includes('[Driver] Autonomous Thought') ? 'text-blue-400' :
+                                            log.includes('[Driver] Autonomous Action') ? 'text-cyan-400 font-bold' :
                                                 'text-slate-300'
                                 }>
                                     {log}
@@ -138,7 +139,7 @@ const BrowserAgentTester: React.FC = () => {
                             {isRunning && (
                                 <div className="text-cyan-400 animate-pulse flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
-                                    Wait for AI reasoning...
+                                    Wait for Autonomous reasoning...
                                 </div>
                             )}
                             <div ref={logEndRef} />

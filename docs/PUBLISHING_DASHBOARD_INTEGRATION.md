@@ -24,12 +24,12 @@ Successfully integrated real data sources into the Publishing Dashboard and impl
 
 ### 2. Implement DSR Processing
 
-Created **DSRUploadService** (`/src/services/ddex/DSRUploadService.ts`):
+Created **DSRUploadService** (`/src/services/ingestion/DSRUploadService.ts`):
 
 ```typescript
 Key Features:
 - File reading and validation
-- DSR parsing via DDEXParser integration
+- DSR parsing via Proprietary Ingestion IPParser integration
 - Royalty calculation via DSRService
 - Firestore persistence for processed reports
 - Sentry error tracking
@@ -108,14 +108,14 @@ Created comprehensive test suite (`/e2e/publishing-dashboard.spec.ts`):
    - Wired up DSR processing with real backend
    - Implemented release edit handler
 
-2. `/src/services/ddex/DSRUploadService.ts` (NEW)
+2. `/src/services/ingestion/DSRUploadService.ts` (NEW)
    - Complete DSR upload pipeline
    - Firestore integration
    - Error handling and logging
 
 ### Type Fixes
 
-3. `/src/services/ddex/DSRUploadService.ts`
+3. `/src/services/ingestion/DSRUploadService.ts`
    - Fixed type imports from `types/dsr.ts`
    - Corrected property names (reportingPeriod)
    - Fixed revenue calculation fields
@@ -152,7 +152,7 @@ Created comprehensive test suite (`/e2e/publishing-dashboard.spec.ts`):
    ┌────────────────────────────────────────┐
    │         Firestore Collections          │
    ├────────────────────────────────────────┤
-   │  • ddex_releases                       │
+   │  • ingestion_releases                       │
    │  • dsr_processed_reports (NEW)         │
    │  • distributor_connections             │
    │  • earnings_summary                    │

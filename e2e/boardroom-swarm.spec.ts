@@ -6,12 +6,12 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         // Setup mock environment and auth
         // Relies on `auth.ts` fixture for Gemini API and RAG network mocking.
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         
         // Wait for store initialization and then open the boardroom overlay
         await page.waitForFunction(() => window.useStore !== undefined);
         await page.evaluate(() => {
-            window.useStore.getState().setBoardroomMode(true);
+            window.useStore.getState().setConversationMode('boardroom');
         });
         
         // Wait for the modal to be visible

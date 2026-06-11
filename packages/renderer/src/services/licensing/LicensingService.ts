@@ -57,8 +57,8 @@ export class LicensingService {
 
         if (results.length === 0 && userId) {
             await this.seedDatabase(userId);
-            // After seeding, fetch again with the same credentials
-            return this.getActiveLicenses(userId);
+            // After seeding, fetch again once to check if seeding populated anything
+            return this.licensesStore.list(constraints);
         }
 
         return results;
@@ -178,7 +178,7 @@ export class LicensingService {
 
     /**
      * Returns the user's catalog tracks mapped to the SyncCatalogTrack shape.
-     * Reads from `ddexReleases` and picks up BPM from `audioFeatures.bpm`
+     * Reads from `proprietaryIngestionReleases` and picks up BPM from `audioFeatures.bpm`
      * if stored on the document (set by AudioAnalysisService after upload).
      */
     async getCatalogTracksForSync(): Promise<SyncCatalogTrack[]> {
@@ -187,7 +187,7 @@ export class LicensingService {
 
         try {
             const snapshot = await getDocs(
-                query(collection(db, 'ddexReleases'), where('orgId', '==', userProfile.id), limit(50))
+                query(collection(db, 'proprietaryIngestionReleases'), where('orgId', '==', userProfile.id), limit(50))
             );
 
             return snapshot.docs.map(d => {
@@ -215,7 +215,7 @@ export class LicensingService {
 
     /**
      * Returns sync briefs from Firestore. If the collection is empty, generates
-     * realistic sample briefs with GenAI and caches them in Firestore so future
+     * realistic sample briefs with AutonomousIntelligence and caches them in Firestore so future
      * sessions load instantly.
      */
     async getSyncBriefs(): Promise<SyncBrief[]> {
@@ -230,7 +230,7 @@ export class LicensingService {
                 return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SyncBrief));
             }
 
-            // Collection empty → generate and seed with AI
+            // Collection empty → generate and seed with Intelligence
             return this.seedSyncBriefs(userProfile.id);
         } catch (err: unknown) {
             logger.warn('[LicensingService] getSyncBriefs failed:', err);
@@ -239,13 +239,14 @@ export class LicensingService {
     }
 
     /**
-     * Uses GenAI to generate realistic sync licensing briefs and writes them
+     * Uses AutonomousIntelligence to generate realistic sync licensing briefs and writes them
      * to Firestore so they survive page refreshes.
      */
     private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
         try {
-            const { GenAI } = await import('@/services/ai/GenAI');
-            const { AI_MODELS } = await import('@/core/config/ai-models');
+            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
 
             const today = new Date();
             const deadlines = [7, 14, 21, 30, 45, 60, 90].map(d => {
@@ -277,7 +278,7 @@ export class LicensingService {
                 }
             };
 
-            const generated = await GenAI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
+            const generated = await AutonomousIntelligence.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
                 `Generate 8 realistic sync licensing briefs for music supervisors seeking independent music.
 Use these upcoming deadlines: ${deadlines.join(', ')}.
 Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.

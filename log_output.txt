@@ -1,0 +1,360 @@
+--- BEGIN UNTRUSTED EXTERNAL CONTENT (source: https://github.com/indii-music-founder/indii-music-founder/actions/runs/26322232166/job/77493386142) ---
+Skip to content
+Open menuHomepage (g then d) gGthen  dDindii-music-founderindii-music-founderType / to searchSearch or jump to…(forward slash) forward slash/
+Search code, repositories, users, issues, pull requests...
+Search
+Clear
+0 suggestions.
+Search syntax tips
+Give feedback
+Provide feedback
+We read every piece of feedback, and take your input very seriously.
+Include my email address so I can be contacted
+Cancel
+Submit feedback
+Saved searches
+Use saved searches to filter your results more quickly
+Name
+Query
+To see all available qualifiers, see our documentation.
+Cancel
+Create saved search
+Chat with CopilotCreate new...All issuesAll pull requestsAll repositoriesYou have unread notifications(g then n) gGthen  nNOpen user navigation menuRepository navigationCodeIssuesPull requestsAgentsActionsProjectsSecurity and qualityInsightsSettings
+Search code, repositories, users, issues, pull requests...
+Search
+Clear
+0 suggestions.
+Search syntax tips
+Give feedback
+Provide feedback
+We read every piece of feedback, and take your input very seriously.
+Include my email address so I can be contacted
+Cancel
+Submit feedback
+Saved searches
+Use saved searches to filter your results more quickly
+Name
+Query
+To see all available qualifiers, see our documentation.
+Cancel
+Create saved search
+You signed in with another tab or window. Reload to refresh your session.
+You signed out in another tab or window. Reload to refresh your session.
+You switched accounts on another tab or window. Reload to refresh your session.
+Dismiss alert
+Deploy to Firebase Hosting
+fix(ci): integrate High-Cost Safeguards, resolve CI TypeScript errors…
+#117
+Re-run jobs
+Re-run all jobs
+Re-run failed jobs
+Re-run all jobs
+Re-run all jobs
+A new attempt of this workflow will be started, including all the jobs:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run failed jobs
+Re-run failed jobs
+A new attempt of this workflow will be started, including all failed jobs and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Workflow run options
+Create status badge
+Delete all logs
+Create status badge
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Re-run failed jobs
+Re-run failed jobs
+Re-run failed jobs
+A new attempt of this workflow will be started, including all failed jobs and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run all jobs
+Re-run all jobs
+Re-run all jobs
+A new attempt of this workflow will be started, including all the jobs:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Create status badge
+Create status badge
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Delete all logs
+unit-tests (2)
+fix(ci): integrate High-Cost Safeguards, resolve CI TypeScript errors…
+fix(ci): integrate High-Cost Safeguards, resolve CI TypeScript errors… #117
+Uh oh!
+There was an error while loading. Please reload this page.
+SummaryAll jobsFilter by job statussetupRe-run jobunit-tests (1)Re-run jobunit-tests (2)Re-run jobunit-tests (3)Re-run jobunit-tests (4)Re-run jobbuildRe-run jobdeploy-stagingRe-run jobe2e-stagingRe-run jobdeploy-productionRe-run jobRun detailsUsageWorkflow fileUsageWorkflow file
+Annotations
+1 error and 1 warning
+Run unit tests (shard 2/4)
+Process completed with exit code 1.
+Show more
+Show less
+Complete job
+Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/cache@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Show more
+Show less
+unit-tests (2)
+unit-tests (2)
+failed
+May 22, 2026 in 3m 53s
+0/0
+Explain errorExplain error
+Re-run this job
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including unit-tests (2) and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Show timestamps
+Show full screen (Shift+F)
+Download log archive
+View raw logs
+Set up job
+2s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Checkout repository
+11s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Setup Node.js
+0s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Restore node_modules cache
+26s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Run unit tests (shard 2/4)
+3m 13s
+Error:
+3700
+Sat, 23 May 2026 03:30:21 GMT
+✓ packages/renderer/src/modules/security/SecurityDashboard.test.tsx > SecurityDashboard > shows pending placeholders for not-yet-implemented panes 12ms
+3701
+Sat, 23 May 2026 03:30:22 GMT
+✓ packages/renderer/src/services/agent/FinanceIntegration.test.ts > Finance Agent Integration > should audit distribution for a valid distributor 3ms
+3702
+Sat, 23 May 2026 03:30:22 GMT
+✓ packages/renderer/src/services/agent/FinanceIntegration.test.ts > Finance Agent Integration > should return error for unknown distributor 0ms
+3703
+Sat, 23 May 2026 03:30:24 GMT
+✓ packages/renderer/src/components/ui/DeptLoader.a11y.test.tsx > DeptLoader Accessibility > should have correct role and aria-live attributes 143ms
+3704
+Sat, 23 May 2026 03:30:24 GMT
+✓ packages/renderer/src/components/ui/DeptLoader.a11y.test.tsx > DeptLoader Accessibility > should be accessible according to axe 56ms
+3705
+Sat, 23 May 2026 03:30:25 GMT
+✓ packages/renderer/src/modules/dashboard/Dashboard.test.tsx > Dashboard > renders AgentWorkspace by default 68ms
+3706
+Sat, 23 May 2026 03:30:25 GMT
+3707
+Sat, 23 May 2026 03:30:25 GMT
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+3708
+Sat, 23 May 2026 03:30:25 GMT
+3709
+Sat, 23 May 2026 03:30:25 GMT
+FAIL  packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts > Voice Interface QA > should sanitize special characters
+3710
+Sat, 23 May 2026 03:30:25 GMT
+AppException: Intelligence Service Failure: No candidates returned from TTS fallback model
+3711
+Sat, 23 May 2026 03:30:25 GMT
+❯ FirebaseIntelligenceService.handleError packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts:1197:16
+3712
+Sat, 23 May 2026 03:30:25 GMT
+1195|         }
+3713
+Sat, 23 May 2026 03:30:25 GMT
+3714
+Sat, 23 May 2026 03:30:25 GMT
+1196|
+3715
+Sat, 23 May 2026 03:30:25 GMT
+1197|         return new AppException(AppErrorCode.INTERNAL_ERROR, `Intellig…
+3716
+Sat, 23 May 2026 03:30:25 GMT
+|                ^
+3717
+Sat, 23 May 2026 03:30:25 GMT
+1198|     }
+3718
+Sat, 23 May 2026 03:30:25 GMT
+1199|
+3719
+Sat, 23 May 2026 03:30:25 GMT
+❯ packages/renderer/src/services/intelligence/generators/SpeechGenerator.ts:82:27
+3720
+Sat, 23 May 2026 03:30:25 GMT
+❯ CircuitBreaker.execute packages/renderer/src/services/intelligence/utils/CircuitBreaker.ts:124:28
+3721
+Sat, 23 May 2026 03:30:25 GMT
+❯ packages/renderer/src/services/intelligence/__tests__/QA_Voice.test.ts:94:24
+3722
+Sat, 23 May 2026 03:30:25 GMT
+3723
+Sat, 23 May 2026 03:30:25 GMT
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+3724
+Sat, 23 May 2026 03:30:25 GMT
+Serialized Error: { code: 'INTERNAL_ERROR', details: { retryable: false }, toAppError: 'Function<toAppError>' }
+3725
+Sat, 23 May 2026 03:30:25 GMT
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+3726
+Sat, 23 May 2026 03:30:25 GMT
+3727
+Sat, 23 May 2026 03:30:25 GMT
+Test Files  1 failed | 150 passed (151)
+3728
+Sat, 23 May 2026 03:30:25 GMT
+Tests  1 failed | 899 passed | 1 skipped (901)
+3729
+Sat, 23 May 2026 03:30:25 GMT
+Start at  03:27:13
+3730
+Sat, 23 May 2026 03:30:25 GMT
+Duration  192.40s (transform 7.20s, setup 15.13s, import 21.62s, tests 17.14s, environment 115.91s)
+3731
+Sat, 23 May 2026 03:30:25 GMT
+3732
+Sat, 23 May 2026 03:30:25 GMT
+Error: Process completed with exit code 1.
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Post Restore node_modules cache
+0s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Post Setup Node.js
+0s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Post Checkout repository
+0s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Complete job
+0s
+Error:
+This step has been truncated due to its large size. View the raw logs from the  menu once
+the workflow run has completed.
+Loading
+Re-running jobs...
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including setup and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including unit-tests (1) and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including unit-tests (4) and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including unit-tests (3) and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including unit-tests (2) and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including build and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including deploy-staging and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including e2e-staging and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+Re-run single job
+Re-run single job
+A new attempt of this workflow will be started, including deploy-production and dependents:
+Loading
+Uh oh!
+There was an error while loading. Please reload this page.
+Enable debug logging
+Cancel
+Re-run jobs
+You can’t perform that action at this time.
+--- END UNTRUSTED EXTERNAL CONTENT ---

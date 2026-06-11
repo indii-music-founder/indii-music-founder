@@ -107,7 +107,7 @@ const BrandText: React.FC<{ opacity: number; y: number }> = ({ opacity, y }) => 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif",
       }}
     >
-      indiiOS
+      indii
     </div>
     <div
       style={{
@@ -121,7 +121,7 @@ const BrandText: React.FC<{ opacity: number; y: number }> = ({ opacity, y }) => 
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif",
       }}
     >
-      The Sovereign Creative Engine
+      The Independent Creative Engine
     </div>
   </div>
 );

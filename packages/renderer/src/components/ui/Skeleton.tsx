@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 
 interface SkeletonProps {
     className?: string;
+    key?: React.Key;
 }
 
 // ── Base pulse skeleton ──────────────────────────────────────────────────────

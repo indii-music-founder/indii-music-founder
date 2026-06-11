@@ -48,7 +48,7 @@ export const RevenueProjections = () => {
                         <Calculator size={16} className="text-dept-royalties" />
                         Revenue Projections
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">AI-powered earnings forecast</p>
+                    <p className="text-xs text-gray-500 mt-1">Intelligence-driven earnings forecast</p>
                 </div>
                 {projections && (
                     <button

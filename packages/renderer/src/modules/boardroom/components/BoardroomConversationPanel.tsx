@@ -67,7 +67,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
                 {/* Prompt Area — always visible so users can start the conversation */}
                 <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
-                    <PromptArea className="static! translate-x-0! w-full! max-w-none!" />
+                    <PromptArea isDocked className="w-full max-w-none" />
                 </div>
             </div>
         );
@@ -148,7 +148,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     )}
 
                                     {/* Message Text */}
-                                    <div className="text-sm text-white/80 leading-relaxed wrap-break-word whitespace-pre-wrap">
+                                    <div className="message-content text-sm text-white/80 leading-relaxed wrap-break-word whitespace-pre-wrap">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
@@ -186,7 +186,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
             {/* Inline PromptArea for Boardroom */}
             <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
-                <PromptArea className="static! translate-x-0! w-full! max-w-none!" />
+                <PromptArea isDocked className="w-full max-w-none" />
             </div>
         </div>
     );

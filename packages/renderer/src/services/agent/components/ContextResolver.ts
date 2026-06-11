@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { AgentMessage } from '@/core/store';
 // useStore removed
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';

@@ -10,9 +10,10 @@
  */
 
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
+import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import type {
   DistributorId,
+  DistributorEarnings,
   ReleaseAssets,
   ReleaseResult,
   MultiDistributorReleaseRequest,
@@ -35,7 +36,7 @@ import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resi
 import {
   ExtendedGoldenMetadataSchema,
   DistributorEarningsSchema
-} from '@/services/ddex/validation';
+} from '@/services/distribution/proprietary-ingestion/validation';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -535,7 +536,7 @@ class DistributorServiceImpl {
       totalFees,
       totalNetRevenue,
       currencyCode: targetCurrency,
-      byDistributor: validEarnings.filter((e) => e !== null) as typeof validEarnings[0] extends null ? never : typeof validEarnings[number][],
+      byDistributor: validEarnings.filter((e) => e !== null) as unknown as DistributorEarnings[],
       byPlatform: Array.from(platformMap.entries()).map(([platform, data]) => ({
         platform,
         ...data,
@@ -652,25 +653,29 @@ class DistributorServiceImpl {
     const grouped: Record<string, DashboardRelease> = {};
 
     deployments.forEach((d: ReleaseDeploymentDocument) => {
+      if (!d.title || !d.artist) {
+        logger.warn('[DistributorService] Skipping release deployment with incomplete metadata', {
+          internalReleaseId: d.internalReleaseId,
+          hasTitle: !!d.title,
+          hasArtist: !!d.artist
+        });
+        return;
+      }
+
       if (!grouped[d.internalReleaseId]) {
         grouped[d.internalReleaseId] = {
           id: d.internalReleaseId,
-          title: d.title || 'Untitled Release',
-          artist: d.artist || 'Unknown Artist',
+          title: d.title,
+          artist: d.artist,
           coverArtUrl: d.coverArtUrl,
-          releaseDate: d.submittedAt?.toDate().toISOString(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          releaseDate: (d.submittedAt && typeof (d.submittedAt as { toDate?: () => Date }).toDate === 'function') ? (d.submittedAt as { toDate: () => Date }).toDate().toISOString() : (d.submittedAt ? new Date(d.submittedAt as any).toISOString() : undefined),
           deployments: {},
         };
       }
       grouped[d.internalReleaseId]!.deployments[d.distributorId] = { status: d.status as unknown as ReleaseStatus };
 
       // Update metadata if a more complete record is found
-      if (d.title && grouped[d.internalReleaseId]!.title === 'Untitled Release') {
-        grouped[d.internalReleaseId]!.title = d.title;
-      }
-      if (d.artist && grouped[d.internalReleaseId]!.artist === 'Unknown Artist') {
-        grouped[d.internalReleaseId]!.artist = d.artist;
-      }
       if (d.coverArtUrl && !grouped[d.internalReleaseId]!.coverArtUrl) {
         grouped[d.internalReleaseId]!.coverArtUrl = d.coverArtUrl;
       }

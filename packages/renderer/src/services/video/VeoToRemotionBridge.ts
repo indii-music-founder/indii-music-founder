@@ -17,7 +17,7 @@
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { useVideoEditorStore, VideoProject } from '@/modules/video/store/videoEditorStore';
+import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 import { videoRenderOrchestrator } from './VideoRenderOrchestrator';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -136,7 +136,7 @@ export class VeoToRemotionBridge {
             tracks: [
                 {
                     id: videoTrackId,
-                    name: 'AI Generated Video',
+                    name: 'Autonomous Generated Video',
                     type: 'video',
                 },
             ],
@@ -227,7 +227,7 @@ export class VeoToRemotionBridge {
             durationInFrames: framesPerSegment * segmentUrls.length,
             width,
             height,
-            tracks: [{ id: videoTrackId, name: 'AI Generated Video', type: 'video' }],
+            tracks: [{ id: videoTrackId, name: 'Autonomous Generated Video', type: 'video' }],
             clips: segmentUrls.map((url, index) => ({
                 id: `clip_veo_${uuidv4()}`,
                 type: 'video' as const,

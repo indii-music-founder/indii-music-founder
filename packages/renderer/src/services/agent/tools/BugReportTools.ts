@@ -1,14 +1,16 @@
-import { wrapTool, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
 
 /**
  * Bug and feature reporting tools.
- * Bug reports are saved to Firestore (bug_reports collection) and optionally
- * to GitHub Issues if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env.
+ * Bug reports are saved to Firestore (bug_reports collection) and
+ * forwarded to GitHub Issues via the reportBugFn Cloud Function.
+ * GitHub token is server-side only (GCP Secret Manager) — no client config needed.
  */
 export const BugReportTools: Record<string, AnyToolFunction> = {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     report_bug: wrapTool('report_bug', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;
@@ -27,7 +29,7 @@ export const BugReportTools: Record<string, AnyToolFunction> = {
         const state = useStore.getState();
 
         const bugReport = {
-            id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            id: `bug-${Date.now()}-${crypto.randomUUID().split('-')[0]}`,
             title,
             description,
             stepsToReproduce,
@@ -92,8 +94,8 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let issueUrl: string | undefined;
 
         try {
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const functions = getFunctions();
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
             const reportBug = httpsCallable<{
                 title: string;
                 description: string;
@@ -131,39 +133,30 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 
         // 3. Save to Agent Memory for context continuity
         try {
-            const { memoryService } = await import('@/services/agent/MemoryService');
-            const currentProjectId = toolContext
-                ? toolContext.get('currentProjectId')
-                : state.currentProjectId;
-            if (currentProjectId) {
-                await memoryService.saveMemory(
-                    currentProjectId,
-                    `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
-                    'fact',
-                    0.7,
-                    'system'
-                );
-            }
+            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            await alwaysOnMemoryEngine.ingest(
+                `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
+                'system',
+                'context'
+            );
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to save bug to memory:', e);
         }
 
-        return {
+        const finalMessage = githubStatus === 'merged_as_comment'
+            ? `Bug report merged as comment on existing issue: ${issueUrl}`
+            : githubStatus === 'ok'
+            ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
+            : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`;
+
+        return toolSuccess({
             bugId: bugReport.id,
             title: bugReport.title,
-            severity: bugReport.severity,
-            markdownBody,
-            firestore: 'ok',
-            github: githubStatus,
-            issueUrl,
-            message: githubStatus === 'merged_as_comment'
-                ? `Bug report merged as comment on existing issue: ${issueUrl}`
-                : githubStatus === 'ok'
-                ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
-                : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`
-        };
+            issueUrl
+        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`);
     }),
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     request_feature: wrapTool('request_feature', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;
@@ -180,7 +173,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         const state = useStore.getState();
 
         const featureRequest = {
-            id: `feat-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            id: `feat-${Date.now()}-${crypto.randomUUID().split('-')[0]}`,
             title,
             description,
             useCase,
@@ -233,30 +226,19 @@ ${featureRequest.useCase}
 
         // 2. Save to Agent Memory
         try {
-            const { memoryService } = await import('@/services/agent/MemoryService');
-            const currentProjectId = toolContext
-                ? toolContext.get('currentProjectId')
-                : state.currentProjectId;
-            if (currentProjectId) {
-                await memoryService.saveMemory(
-                    currentProjectId,
-                    `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
-                    'fact',
-                    0.6,
-                    'system'
-                );
-            }
+            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            await alwaysOnMemoryEngine.ingest(
+                `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
+                'system',
+                'context'
+            );
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
         }
 
-        return {
+        return toolSuccess({
             featureId: featureRequest.id,
-            title: featureRequest.title,
-            priority: featureRequest.priority,
-            category: featureRequest.category,
-            markdownBody,
-            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
-        };
+            title: featureRequest.title
+        }, `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`);
     })
 } satisfies Record<string, AnyToolFunction>;

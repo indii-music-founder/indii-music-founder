@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { motion } from 'motion/react';
 import {
     MousePointer2,
@@ -13,11 +14,15 @@ import {
     TrendingUp,
     Network,
     MessageSquare,
+    Zap,
 } from 'lucide-react';
+import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
+import type { SavedWorkflow } from '@/modules/workflow/types';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { EntryOverlay } from './EntryOverlay';
+import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
 
 interface EmptyStateProps {
     /** Legacy: populate the prompt input box without submitting */
@@ -26,33 +31,67 @@ interface EmptyStateProps {
     onCommandSubmit: (cmd: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps) {
-    const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed } = useStore(useShallow(state => ({
+    const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed, user, setNodes, setEdges } = useStore(useShallow(state => ({
         setModule: state.setModule,
         isEntryAssistantDismissed: state.isEntryAssistantDismissed,
-        setEntryAssistantDismissed: state.setEntryAssistantDismissed
+        setEntryAssistantDismissed: state.setEntryAssistantDismissed,
+        user: state.user,
+        setNodes: state.setNodes,
+        setEdges: state.setEdges,
     })));
 
-    const suggestions = [
-        // Row 1 — each fires its command immediately on click
-        { icon: Eye, title: 'Analyze Brand', prompt: 'Audit my current visual brand and give me a detailed brand identity report with specific improvement recommendations.' },
-        { icon: Play, title: 'Create Video', prompt: "Generate a creative brief and shot list for a music video for my latest track, then kick off the video generation pipeline." },
-        { icon: Command, title: 'Build Release', prompt: 'Walk me through preparing a new distribution release: gather my track metadata, run QC checks, and stage it for distribution.' },
-        { icon: PenTool, title: 'Write Copy', prompt: 'Draft a compelling press release for my upcoming single, including a hook, artist bio blurb, and key talking points for media outreach.' },
-        { icon: Image, title: 'Design Cover', prompt: 'Generate several album artwork concepts for my new EP. Ask me about the vibe, genre, and visual references before generating.' },
-        // Row 2
-        { icon: MapPin, title: 'Scout Venues', prompt: 'Find suitable live music venues for my next tour. Ask me about my preferred cities, capacity range, and tour dates.' },
-        { icon: Megaphone, title: 'Plan Campaign', prompt: 'Build a detailed 30-day social media launch plan for my upcoming release, with platform-specific strategies and a content calendar.' },
-        { icon: FileCheck, title: 'Review Contract', prompt: 'Analyze my latest licensing agreement for red flags, unfavorable clauses, and key terms I should negotiate. Ask me to share the document.' },
-        { icon: TrendingUp, title: 'Track Revenue', prompt: 'Show me a summary of my royalty earnings this quarter broken down by platform, territory, and track.' },
-        // Custom Workflow — navigates instead of submitting
-        {
-            icon: Network,
-            title: 'Custom Workflow',
-            prompt: null,
-            action: () => setModule('workflow'),
-        },
-    ];
+    const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            getUserWorkflows(user.uid)
+                .then(setSavedWorkflows)
+                .catch(err => Logger.error('EmptyState', 'Failed to load workflows for EmptyState', err));
+        }
+    }, [user?.uid]);
+
+    const commandIcons: Record<string, React.ElementType> = {
+        'analyze-brand': Eye,
+        'create-video': Play,
+        'build-release': Command,
+        'write-copy': PenTool,
+        'design-cover': Image,
+        'scout-venues': MapPin,
+        'plan-campaign': Megaphone,
+        'review-contract': FileCheck,
+        'track-revenue': TrendingUp,
+        'custom-workflow': Network,
+    };
+
+    const displayItems: Array<{
+        icon: React.ElementType;
+        title: string;
+        prompt: string | null;
+        summary?: string;
+        action?: () => void;
+        isWorkflow?: boolean;
+    }> = [
+        ...savedWorkflows.map(wf => ({
+            icon: Zap,
+            title: wf.name,
+            prompt: null as string | null,
+            action: () => {
+                setNodes(wf.nodes);
+                setEdges(wf.edges);
+                setModule('workflow');
+            },
+            isWorkflow: true
+        })),
+        ...getDashboardEntryCommands().map((command: EntryCommandDefinition) => ({
+            icon: commandIcons[command.id] || Command,
+            title: command.title,
+            prompt: command.slash,
+            summary: command.summary,
+            action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
+        }))
+    ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 max-w-6xl mx-auto w-full">
@@ -70,7 +109,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.1 }}
                 className="text-3xl font-semibold text-white tracking-wide text-center leading-none"
             >
-                indiiOS
+                indii
             </motion.h2>
 
             <motion.p
@@ -79,13 +118,13 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                 transition={{ delay: 0.2 }}
                 className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
             >
-                Your AI Creative Engine • What Would You Like To Do?
+                Your Creative Intelligence Engine • What Would You Like To Do?
             </motion.p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full px-4">
-                {suggestions.map((s, i) => (
+                {displayItems.map((s, i) => (
                     <motion.button
-                        key={s.title}
+                        key={s.title + i}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
@@ -96,15 +135,19 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
                                 onCommandSubmit(s.prompt);
                             }
                         }}
-                        className="group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 text-left overflow-hidden h-full"
+                        className={`group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border hover:bg-white/[0.06] hover:shadow-lg transition-all duration-300 text-left overflow-hidden h-full ${
+                            s.isWorkflow 
+                            ? 'border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' 
+                            : 'border-white/5 hover:border-emerald-500/40 hover:shadow-emerald-500/5'
+                        }`}
                     >
                         <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MousePointer2 size={12} className="text-emerald-400" />
+                            <MousePointer2 size={12} className={s.isWorkflow ? "text-amber-400" : "text-emerald-400"} />
                         </div>
-                        <s.icon size={22} className="text-emerald-400 mb-3 group-hover:scale-110 transition-transform duration-300" />
-                        <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5">{s.title}</h3>
+                        <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${s.isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
+                        <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
-                            {s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0]}
+                            {s.isWorkflow ? 'Custom User Workflow' : (s.summary || s.prompt)}
                         </p>
                     </motion.button>
                 ))}
@@ -131,4 +174,3 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
 
     );
 }
-

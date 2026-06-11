@@ -1,5 +1,5 @@
 /**
- * Subscription Tier Definitions for indiiOS
+ * Subscription Tier Definitions for indii
  *
  * Defines all available subscription tiers with their feature limits and capabilities.
  *
@@ -41,7 +41,7 @@ export interface VideoGenerationLimits {
 }
 
 /**
- * AI chat limits for a tier
+ * Intelligence chat limits for a tier
  */
 export interface ChatLimits {
   tokensPerMonth: number;
@@ -91,8 +91,8 @@ export interface TierLimits {
  */
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
-    name: 'indiiOS Free',
-    description: 'Perfect for beginners to explore AI-powered creativity',
+    name: 'indii Free',
+    description: 'Perfect for beginners to explore Intelligence-powered creativity',
     price: 0,
     billingPeriod: 'once',
     imageGenerations: {
@@ -129,7 +129,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.PRO_MONTHLY]: {
-    name: 'indiiOS Pro',
+    name: 'indii Pro',
     description: 'Professional tools for serious creators',
     price: 19,
     billingPeriod: 'month',
@@ -167,7 +167,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.PRO_YEARLY]: {
-    name: 'indiiOS Pro (Yearly)',
+    name: 'indii Pro (Yearly)',
     description: 'Save 17% with annual billing',
     price: 190,
     billingPeriod: 'year',
@@ -205,7 +205,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   },
 
   [SubscriptionTier.STUDIO]: {
-    name: 'indiiOS Studio',
+    name: 'indii Studio',
     description: 'Desktop-native with local computing and unlimited creativity',
     price: 49,
     billingPeriod: 'month',
@@ -242,8 +242,8 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     maxTeamMembers: 25
   },
   [SubscriptionTier.FOUNDER]: {
-    name: 'indiiOS Founder',
-    description: 'Lifetime founding access. One-time $2,500. Limited to 10 seats. API costs billed at pass-through cost.',
+    name: 'indii Founder',
+    description: 'Lifetime founding access. One-time $2,500. Limited to 11 total seats (10 paid). API costs billed at pass-through cost.',
     price: 2500,
     billingPeriod: 'once',
     imageGenerations: {
@@ -294,8 +294,7 @@ export function getTierOrder(): SubscriptionTier[] {
   return [
     SubscriptionTier.FREE,
     SubscriptionTier.PRO_MONTHLY,
-    SubscriptionTier.STUDIO,
-    SubscriptionTier.FOUNDER
+    SubscriptionTier.STUDIO
   ];
 }
 

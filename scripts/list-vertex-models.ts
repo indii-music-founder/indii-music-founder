@@ -13,7 +13,7 @@ async function listModels() {
         scopes: ['https://www.googleapis.com/auth/cloud-platform']
     });
     const client = await auth.getClient();
-    const projectId = process.env.VITE_VERTEX_PROJECT_ID || "indiios-v-1-1";
+    const projectId = process.env.VITE_VERTEX_PROJECT_ID || "indii-v-1-1";
     const location = "us-central1";
     const accessToken = await client.getAccessToken();
 

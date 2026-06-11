@@ -1,21 +1,38 @@
-# indiiREMOTE Global Edge Architecture
+# indiiREMOTE Hybrid Architecture
 
-The indiiREMOTE feature transforms your desktop into a globally accessible, private edge server.
+The indiiREMOTE feature transforms your mobile device into a companion controller for the indii studio.
 
-## Architectural Transition
+## Architectural Model: Hybrid Cloud Relay + Edge
 
-We previously relied on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. Both are slow or restrictive. We have now moved to **Global Edge Computing**.
+We currently operate a **Hybrid** remote architecture that leverages the best of both cloud reliability and edge performance. The documentation previously stated that the Edge model replaced the Cloud Relay entirely, but in reality, both paths are active and serve different necessary functions.
 
-Instead of relying on cloud databases to relay commands, the indiiOS Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+### 1. Firestore Cloud Relay (Primary Command & State Path)
+The primary method for state synchronization and command delivery is the **Cloud Relay** (via Firebase Firestore). 
+- **Atomic Execution**: Commands are processed using a first-wins atomic claim system. The desktop studio claims the command if online; otherwise, the cloud function processes it.
+- **Persistence**: Ensures that commands and state updates are never lost, even if the mobile device temporarily drops connection or the desktop is offline.
+- **Text & Metadata**: Handles text generation commands, agent chat, and status dashboard syncing.
+- **Desktop-Only Commands Partition**: Desktop-only operations (e.g. `[GENERATE_IMAGE]`) are routed through Firestore but are ignored by the Cloud Function, allowing the desktop to claim and execute them locally.
+
+### 2. Global Edge Computing (High-Bandwidth / Low-Latency Path)
+In parallel, the indii Electron app can silently boot a native Node.js Express server on port `3333`, mapped directly to the global internet via an encrypted **Ngrok Tunnel**.
+- **Headless Playback**: Designed for streaming audio/video chunks directly to the mobile device for preview without relying on slow database reads/writes.
+- **Direct Edge Access**: Provides a zero-install Thin Client React SPA served directly from the Mac.
+- **Desktop-Only Commands**: Provides an alternative fast-path for commands that require immediate desktop execution.
+We previously relied exclusively on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. We have now moved to a **Hybrid Edge Architecture**.
+
+The system now supports two parallel paths:
+1. **Firestore Cloud Relay (Ubiquitous):** Serves as the primary, highly-available transport for text and commands across all network conditions.
+2. **Direct Edge Server (Low-Latency):** The indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**. This direct WebSocket path is utilized for sub-millisecond sync of heavy payloads and real-time state.
 
 ## Core Components
 
-1. **IndiiRemoteService (`electron/services/IndiiRemoteService.ts`)**: Manages the Express server, WebSocket lifecycle, and Ngrok tunnel bridging.
-2. **IPC Handler (`electron/handlers/mobile_remote.ts`)**: Translates Desktop UI requests to the background service and fetches the live HTTPS tunnel URL.
-3. **The Edge Client (`public/remote/index.html`)**: A zero-install Thin Client React SPA served directly from your Mac, handling the WebSocket handshake and displaying the live mainframe status.
+1. **RemoteRelayService (`packages/renderer/src/services/agent/RemoteRelayService.ts`)**: The primary React-side service that subscribes to Firestore for state sync and sends commands.
+2. **IndiiRemoteService (`packages/main/src/services/IndiiRemoteService.ts`)**: Manages the Express server, WebSocket lifecycle, and Ngrok tunnel bridging for the Edge path.
+3. **IPC Handler (`packages/main/src/handlers/mobile_remote.ts`)**: Translates Desktop UI requests to the background service and fetches the live HTTPS tunnel URL.
+4. **Cloud Relay Processor (`packages/firebase/src/relay/relayCommandProcessor.ts`)**: Backend cloud function ensuring command execution if the desktop is disconnected.
 
 ## Security Model
 
-- **End-to-End Encryption**: Managed via Ngrok TLS.
-- **Passcode Auth**: The IPC bridge generates a 6-digit Session Passcode (`sessionPasscode`) unique to each boot.
-- **No Third-Party Middlemen**: Data never touches a Firebase instance, protecting unreleased visual and audio assets.
+- **Cloud Relay Rules**: Protected by strict Firestore security rules requiring proper authentication.
+- **Edge Encryption**: The direct Ngrok tunnel path uses end-to-end encryption via Ngrok TLS.
+- **Passcode Auth**: The IPC bridge generates a 6-digit Session Passcode (`sessionPasscode`) unique to each edge boot.

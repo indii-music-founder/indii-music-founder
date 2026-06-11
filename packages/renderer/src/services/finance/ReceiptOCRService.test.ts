@@ -1,18 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ReceiptOCRService } from './ReceiptOCRService';
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        bootstrap: vi.fn().mockResolvedValue(true),
         rawGenerateContent: vi.fn().mockResolvedValue({ response: { text: () => '{}' } }),
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
-            bootstrap = mockFirebaseAI.bootstrap;
+        FirebaseIntelligenceService: class {
             rawGenerateContent = mockFirebaseAI.rawGenerateContent;
             generateText = mockFirebaseAI.generateText;
             generateStructuredData = mockFirebaseAI.generateStructuredData;
@@ -37,7 +35,7 @@ describe('ReceiptOCRService', () => {
             // Mock the file
             const mockFile = new File(['mock content'], 'receipt.jpg', { type: 'image/jpeg' });
 
-            // Set up mock AI response
+            // Set up mock Intelligence response
             const mockAiResponse = {
                 amount: 150.50,
                 currency: 'USD',
@@ -75,7 +73,6 @@ describe('ReceiptOCRService', () => {
             const result = await service.processReceipt(mockFile);
 
             // Assertions
-            expect(aiServiceMock.bootstrap).toHaveBeenCalled();
             expect(aiServiceMock.rawGenerateContent).toHaveBeenCalled();
 
             const [contentsArgs, modelArgs, configArgs] = aiServiceMock.rawGenerateContent.mock.calls[0];
@@ -92,9 +89,9 @@ describe('ReceiptOCRService', () => {
             const mockFile = new File(['mock content'], 'receipt.jpg', { type: 'image/jpeg' });
 
             const aiServiceMock = (service as any).aiService;
-            aiServiceMock.bootstrap.mockRejectedValueOnce(new Error('AI Service unavailable'));
+            aiServiceMock.rawGenerateContent.mockRejectedValueOnce(new Error('Intelligence Service unavailable'));
 
-            await expect(service.processReceipt(mockFile)).rejects.toThrow('AI Service unavailable');
+            await expect(service.processReceipt(mockFile)).rejects.toThrow('Intelligence Service unavailable');
         });
 
         it('should handle FileReader errors', async () => {

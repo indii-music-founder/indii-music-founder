@@ -1,9 +1,9 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { getFineTunedModel } from '../fine-tuned-models';
 
 // ============================================================================
 // SocialTools Implementation
@@ -13,11 +13,11 @@ export const SocialTools = {
     generate_social_post: wrapTool('generate_social_post', async ({ platform, topic, tone }: { platform: string; topic: string; tone?: string }) => {
         const prompt = `Generate a ${tone || 'professional'} social media post for ${platform} about ${topic}. Include hashtags.`;
 
-        const result = await GenAI.generateContent(
+        const result = await AutonomousIntelligence.generateContent(
             prompt,
-            AI_MODELS.TEXT.AGENT
+            getFineTunedModel('social')
         );
-        const text = result.response.text();
+        const text = getResponseText(result);
 
         // Auto-persist using the robust SocialService
         let postId: string | null = null;
@@ -68,7 +68,7 @@ Return a JSON object with exactly these fields:
 }
 Be specific and data-driven based on the post content above.`;
 
-        const result = await GenAI.generateStructuredData<{
+        const result = await AutonomousIntelligence.generateStructuredData<{
             sentiment: string;
             trend_score: number;
             insights: string[];
@@ -87,7 +87,7 @@ Be specific and data-driven based on the post content above.`;
             } as Record<string, unknown>,
             undefined,
             undefined,
-            AI_MODELS.TEXT.AGENT
+            getFineTunedModel('social')
         );
 
         const normalizedTrendScore = Math.min(100, Math.max(0, Math.round(result.trend_score)));
@@ -124,8 +124,105 @@ Be specific and data-driven based on the post content above.`;
             logger.error('[SocialTools] Failed to schedule post:', error);
             return toolError(`Failed to schedule post: ${error.message}`);
         }
+    }),
+
+    analyze_sentiment: wrapTool('analyze_sentiment', async (args: { platform: 'All' | 'X' | 'Instagram' | 'TikTok'; timeframe: '7d' | '14d' | '30d' }) => {
+        return toolError(
+            `Live sentiment analysis for ${args.platform} over ${args.timeframe} requires connected platform analytics/comment APIs.`,
+            'SOCIAL_ANALYTICS_UNAVAILABLE'
+        );
+    }),
+
+    multi_platform_autopost: wrapTool('multi_platform_autopost', async (args: {
+        videoUrl: string;
+        caption: string;
+        hashtags?: string[];
+        platforms: Array<'TikTok' | 'YouTube Shorts' | 'IG Reels'>;
+    }) => {
+        try {
+            const { socialAutoPosterService } = await import('@/services/marketing/SocialAutoPosterService');
+            const platformMap = {
+                'TikTok': 'tiktok',
+                'YouTube Shorts': 'youtube_shorts',
+                'IG Reels': 'meta_reels',
+            } as const;
+
+            const posts = await Promise.all(args.platforms.map(async platform => {
+                const jobId = await socialAutoPosterService.queuePost({
+                    id: `autopost-${crypto.randomUUID()}`,
+                    mediaUrl: args.videoUrl,
+                    caption: args.caption,
+                    hashtags: args.hashtags || [],
+                    platform: platformMap[platform],
+                });
+                return { platform, status: 'queued', jobId };
+            }));
+
+            return toolSuccess({
+                batchId: `autopost-${Date.now().toString(36)}`,
+                posts,
+            }, `Queued ${posts.length} short-form post package(s) for scheduled delivery.`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Failed to queue short-form autopost package: ${msg}`, 'AUTOPOST_QUEUE_FAILED');
+        }
+    }),
+
+    dispatch_community_webhook: wrapTool('dispatch_community_webhook', async (args: {
+        platform: 'Discord' | 'Telegram';
+        webhookUrl: string;
+        messageContent: string;
+        embedTitle?: string;
+        embedImageUrl?: string;
+        embedLink?: string;
+    }) => {
+        try {
+            const webhook = new URL(args.webhookUrl);
+            const payload = args.platform === 'Discord'
+                ? {
+                    content: args.messageContent,
+                    embeds: args.embedTitle || args.embedImageUrl || args.embedLink ? [{
+                        title: args.embedTitle,
+                        image: args.embedImageUrl ? { url: args.embedImageUrl } : undefined,
+                        url: args.embedLink,
+                    }] : undefined,
+                }
+                : {
+                    text: args.messageContent,
+                    title: args.embedTitle,
+                    imageUrl: args.embedImageUrl,
+                    link: args.embedLink,
+                };
+
+            const response = await fetch(webhook.toString(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                return toolError(`Webhook dispatch failed with HTTP ${response.status}.`, 'WEBHOOK_DISPATCH_FAILED');
+            }
+
+            return toolSuccess({
+                dispatchId: `community-${Date.now().toString(36)}`,
+                platform: args.platform,
+                webhookHost: webhook.host,
+                status: 'dispatched',
+            }, `${args.platform} community announcement dispatched.`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Webhook dispatch failed: ${msg}`, 'WEBHOOK_DISPATCH_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
 // Aliases
-export const { generate_social_post, analyze_social_sentiment, schedule_social_post } = SocialTools;
+export const {
+    generate_social_post,
+    analyze_social_sentiment,
+    schedule_social_post,
+    analyze_sentiment,
+    multi_platform_autopost,
+    dispatch_community_webhook
+} = SocialTools;

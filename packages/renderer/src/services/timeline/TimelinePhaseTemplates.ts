@@ -1128,7 +1128,7 @@ export const TIMELINE_TEMPLATES: Record<TimelineTemplateId, TimelineTemplate | n
     tour_promo_12w: TOUR_PROMO_12W,
     indii_28_day_frontloaded: INDII_28_DAY_FRONTLOADED,
     indii_curator_playlist_builder: INDII_CURATOR_PLAYLIST_BUILDER,
-    custom: null, // Custom timelines are generated purely by AI
+    custom: null, // Custom timelines are generated purely by Intelligence
 };
 
 /**

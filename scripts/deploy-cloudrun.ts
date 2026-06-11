@@ -19,7 +19,7 @@ import path from 'path';
  *   npx tsx scripts/deploy-cloudrun.ts
  */
 const deploy = async () => {
-    const region = process.env.VITE_REMOTION_GCP_REGION || 'us-east1';
+    const region = process.env.VITE_REMOTION_GCP_REGION || 'us-central1';
 
     console.log('🎬 Deploying Remotion Cloud Run site bundle to GCS...');
     console.log(`   Region: ${region}`);

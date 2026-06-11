@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# indiiOS Developer Environment Setup
+# indii Developer Environment Setup
 # One-click bootstrap for all Google Cloud CLI tools + dependencies
 # ============================================================================
 # Usage: chmod +x scripts/setup-dev-environment.sh && ./scripts/setup-dev-environment.sh
@@ -31,7 +31,7 @@ step() {
 # ============================================================================
 # Prerequisites Check
 # ============================================================================
-echo -e "\n${BOLD}🚀 indiiOS Developer Environment Setup${NC}"
+echo -e "\n${BOLD}🚀 indii Developer Environment Setup${NC}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
 step "Checking prerequisites"
@@ -180,6 +180,7 @@ if command -v gcloud &>/dev/null; then
 
   if [ -n "$EMULATORS_NEEDED" ]; then
     log_info "Installing missing emulators:$EMULATORS_NEEDED"
+    # shellcheck disable=SC2086
     gcloud components install $EMULATORS_NEEDED --quiet
     log_ok "Emulators installed"
   fi
@@ -194,7 +195,11 @@ step "Updating gcloud components"
 
 if command -v gcloud &>/dev/null; then
   log_info "Checking for updates..."
-  gcloud components update --quiet 2>/dev/null && log_ok "gcloud updated" || log_warn "Update check failed (may need gcloud init first)"
+  if gcloud components update --quiet 2>/dev/null; then
+    log_ok "gcloud updated"
+  else
+    log_warn "Update check failed (may need gcloud init first)"
+  fi
 else
   log_warn "gcloud not found, skipping update"
 fi
@@ -203,7 +208,7 @@ fi
 # Final Report
 # ============================================================================
 echo -e "\n${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BOLD}${GREEN}  ✅ indiiOS Developer Environment Setup Complete!${NC}"
+echo -e "${BOLD}${GREEN}  ✅ indii Developer Environment Setup Complete!${NC}"
 echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${BOLD}Installed Tools:${NC}"
