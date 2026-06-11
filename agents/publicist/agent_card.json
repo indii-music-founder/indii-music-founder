@@ -1,14 +1,85 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "publicist",
-  "displayName": "Publicist Agent",
-  "description": "Publicist specialist \u2014 press, PR, media relations",
-  "capabilities": [],
+  "displayName": "Publicist Director",
+  "description": "Manages public relations and media communications.",
+  "capabilities": [
+    {
+      "name": "create_campaign",
+      "description": "Create a new publicity campaign in the database.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "write_press_release",
+      "description": "Write a formal press release.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_crisis_response",
+      "description": "Generate a response to a PR crisis or negative feedback.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_social_post",
+      "description": "Generate a social media post.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "indii_image_gen",
+      "description": "Generate visual assets for press kits or social media.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "browser_tool",
+      "description": "Browse the web to find press contacts or monitor coverage.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "credential_vault",
+      "description": "Securely retrieve passwords for social accounts.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_pdf",
+      "description": "Automatically generate a professional PDF document (e.g., Press Release, EPK).",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_live_epk",
+      "description": "Generates a dynamic public link (indii.os/artist/epk) that reflects the latest brand kit, bio, and approved press shots.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "pitch_media",
+      "description": "Generate personalized pitch emails for press outlets (blogs, magazines, podcasts) based on a press release or release info. Each outlet gets a tailored angle. Returns up to 8 ready-to-send pitches.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +90,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "manager",
+    "departmentId": "marketing"
+  },
+  "promptVersion": "1.55.3-publicist",
+  "trainingModel": "marketing"
 }

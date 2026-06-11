@@ -1,2 +1,0 @@
-description: Technical readiness checker for the publicist domain.
-trigger_labels: ["publicist", "readiness", "status"]

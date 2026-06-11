@@ -17,6 +17,7 @@ import { DevOpsAgent } from './definitions/DevOpsAgent';
 import { DistributionAgent } from './definitions/DistributionAgent';
 import { MusicAgent } from './definitions/MusicAgent';
 import { CreativeAgent } from './definitions/CreativeAgent';
+import { AnalyticsAgent } from './definitions/AnalyticsAgent';
 
 // Phase 3: Finance Workers
 import { FinanceTaxAgent } from '@/agents/finance/workers/tax.config';
@@ -42,7 +43,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     DistributionAgent,
     MusicAgent,
     CreativeAgent,
+    AnalyticsAgent,
     FinanceTaxAgent,
+
     FinanceRoyaltyAgent,
     FinanceAccountingAgent
 ];

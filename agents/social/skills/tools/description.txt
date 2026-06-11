@@ -1,2 +1,0 @@
-description: Formats social media posts for multiple platforms (IG, TikTok, X).
-trigger_labels: ["social", "marketing", "content"]

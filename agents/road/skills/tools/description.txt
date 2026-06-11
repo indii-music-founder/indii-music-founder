@@ -1,2 +1,0 @@
-description: Optimizes tour routes and logistics between multiple cities.
-trigger_labels: [road, tour, route, optimize]

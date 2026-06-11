@@ -1,16 +1,38 @@
 {
   "schemaVersion": "1.0.0",
-  "agentId": "indii_curriculum",
-  "displayName": "Indii Curriculum Agent",
-  "description": "Curriculum agent \u2014 onboarding and education flows",
-  "capabilities": [],
+  "agentId": "curriculum",
+  "displayName": "Music Education Specialist",
+  "description": "Teaches independent artists the music business — copyright, royalties, contracts, distribution, and building a sustainable career.",
+  "capabilities": [
+    {
+      "name": "create_learning_path",
+      "description": "Generates a structured, progressive learning path for a given music business topic and skill level. Returns modules, priority order, and time estimates.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_quiz",
+      "description": "Generates knowledge-check quiz questions based on completed modules and skill level.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "search_knowledge",
+      "description": "Searches the indii knowledge base for up-to-date music industry information, rate schedules, and legal context.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
-  "riskTier": "read",
+  "riskTier": "write",
   "sla": {
     "modeSync": {
       "p50Ms": 2000,
@@ -19,5 +41,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "specialist",
+    "departmentId": "curriculum"
+  },
+  "promptVersion": "1.55.3-curriculum",
+  "trainingModel": "curriculum"
 }

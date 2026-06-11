@@ -1,14 +1,50 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "brand",
-  "displayName": "Brand Agent",
-  "description": "Brand specialist \u2014 identity, voice, visual system",
-  "capabilities": [],
+  "displayName": "Brand Director",
+  "description": "Protects the integrity and consistency of the artist brand.",
+  "capabilities": [
+    {
+      "name": "verify_output",
+      "description": "Critique and verify generated content against a goal (Brand Bible).",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "analyze_brand_consistency",
+      "description": "Analyze content for tone, core values, and visual consistency.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_brand_guidelines",
+      "description": "Generate structured brand guidelines based on core values.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "audit_visual_assets",
+      "description": "Audit a list of visual assets for compliance.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "analyze_audio",
+      "description": "Analyze an uploaded audio track for BPM, Key, Genre, and Vibe.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 0.000015,
+    "perTokenOutUsd": 0.000075
   },
   "riskTier": "write",
   "sla": {
@@ -19,5 +55,11 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "department",
+    "departmentId": "creative"
+  },
+  "promptVersion": "1.55.3-brand",
+  "trainingModel": "creative"
 }
