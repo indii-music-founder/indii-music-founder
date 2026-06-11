@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 15:15 EDT
+**Updated:** 2026-06-11 15:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d3994a029 docs(agents): document the four skill registries in all agent mirrors
+676cfcecc chore: session checkpoint [15:15]
 323470e1f docs(workflows): register vendored and proprietary skill registries in routing system
 713932b67 chore: session checkpoint [15:10]
 d4a4b4676 docs(skills): fix stale monorepo paths and outdated references
@@ -12,8 +14,6 @@ d4a4b4676 docs(skills): fix stale monorepo paths and outdated references
 b90038cdb chore: session checkpoint [14:56]
 9bfcac500 chore: session checkpoint [14:54]
 3e29045a8 chore: session checkpoint [14:51]
-b9b57ae9d chore: session checkpoint [14:47]
-9fa34cfb2 Merge pull request #160 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
 ```
 
 ## Working State
