@@ -10,7 +10,7 @@
  * npx tsx scripts/rotate-keys.ts --service-account [ACCOUNT_NAME]
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../src/utils/logger';
@@ -39,11 +39,25 @@ async function rotateServiceAccountKey(accountName: string): Promise<RotationRes
         logger.info(`[Rotation] Creating new key for ${email}...`);
 
         // 1. List existing keys to identify old ones
-        const existingKeysRaw = execSync(`gcloud iam service-accounts keys list --iam-account=${email} --format=json`).toString();
+        const existingKeysRaw = execFileSync('gcloud', [
+            'iam',
+            'service-accounts',
+            'keys',
+            'list',
+            `--iam-account=${email}`,
+            '--format=json'
+        ]).toString();
         const existingKeys = JSON.parse(existingKeysRaw);
 
         // 2. Create new key
-        execSync(`gcloud iam service-accounts keys create ${filePath} --iam-account=${email}`);
+        execFileSync('gcloud', [
+            'iam',
+            'service-accounts',
+            'keys',
+            'create',
+            filePath,
+            `--iam-account=${email}`
+        ]);
 
         logger.info(`[Rotation] New key saved to ${filePath}`);
 
@@ -56,7 +70,7 @@ async function rotateServiceAccountKey(accountName: string): Promise<RotationRes
                     new Date(prev.validAfterTime) < new Date(curr.validAfterTime) ? prev : curr
                 );
                 logger.warn(`[Rotation] Recommended: Delete old key ${oldestKey.name.split('/').pop()}`);
-                // execSync(`gcloud iam service-accounts keys delete ${oldestKey.name.split('/').pop()} --iam-account=${email} --quiet`);
+                // execFileSync('gcloud', ['iam', 'service-accounts', 'keys', 'delete', oldestKey.name.split('/').pop()!, `--iam-account=${email}`, '--quiet']);
             }
         }
 

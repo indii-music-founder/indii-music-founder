@@ -120,7 +120,7 @@ function getResponsesRef() {
  */
 const FEED_PAGE_SIZE = 50;
 const FEED_RECENCY_HOURS = 24;
-export const DESKTOP_HEARTBEAT_STALE_MS = 30_000;
+export const DESKTOP_HEARTBEAT_STALE_MS = 15_000;
 
 function getFeedRecencyCutoff(): Timestamp {
     return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);

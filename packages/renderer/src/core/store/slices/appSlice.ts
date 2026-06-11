@@ -153,8 +153,10 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             set({ hasUnsavedChanges: false });
         }
 
+        const outgoingModule = state.currentModule;
+
         // Track navigation history for proper Back button behavior
-        const history = state._navigationHistory ?? [state.currentModule];
+        const history = state._navigationHistory ? [...state._navigationHistory] : [state.currentModule];
         const shouldAddToHistory = state.currentModule !== module && !history.includes(module);
         if (shouldAddToHistory && history[history.length - 1] !== module) {
             history.push(module);
@@ -163,7 +165,6 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         // Aggressively tear down listeners from previous modules
         // This requires dynamic import of store to avoid circular dependency
         import('@/core/store').then(({ useStore }) => {
-            const currentModule = get().currentModule;
             const store = useStore.getState();
             
             // Auto-align the active agent for the new module
@@ -171,7 +172,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             store.setDirectTargetAgentId(targetAgent);
 
             // Only clear if actually switching modules
-            if (currentModule !== module) {
+            if (outgoingModule !== module) {
                 // Clean up Firestore subscriptions for the module we're leaving
                 // to prevent INTERNAL ASSERTION FAILED errors during rapid navigation
                 const prefixes: Partial<Record<string, string>> = {
@@ -183,7 +184,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
                     distribution: 'distribution_',
                     merch: 'merch_',
                 };
-                const prefix = prefixes[currentModule];
+                const prefix = prefixes[outgoingModule];
                 if (prefix) {
                     store.clearSubscriptionsByPrefix(prefix);
                 }
