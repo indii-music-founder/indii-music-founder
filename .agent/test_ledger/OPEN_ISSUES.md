@@ -4356,3 +4356,224 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Dead duplicate files, old CI logs, and test artifacts clutter the root.
 - **Builder Directive:** Delete or archive.
 ---
+
+### ISSUE-399: Commented-out dsp-engine profiling dispatch logic
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/distribution/ingestion.ts:36-57`
+- **Summary:** The task dispatching code to the `engine-dsp` Python service via Cloud Tasks is entirely commented out, returning a stubbed success status.
+
+---
+
+### ISSUE-400: Stubbed dispatches in unified-distribution
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/orchestration/toggle/unified-distribution.ts:53-57`
+- **Summary:** Dispatches to external platforms (Spotify, Apple Music, Tidal, PROs) consist of dummy mock stubs returning resolved promises without calling real APIs.
+
+---
+
+### ISSUE-401: Hardcoded duration and stubs in ddex-generator
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/publishing/ddex-generator.ts:34-82,88-104`
+- **Summary:** `compileDDEXRelease` uses a hardcoded placeholder duration `<Duration>PT3M30S</Duration>` instead of metadata, and `dispatchPROPayload` only logs a mock payload.
+
+---
+
+### ISSUE-402: Unimplemented requestTaxForms function
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/stripe/taxForms.ts:26-30`
+- **Summary:** The `requestTaxForms` Cloud Function is unimplemented, immediately throwing an `unimplemented` HttpsError.
+
+---
+
+### ISSUE-403: Disabled verifyMechanicalLicense function
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/legal/mechanicalLicense.ts:42-52`
+- **Summary:** `verifyMechanicalLicense` is disabled and throws an `unimplemented` error after attempting to call a hallucinated HFA API endpoint.
+
+---
+
+### ISSUE-404: Redundant status ternary in deliverScheduledPosts
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Console
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/social/deliverScheduledPosts.ts:281`
+- **Summary:** Contains a redundant, pointless ternary condition `status: currentRetry >= 3 ? 'failed' : 'failed'` that evaluates to `'failed'` regardless of retries.
+
+---
+
+### ISSUE-405: LLM slop in format_dsp_metadata mock XML
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/mcp/index.ts:113`
+- **Summary:** The mock MCP tool `format_dsp_metadata` outputs XML containing the comment `<!-- Resource details omitted for brevity -->`, which is typical LLM snippet slop.
+
+---
+
+### ISSUE-406: Unused Cloud Function wrappers in factory.ts
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/factory.ts`
+- **Summary:** The factory wrappers designed to "future-proof" Cloud Functions are never imported or used elsewhere in the codebase.
+
+---
+
+### ISSUE-407: Ignored timeoutMs in circuit-breaker wrapper
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Performance
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/orchestration/circuit-breaker.ts:23`
+- **Summary:** `CircuitBreakerOptions` defines `timeoutMs`, but it is completely ignored in the implementation, allowing operations that hang to block the circuit breaker indefinitely.
+
+---
+
+### ISSUE-408: Duplicate Connect onboarding functions
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/stripe/connect.ts` & `createStripeConnectAccount.ts`
+- **Summary:** Duplicate files/functions (`createStripeAccount` vs `createStripeConnectAccount`) exist for Stripe Connect onboarding.
+
+---
+
+### ISSUE-409: Admin UID logged as Artist UID in createTransfer
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/stripe/connect.ts:77`
+- **Summary:** The admin-only `createTransfer` description logs `Artist ID: ${request.auth.uid}`, which references the admin's UID instead of the target artist receiving the payout.
+
+---
+
+### ISSUE-410: Fragile webhook polling in telegramWebhook.ts
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Performance
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/relay/telegramWebhook.ts:393-418`
+- **Summary:** Webhook thread blocks for up to 90 seconds polling Firestore for answers, leading to Telegram timing out and retrying/flooding the endpoint.
+
+---
+
+### ISSUE-411: Missing crypto imports in firebase src files
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/stripe/paymentLinks.ts:16` & `packages/firebase/src/lib/marketing.ts:201`
+- **Summary:** Functions invoke `crypto.randomUUID()` but do not import `crypto`, risking runtime reference errors in strict or legacy environments.
+
+---
+
+### ISSUE-412: Fragile AI JSON cleanup in touring.ts
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/lib/touring.ts:49-50`
+- **Summary:** JSON parser removes markdown codeblock wrappers but crashes if Gemini outputs conversational text before or after the block.
+
+---
+
+### ISSUE-413: Overly aggressive blacklisting in retention-daemon.ts
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** firebase
+- **Found:** 2026-06-11 by /finish Sweep (Firebase Code Finisher)
+- **Target Coordinates:** `packages/firebase/src/daemons/retention-daemon.ts:33-45`
+- **Summary:** Daemon immediately blacklists a vendor on a single placement query failure (including temporary 502/503 timeout errors) without retries or grace periods.
+
+---
+
+### ISSUE-414: Missing distribution:package-spotify IPC handler
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Architecture
+- **Module:** main
+- **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
+- **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
+- **Summary:** Preload script and renderer reference `distribution:package-spotify` IPC, but the backend main-process handler does not exist.
+
+---
+
+### ISSUE-415: Missing distribution:deliver-apple IPC handler
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Architecture
+- **Module:** main
+- **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
+- **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
+- **Summary:** Preload script and renderer reference `distribution:deliver-apple` IPC, but the backend main-process handler does not exist.
+
+---
+
+### ISSUE-416: Missing distribution:validate-xsd IPC handler
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Architecture
+- **Module:** main
+- **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
+- **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
+- **Summary:** Preload script and renderer reference `distribution:validate-xsd` IPC, but the backend main-process handler does not exist.
+
+---
+
+### ISSUE-417: Missing agent:capture-state IPC handler
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Architecture
+- **Module:** main
+- **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
+- **Target Coordinates:** `packages/main/src/handlers/agent.ts`
+- **Summary:** Preload script and renderer reference `agent:capture-state` IPC, but the main-process handler is missing. Should call `browserAgentService.captureSnapshot()`.
+
+---
+
+### ISSUE-418: Stale ElectronSidecarAPI.restart interface signature
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Architecture
+- **Module:** shared
+- **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
+- **Target Coordinates:** `packages/shared/src/ipc/electron-api.types.ts:181`
+- **Summary:** The type interface defines `restart()`, but the backend implementation was deprecated and removed for security reasons, leaving the contract stale.
+
+---
+
