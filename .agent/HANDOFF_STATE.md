@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 10:13 EDT
+**Updated:** 2026-06-11 10:15 EDT
 **Branch:** `claude/fix-builder-pill-selection-OapN2`
 
 ## Recent Commits
 ```
+51f088e15 chore(issues): triage all ledger issues and resolve unused imports
+dc621a141 chore: session checkpoint [10:13]
 766c309f9 chore: session checkpoint [09:53]
 53b85d661 docs(error-ledger): document JSONL merge conflict splitting pattern
 80882b1e5 chore: session checkpoint [09:53]
@@ -12,35 +14,15 @@ d8a8d4bc2 chore: session checkpoint [09:50]
 fae7d7076 chore: session checkpoint [19:59]
 16678180e refactor(audio): elevate AudioIntelligence pipeline performance to parallel execution and add defensive boundaries
 8033411b1 docs: update project documentation for v1.64.2
-3658984c7 chore: session checkpoint [19:15]
-c4dd1091c chore: session checkpoint [19:13]
 ```
 
 ## Working State
 ```
-D  .agent/PREEXISTING_ISSUES.md
-M  .agent/test_ledger/OPEN_ISSUES.md
-M  .agent/workflows/WIIL-skill.md
-M  .agent/workflows/better.md
-M  .agent/workflows/factory.md
-M  .agent/workflows/finish.md
-M  .agent/workflows/get-git.md
-M  .agent/workflows/issue-sweep.md
-M  .agent/workflows/issue.md
-M  .agent/workflows/mega-test.md
-M  .agent/workflows/mega.md
-M  .agent/workflows/real.md
  M CLAUDE.md
  M CODEX.md
  M DROID.md
  M GEMINI.md
  M JULES.md
-D  archive/analysis/issue_analysis.md
-D  artifacts/mega_test_audio_loop_2026-06-06_14-36-22_issue-187-regression.md
-D  docs/issue_analysis.md
-D  memory/BROWSER_ISSUES.md
-M  packages/renderer/src/modules/marketing/components/brand-manager/VisualsPanel.tsx
-M  packages/renderer/src/services/touring/TouringService.ts
 ```
 
 ## Decisions
