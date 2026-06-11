@@ -187,12 +187,28 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
             return;
         }
 
-        try {
-            const docRef = doc(db, 'users', userId);
-            await setDoc(docRef, profile, { merge: true });
-        } catch (_error: unknown) {
-            // Failed to sync profile to cloud
-        }
+        const maxAttempts = 3;
+        let attempt = 0;
+
+        const runCloudSync = async () => {
+            try {
+                const docRef = doc(db, 'users', userId);
+                await setDoc(docRef, profile, { merge: true });
+            } catch (error: unknown) {
+                attempt++;
+                if (attempt < maxAttempts) {
+                    const backoff = Math.pow(2, attempt) * 1000;
+                    logger.warn(`[Repository] Profile cloud sync failed (attempt ${attempt}/${maxAttempts}). Retrying in ${backoff}ms...`, error);
+                    await new Promise(resolve => setTimeout(resolve, backoff));
+                    await runCloudSync();
+                } else {
+                    logger.error('[Repository] Profile cloud sync failed permanently:', error);
+                    throw new Error(`Profile sync failed after ${maxAttempts} attempts: ${(error as Error).message}`);
+                }
+            }
+        };
+
+        await runCloudSync();
     }
 }
 

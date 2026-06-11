@@ -58,12 +58,18 @@ export function buildAgentTaskState(
             // Item 407: Persist queue so in-flight tasks survive app restart
             get().persistQueueToFirestore();
         },
-        updateBatchTask: (id, updates) => set(state => ({
-            batchingTasks: state.batchingTasks.map(t => t.id === id ? { ...t, ...updates } : t)
-        })),
-        clearCompletedBatchTasks: () => set(state => ({
-            batchingTasks: state.batchingTasks.filter(t => t.status !== 'completed' && t.status !== 'error')
-        })),
+        updateBatchTask: (id, updates) => {
+            set(state => ({
+                batchingTasks: state.batchingTasks.map(t => t.id === id ? { ...t, ...updates } : t)
+            }));
+            get().persistQueueToFirestore();
+        },
+        clearCompletedBatchTasks: () => {
+            set(state => ({
+                batchingTasks: state.batchingTasks.filter(t => t.status !== 'completed' && t.status !== 'error')
+            }));
+            get().persistQueueToFirestore();
+        },
 
         // Canvas Actions
         addCanvasItem: (item) => set((state) => ({ canvasItems: [...state.canvasItems, item] })),
@@ -72,24 +78,39 @@ export function buildAgentTaskState(
 
         // Item 407: Persist task queue to Firestore so in-progress work survives app restarts
         persistQueueToFirestore: async () => {
-            try {
-                const { auth, db } = await import('@/services/firebase');
-                const { collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-                const uid = auth.currentUser?.uid;
-                if (!uid) return;
+            const maxAttempts = 3;
+            let attempt = 0;
 
-                const { batchingTasks } = get();
-                const pendingTasks = batchingTasks.filter(t => t.status === 'pending' || t.status === 'processing');
+            const run = async () => {
+                try {
+                    const { auth, db } = await import('@/services/firebase');
+                    const { collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+                    const uid = auth.currentUser?.uid;
+                    if (!uid) return;
 
-                const queueRef = doc(collection(db, 'users', uid, 'agent_queue'), 'queue');
-                await setDoc(queueRef, {
-                    tasks: pendingTasks,
-                    savedAt: serverTimestamp(),
-                });
-                logger.info(`[AgentSlice] Persisted ${pendingTasks.length} queue tasks to Firestore`);
-            } catch (err: unknown) {
-                logger.warn('[AgentSlice] Queue persistence failed:', err);
-            }
+                    const { batchingTasks } = get();
+                    const pendingTasks = batchingTasks.filter(t => t.status === 'pending' || t.status === 'processing');
+
+                    const queueRef = doc(collection(db, 'users', uid, 'agent_queue'), 'queue');
+                    await setDoc(queueRef, {
+                        tasks: pendingTasks,
+                        savedAt: serverTimestamp(),
+                    });
+                    logger.info(`[AgentSlice] Persisted ${pendingTasks.length} queue tasks to Firestore`);
+                } catch (err: unknown) {
+                    attempt++;
+                    if (attempt < maxAttempts) {
+                        const backoff = Math.pow(2, attempt) * 1000;
+                        logger.warn(`[AgentSlice] Queue persistence failed (attempt ${attempt}/${maxAttempts}). Retrying in ${backoff}ms...`, err);
+                        await new Promise(resolve => setTimeout(resolve, backoff));
+                        await run();
+                    } else {
+                        logger.error('[AgentSlice] Queue persistence failed permanently:', err);
+                    }
+                }
+            };
+
+            await run();
         },
 
         resumeQueueFromFirestore: async () => {

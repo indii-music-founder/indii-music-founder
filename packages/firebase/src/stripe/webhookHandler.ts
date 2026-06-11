@@ -6,10 +6,16 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { logger } from 'firebase-functions';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
 import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
+
+function maskId(id: string): string {
+  if (!id) return '';
+  return id.length > 4 ? `${id.slice(0, 4)}***` : '***';
+}
 
 /**
  * Verify Stripe webhook signature
@@ -31,7 +37,7 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
   const credits = parseInt(session.metadata?.credits || '0', 10);
   
   if (!userId || isNaN(credits) || credits <= 0) {
-    console.error('[handleMicroTransaction] Invalid metadata for micro-transaction');
+    logger.error('[handleMicroTransaction] Invalid metadata for micro-transaction');
     return;
   }
 
@@ -57,7 +63,7 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
     });
   });
 
-  console.log(`[handleMicroTransaction] Added ${credits} credits to user ${userId}`);
+  logger.info(`[handleMicroTransaction] Added ${credits} credits to user ${maskId(userId)}`);
 }
 
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
@@ -71,7 +77,7 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
 
 
   if (!session.customer || !session.metadata?.userId || !session.metadata?.tier) {
-    console.error('[handleCheckoutCompleted] Missing required metadata');
+    logger.error('[handleCheckoutCompleted] Missing required metadata');
     return;
   }
 
@@ -101,7 +107,7 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
 
   await db.collection('subscriptions').doc(userId).set(subscriptionData, { merge: true });
 
-  console.log(`[handleCheckoutCompleted] Updated subscription for user ${userId}`);
+  logger.info(`[handleCheckoutCompleted] Updated subscription for user ${maskId(userId)}`);
 }
 
 /**
@@ -126,7 +132,7 @@ async function updateSubscriptionByCustomer(
 
     const docRef = snapshot.docs[0].ref;
     tx.update(docRef, { ...updateData, updatedAt: Date.now() });
-    console.log(`[${callerName}] Updated subscription for user ${snapshot.docs[0].id}`);
+    logger.info(`[${callerName}] Updated subscription for user ${maskId(snapshot.docs[0].id)}`);
   });
 }
 
@@ -142,7 +148,7 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
   );
 
   if (!tier) {
-    console.error('[handleSubscriptionCreated] Unknown tier');
+    logger.error('[handleSubscriptionCreated] Unknown tier');
     return;
   }
 
@@ -168,7 +174,7 @@ async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
   );
 
   if (!tier) {
-    console.error('[handleSubscriptionUpdated] Unknown tier');
+    logger.error('[handleSubscriptionUpdated] Unknown tier');
     return;
   }
 
@@ -240,7 +246,7 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
       pdfUrl: invoice.invoice_pdf || null,
       createdAt: FieldValue.serverTimestamp(),
     });
-    console.log(`[handleInvoicePaid] Ledger entry written for user ${userId}`);
+    logger.info(`[handleInvoicePaid] Ledger entry written for user ${maskId(userId)}`);
   }
 }
 
@@ -283,7 +289,7 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
       status: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });
-    console.log(`[handleInvoicePaymentFailed] Dunning notification queued for user ${userId}`);
+    logger.info(`[handleInvoicePaymentFailed] Dunning notification queued for user ${maskId(userId)}`);
   }
 }
 
@@ -298,7 +304,7 @@ export const stripeWebhook = onRequest({
   const webhookSecret = getStripeWebhookSecret();
 
   if (!webhookSecret) {
-    console.error('[stripeWebhook] Webhook secret not configured');
+    logger.error('[stripeWebhook] Webhook secret not configured');
     res.status(500).json({ error: 'Webhook secret not configured' });
     return;
   }
@@ -308,7 +314,7 @@ export const stripeWebhook = onRequest({
   try {
     event = verifyStripeWebhook(req.rawBody.toString(), signature, webhookSecret);
   } catch (error) {
-    console.error('[stripeWebhook] Signature verification failed:', error);
+    logger.error('[stripeWebhook] Signature verification failed:', error);
     res.status(400).json({ error: 'Invalid signature' });
     return;
   }
@@ -338,13 +344,13 @@ export const stripeWebhook = onRequest({
     });
 
     if (alreadyProcessed) {
-      console.log(`[stripeWebhook] Duplicate delivery skipped: ${event.id}`);
+      logger.info(`[stripeWebhook] Duplicate delivery skipped: ${event.id}`);
       res.json({ received: true, duplicate: true });
       return;
     }
   } catch (idempotencyErr) {
     // Non-fatal: log and continue — better to process twice than drop
-    console.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
+    logger.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
   }
 
   try {
@@ -368,7 +374,7 @@ export const stripeWebhook = onRequest({
         await handleInvoicePaymentFailed(event);
         break;
       default:
-        console.warn({
+        logger.warn({
           message: `[stripeWebhook] Unhandled event type: ${event.type}`,
           eventId: event.id,
           eventType: event.type
@@ -379,14 +385,14 @@ export const stripeWebhook = onRequest({
 
     // Mark delivery complete (best-effort)
     deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
-      .catch((err: unknown) => { console.warn('[stripeWebhook] Best-effort status update failed (processed):', err); });
+      .catch((err: unknown) => { logger.warn('[stripeWebhook] Best-effort status update failed (processed):', err); });
 
     res.json({ received: true });
   } catch (error) {
-    console.error('[stripeWebhook] Handler error:', error);
+    logger.error('[stripeWebhook] Handler error:', error);
     // Mark failed so the next retry is not skipped
     deliveryRef.update({ status: 'failed', error: String(error) })
-      .catch((err: unknown) => { console.warn('[stripeWebhook] Best-effort status update failed (failed):', err); });
+      .catch((err: unknown) => { logger.warn('[stripeWebhook] Best-effort status update failed (failed):', err); });
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });

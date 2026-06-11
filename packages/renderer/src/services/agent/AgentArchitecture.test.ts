@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { ContextPipeline } from './components/ContextPipeline';
@@ -40,10 +39,6 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 }));
 
 // Mock useStore for AgentArchitecture tests
-// Note: The provided change for useStore seems to be for a different test file (e.g., OnboardingPage or CreateCampaignModal)
-// as it changes the mock structure from { getState, setState } to a hook-like return.
-// For AgentArchitecture, we need getState and setState.
-// Reverting to the original mock structure for useStore in this file to maintain existing test compatibility.
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: vi.fn(),
@@ -108,7 +103,7 @@ vi.mock('@/services/agent/governance/ModelArmor', () => ({
     getDefaultPolicy: vi.fn().mockReturnValue({})
 }));
 
-// Mock useToast - This is a new mock from the provided change
+// Mock useToast
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         success: vi.fn(),
@@ -253,28 +248,18 @@ describe('Multi-Agent Architecture Tests', () => {
         });
 
         it('should have search_knowledge superpower on all agents', () => {
-            // Test a few diverse ones
             const testAgents = ['legal', 'video', 'finance'];
             testAgents.forEach(id => {
                 const agent = agentRegistry.get(id);
                 expect(agent).toBeDefined();
-                // BaseAgent merges superpowers into the tools sent to LLM, 
-                // but they are not stored in public .tools array directly in the class 
-                // (logic is in execute method: const allTools = [...this.tools, ...SUPERPOWER_TOOLS])
-
-                // Ideally we mock AI.generateContent and ensure the tools passed in include search_knowledge.
             });
         });
 
-        // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
         it('should pass superpower tools to Autonomous when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await agent_marketing?.execute('Research market trends');
 
-            // BaseAgent currently uses generateContent
-            // BaseAgent currently uses generateContent with positional arguments:
-            // contents, model, config, systemInstruction, tools, options
             expect(AI.generateContent).toHaveBeenCalledWith(
                 expect.any(Array),  // contents
                 expect.any(String), // model
@@ -293,12 +278,17 @@ describe('Multi-Agent Architecture Tests', () => {
     });
 
     describe('6. Direct Delegation Verification', () => {
-        // Skipped: sendMessage triggers real agent execution which makes network calls that timeout in CI.
         it('should bypass orchestrator when forcedAgentId is provided', async () => {
             const agentSvc_bypass = new AgentService(); // Instantiate service locally
             const userQuery = "Draft a contract";
             await agentSvc_bypass.sendMessage(userQuery, undefined, 'director');
-            expect(true).toBe(true);
+            
+            const state = useStore.getState();
+            expect(state.addAgentMessage).toHaveBeenCalled();
+            expect(state.updateAgentMessage).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ agentId: 'director' })
+            );
         });
 
         it('should invoke runAgent when delegate_task is called', async () => {
@@ -309,7 +299,6 @@ describe('Multi-Agent Architecture Tests', () => {
             const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue({ text: 'Delegation Success' });
 
             // Use 'legal' agent delegating to 'generalist' (hub) - this is valid per hub-and-spoke architecture
-            // Specialist → Specialist is blocked, only Specialist → Hub or Hub → Specialist is allowed
             const agent = agentRegistry.get('legal'); // Any BaseAgent
             const delegateFunc = (agent as unknown as { functions: Record<string, (...args: any[]) => Promise<any>> }).functions['delegate_task'];
 
@@ -357,11 +346,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 currentModule: 'creative'
             } as unknown as ReturnType<typeof useStore.getState>));
 
-            // eslint-disable-next-line prefer-const
-            let agentSvc_thoughts = new AgentService();
-            // We need to mock the executor to trigger the callback manually
-            // Since executor is private, we can't replace it easily without module mocking.
-            // Let's rely on internal behavior or cast to any.
+            const agentSvc_thoughts = new AgentService();
 
             // Mocking execute method on the executor instance
             const executorMock = {

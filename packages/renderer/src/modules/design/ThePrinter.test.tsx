@@ -33,23 +33,25 @@ describe('The Printer 🖨️ - Physical Media Stress Test', () => {
     // Render every single template to ensure data integrity and no crashes
     it('The Press Run: Renders all templates without crashing', () => {
         Object.values(PHYSICAL_MEDIA_TEMPLATES).forEach((template) => {
-            render(<PhysicalMediaLayout template={template} />);
+            const { container } = render(<PhysicalMediaLayout template={template} />);
+            expect(container.querySelector('canvas')).not.toBeNull();
+            expect(container.textContent).toContain(template.name);
             cleanup(); // Force unmount
         });
-        expect(true).toBe(true); // If we get here, no crash occurred
     });
 
     // Scenario 2: The Zoom Lens
     // Rapidly change props to trigger re-renders
     it('The Zoom Lens: Survives 100 rapid zoom updates', async () => {
         const template = PHYSICAL_MEDIA_TEMPLATES.cd_front_cover!;
-        const { rerender } = render(<PhysicalMediaLayout template={template} zoom={0.1} />);
+        const { container, rerender } = render(<PhysicalMediaLayout template={template} zoom={0.1} />);
 
         for (let i = 0; i < 100; i++) {
             // Simulate animation frame updates
             rerender(<PhysicalMediaLayout template={template!} zoom={0.1 + (i * 0.01)} />);
         }
-        expect(true).toBe(true);
+        expect(container.querySelector('canvas')).not.toBeNull();
+        expect(container.textContent).toContain(template.name);
     });
 
     // Scenario 3: The Ink Spill
@@ -59,9 +61,10 @@ describe('The Printer 🖨️ - Physical Media Stress Test', () => {
 
         for (let i = 0; i < 50; i++) {
             const t = templates[i % templates.length];
-            render(<PhysicalMediaLayout template={t!} />);
+            const { container } = render(<PhysicalMediaLayout template={t!} />);
+            expect(container.querySelector('canvas')).not.toBeNull();
+            expect(container.textContent).toContain(t.name);
             cleanup();
         }
-        expect(true).toBe(true);
     });
 });
