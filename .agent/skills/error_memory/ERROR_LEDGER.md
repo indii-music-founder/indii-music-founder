@@ -910,3 +910,8 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FIX: Use `await page.goto("/", { waitUntil: "domcontentloaded" })` instead. This unlocks the test execution immediately after HTML parsing, bypassing the hanging Firestore network requests completely.
 - PREVENTION: Never use default `page.goto` (network idle) inside Playwright tests when running offline/mocked Firebase backends, as background SDK retry loops will permanently block navigation. Always explicitly await `domcontentloaded`.
 
+
+## 2026-06-11: JSONL Merge Conflict Splitting
+**Symptom:** `Error: Invalid JSON at line X in file.jsonl`
+**Context:** When resolving git merge conflicts in JSONL files using blanket marker removal, the conflict markers (`<<<<<<< HEAD`, `=======`, `>>>>>>>`) can split a single JSON object across multiple lines if not careful, leading to invalid JSON parsing downstream.
+**Fix:** Use a script to strip the conflict markers directly without adding newlines, or properly regenerate the JSONL file if it gets corrupted. Ensure all `>>>>>>> branch` variants are targeted in the cleanup script.
