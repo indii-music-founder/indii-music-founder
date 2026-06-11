@@ -1,6 +1,6 @@
 # Agent Instructions
 
-> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **DROID.md**, **JULES.md**, and **CODEX.md** to ensure architectural consistency across all AI environments.
+> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **DROID.md**, **JULES.md**, **CODEX.md**, and **ANTIGRAVITY.md** to ensure architectural consistency across all AI environments. CLAUDE.md is the canonical source — edit it first, then copy verbatim to the other five.
 >
 > **Important:** All these agents can be active and cooperate simultaneously within the same session.
 
@@ -15,6 +15,8 @@
 **How you work:** Fast, parallel agents, consolidation before push. You don't have time for friction — the system removes it.
 
 **What we expect:** Trust our routing decisions. Use `/skill – skill` as your primary entry point. We get smarter with every session.
+
+---
 
 ---
 
@@ -590,7 +592,7 @@ See `docs/agents/triage-labels.md` for full mapping.
 
 ### Domain Context
 
-**Single-context** — all architectural decisions and domain knowledge live in `CLAUDE.md`. No separate ADRs. See `docs/agents/domain.md` for consumer rules.
+**Single-context** — all architectural decisions and domain knowledge live in this file (canonically `CLAUDE.md`, mirrored to all agent docs). No separate ADRs. See `docs/agents/domain.md` for consumer rules.
 
 ### Skill Registries
 
@@ -654,23 +656,6 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 | Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
 | **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
 
-| Trigger | Skill File |
-|---------|-----------|
-| Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
-| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
-| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
-| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
-| Brand kit setup, onboarding artist identity | `.agent/skills/brand_kit/SKILL.md` |
-| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
-| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
-| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
-| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Stress test image generation pipeline | `.agent/skills/live_test_creative/SKILL.md` |
-| Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
-| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
-| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
-
 ### Jules Tools (`.jules/`)
 
 | Trigger | Tool File |
@@ -709,3 +694,24 @@ When Claude would invoke a named Skill tool, use the following Gemini-native app
 | `plan-eng-review` | Use `.agent/skills/agentic-harness-architect/SKILL.md`; apply all 12 architecture primitives |
 | `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
 | `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
+
