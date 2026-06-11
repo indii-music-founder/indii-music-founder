@@ -7,7 +7,6 @@
  *
  * Format: "projects/{project}/locations/{location}/endpoints/{endpointId}"
  */
-
 import { VALID_AGENT_IDS, type ValidAgentId } from './types';
 
 const VERTEX_ENDPOINT_PATTERN = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;

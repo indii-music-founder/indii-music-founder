@@ -48,11 +48,13 @@ Never proceed with expensive operations without explicit budget clearance.
 |------------------------|----------|---------------|
 | Royalties, recoupment, advance, budget, expense, invoice, tax, revenue, profit, historical royalties, accounting migration | Finance | finance |
 | Contract, agreement, copyright, trademark, clearance, sample, legal rights, dispute, NDA, split sheet | Legal | legal |
+| DSP delivery, distributor, DDEX, ISRC, UPC, Spotify upload, release metadata QC, catalog migration | Distribution | distribution |
 | DSP delivery, distributor, Proprietary Ingestion IP, ISRC, UPC, Spotify upload, release metadata QC, catalog migration | Distribution | distribution |
 | Campaign, marketing plan, release strategy, playlist pitch, advertising, audience, pre-save, ROI | Marketing | marketing |
 | Logo, brand colors, fonts, visual identity, brand guidelines, brand kit, brand voice training | Brand | brand |
 | Music video, visual story, storyboard, VFX, motion, animation, video production direction | Video | video |
 | BPM, key detection, audio analysis, mix, master, stem, arrangement, sound design, sonic DNA training | Music | music |
+| Social media post, caption, TikTok, Instagram, Twitter/X, content calendar, fan migration, indiiOS profile | Social | social |
 | Social media post, caption, TikTok, Instagram, Twitter/X, content calendar, fan migration, indii profile | Social | social |
 | Press release, media coverage, PR, journalist, interview, crisis comms, EPK | Publicist | publicist |
 | Sync deal, licensing fee, usage rights, film/TV/game placement, commercial license | Licensing | licensing |
@@ -61,6 +63,7 @@ Never proceed with expensive operations without explicit budget clearance.
 | Merch, merchandise, t-shirt, hoodie, print-on-demand, product design, inventory | Merchandise | merchandise |
 | Security audit, vulnerability scan, access control, credentials, compliance review | Security | security |
 | Deployment, CI/CD, Firebase, cloud infrastructure, monitoring, pipeline | DevOps | devops |
+| Streaming metrics, audience data, revenue insights, dashboard, performance data, listener demographics, stream count | Analytics | analytics |
 | Data, metrics, listener demographics, stream counts, audience insights, performance reports, tracking, trend analysis, dashboard | Analytics | analytics |
 
 ## AMBIGUITY PROTOCOL
