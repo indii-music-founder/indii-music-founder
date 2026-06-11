@@ -73,6 +73,7 @@ class SFTPService {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async listDirectory(remotePath: string): Promise<any[]> {
         if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
         try {

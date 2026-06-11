@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Configuration — indiiOS E2E Tests
+ * Playwright Configuration — indii E2E Tests
  *
  * Run:           npx playwright test
  * A11y only:     npx playwright test e2e/a11y.spec.ts
@@ -34,13 +34,18 @@ export default defineConfig({
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: {
+                    args: ['--no-sandbox', '--disable-setuid-sandbox']
+                }
+            },
         },
     ],
     ...(isLocalhost ? {
         webServer: {
-            command: 'npm run dev',
-            url: 'http://127.0.0.1:4242',
+            command: 'VITE_E2E=true VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4242',
+            url: 'http://localhost:4242',
             reuseExistingServer: !process.env.CI,
             timeout: 60_000,
         },

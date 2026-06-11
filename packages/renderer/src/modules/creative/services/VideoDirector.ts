@@ -1,10 +1,10 @@
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { SchemaType } from 'firebase/ai';
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -40,8 +40,8 @@ export class VideoDirector {
                 }
 
                 // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
-                // FirebaseAIService expects Record<string, any> or Schema.
-                const feedback = await GenAI.generateStructuredData<DirectorFeedback>(
+                // FirebaseIntelligenceService expects Record<string, any> or Schema.
+                const feedback = await AutonomousIntelligence.generateStructuredData<DirectorFeedback>(
                     [
                         { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] ?? '' } },
                         { text: critiquePrompt }
@@ -117,13 +117,13 @@ export class VideoDirector {
         const jobId = crypto.randomUUID();
         const prompt = item.prompt || 'Animate this scene';
 
-        // --- Electron Path: Delegate to local Python API (AI sidecar) ---
+        // --- Electron Path: Delegate to local Python API (Intelligence sidecar) ---
         // --- Cloud Function (triggerVideoJob) ---
         // Build a payload that satisfies VideoJobSchema
         const cloudPayload: Record<string, unknown> = {
             jobId,
             prompt,
-            model: AI_MODELS.VIDEO.GENERATION,
+            model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
             options: { aspectRatio: '16:9' },
         };
 

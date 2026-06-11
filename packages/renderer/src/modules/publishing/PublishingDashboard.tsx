@@ -304,7 +304,7 @@ export default function PublishingDashboard() {
                         onClose={() => setIsDSRModalOpen(false)}
                         onProcess={async (report) => {
                             try {
-                                const { dsrUploadService } = await import('@/services/ddex/DSRUploadService');
+                                const { dsrUploadService } = await import('@/services/distribution/proprietary-ingestion/EarningsUploadService');
                                 const catalog = new Map(
                                     releases
                                         .filter(r => r.metadata.isrc)

@@ -1,4 +1,6 @@
 import { StateCreator } from 'zustand';
+import type { EntryCommandWorkflowState } from '@/services/commands/EntryCommandRegistry';
+import { EMPTY_ENTRY_COMMAND_STATE } from '@/services/commands/EntryCommandRegistry';
 
 export type AgentMode = 'assistant' | 'autonomous' | 'creative' | 'research';
 
@@ -71,6 +73,11 @@ export interface AgentUISlice {
 
     agentWindowSize: { width: number; height: number };
     setAgentWindowSize: (size: { width: number; height: number }) => void;
+
+    entryCommandWorkflow: EntryCommandWorkflowState;
+    setEntryCommandWorkflow: (workflow: EntryCommandWorkflowState) => void;
+    updateEntryCommandWorkflow: (updates: Partial<EntryCommandWorkflowState>) => void;
+    clearEntryCommandWorkflow: () => void;
 }
 
 export function buildAgentUIState(
@@ -81,7 +88,7 @@ export function buildAgentUIState(
         isAgentOpen: false,
         isCommandBarDetached: false,
         isCommandBarCollapsed: false,
-        commandBarPosition: (typeof window !== 'undefined' && (['left', 'center', 'right'].includes(localStorage.getItem('indiiOS_commandBarPosition') || '') ? localStorage.getItem('indiiOS_commandBarPosition') as 'left' | 'center' | 'right' : 'center')) || 'center',
+        commandBarPosition: (typeof window !== 'undefined' && (['left', 'center', 'right'].includes(localStorage.getItem('indii_commandBarPosition') || '') ? localStorage.getItem('indii_commandBarPosition') as 'left' | 'center' | 'right' : 'center')) || 'center',
         commandBarInput: '',
         commandBarAttachments: [],
         agentMode: 'assistant',
@@ -90,19 +97,20 @@ export function buildAgentUIState(
         pendingApproval: null,
         rightPanelView: 'messages',
         chatChannel: 'indii',
-        activeAgentProvider: 'direct',
+        activeAgentProvider: 'native',
         conversationMode: 'direct',
         activeDepartmentId: null,
         directTargetAgentId: null,
         isKnowledgeBaseEnabled: true,
         agentWindowSize: { width: 500, height: 800 },
+        entryCommandWorkflow: { ...EMPTY_ENTRY_COMMAND_STATE },
 
         toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
         setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
         setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
         setCommandBarPosition: (position) => {
             if (typeof window !== 'undefined') {
-                localStorage.setItem('indiiOS_commandBarPosition', position);
+                localStorage.setItem('indii_commandBarPosition', position);
             }
             set({ commandBarPosition: position });
         },
@@ -134,6 +142,15 @@ export function buildAgentUIState(
         setDirectTargetAgentId: (agentId) => set({ directTargetAgentId: agentId }),
         setKnowledgeBaseEnabled: (enabled) => set({ isKnowledgeBaseEnabled: enabled }),
         setAgentWindowSize: (size) => set({ agentWindowSize: size }),
+        setEntryCommandWorkflow: (workflow) => set({ entryCommandWorkflow: workflow }),
+        updateEntryCommandWorkflow: (updates) => set((state) => ({
+            entryCommandWorkflow: {
+                ...state.entryCommandWorkflow,
+                ...updates,
+                updatedAt: Date.now(),
+            },
+        })),
+        clearEntryCommandWorkflow: () => set({ entryCommandWorkflow: { ...EMPTY_ENTRY_COMMAND_STATE } }),
 
         requestApproval: (content: string, type: string): Promise<boolean> => {
             return new Promise((resolve) => {

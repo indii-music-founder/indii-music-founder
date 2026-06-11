@@ -62,7 +62,7 @@ const mockProject = {
     clips: [{ id: 'clip-123' }]
 };
 
-vi.mock('@/modules/video/store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: {
         getState: () => ({
             updateKeyframe: mockUpdateKeyframe,

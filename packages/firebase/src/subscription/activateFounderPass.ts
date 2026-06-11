@@ -4,7 +4,7 @@
  * Called manually by an Admin after receiving alternative payments (Cash App, Wire).
  * This function:
  *   1. Verifies the caller is an Admin
- *   2. Checks that fewer than 10 founders have been seated
+ *   2. Checks that fewer than 11 founder seats have been occupied
  *   3. Checks if targetUid is already a founder to avoid duplicates
  *   4. Sanitizes displayName input (whitelist characters, enforce length)
  *   5. Generates a SHA-256 agreement hash as the founder's receipt
@@ -27,10 +27,12 @@ import { createHash } from 'crypto';
 import { githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 
-const GITHUB_REPO_OWNER = 'the-walking-agency-det';
-const GITHUB_REPO_NAME = 'indiiOS-Clean';
+const GITHUB_REPO_OWNER = 'indii-music-founder';
+const GITHUB_REPO_NAME = 'indii-music-founder';
 const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
-const MAX_FOUNDER_SEATS = 10;
+// 11 seats: the builder's i-i Founder seat + 10 paid Founder buy-in seats (#2-#11).
+const MAX_FOUNDER_SEATS = 11;
+const RESERVED_INTERNAL_FOUNDER_SEATS = 1;
 const AGREEMENT_VERSION = '1.0.0';
 
 /** Timeout (ms) for individual GitHub API calls */
@@ -181,7 +183,7 @@ async function commitFounderToGitHub(
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nFounder seat activated. This entry is permanent per the IndiiOS Founders Agreement.\nSee ${FOUNDERS_FILE_PATH} for agreement terms.\n\n[founders-program]`,
+            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nFounder seat activated. This entry is permanent per the indii Founders Agreement.\nSee ${FOUNDERS_FILE_PATH} for agreement terms.\n\n[founders-program]`,
             content: encodedContent,
             sha: fileSha,
             branch: 'main',
@@ -201,7 +203,7 @@ export const activateFounderPass = onCall({
     secrets: [githubTokenFounders],
     timeoutSeconds: 120,
     memory: '256MiB',
-    enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+    enforceAppCheck: true,
 }, async (request): Promise<ActivateFounderPassResult> => {
     const { targetUid, displayName } = request.data as ActivateFounderPassParams;
 
@@ -226,22 +228,30 @@ export const activateFounderPass = onCall({
     let seat: number;
     try {
         seat = await db.runTransaction(async (tx) => {
-            // Count existing founders
+            // === ALL READS MUST COME FIRST IN FIRESTORE TRANSACTIONS ===
+            
+            // 1. Count existing founders
             const foundersSnap = await tx.get(db.collection('founders'));
-            const currentCount = foundersSnap.size;
+            const hasInternalSeatInFirestore = foundersSnap.docs.some((doc) => doc.get('seat') === 1);
+            const occupiedSeatCount = foundersSnap.size + (hasInternalSeatInFirestore ? 0 : RESERVED_INTERNAL_FOUNDER_SEATS);
 
-            if (currentCount >= MAX_FOUNDER_SEATS) {
-                throw new HttpsError('resource-exhausted', 'All 10 founder seats have been claimed.');
+            if (occupiedSeatCount >= MAX_FOUNDER_SEATS) {
+                throw new HttpsError('resource-exhausted', 'All 11 founder seats have been claimed.');
             }
 
-            // Check this user hasn't already activated a founder pass
+            // 2. Check this user hasn't already activated a founder pass
             const existingRef = db.collection('founders').doc(targetUid);
             const existing = await tx.get(existingRef);
             if (existing.exists) {
                 throw new HttpsError('already-exists', 'This user already has a founders pass activated.');
             }
 
-            const seatNumber = currentCount + 1;
+            // 3. Read the public founders_meta/summary counter for the landing page
+            const metaRef = db.collection('founders_meta').doc('summary');
+            const metaSnap = await tx.get(metaRef);
+
+            // === ALL WRITES MUST GO AFTER READS ===
+            const seatNumber = occupiedSeatCount + 1;
 
             // Write founder record to Firestore
             tx.set(existingRef, {
@@ -264,6 +274,30 @@ export const activateFounderPass = onCall({
                 currentPeriodEnd: new Date('2099-01-01').getTime(),
                 cancelAtPeriodEnd: false,
                 updatedAt: Date.now(),
+            }, { merge: true });
+
+            // Update user profile to ensure UI download gates recognize founder status
+            tx.set(db.collection('users').doc(targetUid), {
+                isFounder: true,
+                subscriptionTier: SubscriptionTier.FOUNDER,
+                tier: SubscriptionTier.FOUNDER,
+            }, { merge: true });
+
+            let currentMetaCount = 0;
+            let currentMetaFounders: Array<{ seat: number; name: string; joinedAt: string }> = [];
+
+            if (metaSnap.exists) {
+                const data = metaSnap.data() || {};
+                currentMetaCount = typeof data.count === 'number' ? data.count : 0;
+                currentMetaFounders = Array.isArray(data.founders) ? data.founders : [];
+            }
+
+            currentMetaFounders.push({ seat: seatNumber, name, joinedAt });
+
+            tx.set(metaRef, {
+                count: Math.max(currentMetaCount + 1, seatNumber),
+                founders: currentMetaFounders,
+                updatedAt: FieldValue.serverTimestamp(),
             }, { merge: true });
 
             return seatNumber;
@@ -328,7 +362,7 @@ export const activateFounderPass = onCall({
 
     const message = githubCommitPending
         ? `Founder #${seat} activated. The agreement hash is stored in Firestore; the repository commit is pending and will be completed shortly.`
-        : `Founder #${seat} activated. The agreement hash has been committed to the indiiOS repository.`;
+        : `Founder #${seat} activated. The agreement hash has been committed to the indii repository.`;
 
     return {
         seat,

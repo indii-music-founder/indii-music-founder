@@ -6,6 +6,20 @@
 
 ---
 
+## Your Team Structure
+
+**You are:** Solo operator + IDE + agent swarm (Claude, Gemini, DROID, JULES, CODEX)
+
+**Our role:** Execute your intent with guardrails that prevent mistakes, learn your patterns from memory, anticipate your needs.
+
+**How you work:** Fast, parallel agents, consolidation before push. You don't have time for friction — the system removes it.
+
+**What we expect:** Trust our routing decisions. Use `/skill – skill` as your primary entry point. We get smarter with every session.
+
+---
+
+---
+
 ## MANDATORY SESSION BOOTSTRAP
 
 > This section is non-negotiable. There are no lifecycle hooks in this environment —
@@ -52,11 +66,11 @@ bash .claude/scripts/checkpoint.sh
 
 > **Canonical product documentation lives in `.agent-os/product/`. Read those 5 files first before acting on instructions in this file.**
 
-**indiiOS** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
+**indii** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
 
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
-- **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
+- **Repo:** `indii-music-founder/indii-music-founder`
 - **Node Requirement:** >= 22.0.0
 
 ---
@@ -98,19 +112,18 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 ## Codebase Structure
 
 ```
-indiiOS-Alpha-Electron/
+indii-music-founder/
 ├── packages/
-│   ├── renderer/               # Main React application source (indiiOS studio)
+│   ├── renderer/               # Main React application source (indii studio)
 │   ├── main/                   # Electron desktop wrapper
 │   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
 │   ├── shared/                 # Shared types and schemas
 │   ├── landing/                # Separate marketing site (React + Vite)
 │   ├── sdk/                    # SDKs
 │   └── mcp-server-local/       # Local MCP server
-├── agents/                     # AI agent definitions (hub-and-spoke architecture)
+├── agents/                     # AI agent definitions (A2A Swarm Protocol)
 ├── execution/                  # Deterministic scripts for agent tools (Layer 3)
 ├── directives/                 # AI agent SOPs (Layer 1)
-├── python/                     # Python agent tools and API handlers
 ├── e2e/                        # Playwright E2E tests (60+ spec files)
 ├── docs/                       # Documentation (specs, plans, design, testing)
 ├── .agent/                     # Agent system configuration and error memory
@@ -135,7 +148,7 @@ indiiOS-Alpha-Electron/
 | Animation | Framer Motion 12.x | |
 | Canvas | Fabric.js 6.9 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
-| Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 | Analysis & visualization |
+| Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 + Python (YAMNet ONNX) | Local-first analysis & visualization |
 | Video | Remotion 4.0.445 | Video rendering |
 | 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |
@@ -307,7 +320,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `packages/renderer/src/test/setup.ts` prevents import errors
+- indii Conductor replaced AgentZeroService (Native Node.js/TypeScript orchestrator) — see `src/services/agent/orchestration/AgentGraphService.ts`
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
@@ -342,30 +355,37 @@ The `build` script runs three steps sequentially:
 
 ---
 
-## Hub-and-Spoke Agent Architecture
-
 ```
-         ┌─────────────────────┐
-         │  indii Conductor (Hub) │
-         │    (Orchestrator)      │
-         └──────────┬──────────┘
-                    │
-    ┌───────────────┼───────────────┐
-    │       │       │       │       │
-  Legal   Brand  Marketing Music  Video
-  Agent   Agent   Agent   Agent  Agent
-    │
-  [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
+                    ┌─────────────────────────┐
+                    │      A2A Swarm          │
+                    │   (Decentralized)       │
+                    └──────────┬──────────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Legal Agent   │──│ Creative Agent│──│ Brand Agent   │
+    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
+            │                  │                  │
+    ┌───────┴───────┐  ┌───────┴───────┐  ┌───────┴───────┐
+    │ Marketing Agt │──│ Finance Agent │──│ Music Agent   │
+    └───────────────┘  └───────────────┘  └───────────────┘
 ```
 
-- **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
-- **Specialist Agents** - Domain experts with focused capabilities
-- **AI Sidecar** - Dockerized Python runtime (`docker-compose.yml`) on `localhost:50080`
-- **Python Tools** (`python/tools/`) - 20+ execution tools (image gen, video gen, audio analysis, browser automation, DDEX, payment gate, etc.)
+- **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
+- **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
+- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
 
 ---
 
 ## Operating Principles
+
+### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
+
+> Token efficiency applies to **communication only**, NEVER to code.
+
+- **Terse Talk:** Adopt the `caveman` communication style for all chat, planning, and explanations. Drop pleasantries, filler words, and over-explanations.
+- **Complete Code:** When generating code, you MUST still output 100% functional, complete code with no placeholders. Use chunk-based replacement tools to edit specific blocks of code in-place rather than rewriting entire files.
 
 ### 1. Check for tools first
 
@@ -428,7 +448,7 @@ Before debugging ANY error, you MUST follow this workflow:
 
 1. **STOP** - Do not immediately attempt a fix.
 2. **CHECK LEDGER** - Open `.agent/skills/error_memory/ERROR_LEDGER.md` and search for matching patterns.
-3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indiiOS-errors")`.
+3. **CHECK MEM0** - Query `mcp_mem0_search-memories(query="<error message>", userId="indii-errors")`.
 4. **APPLY FIX** - If a match is found, apply the documented solution verbatim.
 5. **DOCUMENT NEW** - If this is a genuinely new error, add it to the ledger AND mem0 after solving.
 
@@ -437,7 +457,7 @@ Before debugging ANY error, you MUST follow this workflow:
 ```javascript
 mcp_mem0_add-memory(
   content="ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>",
-  userId="indiiOS-errors"
+  userId="indii-errors"
 )
 ```
 
@@ -480,6 +500,16 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 **Example (PR #1631):** CreativeNavbar.tsx had two `<PromptBuilder>` blocks after merge. The newer one (mine) had `onSetPrompt`, the older one (from main's alternate impl) had the deleted `onPromptImproved` prop. The merge kept both. This broke typecheck with "Property 'onPromptImproved' does not exist." Fix: delete the duplicate inline render block.
 
 **Failure to perform this check after a merge is a protocol violation and will block deployment.**
+### 7. ASSET DELETION & PRUNING FAIL-SAFE (STRICT)
+
+> Never suggest deleting skills, workflows, or files simply because they do not appear in a manifest.
+
+Before suggesting the deletion or pruning of any tool, plugin, skill, or workflow to save context tokens, you MUST:
+1. **Check for prefixes:** Files/folders prefixed with `indii-` (e.g., `indii-cinema-worldbuilder`, `indii-director`) are explicitly built for this platform.
+2. **Check restricted zones:** Treat all files within `.agent/skills/`, `.agent/workflows/`, and `execution/` as MISSION CRITICAL by default.
+3. **Ask before acting:** Explicitly ask the user "What is [asset] used for?" before ever classifying it as obsolete or suggesting removal.
+
+Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds for deletion.
 
 ---
 
@@ -499,8 +529,7 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | `packages/firebase/storage.rules` | Cloud Storage security rules |
 | `packages/main/src/main.ts` | Electron main process |
 | `packages/main/src/preload.ts` | Electron IPC bridge |
-| `docker-compose.yml` | AI Sidecar + Ollama containers |
-| `.env.example` | Environment variable template |
+| .env.example | Environment variable template |
 | `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 | `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
@@ -509,7 +538,6 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | `.agent/skills/error_memory/ERROR_LEDGER.md` | Living log of past regressions — MANDATORY check before debug |
 | `.claude/commands/plat.md` | `/plat` slash command — platinum finishing touches before every push |
 | `docs/CHAT_IMAGE_INTERACTION_PLAN.md` | **Living plan** — chat image annotator + Studio handoff + visual verification loop. Update Section 5 (Current State) before ending any session that touches this work. |
-| `docs/GEMINI_FILE_SEARCH_MULTIMODAL_PLAN.md` | **Living plan** — Gemini File Search multimodal RAG gap analysis. Decisions locked: augment stores with metadata, near-term image ingestion (`gemini-embedding-2`), no legacy backfill. Impl order: citations → images → metadata. |
 
 ---
 
@@ -524,6 +552,38 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
+---
+
+## Agent Skills Configuration
+
+The engineering skills (from Matt Pocock's suite) read three config files to understand how indii tracks work, manages triage, and documents domain knowledge.
+
+### Issue Tracker
+
+**GitHub Issues** — issues live in `indii-music-founder/indii-music-founder` GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+Skills use the `gh` CLI to create, list, and manage issues. Infer repo from `git remote -v` automatically.
+
+### Triage Labels
+
+**Canonical five-state triage vocabulary:**
+
+| Role | Label | Meaning |
+| --- | --- | --- |
+| Needs Eval | `triage/eval-needed` | Maintainer assessment required |
+| Awaiting Info | `triage/awaiting-info` | Blocked waiting on reporter |
+| Ready for Agent | `triage/ready-for-agent` | Fully specified, agent can pick up |
+| Ready for Human | `triage/ready-for-human` | Ready for human implementation |
+| Won't Fix | `wontfix` | Decided not to pursue |
+
+See `docs/agents/triage-labels.md` for full mapping.
+
+### Domain Context
+
+**Single-context** — all architectural decisions and domain knowledge live in `CLAUDE.md` (this file). No separate ADRs. See `docs/agents/domain.md` for consumer rules.
+
+---
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
@@ -532,20 +592,43 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 ### Agent Skills (`.agent/skills/`)
 
+#### Engineering (Matt Pocock Core Suite)
+
 | Trigger | Skill File |
-|---------|-----------|
+| --- | --- |
+| Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
+| Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
+| Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
+| Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
+| Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
+| Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
+
+#### Productivity (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
+| Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
+
+#### Misc (Matt Pocock)
+
+| Trigger | Skill File |
+| --- | --- |
+| Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
+| Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
+
+#### Indii-Specific Skills (Core & Essential)
+
+| Trigger | Skill File |
+| --- | --- |
+| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
 | Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
 | Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
 | Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
 | Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
-| Brand kit setup, onboarding artist identity | `.agent/skills/brand_kit/SKILL.md` |
-| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
 | Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
 | Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
 | Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Stress test image generation pipeline | `.agent/skills/live_test_creative/SKILL.md` |
-| Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
 | Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
 | **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
 
@@ -587,3 +670,24 @@ When Claude would invoke a named Skill tool, use the following Gemini-native app
 | `plan-eng-review` | Use `.agent/skills/agentic-harness-architect/SKILL.md`; apply all 12 architecture primitives |
 | `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
 | `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
+

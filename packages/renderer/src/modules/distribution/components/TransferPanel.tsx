@@ -24,7 +24,8 @@ export const TransferPanel: React.FC = () => {
 
     useEffect(() => {
         // Handle progress updates from Electron
-        const removeListener = window.electronAPI?.distribution?.onTransmitProgress?.((data) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const removeListener = window.electronAPI?.distribution?.onTransmitProgress?.((data: any) => {
             if (data.progress !== undefined) {
                 setProgress(data.progress);
             }
@@ -42,7 +43,7 @@ export const TransferPanel: React.FC = () => {
             filters: [{ name: 'Packages', extensions: ['itmsp', 'zip', 'xml'] }]
         });
         if (path) {
-            setConfig({ ...config, localPath: path });
+            setConfig({ ...config, localPath: path as string });
             addLog(`Selected local package: ${path}`);
         }
     };
@@ -53,7 +54,7 @@ export const TransferPanel: React.FC = () => {
             filters: [{ name: 'Keys', extensions: ['pem', 'key', 'ppk', '*'] }]
         });
         if (path) {
-            setConfig({ ...config, key: path });
+            setConfig({ ...config, key: path as string });
             addLog(`Selected private key: ${path}`);
         }
     };
@@ -75,7 +76,8 @@ export const TransferPanel: React.FC = () => {
                 protocol,
                 // Ensure only selected auth mode is passed if necessary, 
                 // but IPC handler already checks priority
-            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as any;
 
             setReport(result.report || null);
             if (result.success) {

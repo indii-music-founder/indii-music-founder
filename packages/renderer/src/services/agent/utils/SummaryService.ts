@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../../ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { Logger } from '@/core/logger/Logger';
 
 /**
@@ -44,14 +44,20 @@ export class SummaryService {
 
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW,
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW,
                     maxOutputTokens: 512
                 }
             );
 
-            const summary = response.response.text().trim();
+            if (!response || !response.response) {
+                throw new Error('Invalid response structure from AutonomousIntelligence');
+            }
+            const rawText = typeof response.response.text === 'function'
+                ? response.response.text()
+                : (response.response.text as unknown as string || '');
+            const summary = rawText.trim();
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
         } catch (error: unknown) {

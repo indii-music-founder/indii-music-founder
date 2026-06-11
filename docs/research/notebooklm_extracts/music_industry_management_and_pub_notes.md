@@ -44,7 +44,7 @@
 
 ## 3. High-Quality Strategic Concepts and Frameworks
 
-* **Digital Sovereignty:** A shift from "rented" social audiences to **owned data** (Email/SMS lists). immunity against algorithm changes through D2C channels.
+* **Digital Independence:** A shift from "rented" social audiences to **owned data** (Email/SMS lists). immunity against algorithm changes through D2C channels.
 * **The Bifurcation of Discovery:** Split between **Algorithmic (passive/lean-back)** and **Community-Driven (active/lean-forward)**. Strategic artists target the latter (Discord, social radio).
 * **The "Hedgehog Concept" of Management:** The manager must simultaneously be the **Prospector** (data/opportunity), **Cheerleader** (morale/brand), **Spokesperson** (external comms), and **CEO** (systems/scaling).
 * **"Sweat Equity" and Startup Model:** The manager-artist relationship is increasingly viewed as a startup co-founder partnership. 35% of managed artists now include equity/profit-sharing to align incentives.

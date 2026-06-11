@@ -31,7 +31,7 @@ export function configureSecurity(session: Session) {
         // This allows WASM (needed for Essentia.js, PDF.js, Tesseract.js) but blocks JS eval()
         const scriptSrc = isDev
             ? "* 'unsafe-inline' 'unsafe-eval'"
-            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net";
+            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net";
 
         const defaultSrc = isDev ? "*" : "'none'";
         const styleSrc = isDev
@@ -56,9 +56,10 @@ export function configureSecurity(session: Session) {
                         `style-src ${styleSrc}`,
                         `connect-src ${connectSrc}`,
                         `media-src ${mediaSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indiios-studio.web.app",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indii.music",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
-                        "manifest-src 'self' https://indiios-studio.web.app",
+                        "manifest-src 'self' https://indii.music",
+                        "frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net https://*.google.com",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],
@@ -87,9 +88,9 @@ export function configureSecurity(session: Session) {
 
     // 4. Certificate Verification
     // Trusts Google/Firebase domains via standard certificate verification.
-    // NOTE: Certificate pinning for api.indii.os is disabled until the API is deployed.
+    // NOTE: Certificate pinning for api.indii.music is disabled until the API is deployed.
     // When deploying a custom API, generate real certificate fingerprints using:
-    //   openssl s_client -connect api.indii.os:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
+    //   openssl s_client -connect api.indii.music:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
 
     session.setCertificateVerifyProc((request, callback) => {
         const { hostname, verificationResult } = request;

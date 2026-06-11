@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Play, Clock, CheckCircle2, XCircle,
     Plus, Trash2, Video, Calendar, Loader2
 } from 'lucide-react';
@@ -18,6 +19,7 @@ interface Platform {
 interface ScheduledPost {
     id: string;
     title: string;
+    mediaUrl: string;
     platforms: SocialPlatform[];
     scheduledAt: Date;
     status: 'queued' | 'posting' | 'posted' | 'failed';
@@ -61,6 +63,7 @@ export default function MultiPlatformPoster() {
     const [posts, setPosts] = useState<ScheduledPost[]>(INITIAL_POSTS);
     const [showNewPost, setShowNewPost] = useState(false);
     const [newTitle, setNewTitle] = useState('');
+    const [newMediaUrl, setNewMediaUrl] = useState('');
     const [newCaption, setNewCaption] = useState('');
     const [newPlatforms, setNewPlatforms] = useState<SocialPlatform[]>(['tiktok']);
     const [isPosting, setIsPosting] = useState<string | null>(null);
@@ -73,10 +76,11 @@ export default function MultiPlatformPoster() {
     };
 
     const handleSchedule = () => {
-        if (!newTitle.trim() || newPlatforms.length === 0) return;
+        if (!newTitle.trim() || !newMediaUrl.trim() || newPlatforms.length === 0) return;
         const post: ScheduledPost = {
             id: Date.now().toString(),
             title: newTitle.trim(),
+            mediaUrl: newMediaUrl.trim(),
             platforms: newPlatforms,
             scheduledAt: new Date(Date.now() + 7200000),
             status: 'queued',
@@ -84,6 +88,7 @@ export default function MultiPlatformPoster() {
         };
         setPosts(prev => [post, ...prev]);
         setNewTitle('');
+        setNewMediaUrl('');
         setNewCaption('');
         setNewPlatforms(['tiktok']);
         setShowNewPost(false);
@@ -94,11 +99,9 @@ export default function MultiPlatformPoster() {
         setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posting' } : p));
 
         try {
-            // In a real scenario, we would have the mediaUrl in the post object
-            // For the demo, we use a placeholder or the title as a reference
             await socialAutoPosterService.queuePost({
                 id: post.id,
-                mediaUrl: `gs://assets/videos/${post.id}.mp4`,
+                mediaUrl: post.mediaUrl,
                 caption: post.caption,
                 hashtags: [],
                 platform: post.platforms[0] as SocialPlatform
@@ -180,6 +183,16 @@ export default function MultiPlatformPoster() {
                         </div>
 
                         <div>
+                            <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Media URL</label>
+                            <input
+                                value={newMediaUrl}
+                                onChange={e => setNewMediaUrl(e.target.value)}
+                                placeholder="https://..."
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/20"
+                            />
+                        </div>
+
+                        <div>
                             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Caption</label>
                             <textarea
                                 value={newCaption}
@@ -212,7 +225,7 @@ export default function MultiPlatformPoster() {
                         <div className="flex gap-2">
                             <button
                                 onClick={handleSchedule}
-                                disabled={!newTitle.trim() || newPlatforms.length === 0}
+                                disabled={!newTitle.trim() || !newMediaUrl.trim() || newPlatforms.length === 0}
                                 className="px-4 py-2 bg-dept-marketing hover:bg-dept-marketing/80 disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-colors"
                             >
                                 Schedule in 2h

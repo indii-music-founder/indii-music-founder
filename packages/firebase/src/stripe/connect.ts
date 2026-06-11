@@ -74,7 +74,7 @@ export const createTransfer = onCall(
                 amount, // in cents
                 currency,
                 destination: destinationId,
-                description: `indiiOS Royalty Payout - Artist ID: ${request.auth.uid}`
+                description: `indii Royalty Payout - Artist ID: ${request.auth.uid}`
             });
 
             return { transferId: transfer.id };

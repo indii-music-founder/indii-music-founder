@@ -5,33 +5,33 @@ import type { AnyToolFunction } from '../types';
  * Universal Tools
  *
  * These are tools that are shared across multiple specialist agents.
- * In "Direct" (browser) mode, these provide basic functionality or stubs.
- * In sidecar (Python) mode, these are handled by actual Python scripts.
+ * Browser/credential/repertory/document operations must be backed by a real
+ * bridge or service. They fail closed when not configured.
  */
 export const UniversalTools = {
     /**
-     * Browser Tool stub for the fallback layer.
-     * Maps to general research/search capabilities.
+     * Browser Tool bridge for research/search capabilities.
      */
     browser_tool: wrapTool('browser_tool', async (args: { action: string; url?: string; selector?: string; text?: string }) => {
-        const { action, url } = args;
-
-        if (action === 'open' && url) {
-            // In a real browser environment, we might open a popup or iframe
-            // For now, we simulate a successful open for research purposes
-            return toolSuccess({
-                action,
-                url,
-                status: 'opened',
-                message: `Browser simulated: Opened ${url}. Researching content...`
-            }, `Simulated browser access to ${url}.`);
+        const bridge = window.electronAPI?.agent;
+        if (!bridge) {
+            return toolError('Browser bridge is unavailable. No browser action was performed.', 'BROWSER_BRIDGE_UNAVAILABLE');
         }
 
-        return toolSuccess({
-            action,
-            status: 'completed',
-            message: `Action ${action} executed in virtual browser environment.`
-        });
+        let result: unknown;
+        if (args.action === 'navigate' || args.action === 'extract') {
+            if (!args.url) return toolError('Browser navigation requires a URL.', 'INVALID_INPUT');
+            result = await bridge.navigateAndExtract(args.url);
+        } else if (args.action === 'capture') {
+            result = await bridge.captureState();
+        } else if (['click', 'type', 'scroll', 'wait'].includes(args.action)) {
+            if (!args.selector) return toolError(`Browser action "${args.action}" requires a selector.`, 'INVALID_INPUT');
+            result = await bridge.performAction(args.action as 'click' | 'type' | 'scroll' | 'wait', args.selector, args.text);
+        } else {
+            return toolError(`Unsupported browser action: ${args.action}`, 'INVALID_INPUT');
+        }
+
+        return toolSuccess(result, `Browser action completed: ${args.action}.`);
     }),
 
     /**
@@ -46,14 +46,13 @@ export const UniversalTools = {
     }),
 
     /**
-     * Stub for credential vault.
+     * Credential vault bridge.
      */
     credential_vault: wrapTool('credential_vault', async (args: { action: string; service: string }) => {
-        return toolSuccess({
-            status: 'locked',
-            service: args.service,
-            message: `Credential vault accessed for ${args.service}. bi-metric auth required on host device.`
-        });
+        return toolError(
+            `Credential vault action "${args.action}" for "${args.service}" requires the secure credential bridge.`,
+            'CREDENTIAL_BRIDGE_UNAVAILABLE'
+        );
     }),
 
     /**
@@ -67,23 +66,22 @@ export const UniversalTools = {
     }),
 
     /**
-     * Stub for Pro Scraper.
+     * PRO/repertory lookup.
      */
     pro_scraper: wrapTool('pro_scraper', async (args: { query: string; society?: string }) => {
-        return toolSuccess({
-            status: 'scraped',
-            results: [],
-            message: `Searching ${args.society || 'repertories'} for "${args.query}"... No conflicts found in public registry.`
-        });
+        return toolError(
+            `PRO/repertory lookup is not configured for ${args.society || 'the requested society'}. No registry search was performed for "${args.query}".`,
+            'PRO_LOOKUP_UNAVAILABLE'
+        );
     }),
 
     /**
-     * Stub for Document Query.
+     * Document query bridge.
      */
     document_query: wrapTool('document_query', async (args: { query: string }) => {
-        return toolSuccess({
-            status: 'analyzed',
-            message: `Querying local documents for: ${args.query}. Context weight: 0.85`
-        });
+        return toolError(
+            `Document query backend is not configured. No documents were searched for: ${args.query}.`,
+            'DOCUMENT_QUERY_UNAVAILABLE'
+        );
     })
 } satisfies Record<string, AnyToolFunction>;

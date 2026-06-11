@@ -58,7 +58,7 @@ export function registerVideoHandlers() {
 
             // Define the shared asset folder
             const documentsPath = app.getPath('documents');
-            const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
+            const assetDir = path.join(documentsPath, 'indii', 'Assets', 'Video');
 
             // Ensure directory exists
             await fs.promises.mkdir(assetDir, { recursive: true });
@@ -93,7 +93,7 @@ export function registerVideoHandlers() {
         try {
             validateSender(event);
             const documentsPath = app.getPath('documents');
-            const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
+            const assetDir = path.join(documentsPath, 'indii', 'Assets', 'Video');
 
             // If filePath is provided, ensure it is within assetDir
             let target = assetDir;
@@ -123,16 +123,8 @@ export function registerVideoHandlers() {
             const { outputLocation } = config;
 
             // Security Check 1: Access Control
-            // We use a stubbed AccessControlService check here as per the test expectation
-            // In a real scenario, we might verify if the destination folder is writable/allowed
-            // For this test, verifyAccess mock returns true/false
             const hasAccess = accessControlService.verifyAccess(outputLocation);
             if (!hasAccess) {
-                // Determine if it was explicit denial or just scope issue?
-                // The test expects "Security Violation" or "Access Denied"
-                // Let's assume verifyAccess covers path scope policy.
-                // However, we also need to check for unauthorized paths explicitly if verifyAccess is mocked to true but path is 'bad'?
-                // Actually, the test mocks verifyAccess to return false to trigger the error.
                 throw new Error("Security Violation: Access Denied to output location");
             }
 
@@ -161,11 +153,7 @@ export function registerVideoHandlers() {
                 // ignore
             }
 
-            // Invoke Service
-            // We need to dynamic import or use the global service if available?
-            // Since we created ElectronRenderService, let's use it.
-            // But we need to import it at top of file.
-            // For now, I'll assume we can import it.
+            // Invoke ElectronRenderService dynamically
             const { electronRenderService } = await import('../services/ElectronRenderService');
             return await electronRenderService.render(config);
 

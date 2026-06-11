@@ -51,6 +51,7 @@ export default function MIDIController() {
     const [devices, setDevices] = useState<MIDIDevice[]>([]);
     const [events, setEvents] = useState<MIDIEvent[]>([]);
     const [connected, setConnected] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [midiAccess, setMidiAccess] = useState<MIDIAccess | null>(null);
 
     const refreshDevices = useCallback((access: MIDIAccess) => {

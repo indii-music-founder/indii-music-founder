@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { z } from 'zod';
-import { AspectRatioSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema } from '@/modules/creative/video/schemas';
 import {
     Monitor, Smartphone, Square, Zap, Brain, Sparkles,
     Shield, Eye, RotateCcw, ChevronLeft, ChevronRight

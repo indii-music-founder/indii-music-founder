@@ -42,6 +42,7 @@ export const StreamingAgentCard: React.FC<StreamingAgentCardProps> = ({
   const {
     isStreaming,
     fullText,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tokens,
     error,
     stream,
@@ -49,6 +50,7 @@ export const StreamingAgentCard: React.FC<StreamingAgentCardProps> = ({
     reset,
     tokenCount
   } = useAgentStream(user?.uid || '', {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onComplete: (metadata) => {
       onComplete?.(fullText);
     },
@@ -61,6 +63,7 @@ export const StreamingAgentCard: React.FC<StreamingAgentCardProps> = ({
     if (autoStart && input && !isStreaming) {
       stream(input, agentId, context);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, input, agentId]);
 
   const handleCopy = () => {

@@ -24,6 +24,7 @@ export interface LayersPanelProps {
 const LayerProperties: React.FC<{
     layer: CanvasObject;
     onUpdateProperty?: (layer: CanvasObject, property: string, value: LayerPropertyValue) => void;
+    key?: React.Key;
 }> = ({ layer, onUpdateProperty }) => {
     // Cast to text object type for text-specific properties
     const textObj = layer.fabricObject as FabricTextObject;

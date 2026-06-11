@@ -6,7 +6,7 @@
 
 ## Summary
 
-The indiiOS codebase includes AI-generated code committed via automated integrations. All such code is properly licensed and assigned to New Detroit Music LLC.
+The indii codebase includes AI-generated code committed via automated integrations. All such code is properly licensed and assigned to New Detroit Music LLC.
 
 | Source | Commits | Percentage of Total | Status |
 |--------|---------|-------------------|--------|

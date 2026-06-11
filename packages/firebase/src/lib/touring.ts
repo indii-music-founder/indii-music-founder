@@ -95,7 +95,7 @@ const FuelLogisticsSchema = z.object({
 // ----------------------------------------------------------------------------
 
 export const generateItinerary = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -120,11 +120,12 @@ export const generateItinerary = functions
         2. Assign dates to each stop.
         3. Suggest a realistic venue for a band/artist in each city.
         4. Include "Travel Day" if distances are long.
+        5. Set both "activity" and "type" fields to the same action value (e.g. "Show", "Travel", "Day Off").
 
         Return JSON format:
         {
             "stops": [
-                { "city": "City, State", "date": "YYYY-MM-DD", "venue": "Venue Name", "activity": "Show" }
+                { "city": "City, State", "date": "YYYY-MM-DD", "venue": "Venue Name", "activity": "Show", "type": "Show" }
             ],
             "totalDistanceMiles": number,
             "estimatedDurationDays": number
@@ -140,7 +141,7 @@ export const generateItinerary = functions
     });
 
 export const checkLogistics = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -178,7 +179,7 @@ export const checkLogistics = functions
     });
 
 export const findPlaces = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [googleMapsApiKey]  })
+    .runWith({ enforceAppCheck: true,  secrets: [googleMapsApiKey]  })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 

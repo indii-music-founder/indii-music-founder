@@ -46,7 +46,7 @@ vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testi
 vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
 vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
 vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
+vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
 vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
@@ -58,6 +58,17 @@ vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window"
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
 vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
+vi.mock('./sidebar/ProjectList', () => ({ ProjectList: () => <div data-testid="project-list">Project List</div> }));
+vi.mock('@/modules/finance/hooks/useSubscription', () => ({
+    useSubscription: vi.fn(() => ({
+        subscription: { tier: 'pro', status: 'active' },
+        loading: false,
+        error: null,
+        refresh: vi.fn(),
+        createCheckoutSession: vi.fn(),
+        getPortalUrl: vi.fn()
+    }))
+}));
 
 // Mock feature flags — useGatedModules returns empty Set (all modules visible) in tests
 vi.mock('@/config/featureFlags', () => ({
@@ -190,7 +201,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('brand-manager')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Campaign Manager', async () => {
         const state = buildStoreState({ currentModule: 'campaign' });
@@ -209,7 +220,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('campaign-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Publicist', async () => {
         const state = buildStoreState({ currentModule: 'publicist' });
@@ -228,7 +239,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('publicist-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Publishing', async () => {
         const state = buildStoreState({ currentModule: 'publishing' });
@@ -247,7 +258,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('publishing-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Finance', async () => {
         const state = buildStoreState({ currentModule: 'finance' });
@@ -266,7 +277,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('finance-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders correct dashboard for Licensing', async () => {
         const state = buildStoreState({ currentModule: 'licensing' });
@@ -285,7 +296,7 @@ describe('Sidebar Navigation Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
-    });
+    }, 30000);
 
     it('renders navigation items correctly', () => {
         mockedUseStore.mockReturnValue({

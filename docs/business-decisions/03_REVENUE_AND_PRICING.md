@@ -29,7 +29,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | **Free** | `FREE` | $0 | $0 | Basic creative tools, 1 GB storage, watermarked exports |
 | **Pro** | `PRO` | `$____/mo` | `$____/yr` | Full creative suite, 50 GB storage, unwatermarked exports, basic distribution |
 | **Studio** | `STUDIO` | `$____/mo` | `$____/yr` | Everything in Pro + unlimited storage, priority rendering, advanced analytics, multi-distributor support |
-| **Founder** | `FOUNDER` | $2,500 (one-time) | Lifetime | Everything, forever. 10 seats total. |
+| **Founder** | `FOUNDER` | $2,500 (one-time) | Lifetime | Everything, forever. 11 total Founder seats (the i-i Founder reserved/internal seat and 10 paid seats available). |
 
 ### Pricing Research (Competitor Landscape)
 
@@ -41,7 +41,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | BandLab | Free | $9.99/mo | $19.99/mo |
 | LANDR | Free master | $12.49/mo | $35.99/mo |
 
-> **Recommendation:** indiiOS does significantly more than any single competitor (AI generation + distribution + legal + finance + social). Pricing in the $15–30/mo range for Pro and $30–50/mo for Studio positions the platform as premium but accessible.
+> **Recommendation:** indii does significantly more than any single competitor (AI generation + distribution + legal + finance + social). Pricing in the $15–30/mo range for Pro and $30–50/mo for Studio positions the platform as premium but accessible.
 
 **Your pricing:**
 
@@ -79,12 +79,12 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 
 ## Decision B3: Distribution Revenue Model
 
-> **Question:** How does indiiOS make money from distribution?
+> **Question:** How does indii make money from distribution?
 
 | Option | How it works | Industry standard |
 |--------|-------------|-------------------|
 | **(a) Flat fee per release** | User pays $X per single, $Y per album pushed to DSPs | TuneCore model |
-| **(b) Revenue share** | indiiOS takes X% of all royalties collected through the platform | CD Baby model (9%) |
+| **(b) Revenue share** | indii takes X% of all royalties collected through the platform | CD Baby model (9%) |
 | **(c) Included in subscription** | Pro/Studio tiers include unlimited distribution | DistroKid model |
 | **(d) Tiered: free tier = revenue share, paid tier = flat/unlimited** | Free users pay revenue share; paid users get unlimited | Hybrid model |
 
@@ -102,7 +102,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | # | Item | Current Setting | Confirm? |
 |---|------|----------------|----------|
 | B4a | Price | $2,500 USD one-time | ✅ / Change: `$_____` |
-| B4b | Total seats | 10 | ✅ / Change: `_____` |
+| B4b | Total seats | 11 (1 reserved, 10 paid) | ✅ / Change: `_____` |
 | B4c | Access level | All features, forever | ✅ |
 | B4d | API costs | Founders bring their own key | ✅ |
 | B4e | Name in code | Permanent git entry in `src/config/founders.ts` | ✅ |
@@ -120,11 +120,11 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 
 | Product | Type | Price | Stripe Price ID | Status |
 |---------|------|-------|----------------|--------|
-| indiiOS Pro Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
-| indiiOS Pro Annual | Recurring | $__/yr | `price_________________` | 🔴 |
-| indiiOS Studio Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
-| indiiOS Studio Annual | Recurring | $__/yr | `price_________________` | 🔴 |
-| indiiOS Founders Pass | One-time | $2,500 | `price_________________` | 🔴 |
+| indii Pro Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
+| indii Pro Annual | Recurring | $__/yr | `price_________________` | 🔴 |
+| indii Studio Monthly | Recurring | $__/mo | `price_________________` | 🔴 |
+| indii Studio Annual | Recurring | $__/yr | `price_________________` | 🔴 |
+| indii Founders Pass | One-time | $2,500 | `price_________________` | 🔴 |
 
 ### After Creating Products
 
@@ -185,4 +185,3 @@ Firebase App Check prevents API abuse by verifying that requests come from your 
 3. Update GitHub Secrets
 4. Deploy Cloud Functions
 5. The Founders Pass, subscription checkout, and tier enforcement all go live
-

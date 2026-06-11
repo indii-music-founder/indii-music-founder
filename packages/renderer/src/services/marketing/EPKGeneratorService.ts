@@ -36,15 +36,22 @@ export class EPKGeneratorService {
         if (!profile || profile.id === 'pending') {
             throw new Error('User profile not loaded. Cannot generate EPK.');
         }
+        const artistName = profile.displayName?.trim();
+        if (!artistName) {
+            throw new Error('Artist name is required to generate an EPK.');
+        }
+        if (!profile.email?.trim()) {
+            throw new Error('A real account email is required to generate an EPK.');
+        }
 
-        logger.info(`[EPKGenerator] Assembling EPK for ${profile.displayName}...`);
+        logger.info(`[EPKGenerator] Assembling EPK for ${artistName}...`);
 
         const brandKit = profile.brandKit;
         const releaseDetails = brandKit?.releaseDetails;
 
         const epk: EPKData = {
-            artistName: profile.displayName || 'Anonymous Artist',
-            bio: profile.bio || 'Independent Artist on indiiOS.',
+            artistName,
+            bio: profile.bio || '',
             profileImage: profile.photoURL || '',
             brandColors: brandKit?.colors || ['#000000', '#ffffff'],
             fonts: brandKit?.fonts || 'Inter',
@@ -60,7 +67,7 @@ export class EPKGeneratorService {
                 genre: releaseDetails.genre,
                 coverArt: brandKit?.referenceImages?.[0] ? String(brandKit.referenceImages[0]) : undefined
             } : undefined,
-            contactEmail: profile.email || ''
+            contactEmail: profile.email.trim()
         };
 
         return epk;

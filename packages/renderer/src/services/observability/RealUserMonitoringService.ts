@@ -43,7 +43,7 @@ export class RealUserMonitoringService {
   }
 
   private _generateSessionId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${crypto.randomUUID().split('-')[0]}`;
   }
 
   private _initializeCollectors(): void {

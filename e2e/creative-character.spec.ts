@@ -53,9 +53,16 @@ test.describe('Creative Studio - Character Library', () => {
             }
         });
 
-        // Navigate to creative module
-        await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+        // Wait for the app container from the initial page load in the authedPage fixture
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
+
+        // Navigate client-side to creative module via Zustand store
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setModule('creative');
+            }
+        });
 
         // Ensure Direct mode is active
         const directBtn = page.locator('[data-testid="direct-view-btn"]');
@@ -78,8 +85,21 @@ test.describe('Creative Studio - Character Library', () => {
         // Wait for generation to complete (mock takes ~2s)
         await page.waitForTimeout(3000);
 
+        // Ensure right panel is set to context controls and is open
+        await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
+        await page.evaluate(() => {
+            (window as any).useStore.getState().setRightPanelTab('context');
+        });
+        await page.waitForTimeout(1000);
+
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+
+        // Select Video target media to reveal the Character Library panel
+        const videoBtn = rightPanel.locator('button:has-text("Video")').first();
+        await videoBtn.click();
+
         // Click Add Person in CharacterLibrary
-        const addPersonBtn = page.locator('button:has-text("Add Person")');
+        const addPersonBtn = rightPanel.locator('button:has-text("Add Person")');
         await expect(addPersonBtn).toBeVisible({ timeout: 10_000 });
         await addPersonBtn.click();
 
@@ -100,11 +120,11 @@ test.describe('Creative Studio - Character Library', () => {
         
         // Check if the reference was added to the Character Library UI
         // It renders with the name "Character 1"
-        const characterLabel = page.getByText('Character 1');
+        const characterLabel = rightPanel.getByText('Character 1');
         await expect(characterLabel).toBeVisible({ timeout: 5000 });
 
         // The default reference type should be 'subject' (Face)
-        const faceToggle = page.locator('[data-testid="ref-type-face-0"]');
+        const faceToggle = rightPanel.locator('[data-testid="ref-type-face-0"]');
         await expect(faceToggle).toBeVisible();
         await expect(faceToggle).toHaveClass(/bg-blue-500/);
 

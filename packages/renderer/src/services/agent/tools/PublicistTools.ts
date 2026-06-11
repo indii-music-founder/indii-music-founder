@@ -1,4 +1,4 @@
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
@@ -66,7 +66,7 @@ export const PublicistTools = {
         Provide the response in a structured format suitable for a press release.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -113,7 +113,7 @@ export const PublicistTools = {
         Tone: ${tone || 'Professional, empathetic, and firm'}.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -146,7 +146,7 @@ export const PublicistTools = {
         Recipient: ${recipient_type || 'General Media'}.
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -179,7 +179,7 @@ export const PublicistTools = {
         and draft a highly personalized pitch email for the track "${args.trackTitle}".
         `;
 
-        const data = await GenAI.generateStructuredData(
+        const data = await AutonomousIntelligence.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

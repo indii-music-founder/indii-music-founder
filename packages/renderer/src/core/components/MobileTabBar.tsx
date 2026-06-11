@@ -52,7 +52,6 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
             { id: 'agent', label: 'Booking Agent' },
             { id: 'publicist', label: 'Publicist' },
             { id: 'creative', label: 'Creative Director' },
-            { id: 'video', label: 'Video Producer' },
         ],
     },
     {

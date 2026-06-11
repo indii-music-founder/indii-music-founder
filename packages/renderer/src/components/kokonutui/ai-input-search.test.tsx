@@ -160,6 +160,7 @@ describe('AI_Input_Search Interaction', () => {
     render(<AI_Input_Search onFileSelect={onFileSelect} />);
 
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const paperclipButton = screen.getByRole('button', { name: /attach file/i });
     const fileInput = screen.getByLabelText(/upload file/i); // Using aria-label on hidden input
 

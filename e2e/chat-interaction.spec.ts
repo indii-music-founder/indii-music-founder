@@ -47,7 +47,7 @@ test.describe('Chat / CommandBar Interaction', () => {
             });
         });
 
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
@@ -77,7 +77,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         }
 
         await inputRetry.click({ force: true });
-        await inputRetry.fill('hello indiiOS');
+        await inputRetry.fill('hello indii');
 
         const value = await inputRetry.inputValue().catch(() =>
             inputRetry.textContent()

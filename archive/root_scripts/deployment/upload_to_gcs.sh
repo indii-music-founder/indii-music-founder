@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export_dir="./ft_export_r6"
-gcs_bucket="gs://indiios-training-data"
+gcs_bucket="gs://indii-training-data"
 
 if [ ! -d "$export_dir" ]; then
   echo "Export directory $export_dir not found."

@@ -51,7 +51,7 @@ function assertAuth(context: functions.https.CallableContext): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsExchangeToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 30  })
+    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform, code, redirectUri, codeVerifier } = data as {
@@ -111,7 +111,7 @@ export const analyticsExchangeToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRefreshToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 30  })
+    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };
@@ -174,7 +174,7 @@ export const analyticsRefreshToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRevokeToken = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 15  })
+    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 15  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };
@@ -187,7 +187,9 @@ export const analyticsRevokeToken = functions
         if (snap.exists) {
             const stored = snap.data() as StoredToken;
             if (platform === "spotify" && stored.accessToken) {
-                await revokeSpotifyToken(stored.accessToken).catch(() => { /* best-effort */ });
+                await revokeSpotifyToken(stored.accessToken).catch((err: unknown) => {
+                    functions.logger.warn(`[analyticsRevokeToken] Spotify token revocation failed for user ${uid}:`, err);
+                });
             }
         }
 
@@ -277,7 +279,9 @@ async function revokeSpotifyToken(accessToken: string): Promise<void> {
     await fetch(`https://accounts.spotify.com/api/token`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err: unknown) => {
+        functions.logger.warn('[revokeSpotifyToken] Network request failed for Spotify token deletion:', err);
+    });
 }
 
 async function exchangeTikTokCode(code: string, redirectUri: string): Promise<TikTokTokenResponse> {

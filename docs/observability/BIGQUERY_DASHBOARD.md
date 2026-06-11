@@ -1,7 +1,7 @@
 # Item 390: BigQuery Revenue Funnel Dashboard
 
 This document defines the BigQuery views and Looker Studio configuration for the
-indiiOS revenue funnel analytics dashboard.
+indii revenue funnel analytics dashboard.
 
 ## BigQuery Views
 
@@ -115,7 +115,7 @@ GROUP BY 1, 2;
 2. Open [Looker Studio](https://lookerstudio.google.com) → Create → Report
 3. Add data source → BigQuery → select `{PROJECT_ID}.analytics`
 4. Import this report structure or build manually using the views above
-5. Share the report with `analytics@indiios.com` with Viewer access
+5. Share the report with `analytics@indii.music` with Viewer access
 
 ## Firebase Analytics Events to Instrument
 

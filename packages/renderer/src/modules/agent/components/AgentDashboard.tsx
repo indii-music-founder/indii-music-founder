@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MapPin, Sparkles, Megaphone, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
@@ -50,6 +50,21 @@ const CampaignsTab: React.FC = () => {
 
     React.useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
 
+    React.useEffect(() => {
+        if (!import.meta.env.DEV) return;
+
+        const handleTestSetCampaigns = (event: Event) => {
+            const customEvent = event as CustomEvent<{ campaigns?: CampaignAsset[] }>;
+            if (Array.isArray(customEvent.detail?.campaigns)) {
+                setCampaigns(customEvent.detail.campaigns);
+                setLoading(false);
+            }
+        };
+
+        window.addEventListener('TEST_INJECT_AGENT_CAMPAIGNS', handleTestSetCampaigns);
+        return () => window.removeEventListener('TEST_INJECT_AGENT_CAMPAIGNS', handleTestSetCampaigns);
+    }, []);
+
     return (
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -74,12 +89,12 @@ const CampaignsTab: React.FC = () => {
             ) : campaigns.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-slate-600 space-y-3">
                     <Megaphone size={32} className="opacity-30" />
-                    <p className="text-sm">No campaigns yet. Create one in the Marketing module.</p>
+                    <p className="text-sm">{t('agent.campaigns.noCampaigns')}</p>
                     <a
                         href="?module=marketing"
                         className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
                     >
-                        Go to Marketing <ExternalLink size={10} />
+                        {t('agent.campaigns.goToMarketing')} <ExternalLink size={10} />
                     </a>
                 </div>
             ) : (
@@ -101,7 +116,7 @@ const CampaignsTab: React.FC = () => {
                                 </span>
                             </div>
                             {c.budget !== undefined && (
-                                <p className="text-xs text-slate-500 mt-2">Budget: ${c.budget.toLocaleString()}</p>
+                                <p className="text-xs text-slate-500 mt-2">{t('agent.campaigns.budget', { amount: '$' + c.budget.toLocaleString() })}</p>
                             )}
                         </div>
                     ))}
@@ -132,7 +147,7 @@ const AgentDashboard: React.FC = () => {
     const [city, setCity] = useState('Nashville');
     const [genre, setGenre] = useState('Rock');
     const [isAutonomous, setIsAutonomous] = useState(false);
-    const [scanStatus, setScanStatus] = useState<string>('Ready to deploy');
+    const [scanStatus, setScanStatus] = useState<string>(t('agent.scout.ready'));
 
     // Reactive mobile detection via centralized hook
     const { isAnyPhone } = useMobile();
@@ -160,7 +175,7 @@ const AgentDashboard: React.FC = () => {
 
     const handleScan = async () => {
         setScanning(true);
-        setScanStatus("Initializing agent...");
+        setScanStatus(t('agent.scout.initializing'));
 
         try {
             const results = await VenueScoutService.searchVenues(
@@ -177,20 +192,20 @@ const AgentDashboard: React.FC = () => {
             results.forEach(v => {
                 const exists = venues.find(existing => existing.id === v.id);
                 if (!exists) {
-                    addVenue(v);
+                    addVenue(v as Venue);
                     newCount++;
                 }
             });
 
             if (newCount === 0 && results.length > 0) {
-                setScanStatus(`Scan complete. Found ${results.length} venues (all already in roster).`);
+                setScanStatus(t('agent.scout.scanCompleteNoNew', { count: results.length }));
             } else {
-                setScanStatus(`Mission complete. Discovered ${newCount} new venues.`);
+                setScanStatus(t('agent.scout.missionComplete', { count: newCount }));
             }
 
         } catch (e: unknown) {
             logger.error("Scan failed", e);
-            setScanStatus("Mission failed. Connection lost.");
+            setScanStatus(t('agent.scout.missionFailed'));
         } finally {
             setScanning(false);
         }
@@ -252,10 +267,9 @@ const AgentDashboard: React.FC = () => {
                                     {/* Hero Section */}
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <h1 className="text-4xl font-bold text-white tracking-tight">The Scout</h1>
+                                            <h1 className="text-4xl font-bold text-white tracking-tight">{t('agent.scout.title')}</h1>
                                             <p className="text-lg text-slate-400 max-w-2xl">
-                                                Deploy autonomous agents to identify high-value performance opportunities.
-                                                Select your target market and genre focus below.
+                                                {t('agent.scout.description')}
                                             </p>
                                         </div>
 
@@ -286,7 +300,7 @@ const AgentDashboard: React.FC = () => {
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                                                    Scouted Venues ({venues.length})
+                                                    {t('agent.scout.scoutedVenues', { count: venues.length })}
                                                 </h3>
                                             </div>
 
@@ -303,8 +317,8 @@ const AgentDashboard: React.FC = () => {
                                                         <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 shadow-inner shadow-black/50">
                                                             <MapPin size={32} className="opacity-40" />
                                                         </div>
-                                                        <p className="text-lg font-medium text-slate-400">No venues scouted yet</p>
-                                                        <p className="text-sm">Configure your parameters above and deploy the scout.</p>
+                                                        <p className="text-lg font-medium text-slate-400">{t('agent.scout.noVenues')}</p>
+                                                        <p className="text-sm">{t('agent.scout.configureParams')}</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -324,7 +338,7 @@ const AgentDashboard: React.FC = () => {
                             <div className="flex flex-col h-full overflow-hidden">
                                 {/* Specialist selector toolbar */}
                                 <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 shrink-0">
-                                    <span className="text-xs text-slate-500 font-medium">Route to:</span>
+                                    <span className="text-xs text-slate-500 font-medium">{t('agent.chat.routeTo')}</span>
                                     <SpecialistSelector
                                         selectedAgentId={selectedAgentId}
                                         onSelect={setSelectedAgentId}
@@ -345,7 +359,7 @@ const AgentDashboard: React.FC = () => {
                                                 URL.revokeObjectURL(url);
                                             }}
                                             className="ml-auto p-1.5 rounded-md hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors"
-                                            title="Export chat transcript"
+                                            title={t('agent.chat.exportTranscript')}
                                         >
                                             <Download size={14} />
                                         </button>
@@ -357,7 +371,7 @@ const AgentDashboard: React.FC = () => {
                                     {agentMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
                                             <Sparkles size={28} className="opacity-40" />
-                                            <p className="text-sm">Start a conversation with your AI team.</p>
+                                            <p className="text-sm">{t('agent.chat.startConversation')}</p>
                                         </div>
                                     )}
                                     {agentMessages.map((msg) => (
@@ -392,7 +406,7 @@ const AgentDashboard: React.FC = () => {
                         )}
 
                         {activeTab === 'inbox' && (
-                            <React.Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-sm text-slate-500">Loading inbox...</div></div>}>
+                            <React.Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-sm text-slate-500">{t('agent.inbox.loading')}</div></div>}>
                                 <InboxTabNew />
                             </React.Suspense>
                         )}

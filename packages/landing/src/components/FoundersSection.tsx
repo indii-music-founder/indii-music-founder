@@ -83,12 +83,12 @@ export default function FoundersSection() {
           </motion.div>
 
           <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4">
-            10 Founders.<br />
+            10 Available Seats.<br />
             <span className="text-amber-400">Lifetime Access.</span>
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            The first 10 people who believe in what we&apos;re building get in forever.
-            Your name goes into the code. Your deal is encoded as cryptographic proof.
+            We are opening exactly 10 paid seats to join the i-i Founder. The first 10 people who believe in what we&apos;re building get in forever.
+            Your name is permanently added to the system. Your terms are secured and verifiable.
             No subscriptions. No renewal. Just access — for the life of the software.
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function FoundersSection() {
                 key={f.seat}
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-medium"
               >
-                <span className="text-amber-500 font-mono text-xs">#{f.seat}</span>
+                <span className="text-amber-500 font-mono text-xs">#{f.seat === 11 ? 'ii' : f.seat}</span>
                 {f.name}
               </div>
             ))}
@@ -148,18 +148,18 @@ export default function FoundersSection() {
             },
             {
               icon: '$',
-              title: 'API Costs At Cost',
-              desc: 'AI generation costs (Gemini, Vertex) are passed through at no markup — just what Google charges.',
+              title: 'Infrastructure At Cost',
+              desc: 'Compute and generation costs are passed through at no markup — just what the providers charge.',
             },
             {
               icon: '⌗',
-              title: 'Verification Hash',
-              desc: 'Your payment generates a SHA-256 hash of your deal terms. Verify it any time. The math doesn\'t lie.',
+              title: 'Transparent Terms',
+              desc: 'Your payment generates a secure digital receipt of your deal terms. Verify it any time. The proof is in the system.',
             },
             {
-              icon: '10',
-              title: '10 Seats. Final.',
-              desc: 'No exceptions. No 11th founder. The seats encoded in the codebase are the cap.',
+              icon: '11',
+              title: '11 Seats Total.',
+              desc: '1 Reserved, 10 Paid. The 11 seats encoded in the codebase are the cap.',
             },
             {
               icon: '◎',
@@ -196,7 +196,7 @@ export default function FoundersSection() {
                 disabled={!ctaReady}
                 className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_60px_rgba(245,158,11,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Become Founder #{(meta?.count ?? 0) + 1}
+                Become Founder #{(meta?.count ?? 0) + 2}
                 <span className="text-black/60 font-normal text-base">
                   — ${FOUNDER_PRICE.toLocaleString()} one-time
                 </span>

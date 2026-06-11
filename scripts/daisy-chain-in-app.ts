@@ -1,7 +1,7 @@
 /**
  * Daisy Chain IN-APP E2E Test via Playwright
  * 
- * Drives the actual indiiOS Creative Studio UI at localhost:4242.
+ * Drives the actual indii Creative Studio UI at localhost:4242.
  * Handles auth (Explore as Guest) → Creative Studio → Generate Image
  * 
  * This test exercises the REAL app code: ImageGenerationService,
@@ -46,7 +46,7 @@ async function main() {
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════╗');
     console.log('║  DAISY CHAIN — IN-APP E2E TEST (Playwright)                ║');
-    console.log('║  Driving the actual indiiOS Creative Studio UI             ║');
+    console.log('║  Driving the actual indii Creative Studio UI             ║');
     console.log('╚══════════════════════════════════════════════════════════════╝');
     console.log('');
 

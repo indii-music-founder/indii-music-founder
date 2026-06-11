@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen, Fingerprint } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { MyContracts } from './components/MyContracts';
+import { CreatorProtectionCenter } from './components/CreatorProtectionCenter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { LegalService } from '@/services/legal/LegalService';
+import { creatorProtectionHarnessService } from '@/services/creator-protection';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 /* ================================================================== */
 /*  Legal Dashboard — Three-Panel Layout                                */
@@ -25,12 +29,16 @@ import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 
 export default function LegalDashboard() {
     const { t } = useTranslation();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [isDragging, setIsDragging] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<null | {
         score: number;
         risks: string[];
         summary: string;
+        aiClauseFlags?: string[];
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
@@ -103,17 +111,22 @@ Only return valid JSON.
 
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: `Contract Content:\n${content}` }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { responseMimeType: 'application/json' },
                 systemPrompt
             );
 
-            const data = JSON.parse(response.response.text());
+            const responseText = typeof response.response.text === 'function'
+                ? response.response.text()
+                : (typeof response.response.text === 'string' ? response.response.text : JSON.stringify(response.response));
+            const data = JSON.parse(responseText);
+            const aiClauseReview = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(content);
 
             const result = {
                 score: data.score || 0,
                 summary: data.summary || "No summary provided.",
-                risks: data.risks || []
+                risks: [...(data.risks || []), ...aiClauseReview.flags],
+                aiClauseFlags: aiClauseReview.flags,
             };
 
             setAnalysisResult(result);
@@ -145,7 +158,8 @@ Only return valid JSON.
     const handleGenerateNDA = async () => {
         setIsGenerating('NDA');
         try {
-            const parties = ['[ARTIST NAME]', '[COMPANY/INDIVIDUAL NAME]'];
+            const artistName = userProfile?.displayName || '[ARTIST NAME]';
+            const parties = [artistName, '[COMPANY/INDIVIDUAL NAME]'];
             const purpose = 'general business discussion and project collaboration';
 
             await LegalService.generateNDA(parties, purpose);
@@ -162,7 +176,8 @@ Only return valid JSON.
         setIsGenerating('IP');
         try {
             const type = 'Intellectual Property Assignment';
-            const parties = ['[ASSIGNOR NAME]', '[ASSIGNEE NAME]'];
+            const assignorName = userProfile?.displayName || '[ASSIGNOR NAME]';
+            const parties = [assignorName, '[ASSIGNEE NAME]'];
             const terms = 'Transfer of all rights, title, and interest in and to the specified creative works.';
 
             await LegalService.draftContract(type, parties, terms);
@@ -218,6 +233,9 @@ Only return valid JSON.
                         </TabsTrigger>
                         <TabsTrigger value="dmca" data-testid="legal-tab-dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Shield size={14} /> {t('legal.tabs.dmca')}
+                        </TabsTrigger>
+                        <TabsTrigger value="protection" data-testid="legal-tab-protection" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Fingerprint size={14} /> Creator Protection
                         </TabsTrigger>
                         <TabsTrigger value="counsel" data-testid="legal-tab-counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Scale size={14} /> {t('legal.tabs.counsel')}
@@ -283,7 +301,7 @@ Only return valid JSON.
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h4 className="text-xl font-bold text-white mb-1">Analysis Report</h4>
-                                    <p className="text-gray-400 text-sm">Generated by LegalAI Agent</p>
+                                    <p className="text-gray-400 text-sm">Generated by Autonomous Legal Agent</p>
                                 </div>
                                 <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${analysisResult.score >= 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
                                     analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
@@ -325,6 +343,10 @@ Only return valid JSON.
 
                 <TabsContent value="dmca" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
                     <DMCANoticeGenerator />
+                </TabsContent>
+
+                <TabsContent value="protection" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
+                    <CreatorProtectionCenter />
                 </TabsContent>
 
                 <TabsContent value="counsel" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
@@ -410,7 +432,7 @@ function DisclaimerPanel() {
         <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
             <div className="flex items-start gap-2 text-xs text-amber-300/70">
                 <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
-                <span>AI analysis is for informational purposes only. All drafts MUST be reviewed by qualified legal counsel.</span>
+                <span>Autonomous analysis is for informational purposes only. All drafts MUST be reviewed by qualified legal counsel.</span>
             </div>
         </div>
     );
@@ -526,7 +548,7 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 
 // Featured Attorney Booking URL
 const FEATURED_ATTORNEY_BOOKING_URL = 'https://indii.music/legal/counsel-booking';
-const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indiios&utm_medium=platform&utm_campaign=legal_partner`;
+const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indii&utm_medium=platform&utm_campaign=legal_partner`;
 
 function FindCounselPanel() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -559,7 +581,7 @@ function FindCounselPanel() {
                                     {[...Array(5)].map((_, i) => (
                                         <Star key={i} size={10} className="fill-yellow-400 text-yellow-400" />
                                     ))}
-                                    <span className="text-[10px] text-gray-500 ml-1">indiiOS Verified Partner</span>
+                                    <span className="text-[10px] text-gray-500 ml-1">indii Verified Partner</span>
                                 </div>
                             </div>
                         </div>

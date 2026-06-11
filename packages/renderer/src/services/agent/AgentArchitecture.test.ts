@@ -5,17 +5,22 @@ import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HistoryManager } from './components/HistoryManager';
 import { useStore } from '@/core/store';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { agentRegistry } from './registry';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => "Mock Response",
                 functionCalls: () => []
             }
+        }),
+        generateStructuredData: vi.fn().mockResolvedValue({
+            score: 0.9,
+            reasoning: "Mocked evaluation",
+            improvements: []
         }),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: {
@@ -262,8 +267,9 @@ describe('Multi-Agent Architecture Tests', () => {
         });
 
         // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
-        it('should pass superpower tools to AI when executing', async () => {
+        it('should pass superpower tools to Autonomous when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await agent_marketing?.execute('Research market trends');
 
             // BaseAgent currently uses generateContent

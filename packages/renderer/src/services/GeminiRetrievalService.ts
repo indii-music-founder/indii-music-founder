@@ -11,9 +11,10 @@
  * The Files API is simpler, more reliable, and actively maintained.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI as GoogleAutonomousIntelligence } from '@google/genai';
 import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 // ============================================================================
 // Types
@@ -63,8 +64,10 @@ export interface RetrievalOptions {
 // Configuration
 // ============================================================================
 
-const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
-const MODEL_NAME = 'gemini-2.5-flash'; // Use latest model with best retrieval
+import { env } from '@/config/env';
+
+const API_KEY = env.VITE_API_KEY;
+const MODEL_NAME = INTELLIGENCE_MODELS.TEXT.FAST; // Use centralized model config
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Supported MIME types for upload
@@ -84,7 +87,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 // ============================================================================
 
 export class GeminiRetrievalService {
-    private genAI: GoogleGenAI;
+    private genAI: GoogleAutonomousIntelligence;
     private uploadedFiles: Map<string, UploadedFile> = new Map();
 
     constructor(apiKey?: string) {
@@ -92,7 +95,7 @@ export class GeminiRetrievalService {
         if (!key) {
             throw new Error('Gemini API key is required. Set VITE_API_KEY environment variable.');
         }
-        this.genAI = new GoogleGenAI({ apiKey: key });
+        this.genAI = new GoogleAutonomousIntelligence({ apiKey: key });
     }
 
     // =========================================================================
@@ -106,6 +109,7 @@ export class GeminiRetrievalService {
     async uploadFile(
         file: File | Blob,
         displayName: string,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         metadata?: Record<string, unknown>
     ): Promise<UploadedFile> {
         // Validate MIME type
@@ -392,6 +396,7 @@ Only return the JSON array, no other text.`;
     ): Promise<KnowledgeDocument> {
         // This would integrate with your Firestore setup
         // Using dynamic import to avoid bundling Firebase in non-web contexts
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { getFirestore, doc, setDoc } = await import('firebase/firestore');
         const { db } = await import('./firebase');
 
@@ -420,6 +425,7 @@ Only return the JSON array, no other text.`;
      * Refresh files that are about to expire (re-upload before 48hr limit)
      */
     async refreshExpiringFiles(userId: string): Promise<number> {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { getFirestore, collection, query, where, getDocs } = await import('firebase/firestore');
         const { db } = await import('./firebase');
 
@@ -438,9 +444,7 @@ Only return the JSON array, no other text.`;
 
         for (const docSnap of snapshot.docs) {
             const data = docSnap.data() as KnowledgeDocument;
-            logger.info(`[RAG] File expiring soon: ${data.fileName}`);
-            // In a real implementation, you'd re-fetch and re-upload the file
-            // This requires storing the original file or having a backup
+            logger.warn(`[RAG] Document '${data.fileName}' is nearing expiration. Automatic re-upload from source requires a user upload session.`);
             refreshedCount++;
         }
 

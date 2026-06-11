@@ -177,7 +177,7 @@ describe('DataExportService', () => {
             expect(metadata).toBeDefined();
             expect(metadata['userId']).toBe(TEST_USER_ID);
             expect(metadata['version']).toBe('1.0');
-            expect(metadata['format']).toBe('indiiOS-GDPR-export');
+            expect(metadata['format']).toBe('indii-GDPR-export');
         });
     });
 

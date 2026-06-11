@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
@@ -7,24 +8,27 @@ interface AnnotationPaletteProps {
     onColorSelect: (color: CreativeColor) => void;
     colorDefinitions: Record<string, string>;
     onOpenDefinitions: () => void;
+    orientation?: 'horizontal' | 'vertical';
 }
 
 export default function AnnotationPalette({
     activeColor,
     onColorSelect,
     colorDefinitions,
-    onOpenDefinitions
+    onOpenDefinitions,
+    orientation = 'horizontal',
 }: AnnotationPaletteProps) {
+    const isVertical = orientation === 'vertical';
 
     return (
-        <div className="flex flex-col gap-2 p-2 bg-[#111] border-r border-gray-800 h-full w-14 items-center">
-            <div className="mb-4 mt-2">
-                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
+        <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center bg-transparent border-0 h-auto w-auto`}>
+            <div className={isVertical ? 'mb-1' : 'mr-2'}>
+                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
                     <span className="text-[10px] font-bold text-white">ID</span>
                 </div>
             </div>
 
-            <div className="flex flex-col gap-3 items-center flex-1">
+            <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center`}>
                 {STUDIO_COLORS.map((color) => {
                     const hasDefinition = !!colorDefinitions[color.id];
                     const isActive = activeColor.id === color.id;
@@ -55,7 +59,7 @@ export default function AnnotationPalette({
                             )}
 
                             {/* Hover Label */}
-                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-opacity">
+                            <div className={`absolute ${isVertical ? 'left-full ml-3 top-1/2 -translate-y-1/2' : 'bottom-full mb-3 left-1/2 -translate-x-1/2'} px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-opacity`}>
                                 <span className="font-bold">{color.name}</span>
                                 {hasDefinition && <span className="block text-[10px] text-gray-400 max-w-[150px] truncate">{colorDefinitions[color.id]}</span>}
                             </div>
@@ -67,11 +71,11 @@ export default function AnnotationPalette({
             <button
                 onClick={onOpenDefinitions}
                 data-testid="palette-settings-btn"
-                className="mt-auto mb-2 w-10 h-10 rounded-xl bg-[#222] hover:bg-[#333] text-gray-400 hover:text-white flex items-center justify-center transition-colors border border-gray-800"
+                className={`${isVertical ? 'mt-1' : 'ml-2'} w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors`}
                 aria-label="Edit Definitions"
                 title="Edit Definitions"
             >
-                <Settings size={18} />
+                <Settings size={16} />
             </button>
         </div>
     );

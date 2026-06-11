@@ -190,6 +190,7 @@ export class E2EEncryptionService {
     recipientAgentId: string
   ): Promise<Record<string, unknown>> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { encrypted, signature } = envelope;
 
       // Note: Signature verification bypassed for Phase 4.1 (matching Python placeholder)
@@ -376,7 +377,7 @@ export class E2EEncryptionService {
   }
 
   private generateMessageId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    return `msg_${Date.now()}_${crypto.randomUUID().substring(0, 12)}`;
   }
 
   private log(message: string): void {

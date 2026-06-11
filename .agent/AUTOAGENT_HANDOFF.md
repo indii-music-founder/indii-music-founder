@@ -16,13 +16,13 @@ wire it up so:
    automatically opening a PR with any winning system-prompt deltas.
 2. **The same loop powers in-app self-improvement** — registered users' real
    sessions get captured as eval cases, so each artist's agents get smarter the
-   more they use indiiOS. This is the actual product wedge for registration.
+   more they use indii. This is the actual product wedge for registration.
 
 ---
 
 ## What AutoAgent actually is (verified from README, not guessed)
 
-| Fact | Implication for indiiOS |
+| Fact | Implication for indii |
 |---|---|
 | Python + `uv`, not Node | Lives in a sidecar dir, isolated from npm workspaces. Fits the existing `python/` + `docker-compose.yml` AI Sidecar pattern. |
 | Tasks use **Harbor** format — Docker per eval case (`task.toml`, `instruction.md`, `tests/test.sh`, `environment/Dockerfile`) | Each eval case is heavy. Start with 3 seed tasks. |
@@ -46,7 +46,7 @@ last session ended up writing nothing.
 
 ### Phase A — Sidecar + loop proof  *(start here on desktop)*
 
-Goal: Prove the loop spins on indiiOS hardware. Reward can be 0 — we just need
+Goal: Prove the loop spins on indii hardware. Reward can be 0 — we just need
 the harness to execute end-to-end.
 
 Files to create:
@@ -79,7 +79,7 @@ optimization/autoagent/
 running on localhost, `agent.py` ships with a minimal hardcoded routing function
 keyed off `SYSTEM_PROMPT`. The meta-agent's job is to discover that mentioning
 specific specialist names in the prompt improves routing accuracy. This proves
-the loop works WITHOUT requiring the indiiOS dev server to be running inside
+the loop works WITHOUT requiring the indii dev server to be running inside
 the Docker eval container (which would be a nightmare).
 
 Phase B replaces the stub with a real HTTP call.
@@ -117,7 +117,7 @@ Files:
    be enforced — never let it run unbounded.
 2. Harbor needs Docker-in-Docker. GH Actions hosted runners support this but
    it's slow. May need to switch to a Modal/Fly worker — note this in setup doc.
-3. Service-account auth path for the Python wrapper to call any indiiOS HTTP
+3. Service-account auth path for the Python wrapper to call any indii HTTP
    endpoint. Phase A skirts this with the stub.
 
 ### Phase C — In-app self-improvement capture

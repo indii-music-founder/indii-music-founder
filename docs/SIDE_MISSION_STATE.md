@@ -11,7 +11,7 @@ The next major build is the **Sonic Reasoning Engine**. This moves beyond "Finge
 
 ### BUILD TASKS:
 1.  **Audio Ingestion Service:** Connect the Electron filesystem to the Gemini 3 Pro API for direct audio upload (MODALITY: AUDIO).
-2.  **Deep Description Prompt:** Develop the prompt that forces Gemini to describe "Timbre, Mood, and Production Value" for the DDEX `marketingComment` field.
+2.  **Deep Description Prompt:** Develop the prompt that forces Gemini to describe "Timbre, Mood, and Production Value" for the Proprietary Ingestion IP `marketingComment` field.
 3.  **Verification Loop:** Use Gemini to audit the audio for "AI Artifacts" to ensure Goal 3 compliance.
 
 ---

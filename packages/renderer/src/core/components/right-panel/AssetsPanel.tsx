@@ -117,7 +117,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
             const q = searchQuery.toLowerCase();
             filtered = filtered.filter(a =>
                 a.prompt?.toLowerCase().includes(q) ||
-                a.tags?.some(t => t.toLowerCase().includes(q))
+                a.tags?.some(t => t?.toLowerCase().includes(q))
             );
         }
 
@@ -279,6 +279,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                 <motion.button
                                     key={asset.id}
                                     draggable={asset.type === 'image' || asset.type === 'video'}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
                                         e.dataTransfer?.setData('text/plain', asset.id);
                                     }}
@@ -345,6 +346,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                 <motion.button
                                     key={asset.id}
                                     draggable={asset.type === 'image' || asset.type === 'video'}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
                                         e.dataTransfer?.setData('text/plain', asset.id);
                                     }}

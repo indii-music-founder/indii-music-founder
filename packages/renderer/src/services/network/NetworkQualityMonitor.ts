@@ -18,14 +18,15 @@ type QualityChangeCallback = (quality: NetworkQuality) => void;
 export class NetworkQualityMonitor {
   private quality: NetworkQuality | null = null;
   private qualityListeners: Set<QualityChangeCallback> = new Set();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private connectionInfo: any = null;
 
   async initialize(): Promise<void> {
     // Check if Network Information API is available
     const connection =
-      (navigator as any).connection ||
-      (navigator as any).mozConnection ||
-      (navigator as any).webkitConnection;
+      (navigator as unknown as { connection?: { addEventListener: (type: string, listener: EventListener) => void, effectiveType: string, downlink: number, rtt: number } }).connection ||
+      (navigator as unknown as { mozConnection?: { addEventListener: (type: string, listener: EventListener) => void, effectiveType: string, downlink: number, rtt: number } }).mozConnection ||
+      (navigator as unknown as { webkitConnection?: { addEventListener: (type: string, listener: EventListener) => void, effectiveType: string, downlink: number, rtt: number } }).webkitConnection;
 
     if (!connection) {
       logger.warn(

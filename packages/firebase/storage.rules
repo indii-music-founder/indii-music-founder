@@ -8,12 +8,18 @@ service firebase.storage {
     // ========================================
 
     function isAuthenticated() {
-      return request.auth != null; // AppCheck decoupled for dev environment
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
 
     function isOrgMember(orgId) {
       return isAuthenticated() && 
         request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
+    }
+
+    // Guest explorer writes are retired. Keep this helper so legacy rule branches
+    // stay syntactically stable, but make every guest path fail closed.
+    function isGuest() {
+      return false;
     }
 
     // File size limits (in bytes)
@@ -37,7 +43,14 @@ service firebase.storage {
     function isAllowedMediaType() {
       return isImageType() || isVideoType() || isAudioType() ||
              request.resource.contentType.matches('application/pdf') ||
-             request.resource.contentType.matches('application/json');
+             request.resource.contentType.matches('application/json') ||
+             request.resource.contentType.matches('text/.*') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+             request.resource.contentType.matches('application/zip') ||
+             request.resource.contentType.matches('application/x-zip-compressed') ||
+             request.resource.contentType.matches('font/.*') ||
+             request.resource.contentType.matches('application/x-font-.*');
     }
 
     // ========================================
@@ -52,6 +65,16 @@ service firebase.storage {
                       request.auth.uid == userId &&
                       isUnderSizeLimit(500) &&
                       isAllowedMediaType();
+    }
+
+    // Creative Suite thin client asset uploads
+    match /creative/{userId}/{allPaths=**} {
+      // Owner can read their own uploaded assets and results
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid');
+      // Owner can upload reference media
+      allow write: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
+                      isUnderSizeLimit(100) && // limit references to 100MB
+                      (isImageType() || isVideoType() || isAudioType());
     }
 
     // ========================================

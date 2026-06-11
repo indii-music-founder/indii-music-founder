@@ -39,7 +39,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app. Web sessions do not support native browser control.',
+                'Browser automation requires the indii desktop app. Web sessions do not support native browser control.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {
@@ -62,7 +62,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app.',
+                'Browser automation requires the indii desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {
@@ -85,7 +85,7 @@ export const BrowserTools = {
             }
 
             return toolError(
-                'Browser automation requires the indiiOS desktop app.',
+                'Browser automation requires the indii desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
         } catch (error: unknown) {

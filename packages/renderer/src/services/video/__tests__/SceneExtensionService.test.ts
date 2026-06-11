@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SceneExtensionService } from '../SceneExtensionService';
-import { GenAI as AI } from '../../ai/GenAI';
+import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
 import { MembershipService } from '../../MembershipService';
 
 // Mock dependencies
-vi.mock('../../ai/GenAI', () => ({
-    GenAI: {
+vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateVideo: vi.fn(),
     },
 }));
@@ -66,10 +66,10 @@ describe('SceneExtensionService', () => {
         expect(result.videoUris).toHaveLength(3);
         expect(result.totalDurationSeconds).toBe(24);
 
-        // Verify AI generation was called 3 times
+        // Verify Autonomous generation was called 3 times
         expect(AI.generateVideo).toHaveBeenCalledTimes(3);
 
-        // Verify calls to AI Service
+        // Verify calls to Intelligence Service
         // First call: No image (unless provided in options), just prompt
         expect(AI.generateVideo).toHaveBeenNthCalledWith(1, expect.objectContaining({
             prompt: 'dogs having fun',

@@ -1,7 +1,7 @@
 import { vi, MockInstance } from 'vitest';
 import { BaseAgent } from '../../BaseAgent';
 import { AgentConfig, AgentContext } from '../../types';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { TraceService } from '../../observability/TraceService';
 
 /**
@@ -9,7 +9,7 @@ import { TraceService } from '../../observability/TraceService';
  * 
  * Automatically mocks:
  * - TraceService (prevents Firestore writes)
- * - FirebaseAIService (allows injecting responses)
+ * - FirebaseIntelligenceService (allows injecting responses)
  * 
  * Usage:
  * ```typescript
@@ -39,13 +39,13 @@ export class AgentTestHarness {
         vi.spyOn(TraceService, 'completeTrace').mockResolvedValue(undefined);
         vi.spyOn(TraceService, 'failTrace').mockResolvedValue(undefined);
 
-        // Spy on GenAI if not already mocked
-        if (!vi.isMockFunction(GenAI.generateContent)) {
-            vi.spyOn(GenAI, 'generateContent');
+        // Spy on AutonomousIntelligence if not already mocked
+        if (!vi.isMockFunction(AutonomousIntelligence.generateContent)) {
+            vi.spyOn(AutonomousIntelligence, 'generateContent');
         }
-        if (!vi.isMockFunction(GenAI.generateContentStream)) {
+        if (!vi.isMockFunction(AutonomousIntelligence.generateContentStream)) {
             try {
-                vi.spyOn(GenAI, 'generateContentStream');
+                vi.spyOn(AutonomousIntelligence, 'generateContentStream');
             } catch (_e: unknown) {
                 // Ignore if it fails (already mocked or property descriptor issue)
             }
@@ -53,10 +53,10 @@ export class AgentTestHarness {
     }
 
     /**
-     * Mocks the next response from GenAI.generateContent.
+     * Mocks the next response from AutonomousIntelligence.generateContent.
      * @param text The text response to return.
      */
-    public mockGenAIResponse(text: string) {
+    public mockAutonomousIntelligenceResponse(text: string) {
         const mockResult = {
             response: {
                 text: () => text,
@@ -68,22 +68,22 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
-        if (GenAI.generateContentStream) {
-            (GenAI.generateContentStream as unknown as MockInstance).mockResolvedValue({
+        (AutonomousIntelligence.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+        if (AutonomousIntelligence.generateContentStream) {
+            (AutonomousIntelligence.generateContentStream as unknown as MockInstance).mockResolvedValue({
                 stream: (async function* () {
                     yield { text: () => text };
                 })(),
-                response: Promise.resolve(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
-            } as unknown as Awaited<ReturnType<typeof GenAI.generateContentStream>>);
+                response: Promise.resolve(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>)
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContentStream>>);
         }
     }
 
     /**
-     * Mocks an GenAI response that triggers tool calls.
+     * Mocks an AutonomousGenIntelligence response that triggers tool calls.
      * @param toolCalls Array of tool calls (name + args)
      */
-    public mockGenAIToolCall(toolCalls: { name: string, args: Record<string, unknown> }[]) {
+    public mockAutonomousIntelligenceToolCall(toolCalls: { name: string, args: Record<string, unknown> }[]) {
         const mockResult = {
             response: {
                 text: () => '',
@@ -95,7 +95,7 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        (AutonomousIntelligence.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
     }
 
     /**

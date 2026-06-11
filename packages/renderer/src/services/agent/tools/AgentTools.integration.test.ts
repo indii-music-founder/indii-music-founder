@@ -115,6 +115,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
             expect(NavigationTools).toBeDefined();
             expect(typeof NavigationTools).toBe('object');
             // All values should be functions
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for (const [name, fn] of Object.entries(NavigationTools)) {
                 expect(typeof fn).toBe('function');
             }
@@ -149,6 +150,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                     const toolRecord = mod[key];
                     expect(typeof toolRecord).toBe('object');
 
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     for (const [toolName, toolFn] of Object.entries(toolRecord)) {
                         expect(typeof toolFn).toBe('function');
                     }

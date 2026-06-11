@@ -5,8 +5,8 @@ import { z } from 'zod';
 import { AgentConfig } from './types';
 
 // Mock dependencies
-vi.mock('@/services/ai/GenAI', () => ({
-    GenAI: {
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
+    AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
         generateSpeech: vi.fn()
@@ -82,10 +82,10 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should execute tool when args are valid', async () => {
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
 
-        // Setup AI mock to call the tool
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        // Setup Autonomous mock to call the tool
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Calling tool...',
                 functionCalls: () => [{
@@ -96,13 +96,13 @@ describe('BaseAgent Tool Validation', () => {
                     }
                 }]
             }
-        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Tool execution confirmed.'
             }
-        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         const response = await agent.execute('Task');
 
@@ -111,9 +111,9 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should block tool execution when args are invalid', async () => {
-        const { GenAI } = await import('@/services/ai/GenAI');
+        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
 
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Calling tool with invalid args...',
                 functionCalls: () => [{
@@ -124,13 +124,13 @@ describe('BaseAgent Tool Validation', () => {
                     }
                 }]
             }
-        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'I see there was a validation error.'
             }
-        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         const response = await agent.execute('Task');
 

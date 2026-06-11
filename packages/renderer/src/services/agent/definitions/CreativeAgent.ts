@@ -42,7 +42,7 @@ export const CreativeAgent: AgentConfig = {
         functionDeclarations: [
             {
                 name: 'generate_image',
-                description: 'Generate AI images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.',
+                description: 'Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 /**
- * Comprehensive Firebase Mock Factory for indiiOS
+ * Comprehensive Firebase Mock Factory for indii.music
  * Follows Platinum Polish standards for type safety and completeness.
  */
 
@@ -101,6 +101,7 @@ export const createFirebaseMock = () => {
 
     const mockRemoteConfig = {
         fetchAndActivate: vi.fn().mockResolvedValue(true),
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         getValue: vi.fn((_rc, key) => ({
             asString: () => 'mock-value',
             asBoolean: () => false,
@@ -115,7 +116,7 @@ export const createFirebaseMock = () => {
         getGenerativeModel: vi.fn(() => ({
             generateContent: vi.fn().mockResolvedValue({
                 response: {
-                    text: () => '{"result": "mock AI response"}',
+                    text: () => '{"result": "mock Autonomous response"}',
                     functionCalls: () => [],
                 },
             }),
@@ -143,7 +144,7 @@ export const createFirebaseMock = () => {
     };
 
     return {
-        app: { name: '[DEFAULT]', options: {}, delete: vi.fn().mockResolvedValue(undefined) },
+        app: { name: '[DEFAULT]', options: { storageBucket: 'mock-bucket.appspot.com' }, delete: vi.fn().mockResolvedValue(undefined) },
         auth: mockAuth,
         db: mockFirestore,
         firestore: mockFirestore, // Alias

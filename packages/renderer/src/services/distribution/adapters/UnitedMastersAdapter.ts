@@ -19,8 +19,8 @@ import {
     ExtendedGoldenMetadata,
     DateRange
 } from '@/services/distribution/types/distributor';
-import { ernService } from '@/services/ddex/ERNService';
-import { DDEX_CONFIG } from '@/core/config/ddex';
+import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { logger } from '@/utils/logger';
 
 const UM_API_BASE = 'https://api.unitedmasters.com/v1';
@@ -78,7 +78,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
         const releaseId = metadata.id || `UM-${Date.now()}`;
 
         try {
-            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'unitedmasters', assets);
+            const ernResult = await ingestionNotificationService.generateERN(metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'unitedmasters', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -94,7 +94,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
                         headers: {
                             'Authorization': `Bearer ${this.credentials.apiKey}`,
                             'Content-Type': 'application/json',
-                            'X-UM-Partner': 'indiiOS',
+                            'X-UM-Partner': 'indii',
                         },
                         body: JSON.stringify({
                             title: metadata.trackTitle,
@@ -142,6 +142,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         // UnitedMasters typically requires re-upload for changes
         return {

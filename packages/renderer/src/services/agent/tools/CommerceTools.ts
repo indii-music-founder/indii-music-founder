@@ -1,11 +1,11 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { GenAI } from '@/services/ai/GenAI';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
 export const CommerceTools = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
-        // Use AI image generation to produce an actual product mockup
+        // Use Intelligence image generation to produce an actual product mockup
         const productDescriptions: Record<string, string> = {
             't-shirt':    'a flat-lay product photo of a black unisex t-shirt displayed on a white background',
             'hoodie':     'a flat-lay product photo of a black pullover hoodie on a white background',
@@ -21,7 +21,7 @@ export const CommerceTools = {
         const imagePrompt = `${productBase}, with the following artwork printed on it: ${args.designIdea}. Studio lighting, product photography style, high resolution, centered composition.`;
 
         try {
-            const mockupImageUrl = await GenAI.generateImage(imagePrompt);
+            const mockupImageUrl = await AutonomousIntelligence.generateImage(imagePrompt);
 
             // Persist the generated mockup to Firestore for the merch module
             const { db, auth } = await import('@/services/firebase');
@@ -45,7 +45,7 @@ export const CommerceTools = {
             }, `Merchandise mockup generated for ${args.productType}. Image saved and ready for POD upload.`);
         } catch (err: unknown) {
             logger.error('[CommerceTools] mockup_merchandise image gen failed:', err);
-            return toolError('Failed to generate merchandise mockup. AI image service unavailable.', 'IMAGE_GEN_FAILED');
+            return toolError('Failed to generate merchandise mockup. Intelligence image service unavailable.', 'IMAGE_GEN_FAILED');
         }
     }),
 
@@ -54,29 +54,20 @@ export const CommerceTools = {
         try {
             const { functions } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
-            const createPaymentLinksFn = httpsCallable<
-                { campaignName: string; items: string[] },
-                { storefrontUrl: string; paymentLinks: string[] }
-            >(functions, 'createStripePaymentLinks');
+            const createPaymentLinksFn = httpsCallable(functions, 'createStripePaymentLinks');
 
-            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items });
+            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items }) as { data: { storefrontUrl: string; paymentLinks: string[] } };
             return toolSuccess(result.data, `Storefront deployed for "${args.campaignName}" with ${args.items.length} real Stripe Payment Links.`);
         } catch (_err: unknown) {
-            // Cloud Function not yet deployed — return a staged preview URL with clear status
-            const slug = args.campaignName.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-            logger.warn('[CommerceTools] createStripePaymentLinks not available, returning staged preview');
-            return toolSuccess({
-                campaignName: args.campaignName,
-                storefrontUrl: `https://app.indii.music/store/${slug}`,
-                paymentLinks: [],
-                status: 'staged',
-                note: 'Stripe Payment Links require the createStripePaymentLinks Cloud Function to be deployed. Items saved to merch module for manual link creation.',
-            }, `Storefront "${args.campaignName}" staged at /store/${slug}. Deploy createStripePaymentLinks Cloud Function to activate real checkout.`);
+            logger.warn('[CommerceTools] createStripePaymentLinks not available');
+            return toolError(
+                'Storefront preview deployment requires the createStripePaymentLinks Cloud Function.',
+                'STOREFRONT_BACKEND_UNAVAILABLE'
+            );
         }
     }),
 
     recommend_merch_pricing: wrapTool('recommend_merch_pricing', async (args: { productType: string; baseCost: number }) => {
-        // Dynamic pricing engine mock
         const standardMargin = 0.40; // 40% margin
         const recommendedPrice = args.baseCost / (1 - standardMargin);
         const premiumPrice = recommendedPrice * 1.25;
@@ -91,14 +82,37 @@ export const CommerceTools = {
     }),
 
     create_limited_drop_campaign: wrapTool('create_limited_drop_campaign', async (args: { dropName: string; totalItems: number; releaseDate: string }) => {
-        return toolSuccess({
-            dropName: args.dropName,
-            totalItems: args.totalItems,
-            releaseDate: args.releaseDate,
-            status: 'Scheduled',
-            presaleLocked: true,
-            notificationsQueued: true
-        }, `Limited drop campaign "${args.dropName}" scheduled for ${args.releaseDate} with ${args.totalItems} total items. Pre-sales are locked and superfan notifications queued.`);
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError('User must be authenticated to create a limited drop.', 'AUTH_REQUIRED');
+            }
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'limitedDrops'), {
+                dropName: args.dropName,
+                totalItems: args.totalItems,
+                releaseDate: args.releaseDate,
+                status: 'scheduled',
+                presaleLocked: false,
+                notificationsQueued: false,
+                createdAt: serverTimestamp(),
+            });
+
+            return toolSuccess({
+                dropId: docRef.id,
+                dropName: args.dropName,
+                totalItems: args.totalItems,
+                releaseDate: args.releaseDate,
+                status: 'scheduled',
+                presaleLocked: false,
+                notificationsQueued: false
+            }, `Limited drop campaign "${args.dropName}" saved for ${args.releaseDate}. Presale locking and notifications require their provider backends.`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Failed to create limited drop: ${msg}`, 'LIMITED_DROP_CREATE_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 

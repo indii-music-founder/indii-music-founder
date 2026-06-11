@@ -27,6 +27,7 @@ export const MobileAdaptiveLayout: React.FC<MobileAdaptiveLayoutProps> = ({
   showOnlyOn,
 }) => {
   const mobile = useMobile();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const layout = useResponsiveLayout();
 
   // Determine visibility

@@ -47,27 +47,44 @@ export class CanvasBatchService {
 
         try {
             const targets = PLATFORM_DIMENSIONS.filter(d => selectedIds.includes(d.id));
-            let completed = 0;
-
-            for (const target of targets) {
-                logger.debug(`[CanvasBatch] Processing ${target.label} (${target.width}x${target.height})`);
-
-                // In a real browser context:
-                // 1. Temporarily resize canvas
-                // 2. Adjust elements (relative positioning)
-                // 3. call canvas.toDataURL() or canvas.toCanvasElement()
-                // 4. Reset canvas size
-
-                // Mock result URL
-                const mockUrl = `https://firebasestorage.googleapis.com/v0/b/mock/o/creative/batch%2F${jobId}_${target.id}.png`;
-                exportedMap.set(target.id, mockUrl);
-
-                completed++;
-                store.updateJobProgress(jobId, (completed / targets.length) * 100);
-
-                // Simulate processing time
-                await new Promise(r => setTimeout(r, 800));
+            if (targets.length === 0) {
+                store.updateJobStatus(jobId, 'success');
+                return exportedMap;
             }
+
+            if (!import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) {
+                throw new Error('Canvas batch export renderer is not configured. No asset URL was generated.');
+            }
+
+            const { CloudStorageService } = await import('@/services/CloudStorageService');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fabricCanvas = canvas as any;
+            
+            const originalWidth = fabricCanvas.width;
+            const originalHeight = fabricCanvas.height;
+
+            for (let i = 0; i < targets.length; i++) {
+                const target = targets[i];
+                await this.autoReframe(fabricCanvas, target.width, target.height);
+                fabricCanvas.setWidth(target.width);
+                fabricCanvas.setHeight(target.height);
+                fabricCanvas.renderAll();
+
+                const dataUrl = fabricCanvas.toDataURL({
+                    format: 'png',
+                    quality: 1
+                });
+                
+                const userId = import.meta.env.VITE_E2E ? 'e2e_user' : 'batch_user';
+                const result = await CloudStorageService.smartSave(dataUrl, `batch_${target.id}_${Date.now()}`, userId);
+                exportedMap.set(target.id, result.url);
+                
+                store.updateJobProgress(jobId, Math.round(((i + 1) / targets.length) * 100));
+            }
+
+            fabricCanvas.setWidth(originalWidth);
+            fabricCanvas.setHeight(originalHeight);
+            fabricCanvas.renderAll();
 
             store.updateJobStatus(jobId, 'success');
             return exportedMap;

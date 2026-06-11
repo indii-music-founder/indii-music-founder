@@ -1,15 +1,15 @@
-# 📘 indiiOS Scripts Catalog
+# 📘 indii Scripts Catalog
 
-This directory contains automation, diagnostics, and utility scripts for the indiiOS development ecosystem.
+This directory contains automation, diagnostics, and utility scripts for the indii development ecosystem.
 
 ## 🚀 Core & Health
 
 | Script | Command | Purpose |
 | :--- | :--- | :--- |
 | **doctor.sh** | `npm run doctor` | **Flagship.** Checks Node, Python, Dependencies, Git, .env, and Sidecar health. |
-| **env-guardian.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/env-guardian.sh` | Backs up and restores `.env` from a secure location outside the repo. |
+| **env-guardian.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/env-guardian.sh` | Backs up and restores `.env` from a secure location outside the repo. |
 | **setup-dev-environment.sh** | N/A | Full machine bootstrapping for new developers. |
-| **validate-env.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/validate-env.ts` | Zod-powered validation of `.env` against the required schema. |
+| **validate-env.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/validate-env.ts` | Zod-powered validation of `.env` against the required schema. |
 
 ## 🛠 Diagnostics & AI
 
@@ -24,25 +24,25 @@ This directory contains automation, diagnostics, and utility scripts for the ind
 
 | Script | Command | Purpose |
 | :--- | :--- | :--- |
-| **build_sidecar.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/build_sidecar.sh` | Rebuilds the Python AI sidecar Docker image. |
-| **deploy-staging.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/deploy-staging.sh` | One-click deployment to the staging environment. |
-| **start-proxy.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/start-proxy.ts` | Starts the local RAG proxy server for development. |
+| **build_sidecar.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/build_sidecar.sh` | Rebuilds the Python AI sidecar Docker image. |
+| **deploy-staging.sh** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/deploy-staging.sh` | One-click deployment to the staging environment. |
+| **start-proxy.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/start-proxy.ts` | Starts the local RAG proxy server for development. |
 
 ## 💾 Data & Seed
 
 | Script | Command | Purpose |
 | :--- | :--- | :--- |
-| **seed-test-account.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/seed-test-account.ts` | populates Firestore with a complete "Platinum Release" mock artist profile. |
-| **bulk-ingest-rag.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/bulk-ingest-rag.ts` | Ingests documentation into the RAG vector database. |
-| **seed-earnings.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/seed-earnings.ts` | Generates mock financial data for the Revenue Dashboard. |
+| **seed-test-account.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/seed-test-account.ts` | populates Firestore with a complete "Platinum Release" mock artist profile. |
+| **bulk-ingest-rag.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/bulk-ingest-rag.ts` | Ingests documentation into the RAG vector database. |
+| **seed-earnings.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/seed-earnings.ts` | Generates mock financial data for the Revenue Dashboard. |
 
 ## 🧪 Verification & Stress Tests
 
 | Script | Command | Purpose |
 | :--- | :--- | :--- |
-| **stress-test-rag.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/stress-test-rag.ts` | Evaluates RAG performance under high concurrent load. |
-| **verify-gemini-image-gen.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/verify-gemini-image-gen.ts` | End-to-end verification of the image generation pipeline. |
-| **test-chunker.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/scripts/test-chunker.ts` | Verifies the logic of the audio/text content chunking. |
+| **stress-test-rag.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/stress-test-rag.ts` | Evaluates RAG performance under high concurrent load. |
+| **verify-gemini-image-gen.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/verify-gemini-image-gen.ts` | End-to-end verification of the image generation pipeline. |
+| **test-chunker.ts** | `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-Clean/scripts/test-chunker.ts` | Verifies the logic of the audio/text content chunking. |
 
 ---
 

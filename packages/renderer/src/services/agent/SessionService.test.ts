@@ -30,6 +30,7 @@ vi.mock('../FirestoreService', () => {
             update = mockUpdate;
             delete = mockDelete;
             list = mockList;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             constructor(collectionPath: string) {}
         }
     };

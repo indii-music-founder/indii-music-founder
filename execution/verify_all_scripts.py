@@ -103,8 +103,8 @@ def test_upc_manager():
         print(f"❌ UPC Generation Failed: {res.stderr}")
 
 
-def test_ddex_generator():
-    print("Testing ddex_generator.py...")
+def test_ingestion_generator():
+    print("Testing ingestion_generator.py...")
     input_data = json.dumps({
         "tracks": [{
             "id": "1",
@@ -115,16 +115,16 @@ def test_ddex_generator():
         "upc": "123456789012",
         "artist": "Test Artist"
     })
-    res = run_script("execution/distribution/ddex_generator.py", [input_data])
+    res = run_script("execution/distribution/ingestion_generator.py", [input_data])
     if res.returncode == 0:
         data = json.loads(res.stdout)
         assert data["status"] == "SUCCESS"
         assert "xml" in data
         assert "NewReleaseMessage" in data["xml"]
         assert "US-XXX-26-00001" in data["xml"]
-        print("✅ DDEX ERN 4.3 Generation Passed")
+        print("✅ Proprietary Ingestion IP Ingestion Protocol 4.3 Generation Passed")
     else:
-        print(f"❌ DDEX Generator Failed: {res.stderr}")
+        print(f"❌ Proprietary Ingestion IP Generator Failed: {res.stderr}")
 
 
 def test_keys_manager_bwarm():
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     test_isrc_manager()
     test_upc_manager()
     test_content_id()
-    test_ddex_generator()
+    test_ingestion_generator()
     test_keys_manager_bwarm()
     test_keys_manager_merlin()
     print("=" * 60 + "\n")

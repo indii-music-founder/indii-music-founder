@@ -1,4 +1,5 @@
 
+
 export const electronRenderService = {
     async render(config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) {
         console.log('[ElectronRenderService] Starting local render for', config.compositionId);
@@ -6,6 +7,7 @@ export const electronRenderService = {
         try {
             // Dynamically import @remotion/renderer so that it doesn't break if not available
             const { renderMedia } = await import('@remotion/renderer');
+            type RenderMediaParams = Parameters<typeof renderMedia>[0];
             
             const serveUrl = process.env.REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
             
@@ -18,18 +20,17 @@ export const electronRenderService = {
                     fps: 30,
                     durationInFrames: 300,
                     defaultProps: {},
-                } as any,
+                } as unknown as RenderMediaParams['composition'],
                 serveUrl,
                 codec: 'h264',
                 outputLocation: config.outputLocation,
-            });
+            } as RenderMediaParams);
             
             console.log('[ElectronRenderService] Local render successful:', config.outputLocation);
             return config.outputLocation;
         } catch (error) {
-            console.warn('[ElectronRenderService] Local @remotion/renderer failed or not found, falling back to stub mode.', error);
-            // This is a stub fallback. For the purpose of passing the security test or dev mode, we just simulate success.
-            return config.outputLocation;
+            console.error('[ElectronRenderService] Local render failed; no stub render will be reported as success.', error);
+            throw error;
         }
     }
 };

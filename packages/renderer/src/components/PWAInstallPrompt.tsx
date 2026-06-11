@@ -115,7 +115,7 @@ export const PWAInstallPrompt: React.FC = () => {
                         {/* Content */}
                         <div className="flex-1 pr-6">
                             <h3 className="text-white font-semibold text-sm mb-1">
-                                Install indiiOS
+                                Install indii.music
                             </h3>
                             <p className="text-white/60 text-xs mb-3 leading-relaxed">
                                 Add to your home screen for faster access and offline support

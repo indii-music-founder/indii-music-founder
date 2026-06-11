@@ -11,12 +11,20 @@ import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'fireba
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
-import type { AnalyticsEvent } from '@indiios/shared';
+import * as crypto from 'crypto';
 
 const db = admin.firestore();
 const bigquery = new BigQuery({
   projectId: process.env.GCLOUD_PROJECT,
 });
+
+interface AnalyticsEvent {
+  eventId: string;
+  eventType: string;
+  userId: string;
+  timestamp: string | number;
+  data: Record<string, unknown>;
+}
 
 interface BigQueryRow extends AnalyticsEvent {
   _idempotencyKey?: string;
@@ -34,8 +42,9 @@ const BATCH_SIZE = 100;
  * Format: userId-eventType-timestamp-hash
  */
 function generateIdempotencyKey(event: AnalyticsEvent): string {
-  const hash = Math.random().toString(36).substr(2, 9);
-  return `${event.userId}-${event.eventType}-${event.timestamp}-${hash}`;
+  const dataString = JSON.stringify(event.data || {});
+  const hash = crypto.createHash('sha256').update(dataString).digest('hex').substring(0, 8);
+  return event.eventId || `${event.userId}-${event.eventType}-${event.timestamp}-${hash}`;
 }
 
 /**
@@ -101,7 +110,8 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
   try {
     const result = await table.insert(rows);
     console.log(`[BigQueryEventsPipeline] Inserted ${result.length} rows`);
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { errors?: unknown[] };
     if (err.name === 'PartialFailureError') {
       console.warn('[BigQueryEventsPipeline] Partial insert failure:', err.errors);
     } else {

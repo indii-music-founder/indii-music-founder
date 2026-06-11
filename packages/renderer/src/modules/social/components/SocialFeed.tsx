@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useCallback } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
@@ -16,11 +19,13 @@ import {
   ShoppingBag, 
   Ghost,
   X,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Rocket,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Plus
 } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
-import { areFeedItemPropsEqual } from './SocialFeed.utils';
+import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
@@ -37,6 +42,7 @@ const SHORTCUTS = [
 ];
 
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
+    const { t } = useTranslation();
     const {
         posts,
         isFeedLoading: loading,
@@ -72,6 +78,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             }, 0);
             return () => clearTimeout(timer);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile]);
 
     const handleCreatePost = async () => {
@@ -113,7 +120,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     data-testid="social-post-input"
-                                    placeholder="What's happening in your studio?"
+                                    placeholder={t('social.hints.studio_update')}
                                     className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[100px] focus:outline-none text-lg"
                                 />
                                 
@@ -157,7 +164,8 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     >
                                         <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
                                     </button>
-                                    {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
+                                    
+                                    {(({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'artist' || ({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(true)}
                                             data-testid="social-attach-product-button"
@@ -271,7 +279,7 @@ export default SocialFeed;
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
 // We use custom deep comparison here because Firestore onSnapshot often returns new object references
 // even for unchanged items, which defeats shallow comparison.
-const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
+const FeedItem = React.memo(({ post }: FeedItemProps) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {

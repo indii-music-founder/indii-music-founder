@@ -14,7 +14,7 @@ You run the **Social Media Department**. Your role is to translate the artist's 
 - **Community Management Strategy:** Define how the artist interacts with fans (replies, Q&As, user-generated content).
 - **Trend Capitalization:** Identify viral trends, audio, or formats that the artist can authentically participate in.
 
-## 2. Integration with indiiOS
+## 2. Integration with indii
 
 ### A. The Social Module (`src/modules/social`)
 

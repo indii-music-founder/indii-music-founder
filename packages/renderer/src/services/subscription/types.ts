@@ -22,6 +22,8 @@ export interface Subscription {
   cancelReason?: string;
   createdAt: number;
   updatedAt: number;
+  /** Internal flag to indicate this is a fallback object from local cache/defaults */
+  isFallback?: boolean;
 }
 
 /**
@@ -47,7 +49,7 @@ export interface UsageStats {
   videoRemainingMinutes: number;
   videoTotalMinutes: number;
 
-  /** AI chat token usage */
+  /** Intelligence chat token usage */
   aiChatTokensUsed: number;
   aiChatTokensRemaining: number;
   aiChatTokensPerMonth: number;
@@ -66,6 +68,8 @@ export interface UsageStats {
   teamMembersUsed: number;
   teamMembersRemaining: number;
   maxTeamMembers: number;
+  /** Internal flag to indicate this is a fallback object from local cache/defaults */
+  isFallback?: boolean;
 }
 
 /**

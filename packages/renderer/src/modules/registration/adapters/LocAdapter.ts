@@ -1,6 +1,7 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
+import { getConfirmedAutomationResult } from './automationResult';
 
 export const LocAdapter: OrgAdapter = {
   id: 'loc',
@@ -102,7 +103,7 @@ export const LocAdapter: OrgAdapter = {
         'https://eco.copyright.gov'
       );
 
-      const confirmationNumber = result.result ?? result.id;
+      const confirmationNumber = getConfirmedAutomationResult(result, 'Library of Congress');
       await persistOrgRecord(userId, track.id, 'loc', data, confirmationNumber);
 
       return {
@@ -121,7 +122,7 @@ export const LocAdapter: OrgAdapter = {
           requiresManualStep: true,
           manualStepUrl: 'https://eco.copyright.gov',
           manualStepInstructions:
-            'Automatic submission requires the indiiOS desktop app. Your pre-filled registration details are ready below — you can download them and complete submission on eco.copyright.gov.',
+            'Automatic submission requires the indii desktop app. Your pre-filled registration details are ready below — you can download them and complete submission on eco.copyright.gov.',
         };
       }
 
@@ -134,4 +135,3 @@ export const LocAdapter: OrgAdapter = {
     }
   },
 };
-

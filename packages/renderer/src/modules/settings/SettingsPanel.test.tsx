@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import SettingsPanel from './SettingsPanel';
@@ -80,30 +81,30 @@ vi.mock('./components/DownloadHub', () => ({
 describe('SettingsPanel', () => {
     it('renders the Settings heading', () => {
         render(<SettingsPanel />);
-        expect(screen.getByText('Settings')).toBeInTheDocument();
+        expect(screen.getByText('settings.title')).toBeInTheDocument();
     });
 
     it('renders all 5 navigation sections', () => {
         render(<SettingsPanel />);
         // Each label appears multiple times (desktop + mobile nav + possibly section heading)
-        expect(screen.getAllByText('Profile').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getAllByText('Connected Services').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getAllByText('Notifications').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getAllByText('Appearance').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getAllByText('Account & Security').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getAllByText('settings.sections.profile.label').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getAllByText('settings.sections.connections.label').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getAllByText('settings.sections.notifications.label').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getAllByText('settings.sections.appearance.label').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getAllByText('settings.sections.security.label').length).toBeGreaterThanOrEqual(2);
     });
 
     it('defaults to the Profile section', () => {
         render(<SettingsPanel />);
         // Profile section should show the display name input
-        expect(screen.getByPlaceholderText('Your display name')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
     });
 
     it('switches to Connected Services when clicked', () => {
         render(<SettingsPanel />);
         // There are multiple "Connected Services" buttons (desktop + mobile nav)
         // Click the first one (desktop sidebar)
-        const buttons = screen.getAllByText('Connected Services');
+        const buttons = screen.getAllByText('settings.sections.connections.label');
         fireEvent.click(buttons[0]!);
         // The connections section should now be visible — look for connection-related content
         // We can't check exact text without seeing the component, but AnimatePresence should switch
@@ -112,29 +113,29 @@ describe('SettingsPanel', () => {
 
     it('switches to Notifications when clicked', () => {
         render(<SettingsPanel />);
-        const buttons = screen.getAllByText('Notifications');
+        const buttons = screen.getAllByText('settings.sections.notifications.label');
         fireEvent.click(buttons[0]!);
         expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
     it('switches to Appearance when clicked', () => {
         render(<SettingsPanel />);
-        const buttons = screen.getAllByText('Appearance');
+        const buttons = screen.getAllByText('settings.sections.appearance.label');
         fireEvent.click(buttons[0]!);
         expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
     it('switches to Account & Security when clicked', () => {
         render(<SettingsPanel />);
-        const buttons = screen.getAllByText('Account & Security');
+        const buttons = screen.getAllByText('settings.sections.security.label');
         fireEvent.click(buttons[0]!);
         expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
     it('Profile section renders display name and bio fields', () => {
         render(<SettingsPanel />);
-        expect(screen.getByPlaceholderText('Your display name')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Tell us about yourself...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('settings.hints.bio_desc')).toBeInTheDocument();
     });
 
     it('Profile section shows the user email as disabled', () => {
@@ -145,33 +146,33 @@ describe('SettingsPanel', () => {
 
     it('Profile section shows save button after editing display name', () => {
         render(<SettingsPanel />);
-        const nameInput = screen.getByPlaceholderText('Your display name');
+        const nameInput = screen.getByPlaceholderText('settings.hints.display_name');
         fireEvent.change(nameInput, { target: { value: 'Detroit Legend' } });
-        expect(screen.getByText('Save Changes')).toBeInTheDocument();
-        expect(screen.getByText('Cancel')).toBeInTheDocument();
+        expect(screen.getByText('settings.profile.saveChanges')).toBeInTheDocument();
+        expect(screen.getByText('settings.profile.cancel')).toBeInTheDocument();
     });
 
     it('Profile section cancel button resets the name', () => {
         render(<SettingsPanel />);
-        const nameInput = screen.getByPlaceholderText('Your display name') as HTMLInputElement;
+        const nameInput = screen.getByPlaceholderText('settings.hints.display_name') as HTMLInputElement;
         fireEvent.change(nameInput, { target: { value: 'Detroit Legend' } });
-        fireEvent.click(screen.getByText('Cancel'));
+        fireEvent.click(screen.getByText('settings.profile.cancel'));
         expect(nameInput.value).toBe('D-Troit');
     });
 
     it('Profile section bio character count updates', () => {
         render(<SettingsPanel />);
-        const bioInput = screen.getByPlaceholderText('Tell us about yourself...');
+        const bioInput = screen.getByPlaceholderText('settings.hints.bio_desc');
         fireEvent.change(bioInput, { target: { value: 'Underground techno from the D' } });
         // bio.length and "/280 characters" render as separate text nodes in React
         // Find the parent element that contains both
-        expect(screen.getByText(/\/280 characters/)).toBeInTheDocument();
+        expect(screen.getByText('settings.profile.characters')).toBeInTheDocument();
     });
 
     it('renders both desktop and mobile navigation', () => {
         render(<SettingsPanel />);
         // Each section label should appear twice (desktop + mobile)
-        const profileButtons = screen.getAllByText('Profile');
+        const profileButtons = screen.getAllByText('settings.sections.profile.label');
         expect(profileButtons.length).toBeGreaterThanOrEqual(2);
     });
 });

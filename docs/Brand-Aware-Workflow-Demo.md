@@ -152,7 +152,7 @@ Mastra Agent generateImageTool
 
 To test the system yourself:
 
-1. Start the indiiOS application
+1. Start the indii application
 2. Navigate to the Creative Director agent
 3. Try these prompts:
 

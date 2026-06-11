@@ -17,6 +17,7 @@ import {
 import {
   EarningsSummarySchema,
   type EarningsSummary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DashboardEarningsSummarySchema, // Keep for dashboard summary if needed
   type DashboardEarningsSummary
 } from '@/services/revenue/schema';
@@ -122,7 +123,8 @@ export class FinanceService {
       return {
         id: docRef.id,
         ...validExpense,
-        createdAt: now.toDate().toISOString()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as any).toISOString()
       };
     } catch (error: unknown) {
       Sentry.captureException(error);
@@ -152,7 +154,7 @@ export class FinanceService {
           id: doc.id,
           ...data,
           // Handle Timestamp conversion if coming from Firestore
-          createdAt: (data.createdAt instanceof Timestamp) ? data.createdAt.toDate().toISOString() : data.createdAt
+          createdAt: (data.createdAt && typeof (data.createdAt as { toDate?: () => Date }).toDate === 'function') ? (data.createdAt as { toDate: () => Date }).toDate().toISOString() : data.createdAt
         } as Expense;
       });
     } catch (error: unknown) {
@@ -165,7 +167,7 @@ export class FinanceService {
    * Subscribe to expenses for real-time updates.
    */
   subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void): () => void {
-    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to expenses');
       return () => { };
     }
@@ -197,7 +199,7 @@ export class FinanceService {
    * Subscribe to earnings reports for real-time updates.
    */
   subscribeToEarnings(userId: string, callback: (earnings: EarningsSummary | null) => void): () => void {
-    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to earnings');
       return () => { };
     }

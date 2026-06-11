@@ -1,7 +1,8 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { UniversalTools } from '../tools/UniversalTools';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -36,11 +37,11 @@ export const FinanceAgent: AgentConfig = {
             };
         },
         search_knowledge: async (args: { query: string }) => {
-            const prompt = `Answer the following financial query based on standard music industry economics and the 'indiiOS Dividend' knowledge base.
+            const prompt = `Answer the following financial query based on standard music industry economics and the 'indii Dividend' knowledge base.
             Query: ${args.query}`;
 
             try {
-                const response = await GenAI.generateText(prompt);
+                const response = await AutonomousIntelligence.generateText(prompt);
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -54,8 +55,9 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
-                // Formatting the image data for Gemini Vision via FirebaseAIService
-                const contents = [
+                // Formatting the image data for Gemini Vision via FirebaseIntelligenceService
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const contents: any[] = [
                     {
                         role: 'user' as const,
                         parts: [
@@ -71,7 +73,7 @@ export const FinanceAgent: AgentConfig = {
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await GenAI.generateContent(contents, AI_MODELS.TEXT.FAST);
+                const result = await AutonomousIntelligence.generateContent(contents, INTELLIGENCE_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks
@@ -90,7 +92,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await GenAI.generateText(prompt);
+                const advice = await AutonomousIntelligence.generateText(prompt);
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -100,7 +102,7 @@ export const FinanceAgent: AgentConfig = {
         forecast_revenue: async (args: { current_monthly_streams: number; growth_rate_percent: number; months: number }) => {
             /**
              * Pillar 2 — Agent CFO: Proactive forecast showing revenue trajectory +
-             * the cumulative indiiOS Dividend (fees saved vs. external 20% management).
+             * the cumulative indii Dividend (fees saved vs. external 20% management).
              * Gamification: shows compound savings, not just a number.
              */
             const SPOTIFY_RATE = 0.004;                // avg blended per-stream rate
@@ -141,10 +143,11 @@ export const FinanceAgent: AgentConfig = {
                         months,
                     },
                     projections,
-                    message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indiiOS Dividend.`
+                    message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indii Dividend.`
                 }
             };
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         generate_tax_report: async (args: { year: number; transactions: any[] }) => {
             const highValuepayouts = args.transactions.filter(t => t.amount >= 600);
             return {
@@ -158,32 +161,16 @@ export const FinanceAgent: AgentConfig = {
                 }
             };
         },
-        credential_vault: async (args: { action: string; service: string }) => {
-            return {
-                success: true,
-                data: {
-                    status: "Access granted",
-                    message: `Credentials for ${args.service} retrieved via Secure Vault.`
-                }
-            };
-        },
-        payment_gate: async (args: { amount: number; vendor: string; reason: string }) => {
-            return {
-                success: true,
-                data: {
-                    status: "Authorized",
-                    transaction_id: `TX-${Math.random().toString(36).substring(7).toUpperCase()}`,
-                    message: `Payment of $${args.amount} to ${args.vendor} for ${args.reason} has been authorized.`
-                }
-            };
-        }
+        credential_vault: UniversalTools.credential_vault,
+        payment_gate: UniversalTools.payment_gate,
+        browser_tool: UniversalTools.browser_tool,
     },
     authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
     tools: [{
         functionDeclarations: [
             {
                 name: "analyze_budget",
-                description: "Analyze a project budget and calculate the 'indiiOS Dividend' savings.",
+                description: "Analyze a project budget and calculate the 'indii Dividend' savings.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -304,7 +291,7 @@ export const FinanceAgent: AgentConfig = {
             },
             {
                 name: "forecast_revenue",
-                description: "Forecast revenue and the indiiOS Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
+                description: "Forecast revenue and the indii Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

@@ -52,7 +52,7 @@ export const MusicTools = {
      * Verifies if a metadata object meets the industrial "Golden Standard".
      */
     verify_metadata_golden: wrapTool('verify_metadata_golden', async (args: { metadata: any }) => {
-        const { ExtendedGoldenMetadataSchema } = await import('@/services/ddex/validation');
+        const { ExtendedGoldenMetadataSchema } = await import('@/services/distribution/proprietary-ingestion/validation');
 
         const result = ExtendedGoldenMetadataSchema.safeParse(args.metadata);
 
@@ -132,10 +132,16 @@ export const MusicTools = {
     }),
 
     scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
+        const title = args.metadata.trackTitle || args.metadata.title;
+        const artist = args.metadata.artistName || args.metadata.artist;
+        if (!title || !artist) {
+            return toolError('ID3 tag writing requires track title and artist name. No placeholder tags were written.', 'MISSING_ID3_METADATA');
+        }
+
         // Write ID3 tags using MetadataOrchestrator
         const tags = {
-            TIT2: args.metadata.trackTitle || args.metadata.title || 'Untitled',
-            TPE1: args.metadata.artistName || args.metadata.artist || 'Unknown Artist',
+            TIT2: title,
+            TPE1: artist,
             TALB: args.metadata.albumTitle || args.metadata.album || '',
             TCON: args.metadata.genre || '',
             TRCK: args.metadata.trackNumber?.toString() || '',
@@ -217,64 +223,5 @@ export const MusicTools = {
             logger.warn('[MusicTools] Failed to inject splits:', error);
             return toolError('Failed to persist split data to Firestore.', 'PERSISTENCE_ERROR');
         }
-    }),
-
-    export_dolby_atmos_stems: wrapTool('export_dolby_atmos_stems', async (args: { trackId: string; format: 'wav' | 'aiff'; stemCount: number }) => {
-        // Structure Dolby Atmos metadata and persist export config
-        const userId = auth.currentUser?.uid;
-
-        // Generate spatial coordinate assignments for each stem
-        const spatialMap = Array.from({ length: args.stemCount }, (_, i) => ({
-            stemIndex: i + 1,
-            label: getStemLabel(i),
-            azimuth: getStemAzimuth(i, args.stemCount),
-            elevation: getStemElevation(i),
-            distance: 1.0
-        }));
-
-        // Persist to Firestore
-        if (userId) {
-            try {
-                await setDoc(doc(collection(db, `users/${userId}/atmos_exports`)), {
-                    trackId: args.trackId,
-                    stemCount: args.stemCount,
-                    spatialMap,
-                    exportFormat: 'ADM BWF',
-                    createdAt: new Date().toISOString(),
-                    status: 'Ready for Atmos Mixing'
-                });
-            } catch (e: unknown) {
-                logger.warn('[MusicTools] Failed to persist Atmos export config:', e);
-            }
-        }
-
-        return toolSuccess({
-            trackId: args.trackId,
-            stemCount: args.stemCount,
-            spatialMap,
-            exportFormat: 'ADM BWF',
-            status: 'Ready for Atmos Mixing'
-        }, `${args.stemCount} stems for track ${args.trackId} have been tagged with spatial coordinates and exported for Dolby Atmos mixing.`);
     })
 } satisfies Record<string, AnyToolFunction>;
-
-// --- Helpers for spatial audio ---
-
-function getStemLabel(index: number): string {
-    const labels = ['Kick', 'Snare', 'HiHat', 'Bass', 'Lead Vocal', 'Backing Vocal', 'Guitar L', 'Guitar R', 'Synth L', 'Synth R', 'Percussion', 'FX', 'Strings', 'Brass', 'Piano', 'Pad'];
-    return labels[index] || `Stem ${index + 1}`;
-}
-
-function getStemAzimuth(index: number, total: number): number {
-    // Distribute stems in a circle from -180 to +180 degrees
-    return Math.round(((index / total) * 360) - 180);
-}
-
-function getStemElevation(index: number): number {
-    // Lower instruments at 0, vocals at 30, overheads at 45, FX at 90
-    if (index < 2) return 0;     // Kick, Snare
-    if (index === 4) return 30;   // Lead Vocal
-    if (index === 5) return 25;   // Backing Vocal
-    if (index > 10) return 45;    // FX/Overheads
-    return 10;                     // Everything else
-}

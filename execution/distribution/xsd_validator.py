@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-xsd_validator.py - DDEX ERN 4.3 XSD Schema Validator
+xsd_validator.py - Proprietary Ingestion IP Ingestion Protocol 4.3 XSD Schema Validator
 
-Validates DDEX ERN XML against the official XSD schema.
+Validates Proprietary Ingestion IP Ingestion Notification XML against the official XSD schema.
 Spotify REQUIRES XSD validation before delivery.
 
-XSD files must be downloaded from the DDEX Knowledge Base:
-  https://kb.ddex.net/display/ERNDG/ERN+4
+XSD files must be downloaded from the Proprietary Ingestion IP Knowledge Base:
+  https://kb.ingestion.net/display/Ingestion NotificationDG/Ingestion Notification+4
 
 Place the XSD files in the 'schemas/' subdirectory relative to this script,
-or set the DDEX_XSD_PATH environment variable.
+or set the Proprietary Ingestion IP_XSD_PATH environment variable.
 
 If the official XSD is not available, falls back to structural validation
 that checks for required elements, attribute patterns, and value constraints.
@@ -40,16 +40,16 @@ except ImportError:
     logger.info("lxml not available — using structural validation fallback")
 
 
-class DDEXXSDValidator:
-    """Validates DDEX ERN 4.3 XML against official XSD or structural rules.
+class Proprietary Ingestion IPXSDValidator:
+    """Validates Proprietary Ingestion IP Ingestion Protocol 4.3 XML against official XSD or structural rules.
 
     Two validation modes:
     1. Full XSD validation (requires lxml + official XSD files)
     2. Structural validation (fallback, checks required elements and patterns)
     """
 
-    # DDEX ERN 4.3 Namespace
-    ERN_NS = "http://ddex.net/xml/ern/43"
+    # Proprietary Ingestion IP Ingestion Protocol 4.3 Namespace
+    Ingestion Notification_NS = "http://ingestion.net/xml/ern/43"
 
     # Required elements for a valid NewReleaseMessage
     REQUIRED_ELEMENTS = [
@@ -80,29 +80,29 @@ class DDEXXSDValidator:
     ]
 
     # ISRC pattern: CC-XXX-YY-NNNNN
-    ISRC_PATTERN = re.compile(r'^[A-Z]{2}-?[A-Z0-9]{3}-?\d{2}-?\d{5}$')
+    ISRC_PATTIngestion Notification = re.compile(r'^[A-Z]{2}-?[A-Z0-9]{3}-?\d{2}-?\d{5}$')
 
     # UPC/EAN pattern: 12-13 digits
-    UPC_PATTERN = re.compile(r'^\d{12,13}$')
+    UPC_PATTIngestion Notification = re.compile(r'^\d{12,13}$')
 
     # ISO 8601 Duration pattern: PT(n)M(n)S
-    DURATION_PATTERN = re.compile(r'^PT(\d+H)?(\d+M)?(\d+S)?$')
+    DURATION_PATTIngestion Notification = re.compile(r'^PT(\d+H)?(\d+M)?(\d+S)?$')
 
     # ISO 8601 DateTime pattern
-    DATETIME_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$')
+    DATETIME_PATTIngestion Notification = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$')
 
     # Date pattern: YYYY-MM-DD
-    DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    DATE_PATTIngestion Notification = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
     def __init__(self, xsd_path: Optional[str] = None):
         """Initialize the validator.
 
         Args:
-            xsd_path: Path to DDEX ERN 4.3 XSD schema file.
-                      Defaults to DDEX_XSD_PATH env var or schemas/ern-main.xsd
+            xsd_path: Path to Proprietary Ingestion IP Ingestion Protocol 4.3 XSD schema file.
+                      Defaults to Proprietary Ingestion IP_XSD_PATH env var or schemas/ern-main.xsd
         """
         self.xsd_path = xsd_path or os.environ.get(
-            "DDEX_XSD_PATH",
+            "Proprietary Ingestion IP_XSD_PATH",
             os.path.join(os.path.dirname(__file__), "schemas", "ern-main.xsd")
         )
         self.xsd_schema = None
@@ -117,7 +117,7 @@ class DDEXXSDValidator:
                 logger.warning(f"Failed to load XSD schema: {e}. Using structural validation.")
 
     def validate_xml_string(self, xml_string: str) -> Dict[str, Any]:
-        """Validate a DDEX ERN XML string.
+        """Validate a Proprietary Ingestion IP Ingestion Notification XML string.
 
         Args:
             xml_string: The XML content to validate.
@@ -158,7 +158,7 @@ class DDEXXSDValidator:
         return self._validate_structural(xml_string, errors, warnings)
 
     def validate_file(self, file_path: str) -> Dict[str, Any]:
-        """Validate a DDEX ERN XML file.
+        """Validate a Proprietary Ingestion IP Ingestion Notification XML file.
 
         Args:
             file_path: Path to the XML file.
@@ -185,7 +185,7 @@ class DDEXXSDValidator:
     def _validate_structural(self, xml_string: str,
                               errors: List[str],
                               warnings: List[str]) -> Dict[str, Any]:
-        """Perform structural validation against DDEX ERN 4.3 rules.
+        """Perform structural validation against Proprietary Ingestion IP Ingestion Protocol 4.3 rules.
 
         This is the fallback when lxml/XSD is not available.
         It checks required elements, value patterns, and business rules.
@@ -209,10 +209,10 @@ class DDEXXSDValidator:
         root_tag = root.tag
         if root_tag.startswith("{"):
             ns = root_tag.split("}")[0] + "}"
-            # Verify it's the DDEX namespace
+            # Verify it's the Proprietary Ingestion IP namespace
             actual_ns = root_tag.split("}")[0].lstrip("{")
-            if "ddex.net" not in actual_ns:
-                errors.append(f"Unexpected namespace: {actual_ns}. Expected DDEX ERN namespace.")
+            if "ingestion.net" not in actual_ns:
+                errors.append(f"Unexpected namespace: {actual_ns}. Expected Proprietary Ingestion IP Ingestion Notification namespace.")
 
         # Check root element
         local_tag = root_tag.replace(ns, "")
@@ -273,7 +273,7 @@ class DDEXXSDValidator:
         # MessageCreatedDateTime format
         dt_elem = header.find(f"{ns}MessageCreatedDateTime")
         if dt_elem is not None and dt_elem.text:
-            if not self.DATETIME_PATTERN.match(dt_elem.text):
+            if not self.DATETIME_PATTIngestion Notification.match(dt_elem.text):
                 errors.append(
                     f"MessageCreatedDateTime '{dt_elem.text}' is not valid ISO 8601. "
                     "Expected format: YYYY-MM-DDTHH:MM:SSZ"
@@ -286,7 +286,7 @@ class DDEXXSDValidator:
             if party_id.startswith("PADPIDA0000"):
                 warnings.append(
                     f"Sender PartyId '{party_id}' appears to be a placeholder. "
-                    "Register at https://dpid.ddex.net/ for a production DPID."
+                    "Register at https://dpid.ingestion.net/ for a production DPID."
                 )
 
     def _validate_resources(self, root: ET.Element, ns: str,
@@ -312,7 +312,7 @@ class DDEXXSDValidator:
             sr_id = sr.find(f"{ns}SoundRecordingId")
             if sr_id is not None:
                 isrc = sr_id.findtext(f"{ns}ISRC", "")
-                if isrc and not self.ISRC_PATTERN.match(isrc):
+                if isrc and not self.ISRC_PATTIngestion Notification.match(isrc):
                     errors.append(
                         f"SoundRecording[{i}] ISRC '{isrc}' does not match format CC-XXX-YY-NNNNN"
                     )
@@ -321,7 +321,7 @@ class DDEXXSDValidator:
 
             # Validate Duration format
             duration = sr.findtext(f"{ns}Duration", "")
-            if duration and not self.DURATION_PATTERN.match(duration):
+            if duration and not self.DURATION_PATTIngestion Notification.match(duration):
                 errors.append(
                     f"SoundRecording[{i}] Duration '{duration}' is not valid ISO 8601 duration"
                 )
@@ -351,7 +351,7 @@ class DDEXXSDValidator:
             release_id = release.find(f"{ns}ReleaseId")
             if release_id is not None:
                 icpn = release_id.findtext(f"{ns}ICPN", "")
-                if icpn and not self.UPC_PATTERN.match(icpn):
+                if icpn and not self.UPC_PATTIngestion Notification.match(icpn):
                     errors.append(
                         f"Release[{i}] ICPN/UPC '{icpn}' must be 12-13 digits"
                     )
@@ -373,7 +373,7 @@ class DDEXXSDValidator:
             details = release.find(f"{ns}ReleaseDetailsByTerritory")
             if details is not None:
                 release_date = details.findtext(f"{ns}OriginalReleaseDate", "")
-                if release_date and not self.DATE_PATTERN.match(release_date):
+                if release_date and not self.DATE_PATTIngestion Notification.match(release_date):
                     errors.append(
                         f"Release[{i}] OriginalReleaseDate '{release_date}' must be YYYY-MM-DD"
                     )
@@ -424,20 +424,20 @@ class DDEXXSDValidator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="DDEX ERN 4.3 XSD/Structural Validator",
+        description="Proprietary Ingestion IP Ingestion Protocol 4.3 XSD/Structural Validator",
         epilog=(
             "Install lxml for full XSD validation: pip install lxml\n"
-            "Download DDEX XSD from: https://kb.ddex.net/display/ERNDG/ERN+4\n"
-            "Set DDEX_XSD_PATH environment variable to your XSD file."
+            "Download Proprietary Ingestion IP XSD from: https://kb.ingestion.net/display/Ingestion NotificationDG/Ingestion Notification+4\n"
+            "Set Proprietary Ingestion IP_XSD_PATH environment variable to your XSD file."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("xml_input", help="XML file path or XML string")
-    parser.add_argument("--xsd", help="Path to DDEX ERN XSD schema file")
+    parser.add_argument("--xsd", help="Path to Proprietary Ingestion IP Ingestion Notification XSD schema file")
 
     args = parser.parse_args()
 
-    validator = DDEXXSDValidator(xsd_path=args.xsd)
+    validator = Proprietary Ingestion IPXSDValidator(xsd_path=args.xsd)
 
     if os.path.exists(args.xml_input):
         result = validator.validate_file(args.xml_input)

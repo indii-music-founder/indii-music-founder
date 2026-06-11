@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useMobile } from '@/hooks/useMobile';
 import {
   AlertCircle,

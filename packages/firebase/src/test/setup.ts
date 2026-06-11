@@ -14,31 +14,13 @@
  * a fatal crash at require-time. We place this mock first and use vi.hoisted()
  * to guarantee it registers before any transitive imports.
  */
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 
-// ─── Native Module Mocks (MUST be first) ─────────────────────────────────────
-// `sharp` is used by lib/image_resizing.ts and is loaded transitively whenever
-// a test imports from the barrel file (index.ts). On CI (ubuntu-latest) the
-// sharp native binary for linux-x64 may not be installed, causing all firebase
-// tests to crash at module resolution time. Mocking it here once prevents every
-// individual test file from needing its own mock.
-//
-// IMPORTANT: This mock must appear before any other vi.mock() calls to ensure
-// it is hoisted first and registered before any module graph resolution.
-vi.mock('sharp', () => {
-    const sharpInstance = {
-        resize: vi.fn().mockReturnThis(),
-        jpeg: vi.fn().mockReturnThis(),
-        png: vi.fn().mockReturnThis(),
-        webp: vi.fn().mockReturnThis(),
-        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-image-data')),
-        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
-        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
-    };
-    return {
-        default: vi.fn(() => sharpInstance),
-    };
+beforeEach(() => {
+    vi.useRealTimers();
 });
+
+
 
 // ─── Firebase Functions v1 Builder Pattern Mock ──────────────────────────────
 // Every chained builder method must return `this` to support arbitrary chains:
@@ -197,7 +179,7 @@ vi.mock('firebase-functions/params', () => ({
 }));
 // ─── Firebase Functions v2 Mocks ─────────────────────────────────────────────
 // The barrel file (index.ts) transitively imports modules that use v2 triggers
-// (image_resizing.ts → firebase-functions/v2/storage, agentStream.ts → v2/https,
+// (agentStream.ts → v2/https,
 // etc.). Without these mocks, tests crash on import.
 
 const mockV2Handler = vi.fn((opts: unknown, handler?: unknown) => handler ?? opts);

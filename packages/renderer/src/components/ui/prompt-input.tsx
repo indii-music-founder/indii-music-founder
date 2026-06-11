@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { logger } from "@/utils/logger"
 import React, {
   createContext,
   useContext,
@@ -43,7 +44,7 @@ const PromptStateContext = createContext<PromptStateContextType>({
 
 const PromptValueContext = createContext<PromptValueContextType>({
   value: "",
-  setValue: () => { },
+  setValue: (val: string) => logger.warn('[PromptValueContext] setValue called outside provider context with value:', val),
   textareaRef: { current: null },
 })
 

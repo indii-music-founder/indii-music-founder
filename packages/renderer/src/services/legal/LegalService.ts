@@ -103,7 +103,7 @@ export class LegalService {
     // -----------------------------------------------------------------------
 
     /**
-     * Persist an AI contract analysis result to Firestore.
+     * Persist an Intelligence contract analysis result to Firestore.
      * Stored under users/{uid}/contract_analyses.
      */
     static async saveAnalysis(analysis: Omit<ContractAnalysis, 'id'>): Promise<string> {
@@ -142,7 +142,7 @@ export class LegalService {
     // -----------------------------------------------------------------------
 
     /**
-     * Generate an NDA via AI Agent 
+     * Generate an NDA via Autonomous Agent 
      */
     static async generateNDA(parties: string[], purpose: string) {
         const tools = await getLegalTools();
@@ -151,7 +151,7 @@ export class LegalService {
     }
 
     /**
-     * Draft an arbitrary contract via AI Agent
+     * Draft an arbitrary contract via Autonomous Agent
      */
     static async draftContract(type: string, parties: string[], terms: string) {
         const tools = await getLegalTools();

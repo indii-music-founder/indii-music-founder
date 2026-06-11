@@ -57,7 +57,7 @@ export const MarketingCard: AgentCard = {
     },
     {
         "name": "create_artifact_drop",
-        "description": "Creates a 'Sovereign Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
+        "description": "Creates a 'Independent Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

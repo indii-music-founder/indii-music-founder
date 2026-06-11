@@ -15,10 +15,8 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock Store
-vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
-    useStore: () => ({
-  serverTimestamp: vi.fn(),
+vi.mock('@/core/store', () => {
+  const mockState = {
         userProfile: {
             id: 'test-user',
             bio: 'Test Bio',
@@ -31,13 +29,20 @@ vi.mock('@/core/store', () => ({
         },
         updateBrandKit: vi.fn(),
         setUserProfile: vi.fn(),
-    }),
-}));
+        consumeHandoff: vi.fn(() => null),
+        pinToClipboard: vi.fn(),
+        sendToModule: vi.fn(),
+  };
+  return {
+    serverTimestamp: vi.fn(),
+    useStore: vi.fn((selector) => selector ? selector(mockState) : mockState)
+  };
+});
 
-// Mock AI Service
-vi.mock('@/services/ai/GenAI', () => ({
+// Mock Autonomous Service
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
   serverTimestamp: vi.fn(),
-    GenAI: {
+    AutonomousIntelligence: {
         generateStructuredData: vi.fn().mockResolvedValue({
             isConsistent: true,
             score: 95,

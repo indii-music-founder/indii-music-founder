@@ -1,4 +1,4 @@
-# indiiOS 1000-Click Marathon Test Results
+# indii 1000-Click Marathon Test Results
 
 **Date:** 2026-04-22  
 **Persona:** Narrowchannel (Detroit Techno Producer)  

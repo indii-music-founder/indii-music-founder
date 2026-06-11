@@ -1,20 +1,27 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { VideoGenerationOptions } from '@/modules/video/schemas';
-import { GenAI } from '@/services/ai/GenAI';
+import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Dependencies
-vi.mock('../ai/FirebaseAIService', () => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { httpsCallableFn, serverTimestamp } = vi.hoisted(() => ({
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
+    serverTimestamp: vi.fn()
+}));
+
+vi.mock('../intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://mock-video.mp4'),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue('Mock Intelligence response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {
-        FirebaseAIService: class {
+        FirebaseIntelligenceService: class {
             static getInstance() { return mockFirebaseAI; }
         },
         firebaseAI: mockFirebaseAI
@@ -27,13 +34,9 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-const _mockHttpsCallable = vi.fn();
-// We need to return a function that returns the result, because httpsCallable returns a callable function
-const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
-
 vi.mock('firebase/functions', () => ({
     httpsCallable: (functions: any, name: string) => {
-        if (name === 'triggerVideoJob') return mockTriggerVideoJob;
+        if (name === 'generateVideoV3') return httpsCallableFn;
         return vi.fn();
     }
 }));
@@ -44,7 +47,7 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     functionsWest1: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -53,7 +56,9 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
-        canPerformAction: vi.fn().mockResolvedValue({ allowed: true })
+        canPerformAction: vi.fn().mockResolvedValue({ allowed: true ,
+        getCurrentSubscription: vi.fn().mockResolvedValue({ tier: 'pro' })
+    })
     }
 }));
 
@@ -89,10 +94,13 @@ describe('VideoGenerationService Integration', () => {
 
         const result = await service.generateVideo(validOptions);
 
-        expect(result[0]!.id).toBe('job-123');
-        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining("A cyberpunk city")
+        // generateVideo uses httpsCallable
+        expect(httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining('A cyberpunk city at night'),
         }));
+
+        expect(result).toHaveLength(1);
+        expect(result[0]!.id).toBe('mock-job-id');
     });
 
     it('generateVideo throws error for missing prompt', async () => {

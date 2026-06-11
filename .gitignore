@@ -9,7 +9,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
+# package-lock.json is committed: CI runs `npm ci` + caches on hashFiles('package-lock.json'),
+# both of which require it tracked. Also prevents transitive version drift (e.g. @types/react major bump).
 yarn.lock
 pnpm-lock.yaml
 
@@ -49,6 +50,7 @@ test_debug*.txt
 test_output*.txt
 test_failures.txt
 test_results*.txt
+eslint_output.json
 
 # Build artifacts
 out/
@@ -59,6 +61,15 @@ lint_errors.txt
 # Sensitive files
 **/access_token.txt
 *.token
+**/id_rsa
+**/id_dsa
+**/id_ecdsa
+**/id_ed25519
+**/*.pem
+**/*.p12
+**/*.pfx
+**/*.key
+!**/*.pub
 
 # Landing page build output
 landing-page/out/**/*.txt
@@ -115,6 +126,8 @@ HANDOFF_STATE.md
 **/HANDOFF_STATE.md
 **/CHECKPOINT*.md
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+**/polling_state.json
 test-results.json
 
 build_output.txt
@@ -127,6 +140,7 @@ build_output.txt
 /sentry_issues.json
 /sentry_issues_electron.json
 /sentry_projects.json
+/scratch/diff.txt
 
 # Graphify tool output (generated knowledge graph cache)
 graphify-out/
@@ -137,3 +151,22 @@ graphify-out/
 # Accidentally cloned external repos (CI checkout breaks on stale gitlinks)
 /graphify/
 /graphify-repo/
+actionlint
+jobs.json
+run.json
+
+/scratch/
+
+# Security: browser/gh session cookies must never be tracked
+gh_cookies.json
+
+# Generated build/test logs
+deploy_output.txt
+ci-full-output.txt
+test-results.txt
+test-results2.txt
+test_results.json
+
+# Discovered Audit Files
+users.json
+anonymous_users_audit_report.json

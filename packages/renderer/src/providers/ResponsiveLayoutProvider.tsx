@@ -75,6 +75,7 @@ export const ResponsiveLayoutProvider: React.FC<
 /**
  * Hook to access responsive layout context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useResponsiveLayout = (): ResponsiveLayoutContextType => {
   const context = React.useContext(ResponsiveLayoutContext);
   if (context === undefined) {

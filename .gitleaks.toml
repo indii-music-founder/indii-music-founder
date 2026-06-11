@@ -5,7 +5,7 @@
 # Firestore Security Rules and API restrictions in the GCP Console.
 # See: https://firebase.google.com/docs/projects/api-keys
 
-title = "indiiOS Gitleaks Config"
+title = "indii Gitleaks Config"
 
 [extend]
 # Extend the default gitleaks rules
@@ -16,7 +16,7 @@ useDefault = true
 # ─────────────────────────────────────────────────────────────────────────────
 
 [allowlist]
-description = "Known safe patterns per indiiOS API Credentials Policy"
+description = "Known safe patterns per indii API Credentials Policy"
 
 paths = [
     # Environment variable files — Firebase API keys are IDENTIFIERS, not secrets.
@@ -35,9 +35,6 @@ paths = [
     # Model capability metadata (API responses cached, not real keys)
     '''config/model_capabilities\.json''',
     '''model_capabilities\.json''',
-
-    # SFTP key for distributor uploads (Electron-only, packaged in desktop build)
-    '''models/id_ed25519''',
 
     # Documentation files containing Firebase API key identifiers (not secrets)
     # Per API Credentials Policy: Firebase keys are identifiers, secured by rules

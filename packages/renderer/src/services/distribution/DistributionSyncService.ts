@@ -3,6 +3,7 @@ import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DashboardRelease, ReleaseStatus } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class DistributionSyncService {
     /**
@@ -52,13 +53,13 @@ export class DistributionSyncService {
         onError?: (error: Error) => void
     ): () => void {
         const q = query(
-            collection(db, 'ddexReleases'),
+            collection(db, 'proprietaryIngestionReleases'),
             where('orgId', '==', orgId),
             orderBy('createdAt', 'desc')
         );
 
         // E2E Mock Bypass: skip real Firestore listeners
-        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+        if (isFirebaseE2EMockEnabled()) {
             setTimeout(() => onUpdate([]), 0);
             return () => { };
         }
@@ -79,13 +80,13 @@ export class DistributionSyncService {
      */
     static async fetchReleases(orgId: string): Promise<DashboardRelease[]> {
         // E2E Mock Bypass: skip real Firestore fetches
-        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+        if (isFirebaseE2EMockEnabled()) {
             return [];
         }
 
         try {
             const q = query(
-                collection(db, 'ddexReleases'),
+                collection(db, 'proprietaryIngestionReleases'),
                 where('orgId', '==', orgId),
                 orderBy('createdAt', 'desc')
             );
@@ -105,7 +106,7 @@ export class DistributionSyncService {
      */
     static async getRelease(releaseId: string): Promise<DDEXReleaseRecord | null> {
         try {
-            const docRef = doc(db, 'ddexReleases', releaseId);
+            const docRef = doc(db, 'proprietaryIngestionReleases', releaseId);
             const snapshot = await getDoc(docRef);
             if (snapshot.exists()) {
                 const data = snapshot.data() as DDEXReleaseRecord;

@@ -44,7 +44,7 @@ class AnalyzeMarketTrends(Tool):
             model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are a Data-Driven Marketing Strategist for indiiOS.
+            You are a Data-Driven Marketing Strategist for indii.
             You are analyzing the current Billboard Hot 100 HTML content.
             
             Task:

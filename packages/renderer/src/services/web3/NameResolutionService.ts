@@ -5,9 +5,8 @@
  * and Unstoppable Domains (.crypto, .nft, .wallet, etc.).
  * Uses the Ethereum RPC via Alchemy — no separate API key needed.
  *
- * @mock The `computeNamehash()` implementation is a PLACEHOLDER — it does NOT
- *       perform real EIP-137 keccak256 hashing. Production requires ethers.js
- *       `namehash()` or equivalent. Entire Web3 module gated behind `enable_web3`.
+ * Entire Web3 module is gated behind `enable_web3`. ENS/Unstoppable resolution
+ * is disabled until a real EIP-137/UNS namehash implementation is wired in.
  *
  * ENS: https://docs.ens.domains/
  * Unstoppable: https://docs.unstoppabledomains.com/
@@ -16,6 +15,7 @@
 import { ethereumService } from './EthereumService';
 import { logger } from '@/utils/logger';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
+import namehash from 'eth-ens-namehash';
 
 /** ENS Registry contract address (Ethereum mainnet) */
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
@@ -68,7 +68,7 @@ export class NameResolutionService {
             return '0x' + result.slice(-40);
         } catch (err: unknown) {
             logger.error('[ENS] Resolution failed:', err);
-            return null;
+            throw err;
         }
     }
 
@@ -99,7 +99,7 @@ export class NameResolutionService {
             return '0x' + result.slice(-40);
         } catch (err: unknown) {
             logger.error('[UD] Resolution failed:', err);
-            return null;
+            throw err;
         }
     }
 
@@ -143,29 +143,14 @@ export class NameResolutionService {
      * node = keccak256(node(parent) + keccak256(label))
      */
     private computeNamehash(name: string): string {
-        // Simplified namehash — in production use ethers.js namehash()
-        const labels = name.split('.').reverse();
-        let node = '0x' + '0'.repeat(64); // bytes32(0)
-
-        for (const _label of labels) {
-            // Each iteration would keccak256(node + keccak256(label))
-            // Placeholder: return a deterministic hash for the name
-            node = '0x' + Array.from(new TextEncoder().encode(_label + node))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
-                .padEnd(64, '0')
-                .slice(0, 64);
-        }
-
-        return node;
+        return namehash.hash(name);
     }
 
     /**
      * Compute Unstoppable Domains namehash.
      */
     private computeUDNamehash(name: string): string {
-        // Similar to ENS but uses different algorithm
-        return this.computeNamehash(name);
+        return namehash.hash(name);
     }
 }
 

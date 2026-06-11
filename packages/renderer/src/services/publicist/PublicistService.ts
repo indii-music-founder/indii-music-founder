@@ -12,8 +12,8 @@ import { db } from '../firebase';
 import { Campaign, Contact } from '../../modules/publicist/types';
 import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
 import { logger } from '@/utils/logger';
-import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
@@ -52,11 +52,11 @@ export class PublicistService {
         
         Style: Sophisticated, trend-aware, and emotionally resonant. Use descriptive but direct language.`;
 
-        const response = await GenAI.generateContent(
+        const response = await AutonomousIntelligence.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
-            AI_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
+            INTELLIGENCE_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
             {
-                ...AI_CONFIG.THINKING.HIGH,
+                ...INTELLIGENCE_CONFIG.THINKING.HIGH,
                 temperature: 1.0 // Creative task
             }
         );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * ReleaseWizard Component
  * Step-by-step wizard for creating DDEX-compliant releases
@@ -17,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
+import { ReleaseHarnessWorkspace } from './ReleaseHarnessWorkspace';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
@@ -27,6 +29,7 @@ const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
   { id: 'distribution', label: 'Distribution', icon: <Globe size={18} /> },
   { id: 'ai_disclosure', label: 'AI Disclosure', icon: <Sparkles size={18} /> },
   { id: 'assets', label: 'Assets', icon: <Upload size={18} /> },
+  { id: 'harness', label: 'Harness', icon: <Sparkles size={18} /> },
   { id: 'review', label: 'Review', icon: <CheckCircle size={18} /> }
 ];
 
@@ -67,6 +70,7 @@ interface ReleaseWizardProps {
 }
 
 export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProps) {
+  const { t } = useTranslation();
   const {
     currentStep,
     setCurrentStep,
@@ -109,7 +113,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         const isValid = isStepValid(step.id);
 
         return (
-          <React.Fragment key={step.id}>
+          <div key={step.id} className="flex items-center gap-2">
             <button
               onClick={() => isPast && setCurrentStep(step.id)}
               disabled={!isPast}
@@ -130,7 +134,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             {index < STEPS.length - 1 && (
               <ChevronRight size={16} className="text-gray-600" />
             )}
-          </React.Fragment>
+          </div>
         );
       })}
     </div>
@@ -150,7 +154,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.trackTitle || ''}
             onChange={e => updateMetadata({ trackTitle: e.target.value })}
-            placeholder="Enter track title"
+            placeholder={t('publishing.hints.track_title')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -165,7 +169,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.artistName || ''}
             onChange={e => updateMetadata({ artistName: e.target.value })}
-            placeholder="Enter artist name"
+            placeholder={t('publishing.hints.artist_name')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -214,7 +218,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.labelName || ''}
             onChange={e => updateMetadata({ labelName: e.target.value })}
-            placeholder="Your label or 'Self-Released'"
+            placeholder={t('publishing.hints.label_name')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -228,7 +232,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.dpid || ''}
             onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
-            placeholder="PA-DPIDA-XXXXXXXXXX-X"
+            placeholder={t('publishing.hints.pro_work_id')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -242,7 +246,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.isrc || ''}
             onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
-            placeholder="US-XXX-25-XXXXX (Optional - will generate if empty)"
+            placeholder={t('publishing.hints.isrc_optional')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -256,7 +260,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="number"
             value={metadata.bpm || ''}
             onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
-            placeholder="e.g. 120"
+            placeholder={t('publishing.hints.bpm_example')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -270,7 +274,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="text"
             value={metadata.key || ''}
             onChange={e => updateMetadata({ key: e.target.value })}
-            placeholder="e.g. C minor, 8A"
+            placeholder={t('publishing.hints.key_example')}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -284,7 +288,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             type="number"
             value={metadata.energy || ''}
             onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
-            placeholder="0.0 to 1.0 (e.g. 0.85)"
+            placeholder={t('publishing.hints.confidence_score')}
             step="0.01"
             min="0"
             max="1"
@@ -459,16 +463,16 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     </div>
   );
 
-  // Render AI disclosure step
+  // Render Autonomous disclosure step
   const renderAIDisclosureStep = () => (
     <div className="space-y-6">
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
         <div className="flex gap-3">
           <Sparkles className="text-yellow-400 flex-shrink-0 mt-0.5" size={20} />
           <div>
-            <h4 className="font-medium text-yellow-400 mb-1">ERN 4.3 AI Content Disclosure</h4>
+            <h4 className="font-medium text-yellow-400 mb-1">ERN 4.3 Autonomous Content Disclosure</h4>
             <p className="text-sm text-yellow-300/70">
-              New DDEX standards require disclosure of AI-generated content.
+              New DDEX standards require disclosure of Intelligence-generated content.
               This helps platforms and listeners understand how the music was created.
             </p>
           </div>
@@ -491,7 +495,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white font-medium">Fully AI-Generated</span>
-            <p className="text-sm text-gray-400">The entire track was created using AI tools</p>
+            <p className="text-sm text-gray-400">The entire track was created using Autonomous tools</p>
           </div>
         </label>
 
@@ -510,7 +514,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white font-medium">Partially AI-Generated</span>
-            <p className="text-sm text-gray-400">Some elements were created using AI tools</p>
+            <p className="text-sm text-gray-400">Some elements were created using Autonomous tools</p>
           </div>
         </label>
       </div>
@@ -519,7 +523,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         <div className="space-y-4 mt-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              AI Tools Used
+              Autonomous Tools Used
             </label>
             <input
               type="text"
@@ -530,7 +534,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   aiToolsUsed: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
-              placeholder="e.g., Suno, Udio, AIVA, Amper"
+              placeholder={t('publishing.hints.ai_tools_example')}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             />
             <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
@@ -548,7 +552,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   humanContribution: e.target.value
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
-              placeholder="Describe any human creative input (lyrics, melody ideas, arrangement, mixing, etc.)"
+              placeholder={t('publishing.hints.human_input_desc')}
               rows={3}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
             />
@@ -667,6 +671,15 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         )}
       </div>
     </div>
+  );
+
+  const renderHarnessStep = () => (
+    <ReleaseHarnessWorkspace
+      metadata={metadata}
+      selectedStores={selectedDistributors}
+      projectId="default-project"
+      onApplyMetadata={updateMetadata}
+    />
   );
 
   // Render review step
@@ -805,16 +818,16 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         </div>
       </div>
 
-      {/* AI Disclosure Summary */}
+      {/* Autonomous Disclosure Summary */}
       {(metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.aiGeneratedContent?.isPartiallyAIGenerated) && (
         <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
           <h4 className="font-medium text-yellow-400 mb-2 flex items-center gap-2">
-            <Sparkles size={18} /> AI Content Disclosure
+            <Sparkles size={18} /> Autonomous Content Disclosure
           </h4>
           <p className="text-sm text-gray-300">
             {metadata.aiGeneratedContent.isFullyAIGenerated
               ? 'This release is fully AI-generated'
-              : 'This release contains AI-generated elements'
+              : 'This release contains Intelligence-generated elements'
             }
             {metadata.aiGeneratedContent.aiToolsUsed?.length
               ? ` using ${metadata.aiGeneratedContent.aiToolsUsed.join(', ')}`
@@ -866,6 +879,8 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         return renderAIDisclosureStep();
       case 'assets':
         return renderAssetsStep();
+      case 'harness':
+        return renderHarnessStep();
       case 'review':
         return renderReviewStep();
       case 'submitting':
@@ -977,4 +992,3 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     </div>
   );
 }
-

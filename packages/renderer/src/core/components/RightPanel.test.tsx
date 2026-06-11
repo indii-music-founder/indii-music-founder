@@ -151,7 +151,7 @@ describe('RightPanel', () => {
         expect(mockSetRightPanelTab).toHaveBeenCalledWith('agent');
     });
 
-    it('renders StudioControlsPanel when open and tab is context and module is creative', () => {
+    it('renders StudioControlsPanel when open and tab is context and module is creative', async () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             ...defaultState,
             rightPanelTab: 'context',
@@ -159,7 +159,7 @@ describe('RightPanel', () => {
             isRightPanelOpen: true,
         });
         render(<RightPanel />);
-        expect(screen.getByTestId('studio-controls-panel')).toBeInTheDocument();
+        expect(await screen.findByTestId('studio-controls-panel')).toBeInTheDocument();
     });
 
     it('renders fallback when open and tab is context and module has no panel', () => {
@@ -173,14 +173,14 @@ describe('RightPanel', () => {
         expect(screen.getByText('No Tool Selected')).toBeInTheDocument();
     });
 
-    it('renders AssetsPanel when open and tab is assets', () => {
+    it('renders AssetsPanel when open and tab is assets', async () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             ...defaultState,
             rightPanelTab: 'assets',
             isRightPanelOpen: true,
         });
         render(<RightPanel />);
-        expect(screen.getByTestId('assets-panel')).toBeInTheDocument();
+        expect(await screen.findByTestId('assets-panel')).toBeInTheDocument();
     });
 
     it('renders Agent content when open and tab is agent', () => {

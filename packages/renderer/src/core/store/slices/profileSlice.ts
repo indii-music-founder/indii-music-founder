@@ -3,6 +3,8 @@ import { UserProfile, BrandKit, UserPreferences } from '@/types/User';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { auth } from '@/services/firebase';
+import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 export interface Organization {
     id: string;
@@ -51,7 +53,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     id: 'pending',
     uid: '',
     email: '',
-    displayName: 'New Artist',
+    displayName: '',
     photoURL: null,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
@@ -109,6 +111,22 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         // Guard: If uid is the default 'pending' placeholder, skip Firestore calls
         if (!uid || uid === 'pending') {
             logger.debug('[Profile] Skipping load — no real UID yet.');
+            return;
+        }
+
+        // Guard: In E2E tests, if a user profile is already seeded with matching uid,
+        // do not load/overwrite it to avoid race conditions with offline/mock fallback loading.
+        const currentProfile = get().userProfile;
+        const { isTestHarnessRuntime } = await import('@/utils/e2eMode');
+        if (currentProfile && currentProfile.uid === uid && currentProfile.displayName && isTestHarnessRuntime()) {
+            logger.info('[Profile] Skipping loadUserProfile — profile already seeded in E2E runtime.');
+            return;
+        }
+
+        const currentUser = auth.currentUser;
+        const isCurrentAnonymousUser = currentUser?.uid === uid && isAnonymousOrDemoUser(currentUser);
+        if (isDemoUserId(uid) || isCurrentAnonymousUser) {
+            logger.error('[Profile] Refusing to load anonymous/demo profile UID in runtime.');
             return;
         }
 
@@ -194,6 +212,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         const cloudProfile = docSnap.data() as UserProfile;
                         
                         const currentProfile = get().userProfile;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const getMs = (t: any) => {
                             if (!t) return 0;
                             if (typeof t.toMillis === 'function') return t.toMillis();

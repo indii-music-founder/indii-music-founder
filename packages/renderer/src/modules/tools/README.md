@@ -1,6 +1,6 @@
 # Tools & Integrations Module (RC1)
 
-The Tools module acts as the "Swiss Army Knife" of indiiOS. It houses specialized utilities and third-party integrations that extend the core capabilities of the platform, from audio processing to external API bridges.
+The Tools module acts as the "Swiss Army Knife" of indii. It houses specialized utilities and third-party integrations that extend the core capabilities of the platform, from audio processing to external API bridges.
 
 ## 🛠️ Key Features
 - **Audio Intelligence:** Deep analysis of audio files including BPM detection, key identification, and silence removal.

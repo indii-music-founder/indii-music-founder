@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Firebase Cloud Function: Create One-Time Stripe Checkout Session
  *
@@ -30,7 +31,7 @@ export const createOneTimeCheckout = onCall({
     secrets: [stripeSecretKey],
     timeoutSeconds: 60,
     memory: '256MiB',
-    enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+    enforceAppCheck: true,
 }, async (request) => {
     const { userId, items, successUrl, cancelUrl, customerEmail, metadata } =
         request.data as OneTimeCheckoutParams;

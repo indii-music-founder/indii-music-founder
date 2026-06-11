@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MechanicalRoyaltyService } from './MechanicalRoyaltyService';
 import { auth } from '@/services/firebase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDocs, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 
 // Mock dependencies are handled by src/test/setup.ts

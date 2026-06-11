@@ -32,7 +32,7 @@ description: Visual DNA construction, art direction, photography lighting, music
   - *Low Key:* High contrast, harsh shadows. Rap, rock, moody R&B.
   - *Neon Noir:* Saturated blues/pinks/purples. Synthwave, electronic.
 
-## 4. indiiOS App Integration (Brand Manager)
+## 4. indii App Integration (Brand Manager)
 
 - Ensure the `CreativeSlice` prompt parameters respect the artist's global "Negative Prompts" to prevent aesthetic drift.
 - Use this knowledge to advise on the `VisualDNA` consistency when producing video outputs via Veo 3.1.

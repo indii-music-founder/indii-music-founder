@@ -9,11 +9,11 @@ export function cleanupLocalStorage() {
 
     // 2. Clear metadata persistence queue if oversized (>50KB)
     try {
-        const queue = localStorage.getItem('indiiOS_pendingMetadataSaves');
+        const queue = localStorage.getItem('indii_pendingMetadataSaves');
         if (queue && queue.length > 50000) {
-            localStorage.removeItem('indiiOS_pendingMetadataSaves');
+            localStorage.removeItem('indii_pendingMetadataSaves');
         }
     } catch { /* already broken, try removing anyway */
-        try { localStorage.removeItem('indiiOS_pendingMetadataSaves'); } catch { /* ignore removal failure */ }
+        try { localStorage.removeItem('indii_pendingMetadataSaves'); } catch { /* ignore removal failure */ }
     }
 }

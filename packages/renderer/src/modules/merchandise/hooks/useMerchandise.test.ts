@@ -84,7 +84,7 @@ describe('useMerchandise', () => {
         expect(MerchandiseService.subscribeToProducts).toHaveBeenCalledWith('test-user-id', expect.any(Function), expect.any(Function));
     });
 
-    it('should handle catalog loading errors gracefully', async () => {
+    it('should surface catalog loading errors', async () => {
         const error = new Error('Failed to fetch');
         vi.mocked(MerchandiseService.getCatalog).mockRejectedValue(error);
         vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
@@ -95,8 +95,7 @@ describe('useMerchandise', () => {
         const { result } = renderHook(() => useMerchandise());
 
         await waitFor(() => {
-            // Updated expectation: The hook swallows the error and sets catalog to empty
-            expect(result.current.error).toBeNull();
+            expect(result.current.error).toBe('Could not load merchandise catalog.');
             expect(result.current.catalog).toEqual([]);
             expect(result.current.loading).toBe(false);
         });
@@ -124,5 +123,25 @@ describe('useMerchandise', () => {
 
         expect(result.current.standardProducts).toHaveLength(2);
         expect(result.current.proProducts).toHaveLength(1);
+    });
+
+    it('falls back to zero stats instead of blocking the dashboard when revenue stats fail', async () => {
+        vi.mocked(MerchandiseService.getCatalog).mockResolvedValue([]);
+        vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
+            callback([]);
+            return () => { };
+        });
+        vi.mocked(revenueService.getUserRevenueStats).mockRejectedValueOnce(new Error('Revenue stats unavailable'));
+
+        const { result } = renderHook(() => useMerchandise());
+
+        await waitFor(() => {
+            expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.error).toBeNull();
+        expect(result.current.stats.totalRevenue).toBe(0);
+        expect(result.current.stats.unitsSold).toBe(0);
+        expect(result.current.topSellingProducts).toEqual([]);
     });
 });

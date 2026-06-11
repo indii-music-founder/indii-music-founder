@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Firebase Cloud Function: Get Customer Portal URL
  *
@@ -12,8 +13,8 @@ import { stripeSecretKey } from '../config/secrets';
 export const getCustomerPortal = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
-  memory: '128MiB',
-  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+  memory: '256MiB',
+  enforceAppCheck: true,
 }, async (request) => {
   const { userId, returnUrl } = request.data;
 

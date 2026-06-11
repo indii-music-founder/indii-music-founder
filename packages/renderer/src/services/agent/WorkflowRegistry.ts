@@ -1,5 +1,6 @@
 import type { WorkflowStep, WorkflowEdge } from './types';
 import { validateWorkflowGraph } from './WorkflowGraphUtils';
+import { logger } from '@/utils/logger';
 
 
 export type WorkflowDefinition = {
@@ -162,9 +163,9 @@ Object.values(WORKFLOW_REGISTRY).forEach(workflow => {
     try {
         validateWorkflowGraph(workflow);
     } catch (error) {
-        console.error(`[WorkflowRegistry] Validation failed for ${workflow.id}:`, error);
+        logger.error(`[WorkflowRegistry] Validation failed for ${workflow.id}:`, error);
         // In a production environment, we might just log, but in dev we want to know.
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
             throw error;
         }
     }

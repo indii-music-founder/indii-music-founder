@@ -92,7 +92,7 @@ Every songwriter MUST register:
 - **ISRC** (International Standard Recording Code) — unique ID per recording. Assign one per track. Required for royalty tracking across all DSPs.
 - **UPC** (Universal Product Code) — unique ID per release. Assigned by distributor.
 
-Store ISRCs in `src/services/distribution/ISRCRegistry.ts` — the indiiOS system manages these automatically.
+Store ISRCs in `src/services/distribution/ISRCRegistry.ts` — the indii system manages these automatically.
 
 ---
 

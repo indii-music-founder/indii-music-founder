@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -10,7 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { voiceService } from '@/services/ai/VoiceService';
+import { voiceService } from '@/services/intelligence/VoiceService';
 import { cn } from '@/lib/utils';
 import {
     PromptInput,
@@ -34,7 +35,7 @@ interface PromptAreaProps {
 export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
 
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isLocalProcessing, setIsLocalProcessing] = useState(false);
 
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -67,9 +68,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setKnowledgeBaseEnabled,
         setCommandBarCollapsed,
         conversationMode,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         setConversationMode,
         stopAgent,
-        isAgentProcessing
+        isAgentProcessing,
+        directTargetAgentId,
+        activeDepartmentId
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -88,7 +92,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         conversationMode: state.conversationMode,
         setConversationMode: state.setConversationMode,
         stopAgent: state.stopAgent,
-        isAgentProcessing: state.isAgentProcessing
+        isAgentProcessing: state.isAgentProcessing,
+        directTargetAgentId: state.directTargetAgentId,
+        activeDepartmentId: state.activeDepartmentId
     })));
 
     const isBoardroom = conversationMode === 'boardroom';
@@ -127,16 +133,31 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
 
+    const activeAgentName = useMemo(() => {
+        if (conversationMode === 'direct' && directTargetAgentId) {
+            const agent = agentRegistry.get(directTargetAgentId);
+            return agent ? agent.name : directTargetAgentId;
+        }
+        if (conversationMode === 'department' && activeDepartmentId) {
+            const agent = agentRegistry.get(activeDepartmentId);
+            return agent ? agent.name : activeDepartmentId;
+        }
+        if (conversationMode === 'boardroom') {
+            return 'Boardroom';
+        }
+        return 'indii Conductor';
+    }, [conversationMode, directTargetAgentId, activeDepartmentId]);
+
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
 
     const handleInputValueChange = useCallback((value: string) => {
         setCommandBarInput(value);
 
-        // Find last word matching @ or #
-        const match = value.match(/(?:^|\s)([@#])([\w-]*)$/);
+        // Find last word matching @, #, or /
+        const match = value.match(/(?:^|\s)([@#/])([\w-]*)$/);
         if (match && match.index !== undefined) {
             setTypeaheadContext({
-                type: match[1] as '@' | '#',
+                type: match[1] as '@' | '#' | '/',
                 query: match[2] || '',
                 position: match.index + (value[match.index] === ' ' ? 1 : 0)
             });
@@ -220,30 +241,29 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
-            console.log('[PromptArea] handleSubmit fired!', { commandBarInput });
             e?.preventDefault();
             const input = commandBarInput || '';
             if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
-                console.log('[PromptArea] Aborting submit: input is empty');
                 return;
             }
-            if (isProcessing) {
-                console.log('[PromptArea] Aborting submit: already processing');
+            if (isLocalProcessing) {
                 return;
             }
 
-            setIsProcessing(true);
-            const currentInput = input;
+            setIsLocalProcessing(true);
+            let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
+
+            // Synchronously clear the inputs optimistically
+            setCommandBarInput('');
+            setCommandBarAttachments([]);
 
             if (currentInput.trim() === '/deploy-andromeda') {
                 const state = useStore.getState();
                 state.setModule('creative');
                 state.enableAndromedaMode();
                 toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
-                setCommandBarInput('');
-                setCommandBarAttachments([]);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
                 return;
             }
 
@@ -251,14 +271,27 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const state = useStore.getState();
                 state.setModule('dashboard');
                 toast.success('System Status: Viral Velocity Active, CPS Kill-switches Armed.');
-                setCommandBarInput('');
-                setCommandBarAttachments([]);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
                 return;
             }
 
-            setCommandBarInput('');
-            setCommandBarAttachments([]);
+            const entryCommandResult = await entryCommandService.handleInput(currentInput, {
+                source: 'command-bar',
+                includeUserMessage: true,
+            });
+            if (entryCommandResult.handled) {
+                setIsLocalProcessing(false);
+                return;
+            }
+
+            // --- DNA INFUSION: Slash Command Interceptor ---
+            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-andromeda') && !currentInput.trim().startsWith('/status-blitz')) {
+                const parts = currentInput.trim().split(' ');
+                const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
+                
+                // Wrap the user's input with a system directive forcing the agent into the skill
+                currentInput = `[SYSTEM INTERCEPT: User executed slash command /${command}. Please immediately load the skill from \`.agent/skills/${command}/SKILL.md\` and follow its protocol strictly without deviating.]\n\n${currentInput}`;
+            }
 
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
             // In Boardroom mode, messages route to boardroomMessages — DON'T open the right panel
@@ -277,25 +310,37 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
                 await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
             } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
                 toast.error("Failed to send message.");
                 setCommandBarInput(currentInput);
                 setCommandBarAttachments(currentAttachments);
-                setIsProcessing(false);
+                setIsLocalProcessing(false);
             }
         } catch (fatalError: unknown) {
             logger.error("PromptArea: Fatal crash", fatalError);
-            setIsProcessing(false);
+            setIsLocalProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
 
     const actionButtonBase = "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
     const submitButtonBase = "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white";
     const submitButtonSize = (!isMobile && !isDocked) 
         ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" 
         : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0");
+
+    const kbButtonClasses = isKnowledgeBaseEnabled
+        ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
+        : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300";
+
+    const roundedClass = isMobile ? "rounded-lg" : "rounded-full";
+
+    const modePickerButtonClasses = isBoardroom
+        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+        : conversationMode === 'department'
+            ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
+            : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50";
 
     return (
         <div
@@ -336,11 +381,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
-                disabled={isProcessing}
+                disabled={isLocalProcessing}
             >
                 <PromptInputTextarea
-                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${currentModule}...`)}
-                    aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
+                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${activeAgentName}...`)}
+                    aria-label={isIndiiMode ? "Ask indii" : `Message ${activeAgentName}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                     data-testid="main-prompt-input"
                 />
@@ -401,23 +446,22 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     setKnowledgeBaseEnabled(next);
                                     if (isMobile) {
                                         toast.success(next
-                                            ? "Knowledge Base connected — AI will reference your docs"
+                                            ? "Knowledge Base connected — Intelligence will reference your docs"
                                             : "Knowledge Base disconnected"
                                         );
                                     }
                                 }}
                                 className={cn(
                                     "flex items-center justify-center gap-1 transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    roundedClass,
                                     isMobile
-                                        ? "px-2.5 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide"
-                                        : isDocked ? "w-7 h-7 rounded-full" : "w-8 h-8 rounded-full",
-                                    isKnowledgeBaseEnabled
-                                        ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
-                                        : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
+                                        ? "px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide"
+                                        : isDocked ? "size-7" : "size-8",
+                                    kbButtonClasses
                                 )}
                                 aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
                                 aria-pressed={isKnowledgeBaseEnabled}
-                            >
+                             >
                                 <Database size={isDocked ? 10 : 12} />
                                 {isMobile && <span>KB</span>}
                             </button>
@@ -434,12 +478,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 onClick={handleToggleModePicker}
                                 className={cn(
                                     "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                                    isDocked ? "w-7 h-7" : "w-8 h-8",
-                                    isBoardroom
-                                        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                                        : conversationMode === 'department'
-                                            ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
-                                            : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50"
+                                    isDocked ? "size-7" : "size-8",
+                                    modePickerButtonClasses
                                 )}
                                 aria-label="Change Agent Mode"
                                 title={`Mode: ${conversationMode}`}
@@ -449,7 +489,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                             <AnimatePresence>
                                 {showModePicker && modeButtonRect && typeof document !== 'undefined' && createPortal(
-                                    <div className="fixed inset-0 z-[9999]">
+                                    <div className="fixed inset-0 z-9999">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
@@ -511,7 +551,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </div>
                         )}
 
-                        {isProcessing || isAgentProcessing ? (
+                        {isLocalProcessing || isAgentProcessing ? (
                             <PromptInputAction tooltip="Stop Agent (Esc)">
                                 <button
                                     onClick={(e) => {

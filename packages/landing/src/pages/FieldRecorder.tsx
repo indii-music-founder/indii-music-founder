@@ -92,33 +92,45 @@ export default function FieldRecorder() {
     const storagePath = `users/${user.uid}/recordings/${Date.now()}_${filename}.webm`;
     const storageRef = ref(storage, storagePath);
 
-    try {
-      // 1. Upload to Storage
-      const snapshot = await uploadBytes(storageRef, audioBlob);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+    const maxRetries = 3;
+    let attempt = 0;
+    let success = false;
 
-      // 2. Register in Firestore (Shared with Electron App)
-      await addDoc(collection(db, 'history'), {
-        userId: user.uid,
-        orgId: 'personal',
-        type: 'audio_capture',
-        prompt: filename,
-        storageUrl: downloadUrl,
-        mimeType: 'audio/webm',
-        createdAt: serverTimestamp(),
-        generatedAt: Date.now(),
-        estimatedDuration: timer,
-        metadata: {
-          source: 'Artist Portal (Field Recorder)',
-          originalFilename: filename
+    while (attempt < maxRetries && !success) {
+      try {
+        // 1. Upload to Storage
+        const snapshot = await uploadBytes(storageRef, audioBlob);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
+        // 2. Register in Firestore (Shared with Electron App)
+        await addDoc(collection(db, 'history'), {
+          userId: user.uid,
+          orgId: 'personal',
+          type: 'audio_capture',
+          prompt: filename,
+          storageUrl: downloadUrl,
+          mimeType: 'audio/webm',
+          createdAt: serverTimestamp(),
+          generatedAt: Date.now(),
+          estimatedDuration: timer,
+          metadata: {
+            source: 'Artist Portal (Field Recorder)',
+            originalFilename: filename
+          }
+        });
+
+        success = true;
+        setRecordingState('completed');
+      } catch (err) {
+        attempt++;
+        console.error(`Upload failed (attempt ${attempt}/${maxRetries}):`, err);
+        if (attempt >= maxRetries) {
+          setError('Cloud sync failed after multiple attempts. Please try again or download locally.');
+          setRecordingState('stopped');
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
-      });
-
-      setRecordingState('completed');
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setError('Cloud sync failed. Please try again or download locally.');
-      setRecordingState('stopped');
+      }
     }
   }
 
@@ -148,7 +160,7 @@ export default function FieldRecorder() {
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${recordingState === 'recording' ? 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-green-500'}`} />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-            {recordingState === 'recording' ? 'Live Capture' : 'Secure Bridge'}
+            {recordingState === 'recording' ? 'Live Capture' : 'Ready'}
           </span>
         </div>
       </nav>
@@ -162,7 +174,7 @@ export default function FieldRecorder() {
           <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
             Field <span className="text-purple-500">Capture</span>
           </h1>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]">indiiOS Professional Audio Interface</p>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]">indii Professional Audio Interface</p>
         </header>
 
         <div className="w-full space-y-8 flex flex-col items-center">
@@ -266,7 +278,7 @@ export default function FieldRecorder() {
                       {!user && (
                         <p className="flex items-center gap-1.5 text-[9px] font-bold text-amber-500/80 uppercase tracking-tight justify-center">
                           <AlertCircle size={10} />
-                          Sign in to sync with indiiOS Studio
+                          Sign in to sync with indii Studio
                         </p>
                       )}
                     </div>
@@ -275,7 +287,7 @@ export default function FieldRecorder() {
                   {recordingState === 'uploading' && (
                     <div className="w-full py-12 flex flex-col items-center gap-6">
                       <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-                      <p className="text-sm font-black uppercase tracking-widest italic animate-pulse">Establishing Bridge...</p>
+                      <p className="text-sm font-black uppercase tracking-widest italic animate-pulse">Syncing to Cloud...</p>
                     </div>
                   )}
 
@@ -328,7 +340,7 @@ export default function FieldRecorder() {
       <footer className="absolute bottom-0 left-0 w-full p-8 flex items-center justify-between pointer-events-none opacity-40">
         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">ALPHA_V5.0</span>
         <div className="flex items-center gap-4">
-          <span className="text-[9px] font-bold text-gray-700">POWERED BY GEMINI 3 CORTEX</span>
+          <span className="text-[9px] font-bold text-gray-700">POWERED BY INDII.MUSIC</span>
         </div>
       </footer>
     </div>

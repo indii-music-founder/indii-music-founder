@@ -1,7 +1,46 @@
 import { StateCreator } from 'zustand';
-import { type ModuleId, isValidModule } from '@/core/constants';
+import { type ModuleId, isValidModule, MODULE_AGENT_MAP } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
+
+// Migration: Support old indii_ localStorage keys from before rebranding to indii.music
+// This function is called once on app startup to preserve existing user preferences
+function migrateStorageKeys(): void {
+    if (typeof window === 'undefined') return;
+
+    const keysToMigrate = [
+        'indii_entryAssistantDismissed',
+        'indii_sidebarOpen',
+        'indii_commandBarPosition',
+        'indii_first_run_tips',
+        'indii_tour_completed_v1',
+    ];
+
+    const migrationVersion = 'indii_migration_v1';
+    const hasMigrated = localStorage.getItem(migrationVersion) === 'true';
+
+    if (hasMigrated) return; // Only run once per browser
+
+    try {
+        for (const oldKey of keysToMigrate) {
+            const value = localStorage.getItem(oldKey);
+            if (value !== null) {
+                const newKey = oldKey.replace('indii_', 'indii_');
+                localStorage.setItem(newKey, value);
+                localStorage.removeItem(oldKey);
+                logger.debug(`[AppSlice] Migrated ${oldKey} → ${newKey}`);
+            }
+        }
+        localStorage.setItem(migrationVersion, 'true');
+    } catch (err) {
+        logger.error('[AppSlice] Storage migration failed:', err);
+    }
+}
+
+// Run migration on module load
+if (typeof window !== 'undefined') {
+    migrateStorageKeys();
+}
 
 // Helper to get initial module from URL
 const getInitialModule = (): ModuleId => {
@@ -23,6 +62,7 @@ export interface Project {
     orgId: string;
     thumbnail?: string;
     assetCount?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
 
@@ -30,11 +70,12 @@ export interface AppSlice {
     currentModule: ModuleId;
     currentProjectId: string;
     projects: ProjectMetadata[]; // Changed from Project[] to enforce UI type
-    setModule: (module: AppSlice['currentModule']) => void;
+    setModule: (module: AppSlice['currentModule']) => Promise<void>;
     setProject: (id: string) => void;
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateProjectMetadata: (projectId: string, metadata: Record<string, any>) => Promise<void>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
@@ -42,16 +83,18 @@ export interface AppSlice {
     setApiKeyError: (error: boolean) => void;
     isSidebarOpen: boolean;
     isRightPanelOpen: boolean;
-    rightPanelTab: 'context' | 'assets' | 'agent';
+    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts';
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
-    setRightPanelTab: (tab: 'context' | 'assets' | 'agent') => void;
+    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts') => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
     isEntryAssistantDismissed: boolean;
     setEntryAssistantDismissed: (dismissed: boolean) => void;
+    pendingCostWarning: { estimatedCost: number; reason: string; resolve: (approved: boolean) => void } | null;
+    setPendingCostWarning: (warning: AppSlice['pendingCostWarning']) => void;
     /** @internal Debounce tracker for toggleSidebar */
     _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
@@ -67,19 +110,21 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentProjectId: 'default',
     projects: [],
     hasUnsavedChanges: false,
+    pendingCostWarning: null,
+    setPendingCostWarning: (warning) => set({ pendingCostWarning: warning }),
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
-    isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_entryAssistantDismissed') === 'true' : false,
+    isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indii_entryAssistantDismissed') === 'true' : false,
     setEntryAssistantDismissed: (dismissed) => {
         if (typeof window !== 'undefined') {
             if (dismissed) {
-                localStorage.setItem('indiiOS_entryAssistantDismissed', 'true');
+                localStorage.setItem('indii_entryAssistantDismissed', 'true');
             } else {
-                localStorage.removeItem('indiiOS_entryAssistantDismissed');
+                localStorage.removeItem('indii_entryAssistantDismissed');
             }
         }
         set({ isEntryAssistantDismissed: dismissed });
     },
-    setModule: (module) => {
+    setModule: async (module) => {
         const state = get();
         const now = Date.now();
 
@@ -91,8 +136,18 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
 
         if (state.hasUnsavedChanges && state.currentModule !== module) {
-            const confirmLeave = window.confirm("You have unsaved changes that will be lost. Are you sure you want to leave?");
-            if (!confirmLeave) {
+            // Surface a proper React modal instead of a blocking browser dialog.
+            // The UnsavedChangesModal listens to pendingCostWarning and resolves it.
+            const approved = await new Promise<boolean>((resolve) => {
+                set({
+                    pendingCostWarning: {
+                        estimatedCost: 0,
+                        reason: 'You have unsaved changes that will be lost. Are you sure you want to leave this page?',
+                        resolve,
+                    },
+                });
+            });
+            if (!approved) {
                 return;
             }
             set({ hasUnsavedChanges: false });
@@ -109,9 +164,14 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         // This requires dynamic import of store to avoid circular dependency
         import('@/core/store').then(({ useStore }) => {
             const currentModule = get().currentModule;
+            const store = useStore.getState();
+            
+            // Auto-align the active agent for the new module
+            const targetAgent = MODULE_AGENT_MAP[module] || 'generalist';
+            store.setDirectTargetAgentId(targetAgent);
+
             // Only clear if actually switching modules
             if (currentModule !== module) {
-                const store = useStore.getState();
                 // Clean up Firestore subscriptions for the module we're leaving
                 // to prevent INTERNAL ASSERTION FAILED errors during rapid navigation
                 const prefixes: Partial<Record<string, string>> = {
@@ -128,7 +188,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
                     store.clearSubscriptionsByPrefix(prefix);
                 }
             }
-        }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions:', err));
+        }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions or align agent:', err));
 
         set({
             currentModule: module,
@@ -165,6 +225,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     },
     updateProjectMetadata: async (projectId, metadata) => {
         const { ProjectService } = await import('@/services/ProjectService');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
         
         // 1. Update in Firestore via ProjectService
@@ -187,7 +248,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
-    isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_sidebarOpen') !== 'false' : true,
+    isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indii_sidebarOpen') !== 'false' : true,
     isRightPanelOpen: false,
     rightPanelTab: 'context',
     toggleSidebar: () => {
@@ -198,7 +259,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         const newState = !state.isSidebarOpen;
         if (typeof window !== 'undefined') {
-            localStorage.setItem('indiiOS_sidebarOpen', String(newState));
+            localStorage.setItem('indii_sidebarOpen', String(newState));
         }
         set({ isSidebarOpen: newState, _lastSidebarToggle: now });
     },

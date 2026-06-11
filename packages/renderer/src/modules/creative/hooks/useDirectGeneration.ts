@@ -1,16 +1,109 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
-import { VideoJob } from '@/types/video';
-import { VideoAspectRatioSchema } from '@/modules/video/schemas';
-import { importWithRetry } from '@/utils/dynamicImport';
+import { VideoAspectRatioSchema } from '../video/schemas';
+import { functions, db, auth, storage } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+
+type CallableGenerationError = {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+};
+
+const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
+    'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+
+function normalizeCallableCode(code: unknown): string | undefined {
+    if (typeof code !== 'string') return undefined;
+    return code.replace(/^functions\//, '');
+}
+
+function flattenErrorText(value: unknown): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (value instanceof Error) return value.message;
+    if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+    return String(value);
+}
+
+function isGooglePrepaymentExhausted(text: string): boolean {
+    const lower = text.toLowerCase();
+    return lower.includes('prepayment credits are depleted')
+        || lower.includes('billing#prepay')
+        || (lower.includes('ai studio') && lower.includes('billing'))
+        || (lower.includes('resource_exhausted') && lower.includes('prepay'));
+}
+
+function detailsMessage(details: unknown): string | undefined {
+    if (!details) return undefined;
+    if (typeof details === 'string') return details;
+    if (details instanceof Error) return details.message;
+    if (typeof details === 'object') {
+        const record = details as Record<string, unknown>;
+        const detailMessage = record.message || record.cause || record.reason;
+        if (typeof detailMessage === 'string') return detailMessage;
+    }
+    return undefined;
+}
+
+function generationErrorMessage(error: unknown): { code?: string; message: string } {
+    const errObj = error as CallableGenerationError | null;
+    const code = normalizeCallableCode(errObj?.code);
+    const rawMessage = error instanceof Error ? error.message : typeof errObj?.message === 'string' ? errObj.message : flattenErrorText(error);
+    const detailMessage = detailsMessage(errObj?.details);
+    const combinedErrorText = [
+        code,
+        rawMessage,
+        detailMessage,
+        flattenErrorText(errObj?.details),
+    ].filter(Boolean).join(' ');
+
+    if (isGooglePrepaymentExhausted(combinedErrorText)) {
+        return { code: 'resource-exhausted', message: GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE };
+    }
+
+    const usableRawMessage = rawMessage && rawMessage !== code && rawMessage !== '[object Object]' ? rawMessage : undefined;
+    const message = usableRawMessage || detailMessage;
+
+    if (message && message !== 'internal') {
+        return { code, message };
+    }
+    if (detailMessage) {
+        return { code, message: detailMessage };
+    }
+
+    if (code === 'permission-denied') return { code, message: 'Google generation credentials or permissions are not configured.' };
+    if (code === 'not-found') return { code, message: 'The selected Google generation model is not available in this project or region.' };
+    if (code === 'resource-exhausted') return { code, message: 'Google generation quota is exhausted. Try again later or switch model tier.' };
+    if (code === 'deadline-exceeded') return { code, message: 'Generation timed out. The model may be busy - please try again.' };
+    if (code === 'invalid-argument') return { code, message: 'The generation request was rejected. Check prompt, aspect ratio, and model settings.' };
+
+    return { code, message: 'The Google generation service returned an internal error.' };
+}
+
+function compactCallablePayload<T extends Record<string, unknown>>(payload: T): T {
+    return Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+    ) as T;
+}
 
 export function useDirectGeneration() {
     const {
@@ -18,6 +111,7 @@ export function useDirectGeneration() {
         creativePrompt,
         setCreativePrompt,
         addToHistory,
+        generatedHistory,
         currentProjectId,
         whiskState,
         setSelectedItem,
@@ -32,6 +126,7 @@ export function useDirectGeneration() {
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
         addToHistory: state.addToHistory,
+        generatedHistory: state.generatedHistory,
         currentProjectId: state.currentProjectId,
         whiskState: state.whiskState,
         setSelectedItem: state.setSelectedItem,
@@ -51,20 +146,19 @@ export function useDirectGeneration() {
         setCreativePrompt(value);
     }, [setCreativePrompt]);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState<HistoryItem[]>([]);
+    
+    // Derive results from global generated history to ensure sync with Agent-triggered generations
+    const results = (generatedHistory || []).filter(h => h.projectId === currentProjectId);
+    
     const [activeJobs, setActiveJobs] = useState<VideoGenerationJob[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
     const [bpm, setBpm] = useState<number>(120);
 
-    // Guard against double-submit while a generation is in-flight
     const generatingRef = useRef(false);
     const unsubsRef = useRef<Record<string, () => void>>({});
-    // Ref to capture the latest projectId for use inside async subscription callbacks,
-    // preventing stale closures when the user switches projects mid-generation.
     const currentProjectIdRef = useRef(currentProjectId);
     useEffect(() => { currentProjectIdRef.current = currentProjectId; }, [currentProjectId]);
 
-    // Cleanup subscriptions on unmount
     useEffect(() => {
         return () => {
             Object.values(unsubsRef.current).forEach(unsub => unsub());
@@ -72,61 +166,75 @@ export function useDirectGeneration() {
         };
     }, []);
 
-    // Job polling/subscription loop
     useEffect(() => {
         activeJobs.forEach(job => {
-            if (unsubsRef.current[job.id]) return; // already subscribed
+            if (unsubsRef.current[job.id]) return;
             if (job.status === 'completed' || job.status === 'failed') return;
 
-            const unsub = VideoGeneration.subscribeToJob(job.id, (updatedJob: VideoJob | null) => {
-                if (!updatedJob) return;
+            const jobRef = doc(db, 'creative_jobs', job.id);
+            const unsub = onSnapshot(jobRef, async (snapshot) => {
+                if (!snapshot.exists()) return;
+                const data = snapshot.data();
 
                 setActiveJobs(prev => {
-                    const idx = prev.findIndex(j => j.id === updatedJob.id);
+                    const idx = prev.findIndex(j => j.id === job.id);
                     if (idx === -1) return prev;
-
                     const newJobs = [...prev];
                     newJobs[idx] = {
                         ...newJobs[idx],
-                        status: updatedJob.status as any,
-                        progress: updatedJob.progress,
-                        error: updatedJob.error
+                        status: data.status,
+                        progress: data.progress || 0,
+                        error: data.error
                     } as VideoGenerationJob;
                     return newJobs;
                 });
 
-                if (updatedJob.status === 'completed' && (updatedJob.output?.url || updatedJob.videoUrl || updatedJob.url)) {
-                    const finalUrl = updatedJob.output?.url || updatedJob.videoUrl || updatedJob.url || '';
-                    const finalItem: HistoryItem = {
-                        id: updatedJob.id,
-                        url: finalUrl,
-                        type: 'video' as const,
-                        prompt: updatedJob.prompt || job.prompt,
-                        timestamp: Date.now(),
-                        projectId: currentProjectIdRef.current,
-                        origin: 'generated' as const
-                    };
-
-                    setResults(prev => {
-                        if (prev.some(p => p.id === finalItem.id)) return prev;
-                        return [finalItem, ...prev];
-                    });
-                    addToHistory({ ...finalItem });
-                    toast.success('Video generation finished!');
-                    
-                    setTimeout(() => {
-                        setActiveJobs(prev => prev.filter(j => j.id !== updatedJob.id));
-                        if (unsubsRef.current[updatedJob.id]) {
-                            unsubsRef.current[updatedJob.id]?.();
-                            delete unsubsRef.current[updatedJob.id];
+                if (data.status === 'completed' && data.resultUri) {
+                    try {
+                        let finalUrl = data.resultUri;
+                        if (finalUrl.startsWith('gs://')) {
+                            // Convert gs:// URI to an HTTP download URL for UI rendering
+                            const bucketPath = finalUrl.split('/').slice(3).join('/');
+                            const storageRef = ref(storage, bucketPath);
+                            finalUrl = await getDownloadURL(storageRef);
                         }
-                    }, 3000);
-                } else if (updatedJob.status === 'failed') {
+
+                        const finalItem: HistoryItem = {
+                            id: job.id,
+                            url: finalUrl,
+                            type: data.type || mode,
+                            prompt: data.prompt || job.prompt,
+                            timestamp: Date.now(),
+                            projectId: currentProjectIdRef.current,
+                            origin: 'generated' as const
+                        };
+
+                        // The item is now added to the global store, which will automatically update `results`
+                        addToHistory({ ...finalItem });
+                        
+                        if (data.type === 'image') {
+                           setSelectedItem(finalItem);
+                           setViewMode('editor');
+                        }
+
+                        toast.success(`\${data.type} generation finished!`);
+
+                        setTimeout(() => {
+                            setActiveJobs(prev => prev.filter(j => j.id !== job.id));
+                            if (unsubsRef.current[job.id]) {
+                                unsubsRef.current[job.id]?.();
+                                delete unsubsRef.current[job.id];
+                            }
+                        }, 3000);
+                    } catch (err) {
+                        logger.error('Failed to resolve Storage URL', err);
+                    }
+                } else if (data.status === 'failed') {
                     setTimeout(() => {
-                        setActiveJobs(prev => prev.filter(j => j.id !== updatedJob.id));
-                        if (unsubsRef.current[updatedJob.id]) {
-                            unsubsRef.current[updatedJob.id]?.();
-                            delete unsubsRef.current[updatedJob.id];
+                        setActiveJobs(prev => prev.filter(j => j.id !== job.id));
+                        if (unsubsRef.current[job.id]) {
+                            unsubsRef.current[job.id]?.();
+                            delete unsubsRef.current[job.id];
                         }
                     }, 5000);
                 }
@@ -134,7 +242,7 @@ export function useDirectGeneration() {
 
             unsubsRef.current[job.id] = unsub;
         });
-    }, [activeJobs, currentProjectId, addToHistory, toast]);
+    }, [activeJobs, mode, addToHistory, setSelectedItem, setViewMode, toast]);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
@@ -146,7 +254,7 @@ export function useDirectGeneration() {
         id: hi.id,
         dataUrl: hi.url,
         type: hi.type as 'image' | 'video',
-        file: new File([], 'placeholder') // Placeholder since we already have the dataUrl
+        file: new File([], 'placeholder')
     })) || [];
 
     const handleIngredientsChange = useCallback((newIngredients: Ingredient[]) => {
@@ -159,9 +267,7 @@ export function useDirectGeneration() {
 
         const newHistoryItems: HistoryItem[] = newIngredients.map(ing => {
             const foundItem = allItems.find(item => item.id === ing.id);
-            if (foundItem) {
-                return foundItem;
-            }
+            if (foundItem) return foundItem;
             return {
                 id: ing.id,
                 type: ing.type,
@@ -176,45 +282,44 @@ export function useDirectGeneration() {
     }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
-        const { generateImageDirectly } = await importWithRetry(() => import('@/services/ai/generators/DirectImageGenerator'));
-        const { AI_MODELS } = await importWithRetry(() => import('@/core/config/ai-models'));
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to generate images.');
+        }
 
-        const resolvedModel = studioControls.model === 'pro'
-            ? AI_MODELS.IMAGE.DIRECT_PRO
-            : AI_MODELS.IMAGE.DIRECT_FAST;
+        let referenceUri;
+        const ingredientsList = videoInputs?.ingredients || [];
+        const firstIngredient = ingredientsList[0];
+        if (firstIngredient && firstIngredient.url) {
+            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, 'image');
+        }
 
-        const generatedUrls = await generateImageDirectly({
+        const generateImageV3 = httpsCallable(functions, 'generateImageV3');
+        const res = await generateImageV3(compactCallablePayload({
             prompt: finalPrompt,
             aspectRatio: studioControls.aspectRatio,
-            model: resolvedModel,
-            numberOfImages: 1
-        });
+            model: studioControls.model,
+            imageSize: studioControls.imageSize,
+            thinkingLevel: studioControls.thinkingLevel,
+            useGoogleSearch: studioControls.useGrounding,
+            referenceUri
+        }));
+        
+        const data = res.data as { jobId: string };
+        setActiveJobs(prev => [
+            ...prev,
+            { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
+        ]);
+        toast.info('Image job queued. Check gallery for progress.');
 
-        if (generatedUrls.length > 0) {
-            const newItems: HistoryItem[] = generatedUrls.map(url => ({
-                id: crypto.randomUUID(),
-                url: url, // Directly returns the data URI
-                type: 'image' as const,
-                prompt: localPrompt,
-                timestamp: Date.now(),
-                projectId: currentProjectIdRef.current,
-                origin: 'generated' as const
-            }));
-            
-            setResults(prev => [...newItems, ...prev]);
-            newItems.forEach(item => addToHistory({ ...item }));
-
-            setSelectedItem(newItems[0] || null);
-            setViewMode('editor');
-
-            setTimeout(() => {
-                toast.success('Image generated directly successfully');
-            }, 500);
-        }
-    }, [studioControls.model, studioControls.aspectRatio, localPrompt, addToHistory, setSelectedItem, setViewMode, toast]);
+    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
-        // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to generate videos.');
+        }
+
         let effectiveResolution = studioControls.resolution;
         if (effectiveResolution === '4k') {
             effectiveResolution = '1080p';
@@ -225,101 +330,94 @@ export function useDirectGeneration() {
         const secondsPerBeat = 60 / bpm;
         const sequenceTotalSeconds = sequenceTotalBeats * secondsPerBeat;
         
-        const finalDuration = sequenceTotalSeconds > 0 ? sequenceTotalSeconds : Math.max(6, studioControls.duration || 6);
-        
         let sequencePrompt = finalPrompt;
         if (sequence.length > 0) {
-            const sequenceDetails = sequence.map(block => `${block.beats} beats (${(block.beats * secondsPerBeat).toFixed(2)}s) [${block.section || 'Uncategorized'}, ${block.energy || 'Medium'} Energy]`).join(', ');
-            sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const sequenceDetails = sequence.map(block => `\${block.beats} beats (\${(block.beats * secondsPerBeat).toFixed(2)}s) [\${block.section || 'Uncategorized'}, \${block.energy || 'Medium'} Energy]`).join(', ');
+            sequencePrompt = `[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}`;
         }
 
         const ingredientsList = videoInputs?.ingredients || [];
+        const firstIngredient = ingredientsList[0];
+        const firstCharRef = characterReferences?.[0];
+        const firstFrame = firstIngredient?.url || videoInputs?.firstFrame?.url || firstCharRef?.image?.url;
+        const lastFrame = videoInputs?.lastFrame?.url;
 
-        // Validate aspect ratio against the schema; fall back to '16:9' only for truly unsupported values.
-        const validatedAspectRatio = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
-        const effectiveAspectRatio = validatedAspectRatio.success ? validatedAspectRatio.data : '16:9';
+        const combinedReferenceImages = [
+            ...(characterReferences || []).map(ref => ({
+                image: { uri: ref.image.url },
+                referenceType: 'asset' as const
+            })),
+            ...(WhiskService.getSourceMedia(whiskState) || []).map(w => ({
+                image: { imageBytes: w.data, mimeType: w.mimeType },
+                referenceType: 'asset' as const
+            }))
+        ].slice(0, 3);
 
-        const generated = await VideoGeneration.generateVideo({
+        const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
+        const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
+        const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
+
+        const results = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
-            resolution: effectiveResolution,
+            firstFrame,
+            lastFrame,
+            referenceImages: combinedReferenceImages,
             aspectRatio: effectiveAspectRatio,
-            duration: finalDuration,
-            durationSeconds: finalDuration,
-            model: studioControls.model, // Will be resolved by FirebaseAIService
-            fps: 24,
-            orgId: 'personal', // Force personal for direct test
-            referenceImages: [
-                ...(characterReferences || []).map(ref => {
-                    let bytes = ref.image.url;
-                    const commaIndex = bytes.indexOf(',');
-                    if (bytes.startsWith('data:') && commaIndex !== -1) {
-                        bytes = bytes.substring(commaIndex + 1);
-                    }
-                    return {
-                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                        referenceType: 'asset' as const
-                    };
-                }),
-                ...ingredientsList.map(ing => {
-                    let bytes = ing.url;
-                    const commaIndex = bytes.indexOf(',');
-                    if (bytes.startsWith('data:') && commaIndex !== -1) {
-                        bytes = bytes.substring(commaIndex + 1);
-                    }
-                    return {
-                        image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
-                        referenceType: 'asset' as const
-                    };
-                })
-            ]
+            model: studioControls.model,
+            resolution: effectiveResolution,
+            duration: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
+            personGeneration: studioControls.personGeneration,
+            negativePrompt: studioControls.negativePrompt || undefined,
+            seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
+            useGrounding: studioControls.useGrounding
         });
 
-        if (generated && generated.length > 0) {
-            const newItems: HistoryItem[] = generated.map(g => ({
-                id: g.id || crypto.randomUUID(),
-                url: g.url || '', // Might be empty if queued
-                type: 'video' as const,
-                prompt: localPrompt,
-                timestamp: Date.now(),
-                projectId: currentProjectIdRef.current,
-                origin: 'generated' as const
-            }));
-
-            const immediatelyReady = newItems.filter(i => i.url);
-            const queuedJobs = newItems.filter(i => !i.url);
-
-            if (immediatelyReady.length > 0) {
-                setResults(prev => [...immediatelyReady, ...prev]);
-                immediatelyReady.forEach(item => addToHistory({ ...item }));
-                toast.success('Video generated successfully');
-            }
-
-            if (queuedJobs.length > 0) {
-                setActiveJobs(prev => [
-                    ...prev,
-                    ...queuedJobs.map(job => ({
-                        id: job.id,
-                        prompt: job.prompt || localPrompt,
-                        status: 'queued' as const,
-                        progress: 0
-                    }))
-                ]);
-                toast.info('Video job queued. Check gallery for results.');
-            }
+        if (results && results.length > 0) {
+            setActiveJobs(prev => [
+                ...prev,
+                { id: results[0]!.id, prompt: localPrompt, status: 'queued' as const, progress: 0 }
+            ]);
+            toast.info('Video job queued. Check gallery for progress.');
         }
-    }, [studioControls, localPrompt, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
+    }, [studioControls, localPrompt, sequence, bpm, videoInputs, characterReferences, whiskState, toast]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) {
             toast.error('Please enter a prompt before generating.');
             return;
         }
-        if (generatingRef.current) return; // Prevent double-submit
+        if (generatingRef.current) return;
 
         generatingRef.current = true;
         setIsGenerating(true);
 
         try {
+            if (isFirebaseE2EMockEnabled()) {
+                const mockJobId = `mock-job-${Date.now()}`;
+                const mockItem: HistoryItem = {
+                    id: mockJobId,
+                    url: mode === 'image'
+                        ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                        : 'data:video/mp4;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                    type: mode as 'image' | 'video',
+                    prompt: localPrompt,
+                    timestamp: Date.now(),
+                    projectId: currentProjectIdRef.current,
+                    origin: 'generated' as const
+                };
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                addToHistory(mockItem);
+                if (mode === 'image') {
+                    setSelectedItem(mockItem);
+                    setViewMode('editor');
+                }
+                toast.success(`${mode === 'image' ? 'Image' : 'Video'} generation finished!`);
+                return;
+            }
+
             if (mode === 'image') {
                 const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
                 await handleImageGenerate(finalPrompt);
@@ -330,15 +428,12 @@ export function useDirectGeneration() {
         } catch (error: unknown) {
             logger.error("Direct Generation Failed:", error);
 
-            const errObj = error as Record<string, unknown> | null;
-            const errMessage = error instanceof Error ? error.message : String(error);
+            const { code, message: errMessage } = generationErrorMessage(error);
 
-            if (errObj?.code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
+            if (code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
                 toast.error('Generation timed out. The API may be busy - please try again.');
-            } else if (errObj?.code === 'resource-exhausted') {
+            } else if (code === 'resource-exhausted') {
                 toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
-            } else if (errObj?.code === 'internal' && errMessage?.includes('No image data')) {
-                toast.error('No image was generated. Try rephrasing your prompt.');
             } else {
                 toast.error(`Generation failed: ${errMessage || 'Unknown error'}`);
             }
@@ -346,6 +441,7 @@ export function useDirectGeneration() {
             setIsGenerating(false);
             generatingRef.current = false;
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localPrompt, mode, whiskState, toast, handleImageGenerate, handleVideoGenerate]);
 
     const cancelJob = useCallback((jobId: string) => {

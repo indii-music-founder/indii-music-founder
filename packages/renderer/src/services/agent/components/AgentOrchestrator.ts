@@ -1,6 +1,6 @@
 import { AgentContext } from '../types';
-import { GenAI as AI } from '@/services/ai/GenAI';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
 
@@ -8,12 +8,15 @@ import { agentRegistry } from '../registry';
 import { graphDecompositionService } from '../orchestration/GraphDecompositionService';
 import { AgentGraph } from '../types';
 
-import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
-        const userId = auth.currentUser?.uid || 'anonymous';
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to determine an agent.');
+        }
 
         // Start Trace
         const traceId = await TraceService.startTrace(userId, 'orchestrator', userQuery, {
@@ -31,7 +34,7 @@ export class AgentOrchestrator {
             return 'generalist';
         }
 
-        // 2. Security check — block injection attempts before any AI processing
+        // 2. Security check — block injection attempts before any Autonomous processing
         const security = InputSanitizer.securityCheck(userQuery);
         if (security.shouldBlock) {
             logger.warn('[indii:Orchestrator] Input blocked:', security.analysis.detectedPatterns);
@@ -54,7 +57,7 @@ export class AgentOrchestrator {
         ];
 
         const prompt = `
-        You are indii, the AI agent orchestration system for indiiOS (the operating system for your musical independence).
+        You are indii, the Autonomous agent orchestration system for indii (the operating system for your musical independence).
         Your goal is to accurately route user requests to the most appropriate specialist agent and determine the most relevant knowledge base corpus to query.
 
         AVAILABLE AGENTS:
@@ -98,9 +101,9 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    ...AI_CONFIG.THINKING.LOW,
+                    ...INTELLIGENCE_CONFIG.THINKING.LOW,
                     responseMimeType: 'application/json'
                 }
             );
@@ -144,7 +147,7 @@ export class AgentOrchestrator {
                     store.setModule('registration');
                     if (orgId) {
                         store.setRegistrationFocus({ orgId: orgId as import('@/modules/registration/types').OrgId, trackId: null });
-                        store.setRegistrationAIMessage(
+                        store.setRegistrationIntelligenceMessage(
                             `I'll help you register with ${registrationIntent.toUpperCase()}. Let me pull your catalog info and pre-fill what I know…`
                         );
                     }
@@ -205,7 +208,7 @@ export class AgentOrchestrator {
         }));
 
         const prompt = `
-        You are indii, the AI orchestration system for indiiOS.
+        You are indii, the Autonomous orchestration system for indii.
         Analyze this user request and determine if it contains INDEPENDENT subtasks
         that can be executed simultaneously by different specialist agents.
 
@@ -233,8 +236,8 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.FAST,
-                { ...AI_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
+                INTELLIGENCE_MODELS.TEXT.FAST,
+                { ...INTELLIGENCE_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
             );
 
             const textResponse = res.response.text() || '[]';
@@ -290,7 +293,7 @@ export class AgentOrchestrator {
         try {
             const res = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: complexityPrompt }] }],
-                AI_MODELS.TEXT.FAST,
+                INTELLIGENCE_MODELS.TEXT.FAST,
                 { responseMimeType: 'application/json' }
             );
             const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');

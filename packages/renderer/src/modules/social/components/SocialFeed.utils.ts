@@ -2,6 +2,7 @@ import { SocialPost } from '@/services/social/types';
 
 export interface FeedItemProps {
     post: SocialPost;
+    key?: React.Key;
 }
 
 // ⚡ Bolt Optimization: Deep comparison to prevent re-renders from Firestore/Store reference instability

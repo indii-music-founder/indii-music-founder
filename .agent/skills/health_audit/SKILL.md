@@ -2,7 +2,7 @@
 name: health-audit
 version: 1.1.0
 description: |
-  Full-spectrum engineering health audit for indiiOS. Scans build health,
+  Full-spectrum engineering health audit for indii. Scans build health,
   tests, module completeness, service layer, agent fleet, security posture,
   dependencies, CI/CD, and tech debt. Produces a ship readiness report
   with prioritized action items. Self-upgrading: appends new scan
@@ -11,7 +11,7 @@ description: |
   "what's the state of the codebase", or "what needs to get finished".
 ---
 
-# indiiOS Health Audit
+# indii Health Audit
 
 Comprehensive engineering health and ship readiness audit. Run from the
 project root. Produces an artifact report with prioritized action items.
@@ -143,12 +143,20 @@ echo "TODOs: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' src/ --include='*.ts' --include
 echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 ```
 
+### 11. Anti-AI Slop
+
+```bash
+echo "=== ANTI-AI SLOP ==="
+echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+```
+
 ## Report Generation
 
 After all scans complete, produce a markdown artifact at:
 
 ```
-{artifact_dir}/indiios_health_report.md
+{artifact_dir}/indii_health_report.md
 ```
 
 The report MUST include:

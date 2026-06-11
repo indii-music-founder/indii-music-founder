@@ -13,7 +13,7 @@ import { useMobile } from '@/hooks/useMobile';
  * Shows:
  *   - Left: Back/Home button (navigates to Dashboard)
  *   - Center: Current module name with department color accent
- *   - Right: Placeholder for module-specific actions
+ *   - Right: Optional module-specific actions
  *
  * Height: 48px. Respects safe-area-inset-top for notch/Dynamic Island.
  * Only renders on phone-class viewports — hidden on tablet/desktop.
@@ -23,7 +23,6 @@ import { useMobile } from '@/hooks/useMobile';
 const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'dashboard': 'Home',
     'creative': 'Creative Director',
-    'video': 'Video Producer',
     'legal': 'Legal',
     'marketing': 'Marketing',
     'workflow': 'Workflow Lab',
@@ -50,7 +49,11 @@ const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'memory': 'Memory',
 };
 
-export const MobileHeader: React.FC = () => {
+export interface MobileHeaderProps {
+    rightAction?: React.ReactNode;
+}
+
+export const MobileHeader: React.FC<MobileHeaderProps> = ({ rightAction }) => {
     const { isAnyPhone } = useMobile();
     const { currentModule, setModule } = useStore(
         useShallow(state => ({
@@ -100,8 +103,10 @@ export const MobileHeader: React.FC = () => {
                     </h1>
                 </div>
 
-                {/* Right: placeholder for module-specific action */}
-                <div className="w-10 flex-shrink-0" />
+                {/* Right: optional module-specific action */}
+                <div className="w-10 flex-shrink-0 flex justify-end">
+                    {rightAction}
+                </div>
             </div>
         </header>
     );

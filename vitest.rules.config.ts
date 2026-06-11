@@ -13,6 +13,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './packages/renderer/src'),
+            '@agents': path.resolve(__dirname, './agents'),
         },
     },
     test: {

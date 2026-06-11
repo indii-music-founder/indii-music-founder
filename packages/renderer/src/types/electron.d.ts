@@ -24,6 +24,33 @@ export interface AudioAnalysisResult {
         bits_per_sample?: string;
         channels?: number;
     }>;
+    features?: {
+        bpm: number;
+        key: string;
+        scale: string;
+        energy: number;
+        duration: number;
+        danceability: number;
+        valence: number;
+        loudness: number;
+        genre: Record<string, number>;
+        moods: {
+            happy: number;
+            aggressive: number;
+            relaxed: number;
+            sad: number;
+        };
+        audit?: {
+            peakLevel: number;
+            truePeakDb: number;
+            integratedLoudness: number;
+            sampleRate: number;
+            isStereo: boolean;
+            rejectionRisks: string[];
+        };
+    } | null;
+    proxyBase64?: string | null;
+    error?: string;
 }
 
 export interface ElectronAPI {
@@ -88,10 +115,16 @@ export interface ElectronAPI {
         saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
         getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
+        listArtifacts: () => Promise<{ success: boolean; data?: { filename: string }[]; error?: string }>;
+        readArtifact: (filename: string) => Promise<{ success: boolean; data?: string; error?: string }>;
+        createArtifact: (filename: string, content: string, options?: { artifactType?: string, requestFeedback?: boolean }) => Promise<{ success: boolean; error?: string }>;
+        multiReplaceFileContent: (args: unknown) => Promise<{ success: boolean; error?: string }>;
+        scanDirectory: () => Promise<{ success: boolean; data?: unknown; error?: string }>;
+        updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
     };
 
 
-    // AI Sidecar (Docker container management — restart handled by health checks)
+    // Autonomous Sidecar (Docker container management — restart handled by health checks)
     sidecar?: {
         onStatusUpdate?: (callback: (status: string) => void) => () => void;
     };
@@ -116,7 +149,7 @@ export interface ElectronAPI {
         delete: (id: string) => Promise<boolean>;
     };
 
-    // Distribution (DDEX Packaging)
+    // Distribution (Proprietary Ingestion IP)
     distribution: {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path' | 'metadata'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
         runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ForensicsReport>>;
@@ -124,11 +157,11 @@ export interface ElectronAPI {
         calculateTax: (data: DistributionTypes.TaxCalculationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
         certifyTax: (userId: string, data: DistributionTypes.TaxCertificationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
         executeWaterfall: (data: DistributionTypes.WaterfallData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.WaterfallReport>>;
-        validateMetadata: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
+        validateMetadata: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
         generateISRC: (options?: DistributionTypes.ISRCGenerationOptions) => Promise<DistributionTypes.ISRCResponse>;
         generateUPC: (options?: DistributionTypes.UPCGenerationOptions) => Promise<DistributionTypes.UPCResponse>;
         registerRelease: (metadata: unknown, releaseId?: string) => Promise<DistributionTypes.IPCResponse<unknown>>;
-        generateDDEX: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.DDEXResponse>;
+        generateIngestionNotification: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IngestionResponse>;
         generateContentIdCSV: (data: DistributionTypes.ContentIdData) => Promise<DistributionTypes.CSVResponse<DistributionTypes.ContentIdReport>>;
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
@@ -147,6 +180,15 @@ export interface ElectronAPI {
         check: () => Promise<{ available: boolean; version?: string; error?: string }>;
         install: () => Promise<void>;
         setChannel: (channel: 'stable' | 'beta') => Promise<void>;
+        setSource: (source: 'github' | 'firebase') => Promise<void>;
+        getConfig: () => Promise<{
+            channel: 'stable' | 'beta';
+            source: 'github' | 'firebase';
+            isAvailable: boolean;
+            releaseName?: string;
+            releaseNumber?: number;
+            technicalVersion?: string;
+        }>;
         onChecking: (callback: () => void) => () => void;
         onAvailable: (callback: (info: { version: string }) => void) => () => void;
         onNotAvailable: (callback: () => void) => () => void;

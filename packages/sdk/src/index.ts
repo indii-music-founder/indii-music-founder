@@ -1,12 +1,12 @@
 /**
- * @indiios/sdk — Official TypeScript SDK for indiiOS
+ * @indii/sdk — Official TypeScript SDK for indii
  *
  * Usage:
  * ```
- * import { createClient } from '@indiios/sdk';
+ * import { createClient } from '@indii/sdk';
  *
  * const client = createClient({
- *   apiUrl: 'https://api.indiios.com',
+ *   apiUrl: 'https://api.indii.music',
  *   apiKey: 'your-api-key'
  * });
  *
@@ -14,7 +14,7 @@
  * ```
  */
 
-export { IndiiOSClient, createClient, IndiiOSError } from './client';
+export { indiiClient, createClient, indiiError } from './client';
 export type { ClientConfig, RequestOptions, PaginationParams } from './client';
 
 // Re-export shared types for convenience
@@ -27,4 +27,4 @@ export type {
   Webhook,
   CreateWebhook,
   AnalyticsEvent,
-} from '@indiios/shared';
+} from '@indii/shared';

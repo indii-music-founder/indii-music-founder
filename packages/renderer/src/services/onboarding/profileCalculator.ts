@@ -18,7 +18,12 @@ export function calculateProfileStatus(profile: UserProfile) {
     const coreChecks = {
         bio: !!profile.bio && profile.bio.length > 10,
         brandDescription: !!brandKit.brandDescription,
-        socials: !!(socials.twitter || socials.instagram || socials.website),
+        socials: Object.entries(socials).some(([key, val]) => 
+            key !== 'distributor' && key !== 'pro' && // Exclude non-social keys
+            typeof val === 'string' && 
+            val.trim().length > 2 && 
+            !['none', 'n/a', 'null', 'undefined', 'pending'].includes(val.trim().toLowerCase())
+        ),
         // Visuals: complete if they have assets OR explicitly acknowledged they have none
         visuals: (brandAssets.length > 0 || colors.length > 0 || brandKit.visualsAcknowledged === true),
         careerStage: !!profile.careerStage,

@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 
-admin.initializeApp({ projectId: 'indiios-v-1-1' });
+admin.initializeApp({ projectId: 'indii-music' });
 const db = admin.firestore();
 
 async function seed() {

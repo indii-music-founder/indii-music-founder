@@ -6,7 +6,7 @@
 
 ## Assignment Statement
 
-All source code, documentation, designs, and intellectual property in this repository (`the-walking-agency-det/indiiOS-Alpha-Electron`) are assigned to and owned by **New Detroit Music LLC**.
+All source code, documentation, designs, and intellectual property in this repository (`the-walking-agency-det/indii-Alpha-Electron`) are assigned to and owned by **New Detroit Music LLC**.
 
 This assignment covers:
 

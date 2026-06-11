@@ -1,8 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SocialService } from './SocialService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { db } from '@/services/firebase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { addDoc, collection } from 'firebase/firestore';
-import { CampaignStatus } from './types';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
@@ -36,14 +37,19 @@ vi.mock('firebase/firestore', () => ({
     runTransaction: vi.fn(),
     serverTimestamp: vi.fn(),
     updateDoc: vi.fn(),
-    increment: vi.fn()
+    increment: vi.fn(),
+    Timestamp: {
+        now: vi.fn(() => ({ toMillis: () => Date.now(), toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 })),
+        fromDate: vi.fn((date: Date) => ({ toMillis: () => date.getTime(), toDate: () => date, seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
+        fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
+    }
 }));
 
 // Mock Store
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
-            userProfile: { id: 'test-user-id' }
+            userProfile: { id: 'test-user-id', displayName: 'Test Artist' }
         })
     }
 }));
@@ -69,9 +75,10 @@ describe('SocialService Integration', () => {
             undefined, // In vitest mock, if implementation doesn't return value, it might be undefined or we check logic
             expect.objectContaining({
                 copy: 'Valid copy',
-                status: CampaignStatus.PENDING,
+                status: 'pending',
                 authorId: 'test-user-id',
-                platform: 'Twitter',
+                userId: 'test-user-id',
+                platform: 'twitter',
                 day: 1
             })
         );
@@ -97,7 +104,7 @@ describe('SocialService Integration', () => {
                 content: 'Hello World',
                 authorId: 'test-user-id',
                 mediaUrls: ['https://example.com/image.jpg'],
-                authorName: 'Anonymous',
+                authorName: 'Test Artist',
                 likes: 0
             })
         );

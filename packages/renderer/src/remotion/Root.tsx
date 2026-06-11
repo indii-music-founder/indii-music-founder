@@ -8,8 +8,8 @@ import {
   BannerGlitch,
   BannerPulse,
 } from './BannerAnimations';
-import { MyComposition } from '../modules/video/remotion/MyComposition';
-import type { VideoProject } from '../modules/video/store/videoEditorStore';
+import { MyComposition } from '../modules/creative/video/remotion/MyComposition';
+import type { VideoProject } from '../modules/creative/video/store/videoEditorStore';
 
 const DEFAULT_VIDEO_PROJECT: VideoProject = {
   id: 'default',

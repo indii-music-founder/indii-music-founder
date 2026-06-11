@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 async function runE2ETest() {
-    console.log('--- IndiiOS MCP E2E Test ---');
+    console.log('--- indii MCP E2E Test ---');
     try {
         console.log('\n1. Connecting Local MCP...');
         await mcpClientService.connectLocal();
@@ -16,7 +16,7 @@ async function runE2ETest() {
         console.log('\n3. Testing Remote Tool: format_dsp_metadata');
         const remoteResult = await mcpClientService.executeTool('format_dsp_metadata', {
             releaseTitle: 'E2E Test Single',
-            artists: ['IndiiOS Automated Tester'],
+            artists: ['indii Automated Tester'],
             genre: 'Testing'
         });
         console.log('✅ Remote Tool Result:', JSON.stringify(remoteResult, null, 2));

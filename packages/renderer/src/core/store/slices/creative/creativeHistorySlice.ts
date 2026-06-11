@@ -76,15 +76,20 @@ export function buildCreativeHistoryState(
 
                 // Auto-persistence to project asset folder
                 if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
-                    const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
-                    createFileNode(
-                        filename,
-                        null, // root
-                        currentProjectId,
-                        user?.uid || 'anonymous',
-                        enrichedItem.type as any,
-                        { url: enrichedItem.url, origin: enrichedItem.origin }
-                    ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                    if (!user?.uid) {
+                        logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
+                    } else {
+                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                        createFileNode(
+                            filename,
+                            null, // root
+                            currentProjectId,
+                            user.uid,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            enrichedItem.type as any,
+                            { url: enrichedItem.url, origin: enrichedItem.origin }
+                        ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                    }
                 }
 
                 import('@/services/StorageService').then(({ StorageService }) => {
@@ -211,7 +216,11 @@ export function buildCreativeHistoryState(
 
         canvasImages: [],
         selectedCanvasImageId: null,
-        addCanvasImage: (img: CanvasImage) => set((state) => ({ canvasImages: [...state.canvasImages, img] })),
+        addCanvasImage: (img: CanvasImage) => set((state) => ({
+            // Cap at 20 canvas images to prevent unbounded base64 memory accumulation.
+            // Evict the oldest entries (at the end of the array) when the limit is reached.
+            canvasImages: [...state.canvasImages, img].slice(-20)
+        })),
         updateCanvasImage: (id: string, updates: Partial<CanvasImage>) => set((state) => ({
             canvasImages: state.canvasImages.map(img => img.id === id ? { ...img, ...updates } : img)
         })),
@@ -278,7 +287,7 @@ export function buildCreativeHistoryState(
         removeUploadedAudio: (id: string) => {
             set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+                StorageService.removeItem(id).catch((e: unknown) => { logger.error('[Store] Failed to remove audio item:', e); });
             });
         },
         removeUploadedImageFromProject: (id: string) => {

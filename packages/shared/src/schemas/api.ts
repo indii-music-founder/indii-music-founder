@@ -1,5 +1,5 @@
 /**
- * API schemas for indiiOS REST API
+ * API schemas for indii REST API
  *
  * Defines all request/response types for:
  * - Track management endpoints

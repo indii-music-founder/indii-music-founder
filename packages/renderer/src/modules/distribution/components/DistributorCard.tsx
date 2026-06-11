@@ -6,6 +6,7 @@ interface DistributorCardProps {
     connection: DistributorConnection;
     onConnect: (id: string) => void;
     isConnecting?: boolean;
+    key?: React.Key;
 }
 
 const getDistributorColor = (id: string) => {

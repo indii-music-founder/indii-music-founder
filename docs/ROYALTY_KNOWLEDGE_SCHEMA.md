@@ -1,4 +1,4 @@
-# indiiOS Royalty Management System - Knowledge Schema & Data Models
+# indii Royalty Management System - Knowledge Schema & Data Models
 
 ## Overview
 AI-native platform for guiding independent artists through US music royalty collection.
@@ -650,7 +650,7 @@ RELEASE LIFECYCLE
 
 ---
 
-## Integration Points with Existing indiiOS
+## Integration Points with Existing indii
 
 ### Data Models to Add
 - `RoyaltyProfile` (extends Identity)

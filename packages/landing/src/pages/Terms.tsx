@@ -8,7 +8,7 @@ export default function Terms() {
 
       <p className="text-gray-300 leading-relaxed mb-8">
         These Terms of Service ("Terms") are a binding agreement between you and New Detroit Music LLC ("Company").
-        By accessing or using indiiOS, you agree to be bound by these Terms. If you do not agree, do not use the Service.
+        By accessing or using indii, you agree to be bound by these Terms. If you do not agree, do not use the Service.
       </p>
 
       <section className="mb-8">

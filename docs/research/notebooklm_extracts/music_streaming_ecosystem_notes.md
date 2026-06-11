@@ -35,9 +35,9 @@ Master rights (sound recording rights) cover the actual audio file and typically
 Interactive streaming allows the listener to choose the specific sound recording and the order of the playlist (e.g., Spotify, Apple Music) and requires mechanical licenses. Non-interactive streaming gives the consumer limited control, functioning similarly to a radio broadcast (e.g., Pandora Radio, SiriusXM), and does not require mechanical licenses for the DSPs, but requires other types of licenses.
 
 **Data Exchange Standards:**
-The Digital Data Exchange (DDEX) is an international standards-setting organization that provides XML-based message formats for the digital music supply chain. Key formats include:
+The Digital Data Exchange (Proprietary Ingestion IP) is an international standards-setting organization that provides XML-based message formats for the digital music supply chain. Key formats include:
 
-- **ERN (Electronic Release Notification):** Sends release data (albums, tracks, pricing, territories, commercial models) from labels to DSPs.
+- **IngestionNotification (Electronic Release Notification):** Sends release data (albums, tracks, pricing, territories, commercial models) from labels to DSPs.
 - **MEAD (Media Enrichment and Description):** Sends promotional metadata like lyrics, bios, images, and focus tracks.
 - **PIE (Party Identification and Enrichment):** Sends detailed party info like bios, historical chart positions, and awards.
 - **MWDR (Musical Work Data and Rights):** A suite for publishers that includes MWN (Musical Work Notification) for rights claims, MWL (Musical Work Licensing) for requesting mechanical licenses, LoD (Letter of Direction) for bulk catalog transfers, and BWARM (Bulk Communication of Work and Recording Metadata).

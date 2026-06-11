@@ -4,7 +4,7 @@
 
 **North Star Document**: `docs/2026_WEB_DESIGN_TRENDS.md`
 
-The **indiiOS** interface is not just a tool; it is a **resonant environment** for creativity. We align with the **2026 Machine Experience (MX)** philosophy, balancing hyper-real AI capability with raw human authenticity.
+The **indii** interface is not just a tool; it is a **resonant environment** for creativity. We align with the **2026 Machine Experience (MX)** philosophy, balancing hyper-real AI capability with raw human authenticity.
 
 It should feel:
 

@@ -3,7 +3,7 @@
 > **Status:** Active. **Owner rotates per session** (any agent: Claude / Antigravity / Gemini / Droid / Jules / Codex).
 > **Source of truth:** This file. When you start working, read it top-to-bottom; when you finish, update the **Current State** section and the relevant phase checkbox so the next agent picks up cleanly.
 > **Created:** 2026-05-05 by Claude (Haiku 4.5).
-> **Last updated:** 2026-05-05.
+> **Last updated:** 2026-05-14 by Antigravity.
 
 ---
 
@@ -158,15 +158,15 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 **Acceptance criteria:**
 
-- [ ] **3.1** New service `VisualOutputAutorater.ts` in `packages/renderer/src/services/agent/governance/`. Mirrors the shape of `MultiTurnAutorater` (which already exists, see `governance/MultiTurnAutorater.ts`).
-- [ ] **3.2** Method `evaluateImage({ imageBytes, originalBrief, agentId, traceId })` calls Gemini Flash with a structured-output schema returning `{ subjectMatch, sceneMatch, moodMatch, technicalAdherence, overallPass, gapsFound, correctivePrompt }`. All scores 0–10.
-- [ ] **3.3** Threshold for pass: `overallPass === true AND subjectMatch >= 8 AND sceneMatch >= 8`. Tunable via constant at top of file.
-- [ ] **3.4** When a fail is detected, autorater calls `agentService.sendCorrectivePrompt(agentId, correctivePrompt, originalImageId)` which re-runs the producing tool with the corrective prompt appended.
-- [ ] **3.5** Hard cap on self-corrections per image: 2 attempts. Track via a Map keyed by `originalImageId`. After cap, surface a system message: "Image flagged for manual review — autorater couldn't reach pass after 2 attempts."
-- [ ] **3.6** All autorater decisions logged to Firestore at `users/{uid}/visualVerifications/{traceId}` for the Security Dashboard's audit pane.
-- [ ] **3.7** Wired into `AgentService` post-completion path **only when the completion was an image tool** (don't run on text turns).
-- [ ] **3.8** Vitest unit tests with 6+ scenarios (pass on first try, pass on retry, hit cap, threshold edge cases, wrong subject, wrong scene).
-- [ ] **3.9** Manual smoke: ask Conductor for "a red car on a beach", inject a stub that returns a blue motorcycle in a forest, verify the autorater flags + dispatches correction.
+- [x] **3.1** New service `VisualOutputAutorater.ts` in `packages/renderer/src/services/agent/governance/`. Mirrors the shape of `MultiTurnAutorater` (which already exists, see `governance/MultiTurnAutorater.ts`).
+- [x] **3.2** Method `evaluateImage({ imageBytes, originalBrief, agentId, traceId })` calls Gemini Flash with a structured-output schema returning `{ subjectMatch, sceneMatch, moodMatch, technicalAdherence, overallPass, gapsFound, correctivePrompt }`. All scores 0–10.
+- [x] **3.3** Threshold for pass: `overallPass === true AND subjectMatch >= 8 AND sceneMatch >= 8`. Tunable via constant at top of file.
+- [x] **3.4** When a fail is detected, autorater calls `agentService.sendCorrectivePrompt(agentId, correctivePrompt, originalImageId)` which re-runs the producing tool with the corrective prompt appended.
+- [x] **3.5** Hard cap on self-corrections per image: 2 attempts. Track via a Map keyed by `originalImageId`. After cap, surface a system message: "Image flagged for manual review — autorater couldn't reach pass after 2 attempts."
+- [x] **3.6** All autorater decisions logged to Firestore at `users/{uid}/visualVerifications/{traceId}` for the Security Dashboard's audit pane.
+- [x] **3.7** Wired into `AgentService` post-completion path **only when the completion was an image tool** (don't run on text turns).
+- [x] **3.8** Vitest unit tests with 6+ scenarios (pass on first try, pass on retry, hit cap, threshold edge cases, wrong subject, wrong scene).
+- [x] **3.9** Manual smoke: ask Conductor for "a red car on a beach", inject a stub that returns a blue motorcycle in a forest, verify the autorater flags + dispatches correction.
 
 **Estimated commits:** 4–6.
 
@@ -180,7 +180,7 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 ---
 
-**Last edited by:** Antigravity — 2026-05-06.
+**Last edited by:** Antigravity — 2026-05-15.
 **Active branch (if any):** `main`
 **Open PRs against `main` related to this plan:** none.
 
@@ -190,19 +190,19 @@ This format gives the model concrete coordinates per color, paired with the natu
 |---|---|---|---|---|
 | 1 — Single-tap handoff | ✅ Done + Tested | Antigravity, Claude | — | Implemented `openImageInStudio` action and UI buttons. All tests passing. |
 | 2 — Inline annotator | ✅ Done + 2.5 Complete | Antigravity, Claude | — | UI + Tool logic implemented. Phase 2.5 (new message rendering) implemented. |
-| 3 — Visual verification loop | ✅ Done + Tested | Antigravity | — | `VisualOutputAutorater` service, `AgentService` integration, and `VisualVerificationsPane` dashboard UI implemented. |
+| 3 — Visual verification loop | ✅ Done + Tested | Antigravity | — | `VisualOutputAutorater` multimodal upgrade complete. Integrated with `AgentService` tool results. |
 | 4 — Document/PDF support | ✅ Done + Tested | Antigravity | — | `DocumentAnnotator` and `edit_document_with_annotations` integrated and fully tested. |
 | **Phase 6 Verification** | ✅ Done | Antigravity | — | Social Commerce & Revenue integration verified end-to-end. |
 | **Future Expansion** | 🔮 Planned | — | — | Extending to generalized artifact interaction. |
 
 **Blocking items:** none.
 
-**Recent work (Antigravity session 2026-05-06):**
-- Finalized Phase 6 Social Commerce integration and Revenue aggregation logic.
-- Validated financial data flows from social posts to marketplace checkouts (attribution mapping).
-- Integrated `RevenueAggregatedWidget` and `RevenueView` into the dashboard registry.
-- Fixed `useVideoEditor.ts` type regression (missing `projectId` in `addToHistory`).
-- Confirmed monorepo stability with successful `npm run typecheck` and `npm run build:studio`.
+**Recent work (Antigravity session 2026-05-15):**
+- **Phase 3 Completion**: Hardened the `VisualOutputAutorater` by enabling multimodal evaluation. The LLM judge now inspects the actual `imageBytes` (base64) returned by generative tools.
+- **AgentService Integration**: Updated `AgentService` to extract image URLs from message `thoughts` (tool results) and pass them to the autorater for visual verification.
+- **Detection Robustness**: Improved image tool detection to check both message text and structured tool results in the message history.
+- **Release Hygiene**: Updated Firebase Cloud Functions (`agentStream.ts`) to use `FUNCTION_AI_MODELS.TEXT.FAST` (Gemini 3 Flash).
+- **CI/CD Alignment**: Verified `deploy.yml` secret references for upcoming production release.
 
 
 **Notes for the next agent:**

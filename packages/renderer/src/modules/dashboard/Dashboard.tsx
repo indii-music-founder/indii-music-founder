@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { LayoutDashboard, Bot, Gem, ArrowRight, X, Sparkles } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useMobile } from '@/hooks/useMobile';
 import { useStore } from '@/core/store';
 import { PlatformCard } from './components/PlatformCard';
+import { useTranslation } from 'react-i18next';
 
 type DashboardTab = 'agent' | 'custom';
 
@@ -43,12 +45,12 @@ function DashboardMeshBackground() {
                 className="absolute top-[20%] right-[10%] w-[35%] h-[35%] rounded-full bg-dept-marketing/10 blur-[100px]" 
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,102,0.03),transparent_70%)]" />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay" />
         </div>
     );
 }
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<DashboardTab>('agent');
     const [bannerDismissed, setBannerDismissed] = useState(false);
     const { isAnyPhone } = useMobile();
@@ -81,17 +83,17 @@ export default function Dashboard() {
                                     </div>
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 flex-wrap">
-                                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-[0.2em] font-mono">Founders Round</span>
+                                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-[0.2em] font-mono">{t('dashboard.foundersRound')}</span>
                                             <motion.span 
                                                 animate={{ scale: [1, 1.1, 1] }}
                                                 transition={{ duration: 2, repeat: Infinity }}
                                                 className="px-2 py-0.5 text-[9px] font-black bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/40 uppercase tracking-widest"
                                             >
-                                                Active
+                                                {t('dashboard.active')}
                                             </motion.span>
                                         </div>
                                         <p className={`text-gray-100 font-medium mt-1 leading-tight ${isAnyPhone ? 'text-xs' : 'text-sm'}`}>
-                                            Secure your stake in the operating system for musical independence.
+                                            {t('dashboard.foundersBannerText')}
                                         </p>
                                     </div>
                                 </div>
@@ -106,13 +108,13 @@ export default function Dashboard() {
                                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 5 }}
                                             className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent pointer-events-none" 
                                         />
-                                        Back the Vision
+                                        {t('dashboard.backVision')}
                                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                     <button
                                         onClick={() => setBannerDismissed(true)}
                                         className="p-2 text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10"
-                                        aria-label="Dismiss"
+                                        aria-label={t('dashboard.dismiss')}
                                     >
                                         <X size={16} />
                                     </button>
@@ -130,8 +132,8 @@ export default function Dashboard() {
                 {/* Tab Bar */}
                 <div className={`relative z-10 flex-shrink-0 border-b border-white/5 flex gap-10 ${isAnyPhone ? 'px-4 gap-4' : 'px-8'}`}>
                     {([
-                        { id: 'agent', label: 'Agent Workspace', icon: Bot, activeColor: 'var(--color-dept-creative)' },
-                        { id: 'custom', label: 'Command Center', icon: LayoutDashboard, activeColor: '#ffffff' },
+                        { id: 'agent', label: t('dashboard.agentWorkspace'), icon: Bot, activeColor: 'var(--color-dept-creative)' },
+                        { id: 'custom', label: t('dashboard.commandCenter'), icon: LayoutDashboard, activeColor: '#ffffff' },
                     ] as const).map(({ id, label, icon: Icon, activeColor }) => (
                         <button
                             key={id}

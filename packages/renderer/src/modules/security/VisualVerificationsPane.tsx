@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Logger } from '@/core/logger/Logger';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { ShieldAlert, ShieldCheck, Camera } from 'lucide-react';
@@ -17,7 +18,8 @@ interface VisualVerificationRecord {
         overallPass: boolean;
         gapsFound: string;
     } | null;
-    createdAt: any;
+    
+    createdAt: { toDate?: () => Date } | string | number | Date;
 }
 
 export function VisualVerificationsPane() {
@@ -46,7 +48,7 @@ export function VisualVerificationsPane() {
             setRecords(data);
             setLoading(false);
         }, (error) => {
-            console.error("Failed to fetch visual verifications:", error);
+            Logger.error('Security', 'Failed to fetch visual verifications', error);
             setLoading(false);
         });
 
@@ -86,9 +88,9 @@ export function VisualVerificationsPane() {
                             <span className="text-xs font-medium text-white truncate">
                                 Trace: {record.traceId.slice(0, 8)}...
                             </span>
-                            {record.createdAt?.toDate && (
+                            {(record.createdAt as { toDate?: () => Date })?.toDate && (
                                 <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                                    {formatDistanceToNow(record.createdAt.toDate(), { addSuffix: true })}
+                                    {formatDistanceToNow(typeof (record.createdAt as { toDate?: () => Date }).toDate === 'function' ? (record.createdAt as { toDate: () => Date }).toDate() : new Date(record.createdAt as string | number), { addSuffix: true })}
                                 </span>
                             )}
                         </div>

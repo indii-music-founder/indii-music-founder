@@ -87,12 +87,12 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 
 ```typescript
 // CORRECT - Use the central config
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 const response = await AI.generateContent({
-    model: AI_MODELS.TEXT.AGENT,  // gemini-3.1-pro-preview
+    model: INTELLIGENCE_MODELS.TEXT.AGENT,  // gemini-3.1-pro-preview
     contents: [...],
-    config: AI_CONFIG.THINKING.HIGH
+    config: INTELLIGENCE_CONFIG.THINKING.HIGH
 });
 ```
 
@@ -112,17 +112,17 @@ const response = await AI.generateContent({
 
 | Task Type                 | Use This                       | Model ID                       |
 | ------------------------- | ------------------------------ | ------------------------------ |
-| Agent reasoning           | `AI_MODELS.TEXT.AGENT`         | `gemini-3.1-pro-preview`         |
-| Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`          | `gemini-3-flash-preview`       |
-| Image generation          | `AI_MODELS.IMAGE.GENERATION`   | `gemini-3-pro-image-preview`   |
-| Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`          | `gemini-2.5-pro-tts`           |
-| Video generation          | `AI_MODELS.VIDEO.GENERATION`   | `veo-3.1-generate-preview`     |
+| Agent reasoning           | `INTELLIGENCE_MODELS.TEXT.AGENT`| `gemini-3.1-pro-preview`         |
+| Fast routing/simple tasks | `INTELLIGENCE_MODELS.TEXT.FAST` | `gemini-3-flash-preview`       |
+| Image generation          | `INTELLIGENCE_MODELS.IMAGE.GENERATION`| `gemini-3-pro-image-preview`   |
+| Audio/TTS generation      | `INTELLIGENCE_MODELS.AUDIO.PRO` | `gemini-2.5-pro-tts`           |
+| Video generation          | `INTELLIGENCE_MODELS.VIDEO.GENERATION`| `veo-3.1-generate-preview`     |
 
 ---
 
 ## Runtime Validation
 
-The `ai-models.ts` file includes **runtime validation** that will:
+The `intelligence-models.ts` file includes **runtime validation** that will:
 
 1. Check all configured models on application startup
 2. Throw an error if ANY forbidden model is detected
@@ -140,11 +140,11 @@ This means:
 ### IF YOU ARE AN AI AGENT READING THIS
 
 1. **DO NOT** suggest using Gemini 1.5 or 2.0 models
-2. **DO NOT** change the `ai-models.ts` config to use legacy models
+2. **DO NOT** change the `intelligence-models.ts` config to use legacy models
 3. **DO NOT** hardcode legacy model IDs anywhere in the codebase
 4. **DO NOT** use legacy models "temporarily" for debugging
-5. **ALWAYS** use `AI_MODELS.TEXT.AGENT`, `AI_MODELS.TEXT.FAST`, etc.
-6. **ALWAYS** import from `@/core/config/ai-models`
+5. **ALWAYS** use `INTELLIGENCE_MODELS.TEXT.AGENT`, `INTELLIGENCE_MODELS.TEXT.FAST`, etc.
+6. **ALWAYS** import from `@/core/config/intelligence-models`
 
 ### Common Mistakes to AVOID
 

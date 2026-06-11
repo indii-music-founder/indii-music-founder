@@ -5,7 +5,6 @@
 export const MODULE_IDS = [
     'dashboard',
     'creative',
-    'video',
     'legal',
     'marketing',
     'workflow',
@@ -40,8 +39,10 @@ export const MODULE_IDS = [
     'founders-portal',
     'video-popout',
     'registration',
-    'maestro',
-    'security'
+    'security',
+    'devops',
+    'screenwriter',
+    'crm'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -56,6 +57,54 @@ export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'inve
 export function isValidModule(module: string): module is ModuleId {
     return MODULE_IDS.includes(module as ModuleId);
 }
+
+// ============================================================================
+// Module to Agent Alignment
+// ============================================================================
+
+export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
+    'dashboard': 'generalist',
+    'workflow': 'generalist',
+    'history': 'generalist',
+    'memory': 'generalist',
+    'knowledge': 'generalist',
+    'creative': 'creative',
+    'video-popout': 'video',
+    'devops': 'indii_executor',
+    'screenwriter': 'indii_executor',
+    'legal': 'legal',
+    'marketing': 'marketing',
+    'crm': 'marketing',
+    'campaign': 'marketing',
+    'road': 'road',
+    'social': 'social',
+    'brand': 'brand',
+    'publicist': 'publicist',
+    'publishing': 'publishing',
+    'finance': 'finance',
+    'founders-checkout': 'finance',
+    'founders-portal': 'finance',
+    'licensing': 'licensing',
+    'distribution': 'distribution',
+    'merch': 'merchandise',
+    'audio-analyzer': 'music',
+    'analytics': 'analytics',
+    'onboarding': 'indii_curriculum',
+    'registration': 'indii_curriculum',
+    'observability': 'indii_executor',
+    'debug': 'indii_executor',
+    'desktop': 'indii_executor',
+    'security': 'indii_executor',
+    // Fallbacks to generalist for other modules
+    'select-org': 'generalist',
+    'agent': 'generalist',
+    'files': 'generalist',
+    'marketplace': 'generalist',
+    'investor': 'generalist',
+    'capture': 'generalist',
+    'settings': 'generalist',
+    'mobile-remote': 'generalist'
+};
 
 // ============================================================================
 // Theme CSS Variables (use in tailwind classes or inline styles)

@@ -5,8 +5,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // 1. Hoisted mocks for dependencies
 const mocks = vi.hoisted(() => ({
+    httpsCallableFn: vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }),
   serverTimestamp: vi.fn(),
-    httpsCallable: vi.fn(),
+    httpsCallable: vi.fn(() => mocks.httpsCallableFn),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'test-user' } },
@@ -49,7 +50,7 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     functionsWest1: {},
     remoteConfig: { defaultConfig: {} },
-    storage: {},
+    storage: { app: { options: { storageBucket: 'mock-bucket' } } },
     getFirebaseAI: vi.fn(() => ({})),
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
@@ -70,12 +71,30 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: mocks.subscriptionService
 }));
 
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: {
+        checkAndReserve: vi.fn().mockResolvedValue({ 
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0
+        }),
+        getStatus: vi.fn().mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 100,
+            monthlyRemaining: 1000,
+            tier: 'pro'
+        })
+    }
+}));
+
 vi.mock('@/core/store', () => ({
   serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
-vi.mock('../ai/FirebaseAIService', () => ({
+vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
   serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
@@ -99,8 +118,8 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
         mocks.subscriptionService.getCurrentSubscription.mockResolvedValue({ tier: 'pro' });
         // Default happy path for function trigger
-        mocks.httpsCallable.mockReturnValue(async () => ({
-  serverTimestamp: vi.fn(), data: { jobId: 'job-123' } }));
+        mocks.httpsCallableFn.mockResolvedValue({ data: { jobId: 'job-123' } });
+        mocks.httpsCallable.mockReturnValue(mocks.httpsCallableFn);
     });
 
     describe('generateVideo', () => {
@@ -111,7 +130,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             });
 
             await expect(service.generateVideo({ prompt: 'test' }))
-                .rejects.toThrow('Quota exceeded: Quota exceeded');
+                .rejects.toThrow('Quota exceeded: video_duration. Quota exceeded');
         });
 
         it('should trigger video generation with correct parameters', async () => {
@@ -121,16 +140,13 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
                 resolution: '1080p'
             });
 
-            // firebaseAI.generateVideo should be called directly (no Cloud Functions)
-            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-                prompt: expect.stringContaining('A cinematic shot'),
-                config: expect.objectContaining({
-                    aspectRatio: '16:9',
-                }),
+            // firebaseAI.generateVideo is replaced with httpsCallableFn
+            expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+                prompt: expect.stringContaining('A cinematic shot')
             }));
 
             expect(result).toHaveLength(1);
-            expect(result[0]!.id).toBe('mock-uuid');
+            expect(result[0]!.id).toBe('job-123');
         });
     });
 

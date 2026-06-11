@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 
-import { where, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { where, getDoc, doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';
 import { db } from './firebase';
+import { logger } from '@/utils/logger';
 
 export interface Organization {
     id: string;
@@ -123,16 +124,27 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
     }
 
     async inviteMember(orgId: string, email: string, role: 'manager' | 'producer' | 'member'): Promise<string> {
-        // Mock invitation logic - in reality this would create an invite doc and trigger an email
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new Error('A valid invite email is required');
+        }
+
         const orgRef = doc(db, 'organizations', orgId);
         const orgSnap = await getDoc(orgRef);
         if (!orgSnap.exists()) {
             throw new Error(`Organization ${orgId} not found`);
         }
 
-        console.log(`[OrganizationService] Mock inviting ${email} to ${orgId} as ${role}`);
-        // Return a mock invitation ID
-        return `inv_${Date.now()}`;
+        const inviteRef = await addDoc(collection(db, 'organization_invites'), {
+            orgId,
+            email: email.trim().toLowerCase(),
+            role,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        logger.debug(`[OrganizationService] Created invite ${inviteRef.id} for ${email} in ${orgId} as ${role}`);
+        return inviteRef.id;
     }
 
     async updateMemberRole(orgId: string, userId: string, role: 'manager' | 'producer' | 'member'): Promise<void> {

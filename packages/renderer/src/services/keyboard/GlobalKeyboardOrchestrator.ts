@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 
 export type ShortcutPriority = 'low' | 'normal' | 'high' | 'modal' | 'critical';
@@ -46,7 +47,7 @@ class KeyboardOrchestrator {
     }
 
     private handleBlur(e: FocusEvent) {
-        if (this.isEventFromInput(e as any)) {
+        if (this.isEventFromInput(e)) {
             this.lastInputBlurTime = Date.now();
         }
     }
@@ -68,9 +69,9 @@ class KeyboardOrchestrator {
         this.listeners = this.listeners.filter(l => l.id !== id);
     }
 
-    public isEventFromInput(e: KeyboardEvent | React.KeyboardEvent): boolean {
+    public isEventFromInput(e: KeyboardEvent | React.KeyboardEvent | FocusEvent): boolean {
         // Robust input detection via composedPath to catch shadow DOM and rapid focus shifts
-        const event = 'nativeEvent' in e ? (e as React.KeyboardEvent).nativeEvent : (e as KeyboardEvent);
+        const event = 'nativeEvent' in e ? (e as React.KeyboardEvent).nativeEvent : (e as KeyboardEvent | FocusEvent);
         const path = event.composedPath?.();
         if (path) {
             for (const node of path) {

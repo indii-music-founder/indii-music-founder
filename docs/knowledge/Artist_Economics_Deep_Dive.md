@@ -1,7 +1,7 @@
 
-# The IndiiOS Dividend: Quantifying the Value of Artist Independence
+# The indii Dividend: Quantifying the Value of Artist Independence
 
-This document breaks down the economics of an independent artist earning approximately **$25,000/year** and analyzes the financial impact of consolidating services through an all-in-one platform like IndiiOS (hypothetically "The App").
+This document breaks down the economics of an independent artist earning approximately **$25,000/year** and analyzes the financial impact of consolidating services through an all-in-one platform like indii (hypothetically "The App").
 
 ## 1. The Current State (Scenario A)
 
@@ -30,7 +30,7 @@ An independent artist generating **$25,000 gross revenue** today faces a fragmen
 
 ---
 
-## 2. The IndiiOS Effect (Scenario B)
+## 2. The indii Effect (Scenario B)
 
 If "The App" consolidates these functions into a single AI-driven ecosystem with a flat monthly fee (e.g., $30/mo or $360/yr) or a significantly lower unified percentage.
 
@@ -46,7 +46,7 @@ If "The App" consolidates these functions into a single AI-driven ecosystem with
 4. **Metadata Hygiene:** Zero "Black Box" loss because the app ensures perfect registration at the source.
     * *Benefit:* +$2,500 (Recovered Black Box revenue)
 
-### Revised Expenses (Hypothetical IndiiOS)
+### Revised Expenses (Hypothetical indii)
 
 * **Platform Subscription:** $360/yr
 * **Essential Hard Costs:** $3,000 (Touring travel, merch manufacturing)
@@ -55,7 +55,7 @@ If "The App" consolidates these functions into a single AI-driven ecosystem with
 
 **Net Profit (Scenario B):** $25,000 - $3,360 = **$21,640** (Approx. 86% Retention)
 
-## 3. The Bottom Line: The "IndiiOS Dividend"
+## 3. The Bottom Line: The "indii Dividend"
 
 By switching to a consolidated AI ecosystem, the artist in this example sees:
 

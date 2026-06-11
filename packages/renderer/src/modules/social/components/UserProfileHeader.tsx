@@ -5,6 +5,7 @@ import { SocialService } from '@/services/social/SocialService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Users, UserPlus, UserCheck, Edit, Link as LinkIcon } from 'lucide-react';
 import { logger } from '@/utils/logger';
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Firebase Cloud Function: Create Stripe Checkout Session
  *
@@ -16,7 +17,7 @@ export const createCheckoutSession = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 60,
   memory: '256MiB',
-  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
+  enforceAppCheck: true,
 }, async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
@@ -26,6 +27,10 @@ export const createCheckoutSession = onCall({
 
   if (tier === SubscriptionTier.FREE) {
     throw new HttpsError('invalid-argument', 'Cannot create checkout session for free tier');
+  }
+
+  if (tier === SubscriptionTier.FOUNDER) {
+    throw new HttpsError('invalid-argument', 'Founder passes must be activated manually via admin.');
   }
 
   try {
@@ -104,6 +109,9 @@ export const createCheckoutSession = onCall({
 
     return response;
   } catch (error: any) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[createCheckoutSession] Error:', error);
     throw new HttpsError('internal', error.message || 'Failed to create checkout session');
   }

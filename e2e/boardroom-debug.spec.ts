@@ -16,7 +16,7 @@ test('capture boardroom logs', async ({ authedPage: page }) => {
     });
 
     console.log('Navigating to app...');
-    await page.goto('http://localhost:4242');
+    await page.goto('http://localhost:4242', { waitUntil: 'domcontentloaded' });
 
     console.log('Waiting for load...');
     await page.waitForTimeout(3000);

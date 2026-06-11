@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
 interface Props {
+    key?: React.Key;
     children: ReactNode;
     moduleName?: string;
 }

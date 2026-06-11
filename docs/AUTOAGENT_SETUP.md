@@ -109,7 +109,7 @@ them in by hand.
 Each AutoAgent PR includes a checklist. Pay attention to:
 
 1. **Specialist names.** The Conductor must only route to specialists in the
-   indiiOS hub-and-spoke set: `brand`, `finance`, `legal`, `licensing`,
+   indii hub-and-spoke set: `brand`, `finance`, `legal`, `licensing`,
    `marketing`, `music`, `publicist`, `publishing`, `road`, `social`,
    `video`. If the new prompt mentions a non-existent specialist (e.g.
    "distribution"), close the PR — the meta-agent hallucinated.
@@ -160,4 +160,4 @@ they're solved.
    worker.
 5. **No reward-trajectory dashboard.** Reward history lives in workflow
    artifacts only. There is no graph yet. Phase C may add one to the
-   `optimization/` panel inside the indiiOS app.
+   `optimization/` panel inside the indii app.

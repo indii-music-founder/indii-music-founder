@@ -1,4 +1,4 @@
-# Legal Review Checklist — indiiOS Pre-Launch
+# Legal Review Checklist — indii Pre-Launch
 
 > **How to use this doc:** Two sections — things only **you (the founder)** can
 > decide or action, and things that need an **attorney** to draft. Work through
@@ -52,19 +52,19 @@ attorney can draft §4 and §5 of the ToS:
 
 | # | Decision needed | Options | Your call |
 |---|-----------------|---------|-----------|
-| F9 | **Purely prompt-generated tracks** — Will indiiOS allow users to distribute music that was 100% AI-generated (no human arrangement/composition)? | (a) Allow with mandatory disclosure; (b) Block entirely; (c) Allow but warn user they have no copyright | `___________` |
+| F9 | **Purely prompt-generated tracks** — Will indii allow users to distribute music that was 100% AI-generated (no human arrangement/composition)? | (a) Allow with mandatory disclosure; (b) Block entirely; (c) Allow but warn user they have no copyright | `___________` |
 | F10 | **AI disclosure at distribution time** — Will the distribution flow require users to declare AI involvement before sending to DSPs? DistroKid requires it; TuneCore rejects 100% AI tracks outright. | (a) Mandatory disclosure checkbox; (b) Optional; (c) Mirror DistroKid's model exactly | `___________` |
 | F11 | **Platform's copyright warranty** — Do you want users to warrant (promise, under penalty of account termination) that they have a valid copyright claim before distributing? | (a) Yes, required before every release; (b) Yes, one-time on account creation; (c) No warranty required | `___________` |
-| F12 | **AI image ownership** — For images generated in the Creative Studio: does indiiOS claim any license to those images, or does it all belong to the user? | (a) User owns all; (b) User owns, platform gets a non-exclusive license to display/thumbnail; (c) Attorney to advise | `___________` |
+| F12 | **AI image ownership** — For images generated in the Creative Studio: does indii claim any license to those images, or does it all belong to the user? | (a) User owns all; (b) User owns, platform gets a non-exclusive license to display/thumbnail; (c) Attorney to advise | `___________` |
 | F13 | **Gemini downstream restrictions** — Google's ToS restricts some uses of Gemini outputs. Do you want the attorney to review Google's current AI ToS and flow restrictions down to users, or keep it simple and just say "comply with Google's terms"? | (a) Full review + custom clauses; (b) Pass-through reference to Google ToS | `___________` |
 
 ### Email Infrastructure (Do this yourself — 10 minutes)
 
 | # | Task | Status |
 |---|------|--------|
-| F14 | Create `legal@indiios.com` and forward to your inbox | [ ] |
-| F15 | Create `privacy@indiios.com` and forward to your inbox | [ ] |
-| F16 | Create `dmca@indiios.com` and forward to whoever handles takedowns | [ ] |
+| F14 | Create `legal@indii.music` and forward to your inbox | [ ] |
+| F15 | Create `privacy@indii.music` and forward to your inbox | [ ] |
+| F16 | Create `dmca@indii.music` and forward to whoever handles takedowns | [ ] |
 | F17 | Register DMCA agent at **copyright.gov/dmca-directory** — $6/year, 10 minutes. Required for DMCA safe harbor (17 U.S.C. § 512). Without this, you lose safe harbor protection. | [ ] |
 
 ### Production Infrastructure (Engineering — not legal)
@@ -189,13 +189,13 @@ When that grep returns nothing, the legal P0 is cleared.
 │  Layer 2 — CURATED DIRECTORY  (future paid slots)   │
 │  • Other vetted music/entertainment attorneys       │
 │  • Can pay for boosted placement                    │
-│  • indiiOS vets and approves each listing           │
+│  • indii vets and approves each listing           │
 └─────────────────────────────────────────────────────┘
          ↓  "Search the full directory"
 ┌─────────────────────────────────────────────────────┐
 │  Layer 3 — OPEN SEARCH  (organic, no rev-share)     │
 │  • General attorney search (state bar lookup, etc.) │
-│  • No indiiOS endorsement, user finds their own     │
+│  • No indii endorsement, user finds their own     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -205,7 +205,7 @@ When that grep returns nothing, the legal P0 is cleared.
 
 **Option A — Revenue Share (preferred for the pitch)**
 
-- indiiOS gets X% of any client fees generated through the platform referral
+- indii gets X% of any client fees generated through the platform referral
 - She gets prominent placement at zero upfront cost
 - Both parties win as the user base grows
 - Track referrals via a UTM-tagged booking link or a dedicated booking flow
@@ -214,7 +214,7 @@ When that grep returns nothing, the legal P0 is cleared.
 **Option B — Flat Monthly Retainer**
 
 - She pays a fixed monthly fee for the featured slot
-- indiiOS revenue is predictable
+- indii revenue is predictable
 - Better for her if client volume is high (she keeps 100% of fees)
 - Risk: if the platform is early-stage, harder to justify the fee
 
@@ -222,34 +222,34 @@ When that grep returns nothing, the legal P0 is cleared.
 
 - Low/zero monthly fee at launch (reduces her risk while platform is early)
 - Revenue share kicks in after a threshold (e.g., after she earns $X from
-  referrals, indiiOS takes Y%)
+  referrals, indii takes Y%)
 - She gets "Founding Partner Attorney" title / co-marketing language
 - Both sides have skin in the game
 
 **The pitch hook:** Her YouTube audience is people who can't afford her
-firm yet. indiiOS is the platform where those same people become paying
+firm yet. indii is the platform where those same people become paying
 clients once they release their first record. She's already warming up
-the exact user base indiiOS is targeting.
+the exact user base indii is targeting.
 
 ---
 
 ### What She Gets (the value prop for her)
 
-1. **Inbound leads at scale** — every indiiOS user who clicks "Find an
+1. **Inbound leads at scale** — every indii user who clicks "Find an
    Attorney" sees her first, every time
 2. **Credibility on the platform** — "Platform Legal Partner" badge,
    visible on legal pages, in the AI agent's responses, in onboarding
-3. **Content angle** — she can use indiiOS in her YouTube videos as a
+3. **Content angle** — she can use indii in her YouTube videos as a
    real tool she endorses (not paid promo — actual partnership)
 4. **Zero cold outreach** — she doesn't market to get these leads; they
    come from users mid-workflow (e.g., just after they generate a contract
    or hit the copyright registration step)
-5. **First mover** — she'd be the named attorney partner while indiiOS is
+5. **First mover** — she'd be the named attorney partner while indii is
    in beta, locking in the relationship before competitors notice
 
 ---
 
-### What indiiOS Gets
+### What indii Gets
 
 1. **Legal credibility** — a recognizable music law brand attached to the
    platform; reduces user anxiety about "is this legit?"
@@ -278,9 +278,9 @@ the exact user base indiiOS is targeting.
 **Phase 2 (after deal is signed):**
 
 - [ ] Booking flow inside the app (user picks time slot, fills intake form,
-      submits without leaving indiiOS)
+      submits without leaving indii)
 - [ ] Referral tracking dashboard (attorney-facing: how many leads came
-      from indiiOS, conversion rate, client status)
+      from indii, conversion rate, client status)
 - [ ] "Platform Legal Partner" badge + featured placement in AI agent
       responses when user asks "how do I find an attorney?"
 
@@ -299,11 +299,11 @@ the exact user base indiiOS is targeting.
 |---|------|--------|
 | O1 | Build the MVP featured attorney card (even placeholder) so you can show a real demo during the pitch | ✅ Done — `src/modules/legal/LegalDashboard.tsx` |
 | O2 | Draft a one-page partnership deck (the value prop above, condensed) | ✅ Done — `docs/legal/ATTORNEY_PARTNERSHIP_DECK.md` |
-| O3 | Reach out via DM or email with the pitch — lead with the marketing angle (her YouTube audience → indiiOS users → her clients) | ✅ Done — `docs/legal/ATTORNEY_OUTREACH_O3.md` (3 message versions + sending checklist) |
+| O3 | Reach out via DM or email with the pitch — lead with the marketing angle (her YouTube audience → indii users → her clients) | ✅ Done — `docs/legal/ATTORNEY_OUTREACH_O3.md` (3 message versions + sending checklist) |
 | O4 | Agree on deal structure (Option A/B/C above) | [ ] |
 | O5 | Have an attorney (ironically) review the partnership agreement before signing | [ ] |
 | O6 | Integrate her real booking link + bio into the platform | [ ] |
-| O7 | Co-announce the partnership — her channel + indiiOS launch | [ ] |
+| O7 | Co-announce the partnership — her channel + indii launch | [ ] |
 
 ---
 
@@ -333,7 +333,7 @@ resources for legal, accounting, and investor introductions all in one call.
 > **Context:** The platform's browser agent tools currently support music
 > distribution lookups. The following two registries need to be added as
 > searchable/actionable tools in the agent layer so users can handle
-> music rights directly from within indiiOS.
+> music rights directly from within indii.
 
 ### Harry Fox Agency (HFA) / Songfile
 

@@ -10,7 +10,6 @@ import {
     signOut,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signInAnonymously,
     sendPasswordResetEmail,
     signInWithCredential
 } from 'firebase/auth';
@@ -18,10 +17,15 @@ import {
 /** Minimal interface for E2E mock auth objects that provide their own listener */
 interface E2EMockAuth {
     onAuthStateChanged: (callback: (user: User | null) => void) => () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInAnonymously: () => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     createUserWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendPasswordResetEmail: (email: string) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     signInWithPopup: (provider: any) => Promise<any>;
     signOut: () => Promise<void>;
 }
@@ -41,7 +45,7 @@ const wrappedSignInAnonymously = (authObj: Auth | E2EMockAuth) => {
     if (typeof (authObj as E2EMockAuth).signInAnonymously === 'function') {
         return (authObj as E2EMockAuth).signInAnonymously();
     }
-    return signInAnonymously(authObj as Auth);
+    throw new Error('Guest login is disabled outside the Firebase E2E mock.');
 };
 
 const wrappedSignInWithEmailAndPassword = (authObj: Auth | E2EMockAuth, email: string, pass: string) => {
@@ -65,6 +69,7 @@ const wrappedSendPasswordResetEmail = (authObj: Auth | E2EMockAuth, email: strin
     return sendPasswordResetEmail(authObj as Auth, email);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const wrappedSignInWithPopup = (authObj: Auth | E2EMockAuth, provider: any) => {
     if (typeof (authObj as E2EMockAuth).signInWithPopup === 'function') {
         return (authObj as E2EMockAuth).signInWithPopup(provider);
@@ -80,6 +85,8 @@ const wrappedSignOut = (authObj: Auth | E2EMockAuth) => {
 };
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 
 /** Type guard for Firebase Auth errors */
 interface FirebaseAuthError {
@@ -144,6 +151,7 @@ function getAuthErrorMessage(error: FirebaseAuthError): string | null {
     }
 }
 
+/** INDII DESIGN SYSTEM - Single Source of Truth state */
 // Define the shape of our Auth state
 export interface AuthSlice {
     user: User | null;
@@ -220,44 +228,20 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         try {
             set({ authLoading: true, authError: null });
 
-            // 1. Bypass Onboarding and Tours for the Founders Pitch Demo
-            if (typeof window !== 'undefined') {
-                window.localStorage.setItem('TOUR_COMPLETED_dashboard', 'true');
-                window.localStorage.setItem('INDIIOS_ONBOARDING_COMPLETE', 'true');
-                window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
+            if (!isFirebaseE2EMockEnabled()) {
+                throw new Error('Guest login is disabled. Sign in or create an account to continue.');
             }
 
-            // 2. Attempt Anonymous Auth. If Identity Toolkit signups are blocked (which
-            // throws the identitytoolkit error), fallback to an injected Mock User.
-            try {
-                await wrappedSignInAnonymously(auth);
-            } catch (err: unknown) {
-                const firebaseError = err as FirebaseAuthError;
-                if (firebaseError.code === 'auth/admin-restricted-operation' || firebaseError.code?.includes('identitytoolkit')) {
-                    logger.warn('[Auth] Anonymous Auth blocked by Firebase. Injecting local mock user for Founders Demo.');
-                    if (typeof window !== 'undefined') {
-                        (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK = true; // Tell listener to ignore nulls
-                    }
-                    set({
-                        user: {
-                            uid: 'founder-demo-uid',
-                            email: 'founder@indiios.local',
-                            displayName: 'Founder Demo',
-                            isAnonymous: true,
-                            getIdToken: async () => 'mock-token'
-                        } as unknown as User,
-                        authLoading: false,
-                        authError: null
-                    });
-                    return; // Successfully bypassed
-                }
-                throw err;
+            await wrappedSignInAnonymously(auth);
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem('cookie-consent', '{"analytics":false,"marketing":false}');
             }
             // State update handled by listener normally
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
-            const errorMessage = getAuthErrorMessage(firebaseError) ?? 'Founders Demo login failed';
+            const errorMessage = getAuthErrorMessage(firebaseError) ?? 'Guest login failed';
             set({ authError: errorMessage, authLoading: false });
+            throw error;
         }
     },
 
@@ -322,12 +306,14 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
     initializeAuthListener: () => {
         logger.debug('[Auth] Initializing Auth Listener...');
-        logger.debug('[Auth] Initializing Auth Listener...');
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
-        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onUserUpdate) {
-            electronUnsub = window.electronAPI.auth.onUserUpdate(async (tokens) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
+        if (electronAuth && electronAuth.onUserUpdate) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            electronUnsub = electronAuth.onUserUpdate(async (tokens: any) => {
                 if (tokens) {
                     logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');
                     try {
@@ -349,9 +335,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 7. Electron Auth Error Listener
         let errorUnsub: (() => void) | null = null;
-        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
-        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onError) {
-            errorUnsub = window.electronAPI.auth.onError((data: { message: string }) => {
+        if (electronAuth && electronAuth.onError) {
+            errorUnsub = electronAuth.onError((data: { message: string }) => {
                 logger.error('[Auth] Received auth error from Main Process:', data.message);
                 set({ authError: data.message, authLoading: false });
             });
@@ -361,7 +346,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         // EXCLUSION: If we are using the E2E mock, allow any API key string.
         const apiKey = auth.app?.options?.apiKey;
         const apiKeyLower = apiKey?.toLowerCase() ?? '';
-        const isE2EMock = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+        const isE2EMock = isFirebaseE2EMockEnabled();
 
         if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass') || apiKeyLower.includes('mock') || apiKeyLower.includes('your_'))) {
             logger.warn('[Auth] No valid API Key found and not in E2E mode.');
@@ -432,6 +417,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         lastKnownUser = currentUser;
                         set({ user: currentUser, authLoading: false });
 
+                        if (isFirebaseE2EMockEnabled() || isAnonymousOrDemoUser(currentUser)) {
+                            logger.warn('[Auth] Mock/Anonymous user detected — skipping Firestore user sync.');
+                            return;
+                        }
+
                         // Optional: Ensure user document exists in Firestore
                         try {
                             const userRef = doc(db, 'users', currentUser.uid);
@@ -439,6 +429,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
                             if (!userSnap.exists()) {
                                 await setDoc(userRef, {
+                                    uid: currentUser.uid,
                                     email: currentUser.email,
                                     displayName: currentUser.displayName,
                                     photoURL: currentUser.photoURL,
@@ -472,7 +463,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             lastKnownUser = user;
             set({ user, authLoading: false });
 
-            if (user) {
+            if (user && !isFirebaseE2EMockEnabled() && !isAnonymousOrDemoUser(user)) {
                 // Optional: Ensure user document exists in Firestore
                 try {
                     const userRef = doc(db, 'users', user.uid);
@@ -480,6 +471,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
                     if (!userSnap.exists()) {
                         await setDoc(userRef, {
+                            uid: user.uid,
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL,
@@ -495,6 +487,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 } catch (e: unknown) {
                     logger.error("[Auth] Failed to sync user to Firestore", e);
                 }
+            } else if (user) {
+                logger.warn('[Auth] Anonymous/demo user detected — skipping Firestore user sync.');
             }
         });
 

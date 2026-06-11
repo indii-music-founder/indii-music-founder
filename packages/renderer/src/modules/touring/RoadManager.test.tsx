@@ -31,7 +31,7 @@ vi.mock('./hooks/useTouring', () => ({
     useTouring: vi.fn(),
 }));
 
-const setupTouringMock = (overrides = {}) => {
+const setupTouringMock = (overrides: any = {}) => {
     const defaultValues = {
         itineraries: [],
         currentItinerary: null,
@@ -47,9 +47,12 @@ const setupTouringMock = (overrides = {}) => {
             gasPricePerGallon: 4.00
         },
         saveVehicleStats: vi.fn().mockResolvedValue(undefined),
+        emergencyContacts: [],
+        saveEmergencyContact: vi.fn().mockResolvedValue(undefined),
+        deleteEmergencyContact: vi.fn().mockResolvedValue(undefined),
         loading: false,
     };
-    vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides });
+    vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides } as any);
 };
 
 vi.mock('firebase/functions', () => ({
@@ -119,6 +122,30 @@ describe('RoadManager', () => {
         await waitFor(() => {
             expect(screen.queryByText('New York')).not.toBeInTheDocument();
         });
+    });
+
+    it('parses and splits comma-separated waypoint list', async () => {
+        render(<RoadManager />);
+        const input = screen.getByLabelText('Route Waypoints');
+        const addButton = screen.getByLabelText('Add location');
+
+        fireEvent.change(input, { target: { value: 'detroit, orlando, knoxville' } });
+        fireEvent.click(addButton);
+
+        expect(screen.getByText('detroit')).toBeInTheDocument();
+        expect(screen.getByText('orlando')).toBeInTheDocument();
+        expect(screen.getByText('knoxville')).toBeInTheDocument();
+    });
+
+    it('retains city and state abbreviation as a single waypoint', async () => {
+        render(<RoadManager />);
+        const input = screen.getByLabelText('Route Waypoints');
+        const addButton = screen.getByLabelText('Add location');
+
+        fireEvent.change(input, { target: { value: 'Austin, TX' } });
+        fireEvent.click(addButton);
+
+        expect(screen.getByText('Austin, TX')).toBeInTheDocument();
     });
 
     it('generates itinerary when inputs are valid', async () => {

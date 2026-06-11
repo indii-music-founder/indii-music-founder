@@ -1,4 +1,4 @@
-# indiiOS — Architectural Decisions
+# indii — Architectural Decisions
 
 Each decision is numbered, dated, and locked unless explicitly re-opened. When a decision changes, append a superseding entry rather than editing the original — history matters.
 
@@ -8,8 +8,8 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 
 - **Date:** 2026-04-23
 - **Status:** locked
-- **Context:** Prior documentation (CLAUDE.md and mirrors) described indiiOS as an "AI-native creative platform for independent music producers, visual artists, and creators." That framing confused the market boundary and invited comparisons with creative software (DAWs, design tools, content generators).
-- **Decision:** indiiOS is a **music business platform** — "the first of its kind" — for independent music artists. The creative work (production, mixing, mastering) is the user's input, not the product's scope.
+- **Context:** Prior documentation (CLAUDE.md and mirrors) described indii as an "AI-native creative platform for independent music producers, visual artists, and creators." That framing confused the market boundary and invited comparisons with creative software (DAWs, design tools, content generators).
+- **Decision:** indii is a **music business platform** — "the first of its kind" — for independent music artists. The creative work (production, mixing, mastering) is the user's input, not the product's scope.
 - **Consequences:**
   - All agent messaging, marketing copy, and investor pitch material must use "music business platform for independent artists"
   - Competitive positioning is against distributor + publishing admin + merch + CRM stacks — not against creative tools
@@ -22,7 +22,7 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 - **Date:** 2026-04-23
 - **Status:** locked
 - **Context:** Creation and production tools are a crowded, commoditized market. Post-production business tooling for independent artists is not.
-- **Decision:** indiiOS begins at mastered-audio ingestion. It does not ship DAW features, stem separation, mastering assistance, or any upstream creative functionality. Mastered audio is always the input.
+- **Decision:** indii begins at mastered-audio ingestion. It does not ship DAW features, stem separation, mastering assistance, or any upstream creative functionality. Mastered audio is always the input.
 - **Consequences:**
   - Feature requests that cross this line should be declined or deferred
   - Roadmap entries that imply creative-tool functionality are out of scope
@@ -35,7 +35,7 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 - **Date:** 2026-04-23
 - **Status:** locked
 - **Context:** The product exists to give independent artists access to capabilities that only well-funded major-label teams currently have.
-- **Decision:** indiiOS is explicitly **not built for major artists, major labels, or major managers**. Target users are independent music artists regardless of genre or experience level — self-identification is the only gate.
+- **Decision:** indii is explicitly **not built for major artists, major labels, or major managers**. Target users are independent music artists regardless of genre or experience level — self-identification is the only gate.
 - **Consequences:**
   - Feature requests that only make sense at label scale (A&R pipelines, advance accounting for signed rosters, multi-roster admin tooling) are declined or deferred
   - Pricing, UX affordances, and agent defaults assume a one-artist / small-team tenant — not a label with dozens of artists
@@ -47,7 +47,7 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 
 - **Date:** pre-existing
 - **Status:** locked
-- **Context:** indiiOS has 21 domain-specialized agents ("departments") — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, brand, creative, video, licensing, music, analytics, and so on.
+- **Context:** indii has 21 domain-specialized agents ("departments") — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, brand, creative, video, licensing, music, analytics, and so on.
 - **Decision:** A single Conductor (`generalist` agent) routes every task to a specialist based on intent + module context. Specialists do not free-form negotiate with each other.
 - **Consequences:**
   - Deterministic routing is testable; emergent multi-agent behavior is not
@@ -90,7 +90,7 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 - **Date:** pre-existing
 - **Status:** locked
 - **Context:** User's framing: "security of having essentially a vault for user data but secure. This is a music industry app so essentially that's a feature, minimally a selling point."
-- **Decision:** Ship indiiOS as an Electron desktop app in addition to the web build. Desktop is the canonical distribution; web is a reduced-capability companion.
+- **Decision:** Ship indii as an Electron desktop app in addition to the web build. Desktop is the canonical distribution; web is a reduced-capability companion.
 - **Consequences:**
   - Masters, distributor API keys, SFTP credentials, OAuth tokens, and artist contracts live in OS keychain (keytar) + local encrypted store
   - SFTP distribution only works in desktop build — web tier returns a hard error at `packages/renderer/src/services/distribution/DeliveryService.ts:315`

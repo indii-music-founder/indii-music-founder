@@ -1,5 +1,5 @@
-import { GenAI as AI } from '../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 import { GeminiFile } from './GeminiRetrievalService';
@@ -49,7 +49,7 @@ export async function runAgenticWorkflow(
                 null,
                 query,
                 fileContent,
-                AI_MODELS.TEXT.AGENT
+                INTELLIGENCE_MODELS.TEXT.AGENT
             );
             const data = result;
 

@@ -70,7 +70,7 @@ describe('PWAInstallPrompt', () => {
         });
 
         await waitFor(() => {
-            expect(screen.queryByText('Install indiiOS')).toBeInTheDocument();
+            expect(screen.queryByText('Install indii.music')).toBeInTheDocument();
         });
     });
 

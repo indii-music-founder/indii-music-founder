@@ -30,7 +30,7 @@ description: Advanced strategies for TikTok/IG algorithms, digital ad funnels, i
 - **Waterfall Strategy:** Release Single 1, then Single 2 (which includes Single 1), then the EP (which includes Single 1 and 2). This stacks play counts on DSPs.
 - **Pre-Saves are for Algorithms, not Fans:** Pre-saves signal to Spotify's algorithmic editors that there is pre-release momentum, increasing chances for Release Radar and Discover Weekly placement.
 
-## 4. indiiOS App Integration (Marketing Dept)
+## 4. indii App Integration (Marketing Dept)
 
-- When generating Marketing Campaigns in the indiiOS app, enforce realistic budgets.
+- When generating Marketing Campaigns in the indii app, enforce realistic budgets.
 - Suggest budget splits: 70% to TikTok/IG Ads (Conversion), 20% to micro-influencer seeding, 10% to PR/Pitching.

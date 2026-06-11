@@ -42,7 +42,7 @@ The Electron app's Google sign-in was failing due to two issues:
 // Auth Guard - Redirect unauthenticated users to login
 useEffect(() => {
     if (isAuthReady && !isAuthenticated) {
-        const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login';
+        const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indii-v-1-1.web.app/login';
 
         // In Electron: Open login in SYSTEM BROWSER (not inside Electron)
         if (window.electronAPI) {

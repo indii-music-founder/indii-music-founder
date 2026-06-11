@@ -168,6 +168,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
 const TemplateCard: React.FC<{
     template: DesignTemplate;
     onSelect: () => void;
+    key?: React.Key;
 }> = ({ template, onSelect }) => {
     // Generate a preview based on template colors
     const previewStyle = {
@@ -188,7 +189,8 @@ const TemplateCard: React.FC<{
                 {/* Template Preview */}
                 <div className="absolute inset-4 flex flex-col items-center justify-center">
                     {/* Simplified visual representation */}
-                    {template.elements.slice(0, 3).map((element, i) => (
+                    
+                    {template.elements.slice(0, 3).map((element, _i) => (
                         <div
                             key={element.id}
                             className="rounded"

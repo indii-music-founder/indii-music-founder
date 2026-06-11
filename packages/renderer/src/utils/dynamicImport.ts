@@ -11,6 +11,7 @@ export const importWithRetry = async <T>(componentImport: () => Promise<T>): Pro
     while (retries > 0) {
         try {
             return await componentImport();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             const isChunkLoadError = error?.name === 'ChunkLoadError' || 
                 (error?.message && (
@@ -24,8 +25,7 @@ export const importWithRetry = async <T>(componentImport: () => Promise<T>): Pro
                 if (retries === 0) {
                     logger.warn('Chunk load failed after retries, forcing page reload.');
                     window.location.reload();
-                    // Return a promise that never resolves while the page reloads
-                    return new Promise(() => {}) as Promise<T>; 
+                    return Promise.reject(new Error('Chunk load failed. Page reload triggered.')); 
                 }
                 await new Promise(resolve => setTimeout(resolve, interval));
                 interval *= 1.5;
