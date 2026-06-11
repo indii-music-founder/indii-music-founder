@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-11 10:19 EDT
+**Updated:** 2026-06-11 10:23 EDT
 **Branch:** `claude/fix-builder-pill-selection-OapN2`
 
 ## Recent Commits
 ```
+4860859f8 Merge remote-tracking branch 'origin/main' into claude/fix-builder-pill-selection-OapN2
+6a2ed0624 Merge pull request #156 from indii-music-founder/claude/fix-builder-pill-selection-OapN2
+9377a1d47 chore: session checkpoint [10:19]
 060708436 docs(rules): document issue tracking and master ledger protocol
 fdbc46c59 chore: session checkpoint [10:15]
 51f088e15 chore(issues): triage all ledger issues and resolve unused imports
@@ -11,9 +14,6 @@ dc621a141 chore: session checkpoint [10:13]
 766c309f9 chore: session checkpoint [09:53]
 53b85d661 docs(error-ledger): document JSONL merge conflict splitting pattern
 80882b1e5 chore: session checkpoint [09:53]
-d8a8d4bc2 chore: session checkpoint [09:50]
-828c4c087 Merge remote-tracking branch 'origin/main' into claude/fix-builder-pill-selection-OapN2
-fae7d7076 chore: session checkpoint [19:59]
 ```
 
 ## Working State
