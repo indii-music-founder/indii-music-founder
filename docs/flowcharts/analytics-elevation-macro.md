@@ -4,15 +4,15 @@ This diagram details the runtime initialization and wiring strategy of the Analy
 
 ```mermaid
 graph TD
-    A[agents/analytics/agent_card.json] -->|Import JSON at runtime| B(a2a/CardRegistry.ts)
-    C[agents/analytics/prompt.md] -->|raw import| D(definitions/AnalyticsAgent.ts)
-    E(tools/AnalyticsTools.ts) -->|Provide Functions| D
-    D -->|Register in AGENT_CONFIGS| F(agentConfig.ts)
-    F -->|Lazy load loop| G(registry.ts)
-    G -->|Discovery / execution| H(A2A Clients & Router)
+    A["agents/analytics/agent_card.json"] -->|Import JSON at runtime| B["a2a/CardRegistry.ts"]
+    C["agents/analytics/prompt.md"] -->|raw import| D["definitions/AnalyticsAgent.ts"]
+    E["tools/AnalyticsTools.ts"] -->|Provide Functions| D
+    D -->|Register in AGENT_CONFIGS| F["agentConfig.ts"]
+    F -->|Lazy load loop| G["registry.ts"]
+    G -->|Discovery / execution| H["A2A Clients & Router"]
 ```
 
-## Detailed Explanation
+## Step-by-Step Transition Breakdown
 
 - **agent_card.json**: Holds the truthful A2A identity, including risk tier, capabilities, input/output schemas, and cost models. This is imported directly into `CardRegistry.ts` so that it remains the single source of truth at runtime.
 - **prompt.md**: Read as a raw string import by Vite inside `AnalyticsAgent.ts`. The prompt represents the production system instructions.
@@ -20,3 +20,4 @@ graph TD
 - **AnalyticsAgent.ts**: Pairs the raw prompt with the declared tools and exports an `AgentConfig` for the agent registry.
 - **agentConfig.ts**: Registers `AnalyticsAgent` inside `AGENT_CONFIGS` so the registry registers it uniformly like other first-class department agents.
 - **registry.ts**: Cleans up the previous hardcoded inline registration block, enabling the agent to load dynamically via the config-based lazy-loader.
+
