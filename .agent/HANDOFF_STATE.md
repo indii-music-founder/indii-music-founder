@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 15:20 EDT
+**Updated:** 2026-06-11 15:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+90ea7c056 docs(agents): create ANTIGRAVITY.md and unify all agent mirrors from CLAUDE.md
+c2110a900 chore: session checkpoint [15:20]
 d3994a029 docs(agents): document the four skill registries in all agent mirrors
 676cfcecc chore: session checkpoint [15:15]
 323470e1f docs(workflows): register vendored and proprietary skill registries in routing system
@@ -12,8 +14,6 @@ d4a4b4676 docs(skills): fix stale monorepo paths and outdated references
 1e9cd4a96 chore: session checkpoint [14:59]
 8afd7bd4b docs(workflows): repair frontmatter, kill /better cascade, fix stale monorepo paths
 b90038cdb chore: session checkpoint [14:56]
-9bfcac500 chore: session checkpoint [14:54]
-3e29045a8 chore: session checkpoint [14:51]
 ```
 
 ## Working State
