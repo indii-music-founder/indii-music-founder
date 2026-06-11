@@ -1,6 +1,6 @@
 # Agent Instructions
 
-> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **DROID.md**, **JULES.md**, and **CODEX.md** to ensure architectural consistency across all AI environments.
+> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **DROID.md**, **JULES.md**, **CODEX.md**, and **ANTIGRAVITY.md** to ensure architectural consistency across all AI environments. CLAUDE.md is the canonical source — edit it first, then copy verbatim to the other five.
 >
 > **Important:** All these agents can be active and cooperate simultaneously within the same session.
 
@@ -564,7 +564,37 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
-## Skill Registries
+---
+
+## Agent Skills Configuration
+
+The engineering skills (from Matt Pocock's suite) read three config files to understand how indii tracks work, manages triage, and documents domain knowledge.
+
+### Issue Tracker
+
+**GitHub Issues** — issues live in `indii-music-founder/indii-music-founder` GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+Skills use the `gh` CLI to create, list, and manage issues. Infer repo from `git remote -v` automatically.
+
+### Triage Labels
+
+**Canonical five-state triage vocabulary:**
+
+| Role | Label | Meaning |
+| --- | --- | --- |
+| Needs Eval | `triage/eval-needed` | Maintainer assessment required |
+| Awaiting Info | `triage/awaiting-info` | Blocked waiting on reporter |
+| Ready for Agent | `triage/ready-for-agent` | Fully specified, agent can pick up |
+| Ready for Human | `triage/ready-for-human` | Ready for human implementation |
+| Won't Fix | `wontfix` | Decided not to pursue |
+
+See `docs/agents/triage-labels.md` for full mapping.
+
+### Domain Context
+
+**Single-context** — all architectural decisions and domain knowledge live in this file (canonically `CLAUDE.md`, mirrored to all agent docs). No separate ADRs. See `docs/agents/domain.md` for consumer rules.
+
+### Skill Registries
 
 Four skill registries exist — do not confuse them. All are active; the "not listed = deprecated" rule in `WIIL-skill.md` does NOT apply to vendored or proprietary registries.
 
@@ -574,6 +604,9 @@ Four skill registries exist — do not confuse them. All are active; the "not li
 | `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. The lock intentionally lists some skills that are not installed (genkit-dart, genkit-go, xcode) — do not "fix" the drift or reinstall them. |
 | `skills/` | Proprietary product skills — `direct-distribution` (Direct Distribution Engine V3; pairs with `directives/direct_distribution_engine.md`) | Editable, but a covenant doc — keep status tables truthful |
 | `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/workflows/graphify.md` + `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
+
+
+---
 
 ## Skill Routing
 
@@ -661,3 +694,24 @@ When Claude would invoke a named Skill tool, use the following Gemini-native app
 | `plan-eng-review` | Use `.agent/skills/agentic-harness-architect/SKILL.md`; apply all 12 architecture primitives |
 | `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
 | `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
+
