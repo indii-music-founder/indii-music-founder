@@ -13,7 +13,7 @@ This command is used during the `/middle` phase whenever a Firestore schema, col
 - **Reference Resolution:** Cross-reference all Firestore queries (such as `addDoc`, `updateDoc`, `setDoc`, `deleteDoc`) against the registered collections in the project.
 
 ## 2. Hard Security Rules Audit (via `firebase-security-rules-auditor`)
-Invoke the **Firebase Security Rules Auditor** skill to evaluate rules:
+Invoke the **Firebase Security Rules Auditor** skill — read and follow `.agents/skills/firebase-security-rules-auditor/SKILL.md` (note: the vendored `.agents/` registry, NOT `.agent/`). Its Red Team checklist (update-bypass, authority-source, etc.) supersedes the summary below if they conflict. Evaluate:
 - **`firestore.rules` Scan:**
   - Verify that there are zero wildcards that allow public, unauthenticated read/write access (e.g., `allow read, write: if true;` or `allow write: if request.auth != null;` without specific resource field checks).
   - Ensure all write operations specify correct request data validators (e.g. `request.resource.data`).

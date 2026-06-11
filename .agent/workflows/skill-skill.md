@@ -15,7 +15,11 @@ This command can be dropped in at *any* time by either the user or the agent whe
 ## 2. Manifest & Skill Scan
 Scan our centralized command manifests:
 - **Manifest Audit:** Read and evaluate the active `/commands` listed inside [WIIL-skill.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/.agent/workflows/WIIL-skill.md).
-- **Skill Inventory Audit:** Scan the `.agent/skills/` directory for active underlying domain expertise (e.g. `firebase-security-rules-auditor`, `zoom-out`, `to-prd`).
+- **Skill Inventory Audit:** Scan ALL FOUR skill registries — they serve different purposes:
+  1. `.agent/skills/` — indii-authored skills (e.g. `zoom-out`, `to-prd`, `hunter`, `walk`). Editable, owned by us.
+  2. `.agents/skills/` — **vendored third-party skills** pinned by `skills-lock.json` (e.g. `firebase-security-rules-auditor`, `firebase-firestore`, `developing-genkit-js`, `arcjet`). **READ-ONLY:** never edit in place — they are hash-verified and overwritten on update. To change one, update it from upstream via the skills installer.
+  3. `skills/` — proprietary product skills (e.g. `direct-distribution` — the Direct Distribution Engine V3 spec). Editable, mission-critical.
+  4. `~/.agents/skills/` — user-global skills (e.g. `graphify`, invoked by `.agents/workflows/graphify.md`). Machine-specific; do not assume present.
 
 ## 3. Dynamic Parameter & Argument Routing
 If the command is invoked with an inline argument (e.g. `/skill-skill [argument]`), bypass standard matrix scanning and execute these direct verification actions:
