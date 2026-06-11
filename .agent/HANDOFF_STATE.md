@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-10 19:59 EDT
-**Branch:** `main`
+**Updated:** 2026-06-11 09:50 EDT
+**Branch:** `claude/fix-builder-pill-selection-OapN2`
 
 ## Recent Commits
 ```
+828c4c087 Merge remote-tracking branch 'origin/main' into claude/fix-builder-pill-selection-OapN2
+fae7d7076 chore: session checkpoint [19:59]
 16678180e refactor(audio): elevate AudioIntelligence pipeline performance to parallel execution and add defensive boundaries
 8033411b1 docs: update project documentation for v1.64.2
 3658984c7 chore: session checkpoint [19:15]
@@ -12,8 +14,6 @@ e3dea1abc feat(audio): local-first native audio analysis and semantic extraction
 69a43614a refactor(better): elevate AudioIntelligence pipeline performance to avoid duplicate local extraction
 b4f11057a chore: session checkpoint [18:59]
 c1a58316a chore: session checkpoint [18:50]
-042d871e8 refactor(better): apply structural and defensive elevations to fsm and escrow
-7d7f5a3cd docs: add unified distribution flowchart diagram
 ```
 
 ## Working State
