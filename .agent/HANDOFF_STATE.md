@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 11:44 EDT
+**Updated:** 2026-06-11 11:48 EDT
 **Branch:** `claude/fix-builder-pill-selection-OapN2`
 
 ## Recent Commits
 ```
+e78223e5d docs: add error ledger entries for Zustand 5, Vite imports, and Heartbeat presence
+d4faa81da chore: session checkpoint [11:44]
 5849c2d8f chore: add final session checkpoint for antigravity-e6918e62
 aa98ebb6d chore: session checkpoint [11:41]
 52dc3fede chore: update issues ledger status and add flowchart transition breakdown
@@ -12,8 +14,6 @@ aa98ebb6d chore: session checkpoint [11:41]
 946910930 chore: add session final checkpoint
 a6fec16fd test: cast keyPair.publicKey.algorithm as RsaHashedKeyAlgorithm to resolve TS2339 compiler error
 bf76cc619 chore: convert dummy/skeleton tests to real functional assertions
-1ab218a74 chore: session checkpoint [10:34]
-94d59ab64 chore: session checkpoint [10:23]
 ```
 
 ## Working State
