@@ -62,11 +62,11 @@ if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
   npm install
 fi
 
-# Functions dependencies
-if [ -f "functions/package.json" ] && \
-   ([ ! -d "functions/node_modules" ] || [ -z "$(ls -A functions/node_modules 2>/dev/null)" ]); then
-  echo "Installing functions dependencies..."
-  cd functions && npm install && cd ..
+# Firebase functions dependencies (monorepo: packages/firebase)
+if [ -f "packages/firebase/package.json" ] && \
+   ([ ! -d "packages/firebase/node_modules" ] || [ -z "$(ls -A packages/firebase/node_modules 2>/dev/null)" ]); then
+  echo "Installing firebase functions dependencies..."
+  (cd packages/firebase && npm install)
 fi
 
 # Git hooks (once per machine)

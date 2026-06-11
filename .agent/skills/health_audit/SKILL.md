@@ -60,7 +60,7 @@ Classify failures as in-branch vs pre-existing vs external (non-app files).
 
 ```bash
 echo "=== MODULES ==="
-for dir in src/modules/*/; do
+for dir in packages/renderer/src/modules/*/; do
   mod=$(basename "$dir")
   count=$(find "$dir" -name "*.tsx" -o -name "*.ts" | wc -l | tr -d ' ')
   lines=$(find "$dir" -name "*.tsx" -o -name "*.ts" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
@@ -73,12 +73,12 @@ done
 
 ```bash
 echo "=== SERVICES ==="
-for dir in src/services/*/; do
+for dir in packages/renderer/src/services/*/; do
   svc=$(basename "$dir")
   count=$(find "$dir" -name "*.ts" | wc -l | tr -d ' ')
   echo "$svc: $count files"
 done
-echo "Total exports: $(grep -rn '^export ' src/services/ --include='*.ts' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Total exports: $(grep -rn '^export ' packages/renderer/src/services/ --include='*.ts' 2>/dev/null | wc -l | tr -d ' ')"
 ```
 
 ### 6. Agent Fleet
@@ -103,11 +103,11 @@ done | sort -t: -k2 -rn
 ```bash
 echo "=== SECURITY ==="
 # Hardcoded secrets
-grep -rn "sk-\|sk_live\|sk_test\|ghp_\|AIza" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v "MOCK_KEY\|process.env\|import.meta.env\|example\|placeholder\|REDACTED\|FAKE"
+grep -rn "sk-\|sk_live\|sk_test\|ghp_\|AIza" packages/renderer/src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v "MOCK_KEY\|process.env\|import.meta.env\|example\|placeholder\|REDACTED\|FAKE"
 # Console leaks
-echo "Console statements: $(grep -rn 'console\.\(log\|warn\|error\)' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v '.test.' | wc -l | tr -d ' ')"
+echo "Console statements: $(grep -rn 'console\.\(log\|warn\|error\)' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v '.test.' | wc -l | tr -d ' ')"
 # Localhost refs
-grep -rn "localhost:" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v node_modules | head -10
+grep -rn "localhost:" packages/renderer/src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v node_modules | head -10
 ```
 
 ### 8. Dependencies
@@ -139,16 +139,16 @@ gh run list --workflow=deploy.yml --limit=3 2>/dev/null || echo "gh unavailable"
 
 ```bash
 echo "=== TECH DEBT ==="
-echo "TODOs: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "TODOs: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 ```
 
 ### 11. Anti-AI Slop
 
 ```bash
 echo "=== ANTI-AI SLOP ==="
-echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
+echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 ```
 
 ## Report Generation
