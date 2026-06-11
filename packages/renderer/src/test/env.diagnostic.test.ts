@@ -8,6 +8,7 @@ describe('Environment Diagnostic', () => {
         console.log('process.env.NODE_ENV:', process.env.NODE_ENV);
         console.log('process.env.VITEST_WORKER_ID:', process.env.VITEST_WORKER_ID);
         console.log('----------------------');
-        expect(true).toBe(true);
+        expect(typeof import.meta.env.MODE).toBe('string');
+        expect(import.meta.env.MODE.length).toBeGreaterThan(0);
     });
 });

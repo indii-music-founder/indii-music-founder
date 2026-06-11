@@ -51,6 +51,6 @@ describe('AlwaysOnMemoryEngine Benchmark', () => {
 
         console.log(`AlwaysOnMemoryEngine.clearAll took: ${(end - start).toFixed(2)}ms`);
 
-        expect(true).toBe(true);
+        expect(end - start).toBeGreaterThanOrEqual(0);
     });
 });
