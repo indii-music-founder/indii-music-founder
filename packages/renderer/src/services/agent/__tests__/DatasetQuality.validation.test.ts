@@ -47,7 +47,6 @@ const _VALID_CATEGORIES = [
     'analytical',
     'conversational',
     'cross_domain',
-    // Allow additional categories — don't be too strict
 ];
 
 /** Known valid difficulty levels */
@@ -157,7 +156,6 @@ describe('📊 Dataset Quality Validation', () => {
     // ─── Schema Compliance (per-file) ────────────────────────────────────
 
     describe('Schema Compliance (per-file)', () => {
-        // Dynamically create a test for each dataset file
         it('all JSONL files should parse without errors', () => {
             datasets.forEach(dataset => {
                 if (dataset.parseErrors.length > 0) {
@@ -260,8 +258,6 @@ describe('📊 Dataset Quality Validation', () => {
             if (phantomTools.length > 0) {
                 console.warn('⚠️ Phantom tools detected:', phantomTools.slice(0, 10));
             }
-            // This is a WARNING not a hard fail — datasets may reference tools
-            // that are planned but not yet authorized
             expect(phantomTools.length).toBeLessThanOrEqual(20);
         });
     });
@@ -325,7 +321,6 @@ describe('📊 Dataset Quality Validation', () => {
             if (underMinimum.length > 0) {
                 console.warn('⚠️ Datasets under minimum:', underMinimum);
             }
-            // Allow some tolerance — some agents may have fewer examples
             expect(underMinimum.length).toBeLessThanOrEqual(15);
         });
     });
@@ -371,8 +366,8 @@ describe('📊 Dataset Quality Validation', () => {
             console.table(summary);
             console.log(`Total: ${allExamples.length} examples across ${datasets.length} files`);
 
-            // This test always passes — it's for informational output
-            expect(true).toBe(true);
+            expect(summary).toBeInstanceOf(Array);
+            expect(summary.length).toBe(datasets.length);
         });
     });
 });

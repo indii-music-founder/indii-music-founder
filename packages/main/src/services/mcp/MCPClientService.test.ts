@@ -63,8 +63,10 @@ describe('MCPClientService', () => {
         await service.connectLocal();
         await service.disconnect();
 
-        // Internal state cannot be easily asserted without cast, but we verify it runs
-        expect(true).toBe(true);
+        expect((service as any).localClient).toBeNull();
+        expect((service as any).localTransport).toBeNull();
+        expect((service as any).harnessClient).toBeNull();
+        expect((service as any).harnessTransport).toBeNull();
     });
 
     it('should throw an error when calling tool without connecting', async () => {

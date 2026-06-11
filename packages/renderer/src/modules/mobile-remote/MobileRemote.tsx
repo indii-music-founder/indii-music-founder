@@ -25,6 +25,8 @@ import {
   remoteRelayService,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
+import { auth } from '@/services/firebase';
+import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, Grip, MessageSquare, Image, Music2,
@@ -74,13 +76,61 @@ import { QRCodeSVG } from 'qrcode.react';
 // ─── Pairing Modal (Cloud Relay version) ─────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const [qrUrl] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-      return isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
-    }
-    return 'https://indii.music/mobile-remote';
-  });
+  const [qrUrl, setQrUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const generateCode = async () => {
+      try {
+        setLoading(true);
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          throw new Error('Not authenticated on desktop');
+        }
+
+        const idToken = await currentUser.getIdToken();
+        const { endpointService } = await import('@/core/config/EndpointService');
+        const createUrl = endpointService.getFunctionUrl('createHandoffCode');
+
+        const response = await fetch(createUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+
+        const data = await response.json();
+        if (!data.code) {
+          throw new Error('No pairing code returned');
+        }
+
+        if (active) {
+          const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
+          const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
+          setQrUrl(`${base}?code=${data.code}`);
+          setLoading(false);
+        }
+      } catch (err) {
+        logger.error('[PairingModal] Failed to generate handoff code:', err);
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Failed to generate code');
+          setLoading(false);
+        }
+      }
+    };
+
+    generateCode();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <motion.div 
@@ -106,12 +156,16 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         </p>
 
         <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
-          {qrUrl ? (
-            <QRCodeSVG value={qrUrl} size={180} />
-          ) : (
+          {loading ? (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
                <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>
+          ) : error ? (
+            <div className="text-red-500 text-xs text-center px-4 font-semibold">
+              {error}
+            </div>
+          ) : (
+            <QRCodeSVG value={qrUrl} size={180} />
           )}
         </div>
 
@@ -162,7 +216,71 @@ export default function MobileRemote() {
   const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track auth readiness to re-subscribe when auth becomes available
-  const isAuth = remoteRelayService.isAuthenticated();
+  const [isAuth, setIsAuth] = useState(() => remoteRelayService.isAuthenticated());
+
+  // Listen to Auth State changes reactively
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      const authenticated = !!user;
+      setIsAuth(authenticated);
+      if (authenticated) {
+        setConnectionStatus(prev => prev === 'idle' ? 'pairing' : prev);
+      } else {
+        setConnectionStatus('idle');
+        setIsPaired(false);
+      }
+    });
+    return unsub;
+  }, []);
+
+  // Redeem handoff code on mount if present in URL query string
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (!code) return;
+
+    // Validate 64-hex format for security (ISSUE-376)
+    if (!/^[a-fA-F0-9]{64}$/.test(code)) {
+      logger.warn('[MobileRemote] Invalid handoff code format');
+      return;
+    }
+
+    logger.info('[MobileRemote] Found handoff code in URL, redeeming...');
+
+    const redeem = async () => {
+      try {
+        const { endpointService } = await import('@/core/config/EndpointService');
+        const redeemUrl = endpointService.getFunctionUrl('redeemHandoffCode');
+        const response = await fetch(redeemUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+
+        const data = await response.json();
+        if (data.customToken) {
+          logger.info('[MobileRemote] Redeem success, signing in with custom token...');
+          await signInWithCustomToken(auth, data.customToken);
+          logger.info('[MobileRemote] Signed in successfully!');
+        } else {
+          throw new Error('No customToken returned');
+        }
+
+        // Clean up URL query parameters
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      } catch (err) {
+        logger.error('[MobileRemote] Failed to redeem handoff code:', err);
+      }
+    };
+
+    redeem();
+  }, []);
 
   // Keep refs of connection status to avoid tearing down subscription in useEffect
   const isPairedRef = useRef(isPaired);

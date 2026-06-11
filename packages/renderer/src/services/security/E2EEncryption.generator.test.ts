@@ -1,13 +1,7 @@
-import { describe, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { E2EEncryptionService } from './packages/renderer/src/services/security/E2EEncryptionService';
-
-// Fallback for Node 18/20 crypto
-if (!globalThis.crypto) {
-  // @ts-ignore
-  globalThis.crypto = require('crypto').webcrypto;
-}
+import { E2EEncryptionService } from './E2EEncryptionService';
 
 function derToPem(derBuffer: ArrayBuffer, type: string) {
   const b64 = Buffer.from(derBuffer).toString('base64');
@@ -43,8 +37,7 @@ describe('E2E Interop Fixture Generator', () => {
     const envelope = await e2e.encryptMessage(messageObj, 'py-recipient', 'ts-sender');
     
     // Export recipient private key to PKCS8 PEM
-    // @ts-ignore
-    const recipientKeyPair = e2eRecipient.keyPairs.get('py-recipient')!;
+    const recipientKeyPair = (e2eRecipient as any).keyPairs.get('py-recipient')!;
     const pkcs8 = await crypto.subtle.exportKey('pkcs8', recipientKeyPair.privateKey);
     const pem = derToPem(pkcs8, 'PRIVATE KEY');
     

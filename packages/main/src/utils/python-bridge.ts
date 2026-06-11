@@ -51,9 +51,25 @@ export class PythonBridge {
         signal?: AbortSignal
     ): Promise<unknown> {
         return new Promise((resolve, reject) => {
+            // Validate category and scriptName segments (ISSUE-382)
+            const segmentRegex = /^[a-zA-Z0-9_-]+$/;
+            const filenameRegex = /^[a-zA-Z0-9_.-]+$/;
+
+            if (!segmentRegex.test(category)) {
+                return reject(new Error(`Invalid category: ${category}`));
+            }
+            if (!filenameRegex.test(scriptName)) {
+                return reject(new Error(`Invalid script name: ${scriptName}`));
+            }
+
+            const baseDir = path.resolve(this.getScriptPath(''));
+            const fullScriptPath = path.resolve(this.getScriptPath(path.join(category, scriptName)));
+
+            if (!fullScriptPath.startsWith(baseDir + path.sep)) {
+                return reject(new Error('Path traversal detected'));
+            }
+
             const python = this.getPythonPath();
-            // Construct path: execution/<category>/<scriptName>
-            const fullScriptPath = path.join(this.getScriptPath(path.join(category, scriptName)));
 
             // Redact sensitive args for logging
             const sensitiveFlags = ['--password', '--key', '--access-token', '--refresh-token', '--api-key', '--secret'];
