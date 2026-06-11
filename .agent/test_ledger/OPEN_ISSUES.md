@@ -4038,7 +4038,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-367: Webhook queue lookup derives userId from webhookId
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4048,7 +4048,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-368: Queued webhook events never match the queue query
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4058,7 +4058,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-369: createWebhook endpoint has no authentication
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4068,7 +4068,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-370: verifySignature throws on length mismatch
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4078,7 +4078,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-371: Firestore rules — cross-user read/write on agent collections
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** firestore
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4088,7 +4088,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-372: Firestore rules — cross-user access on distribution/marketing collections
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** firestore
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4098,7 +4098,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-373: Module-switch subscription teardown is dead code
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** core/store
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4108,7 +4108,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-374: Null deref + permanently wedged agent on store-import failure
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4118,7 +4118,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-375: Unmemoized object selector → infinite re-render under Zustand 5
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** founders
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4128,7 +4128,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-376: Handoff code endpoint: no format validation, no rate limit
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** auth
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4138,7 +4138,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-377: Desktop broadcasts online:false on every module switch / agent toggle
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4148,7 +4148,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-378: Phone auth check is non-reactive — subscription never starts on cold load
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4158,7 +4158,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-379: Commands silently dropped when relay is busy
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4168,7 +4168,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-380: online flag is trust-forever boolean — stale state after desktop crash
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4178,7 +4178,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-381: Committed auth export with credentials
-- **Status:** OPEN
+- **Status:** ✅ COMPLETED
 - **Severity:** 🟡 MEDIUM
 - **Module:** security
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4188,7 +4188,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-382: Path traversal in PythonBridge
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** main/python
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4198,7 +4198,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-383: Shell interpolation in rotation script
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** scripts
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4208,7 +4208,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-384: No timeout on Gemini step
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** timeline
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4218,7 +4218,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-385: Inngest key from raw env with silent empty fallback
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** timeline
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4228,7 +4228,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-386: console.log/PII in Cloud Functions logs
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** cloud-functions
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4238,7 +4238,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-387: Broad prod connect-src
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** security
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4248,7 +4248,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-388: Fire-and-forget queue persistence
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4258,7 +4258,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-389: No retry on profile persistence
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** profile
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4268,7 +4268,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-390: Side effects inside set() updater
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** core/store
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4278,7 +4278,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-391: In-place mutation of state array
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core/store
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4288,7 +4288,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-392: Blocking window.confirm in store action
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core/store
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4298,7 +4298,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-393: useStore: any + as any[] in agent critical path
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4308,7 +4308,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-394: Uncached dynamic store imports
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4318,7 +4318,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-395: Emoji in production logs
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4328,7 +4328,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-396: Legacy repo fallback
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4338,7 +4338,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-397: Orphaned test file
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** testing
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
@@ -4348,7 +4348,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-398: Dead root artifacts
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** repository
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
