@@ -31,6 +31,15 @@ export class AgentService {
     private executor: AgentExecutor;
     private responseCache = new Map<string, { text: string; thoughts: AgentThought[]; agentId: string }>();
     private syncDebounceTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+    private useStoreCache?: typeof import('@/core/store').useStore;
+
+    private async getStore(): Promise<typeof import('@/core/store').useStore> {
+        if (!this.useStoreCache) {
+            const { useStore } = await moduleImportCache.import('@/core/store', () => import('@/core/store'));
+            this.useStoreCache = useStore;
+        }
+        return this.useStoreCache;
+    }
 
     private debounceSyncMessage(resId: string, getMsg: () => AgentMessage | undefined) {
         if (this.syncDebounceTimeouts.has(resId)) {
@@ -112,115 +121,99 @@ export class AgentService {
         }
         this.isProcessing = true;
 
-        // ISSUE-045: Sync store's isAgentProcessing with service's processing state
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let useStore: any = null;
+        let useStoreInstance: typeof import('@/core/store').useStore | null = null;
         try {
-            const imported = await import('../../core/store');
-            useStore = imported.useStore;
-            const state = useStore.getState();
-            if (typeof state.setAgentProcessing === 'function') {
-                state.setAgentProcessing(true);
-            }
-        } catch (_) {
-            // Silently ignore if store import fails or setAgentProcessing doesn't exist
-        }
-
-        // Ensure agents are warmed up before processing (non-blocking if already done)
-        if (!this.isWarmedUp) {
-            await this.warmup();
-        }
-
-        const activeUserId = auth.currentUser?.uid || null;
-        if (!activeUserId) {
-            this.addSystemMessage('Agent requests require an authenticated user.');
-            this.isProcessing = false;
-            if (useStore) {
-                try {
-                    const state = useStore.getState();
-                    if (typeof state.setAgentProcessing === 'function') {
-                        state.setAgentProcessing(false);
-                    }
-                } catch (_) {
-                    // Ignore store reset failure.
+            try {
+                useStoreInstance = await this.getStore();
+                const state = useStoreInstance.getState();
+                if (typeof state.setAgentProcessing === 'function') {
+                    state.setAgentProcessing(true);
                 }
+            } catch (_) {
+                // Silently ignore store loading issues here
             }
-            return;
-        }
 
-        // PII Redaction for Agent/LLM Input AND Storage
-        // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
-        const redactedText = this.redactPII(text);
-        if (redactedText !== text) {
-            logger.debug("🔒 PII Detected and Redacted from Agent Input");
-        }
+            // Ensure agents are warmed up before processing (non-blocking if already done)
+            if (!this.isWarmedUp) {
+                await this.warmup();
+            }
 
-        // Detect generation requests for longer timeout AND caching exclusion
-        const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
+            const activeUserId = auth.currentUser?.uid || null;
+            if (!activeUserId) {
+                this.addSystemMessage('Agent requests require an authenticated user.');
+                return;
+            }
 
-        // Add User Message (Redacted)
-        const userMsg: AgentMessage = {
-            id: uuidv4(),
-            role: 'user',
-            text: redactedText,
-            timestamp: Date.now(),
-            attachments,
-            source: options?.source || 'desktop',
-        };
-        const state = useStore.getState();
-        const isBoardroomMode = state.conversationMode === 'boardroom';
-        logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
+            // PII Redaction for Agent/LLM Input AND Storage
+            // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
+            const redactedText = this.redactPII(text);
+            if (redactedText !== text) {
+                logger.debug("[SECURITY] PII Detected and Redacted from Agent Input");
+            }
 
-        if (isBoardroomMode) {
-            useStore.getState().addBoardroomMessage(userMsg);
-        } else {
-            useStore.getState().addAgentMessage(userMsg);
-        }
+            // Detect generation requests for longer timeout AND caching exclusion
+            const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
 
-        // Tier 2: Index user message for semantic recall (Episodic Indexing)
-        if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
-            alwaysOnMemoryEngine.ingest(
-                redactedText,
-                'user_input',
-                'context'
-            ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
-        }
-
-        // Cache Check (Item 36): Only cache small conversational/lookup queries, not generation requests
-        const cacheKey = `${state.activeSessionId}:${redactedText.toLowerCase().trim()}`;
-        if (this.responseCache.has(cacheKey) && !isGenerationRequest) {
-            const cached = this.responseCache.get(cacheKey)!;
-            logger.debug(`[AgentService] ⚡ Cache Hit: ${cacheKey}`);
-
-            const responseId = uuidv4();
-            const msgPayload: AgentMessage = {
-                id: responseId,
-                role: 'model',
-                text: cached.text,
-                thoughts: cached.thoughts,
+            // Add User Message (Redacted)
+            const userMsg: AgentMessage = {
+                id: uuidv4(),
+                role: 'user',
+                text: redactedText,
                 timestamp: Date.now(),
-                isStreaming: false,
-                agentId: cached.agentId
+                attachments,
+                source: options?.source || 'desktop',
             };
 
-            if (useStore) {
+            const store = useStoreInstance || await this.getStore();
+            const state = store.getState();
+            const isBoardroomMode = state.conversationMode === 'boardroom';
+            logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
+
+            if (isBoardroomMode) {
+                store.getState().addBoardroomMessage(userMsg);
+            } else {
+                store.getState().addAgentMessage(userMsg);
+            }
+
+            // Tier 2: Index user message for semantic recall (Episodic Indexing)
+            if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
+                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                alwaysOnMemoryEngine.ingest(
+                    redactedText,
+                    'user_input',
+                    'context'
+                ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
+            }
+
+            // Cache Check (Item 36): Only cache small conversational/lookup queries, not generation requests
+            const cacheKey = `${state.activeSessionId}:${redactedText.toLowerCase().trim()}`;
+            if (this.responseCache.has(cacheKey) && !isGenerationRequest) {
+                const cached = this.responseCache.get(cacheKey)!;
+                logger.debug(`[AgentService] [CACHE] Cache Hit: ${cacheKey}`);
+
+                const responseId = uuidv4();
+                const msgPayload: AgentMessage = {
+                    id: responseId,
+                    role: 'model',
+                    text: cached.text,
+                    thoughts: cached.thoughts,
+                    timestamp: Date.now(),
+                    isStreaming: false,
+                    agentId: cached.agentId
+                };
+
                 if (isBoardroomMode) {
-                    useStore.getState().addBoardroomMessage(msgPayload);
+                    store.getState().addBoardroomMessage(msgPayload);
                 } else {
-                    useStore.getState().addAgentMessage(msgPayload);
+                    store.getState().addAgentMessage(msgPayload);
                 }
-                const cacheHitState = useStore.getState();
+                const cacheHitState = store.getState();
                 if (typeof cacheHitState.setAgentProcessing === 'function') {
                     cacheHitState.setAgentProcessing(false);
                 }
+                return;
             }
-            this.isProcessing = false;
-            return;
-        }
 
-        try {
             // 1. Resolve Context
             const context = await this.contextPipeline.buildContext();
 
@@ -237,16 +230,16 @@ export class AgentService {
             };
 
             if (isBoardroomMode) {
-                useStore.getState().addBoardroomMessage(msgPayload);
+                store.getState().addBoardroomMessage(msgPayload);
             } else {
-                useStore.getState().addAgentMessage(msgPayload);
+                store.getState().addAgentMessage(msgPayload);
             }
 
             // Create a timeout controller
             const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
 
             // Track gallery state before execution for timeout grace check
-            const galleryCountBefore = useStore.getState().generatedHistory?.length || 0;
+            const galleryCountBefore = store.getState().generatedHistory?.length || 0;
 
             let timeoutHandle: ReturnType<typeof setTimeout>;
             const timeoutPromise = new Promise((_, reject) => {
@@ -257,7 +250,7 @@ export class AgentService {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
-                        const currentState = useStore.getState();
+                        const currentState = store.getState();
                         const resultMsg = isBoardroomMode 
                             ? (currentState.boardroomMessages as AgentMessage[]).find(m => m.id === responseId)
                             : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
@@ -302,12 +295,12 @@ export class AgentService {
                 logger.error('[AgentService] Message Flow Failed:', err);
 
                 // TIMEOUT GRACE: Check if images were added to gallery during execution
-                const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
+                const galleryCountAfter = store.getState().generatedHistory?.length || 0;
                 const newItemsGenerated = galleryCountAfter > galleryCountBefore;
 
                 const errorMessage = err instanceof Error ? err.message : String(err);
 
-                const { updateAgentMessage, updateBoardroomMessage } = useStore.getState();
+                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
                 const updateMsg = (id: string, updates: Partial<AgentMessage>) => {
                     if (isBoardroomMode) updateBoardroomMessage(id, updates);
                     else updateAgentMessage(id, updates);
@@ -315,7 +308,6 @@ export class AgentService {
 
                 if (errorMessage.includes('Timeout')) {
                     if (newItemsGenerated) {
-                        // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
                         logger.debug('[AgentService] Timeout grace: Generation detected in gallery');
                         updateMsg(responseId, {
                             text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
@@ -327,7 +319,6 @@ export class AgentService {
                             }]
                         });
                     } else if (isGenerationRequest) {
-                        // Case B: Generation request but no items yet - show "Taking longer" message
                         logger.debug('[AgentService] Timeout nudge: Showing "taking longer" message');
                         updateMsg(responseId, {
                             text: `⏳ **Still working on it...** The synthesis is taking a bit longer than expected, but I'm still processing your request in the background. Keep an eye on your Gallery - your assets will appear there shortly!`,
@@ -339,7 +330,6 @@ export class AgentService {
                             }]
                         });
                     } else {
-                        // Case C: Standard timeout
                         updateMsg(responseId, {
                             text: `⏳ **Still Thinking...** The Intelligence is diving deep into this one. It's taking longer than expected (${timeoutMs / 1000}s), but don't hit the panic button yet! Grab a coffee. If you're generating heavy assets, they're probably still cooking and will show up in your Gallery soon.`,
                             thoughts: [{
@@ -351,7 +341,6 @@ export class AgentService {
                         });
                     }
                 } else {
-                    // Non-timeout error (API failure, etc)
                     updateMsg(responseId, {
                         text: `❌ **Error:** ${(err as Error).message || 'The request failed.'}`,
                         thoughts: [{
@@ -363,8 +352,7 @@ export class AgentService {
                     });
                 }
             } finally {
-                // CRITICAL: Always clear streaming state to avoid stuck "..." loading
-                const { updateAgentMessage, updateBoardroomMessage } = useStore.getState();
+                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
                 if (isBoardroomMode) updateBoardroomMessage(responseId, { isStreaming: false });
                 else updateAgentMessage(responseId, { isStreaming: false });
             }
@@ -374,16 +362,22 @@ export class AgentService {
             this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
-            // ISSUE-045: Reset store's isAgentProcessing flag
-            if (useStore) {
+            if (useStoreInstance) {
                 try {
-                    const state = useStore.getState();
+                    const state = useStoreInstance.getState();
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
                 } catch (_) {
                     // Silently ignore if reset fails
                 }
+            } else {
+                this.getStore().then(store => {
+                    const state = store.getState();
+                    if (typeof state.setAgentProcessing === 'function') {
+                        state.setAgentProcessing(false);
+                    }
+                }).catch(() => {});
             }
         }
     }
@@ -398,7 +392,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
-        const { useStore } = await moduleImportCache.import('@/core/store', () => import('@/core/store'));
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const { updateAgentMessage } = state;
         const conversationMode = state.conversationMode;
@@ -591,7 +585,7 @@ export class AgentService {
         context: AgentContext,
         responseId: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const { updateAgentMessage, activeDepartmentId } = state;
 
@@ -659,7 +653,7 @@ export class AgentService {
         initialInput: string,
         responseId: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const { 
             updateAgentMessage, 
             setActiveGraphDefinition, 
@@ -773,7 +767,7 @@ export class AgentService {
         originalQuery: string,
         responseId: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const { updateAgentMessage } = useStore.getState();
 
         updateAgentMessage(responseId, { 
@@ -823,7 +817,7 @@ export class AgentService {
         context: AgentContext,
         initialResponseId: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
         context.seatedAgents = activeAgents;
@@ -1035,7 +1029,7 @@ export class AgentService {
         context: AgentContext,
         responseId: string
     ): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const { updateAgentMessage, agentHistory } = useStore.getState();
 
         const pipelineContext = context as PipelineContext;
@@ -1267,7 +1261,7 @@ The user will see this plan and can approve it to start execution.`;
             }
 
             // Phase 3: Semantic Retrieval Integration
-            const projectId = context.projectId || (await import('@/core/store')).useStore.getState().currentProjectId;
+            const projectId = context.projectId || (await this.getStore()).getState().currentProjectId;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
@@ -1330,7 +1324,7 @@ The user will see this plan and can approve it to start execution.`;
     }
 
     private async addSystemMessage(text: string): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const msg = { id: uuidv4(), role: 'system' as const, text, timestamp: Date.now() };
         if (state.conversationMode === 'boardroom') {
@@ -1362,7 +1356,7 @@ The user will see this plan and can approve it to start execution.`;
      * needs to continue the loop.
      */
     async resumeActivePlan(planId: string): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const projectId = state.currentProjectId;
 
@@ -1402,7 +1396,7 @@ The user will see this plan and can approve it to start execution.`;
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async dispatchToolCall(agentId: string, toolName: string, args: Record<string, any>, responseId: string): Promise<void> {
-        const { useStore } = await import('@/core/store');
+        const useStore = await this.getStore();
         const state = useStore.getState();
         const isBoardroomMode = state.conversationMode === 'boardroom';
 
@@ -1460,7 +1454,7 @@ The user will see this plan and can approve it to start execution.`;
      */
     private async triggerAutorater(userId: string, agentId: string, traceId: string, isBoardroomMode: boolean): Promise<void> {
         try {
-            const { useStore } = await import('@/core/store');
+            const useStore = await this.getStore();
             const state = useStore.getState();
             const history = isBoardroomMode ? state.boardroomMessages : state.agentHistory;
             
@@ -1573,7 +1567,7 @@ The user will see this plan and can approve it to start execution.`;
     ): Promise<void> {
         try {
             const { VisualOutputAutorater } = await import('./governance/VisualOutputAutorater');
-            const { useStore } = await import('@/core/store');
+            const useStore = await this.getStore();
 
             // Find the message in history to access thoughts/tool results
             const currentState = useStore.getState();
@@ -1658,7 +1652,7 @@ The user will see this plan and can approve it to start execution.`;
                 // Cap reached — surface manual review message
                 logger.warn(`[AgentService] Visual autorater: cap reached after ${attemptNumber} attempts for ${originalImageId}`);
 
-                const { useStore } = await import('@/core/store');
+                const useStore = await this.getStore();
                 const manualReviewMsg = {
                     id: uuidv4(),
                     role: 'system' as const,

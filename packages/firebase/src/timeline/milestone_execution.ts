@@ -181,7 +181,7 @@ export const executeMilestoneFn = (inngestClient: Inngest) =>
                     if (!apiKey) {
                         throw new Error('Gemini API key is not configured.');
                     }
-                    const client = new GoogleGenAI({ apiKey });
+                    const client = new GoogleGenAI({ apiKey, httpOptions: { timeout: 120000 } });
 
                     const systemPrompt = getSystemPromptForAgent(agentId);
 

@@ -20,6 +20,8 @@ export default function CostWarningModal() {
         setPendingCostWarning(null);
     };
 
+    const isUnsavedChanges = pendingCostWarning.estimatedCost === 0;
+
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -35,18 +37,24 @@ export default function CostWarningModal() {
                                 <AlertTriangle className="w-8 h-8 text-yellow-500" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-semibold text-white">High Cost Operation</h2>
-                                <p className="text-sm text-zinc-400">Confirmation Required</p>
+                                <h2 className="text-xl font-semibold text-white">
+                                    {isUnsavedChanges ? 'Unsaved Changes' : 'High Cost Operation'}
+                                </h2>
+                                <p className="text-sm text-zinc-400">
+                                    {isUnsavedChanges ? 'Navigate Away?' : 'Confirmation Required'}
+                                </p>
                             </div>
                         </div>
 
                         <div className="p-4 bg-zinc-800/50 rounded-xl border border-white/5 mb-6">
-                            <div className="flex items-center gap-2 text-red-400 mb-2">
-                                <DollarSign size={18} />
-                                <span className="font-mono text-lg font-bold">
-                                    {pendingCostWarning.estimatedCost.toFixed(2)}
-                                </span>
-                            </div>
+                            {!isUnsavedChanges && (
+                                <div className="flex items-center gap-2 text-red-400 mb-2">
+                                    <DollarSign size={18} />
+                                    <span className="font-mono text-lg font-bold">
+                                        {pendingCostWarning.estimatedCost.toFixed(2)}
+                                    </span>
+                                </div>
+                            )}
                             <p className="text-sm text-zinc-300 leading-relaxed">
                                 {pendingCostWarning.reason}
                             </p>
@@ -58,13 +66,13 @@ export default function CostWarningModal() {
                                 onClick={handleCancel}
                                 className="border-white/10 hover:bg-white/5"
                             >
-                                Cancel
+                                {isUnsavedChanges ? 'Stay' : 'Cancel'}
                             </Button>
                             <Button 
                                 onClick={handleConfirm}
                                 className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
                             >
-                                Approve & Proceed
+                                {isUnsavedChanges ? 'Leave Page' : 'Approve & Proceed'}
                             </Button>
                         </div>
                     </div>
