@@ -22,7 +22,7 @@ A self-reflective execution engine that prevents getting stuck, ensures all user
 
 ```bash
 # Always run these immediately — in parallel
-view_file("task.md")                       # [x] done / [/] in progress / [ ] pending
+view_file(".agent/artifacts/task.md")      # Preferred ledger — fall back to root task.md ONLY if it matches the current goal (Stale Ledger Guard)
 git status && git log -n 3 --oneline       # Clean working state?
 ```
 
@@ -64,7 +64,7 @@ Apply these rules before executing:
 
 | Situation | Action |
 |-----------|--------|
-| Fix failing 3+ times | **STOP** — re-diagnose from scratch per Two-Strike Rule. Add logging, prove root cause, propose different approach |
+| Same fix failing | **Strike Ladder** (shared with /middle, /issue, /better): Strike 2 = pivot — re-diagnose from scratch, add logging, prove root cause, propose a fundamentally different approach. Strike 3 = STOP and escalate to the user with a detailed blocker |
 | Strategy in plan is wrong | Update `implementation_plan.md` or work order immediately before continuing |
 | User prompt not yet addressed | Address it NOW before moving to next task |
 | Uncommitted changes from prior task | **COMMIT first** — never start new work with a dirty tree |
