@@ -32,7 +32,7 @@ You are a **skill selector** — your job is to assess the task, evaluate the av
 
 ### Debugging & Troubleshooting
 - `diagnose` — Trace root cause: logs → search codebase → hypothesis → verify
-- `hunter` — HTTP error sweep (401, 403, 404, 410, 413, 422, 429, 500, 502, 503, 504)
+- `hunter` — Full-spectrum bug hunt: security (XSS, secrets), memory leaks, race conditions, HTTP error handling, finance rounding, locale traps
 - `error_memory` — **MANDATORY check before debug** — pattern lookup in ERROR_LEDGER
 
 ### Configuration & Setup

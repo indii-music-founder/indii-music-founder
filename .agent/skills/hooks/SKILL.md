@@ -24,11 +24,11 @@ This skill covers **all hook layers** in indii:
 | Layer | Location | Type |
 |-------|----------|------|
 | **Agent Hooks** | `.claude/settings.json` + `.claude/scripts/` | Claude Code lifecycle |
-| **React Hooks** | `src/hooks/` | Custom React hooks |
-| **Module Hooks** | `src/modules/**/hooks/` | Feature-level React hooks |
-| **Firebase Triggers** | `functions/src/` | Firestore, Auth, HTTP, Scheduled |
-| **Inngest Jobs** | `functions/src/` | Background job event triggers |
-| **Webhook Endpoints** | `src/services/`, `functions/src/` | Stripe, distribution, external |
+| **React Hooks** | `packages/renderer/src/hooks/` | Custom React hooks |
+| **Module Hooks** | `packages/renderer/src/modules/**/hooks/` | Feature-level React hooks |
+| **Firebase Triggers** | `packages/firebase/src/` | Firestore, Auth, HTTP, Scheduled |
+| **Inngest Jobs** | `packages/firebase/src/` | Background job event triggers |
+| **Webhook Endpoints** | `packages/renderer/src/services/`, `packages/firebase/src/` | Stripe, distribution, external |
 | **Git Hooks** | `.git/hooks/`, `package.json` (husky) | Pre-commit, pre-push, commit-msg |
 
 ---
@@ -41,10 +41,10 @@ Simultaneously collect:
 
 1. **Agent hooks** — Read `.claude/settings.json`, list every event + command + timeout
 2. **Script hooks** — Glob `.claude/scripts/**` and read each file
-3. **React hooks** — Glob `src/hooks/**/*.{ts,tsx}` and `src/modules/**/hooks/**/*.{ts,tsx}`
-4. **Firebase triggers** — Grep `functions/src/` for `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onSchedule`, `onCall`, `onRequest`, `beforeUserCreated`, `onUserDeleted`
-5. **Inngest** — Grep `functions/src/` for `inngest.createFunction`, `serve`, event trigger names
-6. **Webhooks** — Grep `src/services/`, `functions/src/` for `webhook`, `stripe.webhooks.constructEvent`, incoming HTTP handlers
+3. **React hooks** — Glob `packages/renderer/src/hooks/**/*.{ts,tsx}` and `packages/renderer/src/modules/**/hooks/**/*.{ts,tsx}`
+4. **Firebase triggers** — Grep `packages/firebase/src/` for `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onSchedule`, `onCall`, `onRequest`, `beforeUserCreated`, `onUserDeleted`
+5. **Inngest** — Grep `packages/firebase/src/` for `inngest.createFunction`, `serve`, event trigger names
+6. **Webhooks** — Grep `packages/renderer/src/services/`, `packages/firebase/src/` for `webhook`, `stripe.webhooks.constructEvent`, incoming HTTP handlers
 7. **Git hooks** — Read `.git/hooks/` directory listing; check `package.json` for `husky` or `lint-staged`
 
 Build a **master hooks inventory** before proceeding.
@@ -143,12 +143,12 @@ When the user confirms a recommendation, implement it immediately:
 - Commit + push
 
 #### React Hook Changes
-- Create/modify in `src/hooks/` or the appropriate module's `hooks/` directory
+- Create/modify in `packages/renderer/src/hooks/` or the appropriate module's `hooks/` directory
 - Follow existing naming conventions (`use<Name>.ts`)
 - Run `npm test -- --run` to verify nothing breaks
 
 #### Firebase / Inngest Changes
-- Modify `functions/src/`
+- Modify `packages/firebase/src/`
 - Ensure types compile: `cd functions && npm run build`
 
 #### Git Hook Changes
@@ -175,11 +175,11 @@ Ran: <timestamp>
 | Stop | checkpoint.sh | yes | 30s | ✓ Active |
 | SessionStart | load-context.sh | no | 10s | ✓ Active |
 
-#### React Hooks (src/hooks/)
+#### React Hooks (packages/renderer/src/hooks/)
 | Hook | File | Purpose | Issues |
 ...
 
-#### Firebase Triggers (functions/src/)
+#### Firebase Triggers (packages/firebase/src/)
 | Trigger | Event | Collection/Path | Issues |
 ...
 

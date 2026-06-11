@@ -24,11 +24,11 @@ Map the changed file → correct test:
 
 | Changed File Pattern | Test to Run |
 |---------------------|------------|
-| `src/services/X.ts` | `X.test.ts` or `find("*X*test*")` |
-| `src/modules/**/Comp.tsx` | `Comp.test.tsx` or `__tests__/Comp.test.tsx` |
+| `packages/renderer/src/services/X.ts` | `X.test.ts` or `find("*X*test*")` |
+| `packages/renderer/src/modules/**/Comp.tsx` | `Comp.test.tsx` or `__tests__/Comp.test.tsx` |
 | `packages/firebase/firestore.rules` | `firestore.rules.test.ts` |
-| `execution/*.py` | `python3 -m pytest execution/tests/` |
-| `functions/src/*.ts` | `functions/src/__tests__/*.test.ts` |
+| `execution/**/*.py` | `python3 -m pytest execution/` (tests co-located per department) |
+| `packages/firebase/src/*.ts` | `packages/firebase/src/__tests__/*.test.ts` |
 | No specific match | Run full unit suite: `npm test -- --run` |
 
 ```bash
@@ -44,7 +44,7 @@ find . -name "*ComponentName*test*" -o -name "*ComponentName*spec*" | grep -v no
 
 ```bash
 # Run specific file
-npm test -- --run src/services/rag/GeminiRetrievalService.test.ts
+npm test -- --run packages/renderer/src/services/<Service>.test.ts
 
 # Run all, once
 npm test -- --run
@@ -67,7 +67,7 @@ npm run test:e2e
 ### Python Tests
 
 ```bash
-python3 -m pytest execution/tests/ -v
+python3 -m pytest execution/ -v
 python3 -m pytest python/tools/ -v
 ```
 
@@ -106,10 +106,10 @@ npm run lint        # ESLint must pass
 
 ## Test Setup Reference
 
-Key mocks provided globally in `src/test/setup.ts`:
+Key mocks provided globally in `packages/renderer/src/test/setup.ts`:
 
 - Firebase (auth, firestore, storage, functions, messaging, app-check, AI)
-- AgentZeroService — mocked to prevent 60s timeouts
+- indii Conductor orchestration (`AgentGraphService`, formerly AgentZeroService) — mocked to prevent 60s timeouts
 - ResizeObserver, Canvas, matchMedia
 - `@testing-library/jest-dom` matchers
 
