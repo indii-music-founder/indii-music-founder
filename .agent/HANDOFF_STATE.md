@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-12 16:46 EDT
+**Updated:** 2026-06-12 17:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+82aed5ae9 chore: session checkpoint [16:46]
 6c819747a feat(agents): perfect agent tool API formations
 219378509 fix(agent): map fallback model correctly
 eb0032ab4 chore: session checkpoint [12:43]
@@ -13,7 +14,6 @@ a70fd4046 docs(agent): register /away workflow for autonomous CI loops
 a3f2675ff chore: session checkpoint [11:25]
 af091bfb8 Merge branch 'main' into feat/agent-elevation-stage-0
 66b176751 test: fix expected error message in DirectGenerationTab.test.tsx
-eb9d44e1c feat(mobile): mobile system reform and agent stability elevation
 ```
 
 ## Working State
