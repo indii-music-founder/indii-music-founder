@@ -2,13 +2,63 @@
   "schemaVersion": "1.0.0",
   "agentId": "indii_executor",
   "displayName": "Indii Executor Agent",
-  "description": "Executor \u2014 runs deterministic action chains",
-  "capabilities": [],
+  "description": "The Sentinel/Executor — runs deterministic media-processing action chains (generation, ffmpeg/PIL post-processing, asset sync) dispatched by the Curriculum Agent. Not currently wired into the A2A runtime; this card is the governance contract required before any wiring.",
+  "capabilities": [
+    {
+      "name": "indii_image_gen",
+      "description": "Generate images via Imagen for curriculum-dispatched creative tasks.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "indii_video_gen",
+      "description": "Generate video via Veo for curriculum-dispatched creative tasks.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "indii_audio_ear",
+      "description": "Sonic analysis (BPM/key detection) used to sync generated media metadata to source audio.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "indii_oracle",
+      "description": "Aesthetic scoring / RIG evaluation of generated assets.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "google_file_search",
+      "description": "RAG / technical retrieval over project files.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "indii_sync",
+      "description": "Roadie distribution sync of finished assets.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "media_postprocess_terminal",
+      "description": "Terminal media post-processing (ffmpeg conversions/crops, PIL image manipulation) scoped to the project workspace. This capability is why the card is riskTier destructive.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 1.5e-05,
+    "perTokenOutUsd": 7.5e-05
   },
   "riskTier": "destructive",
   "sla": {
@@ -19,5 +69,26 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "specialist",
+    "departmentId": "curriculum"
+  },
+  "harness": {
+    "ownedHarnessDomains": ["media-postprocessing"],
+    "supportingHarnessDomains": ["creative-generation", "curriculum"],
+    "skillRefs": [],
+    "mcpServers": [],
+    "approvalAuthority": "user_required",
+    "blockedActions": [
+      "delete files outside the project workspace",
+      "overwrite source/master audio or video assets",
+      "execute terminal commands unrelated to media processing",
+      "network exfiltration of project assets",
+      "modify repository code, configs, or credentials",
+      "publish or distribute assets without an approved indii_sync dispatch"
+    ]
+  },
+  "promptVersion": "1.64.2-executor",
+  "trainingModel": "default"
 }
