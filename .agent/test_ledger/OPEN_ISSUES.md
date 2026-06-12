@@ -4358,7 +4358,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-399: Commented-out dsp-engine profiling dispatch logic
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4369,7 +4369,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-400: Stubbed dispatches in unified-distribution
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4380,7 +4380,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-401: Hardcoded duration and stubs in ddex-generator
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4391,7 +4391,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-402: Unimplemented requestTaxForms function
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4402,7 +4402,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-403: Disabled verifyMechanicalLicense function
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4413,7 +4413,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-404: Redundant status ternary in deliverScheduledPosts
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Console
 - **Module:** firebase
@@ -4424,7 +4424,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-405: LLM slop in format_dsp_metadata mock XML
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4435,7 +4435,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-406: Unused Cloud Function wrappers in factory.ts
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4446,7 +4446,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-407: Ignored timeoutMs in circuit-breaker wrapper
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Performance
 - **Module:** firebase
@@ -4457,7 +4457,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-408: Duplicate Connect onboarding functions
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4468,7 +4468,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-409: Admin UID logged as Artist UID in createTransfer
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4479,7 +4479,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-410: Fragile webhook polling in telegramWebhook.ts
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Performance
 - **Module:** firebase
@@ -4490,7 +4490,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-411: Missing crypto imports in firebase src files
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4501,7 +4501,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-412: Fragile AI JSON cleanup in touring.ts
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4512,7 +4512,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-413: Overly aggressive blacklisting in retention-daemon.ts
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -4575,7 +4575,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-418: Stale ElectronSidecarAPI.restart interface signature
-- **Status:** OPEN
+- **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
 - **Module:** shared
