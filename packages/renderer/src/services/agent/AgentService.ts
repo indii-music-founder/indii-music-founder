@@ -359,7 +359,7 @@ export class AgentService {
         } catch (e: unknown) {
             const errObj = e instanceof Error ? e : new Error(String(e));
             logger.error('[AgentService] Fatal Error in sendMessage:', e);
-            this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
+            this.addSystemMessage(`❌ **System Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
             if (useStoreInstance) {

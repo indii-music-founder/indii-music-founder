@@ -127,7 +127,7 @@ describe('GeneralistAgent', () => {
 
         expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
         expect(result.error).toContain('Rate limit exceeded');
-        expect(result.text).toContain('Fatal Error: Rate limit exceeded');
+        expect(result.text).toContain('System Error: Rate limit exceeded');
     });
 
     it('has proper tool declarations for native function calling', async () => {

@@ -268,21 +268,21 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3.5">
+        <div className="flex overflow-x-auto gap-3.5 pb-2 -mx-2 px-2 snap-x snap-mandatory hide-scrollbar">
           {quickActions.map((action, idx) => (
             <motion.button
               key={action.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={action.action}
               className={cn(
-                "relative overflow-hidden flex flex-col items-start gap-4 p-5 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer",
+                "relative overflow-hidden flex flex-col items-start gap-3 p-4 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer shrink-0 snap-center",
                 action.color,
                 action.glow
               )}
-              style={{ minHeight: '120px', minWidth: '44px' }}
+              style={{ minHeight: '110px', width: '130px', minWidth: '44px' }}
             >
               <div className="w-10 h-10 rounded-[16px] bg-white/5 flex items-center justify-center border border-white/10">
                 <action.icon className="w-5 h-5" />
@@ -318,7 +318,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
               whileTap={{ scale: 0.95 }}
               onClick={() => triggerHubAction(card.moduleId, card.agentPrompt)}
               className={cn(
-                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border bg-white/[0.01] backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer text-left",
+                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border border-t-white/10 border-l-white/5 bg-white/[0.01] backdrop-blur-3xl transition-all duration-300 shadow-2xl cursor-pointer text-left",
                 card.color,
                 card.glow
               )}

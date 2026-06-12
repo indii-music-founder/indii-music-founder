@@ -10,13 +10,13 @@
  * Fully polished to guarantee >= 44x44px touch target grid for all interactive buttons.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ChevronDown, LayoutGrid, Users, User as UserIcon,
-    Sparkles, Mic
+    Sparkles, Mic, Star
 } from 'lucide-react';
 import {
     DESKTOP_HEARTBEAT_STALE_MS,
@@ -45,12 +45,64 @@ interface ChatMessage {
     timestamp: number;
     agentId?: string;
     isStreaming?: boolean;
+    boardroomMessageId?: string;
+    rating?: number;
 }
 
 interface AgentChatProps {
     onSendCommand: (command: { type: string; payload: unknown }) => void;
     isPaired: boolean;
 }
+
+const MessageRating = memo(({ 
+    boardroomMessageId, 
+    currentRating 
+}: { 
+    boardroomMessageId?: string, 
+    currentRating?: number 
+}) => {
+    const [hoverRating, setHoverRating] = useState<number>(0);
+    const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
+
+    const handleRate = async (rating: number) => {
+        if (!boardroomMessageId) return;
+        setOptimisticRating(rating);
+        try {
+            // Import dynamically to avoid circular dependencies if any, 
+            // though we can import directly at the top.
+            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
+            await agentFirebaseConnector.update(boardroomMessageId, { rating });
+        } catch (err) {
+            logger.error('[AgentChat] Failed to save rating:', err);
+            // Revert on failure
+            setOptimisticRating(currentRating);
+        }
+    };
+
+    if (!boardroomMessageId) return null;
+
+    return (
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-white/5 opacity-60 hover:opacity-100 transition-opacity">
+            <span className="text-[9px] text-gray-500 uppercase tracking-widest mr-2">Rate Agent</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    onClick={() => handleRate(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                    aria-label={`Rate ${star} stars`}
+                >
+                    <Star
+                        size={12}
+                        className={`transition-colors ${(hoverRating || optimisticRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
+                    />
+                </button>
+            ))}
+        </div>
+    );
+});
+MessageRating.displayName = 'MessageRating';
 
 // How long the phone waits for the studio before surfacing a clear,
 // user-visible "couldn't reach your studio" message instead of a silent
@@ -215,6 +267,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 timestamp: ts,
                 agentId: res.agentId,
                 isStreaming: res.isStreaming,
+                boardroomMessageId: res.boardroomMessageId,
+                rating: res.rating,
             });
         });
 
@@ -341,7 +395,6 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar pb-4"
-                style={{ maxHeight: 'calc(100vh - 320px)' }}
             >
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
@@ -404,6 +457,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                     )}
                                     {msg.isStreaming && (
                                         <span className="inline-block w-1.5 h-3 bg-blue-400/60 animate-pulse ml-1 align-middle" />
+                                    )}
+                                    {/* Agent Grading / Feedback */}
+                                    {!isUser && !msg.isStreaming && msg.boardroomMessageId && (
+                                        <MessageRating boardroomMessageId={msg.boardroomMessageId} currentRating={msg.rating} />
                                     )}
                                 </div>
                                 
