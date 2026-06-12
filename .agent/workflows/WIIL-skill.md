@@ -62,6 +62,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Checks local repository state, fetches origin, pulls/rebases changes, validates ahead commits using typecheck/Vitest, and manages background scheduling cron.
 - **When to use:** Run at start, middle, or manually to keep commits organized and pushed cleanly.
 
+### `/away` — Autonomous CI Monitor & Merge Loop
+- **Purpose:** Executes an autonomous loop to monitor branch CI using the browser subagent, automatically fixing errors until green, then merging to main.
+- **When to use:** When the user steps away from the keyboard and wants the agent to drive a branch across the finish line.
+
 ### `/ci-validate` — Pre-Push CI Validation
 - **Purpose:** Comprehensive pre-push CI validation with commit consolidation to prevent bloat.
 - **When to use:** Used automatically by `/end`. Must be run before any push to `main`.
