@@ -88,7 +88,7 @@ describe('AgentExecutor (Integration)', () => {
             // GeneralistAgent catches fatal errors and returns them in response.error instead of throwing
             if (response.error) {
                 console.warn('Execution returned an error response, possibly due to quota/auth:', response.error);
-                if (!response.error.includes('quota') && !response.error.includes('403') && !response.error.includes('429') && !response.error.includes('endpoint unavailable')) {
+                if (!response.error.includes('quota') && !response.error.includes('403') && !response.error.includes('429') && !response.error.includes('endpoint unavailable') && !response.error.includes('API Key Invalid')) {
                     throw new Error(`Unexpected error returned by agent: ${response.error}`);
                 }
             } else {
@@ -102,7 +102,7 @@ describe('AgentExecutor (Integration)', () => {
             // we catch and log but don't fail the whole suite if it's an API error.
             console.warn('Execution threw an error, possibly due to quota/auth:', e.message);
             // We only rethrow if it's a structural error in our code.
-            if (!e.message.includes('quota') && !e.message.includes('403') && !e.message.includes('429') && !e.message.includes('endpoint unavailable')) {
+            if (!e.message.includes('quota') && !e.message.includes('403') && !e.message.includes('429') && !e.message.includes('endpoint unavailable') && !e.message.includes('API Key Invalid')) {
                 throw e;
             }
         }
