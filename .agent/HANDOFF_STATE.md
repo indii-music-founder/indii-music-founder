@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-11 18:11 EDT
-**Branch:** `main`
+**Updated:** 2026-06-11 21:22 EDT
+**Branch:** `fix/open-issues-sweep`
 
 ## Recent Commits
 ```
-bcfd6d6c0 chore: add missing campaigns translation keys to resolve E2E warnings
-ed3cffc0c fix(docs): resolve flowchart syntax validation errors
-4b4e0d9c1 feat(agent): synchronize capability registry and prune stale playbook links
-675340132 feat(agent): elevate merchandise and curriculum agents to dynamic A2A JSON cards
-b8775ee76 chore: session checkpoint [15:34]
-d2b24c789 chore: session checkpoint [15:26]
-a8da7584c chore: session checkpoint [15:24]
-90ea7c056 docs(agents): create ANTIGRAVITY.md and unify all agent mirrors from CLAUDE.md
-c2110a900 chore: session checkpoint [15:20]
-d3994a029 docs(agents): document the four skill registries in all agent mirrors
+73c6f0094 refactor(better): add defensive validation and robust error handling to firebase functions
+da35cbf7d docs: update open issues ledger and task tracking sheet for fixed items
+ae50c3360 fix(firebase): resolve remaining open architectural, duplicate onboarding, and webhook integration issues
+e2accb7e0 docs(issues): update OPEN_ISSUES ledger after fixing high-severity IPC handlers
+e94f12aa4 fix(main): implement missing IPC handlers for Spotify, Apple delivery, XSD validation, and capture-state
+8c0364c1e docs: update test history after issue-sweep
+68a1151be docs(test): add test report for Mega Stress Test v12.0
+98dafa19e test(e2e): add Playwright spec for Mega Stress Test V12
+4f8f55e03 docs(test): add Mega Stress Test v12.0 — Main-Process & Firebase Function Integrity (Routines 121-130)
+db9ea3b4a chore: record findings from /finish sweep to open issues ledger
 ```
 
 ## Working State
 ```
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
+clean working tree
 ```
 
 ## Decisions
