@@ -30,7 +30,7 @@ export const AnalyticsAgent: AgentConfig = {
         functionDeclarations: [
             {
                 name: "calculate_viral_potential_score",
-                description: "Predict viral potential based on tempo/BPM, genre, and mood using historical artist distributions.",
+                description: "Estimate viral potential using a transparent heuristic rubric (tempo/BPM, genre, mood). Heuristic estimate only — not a prediction from historical streaming data. Always present the result to the user as a heuristic estimate.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -43,7 +43,7 @@ export const AnalyticsAgent: AgentConfig = {
             },
             {
                 name: "benchmark_release_velocity",
-                description: "Compare current release streaming trajectory (24h, 7d, 30d) against artist historical baseline.",
+                description: "Project an expected release velocity curve (day 1/7/30) from the artist's Spotify follower baseline. Projection from follower count — does not yet read actual per-track streaming trajectories. Label outputs as projections.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

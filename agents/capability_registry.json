@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-11T17:24:29.454846",
+  "last_updated": "2026-06-12T07:53:31.831942",
   "root": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents",
   "agents": {
     "indii_curriculum": {
@@ -612,11 +612,53 @@
           ]
         }
       },
-      "instructions_preview": "# Generalist Agent\n\nYou are a generalist assistant. You handle tasks that do not fit into the other specific domain experts. You answer general questions, organize files, write documents, and help the..."
+      "instructions_preview": "# Generalist Agent \u2014 Prompt Pointer\n\n> **This file is NOT loaded at runtime \u2014 do not edit it expecting behavior changes.**\n>\n> `GeneralistAgent` (packages/renderer/src/services/agent/specialists/Gener..."
     },
     "indii_executor": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_executor",
       "skills": {
+        "indii_image_gen": {
+          "description": "Generate images via Imagen for curriculum-dispatched creative tasks.",
+          "trigger_labels": [
+            "indii_image_gen"
+          ]
+        },
+        "indii_video_gen": {
+          "description": "Generate video via Veo for curriculum-dispatched creative tasks.",
+          "trigger_labels": [
+            "indii_video_gen"
+          ]
+        },
+        "indii_audio_ear": {
+          "description": "Sonic analysis (BPM/key detection) used to sync generated media metadata to source audio.",
+          "trigger_labels": [
+            "indii_audio_ear"
+          ]
+        },
+        "indii_oracle": {
+          "description": "Aesthetic scoring / RIG evaluation of generated assets.",
+          "trigger_labels": [
+            "indii_oracle"
+          ]
+        },
+        "google_file_search": {
+          "description": "RAG / technical retrieval over project files.",
+          "trigger_labels": [
+            "google_file_search"
+          ]
+        },
+        "indii_sync": {
+          "description": "Roadie distribution sync of finished assets.",
+          "trigger_labels": [
+            "indii_sync"
+          ]
+        },
+        "media_postprocess_terminal": {
+          "description": "Terminal media post-processing (ffmpeg conversions/crops, PIL image manipulation) scoped to the project workspace. This capability is why the card is riskTier destructive.",
+          "trigger_labels": [
+            "media_postprocess_terminal"
+          ]
+        },
         "tools": {
           "description": "Technical readiness checker for the indii_executor domain.",
           "trigger_labels": [
@@ -626,7 +668,7 @@
           ]
         }
       },
-      "instructions_preview": "# indii Executor Agent (The Sentinel/Executor)\n\nYou are the \"Roadie\" and \"Engineer\", powered by Gemini 3 Flash. Your goal is fast, precise tool execution and OS manipulation.\n\n**Specialized Toolset:**..."
+      "instructions_preview": "# indii Executor Agent (The Sentinel/Executor)\n\nYou are the \"Roadie\" and \"Engineer\", powered by Gemini 3 Flash. Your goal is fast, precise tool execution and OS manipulation for media processing.\n\n**S..."
     },
     "marketing": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing",
@@ -1066,13 +1108,13 @@
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics",
       "skills": {
         "calculate_viral_potential_score": {
-          "description": "Predict viral potential based on tempo/BPM, genre, and mood using historical artist distributions.",
+          "description": "Estimate viral potential using a transparent heuristic rubric (tempo/BPM, genre, mood). Heuristic estimate only \u2014 not a prediction from historical streaming data.",
           "trigger_labels": [
             "calculate_viral_potential_score"
           ]
         },
         "benchmark_release_velocity": {
-          "description": "Compare current release streaming trajectory (24h, 7d, 30d) against artist historical baseline.",
+          "description": "Project an expected release velocity curve (day 1/7/30) from the artist's Spotify follower baseline. Projection from follower count \u2014 does not yet read actual per-track streaming trajectories.",
           "trigger_labels": [
             "benchmark_release_velocity"
           ]
@@ -1087,15 +1129,6 @@
           "description": "Run cohort retention queries to track weekly user listening activity.",
           "trigger_labels": [
             "run_cohort_analysis"
-          ]
-        },
-        "tools": {
-          "description": "Calculates the viral potential score of a track based on BPM and genre.",
-          "trigger_labels": [
-            "analytics",
-            "viral",
-            "score",
-            "tiktok"
           ]
         }
       },
