@@ -1,7 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { compileDDEXRelease } from '../../publishing/ddex-generator';
+import { compileDDEXRelease, dispatchPROPayload } from '../../publishing/ddex-generator';
 import { CampaignFSM } from '../fsm/machine';
 import { withCircuitBreaker } from '../circuit-breaker';
+import { getStorage } from 'firebase-admin/storage';
 
 /**
  * Unified Distribution Toggle Wrapper
@@ -10,7 +11,7 @@ import { withCircuitBreaker } from '../circuit-breaker';
 export const triggerUnifiedDistribution = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
-    const { releaseId } = request.data;
+    const { releaseId } = request.data as { releaseId: string };
     if (!releaseId) throw new HttpsError('invalid-argument', 'Missing releaseId.');
 
     const fsm = new CampaignFSM(releaseId);
@@ -25,9 +26,9 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
         console.log(`Executing concurrent distribution for ${releaseId}...`);
         
         const distributionTasks = [
-            withCircuitBreaker('SpotifyDispatch', () => dispatchToSpotify(ddexPayload)),
-            withCircuitBreaker('AppleMusicDispatch', () => dispatchToAppleMusic(ddexPayload)),
-            withCircuitBreaker('TidalDispatch', () => dispatchToTidal(ddexPayload)),
+            withCircuitBreaker('SpotifyDispatch', () => dispatchToSpotify(ddexPayload, releaseId)),
+            withCircuitBreaker('AppleMusicDispatch', () => dispatchToAppleMusic(ddexPayload, releaseId)),
+            withCircuitBreaker('TidalDispatch', () => dispatchToTidal(ddexPayload, releaseId)),
             withCircuitBreaker('PRODispatch', () => dispatchToPerformanceRightsOrganizations(releaseId))
         ];
 
@@ -50,8 +51,38 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
     }
 });
 
-// Stubs for external DSP dispatches
-async function dispatchToSpotify(payload: string) { return Promise.resolve('spotify_ok'); }
-async function dispatchToAppleMusic(payload: string) { return Promise.resolve('apple_ok'); }
-async function dispatchToTidal(payload: string) { return Promise.resolve('tidal_ok'); }
-async function dispatchToPerformanceRightsOrganizations(releaseId: string) { return Promise.resolve('pro_ok'); }
+// Real XML upload implementation to Firebase Storage
+async function dispatchToSpotify(payload: string, releaseId: string) {
+    const bucket = getStorage().bucket();
+    const destFile = bucket.file(`distribution/packages/${releaseId}/spotify.xml`);
+    await destFile.save(payload, {
+        contentType: 'application/xml',
+        metadata: {
+            cacheControl: 'public, max-age=31536000',
+        }
+    });
+    return 'spotify_uploaded';
+}
+
+async function dispatchToAppleMusic(payload: string, releaseId: string) {
+    const bucket = getStorage().bucket();
+    const destFile = bucket.file(`distribution/packages/${releaseId}/apple.xml`);
+    await destFile.save(payload, {
+        contentType: 'application/xml',
+    });
+    return 'apple_uploaded';
+}
+
+async function dispatchToTidal(payload: string, releaseId: string) {
+    const bucket = getStorage().bucket();
+    const destFile = bucket.file(`distribution/packages/${releaseId}/tidal.xml`);
+    await destFile.save(payload, {
+        contentType: 'application/xml',
+    });
+    return 'tidal_uploaded';
+}
+
+async function dispatchToPerformanceRightsOrganizations(releaseId: string) {
+    await dispatchPROPayload(releaseId);
+    return 'pro_dispatched';
+}

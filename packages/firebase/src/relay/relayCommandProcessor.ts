@@ -23,7 +23,7 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
 import { getGeminiApiKey } from "../config/secrets";
-import { geminiApiKey } from "../config/secrets";
+import { geminiApiKey, telegramBotToken } from "../config/secrets";
 import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { checkOperationBudget } from "../functions/billing/enforceOperationCost";
@@ -60,7 +60,7 @@ const BUDGET_LIMIT_USER_MESSAGE =
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
     .runWith({ enforceAppCheck: true, 
-        secrets: [geminiApiKey],
+        secrets: [geminiApiKey, telegramBotToken],
         timeoutSeconds: 540,
         memory: "2GB",
      })
@@ -251,8 +251,8 @@ async function sendResponse(
     agentId?: string,
     isStreaming = false
 ): Promise<void> {
-    await admin.firestore()
-        .collection("users").doc(userId)
+    const db = admin.firestore();
+    await db.collection("users").doc(userId)
         .collection("remote-relay-responses")
         .add({
             commandId,
@@ -262,6 +262,88 @@ async function sendResponse(
             isFinal: !isStreaming,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
+
+    if (!isStreaming) {
+        try {
+            // Check if this command originated from Telegram
+            const commandSnap = await db
+                .collection("users").doc(userId)
+                .collection("remote-relay-commands").doc(commandId)
+                .get();
+            const commandData = commandSnap.data();
+            if (commandData?.source === 'telegram' && commandData?.telegramChatId) {
+                console.log(`[Relay] Dispatching async Telegram response for command ${commandId}`);
+                await sendTelegramMessage(commandData.telegramChatId, text);
+            }
+        } catch (err) {
+            console.error(`[Relay] Failed to check/send async Telegram response for command ${commandId}:`, err);
+        }
+    }
+}
+
+/**
+ * Send a text message via the Telegram Bot API (asynchronously from the background runner).
+ */
+async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
+    const token = process.env.TELEGRAM_BOT_TOKEN || (() => {
+        try { return telegramBotToken.value(); } catch { return ""; }
+    })();
+    if (!token) {
+        console.error("[Telegram] Cannot send async response: Bot token not configured.");
+        return;
+    }
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+    const chunks = splitMessage(text, 4096);
+    for (const chunk of chunks) {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: chunk,
+                parse_mode: "Markdown",
+            }),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`[Telegram] Failed to send message to chat ${chatId}: ${response.status} ${errorBody}`);
+        }
+    }
+}
+
+/**
+ * Split a long message into chunks that fit Telegram's max length.
+ */
+function splitMessage(text: string, maxLength: number): string[] {
+    if (text.length <= maxLength) return [text];
+
+    const chunks: string[] = [];
+    let remaining = text;
+
+    while (remaining.length > 0) {
+        if (remaining.length <= maxLength) {
+            chunks.push(remaining);
+            break;
+        }
+
+        // Try to break at a newline
+        let breakPoint = remaining.lastIndexOf("\n", maxLength);
+        if (breakPoint < maxLength * 0.5) {
+            // No good newline break — break at space
+            breakPoint = remaining.lastIndexOf(" ", maxLength);
+        }
+        if (breakPoint < maxLength * 0.3) {
+            // No good break point — hard break
+            breakPoint = maxLength;
+        }
+
+        chunks.push(remaining.substring(0, breakPoint));
+        remaining = remaining.substring(breakPoint).trimStart();
+    }
+
+    return chunks;
 }
 
 /**
