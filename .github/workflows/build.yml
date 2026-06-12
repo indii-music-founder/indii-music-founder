@@ -111,6 +111,7 @@ jobs:
     - name: Build Electron App
       run: npm run build
       env:
+        NODE_OPTIONS: "--max-old-space-size=4096"
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
         WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
