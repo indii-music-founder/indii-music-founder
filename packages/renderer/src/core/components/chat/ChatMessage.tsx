@@ -3,7 +3,7 @@ import React, { memo, useMemo } from 'react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot } from 'lucide-react';
+import { Bot, Star } from 'lucide-react';
 import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 
@@ -106,6 +106,36 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
             onRefine={handleRefine}
             onCancel={handleCancel}
         />
+    );
+});
+
+const MessageRating = memo(({ messageId, currentRating }: { messageId: string, currentRating?: number }) => {
+    const updateAgentMessage = useStore(state => state.updateAgentMessage);
+    const [hoverRating, setHoverRating] = useState<number>(0);
+
+    const handleRate = (rating: number) => {
+        updateAgentMessage(messageId, { rating });
+    };
+
+    return (
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-white/5 opacity-40 hover:opacity-100 transition-opacity">
+            <span className="text-[9px] text-gray-500 uppercase tracking-widest mr-2">Rate Agent</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    onClick={() => handleRate(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                    aria-label={`Rate ${star} stars`}
+                >
+                    <Star
+                        size={12}
+                        className={`transition-colors ${(hoverRating || currentRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
+                    />
+                </button>
+            ))}
+        </div>
     );
 });
 
@@ -436,6 +466,11 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             </motion.div>
                         ))}
                     </div>
+                )}
+
+                {/* Agent Grading / Feedback */}
+                {msg.role === 'model' && !msg.isStreaming && (
+                    <MessageRating messageId={msg.id} currentRating={msg.rating} />
                 )}
 
                 {/* Mobile Remote Source Badge */}

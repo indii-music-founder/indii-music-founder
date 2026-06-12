@@ -19,6 +19,8 @@ export interface AgentMessage {
     metadata?: Record<string, unknown>;
     /** Optional Living Plan ID for Talk-to-Execute bridge */
     planId?: string;
+    /** User rating for the agent's response (1-5) */
+    rating?: number;
 }
 
 export interface AgentThought {
