@@ -4641,6 +4641,8 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
 - **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
+### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** Data Integrity / Legal
 - **Module:** firebase
@@ -4655,6 +4657,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-420: Walkthrough validation proof omitted packages/firebase from typecheck command
 - **Status:** ✅ CLOSED (2026-06-12 — retroactive `cd packages/firebase && npx tsc --noEmit` exit 0; no code defect)
+- **Status:** ✅ VERIFIED-RETROACTIVELY (no code defect)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
 - **Module:** firebase
@@ -4667,6 +4670,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
 - **Status:** ✅ CLOSED (2026-06-12 — full suite re-run: 659 files, 4,142 tests, 4,141 pass; sole failure is pre-existing environmental `AgentExecutor.integration.test.ts` requiring live VITE_API_KEY, confirmed failing on clean tree via git stash)
+- **Status:** OPEN (process)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
 - **Module:** repo-wide
