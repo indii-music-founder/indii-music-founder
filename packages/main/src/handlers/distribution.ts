@@ -3,6 +3,7 @@ import { ipcMain, app } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
+import * as crypto from 'crypto';
 import { DistributionStageReleaseSchema } from '../utils/validation';
 import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSafeAudioPath } from '../utils/file-security';
@@ -510,6 +511,148 @@ export const setupDistributionHandlers = () => {
 
             return { success: result.status === 'SUCCESS', report: result };
         } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:package-spotify', async (event, releaseId: string, stagingPath: string, outputPath?: string) => {
+        try {
+            validateSender(event);
+
+            // Security: Validate releaseId to prevent path traversal
+            if (!z.string().uuid().safeParse(releaseId).success) {
+                throw new Error("Security Error: Invalid releaseId format. Must be a UUID.");
+            }
+
+            // Security: Validate stagingPath and outputPath
+            if (stagingPath.includes('..') || (outputPath && outputPath.includes('..'))) {
+                throw new Error("Security Error: Path traversal detected in arguments.");
+            }
+
+            log.info(`[Distribution] Packaging Spotify release: ${releaseId} from ${stagingPath}`);
+
+            const storagePath = getStoragePath();
+            const args = [releaseId, stagingPath];
+            if (outputPath) {
+                args.push('--output', outputPath);
+            }
+            args.push('--storage-path', storagePath);
+
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'package_spotify.py', args, { timeoutMs: 120000 });
+
+            return {
+                success: report.status === 'PASS',
+                batchId: report.batch_id,
+                packagePath: report.package_path,
+                files: report.files,
+                message: report.details,
+                error: report.status === 'FAIL' ? report.error : undefined
+            };
+        } catch (error) {
+            log.error('[Distribution] Spotify packaging failed:', error);
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:deliver-apple', async (event, command: string, bundlePath: string) => {
+        try {
+            validateSender(event);
+
+            if (!['upload', 'verify', 'status'].includes(command)) {
+                throw new Error(`Invalid deliver-apple command: ${command}`);
+            }
+
+            // Security: Validate path traversal
+            if (bundlePath.includes('..')) {
+                throw new Error("Security Error: Path traversal detected in arguments.");
+            }
+
+            log.info(`[Distribution] Apple Transporter: ${command} on ${bundlePath}`);
+
+            const args: string[] = [command];
+            if (command === 'status') {
+                args.push('--vendor-id', bundlePath);
+            } else {
+                args.push(bundlePath);
+            }
+
+            const storagePath = getStoragePath();
+            args.push('--storage-path', storagePath);
+
+            // Read secure credentials dynamically from CredentialService or env
+            const env: NodeJS.ProcessEnv = {};
+            const appleCreds = await credentialService.getCredentials('apple');
+            if (appleCreds) {
+                if (appleCreds.username) env.APPLE_TRANSPORTER_USER = appleCreds.username;
+                if (appleCreds.password) env.APPLE_TRANSPORTER_PASSWORD = appleCreds.password;
+                if (appleCreds.providerId) env.APPLE_PROVIDER_ID = appleCreds.providerId;
+            }
+
+            // Also fallback to existing env keys if present in process.env
+            if (!env.APPLE_TRANSPORTER_USER && process.env.APPLE_TRANSPORTER_USER) {
+                env.APPLE_TRANSPORTER_USER = process.env.APPLE_TRANSPORTER_USER;
+            }
+            if (!env.APPLE_TRANSPORTER_PASSWORD && process.env.APPLE_TRANSPORTER_PASSWORD) {
+                env.APPLE_TRANSPORTER_PASSWORD = process.env.APPLE_TRANSPORTER_PASSWORD;
+            }
+            if (!env.APPLE_PROVIDER_ID && process.env.APPLE_PROVIDER_ID) {
+                env.APPLE_PROVIDER_ID = process.env.APPLE_PROVIDER_ID;
+            }
+
+            const report = await AgentSupervisor.execute<Record<string, unknown>>(
+                'distribution',
+                'deliver_apple.py',
+                args,
+                { timeoutMs: 300000 },
+                undefined,
+                env
+            );
+
+            return {
+                success: report.status === 'SUCCESS',
+                exitCode: report.exit_code,
+                output: report.output,
+                message: report.error || report.summary || 'Apple delivery execution completed.',
+                error: report.status === 'FAIL' ? report.error : undefined
+            };
+        } catch (error) {
+            log.error('[Distribution] Apple Transporter failed:', error);
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:validate-xsd', async (event, xmlContent: string) => {
+        try {
+            validateSender(event);
+
+            log.info('[Distribution] Validating Proprietary Ingestion IP XML against XSD');
+
+            // Write to a temporary file for safety and robustness
+            const tempFile = path.join(os.tmpdir(), `xsd-validation-${crypto.randomUUID()}.xml`);
+            await fs.writeFile(tempFile, xmlContent, 'utf-8');
+
+            const storagePath = getStoragePath();
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'xsd_validator.py', [
+                tempFile,
+                '--storage-path',
+                storagePath
+            ], { timeoutMs: 30000 });
+
+            // Clean up temp file
+            try {
+                await fs.unlink(tempFile);
+            } catch (_e) {
+                // ignore
+            }
+
+            return {
+                success: report.valid,
+                errors: report.errors,
+                warnings: report.warnings,
+                message: report.summary
+            };
+        } catch (error) {
+            log.error('[Distribution] XSD validation failed:', error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });

@@ -71,8 +71,7 @@ export {
 } from './functions/api/router';
 
 // Stripe Connect Functions
-export { createStripeAccount, createTransfer } from './stripe/connect';
-export { createStripeConnectAccount } from './stripe/createStripeConnectAccount';
+export { createStripeAccount, createStripeConnectAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
 export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';

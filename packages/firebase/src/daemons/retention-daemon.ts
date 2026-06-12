@@ -8,7 +8,7 @@ const db = getFirestore();
  * Executes every 72 hours.
  * Verifies external placements. Flags as BLACKLISTED if removed before 90 days.
  */
-export const retentionDaemon = onSchedule("every 72 hours", async (event) => {
+export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
     console.log("Starting 90-Day Retention Daemon check...");
     
     const placementsRef = db.collection('placements');
@@ -26,25 +26,50 @@ export const retentionDaemon = onSchedule("every 72 hours", async (event) => {
 
     for (const doc of snapshot.docs) {
         const placement = doc.data();
+        let isDefinitivelyRemoved = false;
+        let isTransientError = false;
+        let statusCode = 0;
         
         try {
-            // Programmatic HTTP GET query to audit external placement
-            // Node fetch is available in Node 18+
-            const response = await fetch(placement.url, { method: 'GET' });
+            // Programmatic HTTP GET query to audit external placement with a timeout
+            const response = await fetch(placement.url, { method: 'GET', signal: AbortSignal.timeout(10000) });
+            statusCode = response.status;
             
-            if (!response.ok || response.status === 404) {
-                console.log(`Placement ${doc.id} removed prematurely. Blacklisting vendor.`);
-                
-                // Blacklist the vendor network
-                const vendorRef = db.collection('vendors').doc(placement.vendorId);
-                batch.update(vendorRef, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
-                
-                // Update placement status
-                batch.update(doc.ref, { status: 'VIOLATION_REMOVED' });
-                updates++;
+            if (response.status === 404) {
+                isDefinitivelyRemoved = true;
+            } else if (!response.ok) {
+                isTransientError = true;
             }
         } catch (error) {
             console.error(`Failed to verify placement ${doc.id}:`, error);
+            isTransientError = true;
+        }
+
+        if (isDefinitivelyRemoved) {
+            console.log(`Placement ${doc.id} removed prematurely (404). Blacklisting vendor.`);
+            const vendorRef = db.collection('vendors').doc(placement.vendorId);
+            batch.update(vendorRef, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
+            batch.update(doc.ref, { status: 'VIOLATION_REMOVED', failureCount: 0 });
+            updates++;
+        } else if (isTransientError) {
+            const currentFailures = (placement.failureCount ?? 0) + 1;
+            console.warn(`Placement ${doc.id} failed verification (status: ${statusCode}). Failure count: ${currentFailures}`);
+            if (currentFailures >= 3) {
+                console.log(`Placement ${doc.id} reached maximum failure threshold. Blacklisting vendor.`);
+                const vendorRef = db.collection('vendors').doc(placement.vendorId);
+                batch.update(vendorRef, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
+                batch.update(doc.ref, { status: 'VIOLATION_REMOVED', failureCount: currentFailures });
+                updates++;
+            } else {
+                batch.update(doc.ref, { failureCount: currentFailures });
+                updates++;
+            }
+        } else {
+            // Placement is active and healthy - reset failure count if previously set
+            if (placement.failureCount && placement.failureCount > 0) {
+                batch.update(doc.ref, { failureCount: 0 });
+                updates++;
+            }
         }
     }
 
