@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-11 22:43 EDT
+**Updated:** 2026-06-12 07:18 EDT
 **Branch:** `feat/agent-elevation-stage-0`
 
 ## Recent Commits
 ```
+6702629f6 docs(issues): re-home stranded ISSUE-419..421 from sweep branch
+57aa6819a chore: session checkpoint [22:43]
 1263c4b02 docs(issues): log ISSUE-422..426 for remaining elevation stages
 740f31eca chore: session checkpoint [22:04]
 c652758d7 feat(agents): close stage-0/1 gaps in agent elevation program
@@ -12,8 +14,6 @@ e51c68a8a chore: session checkpoint [21:22]
 73c6f0094 refactor(better): add defensive validation and robust error handling to firebase functions
 da35cbf7d docs: update open issues ledger and task tracking sheet for fixed items
 ae50c3360 fix(firebase): resolve remaining open architectural, duplicate onboarding, and webhook integration issues
-e2accb7e0 docs(issues): update OPEN_ISSUES ledger after fixing high-severity IPC handlers
-e94f12aa4 fix(main): implement missing IPC handlers for Spotify, Apple delivery, XSD validation, and capture-state
 ```
 
 ## Working State
