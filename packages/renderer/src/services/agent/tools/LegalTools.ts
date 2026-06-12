@@ -240,7 +240,7 @@ Signature: ____________________________
 
             const verifyFn = httpsCallable<
                 { trackTitle: string; originalArtist: string },
-                { status: string; songCode: string; publisher: string; rate: number; requiresClearance: boolean }
+                { status: string; songCode: string | null; publisher: string | null; rate: number; requiresClearance: boolean; guidance?: string; rateContext?: string }
             >(functions, 'verifyMechanicalLicense');
 
             const result = await verifyFn({
@@ -278,7 +278,7 @@ Signature: ____________________________
                 statutoryRate: result.data.rate,
                 requiresClearance: result.data.requiresClearance,
                 link: 'https://www.songfile.com/',
-            }, `Mechanical license verification for "${args.trackTitle}": Status=${result.data.status}, Publisher=${result.data.publisher}. ${result.data.requiresClearance ? 'Clearance required before delivery.' : 'License verified — cleared for delivery.'}`);
+            }, `Mechanical license check for "${args.trackTitle}": Status=${result.data.status}${result.data.publisher ? `, Publisher=${result.data.publisher}` : ''}. ${result.data.requiresClearance ? `Clearance required before delivery. ${result.data.guidance ?? 'Use SongFile (downloads/physical) and The MLC (streaming) to obtain a mechanical license.'}` : 'License verified — cleared for delivery.'}`);
         } catch (error: unknown) {
             logger.warn('[LegalTools] verifyMechanicalLicense Cloud Function unavailable:', error);
 
