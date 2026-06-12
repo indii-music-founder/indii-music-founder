@@ -4639,7 +4639,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Data Integrity / Legal
 - **Module:** firebase
@@ -4647,11 +4647,13 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/legal/mechanicalLicense.ts:31-67`
 - **Summary:** The function returns `status: "VERIFIED"` and `requiresClearance: false` for ANY input. It hashes trackTitle+originalArtist to pseudo-randomly select a real publisher (UMPG, Warner Chappell, Sony, BMG, Kobalt) and invents an HFA song code (`HFA-<hash>`), then persists this fabricated result to Firestore `mechanical_license_verifications` as an "audit trail". This violates the hard NO-MOCK-DATA rule and creates legal exposure: an artist could be told their cover is cleared at the statutory rate, attributed to a real publisher, with zero factual basis. The walkthrough described this as "simulate rate checks" — it is fabricated data persisted as fact.
 - **Fix Direction:** Either (a) integrate a real mechanical licensing lookup (HFA/MLC API) before returning VERIFIED, or (b) return an honest `status: "UNVERIFIED — manual clearance required"` response with no fabricated publisher/songCode, and do not persist fabricated audit rows. Honest empty/unknown state over fake data, per project covenant.
+- **Fix:** Option (b) implemented. Function now always returns `UNVERIFIED` + `requiresClearance: true` with null publisher/songCode, accurate statutory-rate context (CRB Phonorecords IV, physical/downloads only), and real clearance guidance (SongFile + The MLC links). Honest audit rows persisted. Renderer `LegalTools.verify_mechanical_license` success-path types/message aligned. Honesty contract documented in the function docstring — VERIFIED may only ever come from a real licensing API response.
+- **Files:** `packages/firebase/src/legal/mechanicalLicense.ts`, `packages/renderer/src/services/agent/tools/LegalTools.ts`
 
 ---
 
 ### ISSUE-420: Walkthrough validation proof omitted packages/firebase from typecheck command
-- **Status:** ✅ VERIFIED-RETROACTIVELY (no code defect)
+- **Status:** ✅ CLOSED (2026-06-12 — retroactive `cd packages/firebase && npx tsc --noEmit` exit 0; no code defect)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
 - **Module:** firebase
@@ -4663,7 +4665,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
-- **Status:** OPEN (process)
+- **Status:** ✅ CLOSED (2026-06-12 — full suite re-run: 659 files, 4,142 tests, 4,141 pass; sole failure is pre-existing environmental `AgentExecutor.integration.test.ts` requiring live VITE_API_KEY, confirmed failing on clean tree via git stash)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
 - **Module:** repo-wide
