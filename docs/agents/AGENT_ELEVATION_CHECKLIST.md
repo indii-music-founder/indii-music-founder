@@ -98,13 +98,13 @@
 | distribution | ✅ | — | — | n/a wired | |
 | finance | ✅ | — | — | n/a wired | |
 | foundational | n/a | n/a | — | n/a | Shared skill library (audit_skill, memory_skill), not an agent |
-| generalist | — | — | — | borrows conductor prompt | Needs own prompt (5 lines today) |
+| generalist | ✅ alias | ✅ pointer | n/a | by design | IS the conductor (see AGENTS.md charter); folder files now self-describing |
 | indii_curriculum | ✅ | — | — | specialist | |
-| indii_executor | — | — | — | — | riskTier `destructive` — review carefully |
+| indii_executor | ✅ | ✅ | — | unwired (by design) | Governance contract complete: harness blockedActions + user_required approval; not dispatched anywhere yet |
 | legal | ✅ | — | — | n/a wired | |
 | licensing | ✅ | — | — | n/a wired | |
 | marketing | ✅ | — | — | n/a wired | |
-| merchandise | ✅ | — | — | — | Card elevated; TS definition TBD |
+| merchandise | ✅ | — | — | ✅ wired | MerchandiseAgent.ts at services root (not definitions/) — fully wired |
 | music | ✅ | — | — | n/a wired | |
 | publicist | ✅ | — | — | n/a wired | |
 | publishing | ✅ | — | — | n/a wired | |
