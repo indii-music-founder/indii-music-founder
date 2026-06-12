@@ -6,6 +6,7 @@ import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalTools } from "../tools/LegalTools";
+import { UniversalTools } from "../tools/UniversalTools";
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
     name: 'Licensing Director',
@@ -14,6 +15,10 @@ export const LicensingAgent: AgentConfig = {
     category: 'department',
     systemPrompt,
     functions: {
+        browser_tool: UniversalTools.browser_tool,
+        document_query: UniversalTools.document_query,
+        payment_gate: UniversalTools.payment_gate,
+
         check_availability: async (args: { title: string, artist: string, usage: string, url?: string }) => {
             let analysis = null;
             let status: 'available' | 'restricted' | 'pending' = 'pending';

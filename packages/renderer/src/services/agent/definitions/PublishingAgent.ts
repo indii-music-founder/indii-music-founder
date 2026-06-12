@@ -4,6 +4,8 @@ import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { Schema } from 'firebase/ai';
+import { PublishingTools } from '../tools/PublishingTools';
+import { UniversalTools } from '../tools/UniversalTools';
 
 export const PublishingAgent: AgentConfig = {
     id: 'publishing',
@@ -49,7 +51,10 @@ export const PublishingAgent: AgentConfig = {
             const prompt = `Prepare release delivery metadata readiness for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}. Return missing delivery fields and review blockers. Do not claim external DSP delivery.`;
             const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { status: "ReadyForReview", externalDelivery: false, ...response } };
-        }
+        },
+        check_pro_catalog: PublishingTools.check_pro_catalog,
+        pro_scraper: UniversalTools.pro_scraper,
+        payment_gate: UniversalTools.payment_gate,
     },
     authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate'],
     tools: [{
