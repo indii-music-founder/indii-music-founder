@@ -4641,8 +4641,6 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
 - **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
-### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
-- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** Data Integrity / Legal
 - **Module:** firebase
@@ -4652,6 +4650,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Either (a) integrate a real mechanical licensing lookup (HFA/MLC API) before returning VERIFIED, or (b) return an honest `status: "UNVERIFIED — manual clearance required"` response with no fabricated publisher/songCode, and do not persist fabricated audit rows. Honest empty/unknown state over fake data, per project covenant.
 - **Fix:** Option (b) implemented. Function now always returns `UNVERIFIED` + `requiresClearance: true` with null publisher/songCode, accurate statutory-rate context (CRB Phonorecords IV, physical/downloads only), and real clearance guidance (SongFile + The MLC links). Honest audit rows persisted. Renderer `LegalTools.verify_mechanical_license` success-path types/message aligned. Honesty contract documented in the function docstring — VERIFIED may only ever come from a real licensing API response.
 - **Files:** `packages/firebase/src/legal/mechanicalLicense.ts`, `packages/renderer/src/services/agent/tools/LegalTools.ts`
+
 
 ---
 

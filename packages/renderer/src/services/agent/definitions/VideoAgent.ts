@@ -1,5 +1,6 @@
 import { AgentConfig } from "../types";
 import { VideoTools } from '../tools/VideoTools';
+import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/video/prompt.md?raw';
 
 export const VideoAgent: AgentConfig = {
@@ -14,8 +15,11 @@ export const VideoAgent: AgentConfig = {
             generate_video: VideoTools.generate_video,
             batch_edit_videos: VideoTools.batch_edit_videos,
             extend_video: VideoTools.extend_video,
-            update_keyframe: VideoTools.update_keyframe
-        };
+            update_keyframe: VideoTools.update_keyframe,
+            browser_tool: UniversalTools.browser_tool,
+            indii_image_gen: UniversalTools.indii_image_gen,
+            orchestrate_timeline: VideoTools.orchestrate_timeline
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline'],
     tools: [{

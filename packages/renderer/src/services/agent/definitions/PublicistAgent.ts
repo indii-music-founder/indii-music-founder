@@ -5,6 +5,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publicist/prompt.md?raw';
+import { UniversalTools } from '../tools/UniversalTools';
 
 export const PublicistAgent = createAgent('publicist')
     .withName('Publicist Director')
@@ -241,15 +242,7 @@ export const PublicistAgent = createAgent('publicist')
                 required: ["action"]
             }
         }]
-    }, async (args: { action: string, url?: string, selector?: string, text?: string }) => {
-        return {
-            success: true,
-            data: {
-                message: "Browser action dispatched to Ghost Hands.",
-                payload: args
-            }
-        };
-    })
+    }, UniversalTools.browser_tool)
     .withTool({
         functionDeclarations: [{
             name: "credential_vault",
@@ -263,15 +256,7 @@ export const PublicistAgent = createAgent('publicist')
                 required: ["action", "service"]
             }
         }]
-    }, async (args: { action: string, service: string }) => {
-        return {
-            success: true,
-            data: {
-                message: "Vault access requested.",
-                payload: args
-            }
-        };
-    })
+    }, UniversalTools.credential_vault)
     .withTool({
         functionDeclarations: [{
             name: "generate_pdf",
@@ -361,15 +346,51 @@ export const PublicistAgent = createAgent('publicist')
             }
         }]
     }, async (args: { artistName: string, shortBio: string, pressShotUrls: string[], featuredTracks?: string[], contactEmail: string }) => {
-        // Mocking the deployment of a Live EPK to the database routing table
-        return {
-            success: true,
-            data: {
-                message: `Live EPK generated for ${args.artistName}.`,
-                epkUrl: `https://indii.os/${args.artistName.toLowerCase().replace(/\s+/g, '-')}/epk`,
-                status: 'Published'
-            }
-        };
+        try {
+            const { useStore } = await import('@/core/store');
+            const { epkGeneratorService } = await import('../../marketing/EPKGeneratorService');
+            
+            // Perform real store update
+            const store = useStore.getState();
+            store.setUserProfile({
+                ...store.userProfile,
+                displayName: args.artistName,
+                bio: args.shortBio,
+                email: args.contactEmail,
+                brandKit: {
+                    colors: store.userProfile.brandKit?.colors || ['#000000', '#ffffff'],
+                    fonts: store.userProfile.brandKit?.fonts || 'Inter',
+                    brandDescription: store.userProfile.brandKit?.brandDescription || '',
+                    negativePrompt: store.userProfile.brandKit?.negativePrompt || '',
+                    socials: store.userProfile.brandKit?.socials || {},
+                    brandAssets: args.pressShotUrls.map(url => ({ url, description: 'Press shot uploaded via Publicist EPK generator' })),
+                    referenceImages: store.userProfile.brandKit?.referenceImages || [],
+                    releaseDetails: store.userProfile.brandKit?.releaseDetails || {
+                        title: '',
+                        type: 'Single',
+                        artists: args.artistName,
+                        genre: '',
+                        mood: '',
+                        themes: '',
+                        lyrics: ''
+                    }
+                }
+            });
+
+            const epkUrl = epkGeneratorService.getPublicEPKUrl(args.artistName);
+
+            return {
+                success: true,
+                data: {
+                    message: `Live EPK generated for ${args.artistName} and updated in user profile.`,
+                    epkUrl: epkUrl,
+                    status: 'Published'
+                }
+            };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: `Failed to generate EPK: ${message}` };
+        }
     })
     .withTool({
         functionDeclarations: [{
