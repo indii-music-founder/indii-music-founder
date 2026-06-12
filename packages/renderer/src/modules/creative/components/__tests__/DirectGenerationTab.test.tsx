@@ -276,7 +276,7 @@ describe('DirectGenerationTab', () => {
 
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith(
-                'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.'
+                'Google AI Studio API quota exhausted. Please add credits to your account.'
             );
         });
     });
