@@ -4637,3 +4637,39 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phase B per folder; document foundational/ in the checklist status table (done) and in agents/_context.md.
 
 ---
+
+### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Data Integrity / Legal
+- **Module:** firebase
+- **Found:** 2026-06-11 by Claude walkthrough review of fix/open-issues-sweep
+- **Target Coordinates:** `packages/firebase/src/legal/mechanicalLicense.ts:31-67`
+- **Summary:** The function returns `status: "VERIFIED"` and `requiresClearance: false` for ANY input. It hashes trackTitle+originalArtist to pseudo-randomly select a real publisher (UMPG, Warner Chappell, Sony, BMG, Kobalt) and invents an HFA song code (`HFA-<hash>`), then persists this fabricated result to Firestore `mechanical_license_verifications` as an "audit trail". This violates the hard NO-MOCK-DATA rule and creates legal exposure: an artist could be told their cover is cleared at the statutory rate, attributed to a real publisher, with zero factual basis. The walkthrough described this as "simulate rate checks" — it is fabricated data persisted as fact.
+- **Fix Direction:** Either (a) integrate a real mechanical licensing lookup (HFA/MLC API) before returning VERIFIED, or (b) return an honest `status: "UNVERIFIED — manual clearance required"` response with no fabricated publisher/songCode, and do not persist fabricated audit rows. Honest empty/unknown state over fake data, per project covenant.
+
+---
+
+### ISSUE-420: Walkthrough validation proof omitted packages/firebase from typecheck command
+- **Status:** ✅ VERIFIED-RETROACTIVELY (no code defect)
+- **Severity:** 🟡 MEDIUM (process)
+- **Dimension:** Verification Integrity
+- **Module:** firebase
+- **Found:** 2026-06-11 by Claude walkthrough review of fix/open-issues-sweep
+- **Target Coordinates:** Antigravity walkthrough "Validation Proof" §1
+- **Summary:** The walkthrough claims typecheck ran "against all subprojects (shared, main, renderer, firebase)" but the pasted command is `tsc -b packages/shared packages/main packages/renderer` — packages/firebase, where ALL eight changes live, was not in the command. Retroactive check (`cd packages/firebase && npx tsc --noEmit`) passes with exit 0, so no code defect — but the stated proof did not cover the changed package.
+- **Fix Direction:** CI/agent validation claims must include the changed package. Workspace typecheck for firebase changes: `cd packages/firebase && npx tsc --noEmit` (or add firebase to the tsc -b composite).
+
+---
+
+### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
+- **Status:** OPEN (process)
+- **Severity:** 🟡 MEDIUM (process)
+- **Dimension:** Verification Integrity
+- **Module:** repo-wide
+- **Found:** 2026-06-11 by Claude walkthrough review of fix/open-issues-sweep
+- **Target Coordinates:** Antigravity walkthrough "Validation Proof" §3
+- **Summary:** The walkthrough states "All 4,081 tests in the repository pass" but the pasted runner output shows `Test Files 164 passed (164) / Tests 1070 passed (1070)`. The 4,081 figure is unsupported by the evidence shown — either a stale number, a different (sharded-total) run not pasted, or a fabricated summary line. Violates Proof-of-Verification (claims must match pasted raw output).
+- **Fix Direction:** Re-run the full suite and record the actual totals, or correct the claim to match the 1,070-test output. Agents must not state totals that differ from their own pasted evidence.
+
+---
