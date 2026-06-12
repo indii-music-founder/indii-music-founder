@@ -309,22 +309,26 @@ async function handleMessage(chatId: number, text: string, username: string): Pr
  * Send a text message via the Telegram Bot API.
  */
 async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
-    const token = getTelegramToken();
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    try {
+        const token = getTelegramToken();
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
-    const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text,
-            parse_mode: "Markdown",
-        }),
-    });
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text,
+                parse_mode: "Markdown",
+            }),
+        });
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`[Telegram] Failed to send message to chat ${chatId}: ${response.status} ${errorBody}`);
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`[Telegram] Failed to send message to chat ${chatId}: ${response.status} ${errorBody}`);
+        }
+    } catch (err) {
+        console.error(`[Telegram] Error sending message to chat ${chatId}:`, err);
     }
 }
 

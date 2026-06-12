@@ -26,8 +26,17 @@ export const requestTaxForms = defineCallable<{ payees?: Payee[] }, any>(
             );
         }
 
-        const requests = payees.map((payee) => {
-            const formTypeRequested = payee.isUsPerson ? "W-9" : "W-8BEN";
+        const requests = payees.map((payee, index) => {
+            if (!payee || typeof payee !== 'object') {
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must be an object.`);
+            }
+            if (!payee.email || typeof payee.email !== 'string' || payee.email.trim().length === 0) {
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'email' string.`);
+            }
+            if (!payee.name || typeof payee.name !== 'string' || payee.name.trim().length === 0) {
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'name' string.`);
+            }
+            const formTypeRequested = payee.isUsPerson === true ? "W-9" : "W-8BEN";
             return {
                 name: payee.name,
                 email: payee.email,

@@ -13,6 +13,9 @@ export const createStripeAccount = defineCallable<{ artistId: string }, any>(
         }
 
         const { artistId } = request.data;
+        if (!artistId || typeof artistId !== 'string' || artistId.trim().length === 0) {
+            throw new HttpsError('invalid-argument', "Missing or invalid 'artistId'.");
+        }
         if (request.auth.uid !== artistId) {
             throw new HttpsError('permission-denied', 'Cannot create Stripe account for another artist.');
         }
@@ -63,10 +66,16 @@ export const createStripeConnectAccount = defineCallable<{ email: string; busine
 
         const { email, businessType } = request.data;
 
-        if (!email) {
+        if (!email || typeof email !== 'string' || email.trim().length === 0) {
             throw new HttpsError(
                 'invalid-argument',
-                "Missing 'email'."
+                "Missing or invalid 'email' parameter."
+            );
+        }
+        if (businessType !== undefined && typeof businessType !== 'string') {
+            throw new HttpsError(
+                'invalid-argument',
+                "Parameter 'businessType' must be a string if provided."
             );
         }
 
@@ -122,6 +131,16 @@ export const createTransfer = defineCallable<{ amount: number; destinationId: st
         }
 
         const { amount, destinationId, currency = 'usd' } = request.data;
+
+        if (amount === undefined || typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
+            throw new HttpsError('invalid-argument', "Parameter 'amount' must be a positive integer representing cents.");
+        }
+        if (!destinationId || typeof destinationId !== 'string' || destinationId.trim().length === 0) {
+            throw new HttpsError('invalid-argument', "Missing or invalid 'destinationId' parameter.");
+        }
+        if (typeof currency !== 'string') {
+            throw new HttpsError('invalid-argument', "Parameter 'currency' must be a string.");
+        }
 
         try {
             const transfer = await stripe.transfers.create({

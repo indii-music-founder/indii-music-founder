@@ -16,9 +16,13 @@ export const processAudioIngestion = onCall({
         throw new HttpsError('unauthenticated', 'User must be authenticated to ingest audio.');
     }
 
+    if (!request.data) {
+        throw new HttpsError('invalid-argument', 'Missing payload data.');
+    }
     const { filePath, masterAssetId } = request.data;
-    if (!filePath || !masterAssetId) {
-        throw new HttpsError('invalid-argument', 'Missing filePath or masterAssetId.');
+    if (!filePath || typeof filePath !== 'string' || filePath.trim().length === 0 ||
+        !masterAssetId || typeof masterAssetId !== 'string' || masterAssetId.trim().length === 0) {
+        throw new HttpsError('invalid-argument', 'Missing or invalid filePath or masterAssetId.');
     }
 
     // 1. Verify file exists in Cloud Storage and is accessible

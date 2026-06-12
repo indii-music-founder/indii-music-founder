@@ -18,10 +18,11 @@ export const verifyMechanicalLicense = defineCallable<MechanicalLicenseRequest, 
 
         const { trackTitle, originalArtist } = request.data;
 
-        if (!trackTitle || !originalArtist) {
+        if (!trackTitle || typeof trackTitle !== 'string' || trackTitle.trim().length === 0 ||
+            !originalArtist || typeof originalArtist !== 'string' || originalArtist.trim().length === 0) {
             throw new HttpsError(
                 'invalid-argument',
-                "Missing 'trackTitle' or 'originalArtist'."
+                "Missing or invalid 'trackTitle' or 'originalArtist'."
             );
         }
 
