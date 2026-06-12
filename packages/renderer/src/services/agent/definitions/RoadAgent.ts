@@ -2,8 +2,11 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 import systemPrompt from '@agents/road/prompt.md?raw';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
+import { RoadTools } from '../tools/RoadTools';
+import { ProjectTools } from '../tools/ProjectTools';
+import { KnowledgeTools } from '../tools/KnowledgeTools';
+import { SocialTools } from '../tools/SocialTools';
+import { UniversalTools } from '../tools/UniversalTools';
 
 export const RoadAgent: AgentConfig = {
     id: 'road',
@@ -12,58 +15,21 @@ export const RoadAgent: AgentConfig = {
     color: 'bg-slate-500',
     category: 'department',
     systemPrompt: systemPrompt,
-    functions: {
-        plan_tour_route: async (args: { start_location: string, end_location: string, stops: string[] }) => {
-            const prompt = `Plan a music tour route.
-    Start: ${args.start_location}
-End: ${args.end_location}
-Stops: ${args.stops.join(', ')}
-
-Provide:
-1. Optimized Route Order
-2. Estimated Drive Times
-3. Recommended Rest Stops`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt);
-                return { success: true, data: { route_plan: response } };
-            } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : String(error);
-                return { success: false, error: message };
-            }
-        },
-        calculate_tour_budget: async (args: { duration_days: number, crew_size: number }) => {
-            const prompt = `Calculate a detailed tour budget. Duration: ${args.duration_days} days, Crew: ${args.crew_size}. Return a JSON with total_estimated_budget and breakdown (accommodation, travel, per_diem, contingency).`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
-                return { success: true, data: response };
-            } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : String(error);
-                return { success: false, error: message };
-            }
-        },
-        search_places: async (args: { query: string }) => {
-            void args;
-            return { success: false, error: 'Place search requires a connected maps/venue provider. No venue results were generated.' };
-        },
-        get_distance_matrix: async () => {
-            return { success: false, error: 'Distance matrix requires a connected maps provider. No route matrix was generated.' };
-        },
-        generate_itinerary: async (args: { tour_name: string, start_date: string, end_date: string, cities: string[] }) => {
-            const prompt = `Generate a detailed day-by-day tour itinerary for "${args.tour_name}".
-            Start Date: ${args.start_date}
-            End Date: ${args.end_date}
-            Cities: ${args.cities.join(', ')}
-            
-            Include travel days, load-in times, soundchecks, show times, and load-out times. Return as structured JSON.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema);
-                return { success: true, data: response };
-            } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : String(error);
-                return { success: false, error: message };
-            }
-        }
+    get functions() {
+        return {
+            plan_tour_route: RoadTools.plan_tour_route,
+            calculate_tour_budget: RoadTools.calculate_tour_budget,
+            create_project: ProjectTools.create_project,
+            search_knowledge: KnowledgeTools.search_knowledge,
+            search_places: RoadTools.search_places,
+            get_place_details: RoadTools.get_place_details,
+            get_distance_matrix: RoadTools.get_distance_matrix,
+            generate_social_post: SocialTools.generate_social_post,
+            browser_tool: UniversalTools.browser_tool,
+            credential_vault: UniversalTools.credential_vault,
+            generate_visa_checklist: RoadTools.generate_visa_checklist,
+            generate_itinerary: RoadTools.generate_itinerary,
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['plan_tour_route', 'calculate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'generate_itinerary'],
     tools: [{

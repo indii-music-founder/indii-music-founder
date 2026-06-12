@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { AutonomousTools } from '../tools/AutonomousTools';
+import { MarketingTools } from '../tools/MarketingTools';
+import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 
 export const MarketingAgent: AgentConfig = {
@@ -11,84 +11,24 @@ export const MarketingAgent: AgentConfig = {
     color: 'bg-orange-500',
     category: 'department',
     systemPrompt: systemPrompt,
-    functions: {
-        create_campaign_brief: async (args: { product: string, goal: string }) => {
-            const prompt = `Create a detailed Campaign Marketing Brief.
-    Product: ${args.product}
-Goal: ${args.goal}
-
-Include:
-- Target Audience Segments
-- Key Messaging / Positioning
-- Channel Strategy (Social, Email, PR)
-- Estimated Budget Allocation (Percent)
-- Success Metrics (KPIs)`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { brief: response } };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        analyze_audience: async (args: { platform: string }) => {
-            const prompt = `Analyze the current audience trends and demographics for the music industry on ${args.platform}.
-
-Provide:
-- Age / Gender breakdown (General approximations)
-- Content preferences
-- Engagement patterns
-- Best times to post`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { analysis: response } };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
-            void args;
-            return {
-                success: false,
-                error: 'Content scheduling requires a connected social scheduling backend. No posts were scheduled.'
-            };
-        },
-        track_performance: async (args: { campaignId: string }) => {
-            void args;
-            return { success: false, error: 'Campaign performance requires connected analytics data. No report was generated.' };
-        },
-        generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
-            const { useStore } = await import('@/core/store');
-            const { uploadedAudio } = useStore.getState();
-            const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
-
-            if (!audioItem) {
-                return { success: false, error: "No audio found. Please upload audio first." };
-            }
-
-            try {
-                const fetchRes = await fetch(audioItem.url);
-                const blob = await fetchRes.blob();
-                const file = new File([blob], "audio_track.mp3", { type: blob.type });
-
-                const profile = await audioIntelligence.analyze(file);
-                const { mood, genre, marketingHooks } = profile.semantic;
-
-                return {
-                    success: true,
-                    data: {
-                        insight: `Analyzed track.Genre: ${genre.join(', ')}.Mood: ${mood.join(', ')}.`,
-                        suggested_one_liner: marketingHooks.oneLiner,
-                        keywords: marketingHooks.keywords,
-                        technical: profile.technical
-                    }
-                };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        create_artifact_drop: AutonomousTools.create_artifact_drop!
+    get functions() {
+        return {
+            create_campaign_brief: MarketingTools.create_campaign_brief,
+            analyze_audience: MarketingTools.analyze_audience,
+            schedule_content: MarketingTools.schedule_content,
+            track_performance: MarketingTools.track_performance,
+            generate_campaign_from_audio: MarketingTools.generate_campaign_from_audio,
+            browser_tool: UniversalTools.browser_tool,
+            indii_image_gen: UniversalTools.indii_image_gen,
+            create_artifact_drop: AutonomousTools.create_artifact_drop,
+            generate_ab_campaign: MarketingTools.generate_ab_campaign,
+            deploy_micro_ad_campaign: MarketingTools.deploy_micro_ad_campaign,
+            deploy_email_newsletter: MarketingTools.deploy_email_newsletter,
+            generate_presave_campaign: MarketingTools.generate_presave_campaign,
+            deploy_sms_blast: MarketingTools.deploy_sms_blast,
+            enrich_fan_data: MarketingTools.enrich_fan_data,
+            generate_influencer_bounty: MarketingTools.generate_influencer_bounty,
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty'],
     tools: [{
