@@ -179,7 +179,6 @@ export interface ElectronSchedulerAPI {
 }
 
 export interface ElectronSidecarAPI {
-    restart: () => Promise<unknown>;
     onStatusUpdate: (callback: (status: string) => void) => () => void;
 }
 
