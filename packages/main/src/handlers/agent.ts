@@ -120,6 +120,18 @@ export function registerAgentHandlers() {
         }
     });
 
+    ipcMain.handle('agent:capture-state', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            const { browserAgentService } = await import('../services/BrowserAgentService');
+            const snapshot = await browserAgentService.captureSnapshot();
+            return { success: true, ...snapshot };
+        } catch (error) {
+            log.error('Agent Capture State Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: any) => {
         try {
