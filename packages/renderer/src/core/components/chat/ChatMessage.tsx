@@ -131,10 +131,6 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
         } else {
             updateAgentMessage(messageId, { rating });
         }
-    const [hoverRating, setHoverRating] = useState<number>(0);
-
-    const handleRate = (rating: number) => {
-        updateAgentMessage(messageId, { rating });
     };
 
     return (
@@ -152,7 +148,6 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
                     <Star
                         size={12}
                         className={`transition-colors ${(hoverRating || optimisticRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
-                        className={`transition-colors ${(hoverRating || currentRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
                     />
                 </button>
             ))}
