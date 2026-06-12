@@ -4523,46 +4523,54 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-414: Missing distribution:package-spotify IPC handler
-- **Status:** OPEN
+- **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
 - **Module:** main
 - **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
 - **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
 - **Summary:** Preload script and renderer reference `distribution:package-spotify` IPC, but the backend main-process handler does not exist.
+- **Fix:** Implemented the `distribution:package-spotify` IPC handler to invoke `package_spotify.py` via `AgentSupervisor.execute`.
+- **Files:** `packages/main/src/handlers/distribution.ts`
 
 ---
 
 ### ISSUE-415: Missing distribution:deliver-apple IPC handler
-- **Status:** OPEN
+- **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
 - **Module:** main
 - **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
 - **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
 - **Summary:** Preload script and renderer reference `distribution:deliver-apple` IPC, but the backend main-process handler does not exist.
+- **Fix:** Implemented the `distribution:deliver-apple` IPC handler to dynamically read Apple credentials and invoke `deliver_apple.py` via `AgentSupervisor.execute`.
+- **Files:** `packages/main/src/handlers/distribution.ts`
 
 ---
 
 ### ISSUE-416: Missing distribution:validate-xsd IPC handler
-- **Status:** OPEN
+- **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
 - **Module:** main
 - **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
 - **Target Coordinates:** `packages/main/src/handlers/distribution.ts`
 - **Summary:** Preload script and renderer reference `distribution:validate-xsd` IPC, but the backend main-process handler does not exist.
+- **Fix:** Implemented the `distribution:validate-xsd` IPC handler to save XML to a temporary file and run `xsd_validator.py`.
+- **Files:** `packages/main/src/handlers/distribution.ts`
 
 ---
 
 ### ISSUE-417: Missing agent:capture-state IPC handler
-- **Status:** OPEN
+- **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
 - **Module:** main
 - **Found:** 2026-06-11 by /finish Sweep (Main & Shared Code Finisher)
 - **Target Coordinates:** `packages/main/src/handlers/agent.ts`
 - **Summary:** Preload script and renderer reference `agent:capture-state` IPC, but the main-process handler is missing. Should call `browserAgentService.captureSnapshot()`.
+- **Fix:** Implemented the `agent:capture-state` IPC handler calling `browserAgentService.captureSnapshot()`.
+- **Files:** `packages/main/src/handlers/agent.ts`
 
 ---
 
