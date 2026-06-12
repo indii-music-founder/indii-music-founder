@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-12 11:25 EDT
-**Branch:** `feat/agent-elevation-stage-0`
+**Updated:** 2026-06-12 12:43 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+dbf07193b ci: increase Node.js memory limit for build jobs to prevent OOM
+a70fd4046 docs(agent): register /away workflow for autonomous CI loops
+95cbd0161 fix(chat): resolve merge duplicate properties and variables in MessageRating
+a3f2675ff chore: session checkpoint [11:25]
 af091bfb8 Merge branch 'main' into feat/agent-elevation-stage-0
 66b176751 test: fix expected error message in DirectGenerationTab.test.tsx
 eb9d44e1c feat(mobile): mobile system reform and agent stability elevation
 26eaa95fa Merge pull request #162 from indii-music-founder/feat/agent-elevation-stage-0
 05da361db chore: session checkpoint [08:34]
 e7e34fb76 Merge branch 'main' into feat/agent-elevation-stage-0
-2400071a8 Merge pull request #163 from indii-music-founder/fix/open-issues-sweep
-a5c1dce9e feat(agent): implement 1-5 star agent grading system
-9d88f0b88 chore: session checkpoint [07:54]
-f4ba06d17 fix(agents): resolve ledger issues 423-426 — executor governance, generalist alias, footer sweep
 ```
 
 ## Working State
