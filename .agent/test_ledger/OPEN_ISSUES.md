@@ -4585,3 +4585,55 @@ Therefore, no fix can be proposed or implemented.
 
 ---
 
+
+### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/{brand,conductor,creative,distribution,legal,licensing,marketing,music,publicist,publishing,road,social,video}/`
+- **Summary:** Phase A (cards) is done swarm-wide, but Phases B (prompt truthfulness/structure) and C (skills audit, mock removal, gap analysis) have NOT been executed for the 12 wired folders. Each prompt.md is live production code (imported ?raw as the system prompt), so every factual claim must be verified against the codebase per `docs/agents/AGENT_ELEVATION_CHECKLIST.md`.
+- **Fix Direction:** One folder = one atomic commit following the checklist Phases B+C+E. Conductor's prompt is shared by GeneralistAgent — flag changes for extra review.
+
+### ISSUE-423: Generalist agent has no prompt of its own
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/generalist/prompt.md` (5 lines), `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts:13`
+- **Summary:** GeneralistAgent imports `@agents/conductor/prompt.md?raw` instead of its own prompt; `agents/generalist/prompt.md` is a 5-line stub and `agents/generalist/agent_card.json` has 0 capabilities (CardRegistry also maps 'generalist' to conductor's card). The generalist has no distinct identity, constraints, or output contract.
+- **Fix Direction:** Write a real `agents/generalist/prompt.md` (checklist Phase B), populate its card, and point GeneralistAgent + CARD_REGISTRY at the generalist assets instead of conductor's.
+
+### ISSUE-424: Merchandise agent card elevated but no TS definition wires it to runtime
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/merchandise/`, `packages/renderer/src/services/agent/definitions/`
+- **Summary:** Merchandise has an elevated card (6 capabilities) and a 76-line prompt.md, but no `MerchandiseAgent.ts` definition exists — the prompt is dead at runtime (same failure mode the analytics pilot fixed). Department references exist in `departments.ts`/`WorkflowRegistry.ts` only.
+- **Fix Direction:** Checklist Phase D — create `MerchandiseAgent.ts` copying the AnalyticsAgent.ts pattern (?raw prompt import, tools matching the card's 6 capabilities), register it, verify capability↔tool 1:1.
+
+### ISSUE-425: indii_executor card declares riskTier 'destructive' with 0 capabilities and no review
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Security / Governance
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/indii_executor/agent_card.json`, `agents/indii_executor/prompt.md` (28 lines)
+- **Summary:** The executor card is riskTier `destructive` (the highest tier) yet declares zero capabilities, no promptVersion/trainingModel, and a 28-line prompt with no guardrails inventory. A destructive-tier agent must have explicitly enumerated capabilities, blocked actions, and approval authority (HarnessCardSchema fields) before the A2A router can safely dispatch to it.
+- **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
+
+### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/{conductor,default,indii_curriculum,indii_executor}/prompt.md`
+- **Summary:** The orchestration tier has not had the Phase B truthfulness/structure audit. Conductor (119 lines) is highest-leverage: it is the hub prompt AND is borrowed by GeneralistAgent, so errors propagate to two agents. `agents/foundational/` also needs its status documented (shared skill library, not an agent — no card by design).
+- **Fix Direction:** Checklist Phase B per folder; document foundational/ in the checklist status table (done) and in agents/_context.md.
+
+---
