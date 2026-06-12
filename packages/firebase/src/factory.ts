@@ -112,19 +112,20 @@ export interface StableCallableRequest<T = unknown> {
  * This is the ONLY function that needs updating when upgrading generations.
  */
 function mapOptions(opts: FunctionOptions): Record<string, unknown> {
-    return {
+    const res: Record<string, unknown> = {
         region: opts.region || 'us-central1',
-        memory: opts.memory,
-        timeoutSeconds: opts.timeoutSeconds,
-        minInstances: opts.minInstances,
-        maxInstances: opts.maxInstances,
-        cpu: opts.cpu,
-        secrets: opts.secrets as unknown[],
-        enforceAppCheck: opts.enforceAppCheck,
-        concurrency: opts.concurrency,
-        ingress: opts.ingress,
         invoker: 'public',
     };
+    if (opts.memory !== undefined) res.memory = opts.memory;
+    if (opts.timeoutSeconds !== undefined) res.timeoutSeconds = opts.timeoutSeconds;
+    if (opts.minInstances !== undefined) res.minInstances = opts.minInstances;
+    if (opts.maxInstances !== undefined) res.maxInstances = opts.maxInstances;
+    if (opts.cpu !== undefined) res.cpu = opts.cpu;
+    if (opts.secrets !== undefined) res.secrets = opts.secrets;
+    if (opts.enforceAppCheck !== undefined) res.enforceAppCheck = opts.enforceAppCheck;
+    if (opts.concurrency !== undefined) res.concurrency = opts.concurrency;
+    if (opts.ingress !== undefined) res.ingress = opts.ingress;
+    return res;
 }
 
 /**

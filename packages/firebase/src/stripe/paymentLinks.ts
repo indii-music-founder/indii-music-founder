@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { stripe } from './config';
+import crypto from 'crypto';
 
 export const createStripePaymentLinks = onCall(async (req) => {
     if (!req.auth) {

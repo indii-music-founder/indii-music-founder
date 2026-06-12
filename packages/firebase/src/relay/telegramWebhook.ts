@@ -52,12 +52,6 @@ interface TelegramLinkDoc {
     defaultAgentId?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const RESPONSE_POLL_INTERVAL_MS = 1500;
-const RESPONSE_POLL_TIMEOUT_MS = 90_000;
-const MAX_TELEGRAM_MESSAGE_LENGTH = 4096;
 
 
 // ---------------------------------------------------------------------------
@@ -305,20 +299,6 @@ async function handleMessage(chatId: number, text: string, username: string): Pr
 
     const commandId = commandRef.id;
     console.log(`[Telegram] 📝 Created relay command ${commandId} for user ${userId} (agent: ${targetAgentId})`);
-
-    // Poll for the response
-    const responseText = await pollForResponse(userId, commandId);
-
-    // Send response back to Telegram
-    if (responseText) {
-        // Split long messages (Telegram max is 4096 chars)
-        const chunks = splitMessage(responseText, MAX_TELEGRAM_MESSAGE_LENGTH);
-        for (const chunk of chunks) {
-            await sendTelegramMessage(chatId, chunk);
-        }
-    } else {
-        await sendTelegramMessage(chatId, "⏰ Response timed out. The agent may still be processing — check indii Studio for the full response.");
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -382,74 +362,4 @@ function getTelegramToken(): string {
     throw new Error("Telegram Bot Token not found. Please set TELEGRAM_BOT_TOKEN secret.");
 }
 
-// ---------------------------------------------------------------------------
-// Response Polling
-// ---------------------------------------------------------------------------
 
-/**
- * Poll Firestore for the relay response to a command.
- * Returns the response text, or null if timed out.
- */
-async function pollForResponse(userId: string, commandId: string): Promise<string | null> {
-    const db = admin.firestore();
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < RESPONSE_POLL_TIMEOUT_MS) {
-        // Check for a final response
-        const responsesSnap = await db
-            .collection("users").doc(userId)
-            .collection("remote-relay-responses")
-            .where("commandId", "==", commandId)
-            .where("isFinal", "==", true)
-            .limit(1)
-            .get();
-
-        if (!responsesSnap.empty) {
-            const responseData = responsesSnap.docs[0].data();
-            return responseData.text || null;
-        }
-
-        // Wait before polling again
-        await sleep(RESPONSE_POLL_INTERVAL_MS);
-    }
-
-    console.warn(`[Telegram] ⏰ Timed out waiting for response to command ${commandId}`);
-    return null;
-}
-
-/**
- * Split a long message into chunks that fit Telegram's max length.
- */
-function splitMessage(text: string, maxLength: number): string[] {
-    if (text.length <= maxLength) return [text];
-
-    const chunks: string[] = [];
-    let remaining = text;
-
-    while (remaining.length > 0) {
-        if (remaining.length <= maxLength) {
-            chunks.push(remaining);
-            break;
-        }
-
-        // Try to break at a newline
-        let breakPoint = remaining.lastIndexOf("\n", maxLength);
-        if (breakPoint < maxLength * 0.5) {
-            // No good newline break — break at space
-            breakPoint = remaining.lastIndexOf(" ", maxLength);
-        }
-        if (breakPoint < maxLength * 0.3) {
-            // No good break point — hard break
-            breakPoint = maxLength;
-        }
-
-        chunks.push(remaining.substring(0, breakPoint));
-        remaining = remaining.substring(breakPoint).trimStart();
-    }
-
-    return chunks;
-}
-
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}

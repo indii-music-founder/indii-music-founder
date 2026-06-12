@@ -20,6 +20,7 @@
         "@arcjet/node": "^1.4.0",
         "@electron/rebuild": "4.0.4",
         "@google-cloud/bigquery": "8.1.1",
+        "@google-cloud/tasks": "^6.2.3",
         "@google-cloud/vertexai": "1.10.0",
         "@google-cloud/video-transcoder": "4.4.1",
         "@google/genai": "^1.48.0",

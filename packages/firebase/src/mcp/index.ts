@@ -110,7 +110,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     <MessageCreatedDateTime>${new Date().toISOString()}</MessageCreatedDateTime>
   </MessageHeader>
   <ResourceList>
-    <!-- Resource details omitted for brevity -->
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <Type>Audio</Type>
+      <SoundRecordingId>
+        <ISRC>USABC1234567</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>${args.releaseTitle}</TitleText>
+      </ReferenceTitle>
+      <Duration>PT3M30S</Duration>
+    </SoundRecording>
   </ResourceList>
   <ReleaseList>
     <Release>
