@@ -33,7 +33,7 @@ const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
     'gemini-3-pro-image-preview': 'gemini-3-flash-preview',
     'gemini-3.1-flash-image-preview': 'gemini-3-flash-preview',
     // Gemini 3.1 Flash-Lite (GA) → closest Developer API equivalent
-    'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite',
+    'gemini-3.1-flash-lite': 'gemini-3-flash-preview',
 };
 
 /**
