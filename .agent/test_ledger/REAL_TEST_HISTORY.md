@@ -798,3 +798,10 @@
   - Recorded one environment-level shift: the old `tsx` IPC preflight failure did not reproduce in this run; the remaining blocker now starts at the Vite listener bind stage.
   - No net-new audio product or test-infrastructure issue was identified beyond the already-open live-browser/runtime blockers.
 - **Artifacts:** `artifacts/mega_test_audio_loop_2026-06-07_02-51-56_runtime_shift_reconfirm.md`
+
+## 2026-06-11 — issue-sweep + Mega Test V12.0
+- **Modules Targeted:** Main-Process IPC, Firebase Cloud Functions validation, Firestore security rules, Zustand state update loop, Mobile remote heartbeats
+- **Duration:** ~2 minutes
+- **Findings:** 0 new issues filed. All regression verification tests passed.
+- **Artifacts:** `artifacts/mega_v12_2026-06-11_results.md`
+
