@@ -1182,7 +1182,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
-                    'AI Verification Failed (Fallback API Key Invalid/Restricted). Check VITE_API_KEY permissions.',
+                    'AI API Key Invalid or Restricted. Check VITE_API_KEY permissions.',
                     { retryable: false }
                 );
             }

@@ -872,7 +872,7 @@ CURRENT REQUEST: ${task}
 
                 if (isFatal || iterations >= MAX_ITERATIONS) {
                     return {
-                        text: accumulatedResponse || `Fatal Error: ${message}`,
+                        text: accumulatedResponse || `System Error: ${message}`,
                         error: message
                     };
                 }

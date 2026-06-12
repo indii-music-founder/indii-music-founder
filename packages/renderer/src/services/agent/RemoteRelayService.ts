@@ -65,6 +65,8 @@ export interface RemoteResponse {
     isFinal?: boolean;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     isStreaming: boolean;
+    boardroomMessageId?: string;
+    rating?: number;
 }
 
 export interface DesktopState {
@@ -361,7 +363,8 @@ class RemoteRelayService {
         text: string,
         agentId?: string,
         isStreaming = false,
-        imageUrls?: string[]
+        imageUrls?: string[],
+        boardroomMessageId?: string
     ): Promise<void> {
         const ref = getResponsesRef();
         if (!ref) return;
@@ -373,6 +376,7 @@ class RemoteRelayService {
             timestamp: serverTimestamp(),
             isStreaming,
             isFinal: !isStreaming,
+            boardroomMessageId,
         };
         if (agentId !== undefined) {
             response.agentId = agentId;
