@@ -47,7 +47,11 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
         throw new HttpsError('failed-precondition', 'Release deadlock: Missing UPC or ISRC.');
     }
 
-    const durationRaw = data.duration ? (data.duration > 10000 ? Math.floor(data.duration / 1000) : data.duration) : 210;
+    let durationRaw = 210;
+    if (data.duration !== undefined && typeof data.duration === 'number' && !isNaN(data.duration)) {
+        durationRaw = data.duration > 10000 ? Math.floor(data.duration / 1000) : data.duration;
+        if (durationRaw <= 0) durationRaw = 210;
+    }
     const durationXmlStr = formatISO8601Duration(durationRaw);
 
     // Scaffolded DDEX XML generation (Electronic Release Notification Message 4.2)

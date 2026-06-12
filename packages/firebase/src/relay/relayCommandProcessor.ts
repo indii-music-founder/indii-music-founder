@@ -285,31 +285,35 @@ async function sendResponse(
  * Send a text message via the Telegram Bot API (asynchronously from the background runner).
  */
 async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
-    const token = process.env.TELEGRAM_BOT_TOKEN || (() => {
-        try { return telegramBotToken.value(); } catch { return ""; }
-    })();
-    if (!token) {
-        console.error("[Telegram] Cannot send async response: Bot token not configured.");
-        return;
-    }
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
-    const chunks = splitMessage(text, 4096);
-    for (const chunk of chunks) {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: chunk,
-                parse_mode: "Markdown",
-            }),
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error(`[Telegram] Failed to send message to chat ${chatId}: ${response.status} ${errorBody}`);
+    try {
+        const token = process.env.TELEGRAM_BOT_TOKEN || (() => {
+            try { return telegramBotToken.value(); } catch { return ""; }
+        })();
+        if (!token) {
+            console.error("[Telegram] Cannot send async response: Bot token not configured.");
+            return;
         }
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+        const chunks = splitMessage(text, 4096);
+        for (const chunk of chunks) {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: chunk,
+                    parse_mode: "Markdown",
+                }),
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`[Telegram] Failed to send message to chat ${chatId}: ${response.status} ${errorBody}`);
+            }
+        }
+    } catch (err) {
+        console.error(`[Telegram] Network or unexpected error sending Telegram message to chat ${chatId}:`, err);
     }
 }
 
