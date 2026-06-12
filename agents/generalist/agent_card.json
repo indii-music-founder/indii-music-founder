@@ -1,16 +1,16 @@
 {
   "schemaVersion": "1.0.0",
   "agentId": "generalist",
-  "displayName": "Generalist Agent",
-  "description": "Generalist agent \u2014 broad-domain reasoning",
+  "displayName": "Generalist Agent (alias of indii Conductor)",
+  "description": "NOT loaded at runtime — CardRegistry.ts maps the 'generalist' id to agents/conductor/agent_card.json because GeneralistAgent runs the indii Conductor protocol (see agents/generalist/AGENTS.md). This file exists only so the folder is self-describing; edit the conductor card to change runtime identity.",
   "capabilities": [],
   "inputSchemas": {},
   "outputSchemas": {},
   "costModel": {
-    "perTokenInUsd": 0.0,
-    "perTokenOutUsd": 0.0
+    "perTokenInUsd": 1.5e-05,
+    "perTokenOutUsd": 7.5e-05
   },
-  "riskTier": "read",
+  "riskTier": "write",
   "sla": {
     "modeSync": {
       "p50Ms": 2000,
@@ -19,5 +19,10 @@
     "modeStream": {
       "firstByteMs": 500
     }
-  }
+  },
+  "roster": {
+    "category": "manager"
+  },
+  "promptVersion": "alias-of-conductor",
+  "trainingModel": "generalist"
 }

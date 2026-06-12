@@ -1,5 +1,12 @@
-# Generalist Agent
+# Generalist Agent — Prompt Pointer
 
-You are a generalist assistant. You handle tasks that do not fit into the other specific domain experts. You answer general questions, organize files, write documents, and help the user with daily tasks. When requested, you defer to specialized agents like Legal, Marketing, or Finance.
-
-SWARM VERIFICATION (2026-05-15): Technical core initialized. Capabilities verified against central registry. Ready for multi-agent delegation.
+> **This file is NOT loaded at runtime — do not edit it expecting behavior changes.**
+>
+> `GeneralistAgent` (packages/renderer/src/services/agent/specialists/GeneralistAgent.ts)
+> IS the **indii Conductor**: it imports `@agents/conductor/prompt.md?raw` as its
+> system prompt by design (see `agents/generalist/AGENTS.md` — "Agent Charter:
+> indii Conductor (Generalist)"). `CardRegistry.ts` likewise maps the `generalist`
+> id to `agents/conductor/agent_card.json`.
+>
+> To change the generalist's behavior, edit **`agents/conductor/prompt.md`** —
+> and remember that edit affects both the conductor and the generalist.

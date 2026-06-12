@@ -4586,6 +4586,61 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 
+### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
+- **Status:** OPEN (PARTIAL 2026-06-12 — mechanical pass done: ghost-tool cross-check of all 13 wired prompts vs definitions found zero false tool claims; ritual footers stripped repo-wide; merchandise verified wired. Remaining: deep Phase B content audit (delegation protocol, failure behavior, output contracts) + Phase C skills gap analysis per folder.)
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/{brand,conductor,creative,distribution,legal,licensing,marketing,music,publicist,publishing,road,social,video}/`
+- **Summary:** Phase A (cards) is done swarm-wide, but Phases B (prompt truthfulness/structure) and C (skills audit, mock removal, gap analysis) have NOT been executed for the 12 wired folders. Each prompt.md is live production code (imported ?raw as the system prompt), so every factual claim must be verified against the codebase per `docs/agents/AGENT_ELEVATION_CHECKLIST.md`.
+- **Fix Direction:** One folder = one atomic commit following the checklist Phases B+C+E. Conductor's prompt is shared by GeneralistAgent — flag changes for extra review.
+
+### ISSUE-423: Generalist agent has no prompt of its own
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0) — resolved differently than filed: per agents/generalist/AGENTS.md charter, GeneralistAgent IS the indii Conductor, so borrowing conductor's prompt/card is BY DESIGN, not a gap. The real defect was the folder's dead misleading files. agents/generalist/prompt.md is now an explicit pointer doc ("not loaded at runtime — edit conductor's prompt; affects both agents") and agent_card.json is self-describing as a conductor alias.
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/generalist/prompt.md` (5 lines), `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts:13`
+- **Summary:** GeneralistAgent imports `@agents/conductor/prompt.md?raw` instead of its own prompt; `agents/generalist/prompt.md` is a 5-line stub and `agents/generalist/agent_card.json` has 0 capabilities (CardRegistry also maps 'generalist' to conductor's card). The generalist has no distinct identity, constraints, or output contract.
+- **Fix Direction:** Write a real `agents/generalist/prompt.md` (checklist Phase B), populate its card, and point GeneralistAgent + CARD_REGISTRY at the generalist assets instead of conductor's.
+
+### ISSUE-424: Merchandise agent card elevated but no TS definition wires it to runtime
+- **Status:** ❌ INVALID (2026-06-12) — recon error: MerchandiseAgent.ts exists at packages/renderer/src/services/agent/MerchandiseAgent.ts (services root, not definitions/), imports @agents/merchandise/prompt.md?raw, declares all 6 card capabilities with Zod schemas, and is registered at registry.ts:80. Merchandise is fully wired; no fix needed.
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/merchandise/`, `packages/renderer/src/services/agent/definitions/`
+- **Summary:** Merchandise has an elevated card (6 capabilities) and a 76-line prompt.md, but no `MerchandiseAgent.ts` definition exists — the prompt is dead at runtime (same failure mode the analytics pilot fixed). Department references exist in `departments.ts`/`WorkflowRegistry.ts` only.
+- **Fix Direction:** Checklist Phase D — create `MerchandiseAgent.ts` copying the AnalyticsAgent.ts pattern (?raw prompt import, tools matching the card's 6 capabilities), register it, verify capability↔tool 1:1.
+
+### ISSUE-425: indii_executor card declares riskTier 'destructive' with 0 capabilities and no review
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
+- **Fix:** Card now enumerates all 7 capabilities (incl. media_postprocess_terminal — the reason for the destructive tier), adds harness governance (approvalAuthority: user_required; 6 blockedActions incl. out-of-workspace deletion, master overwrite, credential modification), roster, costModel, promptVersion, trainingModel. Prompt rewritten: blanket "Do not ask for permission" replaced with explicit Authority Boundaries mirroring the harness; stale Agent Zero path /a0/usr/projects/ removed; strike-ladder failure behavior + honesty rules added; ritual footer stripped. Note: indii_executor is referenced nowhere at runtime (not in CardRegistry, never dispatched) — the card is the governance contract required BEFORE any future wiring.
+- **Severity:** 🔴 HIGH
+- **Dimension:** Security / Governance
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/indii_executor/agent_card.json`, `agents/indii_executor/prompt.md` (28 lines)
+- **Summary:** The executor card is riskTier `destructive` (the highest tier) yet declares zero capabilities, no promptVersion/trainingModel, and a 28-line prompt with no guardrails inventory. A destructive-tier agent must have explicitly enumerated capabilities, blocked actions, and approval authority (HarnessCardSchema fields) before the A2A router can safely dispatch to it.
+- **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
+
+### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
+- **Status:** OPEN (PARTIAL 2026-06-12 — executor fully elevated under ISSUE-425; generalist folder made self-describing under ISSUE-423; conductor + default footers stripped. Remaining: deep Phase B audit of conductor (highest leverage — feeds two agents), default, and indii_curriculum.)
+- **Severity:** 🟢 LOW
+- **Dimension:** Agent Quality
+- **Module:** agents
+- **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
+- **Target Coordinates:** `agents/{conductor,default,indii_curriculum,indii_executor}/prompt.md`
+- **Summary:** The orchestration tier has not had the Phase B truthfulness/structure audit. Conductor (119 lines) is highest-leverage: it is the hub prompt AND is borrowed by GeneralistAgent, so errors propagate to two agents. `agents/foundational/` also needs its status documented (shared skill library, not an agent — no card by design).
+- **Fix Direction:** Checklist Phase B per folder; document foundational/ in the checklist status table (done) and in agents/_context.md.
+
+---
+
+### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
 ### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
 - **Status:** OPEN
 - **Severity:** 🔴 HIGH
@@ -4595,10 +4650,13 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/legal/mechanicalLicense.ts:31-67`
 - **Summary:** The function returns `status: "VERIFIED"` and `requiresClearance: false` for ANY input. It hashes trackTitle+originalArtist to pseudo-randomly select a real publisher (UMPG, Warner Chappell, Sony, BMG, Kobalt) and invents an HFA song code (`HFA-<hash>`), then persists this fabricated result to Firestore `mechanical_license_verifications` as an "audit trail". This violates the hard NO-MOCK-DATA rule and creates legal exposure: an artist could be told their cover is cleared at the statutory rate, attributed to a real publisher, with zero factual basis. The walkthrough described this as "simulate rate checks" — it is fabricated data persisted as fact.
 - **Fix Direction:** Either (a) integrate a real mechanical licensing lookup (HFA/MLC API) before returning VERIFIED, or (b) return an honest `status: "UNVERIFIED — manual clearance required"` response with no fabricated publisher/songCode, and do not persist fabricated audit rows. Honest empty/unknown state over fake data, per project covenant.
+- **Fix:** Option (b) implemented. Function now always returns `UNVERIFIED` + `requiresClearance: true` with null publisher/songCode, accurate statutory-rate context (CRB Phonorecords IV, physical/downloads only), and real clearance guidance (SongFile + The MLC links). Honest audit rows persisted. Renderer `LegalTools.verify_mechanical_license` success-path types/message aligned. Honesty contract documented in the function docstring — VERIFIED may only ever come from a real licensing API response.
+- **Files:** `packages/firebase/src/legal/mechanicalLicense.ts`, `packages/renderer/src/services/agent/tools/LegalTools.ts`
 
 ---
 
 ### ISSUE-420: Walkthrough validation proof omitted packages/firebase from typecheck command
+- **Status:** ✅ CLOSED (2026-06-12 — retroactive `cd packages/firebase && npx tsc --noEmit` exit 0; no code defect)
 - **Status:** ✅ VERIFIED-RETROACTIVELY (no code defect)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
@@ -4611,6 +4669,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
+- **Status:** ✅ CLOSED (2026-06-12 — full suite re-run: 659 files, 4,142 tests, 4,141 pass; sole failure is pre-existing environmental `AgentExecutor.integration.test.ts` requiring live VITE_API_KEY, confirmed failing on clean tree via git stash)
 - **Status:** OPEN (process)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
