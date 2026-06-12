@@ -4587,7 +4587,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
-- **Status:** OPEN
+- **Status:** OPEN (PARTIAL 2026-06-12 — mechanical pass done: ghost-tool cross-check of all 13 wired prompts vs definitions found zero false tool claims; ritual footers stripped repo-wide; merchandise verified wired. Remaining: deep Phase B content audit (delegation protocol, failure behavior, output contracts) + Phase C skills gap analysis per folder.)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
 - **Module:** agents
@@ -4597,7 +4597,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** One folder = one atomic commit following the checklist Phases B+C+E. Conductor's prompt is shared by GeneralistAgent — flag changes for extra review.
 
 ### ISSUE-423: Generalist agent has no prompt of its own
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0) — resolved differently than filed: per agents/generalist/AGENTS.md charter, GeneralistAgent IS the indii Conductor, so borrowing conductor's prompt/card is BY DESIGN, not a gap. The real defect was the folder's dead misleading files. agents/generalist/prompt.md is now an explicit pointer doc ("not loaded at runtime — edit conductor's prompt; affects both agents") and agent_card.json is self-describing as a conductor alias.
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
 - **Module:** agents
@@ -4607,7 +4607,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Write a real `agents/generalist/prompt.md` (checklist Phase B), populate its card, and point GeneralistAgent + CARD_REGISTRY at the generalist assets instead of conductor's.
 
 ### ISSUE-424: Merchandise agent card elevated but no TS definition wires it to runtime
-- **Status:** OPEN
+- **Status:** ❌ INVALID (2026-06-12) — recon error: MerchandiseAgent.ts exists at packages/renderer/src/services/agent/MerchandiseAgent.ts (services root, not definitions/), imports @agents/merchandise/prompt.md?raw, declares all 6 card capabilities with Zod schemas, and is registered at registry.ts:80. Merchandise is fully wired; no fix needed.
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** agents
@@ -4617,7 +4617,8 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phase D — create `MerchandiseAgent.ts` copying the AnalyticsAgent.ts pattern (?raw prompt import, tools matching the card's 6 capabilities), register it, verify capability↔tool 1:1.
 
 ### ISSUE-425: indii_executor card declares riskTier 'destructive' with 0 capabilities and no review
-- **Status:** OPEN
+- **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
+- **Fix:** Card now enumerates all 7 capabilities (incl. media_postprocess_terminal — the reason for the destructive tier), adds harness governance (approvalAuthority: user_required; 6 blockedActions incl. out-of-workspace deletion, master overwrite, credential modification), roster, costModel, promptVersion, trainingModel. Prompt rewritten: blanket "Do not ask for permission" replaced with explicit Authority Boundaries mirroring the harness; stale Agent Zero path /a0/usr/projects/ removed; strike-ladder failure behavior + honesty rules added; ritual footer stripped. Note: indii_executor is referenced nowhere at runtime (not in CardRegistry, never dispatched) — the card is the governance contract required BEFORE any future wiring.
 - **Severity:** 🔴 HIGH
 - **Dimension:** Security / Governance
 - **Module:** agents
@@ -4627,7 +4628,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
 
 ### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
-- **Status:** OPEN
+- **Status:** OPEN (PARTIAL 2026-06-12 — executor fully elevated under ISSUE-425; generalist folder made self-describing under ISSUE-423; conductor + default footers stripped. Remaining: deep Phase B audit of conductor (highest leverage — feeds two agents), default, and indii_curriculum.)
 - **Severity:** 🟢 LOW
 - **Dimension:** Agent Quality
 - **Module:** agents
