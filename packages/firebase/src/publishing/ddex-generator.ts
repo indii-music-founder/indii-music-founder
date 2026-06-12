@@ -12,6 +12,22 @@ export interface DDEXMetadata {
     label: string;
     releaseDate: string;
     genre: string;
+    duration?: number; // duration in seconds or milliseconds
+}
+
+/**
+ * Format milliseconds or seconds to ISO 8601 duration string (e.g. PT3M30S)
+ */
+function formatISO8601Duration(seconds: number): string {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    let durationStr = 'PT';
+    if (hrs > 0) durationStr += `${hrs}H`;
+    if (mins > 0 || hrs > 0) durationStr += `${mins}M`;
+    durationStr += `${secs}S`;
+    return durationStr;
 }
 
 /**
@@ -30,6 +46,13 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
     if (!data.upc || !data.isrc) {
         throw new HttpsError('failed-precondition', 'Release deadlock: Missing UPC or ISRC.');
     }
+
+    let durationRaw = 210;
+    if (data.duration !== undefined && typeof data.duration === 'number' && !isNaN(data.duration)) {
+        durationRaw = data.duration > 10000 ? Math.floor(data.duration / 1000) : data.duration;
+        if (durationRaw <= 0) durationRaw = 210;
+    }
+    const durationXmlStr = formatISO8601Duration(durationRaw);
 
     // Scaffolded DDEX XML generation (Electronic Release Notification Message 4.2)
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -73,7 +96,7 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
             <ReferenceTitle>
                 <TitleText>${data.title}</TitleText>
             </ReferenceTitle>
-            <Duration>PT3M30S</Duration> <!-- Scaffolded duration -->
+            <Duration>${durationXmlStr}</Duration>
         </SoundRecording>
     </ResourceList>
 </ern:NewReleaseMessage>`;
@@ -101,4 +124,17 @@ export async function dispatchPROPayload(releaseId: string): Promise<void> {
     };
 
     console.log(`Dispatching PRO payload for ${releaseId}:`, proPayload);
+
+    // Persistent/real database logging
+    const userId = data?.userId || data?.artistId || 'system';
+    const regRef = db.collection('users').doc(userId).collection('proRegistrations').doc(releaseId);
+    
+    await regRef.set({
+        releaseId,
+        workTitle: data?.title || 'Unknown Work',
+        iswc: data?.iswc || 'PENDING',
+        status: 'SUBMITTED',
+        submittedAt: new Date().toISOString(),
+        payload: proPayload
+    }, { merge: true });
 }

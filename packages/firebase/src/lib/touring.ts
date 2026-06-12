@@ -46,8 +46,18 @@ async function generateWithGemini(prompt: string, schema = false): Promise<Recor
     try {
         if (!schema) return text;
         // Clean up markdown code blocks if present
-        const jsonStr = text.replace(/```json\n?|\n?```/g, "").trim();
-        return JSON.parse(jsonStr) as Record<string, unknown>;
+        let jsonStr = text;
+        const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+        if (match) {
+            jsonStr = match[1];
+        } else {
+            const startIdx = text.indexOf('{');
+            const endIdx = text.lastIndexOf('}');
+            if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+                jsonStr = text.substring(startIdx, endIdx + 1);
+            }
+        }
+        return JSON.parse(jsonStr.trim()) as Record<string, unknown>;
     } catch (_e) {
         console.error("Failed to parse JSON from Gemini:", text);
         throw new Error("Invalid JSON response from AI");

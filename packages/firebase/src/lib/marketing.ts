@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import { defineString } from "firebase-functions/params";
 import { z } from "zod";
 import { geminiApiKey } from "../config/secrets";
+import crypto from "crypto";
 
 const influencerBountyBaseUrl = defineString("INFLUENCER_BOUNTY_BASE_URL");
 

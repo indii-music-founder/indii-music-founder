@@ -20,8 +20,24 @@ export async function withCircuitBreaker<T>(
     
     while (attempt < options.maxRetries) {
         try {
-            // Apply optional timeout wrapper here
-            return await operation();
+            if (options.timeoutMs && options.timeoutMs > 0) {
+                let timer: NodeJS.Timeout;
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    timer = setTimeout(() => {
+                        reject(new Error(`Operation timed out after ${options.timeoutMs}ms`));
+                    }, options.timeoutMs);
+                });
+                try {
+                    const result = await Promise.race([operation(), timeoutPromise]);
+                    clearTimeout(timer!);
+                    return result;
+                } catch (err) {
+                    clearTimeout(timer!);
+                    throw err;
+                }
+            } else {
+                return await operation();
+            }
         } catch (error: any) {
             attempt++;
             console.error(`[CircuitBreaker] ${operationName} failed on attempt ${attempt}:`, error);

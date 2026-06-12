@@ -278,7 +278,7 @@ export const deliverScheduledPosts = onSchedule({
                     Math.floor((Date.now() + backoffMs) / 1000), 0
                 );
                 await postRef.update({
-                    status: currentRetry >= 3 ? 'failed' : 'failed',
+                    status: 'failed',
                     platformPostId: null,
                     deliveryError: result.error || null,
                     retryCount: currentRetry,

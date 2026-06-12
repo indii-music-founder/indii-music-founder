@@ -1,7 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getStorage } from 'firebase-admin/storage';
-// In a real implementation, we would use Cloud Tasks or PubSub to trigger the Cloud Run service.
-// import { CloudTasksClient } from '@google-cloud/tasks';
+import { CloudTasksClient } from '@google-cloud/tasks';
 
 /**
  * Ingestion Boundary Endpoint
@@ -17,9 +16,13 @@ export const processAudioIngestion = onCall({
         throw new HttpsError('unauthenticated', 'User must be authenticated to ingest audio.');
     }
 
+    if (!request.data) {
+        throw new HttpsError('invalid-argument', 'Missing payload data.');
+    }
     const { filePath, masterAssetId } = request.data;
-    if (!filePath || !masterAssetId) {
-        throw new HttpsError('invalid-argument', 'Missing filePath or masterAssetId.');
+    if (!filePath || typeof filePath !== 'string' || filePath.trim().length === 0 ||
+        !masterAssetId || typeof masterAssetId !== 'string' || masterAssetId.trim().length === 0) {
+        throw new HttpsError('invalid-argument', 'Missing or invalid filePath or masterAssetId.');
     }
 
     // 1. Verify file exists in Cloud Storage and is accessible
@@ -34,27 +37,36 @@ export const processAudioIngestion = onCall({
     }
 
     // 2. Queue asynchronous DSP task to engine-dsp Python service
-    // Placeholder logic for Cloud Tasks dispatch
     console.log(`Dispatching ${masterAssetId} to engine-dsp Cloud Run service via Cloud Tasks...`);
     
-    // const client = new CloudTasksClient();
-    // const project = process.env.VITE_FIREBASE_PROJECT_ID;
-    // const queue = 'dsp-processing-queue';
-    // const location = 'us-central1';
-    // const parent = client.queuePath(project, location, queue);
+    const client = new CloudTasksClient();
+    const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || '';
+    if (!project) {
+        throw new HttpsError('failed-precondition', 'Google Cloud Project ID is not configured.');
+    }
+    const queue = 'dsp-processing-queue';
+    const location = 'us-central1';
+    const parent = client.queuePath(project, location, queue);
     
-    // const task = {
-    //   httpRequest: {
-    //     httpMethod: 'POST',
-    //     url: 'https://engine-dsp-service-url/profile', // Cloud Run URL
-    //     body: Buffer.from(JSON.stringify({ filePath, masterAssetId })).toString('base64'),
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //   },
-    // };
+    const engineDspUrl = process.env.ENGINE_DSP_URL || 'https://engine-dsp-service-url/profile';
     
-    // await client.createTask({ parent, task });
+    const task = {
+      httpRequest: {
+        httpMethod: 'POST' as const,
+        url: engineDspUrl,
+        body: Buffer.from(JSON.stringify({ filePath, masterAssetId })).toString('base64'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    };
+    
+    try {
+        await client.createTask({ parent, task });
+    } catch (err) {
+        console.error("Failed to queue Cloud Task:", err);
+        throw new HttpsError('internal', `Failed to dispatch audio processing task: ${err instanceof Error ? err.message : String(err)}`);
+    }
 
     return {
         success: true,
