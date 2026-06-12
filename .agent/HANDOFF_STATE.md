@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-12 07:18 EDT
+**Updated:** 2026-06-12 07:54 EDT
 **Branch:** `feat/agent-elevation-stage-0`
 
 ## Recent Commits
 ```
+f4ba06d17 fix(agents): resolve ledger issues 423-426 — executor governance, generalist alias, footer sweep
+f3678f2ab fix(legal): make verifyMechanicalLicense honest — never fabricate clearance
+383cfd12c chore: session checkpoint [07:18]
 6702629f6 docs(issues): re-home stranded ISSUE-419..421 from sweep branch
 57aa6819a chore: session checkpoint [22:43]
 1263c4b02 docs(issues): log ISSUE-422..426 for remaining elevation stages
@@ -11,9 +14,6 @@
 c652758d7 feat(agents): close stage-0/1 gaps in agent elevation program
 9aa49cf78 Merge pull request #161 from indii-music-founder/fix/open-issues-sweep
 e51c68a8a chore: session checkpoint [21:22]
-73c6f0094 refactor(better): add defensive validation and robust error handling to firebase functions
-da35cbf7d docs: update open issues ledger and task tracking sheet for fixed items
-ae50c3360 fix(firebase): resolve remaining open architectural, duplicate onboarding, and webhook integration issues
 ```
 
 ## Working State
