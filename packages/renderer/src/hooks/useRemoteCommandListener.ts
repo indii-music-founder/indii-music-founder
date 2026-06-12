@@ -422,7 +422,9 @@ function useFirestoreRelay(enabled: boolean) {
                     command.id,
                     response?.text?.trim() || 'Done.',
                     response?.agentId || command.targetAgentId || 'generalist',
-                    false
+                    false,
+                    undefined,
+                    response?.id
                 );
                 await remoteRelayService.markCommandCompleted(command.id);
                 writeDiagnostic('agent_chat_done', { commandId: command.id });

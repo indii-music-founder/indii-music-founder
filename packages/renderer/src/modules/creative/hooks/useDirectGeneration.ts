@@ -23,7 +23,7 @@ type CallableGenerationError = {
 };
 
 const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
-    'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+    'Google AI Studio API quota exhausted. Please add credits to your account.';
 
 function normalizeCallableCode(code: unknown): string | undefined {
     if (typeof code !== 'string') return undefined;

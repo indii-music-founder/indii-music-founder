@@ -21,6 +21,7 @@ export interface BoardroomMessageDocument extends Omit<AgentMessage, 'timestamp'
     userId: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
+    rating?: number;
 }
 
 /**
@@ -76,6 +77,7 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
             if (msg.metadata) docData.metadata = msg.metadata;
             if (msg.planId) docData.planId = msg.planId;
             if (msg.attachments) docData.attachments = msg.attachments;
+            if (msg.rating !== undefined) docData.rating = msg.rating;
 
             // Save using merge set to ensure updates to existing messages do not destroy fields
             await this.set(msg.id, docData);

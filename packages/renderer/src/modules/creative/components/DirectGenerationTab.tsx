@@ -387,7 +387,7 @@ export default function DirectGenerationTab() {
                             <button
                                 key={tag}
                                 onClick={() => setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag)}
-                                className="px-2 py-1 rounded-full bg-white/3 border border-white/5 text-[9px] text-gray-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap"
+                                className="px-2 py-1 rounded-full bg-white/3 border border-white/5 text-[9px] text-gray-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
                             >
                                 + {tag}
                             </button>

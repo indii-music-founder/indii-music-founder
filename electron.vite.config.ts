@@ -47,7 +47,6 @@ export default defineConfig({
                     'electron-log',
                     'electron-squirrel-startup',
                     '@modelcontextprotocol/sdk',
-                    'libsodium-wrappers',
                 ],
             },
         },
@@ -61,6 +60,7 @@ export default defineConfig({
         resolve: {
             alias: {
                 '@shared': resolve(__dirname, 'packages/shared/src'),
+                './libsodium.mjs': resolve(__dirname, 'node_modules/libsodium/dist/modules-esm/libsodium.mjs'),
             },
         },
     },

@@ -29,7 +29,7 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, Grip, MessageSquare, Image, Music2,
+  LayoutDashboard, Grip, MessageSquare,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,7 +53,7 @@ const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'status' | 'control' | 'chat' | 'generate' | 'transport' | 'approve';
+type TabId = 'home' | 'control' | 'studio' | 'review';
 
 interface Tab {
   id: TabId;
@@ -62,12 +62,10 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'status', icon: LayoutDashboard, label: 'Status' },
+  { id: 'home', icon: LayoutDashboard, label: 'Home' },
   { id: 'control', icon: Grip, label: 'Control' },
-  { id: 'chat', icon: MessageSquare, label: 'Chat' },
-  { id: 'generate', icon: Image, label: 'Create' },
-  { id: 'transport', icon: Music2, label: 'Audio' },
-  { id: 'approve', icon: CheckSquare, label: 'Approve' },
+  { id: 'studio', icon: MessageSquare, label: 'Studio' },
+  { id: 'review', icon: CheckSquare, label: 'Review' },
 ];
 
 // We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
@@ -204,7 +202,7 @@ export default function MobileRemote() {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>(() =>
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
-  const [activeTab, setActiveTab] = useState<TabId>('status');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [_desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
@@ -468,10 +466,15 @@ export default function MobileRemote() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'status':
+      case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
+            <div className="space-y-6">
+              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
+              <div className="pt-2 border-t border-white/5">
+                <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
+              </div>
+            </div>
           </Suspense>
         );
       case 'control':
@@ -480,25 +483,20 @@ export default function MobileRemote() {
             <CommandPad onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
-      case 'chat':
+      case 'studio':
         return (
           <Suspense fallback={<TabFallback />}>
-            <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
+            <div className="flex flex-col h-full flex-1 min-h-0">
+              <div className="flex-none mb-2">
+                <GenerationMonitor />
+              </div>
+              <div className="flex-1 min-h-0 flex flex-col">
+                <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
+              </div>
+            </div>
           </Suspense>
         );
-      case 'generate':
-        return (
-          <Suspense fallback={<TabFallback />}>
-            <GenerationMonitor />
-          </Suspense>
-        );
-      case 'transport':
-        return (
-          <Suspense fallback={<TabFallback />}>
-            <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
-          </Suspense>
-        );
-      case 'approve':
+      case 'review':
         return (
           <Suspense fallback={<TabFallback />}>
             <ApprovalQueue onSendCommand={sendCommand} isPaired={isPaired} />
