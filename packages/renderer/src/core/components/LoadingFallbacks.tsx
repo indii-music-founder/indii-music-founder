@@ -143,7 +143,7 @@ export function LoadingFallback() {
         // 10s failsafe timeout to prevent infinite loading spinners
         const failsafe = setTimeout(() => {
             setIsTimedOut(true);
-            console.error('[LoadingFallback] Stuck for more than 10 seconds. Module or auth load timed out.');
+            void 0;
         }, 10000);
 
         return () => {

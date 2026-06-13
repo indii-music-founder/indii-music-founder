@@ -82,7 +82,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             setIsRealData(hasData);
 
         } catch (error) {
-            console.error('[CustomizableAnalyticsDashboard] Failed to fetch Firestore/Stripe data:', error);
+            void 0;
         } finally {
             setLoading(false);
             setRefreshing(false);

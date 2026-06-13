@@ -25,7 +25,7 @@ class SFTPService {
 
     async connect(config: SFTPConfig): Promise<void> {
         try {
-            console.info(`[SFTPService] Connecting to ${config.host}:${config.port || 22}...`);
+            void 0;
             await this.client.connect({
                 host: config.host,
                 port: config.port || 22,
@@ -34,10 +34,10 @@ class SFTPService {
                 privateKey: config.privateKey,
             });
             this.connected = true;
-            console.info('[SFTPService] Connected.');
+            void 0;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error('[SFTPService] Connection failed:', error);
+            void 0;
             throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${msg}`, error);
         }
     }
@@ -45,7 +45,7 @@ class SFTPService {
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
         if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
 
-        console.info(`[SFTPService] Uploading directory: ${localPath} -> ${remotePath}`);
+        void 0;
         const uploadedFiles: string[] = [];
 
         try {
@@ -64,11 +64,11 @@ class SFTPService {
             const list = await this.client.list(remotePath);
             uploadedFiles.push(...list.map(item => item.name));
 
-            console.info(`[SFTPService] Upload complete: ${remotePath}`);
+            void 0;
             return uploadedFiles;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error(`[SFTPService] Upload failed:`, error);
+            void 0;
             throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${msg}`, error);
         }
     }
@@ -99,7 +99,7 @@ class SFTPService {
         if (this.connected) {
             await this.client.end();
             this.connected = false;
-            console.info('[SFTPService] Disconnected.');
+            void 0;
         }
     }
 
