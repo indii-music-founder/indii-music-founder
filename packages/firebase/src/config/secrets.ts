@@ -74,7 +74,7 @@ export function getGithubToken(): string | null {
  */
 export function getGeminiApiKey(): string | null {
     // 1. Try Environment Variable (Local/Dev/Emulator)
-    const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.VITE_API_KEY;
     if (envKey && envKey.trim().length > 0) {
         return envKey;
     }
@@ -89,7 +89,7 @@ export function getGeminiApiKey(): string | null {
         }
     } catch (_e) {
         // Fallback to direct process.env check in case .value() fails in specific contexts
-        const directEnv = process.env.GEMINI_API_KEY;
+        const directEnv = process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
         if (directEnv && directEnv.trim().length > 0) {
             return directEnv;
         }

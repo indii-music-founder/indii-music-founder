@@ -25,3 +25,19 @@
 - `chain-identity` — profile/identity facts propagate consistently to all agents (brand, creative, marketing, publicist, legal).
 
 **Pass bar:** the fact must change agent OUTPUT, not merely be retrievable. Storage ≠ pass.
+
+---
+
+## Resolution status (build pass — same session)
+
+| Gap | Status | Evidence |
+|-----|--------|----------|
+| #2 `api-endpoints` empty placeholder | ✅ **FIXED** | Wired 16 backend test files (111 tests pass) + new `endpoint-inventory.test.ts` drift-guard (4 tests). `python3 execution/run_department_test.py api --unit-only` → PASS. |
+| #5 `services/memory` no unit tests | ✅ **FIXED** | `EventLogger.test.ts` (13) + `CareerMemoryArchiveService.test.ts` (7) = 20 tests pass. profileSlice already had a co-located test; registry repointed to it. |
+| CI typecheck RED on main (discovered) | ✅ **FIXED** | Root cause 1: stale `.tsbuildinfo` (forced `tsc -b packages/shared --force`). Root cause 2: `GeminiFileService.listFiles` used old `@google/genai` shape — fixed to `Pager` API. `npm run typecheck` → exit 0. |
+| #3 `design-toolbar` no e2e | ⏭️ **DEFERRED** | No Design e2e spec exists; authoring one needs the live app. Left to observational `/mega-test design-toolbar`. |
+| #4 missing connected-e2e paths | ⏭️ **DEFERRED** | Add as those specs are written. |
+| Continuity E2E specs | ⏭️ **BY DESIGN** | True cross-pollination verification needs the live app + paid Gemini calls — covered by the §12 observational chain discipline, not fabricated. |
+
+**Gates after build:** `typecheck` exit 0 · `lint` exit 0 (19 pre-existing warnings, 0 errors) · 48 new tests green.
+**Branch:** `mega/testing-system-2026-06-13` — 4 commits.
