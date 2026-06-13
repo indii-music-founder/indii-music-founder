@@ -4587,7 +4587,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
-- **Status:** OPEN (PARTIAL 2026-06-12 — mechanical pass done: ghost-tool cross-check of all 13 wired prompts vs definitions found zero false tool claims; ritual footers stripped repo-wide; merchandise verified wired. Remaining: deep Phase B content audit (delegation protocol, failure behavior, output contracts) + Phase C skills gap analysis per folder.)
+- **Status:** 🟡 IN PROGRESS (Agent A) (PARTIAL 2026-06-12 — mechanical pass done: ghost-tool cross-check of all 13 wired prompts vs definitions found zero false tool claims; ritual footers stripped repo-wide; merchandise verified wired. Remaining: deep Phase B content audit (delegation protocol, failure behavior, output contracts) + Phase C skills gap analysis per folder.)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
 - **Module:** agents
@@ -4628,7 +4628,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
 
 ### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
-- **Status:** OPEN (PARTIAL 2026-06-12 — executor fully elevated under ISSUE-425; generalist folder made self-describing under ISSUE-423; conductor + default footers stripped. Remaining: deep Phase B audit of conductor (highest leverage — feeds two agents), default, and indii_curriculum.)
+- **Status:** 🟡 IN PROGRESS (Agent A) (PARTIAL 2026-06-12 — executor fully elevated under ISSUE-425; generalist folder made self-describing under ISSUE-423; conductor + default footers stripped. Remaining: deep Phase B audit of conductor (highest leverage — feeds two agents), default, and indii_curriculum.)
 - **Severity:** 🟢 LOW
 - **Dimension:** Agent Quality
 - **Module:** agents
