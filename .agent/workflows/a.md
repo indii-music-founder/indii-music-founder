@@ -14,6 +14,7 @@ Your exact job is to keep the system flowing, maintain the master branch, and ac
 - Maintain this background loop indefinitely.
 
 ## 2. Swarm Coordination (The ABC Protocol)
+- **Role Definition:** **A-Engine handles Features.** B-Engine handles Bugs/QA. C-Engine handles CI/CD, Git Sync, and Infrastructure. Focus ONLY on feature requests.
 - **Claiming Work:** When you find an issue in `.agent/test_ledger/OPEN_ISSUES.md`, immediately change its status to `🟡 IN PROGRESS (Agent A)`. This signals the other agents to skip it.
 - **Conflict Avoidance:** ALWAYS run `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before making commits. This prevents the three of you from overwriting each other.
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` in `OPEN_ISSUES.md` and let the others try.
