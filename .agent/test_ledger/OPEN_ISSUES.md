@@ -5027,7 +5027,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Removed 61 `console.log/warn/error` calls across `packages/main/src` and `packages/renderer/src` via AST-like replacement, and replaced localhost string with empty string in `A2AConfig.ts`.
 
 ### ISSUE-AUDIT-005: Technical Debt (TODOs)
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** 🟢 FIXED
 - **Severity:** P1
 - **Module:** Tech Debt
 - **Summary:** The codebase contains 26 TODO/FIXME/HACK comments.
