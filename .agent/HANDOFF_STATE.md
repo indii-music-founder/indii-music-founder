@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-13 08:52 EDT
+**Updated:** 2026-06-13 09:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+fb1af767c chore: snapshot commit (agent ledger updates and partial fixes)
+93b6af233 chore: session checkpoint [08:52]
 1fd5aec49 chore: session checkpoint [17:35]
 82aed5ae9 chore: session checkpoint [16:46]
 6c819747a feat(agents): perfect agent tool API formations
@@ -12,17 +14,26 @@ eb0032ab4 chore: session checkpoint [12:43]
 dbf07193b ci: increase Node.js memory limit for build jobs to prevent OOM
 a70fd4046 docs(agent): register /away workflow for autonomous CI loops
 95cbd0161 fix(chat): resolve merge duplicate properties and variables in MessageRating
-a3f2675ff chore: session checkpoint [11:25]
-af091bfb8 Merge branch 'main' into feat/agent-elevation-stage-0
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/test_ledger/REAL_TEST_HISTORY.md
+ M .agent/test_ledger/departments_test_config.json
+ M .agent/workflows/get-git.md
  M .agent/workflows/mega-test.md
  M .agent/workflows/mega.md
+ M packages/firebase/src/config/models.ts
+ M packages/firebase/src/config/secrets.ts
+ M packages/firebase/src/functions/agent/workflowOrchestrator.ts
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/firebase/src/index.ts
+ M packages/renderer/src/services/intelligence/GeminiFileService.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? artifacts/mega_testing_system_gap_analysis_2026-06-13.md
+?? packages/firebase/src/functions/agent/executeWorkflowStep.ts
+?? test_str.js
 ```
 
 ## Decisions
