@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import type { GraphExecutionState, AgentGraph } from '@/services/agent/types';
+import { logger } from '@/utils/logger';
 
 // Re-using the types defined in the shared firebase package
 export enum AgentTaskStateEnum {
@@ -60,17 +61,17 @@ export const buildAgentOrchestrationState: (
 
     startListeningToGraph: async (taskId: string) => {
         if (graphListeners[taskId]) {
-            console.warn(`[AgentOrchestrationSlice] Already listening to graph: ${taskId}`);
+            logger.warn(`[AgentOrchestrationSlice] Already listening to graph: ${taskId}`);
             return;
         }
 
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            console.warn('[AgentOrchestrationSlice] Cannot listen to graph without authenticated user.');
+            logger.warn('[AgentOrchestrationSlice] Cannot listen to graph without authenticated user.');
             return;
         }
 
-        console.info(`[AgentOrchestrationSlice] Starting listener for legacy graph: ${taskId}`);
+        logger.info(`[AgentOrchestrationSlice] Starting listener for legacy graph: ${taskId}`);
         const graphRef = doc(db, 'agent_tasks', taskId);
 
         const unsubscribe = onSnapshot(
@@ -85,7 +86,7 @@ export const buildAgentOrchestrationState: (
                         }
                     }));
                 } else {
-                    console.warn(`[AgentOrchestrationSlice] Graph document missing or deleted: ${taskId}`);
+                    logger.warn(`[AgentOrchestrationSlice] Graph document missing or deleted: ${taskId}`);
                     set((state) => {
                         const nextGraphs = { ...state.activeGraphs };
                         delete nextGraphs[taskId];
@@ -94,7 +95,7 @@ export const buildAgentOrchestrationState: (
                 }
             },
             (error) => {
-                console.error(`[AgentOrchestrationSlice] Firestore listener error for ${taskId}:`, error);
+                logger.error(`[AgentOrchestrationSlice] Firestore listener error for ${taskId}:`, error);
             }
         );
 
@@ -106,7 +107,7 @@ export const buildAgentOrchestrationState: (
 
     stopListeningToGraph: (taskId: string) => {
         if (graphListeners[taskId]) {
-            console.info(`[AgentOrchestrationSlice] Stopping listener for graph: ${taskId}`);
+            logger.info(`[AgentOrchestrationSlice] Stopping listener for graph: ${taskId}`);
             delete graphListeners[taskId];
             
             import('@/core/store').then(({ useStore }) => {
@@ -130,7 +131,7 @@ export const buildAgentOrchestrationState: (
     startListeningToGraphExecution: async (executionId: string) => {
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            console.warn('[AgentOrchestrationSlice] Cannot listen to graph execution without authenticated user.');
+            logger.warn('[AgentOrchestrationSlice] Cannot listen to graph execution without authenticated user.');
             return;
         }
 
@@ -140,7 +141,7 @@ export const buildAgentOrchestrationState: (
             useStore.getState().clearSubscriptionsByPrefix('execution_');
         }
 
-        console.info(`[AgentOrchestrationSlice] Starting listener for graph execution: ${executionId}`);
+        logger.info(`[AgentOrchestrationSlice] Starting listener for graph execution: ${executionId}`);
         // Path: users/{userId}/graphExecutions/{id}
         const executionRef = doc(db, 'users', uid, 'graphExecutions', executionId);
 
@@ -151,12 +152,12 @@ export const buildAgentOrchestrationState: (
                     const data = snapshot.data() as GraphExecutionState;
                     set({ activeGraphExecution: data });
                 } else {
-                    console.warn(`[AgentOrchestrationSlice] Graph execution missing or deleted: ${executionId}`);
+                    logger.warn(`[AgentOrchestrationSlice] Graph execution missing or deleted: ${executionId}`);
                     set({ activeGraphExecution: null });
                 }
             },
             (error) => {
-                console.error(`[AgentOrchestrationSlice] Firestore listener error for execution ${executionId}:`, error);
+                logger.error(`[AgentOrchestrationSlice] Firestore listener error for execution ${executionId}:`, error);
             }
         );
         
@@ -164,7 +165,7 @@ export const buildAgentOrchestrationState: (
     },
 
     stopListeningToGraphExecution: () => {
-        console.info('[AgentOrchestrationSlice] Stopping active graph execution listener.');
+        logger.info('[AgentOrchestrationSlice] Stopping active graph execution listener.');
         import('@/core/store').then(({ useStore }) => {
             if (typeof useStore.getState().clearSubscriptionsByPrefix === 'function') {
                 useStore.getState().clearSubscriptionsByPrefix('execution_');
