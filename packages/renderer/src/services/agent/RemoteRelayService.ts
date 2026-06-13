@@ -136,8 +136,7 @@ function getFeedRecencyCutoff(): Timestamp {
 export function relayTimestampToMillis(ts: Timestamp | ReturnType<typeof serverTimestamp> | number | undefined): number {
     if (typeof ts === 'number') return ts;
     if (!ts) return 0;
-    if (ts instanceof Timestamp) return ts.toMillis();
-    // Defensive: handle a plain { toMillis } shape or unresolved sentinel.
+    // Defensive: handle a plain { toMillis } shape or unresolved sentinel, bypassing instanceof Timestamp issues in tests.
     const maybe = ts as { toMillis?: () => number };
     return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
 }
@@ -149,7 +148,12 @@ export function isFreshDesktopState(
 ): boolean {
     if (!state?.online) return false;
     const timestamp = relayTimestampToMillis(state.timestamp);
-    return timestamp > 0 && now - timestamp <= staleMs;
+    if (timestamp === 0) return false;
+    
+    // Account for local clock skew between phone and server.
+    // Phones can be off by significant margins (30-60s).
+    const CLOCK_SKEW_TOLERANCE_MS = 60000;
+    return now - timestamp <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
 }
 
 // ---------------------------------------------------------------------------
