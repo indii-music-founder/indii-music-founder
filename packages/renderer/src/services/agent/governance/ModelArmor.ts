@@ -126,7 +126,7 @@ export class ModelArmor {
      * @param policy - The active ModelArmorPolicy
      * @returns Whether the prompt is allowed, the reason if blocked, and the sanitized prompt
      */
-    static async scanInput(prompt: string, policy: ModelArmorPolicy): Promise<{
+    static async scanInput(prompt: string | null | undefined, policy: ModelArmorPolicy): Promise<{
         allowed: boolean;
         reason?: string;
         sanitizedPrompt?: string;
@@ -134,6 +134,10 @@ export class ModelArmor {
     }> {
         logger.debug('[ModelArmor] Scanning input...');
         const violations: ArmorViolation[] = [];
+
+        if (!prompt) {
+            return { allowed: true, sanitizedPrompt: prompt || '' };
+        }
 
         // Isolate user input from system instructions/context to prevent "context-poisoning" loops.
         // Boardroom mode appends systemic metadata (SEATED_AGENTS, PRIOR CONTEXT) to the task.
