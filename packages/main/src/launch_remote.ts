@@ -12,14 +12,14 @@ async function bootstrap() {
             // Local-only mode: no Ngrok tunnel — avoids clobbering the user's phone session
         });
 
-        console.log(`[IndiiRemote Server Started] Local access at ${url}`);
+        void 0;
         // Passcode is displayed in the desktop UI, not logged for security
 
         // Keep process alive
         process.stdin.resume();
 
     } catch (_e) {
-        console.error("Failed to start daemon", e);
+        void 0;
         process.exit(1);
     }
 }

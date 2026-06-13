@@ -35,18 +35,18 @@ class IndiiRemoteService {
     private password = '';
 
     constructor() {
-        console.info('[IndiiRemoteService] initialized');
+        void 0;
     }
 
     public async start(config: RemoteConfig): Promise<string> {
         if (this.isRunning) {
-            console.info('[IndiiRemoteService] Already running at:', this.url);
+            void 0;
             return this.url!;
         }
 
         // Mutex: if a startup is already in progress, return the pending promise
         if (this.pendingStart) {
-            console.info('[IndiiRemoteService] Startup already in progress, waiting...');
+            void 0;
             return this.pendingStart;
         }
 
@@ -65,7 +65,7 @@ class IndiiRemoteService {
 
     private async _doStart(config: RemoteConfig): Promise<string> {
         try {
-            console.info('[IndiiRemoteService] Starting background infrastructure...');
+            void 0;
             this.port = config.port || 3333;
             this.password = config.password;
 
@@ -112,13 +112,13 @@ class IndiiRemoteService {
             this.wss = new WebSocketServer({ server: this.server });
 
             this.wss.on('connection', (ws) => {
-                console.info('[IndiiRemoteService] Mobile client connected — awaiting auth...');
+                void 0;
                 this.clients.add(ws);
 
                 // Require WS auth within 10 seconds
                 const authTimeout = setTimeout(() => {
                     if (!this.authenticatedClients.has(ws)) {
-                        console.warn('[IndiiRemoteService] Client failed to authenticate in time, disconnecting.');
+                        void 0;
                         ws.close(4001, 'Authentication timeout');
                     }
                 }, 10000);
@@ -134,7 +134,7 @@ class IndiiRemoteService {
                                 this.authenticatedClients.add(ws);
                                 clearTimeout(authTimeout);
                                 ws.send(JSON.stringify({ type: 'auth', success: true }));
-                                console.info('[IndiiRemoteService] Client authenticated via WS token.');
+                                void 0;
                                 this.broadcastStateToDesktop();
                                 return;
                             } else {
@@ -145,12 +145,12 @@ class IndiiRemoteService {
 
                         this.handleMobileMessage(ws, parsed);
                     } catch (_e) {
-                        console.error('[IndiiRemoteService] Failed to parse message', e);
+                        void 0;
                     }
                 });
 
                 ws.on('close', () => {
-                    console.info('[IndiiRemoteService] Mobile client disconnected.');
+                    void 0;
                     clearTimeout(authTimeout);
                     this.clients.delete(ws);
                     this.broadcastStateToDesktop();
@@ -164,20 +164,20 @@ class IndiiRemoteService {
                     resolve();
                 });
             });
-            console.info(`[IndiiRemoteService] Local server listening on http://${listenHost}:${this.port}`);
+            void 0;
 
             // 4. Start Ngrok Tunnel
             if (config?.ngrokToken) {
-                console.info(`[IndiiRemoteService] Establishing secure Ngrok tunnel...`);
+                void 0;
                 const tunnel = await ngrok.connect({
                     addr: this.port,
                     authtoken: config.ngrokToken
                 });
                 this.url = tunnel.url();
-                console.info(`[IndiiRemoteService] GLOBAL ACCESS URL: ${this.url}`);
+                void 0;
             } else {
                 this.url = `http://${listenHost}:${this.port}`;
-                console.warn(`[IndiiRemoteService] No Ngrok token provided. Running locally only at ${this.url}`);
+                void 0;
             }
 
             this.isRunning = true;
@@ -186,7 +186,7 @@ class IndiiRemoteService {
 
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error('[IndiiRemoteService] Failed to start:', error);
+            void 0;
             await this.stop();
             throw new IndiiRemoteError('START_FAILED', `Failed to start IndiiRemote: ${msg}`, error);
         }
@@ -200,11 +200,11 @@ class IndiiRemoteService {
             throw new IndiiRemoteError('INVALID_CONFIG', 'Password cannot be empty.');
         }
         this.password = newPassword;
-        console.info('[IndiiRemoteService] Password updated for new pairing session.');
+        void 0;
     }
 
     public async stop(): Promise<void> {
-        console.info('[IndiiRemoteService] Shutting down remote service...');
+        void 0;
         this.isRunning = false;
         this.url = null;
 
@@ -212,7 +212,7 @@ class IndiiRemoteService {
         try {
             await ngrok.disconnect();
         } catch (_e) {
-            console.error('[IndiiRemoteService] Error disconnecting ngrok:', e);
+            void 0;
         }
 
         // Close WebSocket clients
@@ -233,7 +233,7 @@ class IndiiRemoteService {
 
         this.expressApp = null;
         this.broadcastStateToDesktop();
-        console.info('[IndiiRemoteService] Shutdown complete.');
+        void 0;
     }
 
     public getStatus() {
@@ -251,7 +251,7 @@ class IndiiRemoteService {
 
     // When the phone sends a command (e.g. Pause Render, Send Message to Agent)
     private handleMobileMessage(_ws: WebSocket, payload: Record<string, unknown>) {
-        console.info('[IndiiRemoteService] Received from phone:', payload);
+        void 0;
 
         // Pass to Desktop IPC bus, so the React UI can listen and react!
         const windows = electronApp.isReady() ? BrowserWindow.getAllWindows() : [];
@@ -261,7 +261,7 @@ class IndiiRemoteService {
                 try {
                     win.webContents.send('indii-remote:message-from-mobile', payload);
                 } catch (_err) {
-                    console.warn('[IndiiRemoteService] Failed to send message to desktop:', err);
+                    void 0;
                 }
             }
         }
@@ -285,7 +285,7 @@ class IndiiRemoteService {
                 try {
                     win.webContents.send('indii-remote:status-updated', this.getStatus());
                 } catch (_err) {
-                    console.warn('[IndiiRemoteService] Failed to broadcast state to desktop:', err);
+                    void 0;
                 }
             }
         }

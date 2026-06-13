@@ -72,7 +72,7 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                                 e.currentTarget.play().catch((err: unknown) => {
                                                     // Browser aborted play (usually due to autoplay restrictions or navigation transitions)
                                                     if (err instanceof Error && err.name !== 'AbortError') {
-                                                        console.warn('[EditorAssetLibrary] Video play failed:', err);
+                                                        void 0;
                                                     }
                                                 });
                                             }}

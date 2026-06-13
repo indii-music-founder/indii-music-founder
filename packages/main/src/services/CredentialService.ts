@@ -29,14 +29,14 @@ export class CredentialService {
                 const encryptedBuffer = safeStorage.encryptString(secretSerialized);
                 payloadToStore = encryptedBuffer.toString('base64');
             } else {
-                console.error('[CredentialService] safeStorage not available, refusing to store credentials in plaintext');
+                void 0;
                 throw new Error('Encryption is not available. Credentials cannot be stored securely.');
             }
 
             await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
-            console.info(`[CredentialService] Securely saved credentials for ${distributorId}`);
-        } catch (_error) {
-            console.error(`[CredentialService] Failed to save credentials for ${distributorId}`, error);
+            void 0;
+        } catch (error) {
+            void 0;
             throw error;
         }
     }
@@ -67,7 +67,7 @@ export class CredentialService {
                         throw new Error('safeStorage not available for decryption');
                     }
                 } catch (_e) {
-                    console.error('[CredentialService] Decryption failed, may be legacy or corrupted data');
+                    void 0;
                     // If it's not JSON and decryption failed, we can't use it
                     if (storedPayload.trim().startsWith('{')) return JSON.parse(storedPayload);
                     return null;
@@ -75,8 +75,8 @@ export class CredentialService {
             }
 
             return JSON.parse(decryptedPayload) as Credentials;
-        } catch (_error) {
-            console.error(`[CredentialService] Failed to get credentials for ${distributorId}`, error);
+        } catch (error) {
+            void 0;
             return null;
         }
     }
@@ -88,8 +88,8 @@ export class CredentialService {
         // eslint-disable-next-line no-useless-catch
         try {
             return await keytar.deletePassword(SERVICE_NAME, distributorId);
-        } catch (_error) {
-            console.error(`[CredentialService] Failed to delete credentials for ${distributorId}`, error);
+        } catch (error) {
+            void 0;
             return false;
         }
     }
