@@ -4993,3 +4993,53 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Render cycles are pure, preventing unnecessary React re-renders and hydration issues.
 
 - [x] **ISSUE-HUNTER-101** `packages/renderer/src/core/store/slices/authSlice.ts` - Unsafe authLoading Early Returns leaked electron listeners. Fixed.
+
+### ISSUE-AUDIT-001: 26 High Severity Dependency Vulnerabilities
+- **Status:** OPEN
+- **Severity:** P0
+- **Module:** Global / Dependencies
+- **Summary:** `npm audit` reports 26 high severity vulnerabilities. Several core packages are also outdated.
+- **Fix Direction:** Run `npm audit fix` and upgrade dependencies carefully, ensuring the application still builds and runs correctly.
+
+### ISSUE-AUDIT-002: 125 Linting Problems (25 Errors, 100 Warnings)
+- **Status:** OPEN
+- **Severity:** P1
+- **Module:** Code Quality
+- **Summary:** `npx eslint` reported 125 problems, including 25 errors (mostly unexpected any and unused variables).
+- **Fix Direction:** Address lint errors across the codebase, particularly unused variables and any types.
+
+### ISSUE-AUDIT-003: Missing Agent Training Data
+- **Status:** OPEN
+- **Severity:** P1
+- **Module:** Agent Fleet
+- **Summary:** The `social`, `screenwriter`, and `curriculum` agents have 0 examples in their training data sets.
+- **Fix Direction:** Generate or provide `.jsonl` training data examples for these specific agents in `docs/agent-training/`.
+
+### ISSUE-AUDIT-004: Security Hygiene (Console Logs & Localhost References)
+- **Status:** OPEN
+- **Severity:** P1
+- **Module:** Security / Global
+- **Summary:** 16 console statements and 1 localhost reference (`A2AConfig.ts`) found in production code.
+- **Fix Direction:** Remove `console.log/warn/error` from production source files and replace localhost references with correct environment variables.
+
+### ISSUE-AUDIT-005: Technical Debt (TODOs)
+- **Status:** OPEN
+- **Severity:** P1
+- **Module:** Tech Debt
+- **Summary:** The codebase contains 26 TODO/FIXME/HACK comments.
+- **Fix Direction:** Review and resolve the 26 TODOs or convert them into tracked GitHub issues if they require larger architectural changes.
+
+### ISSUE-AUDIT-006: Anti-AI Slop (Boilerplate)
+- **Status:** OPEN
+- **Severity:** P1
+- **Module:** Code Quality
+- **Summary:** 1 instance of AI boilerplate ("Here is the...code" or "As an AI") was detected in the source code.
+- **Fix Direction:** Remove the AI conversational boilerplate from the codebase.
+
+### ISSUE-HUNTER-105: Store Selectors Missing useShallow (230 instances)
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** Store Slices / Components
+- **Summary:** Many Zustand store selectors returned objects/arrays without being wrapped in `useShallow`, leading to infinite re-render loops or performance degradation under Zustand 5.
+- **Fix:** Used an AST codemod script to automatically identify `useStore` hooks returning objects or arrays, wrap their selector arguments with `useShallow`, and properly inject the `import { useShallow } from 'zustand/react/shallow';` statement.
+- **Files:** Modified 186 files across `packages/renderer/src`.
