@@ -36,8 +36,10 @@ describe('DistributionAgent Integration', () => {
         expect(toolNames).toContain('pro_scraper');
         expect(toolNames).toContain('payment_gate');
         expect(toolNames).toContain('credential_vault');
+        expect(toolNames).toContain('check_dsp_delivery_status');
+        expect(toolNames).toContain('validate_metadata_readiness');
 
-        expect(toolNames.length).toBe(15);
+        expect(toolNames.length).toBe(17);
     });
 
     it('should have proper tool schemas for new tools', () => {
