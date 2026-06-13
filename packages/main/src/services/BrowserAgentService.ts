@@ -55,13 +55,10 @@ export class BrowserAgentService {
             this.window.on('closed', () => {
                 this.window = null;
                 // Cleanup partition data on close
-                ses.clearStorageData().catch(e => void 0);
+                ses.clearStorageData().catch(() => {});
             });
 
-            void 0;
-
         } catch (error) {
-            void 0;
             throw error;
         } finally {
             this.isInitializing = false;
