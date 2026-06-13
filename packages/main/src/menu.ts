@@ -28,7 +28,7 @@ export function setupMenu(mainWindow: BrowserWindow) {
                         if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
                             try {
                                 mainWindow.webContents.send('menu:save-triggered');
-                            } catch (err) {
+                            } catch (_err) {
                                 console.warn('[Menu] Failed to send save event:', err);
                             }
                         }

@@ -25,7 +25,7 @@ export async function getA2AConfig(): Promise<A2AConfig> {
   const explicitMode = envVars.VITE_A2A_MODE as 'loopback' | 'http' | undefined;
 
   if (explicitMode) {
-    const baseUrl = envVars.VITE_A2A_SIDECAR_URL || 'http://localhost:50080/a2a';
+    const baseUrl = envVars.VITE_A2A_SIDECAR_URL || '';
     logger.info(`[A2AConfig] Explicit mode: ${explicitMode}, baseUrl: ${baseUrl}`);
     return { mode: explicitMode, baseUrl };
   }
