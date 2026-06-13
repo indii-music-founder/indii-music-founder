@@ -127,7 +127,7 @@ export async function registerWithASCAP(
         });
 
         if (!response.ok) {
-            const errData = await response.json().catch(() => ({})) as { message?: string };
+            const errData = await response.json().catch((e) => { logger.warn('[PRORightsService] Failed to parse JSON error response:', e); return {}; }) as { message?: string };
             return {
                 success: false,
                 organization: 'ASCAP',
@@ -250,7 +250,7 @@ export async function registerWithBMI(
         });
 
         if (!workRes.ok) {
-            const err = await workRes.json().catch(() => ({})) as { message?: string };
+            const err = await workRes.json().catch((e) => { logger.warn('[PRORightsService] Failed to parse JSON error response:', e); return {}; }) as { message?: string };
             return { success: false, organization: 'BMI', error: err.message || `BMI API error ${workRes.status}`, requiresManualReview: true, submittedAt };
         }
 

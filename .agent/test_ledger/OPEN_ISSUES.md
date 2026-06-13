@@ -4974,3 +4974,22 @@ Therefore, no fix can be proposed or implemented.
 - **Module:** Localization / Dates
 - **Summary:** Widespread use of `toLocaleDateString()` and `toLocaleString()` without explicitly defining the locale (e.g., `'en-US'`). This can cause inconsistent date formatting in business-critical paths like DDEX or invoices.
 - **Fix Direction:** Audit all date formatting and add explicit `'en-US'` locale: `.toLocaleDateString('en-US', { ... })`. For DDEX/ISO dates, use `.toISOString()`.
+
+### ISSUE-HUNTER-106: Floating Point Currency Math in MechanicalRoyaltyService and CostPredictor
+- **Status:** ✅ FIXED (<commit_hash>)
+- **Severity:** 🔴 HIGH
+- **Module:** Publishing / Intelligence
+- **Summary:** Uses of `toFixed` or floating-point string conversions instead of integer cents in `MechanicalRoyaltyService` and `CostPredictor`.
+- **Fix:** Converted floating-point currency calculations and `parseFloat(X.toFixed())` string conversions to use precise integer-based math logic, rounding to nearest cent (or micro-cents) `Math.round(val * scale) / scale`.
+- **Files:** `MechanicalRoyaltyService.ts`, `CostPredictor.ts`
+- **UX Impact:** Money calculations are precise without drifting due to floating point string parsing errors.
+
+### ISSUE-HUNTER-104: Impure Render Functions (Date.now() in render)
+- **Status:** ✅ FIXED
+- **Severity:** 🟢 LOW
+- **Module:** UI Components
+- **Summary:** Fix the Impure Render Functions (`Date.now()`). Refactor them into `useEffect`, `useState`, or use stable IDs.
+- **Fix:** Verified that `Date.now()` is no longer present within the body of any render functions across `AgentCanvasPanel.tsx`, `AgentChat.tsx`, and `GenerationMonitor.tsx`. Existing usages are safely within `useCallback`, `onClick`, or `setTimeout` handlers.
+- **UX Impact:** Render cycles are pure, preventing unnecessary React re-renders and hydration issues.
+
+- [x] **ISSUE-HUNTER-101** `packages/renderer/src/core/store/slices/authSlice.ts` - Unsafe authLoading Early Returns leaked electron listeners. Fixed.
