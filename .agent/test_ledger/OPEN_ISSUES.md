@@ -4891,7 +4891,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in PublishingAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-ROAD: Phase C Skills Gap Analysis for road
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🟢 LOW
 - **Module:** agents/road
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the road agent but are currently missing: draft_tour_itinerary, estimate_tour_budget.
@@ -4927,7 +4927,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Audited all `addEventListener` usages. The mismatch is entirely accounted for by singletons, services (e.g. `NetworkQualityMonitor.ts`), and global bootstrapper files (e.g. `main.tsx`) which intentionally register application-lifetime listeners without unregistering them. No React components were found missing `removeEventListener` cleanup logic. Resolved as false positive.
 
 ### ISSUE-HUNTER-3: Unhandled Firestore onSnapshot Subscriptions
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** Medium
 - **Module:** Firebase / Store Slices
 - **Summary:** Found numerous usages of `onSnapshot` across store slices and hooks (e.g., `profileSlice.ts`, `agentOrchestrationSlice.ts`, etc.). Without proper unsubscribe mechanisms, these can leak memory over time.
