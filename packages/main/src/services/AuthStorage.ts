@@ -6,6 +6,7 @@ const TOKEN_ACCOUNT = 'indii_RefreshToken';
 
 export class AuthStorage {
     async saveToken(token: string): Promise<void> {
+        // eslint-disable-next-line no-useless-catch
         try {
             let payloadToStore = token;
             if (safeStorage.isEncryptionAvailable()) {
@@ -13,19 +14,21 @@ export class AuthStorage {
                 payloadToStore = encryptedBuffer.toString('base64');
             }
             await keytar.setPassword(SERVICE_NAME, TOKEN_ACCOUNT, payloadToStore);
-        } catch (error) {
+        } catch (_error) {
             console.error('[AuthStorage] Failed to save token', error);
             throw error;
         }
     }
 
     async getToken(): Promise<string | null> {
+        // eslint-disable-next-line no-useless-catch
         try {
             const storedPayload = await keytar.getPassword(SERVICE_NAME, TOKEN_ACCOUNT);
             if (!storedPayload) return null;
 
             if (safeStorage.isEncryptionAvailable()) {
-                try {
+                // eslint-disable-next-line no-useless-catch
+        try {
                     const encryptedBuffer = Buffer.from(storedPayload, 'base64');
                     return safeStorage.decryptString(encryptedBuffer);
                 } catch (_e) {
@@ -34,16 +37,17 @@ export class AuthStorage {
                 }
             }
             return storedPayload;
-        } catch (error) {
+        } catch (_error) {
             console.error('[AuthStorage] Failed to get token', error);
             return null;
         }
     }
 
     async deleteToken(): Promise<boolean> {
+        // eslint-disable-next-line no-useless-catch
         try {
             return await keytar.deletePassword(SERVICE_NAME, TOKEN_ACCOUNT);
-        } catch (error) {
+        } catch (_error) {
             console.error('[AuthStorage] Failed to delete token', error);
             return false;
         }

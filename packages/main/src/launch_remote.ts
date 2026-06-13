@@ -18,7 +18,7 @@ async function bootstrap() {
         // Keep process alive
         process.stdin.resume();
 
-    } catch (e) {
+    } catch (_e) {
         console.error("Failed to start daemon", e);
         process.exit(1);
     }
