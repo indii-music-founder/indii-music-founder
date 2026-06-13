@@ -9,11 +9,11 @@ interface SongMetadata {
 
 export class APIService {
     async getSongMetadata(hash: string, token?: string): Promise<SongMetadata | null> {
-        console.log(`[APIService] Looking up metadata for hash: ${hash}`);
+        void 0;
 
         const lookupUrl = process.env.METADATA_LOOKUP_URL;
         if (!lookupUrl) {
-            console.warn('[APIService] METADATA_LOOKUP_URL is not configured; metadata lookup disabled.');
+            void 0;
             return null;
         }
 

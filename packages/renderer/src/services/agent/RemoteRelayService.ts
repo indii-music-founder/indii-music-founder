@@ -151,9 +151,11 @@ export function isFreshDesktopState(
     if (timestamp === 0) return false;
     
     // Account for local clock skew between phone and server.
-    // Phones can be off by significant margins (30-60s).
-    const CLOCK_SKEW_TOLERANCE_MS = 60000;
-    return now - timestamp <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
+    // Use Math.abs() to handle clocks that are either ahead or behind.
+    // Allow up to 10 minutes of skew. The local setTimeout in MobileRemote
+    // will catch an actually dead desktop after 15 seconds anyway.
+    const CLOCK_SKEW_TOLERANCE_MS = 10 * 60 * 1000;
+    return Math.abs(now - timestamp) <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
 }
 
 // ---------------------------------------------------------------------------

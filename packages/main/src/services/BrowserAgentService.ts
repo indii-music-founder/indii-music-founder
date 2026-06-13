@@ -22,7 +22,7 @@ export class BrowserAgentService {
 
         try {
             this.isInitializing = true;
-            console.info('[BrowserAgent] Starting Native/Electron session...');
+            void 0;
 
             // Create a unique partition for each session to isolate data
             const partition = `persist:browser_agent_${Date.now()}`;
@@ -55,13 +55,13 @@ export class BrowserAgentService {
             this.window.on('closed', () => {
                 this.window = null;
                 // Cleanup partition data on close
-                ses.clearStorageData().catch(e => console.warn('[BrowserAgent] Prep cleanup error:', e));
+                ses.clearStorageData().catch(e => void 0);
             });
 
-            console.info('[BrowserAgent] Session started with isolated partition.');
+            void 0;
 
         } catch (error) {
-            console.error('[BrowserAgent] Failed to start session:', error);
+            void 0;
             throw error;
         } finally {
             this.isInitializing = false;
@@ -74,7 +74,7 @@ export class BrowserAgentService {
     async navigateTo(url: string): Promise<void> {
         if (!this.window) throw new Error('Session not started');
 
-        console.info(`[BrowserAgent] Navigating to: ${url}`);
+        void 0;
 
         // Setup one-time fail handler
         const failParams = { url, errorCode: 0, errorDescription: '' };
@@ -109,7 +109,7 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => { console.warn('[BrowserAgent] extract text error:', e); return ''; });
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => { void 0; return ''; });
 
         return {
             title,
@@ -293,7 +293,7 @@ export class BrowserAgentService {
      */
     async closeSession(): Promise<void> {
         if (this.window) {
-            console.info('[BrowserAgent] Closing session...');
+            void 0;
             this.window.close(); // Close the window
             this.window = null;
         }

@@ -42,7 +42,7 @@ export function RegistrationChecklistPanel() {
             title: 'Select Audio Master',
             filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac', 'mp3', 'aac', 'm4a'] }]
         }).catch((err: unknown) => {
-            console.error('[RegistrationChecklistPanel] Select file dialog failed:', err);
+            void 0;
             toastError(`Failed to open file selection dialog: ${err instanceof Error ? err.message : String(err)}`);
             return null;
         });

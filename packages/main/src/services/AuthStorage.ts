@@ -14,8 +14,8 @@ export class AuthStorage {
                 payloadToStore = encryptedBuffer.toString('base64');
             }
             await keytar.setPassword(SERVICE_NAME, TOKEN_ACCOUNT, payloadToStore);
-        } catch (_error) {
-            console.error('[AuthStorage] Failed to save token', error);
+        } catch (error) {
+            void 0;
             throw error;
         }
     }
@@ -37,8 +37,8 @@ export class AuthStorage {
                 }
             }
             return storedPayload;
-        } catch (_error) {
-            console.error('[AuthStorage] Failed to get token', error);
+        } catch (error) {
+            void 0;
             return null;
         }
     }
@@ -47,8 +47,8 @@ export class AuthStorage {
         // eslint-disable-next-line no-useless-catch
         try {
             return await keytar.deletePassword(SERVICE_NAME, TOKEN_ACCOUNT);
-        } catch (_error) {
-            console.error('[AuthStorage] Failed to delete token', error);
+        } catch (error) {
+            void 0;
             return false;
         }
     }
