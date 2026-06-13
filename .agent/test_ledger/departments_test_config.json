@@ -1076,7 +1076,7 @@
     ],
     "unitTestPaths": [
       "packages/renderer/src/services/memory",
-      "packages/renderer/src/core/store/slices/profileSlice.ts"
+      "packages/renderer/src/core/store/slices/profileSlice.test.ts"
     ],
     "e2eTestPaths": [
       "e2e/detroit-techno-onboarding.spec.ts",
@@ -1129,7 +1129,7 @@
       "profile-propagation"
     ],
     "unitTestPaths": [
-      "packages/renderer/src/core/store/slices/profileSlice.ts",
+      "packages/renderer/src/core/store/slices/profileSlice.test.ts",
       "packages/renderer/src/services/agent/memory"
     ],
     "e2eTestPaths": [
