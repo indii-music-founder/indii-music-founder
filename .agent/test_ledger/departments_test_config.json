@@ -567,5 +567,15 @@
     "megaStressTestRoutines": {
       "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [41]
     }
+  },
+  "api-endpoints": {
+    "name": "API Endpoints Gauntlet",
+    "category": "tool",
+    "aliases": ["api", "api-endpoints", "apis"],
+    "unitTestPaths": [],
+    "e2eTestPaths": [],
+    "connectedDepartments": [],
+    "connectedE2eTestPaths": [],
+    "megaStressTestRoutines": {}
   }
 }

@@ -1,11 +1,14 @@
 ---
 name: /mega-test
 description: >
-  Execute a specific version of the Mega Stress Test Plan using the browser subagent,
-  measuring against 11 dimensions including deep technical architecture, asset generation,
-  and real artifact validation.
-  Runs numbered routines sequentially, documents pass/fail per routine, logs new issues
-  to .agent/test_ledger/OPEN_ISSUES.md, and produces a structured test report.
+  Execute a full multi-dimensional stress test against ONE left-menu item — a manager,
+  department, tool, or project/dashboard — named as the fill-in-the-blank target.
+  Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`.
+  The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`.
+  Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via
+  `execution/run_department_test.py <target>`, then drives the 11-dimension browser gauntlet
+  against the live module, documents pass/fail, logs new issues to
+  `.agent/test_ledger/OPEN_ISSUES.md`, and produces a structured per-target report.
   TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
 ---
 
@@ -14,21 +17,23 @@ description: >
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
-# /mega-test — Multi-Dimensional Mega Stress Test Execution Protocol
+# /mega-test — Per-Menu-Item Multi-Dimensional Stress Test
 
-> **Purpose:** Execute numbered routines from a specific Mega Stress Test plan file against the live running application using the browser subagent. Evaluate the application across 11 critical dimensions.
+> **Purpose:** Test ONE left-menu item end-to-end against the live running application using the browser subagent, across 11 critical dimensions, plus its scoped unit/E2E/connection test surface.
+> **The unit of work is a menu item, NOT a version number.** `/mega-test road-manager`, not `/mega-test v5`.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
-> **Output:** Multi-dimensional pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES.md`
+> **Output:** Per-target pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES.md`
 
 ---
 
 ## 0. PRIME RULES (READ BEFORE ANYTHING ELSE)
 
-You are a **multi-dimensional test executor**, not an engineer. For every routine, you observe through ALL 11 lenses simultaneously.
+You are a **multi-dimensional test executor**, not an engineer. For the target menu item, you observe through ALL 11 lenses simultaneously.
 
 You DO:
-- Open the browser subagent and navigate the live app
-- Execute each routine's exact steps as written in the plan
+- Resolve the user's target to a registry entry (manager / department / tool / project)
+- Run the scoped test surface via `python3 execution/run_department_test.py <target>`
+- Open the browser subagent and navigate the live app to that exact module
 - Validate real outputs (images, videos, PDFs) end-to-end
 - Screenshot every meaningful state, error toast, and failure
 - Report PASS, PARTIAL, or FAIL per routine with dimensional scores
@@ -37,9 +42,9 @@ You DO:
 You do NOT:
 - Read source code
 - Modify any files (except appending to `.agent/test_ledger/OPEN_ISSUES.md` and the test report)
-- Run terminal commands other than checking the app is running
+- Run terminal commands other than the scoped runner and checking the app is running
 - Diagnose root causes or suggest code fixes
-- Skip routines because they "seem fine" — every routine must execute
+- Skip the target's connected modules — every menu item flows data somewhere
 
 **Technology Snapshot Check:**
 - Framework: React 18.3.1 (Concurrent mode)
@@ -48,36 +53,93 @@ You do NOT:
 - AI: Gemini 3 Pro/Flash Preview models (strict policy)
 - Backend: Firebase Gen 2 Cloud Functions
 
-Before executing ANY routine, read the Architecture Snapshot (Section 8.1) to understand what the code SHOULD do.
+---
+
+## 1. THE TARGET TAXONOMY (THE FILL-IN-THE-BLANK)
+
+Every `/mega-test` invocation names ONE left-menu item. The authoritative list of targets, their aliases, and their scoped test surfaces lives in **`.agent/test_ledger/departments_test_config.json`** — that registry is the single source of truth and mirrors the live sidebar in [Sidebar.tsx](packages/renderer/src/core/components/Sidebar.tsx).
+
+The menu is organized into four categories. Any item below is a valid fill-in-the-blank:
+
+### Manager's Office (`category: manager`)
+| Target | Aliases |
+|--------|---------|
+| Brand Manager | `brand`, `brand-manager`, `branding` |
+| Road Manager | `road`, `road-manager`, `touring` |
+| Campaign Manager | `campaign`, `campaign-manager` |
+| Booking Agent | `agent`, `booking-agent` |
+| Publicist | `publicist`, `pr-agent` |
+| Creative Director | `creative`, `creative-director`, `a&r`, `art` |
+
+### Departments (`category: department`)
+| Target | Aliases |
+|--------|---------|
+| Marketing & PR | `marketing`, `social-media`, `pr` |
+| Social Media Department | `social`, `social-media` |
+| Legal Department | `legal`, `contracts` |
+| Publishing Department | `publishing` |
+| Finance Department | `finance`, `royalties`, `royalty` |
+| Distribution Department | `distribution` |
+| Licensing Department | `licensing` |
+| Art & Merch Dept | `merch`, `merchandise`, `art-merch` |
+| Registration Center | `registration` |
+| Security Agent | `security` |
+
+### Tools (`category: tool`)
+| Target | Aliases |
+|--------|---------|
+| Workflow Builder | `workflow`, `workflows` |
+| Audio Analyzer | `audio-analyzer`, `audio`, `analyzer`, `mega-test-audio`, `MegaTestAudioLoop` |
+| Knowledge Base | `knowledge` |
+| Memory Agent | `memory` |
+| Command Center | `observability`, `command-center` |
+| Settings | `settings`, `preferences` |
+| Mobile Remote | `mobile-remote`, `remote`, `controller` |
+
+### Projects & Dashboards (`category: project`)
+| Target | Aliases |
+|--------|---------|
+| HQ Dashboard | `dashboard`, `hq`, `projects` |
+| Boardroom HQ | `boardroom`, `swarm` |
+| Founders Checkout | `founders`, `checkout` |
+| Onboarding | `onboarding`, `curriculum` |
+
+> **The registry is canonical — these tables are a convenience snapshot.** At startup, dump the live registry to confirm targets and aliases:
+> ```bash
+> python3 execution/run_department_test.py --help && \
+>   python3 -c "import json; c=json.load(open('.agent/test_ledger/departments_test_config.json')); [print(v.get('category'),'|',k,'|',v.get('name'),'| aliases:',v.get('aliases',[])) for k,v in c.items()]"
+> ```
+> If the user names something not in the registry, list the valid targets (the runner prints them on a miss) and ask which they meant.
 
 ---
 
-## 1. INITIALIZATION
+## 2. INVOCATION SYNTAX
 
-### Step 0 — Technology Snapshot
-Verify current system matches the expected tech stack:
-```bash
-npm ls react zustand vite
+```
+/mega-test road-manager          → Full gauntlet against the Road Manager menu item
+/mega-test audio-analyzer        → Full gauntlet against Audio Analyzer (audio system)
+/mega-test marketing             → Full gauntlet against the Marketing department
+/mega-test boardroom             → Full gauntlet against Boardroom HQ
+/mega-test                       → No target: list the registry and ask which item to run
+/mega-test road-manager --deep v5  → Attach a heavier numbered depth-pack (see §9)
+/mega-test road-manager --no-browser → Scoped runner only, skip the live browser gauntlet
 ```
 
-### Step 1 — Determine which test plan or department to run
-Read the user's input:
-| Input | Behavior |
-|-------|---------|
-| `/mega-test` (no args) | Run the highest-version plan found in `.agent/test_ledger/` |
-| `/mega-test v4` | Run `MEGA_STRESS_TEST_V4_REGRESSION.md` |
-| `/mega-test v4 section 3` | Run only Section 3 of V4 |
-| `/mega-test v4 101-110` | Run only routines 101–110 of V4 |
-| `/mega-test regression` | Run all routines tagged `[REGRESSION]` across all plans |
-| `/mega-test marketing` | Run the scoped department tests (unit, integration, E2E, and connections) for the Marketing department using `python3 execution/run_department_test.py marketing` |
-| `/mega-test-audio`, `/mega-test audio`, `/mega-test MegaTestAudioLoop` | Run the scoped audio system gauntlet using `python3 execution/run_department_test.py audio-analyzer`, including Audio Analyzer UI, audio services, Firebase audio API tests, agent audio tools, distribution/DDEX audio paths, Python audio forensics checks, fixtures, and connected Creative/Marketing/Distribution coverage |
-| `/mega-test <department>` | Run tests scoped by department name or alias (e.g., creative, finance, distribution, legal, publishing) |
+`/mega-test <category>` (e.g. `/mega-test managers`, `/mega-test departments`, `/mega-test tools`)
+sweeps every item in that category one at a time. To sweep the **entire menu**, use `/mega`.
 
-### Step 2 — Read the target test plan in full
+---
+
+## 3. INITIALIZATION
+
+### Step 1 — Resolve the target
+Read the user's argument. Resolve it to exactly one registry key via name or alias. If it resolves to a category, expand to the list of items and run them sequentially. If no target was given, print the registry and ask.
+
+### Step 2 — Run the scoped test surface
 ```bash
-cat .agent/test_ledger/MEGA_STRESS_TEST_V<N>_*.md
+python3 execution/run_department_test.py <target>
 ```
-Build a mental checklist of modules, actions, and PASS conditions.
+This executes the target's Vitest unit/integration tests, Playwright E2E specs, configured Python checks, and **connected-integration** tests. Capture the results — failures here become issues just like browser findings. Use `--dry-run` first if you want to see the surface before spending time.
 
 ### Step 3 — Read .agent/test_ledger/OPEN_ISSUES.md
 ```bash
@@ -92,188 +154,133 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:4242
 If not 200, ask the user to start the dev server (`npm run dev:web`).
 
 ### Step 5 — Console Baseline
-Open the browser subagent, navigate to `http://localhost:4242`. Record ALL console messages on initial load as the BASELINE. Any new console errors during testing = new findings.
+Open the browser subagent, navigate to `http://localhost:4242`. Record ALL console messages on initial load as the BASELINE. Any new console errors when you open the target module = new findings.
 
 ### Step 6 — Read Flowchart Index
-Scan `docs/flowcharts/` to build a mental map of key architectural invariants.
-
-### Step 7 — Check Slash Command Availability
-Verify `/hunter`, `/issue`, `/real`, `/auto_qa`, `/flowchart`, `/health_audit`, `/factory`, `/ci-validate` exist in `.agent/workflows/`.
-
-### Step 8 — Read REAL_TEST_HISTORY.md
-Load the coverage history to prioritize under-tested areas.
+Scan `docs/flowcharts/` for invariants touching this target (its module + every module it connects to).
 
 ---
 
-## 2. EXECUTION PROTOCOL
+## 4. EXECUTION PROTOCOL
 
-### 2.1 Routine Execution Loop
-For each routine in the test plan:
-1. **Read the routine** — understand the full scenario.
-2. **Navigate** — get to the correct module using the sidebar.
-3. **Execute** — follow the exact steps.
-4. **Observe** — watch for PASS/FAIL conditions across all 11 Dimensions.
-5. **Screenshot** — capture final state (pass or fail).
-6. **Record** — append to running test report with dimensional scores.
+### 4.1 Per-Target Loop
+1. **Navigate** — open the target module via its sidebar path (§5).
+2. **Exercise the surface** — every button, input, generation trigger, and persisted state in the module.
+3. **Follow the connections** — the registry lists connected modules. Verify data flows out (e.g. Creative image → Distribution; Road Manager itinerary → Calendar/Finance).
+4. **Observe** — watch PASS/FAIL across all 11 Dimensions (§6).
+5. **Screenshot** — capture every meaningful state (pass or fail).
+6. **Record** — append to the running report with dimensional scores.
 7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES.md`.
 
-### 2.2 Browser Subagent Usage Rules
+### 4.2 Browser Subagent Usage Rules
 When calling `browser_subagent`:
-- Provide the full routine text as task context.
+- Provide the target name and the exact scenario as task context.
 - Specify the exact PASS condition.
 - Ask for console error reporting.
 - Request a screenshot at the end.
 - Set generous timeouts for AI generation routines (2+ minutes).
+- Split a rich module into 5–8-step batches — do not cram the whole module into one call.
 
-### 2.3 Verdict Definitions
+### 4.3 Verdict Definitions
 | Verdict | When to Use |
 |---------|-------------|
 | ✅ PASS | PASS condition fully met. No errors, no deviations. |
 | ⚠️ PARTIAL | Works but with degradation (slow, console warning, visual glitch). |
 | ❌ FAIL | PASS condition NOT met, OR blocking console error. |
+| ❌ FAIL [REGRESSION] | Routine maps to a previously `✅ FIXED` issue that has returned. File with `Severity: 🔴 HIGH`. |
 | 🔵 OPEN | Already-open issue. Document current state. |
 | 🚫 BUDGET_HOLD | Stopped due to API costs exceeding budget. |
 
-### 2.4 Regression Detection
-If a routine maps to a previously `✅ FIXED` issue and fails:
-1. Mark `❌ FAIL [REGRESSION]`.
-2. File a new issue with `Severity: 🔴 HIGH`.
+---
+
+## 5. MODULE NAVIGATION GUIDE
+
+Sidebar is grouped: **Projects** (top), **Manager's Office**, **Departments**, **Tools**. Expand a collapsed section to reach its items.
+- Boardroom: top-level "Boardroom HQ"
+- HQ Dashboard / Projects: top-level "Projects"
+- Managers: Manager's Office > "Brand Manager" / "Road Manager" / "Campaign Manager" / "Booking Agent" / "Publicist" / "Creative Director"
+- Departments: Departments > "Marketing" / "Social Media" / "Legal" / "Publishing" / "Finance" / "Distribution" / "Licensing" / "Art & Merch" / "Registration Center" / "Security Agent"
+- Tools: Tools > "Workflow Builder" / "Audio Analyzer" / "Knowledge Base" / "Memory Agent" / "Command Center" / "Settings"
 
 ---
 
-## 3. THE 11 DIMENSIONS
+## 6. THE 11 DIMENSIONS
 
-You evaluate every routine across these 11 lenses.
+You evaluate the target across these 11 lenses.
 
 ### Dimension 1: Performance Profiling
-1. Measure page load time (start → interactive).
-2. Record memory usage via DevTools.
-3. Re-measure memory after 5 minutes (detect leaks).
-4. Check for layout shifts during transitions.
-5. Time AI responses.
-*Budgets: Load < 3s, Switch < 500ms, AI First Token < 5s, No CLS.*
+Page/module load time (start → interactive); memory via DevTools; re-measure after 5 min (leaks); layout shifts; AI response timing.
+*Budgets: Load < 3s, Module switch < 500ms, AI First Token < 5s, No CLS.*
 
 ### Dimension 2: Accessibility Audit
-1. Run axe-core scan.
-2. Tab through elements — verify focus ring.
-3. Verify alt text on images.
-4. Verify accessible names on buttons.
-5. Check color contrast (4.5:1).
+axe-core scan; tab-order + focus ring; alt text; accessible names on buttons; contrast (4.5:1).
 *Severity: Missing alt text = HIGH, Contrast = MEDIUM.*
 
 ### Dimension 3: Security Surface Testing
-1. Check for exposed API keys in network (sk_, ghp_, AIza).
-2. Auth tokens not in URLs.
-3. Test protected routes unauthenticated.
-4. Check CSP headers.
-*Red Flags: API key exposed = ❌ FAIL.*
+Exposed keys in network (`sk_`, `ghp_`, `AIza`); auth tokens not in URLs; protected routes unauthenticated; CSP headers.
+*Red Flag: API key exposed = ❌ FAIL.*
 
 ### Dimension 4: Architecture Validation (Flowchart-Driven)
-Verify the live app matches `docs/flowcharts/`.
-- Validate app layers (entire-app-architecture.md).
-- Validate state management (zustand-state-architecture.md).
-- Validate creative flow (creative-studio-pipeline.md).
+Verify the live module matches `docs/flowcharts/` (app layers, state management, the target's own pipeline).
 
 ### Dimension 5: State Management Integrity
-- Verify Zustand state persists across module navigation.
-- Detect subscription leaks (rapidly switch modules, check memory).
-- Verify slice isolation (actions in Creative don't re-render Finance).
+Zustand state persists across navigation away and back; no subscription leaks; slice isolation (actions in this module don't re-render unrelated ones).
 
 ### Dimension 6: AI/Agent Integrity
-- Model Policy: Verify banned models are NOT used (gemini-1.5*, gemini-2.0*, gemini-pro*).
-- Verify approved models ARE used (gemini-3*, veo-3.1*).
-- Verify Agent Orchestrator (Conductor) delegates correctly.
+Banned models NOT used (`gemini-1.5*`, `gemini-2.0*`, `gemini-pro*`); approved models used (`gemini-3*`, `veo-3.1*`); Conductor delegates correctly for this module's agent.
 
 ### Dimension 7: Cross-Module Data Flow
-Verify assets are visible where needed:
-- Creative Image → Video Producer, Distribution, Brand Kit.
-- Audio DNA → Distribution Metadata.
+Verify the target's outputs reach every module the registry lists as connected. An asset created here but unusable downstream is a FAIL.
 
 ### Dimension 8: Responsive & PWA
-Test viewport breakpoints:
-- 1920px (Desktop), 1280px (Laptop), 768px (Tablet), 375px (Mobile).
-- Verify no horizontal scrollbars, touch targets ≥ 44x44px.
-- PWA: manifest.json valid, service worker active.
+Viewports 1920 / 1280 / 768 / 375; no horizontal scrollbars; touch targets ≥ 44×44px; manifest + service worker.
 
 ### Dimension 9: Production Parity
-- Compare `.env` to production.
-- Verify `VITE_SKIP_ONBOARDING` is off in prod logic.
-- Verify App Check token requirements.
+`VITE_SKIP_ONBOARDING` off in prod logic; App Check token requirements; no dev-only shortcuts leaking.
 
 ### Dimension 10: Console Intelligence
-Classify all console messages:
-- 🔴 CRITICAL (Unhandled Rejection, TypeError) → HIGH issue.
-- 🟡 WARNING (React key, deprecated) → MEDIUM issue.
-- React 18 specific: Catch "Cannot update component while rendering", "unique key", "suspense boundary" errors.
+🔴 CRITICAL (Unhandled Rejection, TypeError) → HIGH; 🟡 WARNING (React key, deprecated) → MEDIUM. Catch React 18 "Cannot update component while rendering", "unique key", "suspense boundary".
 
-### Dimension 11: Asset Generation Gauntlet (The Generative Crucible)
-Every endpoint that CREATES a real artifact MUST be tested end-to-end.
-**Procedure:**
-1. TRIGGER generation.
-2. WAIT (generous timeouts).
-3. VERIFY ARTIFACT: Real (not undefined/placeholder), correct MIME, VISIBLE in UI, PLAYABLE/DOWNLOADABLE.
-4. USE DOWNSTREAM: Verify it can be used in another module.
-
-**Key Chain Tests (End-to-End):**
-- Logo → T-Shirt Mockup (`mockup_merchandise`).
-- Image → Video (`generateVideoV3`).
-- Audio → DNA → Distribution.
-- Contract → PDF → Signature.
-- Full Artist Lifecycle (Gauntlet): Logo → Art → Merch → Split Sheet → PR → Release → DDEX.
-
-*Cost Awareness:* Respect API budgets. Use `check_budget_status()`.
+### Dimension 11: Asset Generation Gauntlet
+Every endpoint in this module that CREATES a real artifact MUST be tested end-to-end: TRIGGER → WAIT → VERIFY (real, correct MIME, visible, playable/downloadable) → USE DOWNSTREAM.
+*Cost Awareness: respect API budgets; use `check_budget_status()`.*
 
 ---
 
-## 4. MODULE NAVIGATION GUIDE
+## 7. TEST REPORT FORMAT
 
-Use explicit sidebar paths:
-- Boardroom: "Boardroom HQ"
-- Creative Director: "Creative Director"
-- Audio Analyzer: TOOLS > "Audio Analyzer"
-- Workflow Builder: TOOLS > "Workflow Builder"
-- Finance: "Finance"
-- Marketing: "Marketing"
-- Distribution: "Distribution"
-Expand the sidebar if tools are hidden.
-
----
-
-## 5. TEST REPORT FORMAT
-
-Maintain a running report, finalize as an artifact `artifacts/mega_v<N>_<date>_results.md`.
+Maintain a running report, finalize as `artifacts/mega_<target>_<date>_results.md`.
 
 ```markdown
-# Mega Stress Test V<N>.0 Execution Report
+# Mega Stress Test — <Target Name> Execution Report
 
 **Date:** <ISO date>
-**Plan:** MEGA_STRESS_TEST_V<N>_*.md
-**Routines Executed:** <X> of <Y> total
+**Target:** <target name> (category: manager|department|tool|project)
+**Registry key:** <key>
+**Connected modules tested:** <list>
+
+## Scoped Runner Results
+- Unit/Integration: <X pass / Y fail>
+- E2E: <X pass / Y fail>
+- Connections: <X pass / Y fail>
 
 ## Dimensional Health Matrix
-
 | Dimension | Score | Critical | Warning | Pass | Notes |
 |-----------|-------|----------|---------|------|-------|
-| Performance | 🟢 8/10 | 0 | 2 | 8 | Memory growth in Creative |
-| Accessibility | 🟡 6/10 | 1 | 3 | 6 | Missing alt text |
+| Performance | 🟢 8/10 | 0 | 2 | 8 | ... |
 | [All 11 Dimensions] | ... | ... | ... | ... | ... |
-| **OVERALL** | **🟡 85/110** | **2** | **20** | **88** | **Target: 100/110** |
+| **OVERALL** | **🟡 .../110** | ... | ... | ... | **Target: 100/110** |
 
 ## Asset Generation Scorecard
 | Endpoint | Status | Time | Downstream |
 |----------|--------|------|------------|
-| generateImageV3 | ✅ PASS | 4.2s | Used as cover art |
 | ... | ... | ... | ... |
 
-## Architecture Violation Log
-- [VIOLATION-001] Video pipeline skips canvas step
-
-## Per-Routine Entry
-### Routine <N>: <Title>
+## Per-Scenario Entries
+### Scenario: <Title>
 - **Verdict:** ✅ PASS
 - **Duration:** ~<seconds>s
 - **Observed:** <what happened>
-- **Dimensional Scores:** [Table of 11 scores]
 - **New issue filed:** ISSUE-NNN
 
 ## New Issues Filed
@@ -282,19 +289,20 @@ Maintain a running report, finalize as an artifact `artifacts/mega_v<N>_<date>_r
 
 ---
 
-## 6. ISSUE FILING FORMAT (.agent/test_ledger/OPEN_ISSUES.md)
+## 8. ISSUE FILING FORMAT (.agent/test_ledger/OPEN_ISSUES.md)
 
-Append to `.agent/test_ledger/OPEN_ISSUES.md`. DO NOT edit existing entries.
+Append only. DO NOT edit existing entries.
 
 ```markdown
 ### ISSUE-<NNN>: <Short title>
 - **Status:** OPEN
 - **Severity:** 🔴 HIGH | 🟡 MEDIUM | 🟢 LOW
 - **Dimension:** Performance | Accessibility | Security | Architecture | State | AI | DataFlow | Responsive | ProdParity | Console | AssetGen
+- **Target:** <menu item name> (category)
 - **Module:** <module name>
 - **Flowchart:** <flowchart file> | N/A
 - **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase | N/A
-- **Found:** <YYYY-MM-DD> by Mega Stress Test V<N> (Routine <N>)
+- **Found:** <YYYY-MM-DD> by /mega-test <target>
 - **Summary:** <description>
 - **Steps to Reproduce:** ...
 - **Expected:** ...
@@ -304,46 +312,35 @@ Append to `.agent/test_ledger/OPEN_ISSUES.md`. DO NOT edit existing entries.
 
 ---
 
-## 7. SLASH COMMAND INTEGRATION
+## 9. DEPTH-PACKS (`--deep <version>`)
 
-Test Orchestration Pipeline:
-- **BEFORE:** `/health_audit` (snapshot), `/flowchart` (architecture map)
-- **DURING:** `/hunter audit` (if ≥5 security issues), `/auto_qa` (after sections)
-- **AFTER:** `/issue triage` (auto-triage), `/ci-validate` (test regressions), `/go` (snapshot)
-- **OPTIONAL:** `/factory` (closed-loop), `/real deep <module>`
+The numbered V1–V12 plans in `.agent/test_ledger/MEGA_STRESS_TEST_V*.md` are **reusable depth-packs**, no longer the unit of work. By default `/mega-test <target>` runs the standard gauntlet. When a single item needs heavier abuse, attach a pack whose routines touch that item:
 
----
+```
+/mega-test road-manager --deep v5     → Pull Road-Manager-relevant routines from the V5 plan
+/mega-test audio-analyzer --deep v11   → Pull audio routines from V11
+```
 
-## 8. FLOWCHART VALIDATION ENGINE
-
-Read flowcharts in `docs/flowcharts/` and extract invariants. Verify them live.
-- `entire-app-architecture.md`: 6 layers operational.
-- `zustand-state-architecture.md`: 10 slices isolated.
-- `creative-studio-pipeline.md`: Generate → Edit → Canvas → Save.
-File `ARCHITECTURE_VIOLATION` issues for deviations.
-
----
-
-## 9. TECHNOLOGY-AWARE TESTING
-
-Specific routines for exact stack versions:
-- **React 18.3.1:** Concurrent rendering, automatic batching, suspense boundaries, strict mode double-renders.
-- **Zustand 5.0.8:** Shallow equality checks, 28-slice stress tests, persistence survival.
-- **Vite 6.4.2 / Tailwind 4.1.17:** HMR speed, chunk splitting, class collision.
-- **Firebase Gen 2:** Firestore rule drops, app check tokens, cold starts.
+When `--deep` is given: read the named plan, extract ONLY the routines that exercise the target module (or its connections), and run them as additional scenarios in the same report. Ignore routines for other modules.
 
 ---
 
 ## 10. QUICK REFERENCE
 
 ```
-/mega-test                  → Run highest-version plan, all routines
-/mega-test v4               → Run V4 plan, all routines
-/mega-test regression       → Run only [REGRESSION]-tagged routines
+/mega-test <item>            → Full 11-dimension gauntlet against one menu item
+/mega-test <category>        → Sweep every item in a category (managers|departments|tools|projects)
+/mega-test                   → List the registry, ask which item to run
+/mega-test <item> --deep vN  → Attach numbered depth-pack routines for that item
+/mega-test <item> --no-browser → Scoped runner only
+
+Source of truth:
+  .agent/test_ledger/departments_test_config.json  ← target taxonomy + scoped surfaces
+  execution/run_department_test.py                  ← scoped runner
 
 Output files:
   .agent/test_ledger/OPEN_ISSUES.md          ← Append new issues HERE
-  artifacts/mega_v<N>_<date>_results.md      ← Session test report
+  artifacts/mega_<target>_<date>_results.md  ← Session test report
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Append one-line summary
 ```
 
@@ -353,9 +350,11 @@ Output files:
 
 | Anti-Pattern | Why It's Wrong |
 |-------------|---------------|
-| Skipping a routine because it "looks fine" | Every routine must run. The PASS condition is not assumed. |
-| Failing to verify downstream Asset flow | An image generated but not usable in Distribution is a FAIL. |
-| Filing vague issues | Every issue needs exact steps to reproduce and Dimension tags. |
+| Asking "which version?" | The unit is a menu item, not a version. Resolve the target against the registry. |
+| Inventing a target not in the registry | If it's not in `departments_test_config.json`, list valid targets and ask. |
+| Testing the module but skipping its connections | The registry lists connected modules. Cross-module data flow is part of the gauntlet. |
+| Running the browser gauntlet but skipping the scoped runner | Both halves are required — unit/E2E failures are findings too. |
+| Filing vague issues | Every issue needs exact steps + Dimension + Target tags. |
 | Marking PARTIAL when it's clearly FAIL | Do not soften failures. |
-| Running all 35 routines in one browser call | Split into sections. Browser subagent has limits. |
+| Reading source to diagnose | You are the user. Observe and report. |
 | Ignoring console errors on PASS | A "working" feature with an Unhandled Promise Rejection is a FAIL. |
