@@ -52,7 +52,7 @@ export default function LegalDashboard() {
                 setAnalysisHistory(analyses.map(a => ({
                     name: a.fileName,
                     score: a.score,
-                    date: new Date(a.analyzedAt).toLocaleDateString(),
+                    date: new Date(a.analyzedAt).toLocaleDateString('en-US'),
                 })));
             }
         }).catch(err => logger.warn('[Legal] Could not load analysis history:', err));
@@ -130,7 +130,7 @@ Only return valid JSON.
             };
 
             setAnalysisResult(result);
-            const historyEntry = { name: file.name, score: result.score, date: new Date().toLocaleDateString() };
+            const historyEntry = { name: file.name, score: result.score, date: new Date().toLocaleDateString('en-US') };
             setAnalysisHistory(prev => [historyEntry, ...prev.slice(0, 19)]);
 
             // Persist to Firestore (fire-and-forget — don't block the UI)

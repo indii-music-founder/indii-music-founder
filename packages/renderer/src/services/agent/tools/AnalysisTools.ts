@@ -47,7 +47,7 @@ export const AnalysisTools = {
                             timestamp: new Date(cached.fetchedAt).toISOString(),
                             stats: cached,
                             source: 'cache'
-                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString() ?? 'N/A'}.`);
+                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
                     }
                 }
 
@@ -62,7 +62,7 @@ export const AnalysisTools = {
                             timestamp: new Date(live.fetchedAt).toISOString(),
                             stats: live,
                             source: 'live'
-                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString() ?? 'N/A'}.`);
+                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
                     }
                 }
             }

@@ -455,10 +455,10 @@ function PODPartnerStatusPanel() {
 
 function ConversionFunnelPanel({ stats }: { stats: MerchStats }) {
     const stages = [
-        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString(), pct: 100 },
-        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
-        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
-        { label: 'Purchased', value: stats.unitsSold.toLocaleString(), pct: stats.conversionRate ?? 0 },
+        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString('en-US'), pct: 100 },
+        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Purchased', value: stats.unitsSold.toLocaleString('en-US'), pct: stats.conversionRate ?? 0 },
     ];
 
     return (

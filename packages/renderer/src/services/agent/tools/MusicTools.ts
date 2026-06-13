@@ -131,6 +131,78 @@ export const MusicTools = {
         }
     }),
 
+    /**
+     * Deep technical and semantic analysis of an isolated audio stem.
+     * Extracts characteristics specifically tuned for isolated stems like vocals or drums.
+     */
+    analyze_audio_stem: wrapTool('analyze_audio_stem', async (args: { uploadedAudioIndex: number, stemType: string }) => {
+        const { useStore } = await import('@/core/store');
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No stem found at index ${args.uploadedAudioIndex}.`, "NOT_FOUND");
+        }
+
+        try {
+            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            
+            // Fetch audio blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], audioItem.prompt || `stem-${args.stemType}.mp3`, { type: blob.type });
+
+            // Run Analysis
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Stem analysis complete for ${args.stemType} stem. BPM: ${profile.technical.bpm}, Key: ${profile.technical.key}, Energy: ${profile.technical.energy.toFixed(2)}. Dominant Texture: ${profile.semantic?.timbre?.texture || 'Unknown'}.`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze stem: ${message}`, "STEM_ANALYSIS_FAILED");
+        }
+    }),
+
+    /**
+     * Fast technical analysis focused solely on extracting BPM, Key, and Scale.
+     * Useful for quick synchronization checks without full semantic overhead.
+     */
+    detect_bpm_and_key: wrapTool('detect_bpm_and_key', async (args: { uploadedAudioIndex: number }) => {
+        const { useStore } = await import('@/core/store');
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}.`, "NOT_FOUND");
+        }
+
+        try {
+            const { audioAnalysisService } = await import('@/services/audio/AudioAnalysisService');
+            
+            // Fetch audio blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], audioItem.prompt || "track.mp3", { type: blob.type });
+
+            // Run fast technical analysis only
+            const result = await audioAnalysisService.analyze(file);
+
+            return toolSuccess(
+                {
+                    bpm: result.features.bpm,
+                    key: result.features.key,
+                    scale: result.features.scale
+                },
+                `BPM and Key detection complete for "${file.name}". BPM: ${result.features.bpm}, Key: ${result.features.key} ${result.features.scale}.`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to detect BPM and Key: ${message}`, "DETECTION_FAILED");
+        }
+    }),
+
     scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
         const title = args.metadata.trackTitle || args.metadata.title;
         const artist = args.metadata.artistName || args.metadata.artist;

@@ -88,7 +88,7 @@ const SourceBreakdown = ({ sources, counts }: { sources: Record<string, number>,
                 {key}
               </div>
               <div className="text-white font-medium">
-                ${value.toLocaleString()} <span className="text-gray-500 text-xs ml-1">({counts[key] || 0})</span>
+                ${value.toLocaleString('en-US')} <span className="text-gray-500 text-xs ml-1">({counts[key] || 0})</span>
               </div>
             </div>
             <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
@@ -178,28 +178,28 @@ export const RevenueView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Revenue" 
-          value={`$${stats.totalRevenue.toLocaleString()}`}
+          value={`$${stats.totalRevenue.toLocaleString('en-US')}`}
           change={stats.revenueChange}
           icon={DollarSign}
           color="bg-purple-500"
         />
         <StatCard 
           title="Units Sold" 
-          value={stats.unitsSold.toLocaleString()}
+          value={stats.unitsSold.toLocaleString('en-US')}
           change={stats.unitsChange}
           icon={ShoppingBag}
           color="bg-blue-500"
         />
         <StatCard 
           title="Streaming" 
-          value={`$${stats.sources.streaming.toLocaleString()}`}
+          value={`$${stats.sources.streaming.toLocaleString('en-US')}`}
           change={0} // Fixed comparison needed for sub-metrics
           icon={Radio}
           color="bg-emerald-500"
         />
         <StatCard 
           title="Social Drops" 
-          value={`$${stats.sources.social.toLocaleString()}`}
+          value={`$${stats.sources.social.toLocaleString('en-US')}`}
           change={0}
           icon={TrendingUp}
           color="bg-pink-500"
@@ -229,7 +229,7 @@ export const RevenueView: React.FC = () => {
                       className="bg-purple-500/20 group-hover:bg-purple-500/40 rounded-t-sm transition-colors border-t border-purple-500/50"
                     />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-gray-700 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-2xl">
-                      {h.date}: ${h.amount.toLocaleString()}
+                      {h.date}: ${h.amount.toLocaleString('en-US')}
                     </div>
                   </div>
                 );
@@ -268,7 +268,7 @@ export const RevenueView: React.FC = () => {
                     {productId}
                   </span>
                   <span className="text-purple-400 font-bold">
-                    ${amount.toLocaleString()}
+                    ${amount.toLocaleString('en-US')}
                   </span>
                 </div>
               );

@@ -83,7 +83,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                     <div className="text-sm text-blue-400 font-mono">{nextStop.venue || "Venue TBD"}</div>
                                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-400 font-mono">
                                         <Clock size={12} />
-                                        <span>ETA: {new Date(nextStop.date).toLocaleDateString()} @ 16:00</span>
+                                        <span>ETA: {new Date(nextStop.date).toLocaleDateString('en-US')} @ 16:00</span>
                                     </div>
                                 </div>
                             ) : (

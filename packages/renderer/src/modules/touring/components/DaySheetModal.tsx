@@ -93,7 +93,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                 <span className="text-blue-500/50">::</span> Day Sheet <span className="text-blue-500/50">::</span> {stop.city}
                             </h2>
                             <p className="text-xs text-gray-500 font-mono uppercase tracking-[0.3em] font-bold mt-1">
-                                {new Date(stop.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} <span className="text-gray-700">|</span> {stop.venue}
+                                {new Date(stop.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} <span className="text-gray-700">|</span> {stop.venue}
                             </p>
                         </div>
                     </div>

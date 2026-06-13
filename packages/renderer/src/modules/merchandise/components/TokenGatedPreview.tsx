@@ -275,7 +275,7 @@ export function TokenGatedPreview() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-neutral-600">Fan Views</span>
-                                <span className="text-neutral-400">{selected.fanViews.toLocaleString()}</span>
+                                <span className="text-neutral-400">{selected.fanViews.toLocaleString('en-US')}</span>
                             </div>
                         </div>
                     </div>

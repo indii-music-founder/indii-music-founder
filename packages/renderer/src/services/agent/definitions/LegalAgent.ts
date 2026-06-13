@@ -53,6 +53,7 @@ export const LegalAgent: AgentConfig = {
             browser_tool: UniversalTools.browser_tool,
             document_query: UniversalTools.document_query,
             draft_split_sheet: LegalTools.generate_split_sheet,
+            summarize_contract_terms: LegalTools.summarize_contract_terms,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -60,6 +61,7 @@ export const LegalAgent: AgentConfig = {
         'browser_tool',
         'document_query',
         'draft_split_sheet',
+        'summarize_contract_terms',
     ],
     tools: [{
         functionDeclarations: [
@@ -122,6 +124,22 @@ export const LegalAgent: AgentConfig = {
                         }
                     },
                     required: ["trackName", "collaborators"]
+                }
+            },
+            {
+                name: "summarize_contract_terms",
+                description: "Analyzes contract text and provides a concise summary of its key terms.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        contractText: { type: "STRING", description: "The full text of the contract to summarize." },
+                        focusAreas: {
+                            type: "ARRAY",
+                            items: { type: "STRING" },
+                            description: "Specific areas to focus on during summarization (e.g., 'Termination', 'Royalties')."
+                        }
+                    },
+                    required: ["contractText"]
                 }
             }
         ]

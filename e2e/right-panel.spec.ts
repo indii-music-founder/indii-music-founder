@@ -14,6 +14,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
         // Intercept/mock Electron API calls before page loads
         await page.addInitScript(() => {
             (window as any).electronAPI = {
+                ...(window as any).electronAPI,
                 agent: {
                     listArtifacts: async () => ({
                         success: true,

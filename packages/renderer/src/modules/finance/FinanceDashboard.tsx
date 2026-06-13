@@ -257,7 +257,7 @@ function formatRelativeTime(dateStr: string): string {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 30) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US');
 }
 
 function LoadingSpinner() {
@@ -297,7 +297,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
     const dividendSaved = totalRevenue * MANAGEMENT_FEE_RATE;
 
     const stats = [
-        { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, change: earningsSummary ? `${earningsSummary.totalStreams.toLocaleString()} streams` : 'No data', positive: totalRevenue > 0 },
+        { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, change: earningsSummary ? `${earningsSummary.totalStreams.toLocaleString('en-US')} streams` : 'No data', positive: totalRevenue > 0 },
         { label: 'Net Income', value: formatCurrency(netIncome), icon: ArrowUpRight, change: totalExpenses > 0 ? `${formatCurrency(totalExpenses)} expenses` : 'No expenses', positive: netIncome > 0 },
         { label: 'Pending Payouts', value: pendingCount > 0 ? `${pendingCount} pending` : 'None', icon: Wallet, change: earningsSummary?.currencyCode ?? 'USD', positive: true },
     ];
@@ -505,7 +505,7 @@ function RevenueByPlatformPanel({ earningsSummary, loading }: RevenueByPlatformP
                                 </div>
                                 <p className="text-lg font-black text-white">{formatCurrency(p.revenue)}</p>
                                 <p className="text-[10px] text-gray-600 mt-0.5">
-                                    {p.streams.toLocaleString()} streams · {p.downloads.toLocaleString()} downloads
+                                    {p.streams.toLocaleString('en-US')} streams · {p.downloads.toLocaleString('en-US')} downloads
                                 </p>
                                 <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                                     <motion.div

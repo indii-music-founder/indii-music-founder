@@ -91,7 +91,7 @@ export default function SocialDashboard() {
                     )}
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString()}`}
+                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString('en-US')}`}
                         className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded text-gray-400 transition-opacity"
                     >
                         <Plus size={12} />
@@ -213,9 +213,9 @@ export default function SocialDashboard() {
 
 function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
     const items = [
-        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString(), icon: Users, color: 'text-dept-creative' },
-        { label: 'Following', value: (stats?.following || 0).toLocaleString(), icon: TrendingUp, color: 'text-dept-marketing' },
-        { label: 'Posts', value: (stats?.posts || 0).toLocaleString(), icon: Megaphone, color: 'text-dept-creative' },
+        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString('en-US'), icon: Users, color: 'text-dept-creative' },
+        { label: 'Following', value: (stats?.following || 0).toLocaleString('en-US'), icon: TrendingUp, color: 'text-dept-marketing' },
+        { label: 'Posts', value: (stats?.posts || 0).toLocaleString('en-US'), icon: Megaphone, color: 'text-dept-creative' },
     ];
 
     return (
@@ -315,7 +315,7 @@ function DraftsQueuePanel({ scheduledPosts }: { scheduledPosts: ScheduledPost[] 
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[10px] text-gray-600">{p.platform}</span>
                                 <span className="text-[10px] text-gray-600">
-                                    {p.scheduledTime ? new Date(p.scheduledTime).toLocaleDateString() : 'TBD'}
+                                    {p.scheduledTime ? new Date(p.scheduledTime).toLocaleDateString('en-US') : 'TBD'}
                                 </span>
                             </div>
                         </div>

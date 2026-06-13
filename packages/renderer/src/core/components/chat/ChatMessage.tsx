@@ -50,21 +50,34 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
     useEffect(() => {
         if (!currentProjectId || !planId) return;
 
+        let hasResolved = false;
         const fetchPlan = async () => {
             try {
                 const fetchedPlan = await livingPlanService.get(currentProjectId, planId);
+                hasResolved = true;
                 setPlan(fetchedPlan);
             } catch (e) {
+                hasResolved = true;
                 logger.error('Failed to load living plan:', e);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchPlan();
+
+        // 10s timeout failsafe to prevent infinite loading
+        const timer = setTimeout(() => {
+            if (!hasResolved) {
+                logger.warn(`LivingPlanToolRenderer: fetchPlan timed out after 10s for planId ${planId}`);
+                setIsLoading(false);
+            }
+        }, 10000);
+
+        return () => clearTimeout(timer);
     }, [planId, currentProjectId]);
 
     if (isLoading) return <div className="p-4 animate-pulse bg-cyan-500/5 rounded-lg border border-cyan-500/20 text-xs text-cyan-400">Fetching living plan...</div>;
-    if (!plan) return <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-400">Plan not found or deleted.</div>;
+    if (!plan) return <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-400">Plan not found, deleted, or network timeout.</div>;
 
     const handleApprove = async () => {
         if (!currentProjectId) return;

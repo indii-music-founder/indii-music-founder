@@ -251,7 +251,7 @@ const EmailDetailView: React.FC<{
                         <p className="text-xs text-slate-500">{fullMessage.from.email}</p>
                     </div>
                     <span className="text-xs text-slate-600 ml-auto shrink-0">
-                        {new Date(fullMessage.date).toLocaleString()}
+                        {new Date(fullMessage.date).toLocaleString('en-US')}
                     </span>
                 </div>
 
@@ -320,7 +320,7 @@ const ComposeModal: React.FC<{
     const [to, setTo] = useState(replyTo ? replyTo.from.email : '');
     const [subject, setSubject] = useState(replyTo ? `Re: ${replyTo.subject}` : '');
     const [body, setBody] = useState(replyTo
-        ? `\n\n---\nOn ${new Date(replyTo.date).toLocaleString()}, ${replyTo.from.name} wrote:\n> ${replyTo.snippet}`
+        ? `\n\n---\nOn ${new Date(replyTo.date).toLocaleString('en-US')}, ${replyTo.from.name} wrote:\n> ${replyTo.snippet}`
         : ''
     );
     const [accountId, setAccountId] = useState(accounts[0]?.id || '');

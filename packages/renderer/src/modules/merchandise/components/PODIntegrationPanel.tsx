@@ -184,7 +184,7 @@ export function PODIntegrationPanel() {
         // Trigger initial sync
         await doSync(provider.id, apiKey);
         setPartners(prev => prev.map(p =>
-            p.id === provider.id ? { ...p, status: 'connected', lastSync: new Date().toLocaleTimeString() } : p
+            p.id === provider.id ? { ...p, status: 'connected', lastSync: new Date().toLocaleTimeString('en-US') } : p
         ));
         setConnecting(null);
     };
@@ -202,7 +202,7 @@ export function PODIntegrationPanel() {
             const products = await PrintOnDemandService.getProducts(id);
             setPartners(prev => prev.map(p =>
                 p.id === id
-                    ? { ...p, products: products.length, lastSync: new Date().toLocaleTimeString() }
+                    ? { ...p, products: products.length, lastSync: new Date().toLocaleTimeString('en-US') }
                     : p
             ));
         } catch {
@@ -237,7 +237,7 @@ export function PODIntegrationPanel() {
                         <div className="text-[10px] text-neutral-500 uppercase tracking-wider mt-1">Connected</div>
                     </div>
                     <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center">
-                        <div className="text-2xl font-black text-white">{totalProducts.toLocaleString()}</div>
+                        <div className="text-2xl font-black text-white">{totalProducts.toLocaleString('en-US')}</div>
                         <div className="text-[10px] text-neutral-500 uppercase tracking-wider mt-1">Products</div>
                     </div>
                     <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center">

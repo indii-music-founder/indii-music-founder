@@ -113,7 +113,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
             {payload.map((p) => (
                 <div key={p.name} className="flex items-center justify-between gap-4">
                     <span style={{ color: p.color }}>{TRACK_NAMES[p.name] || p.name}</span>
-                    <span className="font-bold text-white">{p.value.toLocaleString()}</span>
+                    <span className="font-bold text-white">{p.value.toLocaleString('en-US')}</span>
                 </div>
             ))}
         </div>

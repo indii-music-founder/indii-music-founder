@@ -164,7 +164,7 @@ export default function LicensingDashboard() {
                                                         DRAFT AGREEMENT
                                                     </button>
                                                     <span className="text-[10px] font-medium text-gray-600">
-                                                        Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : request.requestedAt.toDate().toLocaleDateString()) : 'N/A'}
+                                                        Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString('en-US') : request.requestedAt.toDate().toLocaleDateString('en-US')) : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -271,7 +271,7 @@ function DealHealthPanel({ activeLicenses, pendingRequests, projectedValue }: {
     const items = [
         { label: 'Active Licenses', value: activeLicenses.toString(), icon: ShieldCheck, color: 'text-emerald-400' },
         { label: 'Pending Clearances', value: pendingRequests.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Projected Value', value: `$${projectedValue.toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-400' },
+        { label: 'Projected Value', value: `$${projectedValue.toLocaleString('en-US')}`, icon: TrendingUp, color: 'text-emerald-400' },
     ];
 
     return (

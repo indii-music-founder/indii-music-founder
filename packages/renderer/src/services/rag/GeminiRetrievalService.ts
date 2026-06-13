@@ -96,7 +96,7 @@ export class GeminiRetrievalService {
 
         while (attempt < maxRetries) {
             try {
-                console.log('--- RAG FETCH ---', url, headers);
+                logger.debug('--- RAG FETCH ---', url, headers);
                 const response = await fetch(url, {
                     ...options,
                     headers
@@ -464,7 +464,7 @@ export class GeminiRetrievalService {
             url += `?key=${this.apiKey}`;
         }
 
-        console.log('--- RAG FETCH ---', url, streamHeaders);
+        logger.debug('--- RAG FETCH ---', url, streamHeaders);
                 const response = await fetch(url, {
             method: 'POST',
             headers: streamHeaders,

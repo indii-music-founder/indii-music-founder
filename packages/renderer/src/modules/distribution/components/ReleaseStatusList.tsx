@@ -68,7 +68,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                                     </div>
                                 </td>
                                 <td className="py-4 px-6 text-sm text-gray-300">
-                                    {new Date(release.releaseDate).toLocaleDateString()}
+                                    {new Date(release.releaseDate).toLocaleDateString('en-US')}
                                 </td>
                                 <td className="py-4 px-6">
                                     <div className="flex flex-wrap gap-2">

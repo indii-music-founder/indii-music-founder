@@ -73,7 +73,7 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
                                 <div className="flex flex-col">
                                     <span className="text-[8px] text-gray-500 font-mono uppercase tracking-widest">{p.type}</span>
                                     <span className="text-[9px] text-gray-600 font-mono italic">
-                                        {new Date(p.timestamp).toLocaleDateString()}
+                                        {new Date(p.timestamp).toLocaleDateString('en-US')}
                                     </span>
                                 </div>
                                 <button

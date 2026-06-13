@@ -254,7 +254,7 @@ function SubmissionResultView({
             </p>
           )}
           <p className="text-xs text-gray-600 mt-2">
-            Submitted {result.submittedAt.toLocaleDateString()}
+            Submitted {result.submittedAt.toLocaleDateString('en-US')}
           </p>
         </div>
       </div>

@@ -102,36 +102,42 @@ export const FinanceTools = {
         };
 
         const rate = PAYOUT_RATES[args.platform] || PAYOUT_RATES['Other']!;
-        const gross = args.currentStreams * rate;
+        const grossCents = Math.round(args.currentStreams * rate * 100);
 
         // Standard management fee is ~20%
-        const MANAGER_FEE_PERCENT = 0.20;
+        const MANAGER_FEE_PERCENT = 20;
 
-        const projections = {
-            month_1: gross,
-            month_6: gross * 6,
-            year_1: gross * 12
+        const projectionsCents = {
+            month_1: grossCents,
+            month_6: grossCents * 6,
+            year_1: grossCents * 12
+        };
+
+        const managerFeeSavedCents = {
+            month_1: Math.round(projectionsCents.month_1 * (MANAGER_FEE_PERCENT / 100)),
+            month_6: Math.round(projectionsCents.month_6 * (MANAGER_FEE_PERCENT / 100)),
+            year_1: Math.round(projectionsCents.year_1 * (MANAGER_FEE_PERCENT / 100))
+        };
+
+        const netRevenueCents = {
+            month_1: Math.round(projectionsCents.month_1 * (args.rightsHolderSplit / 100)),
+            month_6: Math.round(projectionsCents.month_6 * (args.rightsHolderSplit / 100)),
+            year_1: Math.round(projectionsCents.year_1 * (args.rightsHolderSplit / 100))
         };
 
         const managerFeeSaved = {
-            month_1: projections.month_1 * MANAGER_FEE_PERCENT,
-            month_6: projections.month_6 * MANAGER_FEE_PERCENT,
-            year_1: projections.year_1 * MANAGER_FEE_PERCENT
-        };
-
-        const netRevenue = {
-            month_1: projections.month_1 * (args.rightsHolderSplit / 100),
-            month_6: projections.month_6 * (args.rightsHolderSplit / 100),
-            year_1: projections.year_1 * (args.rightsHolderSplit / 100)
+            month_1: managerFeeSavedCents.month_1 / 100,
+            month_6: managerFeeSavedCents.month_6 / 100,
+            year_1: managerFeeSavedCents.year_1 / 100
         };
 
         return toolSuccess({
             platform: args.platform,
             rate_per_stream: rate,
             projections: {
-                gross: projections,
+                gross: { month_1: projectionsCents.month_1 / 100, month_6: projectionsCents.month_6 / 100, year_1: projectionsCents.year_1 / 100 },
                 manager_fee_saved: managerFeeSaved,
-                net_to_rights_holder: netRevenue
+                net_to_rights_holder: { month_1: netRevenueCents.month_1 / 100, month_6: netRevenueCents.month_6 / 100, year_1: netRevenueCents.year_1 / 100 }
             },
             message: `Revenue forecast generated for ${args.currentStreams} streams on ${args.platform}. Estimated annual savings on manager fees: $${managerFeeSaved.year_1.toFixed(2)}.`
         }, `Revenue forecast generated.`);
@@ -139,7 +145,10 @@ export const FinanceTools = {
 
     generate_schedule_c: wrapTool('generate_schedule_c', async (args: { taxYear: number; totalIncome: number; totalExpenses: number; ownerName: string }) => {
         // Simplified Schedule C draft — full IRS-compliant version requires tax API integration
-        const netProfit = args.totalIncome - args.totalExpenses;
+        const incomeCents = Math.round(args.totalIncome * 100);
+        const expensesCents = Math.round(args.totalExpenses * 100);
+        const netProfitCents = incomeCents - expensesCents;
+        const netProfit = netProfitCents / 100;
         const taxPrepMode = "Active";
 
         return toolSuccess({
@@ -160,8 +169,11 @@ export const FinanceTools = {
             return toolError("Payee percentages must sum to 100%.", "INVALID_SPLIT");
         }
 
+        const totalRevenueCents = Math.round(args.totalRevenue * 100);
+
         const waterfall = args.payees.map(p => {
-            const payout = args.totalRevenue * (p.percentage / 100);
+            const payoutCents = Math.round(totalRevenueCents * (p.percentage / 100));
+            const payout = payoutCents / 100;
             return {
                 name: p.name,
                 percentage: p.percentage,
@@ -214,8 +226,15 @@ export const FinanceTools = {
 
     compare_budget_vs_actuals: wrapTool('compare_budget_vs_actuals', async (args: { projectOrTourName: string; projectedBudget: number; actualExpenses: number; advancesReceived: number }) => {
         // Budget comparison tool (Item 139)
-        const variance = args.projectedBudget - args.actualExpenses;
-        const netPosition = args.advancesReceived - args.actualExpenses;
+        const projectedBudgetCents = Math.round(args.projectedBudget * 100);
+        const actualExpensesCents = Math.round(args.actualExpenses * 100);
+        const advancesReceivedCents = Math.round(args.advancesReceived * 100);
+
+        const varianceCents = projectedBudgetCents - actualExpensesCents;
+        const netPositionCents = advancesReceivedCents - actualExpensesCents;
+
+        const variance = varianceCents / 100;
+        const netPosition = netPositionCents / 100;
 
         return toolSuccess({
             projectOrTourName: args.projectOrTourName,
@@ -232,14 +251,17 @@ export const FinanceTools = {
         // Daily royalties prediction using industry average payout rates (Item 152)
         const RATE = args.platform.toLowerCase() === 'spotify' ? 0.0035 : 0.006;
         const predictedMonthlyStreams = args.dailyStreams * 30;
-        const estimatedMonthlyPayout = predictedMonthlyStreams * RATE;
+        
+        const dailyGrossCents = Math.round(args.dailyStreams * RATE * 100);
+        const estimatedMonthlyPayoutCents = dailyGrossCents * 30;
+        const estimatedMonthlyPayout = estimatedMonthlyPayoutCents / 100;
 
         return toolSuccess({
             trackId: args.trackId,
             platform: args.platform,
             currentDailyStreams: args.dailyStreams,
             predictedMonthlyStreams,
-            estimatedMonthlyPayout: Number(estimatedMonthlyPayout.toFixed(2)),
+            estimatedMonthlyPayout: estimatedMonthlyPayout,
             confidence: 0.88
         }, `Daily royalty prediction for ${args.trackId} on ${args.platform}: Based on ${args.dailyStreams} daily streams, estimated monthly payout is $${estimatedMonthlyPayout.toFixed(2)}.`);
     }),

@@ -56,7 +56,7 @@ function timestampToMillis(timestamp: unknown): number {
         const toMillis = (timestamp as { toMillis?: () => number }).toMillis;
         if (typeof toMillis === 'function') return toMillis();
     }
-    return Date.now();
+    return 0;
 }
 
 function cleanPrompt(commandText?: string): string {

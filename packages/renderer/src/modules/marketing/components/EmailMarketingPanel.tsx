@@ -144,7 +144,7 @@ export default function EmailMarketingPanel() {
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/5">
                     <Users size={14} className="text-dept-marketing" />
-                    <span className="text-sm font-bold text-white">{FAN_LIST_SIZE.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-white">{FAN_LIST_SIZE.toLocaleString('en-US')}</span>
                     <span className="text-xs text-gray-500">subscribers</span>
                 </div>
                 <div className="flex-1 relative">
@@ -192,9 +192,9 @@ export default function EmailMarketingPanel() {
                                 {scheduledTime ? 'Email Scheduled' : 'Email Sent Successfully'}
                             </p>
                             <p className="text-xs text-gray-400 mt-0.5">
-                                Delivered to <span className="text-white">{FAN_LIST_SIZE.toLocaleString()} subscribers</span> via {platform}.
+                                Delivered to <span className="text-white">{FAN_LIST_SIZE.toLocaleString('en-US')} subscribers</span> via {platform}.
                                 {scheduledTime && (
-                                    <> Scheduled for {new Date(scheduledTime).toLocaleString()}.</>
+                                    <> Scheduled for {new Date(scheduledTime).toLocaleString('en-US')}.</>
                                 )}
                             </p>
                         </div>

@@ -236,7 +236,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                     {createdDate && (
                                         <span className="flex items-center gap-1 text-[10px] text-gray-600">
                                             <Clock size={9} />
-                                            {createdDate.toLocaleDateString()}
+                                            {createdDate.toLocaleDateString('en-US')}
                                         </span>
                                     )}
                                     <span className="text-[10px] text-gray-600">{contract.type}</span>

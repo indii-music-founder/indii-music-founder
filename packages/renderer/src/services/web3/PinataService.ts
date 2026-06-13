@@ -25,6 +25,8 @@ export interface PinnedItem {
     mimeType?: string;
 }
 
+import { fetchWithRetry } from '@/utils/async';
+
 export interface PinataOptions {
     name?: string;
     keyValues?: Record<string, string>;
@@ -75,7 +77,7 @@ export class PinataService {
             },
         };
 
-        const response = await fetch(`${PINATA_API}/pinning/pinJSONToIPFS`, {
+        const response = await fetchWithRetry(`${PINATA_API}/pinning/pinJSONToIPFS`, {
             method: 'POST',
             headers: {
                 ...this.getHeaders(),
@@ -116,7 +118,7 @@ export class PinataService {
             }));
         }
 
-        const response = await fetch(`${PINATA_API}/pinning/pinFileToIPFS`, {
+        const response = await fetchWithRetry(`${PINATA_API}/pinning/pinFileToIPFS`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: formData,
@@ -144,7 +146,7 @@ export class PinataService {
             throw new Error('Pinata not configured');
         }
 
-        const response = await fetch(
+        const response = await fetchWithRetry(
             `${PINATA_API}/data/pinList?status=pinned&pageLimit=${limit}`,
             { headers: this.getHeaders() }
         );
@@ -171,7 +173,7 @@ export class PinataService {
             throw new Error('Pinata not configured');
         }
 
-        const response = await fetch(`${PINATA_API}/pinning/unpin/${ipfsHash}`, {
+        const response = await fetchWithRetry(`${PINATA_API}/pinning/unpin/${ipfsHash}`, {
             method: 'DELETE',
             headers: this.getHeaders(),
         });

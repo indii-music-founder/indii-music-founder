@@ -356,7 +356,7 @@ export class BaseAgent implements SpecializedAgent {
                 return {
                     success: true,
                     data: { taskId },
-                    message: `Task scheduled for ${new Date(executeAt).toLocaleString()}`
+                    message: `Task scheduled for ${new Date(executeAt).toLocaleString('en-US')}`
                 };
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)

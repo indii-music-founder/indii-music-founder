@@ -34,7 +34,7 @@ export const TransferPanel: React.FC = () => {
     }, []);
 
     const addLog = (message: string) => {
-        setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${message}`, ...prev].slice(0, 50));
+        setLogs(prev => [`[${new Date().toLocaleTimeString('en-US')}] ${message}`, ...prev].slice(0, 50));
     };
 
     const selectLocalPath = async () => {

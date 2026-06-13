@@ -232,7 +232,7 @@ export default function GrowthIntelligenceDashboard() {
                 <div className="flex items-center gap-2">
                     {analyticsLastRefresh && (
                         <span className="text-xs text-slate-500 hidden sm:block">
-                            Updated {new Date(analyticsLastRefresh).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            Updated {new Date(analyticsLastRefresh).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     )}
                     <button
@@ -401,7 +401,7 @@ export default function GrowthIntelligenceDashboard() {
                                                     <p className="text-xs text-slate-400">Projected Growth</p>
                                                 </div>
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-lg font-bold text-white">{selectedReport.track.creatorCount.toLocaleString()}</p>
+                                                    <p className="text-lg font-bold text-white">{selectedReport.track.creatorCount.toLocaleString('en-US')}</p>
                                                     <p className="text-xs text-slate-400">Creators Using Audio</p>
                                                 </div>
                                             </div>
@@ -445,7 +445,7 @@ export default function GrowthIntelligenceDashboard() {
                                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                                         <div>
                                                             <p className="text-slate-500">Streams / Views</p>
-                                                            <p className="text-white font-medium">{p.streams.toLocaleString()}</p>
+                                                            <p className="text-white font-medium">{p.streams.toLocaleString('en-US')}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-slate-500">Completion</p>
@@ -454,7 +454,7 @@ export default function GrowthIntelligenceDashboard() {
                                                         {p.creatorCount !== undefined && p.creatorCount > 0 && (
                                                             <div>
                                                                 <p className="text-slate-500">Creators</p>
-                                                                <p className="text-white font-medium">{p.creatorCount.toLocaleString()}</p>
+                                                                <p className="text-white font-medium">{p.creatorCount.toLocaleString('en-US')}</p>
                                                             </div>
                                                         )}
                                                     </div>

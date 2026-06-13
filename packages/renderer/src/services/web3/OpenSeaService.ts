@@ -8,6 +8,8 @@
  * Env: VITE_OPENSEA_API_KEY
  */
 
+import { fetchWithRetry } from '@/utils/async';
+
 export interface NFTListing {
     tokenId: string;
     contractAddress: string;
@@ -71,7 +73,7 @@ export class OpenSeaService {
             throw new Error('OpenSea API not configured. Set VITE_OPENSEA_API_KEY in .env');
         }
 
-        const response = await fetch(
+        const response = await fetchWithRetry(
             `${OPENSEA_API_V2}/chain/${chain}/account/${ownerAddress}/nfts?limit=${limit}`,
             { headers: this.getHeaders() }
         );
@@ -101,7 +103,7 @@ export class OpenSeaService {
             throw new Error('OpenSea API not configured');
         }
 
-        const response = await fetch(
+        const response = await fetchWithRetry(
             `${OPENSEA_API_V2}/chain/${chain}/contract/${contractAddress}/nfts/${tokenId}`,
             { headers: this.getHeaders() }
         );
@@ -133,7 +135,7 @@ export class OpenSeaService {
             throw new Error('OpenSea API not configured');
         }
 
-        const response = await fetch(
+        const response = await fetchWithRetry(
             `${OPENSEA_API_V2}/collections/${slug}`,
             { headers: this.getHeaders() }
         );

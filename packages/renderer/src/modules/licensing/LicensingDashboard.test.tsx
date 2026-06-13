@@ -22,7 +22,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 const mockTimestamp = {
     toDate: () => new Date(),
-    toLocaleDateString: () => new Date().toLocaleDateString(),
+    toLocaleDateString: () => new Date().toLocaleDateString('en-US'),
 } as any;
 
 const mockRequests: LicenseRequest[] = [

@@ -84,7 +84,7 @@ export default function UnifiedAssetLibrary({
                 newAssets.push({
                     id: assetId,
                     url: downloadUrl,
-                    description: (file instanceof File) ? file.name : `Capture ${new Date().toLocaleTimeString()}`,
+                    description: (file instanceof File) ? file.name : `Capture ${new Date().toLocaleTimeString('en-US')}`,
                     category,
                     tags: tags.length > 0 ? tags : undefined
                 });

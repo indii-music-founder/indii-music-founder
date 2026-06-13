@@ -559,7 +559,7 @@ export function SetlistAnalytics() {
                                     </p>
                                     <div className="text-[9px] text-gray-500 space-y-0.5 leading-normal">
                                         <p>
-                                            {songs.filter(s => s.title.trim()).length} tracks played to {parseInt(attendance, 10).toLocaleString()} attendees.
+                                            {songs.filter(s => s.title.trim()).length} tracks played to {parseInt(attendance, 10).toLocaleString('en-US')} attendees.
                                         </p>
                                         {category === 'dj' && (
                                             <p className="text-[8px] text-gray-600">
@@ -637,7 +637,7 @@ export function SetlistAnalytics() {
                                                     <p className={`text-sm font-black ${p.category === 'cover' ? 'text-amber-400' : 'text-emerald-400'}`}>
                                                         ${(p.category === 'cover' ? songwriterRoyalty : directRoyalty).toFixed(2)}
                                                     </p>
-                                                    <p className="text-[9px] text-gray-600 font-mono">{p.attendance.toLocaleString()} attendees</p>
+                                                    <p className="text-[9px] text-gray-600 font-mono">{p.attendance.toLocaleString('en-US')} attendees</p>
                                                 </div>
                                                 <button onClick={() => handleDeletePerformance(p.id)} className="text-gray-600 hover:text-red-400 p-1 rounded-md hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 ml-1">
                                                     <Trash2 size={13} />

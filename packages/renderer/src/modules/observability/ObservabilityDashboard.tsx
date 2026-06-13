@@ -52,7 +52,7 @@ export const ObservabilityDashboard: React.FC = () => {
     setVitalsReport(report);
 
     const point: MetricPoint = {
-      timestamp: new Date(snapshot.timestamp).toLocaleTimeString(),
+      timestamp: new Date(snapshot.timestamp).toLocaleTimeString('en-US'),
       lcp: snapshot.vitals['LCP']?.value,
       inp: snapshot.vitals['INP']?.value,
       cls: snapshot.vitals['CLS']?.value,
@@ -280,7 +280,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         {event.actionContext.agentId} <span className="text-slate-400 font-normal">executed</span> {event.actionContext.actionType}
                       </h4>
                       <span className="text-xs text-slate-500 shrink-0 ml-2">
-                        {new Date(event.createdAt.toMillis()).toLocaleTimeString()}
+                        {new Date(event.createdAt.toMillis()).toLocaleTimeString('en-US')}
                       </span>
                     </div>
                     {event.comment && (

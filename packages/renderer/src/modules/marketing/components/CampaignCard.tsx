@@ -120,7 +120,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             }`}>
                             {isActive ? 'Active' : isDone ? 'Completed' : 'Pending'}
                         </span>
-                        <span>{new Date(campaign.startDate).toLocaleDateString()}</span>
+                        <span>{new Date(campaign.startDate).toLocaleDateString('en-US')}</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs font-medium text-purple-400 group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform">
                         Manage <ChevronRightIcon size={14} />

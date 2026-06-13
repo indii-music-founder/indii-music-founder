@@ -227,7 +227,7 @@ export default function MemoryDashboard() {
     const formatDate = (timestamp: number | { toMillis: () => number } | null | undefined) => {
         if (!timestamp) return '—';
         const ms = typeof timestamp === 'object' && 'toMillis' in timestamp ? timestamp.toMillis() : timestamp;
-        return new Date(ms).toLocaleString(undefined, {
+        return new Date(ms).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
