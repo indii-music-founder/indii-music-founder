@@ -531,7 +531,7 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 > Concurrent agents running `npm install` in the same workspace will shred `node_modules` file locks and corrupt the host machine's global `~/.npm/_cacache` registry, leading to unrecoverable `ENOENT` tarball errors.
 
 **Prevention Protocol (MANDATORY):**
-1. **Isolated Caches:** If you MUST run `npm install` (e.g., to fix `ERESOLVE` or missing types), you MUST append an isolated, randomized cache directory: `npm install --cache /tmp/empty-npm-cache-$$`
+1. **Isolated Caches:** If you MUST run `npm install` (e.g., to fix `ERESOLVE` or missing types), you MUST append an isolated, randomized cache directory: `npm install --cache ./.npm-cache-isolated-$$`
 2. **Never Wipe Concurrently:** Never run `rm -rf node_modules` without checking if another agent or process is actively building the workspace. If you wipe it while another agent is compiling, you will break their build.
 
 ## Key Files Quick Reference
