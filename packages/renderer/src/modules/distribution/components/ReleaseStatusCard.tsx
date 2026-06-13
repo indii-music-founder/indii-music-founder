@@ -111,7 +111,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                         </h3>
                         <p className="text-sm text-gray-500 font-medium mb-1">{artistName}</p>
                         <p className="text-[10px] text-gray-600 uppercase tracking-wider">
-                            Released: {releaseDate ? new Date(releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                            Released: {releaseDate ? new Date(releaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                         </p>
                     </div>
 

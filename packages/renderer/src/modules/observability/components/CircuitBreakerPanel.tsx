@@ -183,7 +183,7 @@ export const CircuitBreakerPanel: React.FC = () => {
 
             {lastChecked && (
                 <p className="text-xs text-slate-600 text-right">
-                    Last checked: {lastChecked.toLocaleTimeString()}
+                    Last checked: {lastChecked.toLocaleTimeString('en-US')}
                 </p>
             )}
         </div>

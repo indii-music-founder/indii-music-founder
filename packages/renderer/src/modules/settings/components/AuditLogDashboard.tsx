@@ -84,7 +84,7 @@ export const AuditLogDashboard: React.FC = () => {
                         )}
                         {logs.map((log, idx) => (
                             <tr key={log.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors ${idx % 2 === 0 ? 'bg-gray-900/50' : ''}`}>
-                                <td className="py-3 font-mono text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</td>
+                                <td className="py-3 font-mono text-xs text-gray-500">{new Date(log.timestamp).toLocaleString('en-US')}</td>
                                 <td className="py-3 font-medium text-purple-300">{log.agent}</td>
                                 <td className="py-3">{log.action}</td>
                                 <td className="py-3 text-gray-400">{log.resource}</td>

@@ -56,7 +56,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
                                     {getStepIcon(step.type)}
                                     {step.type.replace('_', ' ')}
                                     <span className="ml-auto font-normal opacity-50">
-                                        {new Date(step.timestamp).toLocaleTimeString()}
+                                        {new Date(step.timestamp).toLocaleTimeString('en-US')}
                                     </span>
                                 </div>
 

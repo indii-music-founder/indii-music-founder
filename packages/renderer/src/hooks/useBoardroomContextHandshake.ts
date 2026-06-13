@@ -32,7 +32,7 @@ export function useBoardroomContextHandshake() {
                 if (item.url) {
                     newAssets.push({
                         id: `creative-${item.id}`,
-                        name: `Generated Image ${new Date(item.timestamp).toLocaleDateString()}`,
+                        name: `Generated Image ${new Date(item.timestamp).toLocaleDateString('en-US')}`,
                         type: 'url',
                         value: item.url
                     });

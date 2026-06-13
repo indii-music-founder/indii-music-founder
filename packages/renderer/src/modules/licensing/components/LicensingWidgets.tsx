@@ -29,7 +29,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, p
             />
             <MetricCard
                 title="Projected Value"
-                value={`$${projectedValue.toLocaleString()}`}
+                value={`$${projectedValue.toLocaleString('en-US')}`}
                 trend="Est. Value"
                 icon={TrendingUp}
                 color="text-purple-400"

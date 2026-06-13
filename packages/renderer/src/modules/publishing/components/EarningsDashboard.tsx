@@ -117,7 +117,7 @@ export const EarningsDashboard: React.FC = () => {
                                     <Globe size={14} className="text-green-400" />
                                     <span className="text-sm text-gray-400 font-medium">Global Streams</span>
                                 </div>
-                                <span className="text-sm font-bold text-white tracking-tight">{earnings.totalStreams.toLocaleString()}</span>
+                                <span className="text-sm font-bold text-white tracking-tight">{earnings.totalStreams.toLocaleString('en-US')}</span>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">

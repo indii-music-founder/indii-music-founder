@@ -377,7 +377,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                                 {asset.type}
                                             </span>
                                             <span className="text-[8px] text-gray-600 font-mono">
-                                                {new Date(asset.timestamp).toLocaleDateString()}
+                                                {new Date(asset.timestamp).toLocaleDateString('en-US')}
                                             </span>
                                             {asset.origin && (
                                                 <span className="text-[8px] text-gray-600 capitalize">

@@ -405,7 +405,7 @@ export function SyncBriefMatcher() {
         const val = parseInt(b.budget.replace(/[^0-9]/g, ''), 10) || 0;
         return val > top ? val : top;
     }, 0);
-    const topBudgetLabel = topBudget >= 100000 ? '$100K+' : topBudget >= 50000 ? '$50K+' : topBudget >= 10000 ? `$${Math.round(topBudget / 1000)}K+` : topBudget > 0 ? `$${topBudget.toLocaleString()}` : '—';
+    const topBudgetLabel = topBudget >= 100000 ? '$100K+' : topBudget >= 50000 ? '$50K+' : topBudget >= 10000 ? `$${Math.round(topBudget / 1000)}K+` : topBudget > 0 ? `$${topBudget.toLocaleString('en-US')}` : '—';
 
     return (
         <div className="space-y-5">

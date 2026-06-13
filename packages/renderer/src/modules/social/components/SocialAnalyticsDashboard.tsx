@@ -282,7 +282,7 @@ export default function SocialAnalyticsDashboard() {
 
             {lastSync && (
                 <p className="text-[10px] text-gray-700 text-right">
-                    Last synced: {lastSync.toLocaleTimeString()}
+                    Last synced: {lastSync.toLocaleTimeString('en-US')}
                 </p>
             )}
         </div>

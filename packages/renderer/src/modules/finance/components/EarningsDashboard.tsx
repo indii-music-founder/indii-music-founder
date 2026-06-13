@@ -92,7 +92,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString()}</div>
+                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString('en-US')}</div>
                 <p className="text-xs text-gray-500 mt-1">Across all stores</p>
             </div>
         </div>
@@ -246,7 +246,7 @@ export const EarningsDashboard: React.FC = () => {
                                             <p className="text-sm font-medium text-gray-200 leading-none">{t.territoryName}</p>
                                             <p className="text-xs text-gray-500">{t.territoryCode}</p>
                                         </div>
-                                        <div className="font-medium text-white">+${t.revenue.toLocaleString()}</div>
+                                        <div className="font-medium text-white">+${t.revenue.toLocaleString('en-US')}</div>
                                     </div>
                                 ))}
                             </div>

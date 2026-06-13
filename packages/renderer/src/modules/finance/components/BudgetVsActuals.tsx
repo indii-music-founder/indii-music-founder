@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
                 <p className="font-bold text-white mb-2">{label}</p>
                 {payload.map((p) => (
                     <p key={p.name} style={{ color: p.fill }} className="font-medium">
-                        {p.name}: ${p.value.toLocaleString()}
+                        {p.name}: ${p.value.toLocaleString('en-US')}
                     </p>
                 ))}
             </div>
@@ -67,11 +67,11 @@ export function BudgetVsActuals() {
             <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Total Budget</p>
-                    <p className="text-xl font-black text-white mt-1">${totalBudget.toLocaleString()}</p>
+                    <p className="text-xl font-black text-white mt-1">${totalBudget.toLocaleString('en-US')}</p>
                 </div>
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Total Actual</p>
-                    <p className="text-xl font-black text-white mt-1">${totalActual.toLocaleString()}</p>
+                    <p className="text-xl font-black text-white mt-1">${totalActual.toLocaleString('en-US')}</p>
                 </div>
                 <div className={`rounded-xl p-3 ${totalVariance >= 0 ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-red-500/5 border border-red-500/20'}`}>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Variance</p>
@@ -84,7 +84,7 @@ export function BudgetVsActuals() {
                             <Minus size={16} className="text-gray-400" />
                         )}
                         <p className={`text-xl font-black ${totalVariance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {totalVariance >= 0 ? '+' : ''}{totalVariance.toLocaleString()}
+                            {totalVariance >= 0 ? '+' : ''}{totalVariance.toLocaleString('en-US')}
                         </p>
                     </div>
                     <p className="text-[10px] text-gray-600 mt-0.5">{totalVariance >= 0 ? 'Under budget' : 'Over budget'}</p>
@@ -157,7 +157,7 @@ export function BudgetVsActuals() {
                                     {/* Actual */}
                                     <div className="text-right">
                                         <span className={`text-xs font-bold ${isOver ? 'text-red-400' : 'text-emerald-400'}`}>
-                                            ${c.actual.toLocaleString()}
+                                            ${c.actual.toLocaleString('en-US')}
                                         </span>
                                     </div>
 
@@ -173,7 +173,7 @@ export function BudgetVsActuals() {
                                             />
                                         </div>
                                         <span className={`text-[10px] font-bold w-16 text-right flex-shrink-0 ${variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                            {variance >= 0 ? '+' : ''}${variance.toLocaleString()}
+                                            {variance >= 0 ? '+' : ''}${variance.toLocaleString('en-US')}
                                         </span>
                                     </div>
                                 </div>
@@ -183,11 +183,11 @@ export function BudgetVsActuals() {
                         {/* Totals Row */}
                         <div className="grid grid-cols-5 gap-3 items-center px-4 py-3 bg-white/[0.02] border-t border-white/10">
                             <span className="text-xs font-black text-white uppercase tracking-wider col-span-1">Total</span>
-                            <span className="text-xs font-black text-white text-right">${totalBudget.toLocaleString()}</span>
-                            <span className={`text-xs font-black text-right ${totalActual > totalBudget ? 'text-red-400' : 'text-emerald-400'}`}>${totalActual.toLocaleString()}</span>
+                            <span className="text-xs font-black text-white text-right">${totalBudget.toLocaleString('en-US')}</span>
+                            <span className={`text-xs font-black text-right ${totalActual > totalBudget ? 'text-red-400' : 'text-emerald-400'}`}>${totalActual.toLocaleString('en-US')}</span>
                             <div className="col-span-2 flex justify-end">
                                 <span className={`text-xs font-black ${totalVariance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {totalVariance >= 0 ? '+' : ''}${totalVariance.toLocaleString()} {totalVariance >= 0 ? 'under' : 'over'}
+                                    {totalVariance >= 0 ? '+' : ''}${totalVariance.toLocaleString('en-US')} {totalVariance >= 0 ? 'under' : 'over'}
                                 </span>
                             </div>
                         </div>

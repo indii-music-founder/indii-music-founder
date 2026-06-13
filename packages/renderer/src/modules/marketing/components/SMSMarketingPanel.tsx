@@ -133,7 +133,7 @@ export default function SMSMarketingPanel() {
                         >
                             <span className="block">{s}</span>
                             <span className="block text-[10px] font-normal mt-0.5 opacity-70">
-                                {SEGMENT_SIZES[s].toLocaleString()} recipients
+                                {SEGMENT_SIZES[s].toLocaleString('en-US')} recipients
                             </span>
                         </button>
                     ))}
@@ -167,7 +167,7 @@ export default function SMSMarketingPanel() {
                 ) : (
                     <>
                         <Send size={16} />
-                        Send Blast to {recipientCount.toLocaleString()} {segment}
+                        Send Blast to {recipientCount.toLocaleString('en-US')} {segment}
                     </>
                 )}
             </button>
@@ -185,7 +185,7 @@ export default function SMSMarketingPanel() {
                         <div>
                             <p className="text-sm font-semibold text-green-400">SMS Blast Sent</p>
                             <p className="text-xs text-gray-400 mt-0.5">
-                                Delivered to <span className="text-white">{recipientCount.toLocaleString()} {segment}</span> via Twilio.
+                                Delivered to <span className="text-white">{recipientCount.toLocaleString('en-US')} {segment}</span> via Twilio.
                             </p>
                         </div>
                     </motion.div>

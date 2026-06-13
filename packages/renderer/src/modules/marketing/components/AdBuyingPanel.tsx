@@ -200,7 +200,7 @@ export default function AdBuyingPanel() {
                             <p className="text-sm font-semibold text-green-400">Campaign Deployed</p>
                             <p className="text-xs text-gray-400 mt-0.5">
                                 ID: <span className="text-white font-mono">{deployResult.id}</span> &nbsp;·&nbsp;
-                                Est. Reach: <span className="text-white">{deployResult.reach.toLocaleString()} users/day</span>
+                                Est. Reach: <span className="text-white">{deployResult.reach.toLocaleString('en-US')} users/day</span>
                             </p>
                         </div>
                     </motion.div>
@@ -230,7 +230,7 @@ export default function AdBuyingPanel() {
                                         <DollarSign size={9} />${c.budget}/day
                                     </span>
                                     <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                        <TrendingUp size={9} />{c.reach.toLocaleString()} est. reach
+                                        <TrendingUp size={9} />{c.reach.toLocaleString('en-US')} est. reach
                                     </span>
                                     <span className="text-[10px] text-gray-500">Spent: ${c.spend.toFixed(2)}</span>
                                 </div>

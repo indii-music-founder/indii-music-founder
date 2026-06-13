@@ -89,7 +89,7 @@ function formatCurrency(amount: number): string {
 /* ── Components ─────────────────────────────────────────────────── */
 
 // eslint-disable-next-line react-refresh/only-export-components
-function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
+function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString('en-US') }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
     const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
     const [displayValue, setDisplayValue] = useState("0");
@@ -956,7 +956,7 @@ function RevenueAggregatedWidget() {
                 
                 <div className="space-y-1">
                     <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
-                        ${stats?.totalRevenue.toLocaleString() || '0'}
+                        ${stats?.totalRevenue.toLocaleString('en-US') || '0'}
                     </p>
                     <div className="flex items-center gap-2">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Gross Revenue</p>

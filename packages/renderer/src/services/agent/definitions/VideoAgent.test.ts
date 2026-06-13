@@ -45,6 +45,8 @@ describe('VideoAgent', () => {
         expect(VideoAgent.authorizedTools).toContain('browser_tool');
         expect(VideoAgent.authorizedTools).toContain('indii_image_gen');
         expect(VideoAgent.authorizedTools).toContain('orchestrate_timeline');
+        expect(VideoAgent.authorizedTools).toContain('generate_storyboard');
+        expect(VideoAgent.authorizedTools).toContain('draft_video_budget');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -55,5 +57,7 @@ describe('VideoAgent', () => {
         expect(VideoAgent.functions!.browser_tool).toBeDefined();
         expect(VideoAgent.functions!.indii_image_gen).toBeDefined();
         expect(VideoAgent.functions!.orchestrate_timeline).toBeDefined();
+        expect(VideoAgent.functions!.generate_storyboard).toBeDefined();
+        expect(VideoAgent.functions!.draft_video_budget).toBeDefined();
     });
 });

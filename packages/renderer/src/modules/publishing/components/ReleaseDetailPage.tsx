@@ -195,7 +195,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                 <div>
                                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Release Date</p>
                                     <p className="text-sm font-bold text-white leading-none">
-                                        {metadata.releaseDate ? new Date(metadata.releaseDate).toLocaleDateString() : 'TBD'}
+                                        {metadata.releaseDate ? new Date(metadata.releaseDate).toLocaleDateString('en-US') : 'TBD'}
                                     </p>
                                 </div>
                             </div>

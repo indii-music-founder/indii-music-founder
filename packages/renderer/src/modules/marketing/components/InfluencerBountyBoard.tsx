@@ -247,7 +247,7 @@ export default function InfluencerBountyBoard() {
                                     </div>
                                     <p className="text-[10px] text-gray-500 mt-0.5">
                                         {b.track} &nbsp;·&nbsp; ${b.reward} reward
-                                        {b.views > 0 && <> &nbsp;·&nbsp; {b.views.toLocaleString()} views</>}
+                                        {b.views > 0 && <> &nbsp;·&nbsp; {b.views.toLocaleString('en-US')} views</>}
                                     </p>
                                     {b.link && (
                                         <p className="text-[10px] text-dept-marketing mt-0.5 truncate">

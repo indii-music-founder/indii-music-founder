@@ -18,9 +18,7 @@ export const isTestHarnessRuntime = (): boolean => {
     try {
         return typeof process !== 'undefined' && (
             process.env.VITEST === 'true' ||
-            process.env.NODE_ENV === 'test' ||
-            process.env.VITE_E2E === 'true' ||
-            process.env.VITE_FIREBASE_E2E_MOCK === 'true'
+            process.env.NODE_ENV === 'test'
         );
     } catch {
         return false;

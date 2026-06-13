@@ -32,8 +32,8 @@ export const formatSmartDate = (timestamp: number | Date) => {
 
     // Less than 24 hours
     if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
 
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };

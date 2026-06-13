@@ -41,7 +41,7 @@ export const RecentDesignItem = React.memo(({ product, onClick }: RecentDesignIt
                 <p className="text-xs text-neutral-500">
                     {product.createdAt && typeof product.createdAt === 'object' && 'toDate' in product.createdAt ?
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        `Added ${(typeof (product.createdAt as any).toDate === 'function' ? (product.createdAt as any).toDate() : new Date(product.createdAt as any)).toLocaleDateString()}` :
+                        `Added ${(typeof (product.createdAt as any).toDate === 'function' ? (product.createdAt as any).toDate() : new Date(product.createdAt as any)).toLocaleDateString('en-US')}` :
                         'Just now'
                     }
                 </p>

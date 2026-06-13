@@ -28,7 +28,7 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
   const [currentTime] = useState(() => Date.now());
 
   const lastUpdated = React.useMemo(() => 
-    new Date(registry?.last_updated || currentTime).toLocaleTimeString(), 
+    new Date(registry?.last_updated || currentTime).toLocaleTimeString('en-US'), 
     [registry?.last_updated, currentTime]
   );
 

@@ -76,7 +76,7 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-sm font-black text-white">${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            <span className="text-sm font-black text-white">${item.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                     </div>
                                     <div className="relative h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-800/50">

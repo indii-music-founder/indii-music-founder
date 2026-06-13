@@ -87,7 +87,7 @@ export const AnalyticsTools = {
                 targetDay30: Math.round(followers * 2.0),
                 performanceRatio: Number((day30 / (followers * 2.0)).toFixed(2))
             }
-        }, `Velocity benchmarking complete. Track ${args.trackId || ''} projected day 30 streams: ${day30.toLocaleString()} based on ${followers.toLocaleString()} followers.`);
+        }, `Velocity benchmarking complete. Track ${args.trackId || ''} projected day 30 streams: ${day30.toLocaleString('en-US')} based on ${followers.toLocaleString('en-US')} followers.`);
     }),
 
     detect_streaming_anomalies,

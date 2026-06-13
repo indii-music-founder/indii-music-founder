@@ -146,7 +146,7 @@ export function SplitSheetEscrow() {
                     </div>
                     <div className="text-center">
                         <p className="text-xl font-black text-white">Funds Released!</p>
-                        <p className="text-sm text-emerald-400 mt-1">${escrowAmount.toLocaleString()} distributed via Stripe Connect</p>
+                        <p className="text-sm text-emerald-400 mt-1">${escrowAmount.toLocaleString('en-US')} distributed via Stripe Connect</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 w-full max-w-sm mt-2">
                         {collaborators.map(c => (
@@ -174,7 +174,7 @@ export function SplitSheetEscrow() {
                             <DollarSign size={20} className="text-emerald-400" />
                         </div>
                         <div className="flex-1 space-y-3">
-                            <p className="text-2xl font-black text-white">${escrowAmount.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-white">${escrowAmount.toLocaleString('en-US')}</p>
                             <p className="text-xs text-gray-500 mt-0.5">Total escrowed — locked until all parties sign</p>
                             <input
                                 type="text"

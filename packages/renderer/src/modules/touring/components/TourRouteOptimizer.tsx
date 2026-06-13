@@ -182,7 +182,7 @@ export function TourRouteOptimizer() {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-neutral-600">Distance</span>
-                        <span className="text-white font-bold">{totalDistance.toLocaleString()} mi</span>
+                        <span className="text-white font-bold">{totalDistance.toLocaleString('en-US')} mi</span>
                     </div>
 
                     <Tooltip>
@@ -336,7 +336,7 @@ export function TourRouteOptimizer() {
                                                 <div className="flex-1 h-px bg-white/5" />
                                                 <div className="flex items-center gap-1.5 text-[9px] text-neutral-600">
                                                     <Route size={9} />
-                                                    <span>{dist.toLocaleString()} mi</span>
+                                                    <span>{dist.toLocaleString('en-US')} mi</span>
                                                     <ArrowRight size={9} />
                                                     <Clock size={9} />
                                                     <span>{driveHours(dist)}</span>

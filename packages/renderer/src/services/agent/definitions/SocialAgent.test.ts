@@ -40,7 +40,7 @@ describe('SocialAgent', () => {
     });
 
     it('should expose the correct authorized tools', () => {
-        expect(SocialAgent.authorizedTools).toContain('create_social_calendar');
+        expect(SocialAgent.authorizedTools).toContain('generate_content_calendar');
         expect(SocialAgent.authorizedTools).toContain('schedule_post_execution');
         expect(SocialAgent.authorizedTools).toContain('generate_social_post');
         expect(SocialAgent.authorizedTools).toContain('analyze_trends');
@@ -51,12 +51,13 @@ describe('SocialAgent', () => {
         expect(SocialAgent.authorizedTools).toContain('analyze_sentiment');
         expect(SocialAgent.authorizedTools).toContain('multi_platform_autopost');
         expect(SocialAgent.authorizedTools).toContain('dispatch_community_webhook');
+        expect(SocialAgent.authorizedTools).toContain('analyze_engagement_rate');
     });
 
     it('should map the functions to correct tool implementations', () => {
         expect(SocialAgent.functions!.analyze_trends).toBeDefined();
         expect(SocialAgent.functions!.generate_social_post).toBeDefined();
-        expect(SocialAgent.functions!.create_social_calendar).toBeDefined();
+        expect(SocialAgent.functions!.generate_content_calendar).toBeDefined();
         expect(SocialAgent.functions!.schedule_post_execution).toBeDefined();
         expect(SocialAgent.functions!.draft_advanced_thread).toBeDefined();
         expect(SocialAgent.functions!.browser_tool).toBeDefined();
@@ -65,5 +66,6 @@ describe('SocialAgent', () => {
         expect(SocialAgent.functions!.analyze_sentiment).toBeDefined();
         expect(SocialAgent.functions!.multi_platform_autopost).toBeDefined();
         expect(SocialAgent.functions!.dispatch_community_webhook).toBeDefined();
+        expect(SocialAgent.functions!.analyze_engagement_rate).toBeDefined();
     });
 });

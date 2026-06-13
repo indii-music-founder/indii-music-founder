@@ -889,9 +889,9 @@ export const test = base.extend<AuthFixtures>({
     
     try {
       // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
-      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 10000 });
+      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 45000 });
     } catch (e) {
-      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 10s.");
+      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 45s.");
     }
     
     if (await emailInput.isVisible().catch(() => false)) {

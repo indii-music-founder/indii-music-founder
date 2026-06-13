@@ -36,7 +36,7 @@ export default function WorkflowLoadModal({ onClose, onLoadWorkflow, savedWorkfl
                                         {workflow.name}
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Last updated: {new Date(workflow.createdAt).toLocaleDateString()}
+                                        Last updated: {new Date(workflow.createdAt).toLocaleDateString('en-US')}
                                     </p>
                                 </div>
                                 <ArrowRight size={16} className="text-gray-500 group-hover:text-blue-500 transition-colors" />

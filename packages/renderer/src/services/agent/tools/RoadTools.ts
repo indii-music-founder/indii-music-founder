@@ -89,7 +89,7 @@ export const RoadTools = {
         return toolSuccess(validated, `Route planned with ${validated.legs.length} legs.`);
     }),
 
-    calculate_tour_budget: wrapTool('calculate_tour_budget', async ({ days, crew, crew_size, duration_days, accommodation_level }: { days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string }) => {
+    estimate_tour_budget: wrapTool('estimate_tour_budget', async ({ days, crew, crew_size, duration_days, accommodation_level }: { days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string }) => {
         const d = days || duration_days || 1;
         const c = crew || crew_size || 1;
         const level = (accommodation_level || 'standard').toLowerCase();
@@ -146,7 +146,7 @@ export const RoadTools = {
         return toolSuccess(result, `Tour budget calculated for ${d} days and ${c} crew at ${level} level.`);
     }),
 
-    generate_itinerary: wrapTool('generate_itinerary', async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
+    draft_tour_itinerary: wrapTool('draft_tour_itinerary', async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
         const promptInfo = city ?
             `Create a Day Sheet for ${city} on ${date} at ${venue}, show time ${show_time}.` :
             `Create a tour itinerary based on this route info: ${JSON.stringify(route)}`;
@@ -363,8 +363,8 @@ export const RoadTools = {
 // Aliases for historical reasons if needed
 export const {
     plan_tour_route,
-    calculate_tour_budget,
-    generate_itinerary,
+    estimate_tour_budget,
+    draft_tour_itinerary,
     optimize_tour_route,
     generate_technical_rider,
     generate_visa_checklist,

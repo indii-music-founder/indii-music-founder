@@ -368,8 +368,8 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
-                } catch (_) {
-                    // Silently ignore if reset fails
+                } catch (e) {
+                    logger.error('[AgentService] Failed to reset processing state:', e);
                 }
             } else {
                 this.getStore().then(store => {
@@ -377,7 +377,9 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
-                }).catch(() => {});
+                }).catch((e) => {
+                    logger.error('[AgentService] Failed to reset processing state in getStore:', e);
+                });
             }
         }
     }

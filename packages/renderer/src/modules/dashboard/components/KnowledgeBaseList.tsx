@@ -57,7 +57,7 @@ export const KnowledgeBaseList: React.FC = () => {
                             {/* Metadata */}
                             <ThreeDCardItem translateZ="30" className="text-xs text-white/40 flex items-center gap-1">
                                 <Clock size={10} />
-                                {new Date(doc.createdAt).toLocaleDateString()} • {new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(doc.createdAt).toLocaleDateString('en-US')} • {new Date(doc.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                             </ThreeDCardItem>
 
                         </ThreeDCardBody>

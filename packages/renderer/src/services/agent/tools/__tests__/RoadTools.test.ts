@@ -23,7 +23,7 @@ describe('RoadTools', () => {
         vi.clearAllMocks();
     });
 
-    it('calculate_tour_budget uses deterministic math', async () => {
+    it('estimate_tour_budget uses deterministic math', async () => {
         // days=10, crew=5, standard (200 hotel, 60 food, 100 transport)
         // Hotel: 200 * 5 * 10 = 10000
         // Food: 60 * 5 * 10 = 3000
@@ -33,7 +33,7 @@ describe('RoadTools', () => {
         // Contingency: 2650
         // Total: 29150
 
-        const result = await RoadTools.calculate_tour_budget({ days: 10, crew: 5, accommodation_level: 'standard' });
+        const result = await RoadTools.estimate_tour_budget({ days: 10, crew: 5, accommodation_level: 'standard' });
 
         expect(result.success).toBe(true);
         const parsed = result.data;

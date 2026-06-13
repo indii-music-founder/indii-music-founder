@@ -37,10 +37,10 @@ const CustomTooltip = ({ active, payload, label, isRevenue }: CustomTooltipProps
         return (
             <div className="bg-[#18181b] border border-gray-800 p-3 rounded-lg shadow-2xl backdrop-blur-md">
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
-                    {new Date(String(label)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(String(label)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p className="text-sm font-black text-white">
-                    {isRevenue ? '$' : ''}{payload[0]?.value?.toLocaleString()}
+                    {isRevenue ? '$' : ''}{payload[0]?.value?.toLocaleString('en-US')}
                     <span className="ml-1 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
                         {isRevenue ? 'USD' : 'Streams'}
                     </span>
@@ -71,7 +71,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                         {loading && <Loader2 size={14} className="animate-spin text-gray-600" />}
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-1">
-                        {new Date(dateRange.start).toLocaleDateString()} — {new Date(dateRange.end).toLocaleDateString()}
+                        {new Date(dateRange.start).toLocaleDateString('en-US')} — {new Date(dateRange.end).toLocaleDateString('en-US')}
                     </p>
                 </div>
 
@@ -127,7 +127,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                             tick={{ fill: '#3f3f46', fontSize: 10, fontWeight: 700 }}
                             tickFormatter={(str) => {
                                 const date = new Date(str);
-                                return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                             }}
                             minTickGap={30}
                         />
@@ -159,14 +159,14 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Peak Performance</p>
                     <p className="text-xl font-black text-white tracking-tight">
                         {isRevenue ? '$' : ''}
-                        {data.length > 0 ? Math.max(...data.map(d => d[selectedMetric] || 0)).toLocaleString() : '0'}
+                        {data.length > 0 ? Math.max(...data.map(d => d[selectedMetric] || 0)).toLocaleString('en-US') : '0'}
                     </p>
                 </div>
                 <div className="p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50">
                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Average Daily</p>
                     <p className="text-xl font-black text-white tracking-tight">
                         {isRevenue ? '$' : ''}
-                        {Math.round(data.reduce((acc, curr) => acc + (curr[selectedMetric] || 0), 0) / (data.length || 1)).toLocaleString()}
+                        {Math.round(data.reduce((acc, curr) => acc + (curr[selectedMetric] || 0), 0) / (data.length || 1)).toLocaleString('en-US')}
                     </p>
                 </div>
             </div>

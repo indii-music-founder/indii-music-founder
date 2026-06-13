@@ -179,7 +179,7 @@ function CanvasCard({
             </div>
 
             <p className="px-4 pb-2 text-[9px] text-white/20 font-mono">
-                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(item.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </p>
         </motion.div>
     );

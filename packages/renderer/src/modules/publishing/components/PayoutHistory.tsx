@@ -92,7 +92,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-lg font-black text-white tracking-tighter">
                                                 {payout.currencyCode === 'USD' ? '$' : payout.currencyCode}
-                                                {payout.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </span>
                                             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md ${statusConfig[payout.status].bg} ${statusConfig[payout.status].color} border border-current opacity-20 group-hover:opacity-100 transition-opacity`}>
                                                 {statusConfig[payout.status].icon}
@@ -100,7 +100,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                             </div>
                                         </div>
                                         <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">
-                                            {new Date(payout.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {payout.method}
+                                            {new Date(payout.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} • {payout.method}
                                         </p>
                                     </div>
                                 </div>
@@ -136,7 +136,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Lifetime Earnings</span>
                 </div>
                 <span className="text-sm font-black text-white tracking-tighter">
-                    ${payouts.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ${payouts.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
             </div>
         </div>

@@ -163,5 +163,5 @@ function formatRelativeDate(ts: number): string {
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     if (days < 7) return `${days}d ago`;
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

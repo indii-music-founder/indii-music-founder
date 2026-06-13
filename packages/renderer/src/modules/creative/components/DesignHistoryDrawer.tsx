@@ -120,7 +120,7 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
 
                             <h4 className="text-xs font-bold text-gray-200 mb-1 line-clamp-1">{v.name}</h4>
                             <p className="text-[10px] text-gray-500 font-mono italic mb-3">
-                                {new Date(v.createdAt).toLocaleString()}
+                                {new Date(v.createdAt).toLocaleString('en-US')}
                             </p>
 
                             <div className="flex items-center justify-between">

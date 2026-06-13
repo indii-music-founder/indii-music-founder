@@ -28,9 +28,11 @@ export const MarketingAgent: AgentConfig = {
             deploy_sms_blast: MarketingTools.deploy_sms_blast,
             enrich_fan_data: MarketingTools.enrich_fan_data,
             generate_influencer_bounty: MarketingTools.generate_influencer_bounty,
+            generate_ad_copy: MarketingTools.generate_ad_copy,
+            analyze_campaign_roi: MarketingTools.analyze_campaign_roi,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty'],
+    authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi'],
     tools: [{
         functionDeclarations: [
             {
@@ -226,6 +228,33 @@ export const MarketingAgent: AgentConfig = {
                         targetInfluencerNiche: { type: "STRING", description: "e.g., 'Fitness Creators', 'Dance', 'Gaming'" }
                     },
                     required: ["trackTitle", "bountyRewardUsd", "soundUrl"]
+                }
+            },
+            {
+                name: "generate_ad_copy",
+                description: "Generates tailored ad copy for a product targeting a specific audience on a given platform.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        productName: { type: "STRING", description: "The product or release to market." },
+                        targetAudience: { type: "STRING", description: "The intended demographic." },
+                        tone: { type: "STRING", description: "The tone of the copy (e.g., engaging, professional, hype)." },
+                        platform: { type: "STRING", description: "The platform for the ad (e.g., Instagram, Twitter)." }
+                    },
+                    required: ["productName", "targetAudience", "platform"]
+                }
+            },
+            {
+                name: "analyze_campaign_roi",
+                description: "Analyzes the Return on Investment (ROI) for a specific campaign.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        campaignId: { type: "STRING", description: "The ID of the campaign to track." },
+                        totalSpend: { type: "NUMBER", description: "Total amount spent on the campaign." },
+                        totalRevenue: { type: "NUMBER", description: "Total revenue generated from the campaign." }
+                    },
+                    required: ["campaignId", "totalSpend", "totalRevenue"]
                 }
             }
         ]

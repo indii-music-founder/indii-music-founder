@@ -148,7 +148,7 @@ export const HealthPanel: React.FC = () => {
                 className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors mt-2"
             >
                 <RefreshCw size={12} />
-                {lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : 'Refresh'}
+                {lastChecked ? `Last checked ${lastChecked.toLocaleTimeString('en-US')}` : 'Refresh'}
             </button>
         </div>
     );
