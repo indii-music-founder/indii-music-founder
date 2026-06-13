@@ -1,5 +1,5 @@
 import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DashboardRelease, ReleaseStatus } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
@@ -52,11 +52,22 @@ export class DistributionSyncService {
         onUpdate: (releases: DashboardRelease[]) => void,
         onError?: (error: Error) => void
     ): () => void {
-        const q = query(
-            collection(db, 'proprietaryIngestionReleases'),
-            where('orgId', '==', orgId),
-            orderBy('createdAt', 'desc')
-        );
+        const userId = auth.currentUser?.uid;
+        if (!userId) return () => {};
+
+        // If the orgId is 'org-default', it is the user's personal workspace.
+        // We query by userId. We must also constrain orgId to null to prevent Firestore rules evaluation failure on `isOrgMember(resource.data.orgId)`.
+        const q = orgId && orgId !== 'org-default'
+            ? query(
+                collection(db, 'proprietaryIngestionReleases'),
+                where('orgId', '==', orgId),
+                orderBy('createdAt', 'desc')
+            )
+            : query(
+                collection(db, 'proprietaryIngestionReleases'),
+                where('userId', '==', userId),
+                orderBy('createdAt', 'desc')
+            );
 
         // E2E Mock Bypass: skip real Firestore listeners
         if (isFirebaseE2EMockEnabled()) {
@@ -85,11 +96,20 @@ export class DistributionSyncService {
         }
 
         try {
-            const q = query(
-                collection(db, 'proprietaryIngestionReleases'),
-                where('orgId', '==', orgId),
-                orderBy('createdAt', 'desc')
-            );
+            const userId = auth.currentUser?.uid;
+            if (!userId && orgId === 'org-default') return [];
+
+            const q = orgId && orgId !== 'org-default'
+                ? query(
+                    collection(db, 'proprietaryIngestionReleases'),
+                    where('orgId', '==', orgId),
+                    orderBy('createdAt', 'desc')
+                )
+                : query(
+                    collection(db, 'proprietaryIngestionReleases'),
+                    where('userId', '==', userId),
+                    orderBy('createdAt', 'desc')
+                );
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc =>

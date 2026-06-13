@@ -567,7 +567,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
-        const constraints = orgId
+        // Firestore rules evaluation for `isOrgMember` fails if `orgId` is unconstrained.
+        const constraints = orgId && orgId !== 'org-default'
             ? [this.where('orgId', '==', orgId)]
             : [this.where('userId', '==', userId)];
 
@@ -770,7 +771,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 
-        const constraints = orgId
+        const constraints = orgId && orgId !== 'org-default'
             ? [this.where('orgId', '==', orgId)]
             : [this.where('userId', '==', userId)];
 

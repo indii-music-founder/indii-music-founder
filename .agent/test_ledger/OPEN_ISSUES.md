@@ -4679,3 +4679,84 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Re-run the full suite and record the actual totals, or correct the claim to match the 1,070-test output. Agents must not state totals that differ from their own pasted evidence.
 
 ---
+
+### ISSUE-422: Missing Mermaid Diagram for API Endpoints
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **UX Dimension:** Action Discoverability
+- **Module:** documentation
+- **Found:** 2026-06-13 by Founder
+- **Steps to Reproduce:**
+  1. Search for a Mermaid chart documenting all API endpoints in the repository (`docs/flowcharts`).
+  2. Observe that while many architecture and flow diagrams exist, a centralized, comprehensive map of all API endpoints is missing.
+  3. We need a unified API map.
+- **User Impact:** Developers or agents lack a single visual reference for the entire API surface, increasing friction when integrating or updating services.
+- **Screenshot:** N/A
+- **Notes:** Generate a new `.md` file in `docs/flowcharts/` containing a `mermaid` diagram mapping all backend API endpoints, cloud functions, and their module relationships.
+
+---
+
+### ISSUE-423: Creative Pipeline API Error - Google Generation Service Internal Error
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication
+- **Module:** Creative Studio
+- **Found:** 2026-06-13 by browser subagent
+- **Steps to Reproduce:**
+  1. Navigate to Creative Studio.
+  2. Click Generate for Image or Video.
+  3. UI throws "The Google generation service returned an internal error."
+- **User Impact:** User cannot generate any images or videos, completely blocking the creative pipeline.
+- **Screenshot:** Native artifact
+- **Notes:** Backend Google Generation service returned a 500-level internal error. Workaround: None via UI.
+
+---
+
+### ISSUE-424: Workflow Orchestrator Indefinite Hang on Template Execution
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication
+- **Module:** Agent Orchestration / Workflow Lab
+- **Found:** 2026-06-13 by browser subagent
+- **Steps to Reproduce:**
+  1. Navigate to Workflow Lab.
+  2. Load Campaign Launch template.
+  3. Click Run.
+  4. Observe the UI hangs on "Running..." indefinitely with no success/failure state returned.
+- **User Impact:** User believes the system is frozen and cannot use Agent workflows.
+- **Screenshot:** Native artifact
+- **Notes:** The orchestrator does not return a state.
+
+---
+
+### ISSUE-425: Finance Receipt OCR Fetch Error to Gemini AI
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication
+- **Module:** Finance
+- **Found:** 2026-06-13 by browser subagent
+- **Steps to Reproduce:**
+  1. Navigate to Finance Department.
+  2. Use Receipt OCR feature with an image.
+  3. Fetch error: "Failed to upload file to Gemini AI: Failed to fetch (generativelanguage.googleapis.com)".
+- **User Impact:** User cannot scan receipts.
+- **Screenshot:** Native artifact
+- **Notes:** Check API keys and CORS configured on the backend.
+
+---
+
+### ISSUE-426: Distribution Department Fails to Load Releases (Permission Denied)
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication
+- **Module:** Distribution
+- **Found:** 2026-06-13 by browser subagent
+- **Steps to Reproduce:**
+  1. Navigate to Distribution Department.
+  2. Attempt to load releases.
+  3. Observe "Missing or insufficient permissions" error.
+- **User Impact:** User cannot see their releases, blocking the entire distribution management flow.
+- **Screenshot:** Native artifact
+- **Notes:** Check Firestore security rules or user auth roles.
+
+---

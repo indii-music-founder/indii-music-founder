@@ -547,6 +547,20 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     // Return only the lightweight URI to the client
     return { jobId, resultUri: outputUri };
   } catch (error: unknown) {
+    // COMPREHENSIVE DEBUG LOGGING
+    console.error(`[generateImageV3] CRITICAL FAILURE: Unhandled exception caught.`);
+    console.error(`[generateImageV3] RAW ERROR:`, error);
+    if (error && typeof error === 'object') {
+      console.error(`[generateImageV3] ERROR KEYS:`, Object.keys(error));
+      console.error(`[generateImageV3] ERROR MESSAGE:`, (error as Error).message);
+      console.error(`[generateImageV3] ERROR STACK:`, (error as Error).stack);
+      try {
+        console.error(`[generateImageV3] STRINGIFIED:`, JSON.stringify(error, null, 2));
+      } catch {
+        console.error(`[generateImageV3] STRINGIFIED: (failed to stringify)`);
+      }
+    }
+
     await safeDbUpdate(jobId, {
       status: 'failed',
       error: errorMessage(error)
