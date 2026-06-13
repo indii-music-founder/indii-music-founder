@@ -18,7 +18,7 @@ description: >
 # /mega — Master Menu-Sweep Orchestrator
 
 > **Purpose:** Drive `/mega-test` across every item in the live left menu, grouped by category,
-> evaluating each across the 11 critical dimensions (including the Asset Generation Gauntlet).
+> evaluating each across the 12 critical dimensions (including the Asset Generation Gauntlet).
 > **The unit of work is a menu item.** `/mega` = "test every menu item." Numbered plans are
 > depth-packs you attach to individual items, not the loop axis.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications. EVER.
@@ -46,14 +46,17 @@ The canonical list of items to sweep is **`.agent/test_ledger/departments_test_c
 python3 -c "import json; c=json.load(open('.agent/test_ledger/departments_test_config.json')); [print(v.get('category'),'|',k,'|',v.get('name')) for k,v in c.items()]"
 ```
 
-Items group into four sidebar categories. Default sweep order:
+Items group into seven categories. Default sweep order:
 
-1. **Manager's Office** — Brand Manager, Road Manager, Campaign Manager, Booking Agent, Publicist, Creative Director
-2. **Departments** — Marketing, Social Media, Legal, Publishing, Finance, Distribution, Licensing, Art & Merch, Registration Center, Security Agent
-3. **Tools** — Workflow Builder, Audio Analyzer, Knowledge Base, Memory Agent, Command Center, Settings, Mobile Remote
-4. **Projects & Dashboards** — HQ Dashboard, Boardroom HQ, Founders Checkout, Onboarding
+1. **Manager's Office** (`manager`) — Brand Manager, Road Manager, Campaign Manager, Booking Agent, Publicist, Creative Director
+2. **Departments** (`department`) — Marketing, Social Media, Legal, Publishing, Finance, Distribution, Licensing, Art & Merch, Registration Center, Security Agent
+3. **Tools** (`tool`) — Workflow Builder, Audio Analyzer, Knowledge Base, Memory Agent, Command Center, Settings, Mobile Remote
+4. **Projects & Dashboards** (`project`) — HQ Dashboard, Boardroom HQ, Founders Checkout, Onboarding
+5. **Right Bar** (`rightbar`) — Context Controls, Project Assets, Artifacts, Omni Agent
+6. **Top Bar** (`topbar`) — Creative Studio Toolbar, Design Toolbar, Agent Toolbar, Marketing Toolbar
+7. **Continuity Chains** (`continuity`) — Aesthetic chain, Longitudinal Finance chain, Identity chain — backend cross-pollination of information (run LAST, since they depend on the UI surfaces above being healthy)
 
-> Per-item testing depth, connections, and the scoped runner all live in `/mega-test`. `/mega` is the sweep driver.
+> Per-item testing depth, connections, the 12 dimensions, and the continuity-chain discipline all live in `/mega-test`. `/mega` is the sweep driver. The category order is fixed: UI surfaces first (so a broken capture point is caught before the chains that depend on it), continuity chains last.
 
 ---
 
@@ -67,6 +70,9 @@ Items group into four sidebar categories. Default sweep order:
 /mega departments            → Sweep only the Departments category
 /mega tools                  → Sweep only the Tools category
 /mega projects               → Sweep only Projects & Dashboards
+/mega rightbar               → Sweep only the Right Bar (Omni-Panel tabs)
+/mega topbar                 → Sweep only the per-module Top Bar toolbars
+/mega continuity             → Sweep only the Continuity Chains (cross-pollination)
 /mega road-manager           → Single item (equivalent to /mega-test road-manager)
 /mega loop                   → Infinite Loop: cycle the whole menu repeatedly until stopped
 /mega loop managers tools    → Selective Loop: cycle only the named categories/items
@@ -78,7 +84,7 @@ Items group into four sidebar categories. Default sweep order:
 ### 2.2 Default Behavior (`/mega` with no args)
 
 Sweep the **entire menu** in category order: Managers → Departments → Tools → Projects.
-For each item, run the full `/mega-test <item>` gauntlet (scoped runner + 11-dimension browser pass).
+For each item, run the full `/mega-test <item>` gauntlet (scoped runner + 12-dimension browser pass).
 Print a progress line after each item and a category summary after each group.
 
 ---
@@ -131,10 +137,11 @@ Create a running report artifact. It grows throughout the session.
 │  MEGA MENU-SWEEP LOOP                              │
 │                                                    │
 │  for each CATEGORY in [Managers, Departments,      │
-│                        Tools, Projects]:           │
+│       Tools, Projects, RightBar, TopBar,           │
+│       Continuity(last)]:                           │
 │    for each ITEM in category:                      │
 │      1. Run /mega-test <item> (scoped runner +     │
-│         11-dimension browser gauntlet)             │
+│         12-dimension browser gauntlet)             │
 │      2. Collect verdicts + dimensional scores      │
 │      3. Append new issues to OPEN_ISSUES.md        │
 │      4. Update running report                      │
@@ -293,7 +300,10 @@ At the end of every `/mega` run, produce `artifacts/mega_session_<date>.md`:
 | Departments | 10 | ... | ... | ... | ... | ... |
 | Tools | 7 | ... | ... | ... | ... | ... |
 | Projects | 4 | ... | ... | ... | ... | ... |
-| **Total** | **27** | ... | ... | ... | ... | ... |
+| Right Bar | 4 | ... | ... | ... | ... | ... |
+| Top Bar | 4 | ... | ... | ... | ... | ... |
+| Continuity | 3 | ... | ... | ... | ... | ... |
+| **Total** | **38** | ... | ... | ... | ... | ... |
 
 ## New Issues Filed
 - ISSUE-XXX: <title> (🔴 HIGH)
