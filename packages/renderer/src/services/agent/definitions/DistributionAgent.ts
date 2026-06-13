@@ -28,6 +28,8 @@ export const DistributionAgent: AgentConfig = {
             run_metadata_qc: DistributionTools.run_metadata_qc,
             generate_bwarm: DistributionTools.generate_bwarm,
             check_merlin_status: DistributionTools.check_merlin_status,
+            check_dsp_delivery_status: DistributionTools.check_dsp_delivery_status,
+            validate_metadata_readiness: DistributionTools.validate_metadata_readiness,
             create_music_metadata: MusicTools.create_music_metadata,
             verify_metadata_golden: MusicTools.verify_metadata_golden,
             update_track_metadata: MusicTools.update_track_metadata,
@@ -37,7 +39,7 @@ export const DistributionAgent: AgentConfig = {
             credential_vault: UniversalTools.credential_vault
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
+    authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
     tools: [{
         functionDeclarations: [
             {
@@ -172,6 +174,29 @@ export const DistributionAgent: AgentConfig = {
                         exclusive_rights: { type: "BOOLEAN", description: "Whether you hold exclusive rights to all content" }
                     },
                     required: ["total_tracks", "has_isrcs", "has_upcs", "exclusive_rights"]
+                }
+            },
+            {
+                name: "check_dsp_delivery_status",
+                description: "Checks the delivery status of a release to DSPs (Digital Service Providers).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "The ID of the release to check" },
+                        dspName: { type: "STRING", description: "Optional name of a specific DSP to check (e.g., Spotify, Apple Music)" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
+                name: "validate_metadata_readiness",
+                description: "Validates if a release's metadata is ready and complete for distribution.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "The ID of the release to validate" }
+                    },
+                    required: ["releaseId"]
                 }
             },
             {
