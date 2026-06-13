@@ -47,8 +47,7 @@ export interface AgentOrchestrationSlice {
     setActiveGraphExecution: (execution: GraphExecutionState | null) => void;
 }
 
-const graphListeners: Record<string, Unsubscribe> = {};
-let activeExecutionListener: Unsubscribe | null = null;
+const graphListeners: Record<string, boolean> = {}; // Keep a simple boolean flag to prevent duplicate listeners
 
 export const buildAgentOrchestrationState: (
     set: Parameters<StateCreator<AgentOrchestrationSlice>>[0],
@@ -99,14 +98,20 @@ export const buildAgentOrchestrationState: (
             }
         );
 
-        graphListeners[taskId] = unsubscribe;
+        graphListeners[taskId] = true;
+        import('@/core/store').then(({ useStore }) => {
+            useStore.getState().registerSubscription(`graph_${taskId}`, unsubscribe);
+        });
     },
 
     stopListeningToGraph: (taskId: string) => {
         if (graphListeners[taskId]) {
             console.info(`[AgentOrchestrationSlice] Stopping listener for graph: ${taskId}`);
-            graphListeners[taskId]();
             delete graphListeners[taskId];
+            
+            import('@/core/store').then(({ useStore }) => {
+                useStore.getState().clearSubscription(`graph_${taskId}`);
+            });
 
             set((state) => {
                 const nextGraphs = { ...state.activeGraphs };
@@ -123,23 +128,23 @@ export const buildAgentOrchestrationState: (
     setActiveGraphExecution: (execution) => set({ activeGraphExecution: execution }),
 
     startListeningToGraphExecution: async (executionId: string) => {
-        if (activeExecutionListener) {
-            console.info('[AgentOrchestrationSlice] Stopping existing active graph execution listener.');
-            activeExecutionListener();
-            activeExecutionListener = null;
-        }
-
         const uid = auth.currentUser?.uid;
         if (!uid) {
             console.warn('[AgentOrchestrationSlice] Cannot listen to graph execution without authenticated user.');
             return;
         }
 
+        // Clean up previous listeners before starting a new one
+        const { useStore } = await import('@/core/store');
+        if (typeof useStore.getState().clearSubscriptionsByPrefix === 'function') {
+            useStore.getState().clearSubscriptionsByPrefix('execution_');
+        }
+
         console.info(`[AgentOrchestrationSlice] Starting listener for graph execution: ${executionId}`);
         // Path: users/{userId}/graphExecutions/{id}
         const executionRef = doc(db, 'users', uid, 'graphExecutions', executionId);
 
-        activeExecutionListener = onSnapshot(
+        const unsubscribe = onSnapshot(
             executionRef,
             (snapshot) => {
                 if (snapshot.exists()) {
@@ -154,14 +159,17 @@ export const buildAgentOrchestrationState: (
                 console.error(`[AgentOrchestrationSlice] Firestore listener error for execution ${executionId}:`, error);
             }
         );
+        
+        useStore.getState().registerSubscription(`execution_${executionId}`, unsubscribe);
     },
 
     stopListeningToGraphExecution: () => {
-        if (activeExecutionListener) {
-            console.info('[AgentOrchestrationSlice] Stopping active graph execution listener.');
-            activeExecutionListener();
-            activeExecutionListener = null;
-            set({ activeGraphExecution: null });
-        }
+        console.info('[AgentOrchestrationSlice] Stopping active graph execution listener.');
+        import('@/core/store').then(({ useStore }) => {
+            if (typeof useStore.getState().clearSubscriptionsByPrefix === 'function') {
+                useStore.getState().clearSubscriptionsByPrefix('execution_');
+            }
+        });
+        set({ activeGraphExecution: null });
     }
 });
