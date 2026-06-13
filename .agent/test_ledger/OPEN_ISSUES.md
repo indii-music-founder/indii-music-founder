@@ -4805,7 +4805,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in BrandAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-CREATIVE: Phase C Skills Gap Analysis for creative
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🟢 LOW
 - **Module:** agents/creative
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the creative agent but are currently missing: generate_moodboard, analyze_visual_trends.
@@ -4853,6 +4853,27 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publicist agent but are currently missing: draft_press_release, find_media_contacts.
 - **Fix Direction:** Implement these tools natively in PublicistAgent.ts or as Layer 3 execution scripts.
 
+### ISSUE-E2E-RIGHT-PANEL-1: Timeout rendering Context Controls for Creative Director
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** e2e/right-panel.spec.ts
+- **Summary:** Test 'should dynamically render Context Controls panel for Creative Director' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
+- **Fix Direction:** Investigate why the creative director route `/creative` is hanging or failing to render the main container. Check for unhandled exceptions or missing mocks in the E2E environment.
+
+### ISSUE-E2E-RIGHT-PANEL-2: Timeout interacting with filters and search in Project Assets tab
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** e2e/right-panel.spec.ts
+- **Summary:** Test 'should interact with filters and search in Project Assets tab' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
+- **Fix Direction:** Check the root route `/` rendering in the test environment. Ensure the app container is visible within 15 seconds.
+
+### ISSUE-E2E-RIGHT-PANEL-3: Timeout rendering Context Controls for Marketing
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** e2e/right-panel.spec.ts
+- **Summary:** Test 'should dynamically render Context Controls panel for Marketing and deploy protocol' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
+- **Fix Direction:** Check the marketing route `/marketing`. Determine why the container fails to appear, similar to the creative director route.
+
 ### ISSUE-GAP-PUBLISHING: Phase C Skills Gap Analysis for publishing
 - **Status:** OPEN
 - **Severity:** 🟢 LOW
@@ -4880,3 +4901,67 @@ Therefore, no fix can be proposed or implemented.
 - **Module:** agents/video
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the video agent but are currently missing: generate_storyboard, draft_video_budget.
 - **Fix Direction:** Implement these tools natively in VideoAgent.ts or as Layer 3 execution scripts.
+
+
+### ISSUE-HUNTER-1: process.env used in browser context instead of import.meta.env
+- **Status:** OPEN
+- **Severity:** High
+- **Module:** packages/renderer/src/utils/e2eMode.ts
+- **Summary:** Found `process.env.VITE_E2E` and `process.env.VITE_FIREBASE_E2E_MOCK` used in a browser context. This will cause runtime errors because Vite uses `import.meta.env` for environment variables.
+- **Fix Direction:** Replace `process.env.` with `import.meta.env.` in packages/renderer/src/utils/e2eMode.ts.
+
+### ISSUE-HUNTER-2: Event Listener Count Mismatch (Potential Memory Leak)
+- **Status:** OPEN
+- **Severity:** Medium
+- **Module:** Global
+- **Summary:** Found 95 instances of `addEventListener` but only 63 instances of `removeEventListener` in the renderer package. This indicates a high probability of missing cleanup logic in `useEffect` hooks or component unmounts.
+- **Fix Direction:** Audit all components with `addEventListener` to ensure a matching `removeEventListener` is returned in the `useEffect` cleanup function.
+
+### ISSUE-HUNTER-3: Unhandled Firestore onSnapshot Subscriptions
+- **Status:** OPEN
+- **Severity:** Medium
+- **Module:** Firebase / Store Slices
+- **Summary:** Found numerous usages of `onSnapshot` across store slices and hooks (e.g., `profileSlice.ts`, `agentOrchestrationSlice.ts`, etc.). Without proper unsubscribe mechanisms, these can leak memory over time.
+- **Fix Direction:** For each leaked `onSnapshot` in a Zustand slice, store the unsubscribe function via `registerSubscription()` or manage it carefully if it's within a React `useEffect`.
+
+### ISSUE-HUNTER-4: Loading State Traps blocking UI with no fallback
+- **Status:** OPEN
+- **Severity:** High
+- **Module:** UI Components
+- **Summary:** Found components returning early on `isLoading` without a timeout failsafe, leading to infinite spinners if underlying services fail silently. E.g., `packages/renderer/src/core/App.tsx:239`, `packages/renderer/src/core/components/chat/ChatMessage.tsx`.
+- **Fix Direction:** Add a `setTimeout` failsafe (e.g., 10s) that forces `loading=false` with an error message to prevent infinite loading screens.
+
+### ISSUE-HUNTER-5: Swallowed Errors in Catch Blocks
+- **Status:** OPEN
+- **Severity:** Medium
+- **Module:** Services
+- **Summary:** Empty or swallowed catch blocks found, hiding actual errors. Examples include `packages/renderer/src/services/agent/AgentService.ts:380` (`.catch(() => {})`) and multiple instances in `SocialPlatformService.ts`. Raw `console.log` also found in `GeminiRetrievalService.ts`.
+- **Fix Direction:** Replace empty catches with proper error handling/logging (`logger.error()`, `Sentry.captureException()`). Replace raw `console.log` with structured `logger.debug()` or `logger.info()`.
+
+### ISSUE-HUNTER-6: Missing Retry Logic and Specific HTTP Error Handling for fetch()
+- **Status:** OPEN
+- **Severity:** Medium
+- **Module:** Services / API integrations
+- **Summary:** Multiple `fetch()` calls check `!response.ok` but do not specifically handle rate limits (429) or implement exponential backoff/retry logic (e.g., in `YouTubeDataService.ts`, `OpenSeaService.ts`, `PinataService.ts`).
+- **Fix Direction:** Wrap critical `fetch()` calls in retry logic with backoff for 429/5xx status codes to improve robustness.
+
+### ISSUE-HUNTER-7: Impure Render Functions (Date.now() in render)
+- **Status:** OPEN
+- **Severity:** Low
+- **Module:** UI Components
+- **Summary:** Found usages of `Date.now()` during render which is non-deterministic and can cause hydration issues or unnecessary re-renders. Examples in `AgentCanvasPanel.tsx`, `AgentChat.tsx`, and `GenerationMonitor.tsx`.
+- **Fix Direction:** Move `Date.now()` calculations to a `useEffect`, `useMemo`, or an event handler to keep render functions pure.
+
+### ISSUE-HUNTER-8: Floating Point Arithmetic for Financial Calculations
+- **Status:** OPEN
+- **Severity:** High
+- **Module:** Finance
+- **Summary:** Uses of `toFixed` or floating-point arithmetic (e.g., in `FinanceDashboard.tsx`, `RevenueProjections.tsx`) instead of integer cents. This can cause floating-point rounding errors in royalty splits.
+- **Fix Direction:** Convert all floating-point money calculations to use integer cents (`Math.round(amount * 100)`) before any operations.
+
+### ISSUE-HUNTER-9: Missing Explicit Locales in toLocaleDateString
+- **Status:** OPEN
+- **Severity:** Low
+- **Module:** Localization / Dates
+- **Summary:** Widespread use of `toLocaleDateString()` and `toLocaleString()` without explicitly defining the locale (e.g., `'en-US'`). This can cause inconsistent date formatting in business-critical paths like DDEX or invoices.
+- **Fix Direction:** Audit all date formatting and add explicit `'en-US'` locale: `.toLocaleDateString('en-US', { ... })`. For DDEX/ISO dates, use `.toISOString()`.
