@@ -88,7 +88,7 @@ export const PublicistAgent = createAgent('publicist')
         Format as a standard press release.`;
 
         try {
-            const content = await AutonomousIntelligence.generateText(prompt);
+            const content = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return {
                 success: true,
                 data: {
@@ -131,7 +131,7 @@ export const PublicistAgent = createAgent('publicist')
         Strategy: Acknowledge, Empathize, Redirect. Keep it professional.`;
 
         try {
-            const response = await AutonomousIntelligence.generateText(prompt);
+            const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return {
                 success: true,
                 data: {
@@ -168,7 +168,7 @@ export const PublicistAgent = createAgent('publicist')
         Include relevant hashtags.`;
 
         try {
-            const post = await AutonomousIntelligence.generateText(prompt);
+            const post = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return {
                 success: true,
                 data: {

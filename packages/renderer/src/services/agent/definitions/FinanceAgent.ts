@@ -41,7 +41,7 @@ export const FinanceAgent: AgentConfig = {
             Query: ${args.query}`;
 
             try {
-                const response = await AutonomousIntelligence.generateText(prompt);
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -92,7 +92,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await AutonomousIntelligence.generateText(prompt);
+                const advice = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
