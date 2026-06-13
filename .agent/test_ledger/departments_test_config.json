@@ -2,14 +2,25 @@
   "marketing": {
     "name": "Marketing & PR",
     "category": "department",
-    "aliases": ["marketing", "social-media", "pr", "marketing-department"],
+    "aliases": [
+      "marketing",
+      "social-media",
+      "pr",
+      "marketing-department"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/marketing"
     ],
     "e2eTestPaths": [
       "e2e/marketing.spec.ts"
     ],
-    "connectedDepartments": ["creative", "finance", "distribution", "publishing", "social"],
+    "connectedDepartments": [
+      "creative",
+      "finance",
+      "distribution",
+      "publishing",
+      "social"
+    ],
     "connectedE2eTestPaths": [
       "e2e/creative-studio.spec.ts",
       "e2e/finance-workflow.spec.ts",
@@ -17,13 +28,27 @@
       "e2e/social.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [9, 10, 11, 12, 13, 14, 15, 41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        41
+      ]
     }
   },
   "creative": {
     "name": "Creative Director",
     "category": "manager",
-    "aliases": ["creative", "creative-director", "a&r", "art"],
+    "aliases": [
+      "creative",
+      "creative-director",
+      "a&r",
+      "art"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/creative"
     ],
@@ -34,20 +59,35 @@
       "e2e/creative-prompt-builder.spec.ts",
       "e2e/creative-character.spec.ts"
     ],
-    "connectedDepartments": ["brand", "distribution", "marketing"],
+    "connectedDepartments": [
+      "brand",
+      "distribution",
+      "marketing"
+    ],
     "connectedE2eTestPaths": [
       "e2e/brand.spec.ts",
       "e2e/distribution-workflow.spec.ts",
       "e2e/marketing.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [32, 36, 38, 42, 47]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        32,
+        36,
+        38,
+        42,
+        47
+      ]
     }
   },
   "finance": {
     "name": "Finance Department",
     "category": "department",
-    "aliases": ["finance", "finance-department", "royalties", "royalty"],
+    "aliases": [
+      "finance",
+      "finance-department",
+      "royalties",
+      "royalty"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/finance",
       "packages/renderer/src/modules/royalty"
@@ -56,20 +96,35 @@
       "e2e/finance-workflow.spec.ts",
       "e2e/payment.spec.ts"
     ],
-    "connectedDepartments": ["marketing", "distribution", "legal"],
+    "connectedDepartments": [
+      "marketing",
+      "distribution",
+      "legal"
+    ],
     "connectedE2eTestPaths": [
       "e2e/marketing.spec.ts",
       "e2e/distribution-workflow.spec.ts",
       "e2e/legal.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [23, 24, 25, 27, 29, 40, 41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        23,
+        24,
+        25,
+        27,
+        29,
+        40,
+        41
+      ]
     }
   },
   "distribution": {
     "name": "Distribution Department",
     "category": "department",
-    "aliases": ["distribution", "distribution-department"],
+    "aliases": [
+      "distribution",
+      "distribution-department"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/distribution"
     ],
@@ -77,246 +132,379 @@
       "e2e/distribution-workflow.spec.ts",
       "e2e/hardened-distribution.spec.ts"
     ],
-    "connectedDepartments": ["finance", "publishing", "legal"],
+    "connectedDepartments": [
+      "finance",
+      "publishing",
+      "legal"
+    ],
     "connectedE2eTestPaths": [
       "e2e/finance-workflow.spec.ts",
       "e2e/publishing.spec.ts",
       "e2e/legal.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [26, 27, 28, 30]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        26,
+        27,
+        28,
+        30
+      ]
     }
   },
   "legal": {
     "name": "Legal Department",
     "category": "department",
-    "aliases": ["legal", "legal-department", "contracts"],
+    "aliases": [
+      "legal",
+      "legal-department",
+      "contracts"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/legal"
     ],
     "e2eTestPaths": [
       "e2e/legal.spec.ts"
     ],
-    "connectedDepartments": ["publishing", "finance", "distribution"],
+    "connectedDepartments": [
+      "publishing",
+      "finance",
+      "distribution"
+    ],
     "connectedE2eTestPaths": [
       "e2e/publishing.spec.ts",
       "e2e/finance-workflow.spec.ts",
       "e2e/distribution-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [16, 17, 18, 19, 20, 21, 22]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ]
     }
   },
   "publishing": {
     "name": "Publishing Department",
     "category": "department",
-    "aliases": ["publishing", "publishing-department"],
+    "aliases": [
+      "publishing",
+      "publishing-department"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/publishing"
     ],
     "e2eTestPaths": [
       "e2e/publishing.spec.ts"
     ],
-    "connectedDepartments": ["legal", "distribution"],
+    "connectedDepartments": [
+      "legal",
+      "distribution"
+    ],
     "connectedE2eTestPaths": [
       "e2e/legal.spec.ts",
       "e2e/distribution-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [17, 19, 21]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        17,
+        19,
+        21
+      ]
     }
   },
   "brand": {
     "name": "Brand Manager",
     "category": "manager",
-    "aliases": ["brand", "brand-manager", "branding"],
+    "aliases": [
+      "brand",
+      "brand-manager",
+      "branding"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/marketing/components/BrandManager.test.tsx"
     ],
     "e2eTestPaths": [
       "e2e/brand.spec.ts"
     ],
-    "connectedDepartments": ["marketing", "creative"],
+    "connectedDepartments": [
+      "marketing",
+      "creative"
+    ],
     "connectedE2eTestPaths": [
       "e2e/marketing.spec.ts",
       "e2e/creative.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [8, 38]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        8,
+        38
+      ]
     }
   },
   "road": {
     "name": "Road Manager",
     "category": "manager",
-    "aliases": ["road", "road-manager", "touring"],
+    "aliases": [
+      "road",
+      "road-manager",
+      "touring"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/touring"
     ],
     "e2eTestPaths": [
       "e2e/road-manager.spec.ts"
     ],
-    "connectedDepartments": ["finance"],
+    "connectedDepartments": [
+      "finance"
+    ],
     "connectedE2eTestPaths": [
       "e2e/finance-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [39]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        39
+      ]
     }
   },
   "campaign": {
     "name": "Campaign Manager",
     "category": "manager",
-    "aliases": ["campaign", "campaign-manager"],
+    "aliases": [
+      "campaign",
+      "campaign-manager"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/marketing/components/CampaignManager.test.tsx"
     ],
     "e2eTestPaths": [
       "e2e/campaign.spec.ts"
     ],
-    "connectedDepartments": ["marketing", "social"],
+    "connectedDepartments": [
+      "marketing",
+      "social"
+    ],
     "connectedE2eTestPaths": [
       "e2e/marketing.spec.ts",
       "e2e/social.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [9, 11, 15]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        9,
+        11,
+        15
+      ]
     }
   },
   "agent": {
     "name": "Booking Agent",
     "category": "manager",
-    "aliases": ["agent", "booking-agent"],
+    "aliases": [
+      "agent",
+      "booking-agent"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/agent"
     ],
     "e2eTestPaths": [
       "e2e/agent-flows.spec.ts"
     ],
-    "connectedDepartments": ["boardroom", "road"],
+    "connectedDepartments": [
+      "boardroom",
+      "road"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts",
       "e2e/road-manager.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [40, 41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        40,
+        41
+      ]
     }
   },
   "publicist": {
     "name": "Publicist",
     "category": "manager",
-    "aliases": ["publicist", "pr-agent"],
+    "aliases": [
+      "publicist",
+      "pr-agent"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/publicist"
     ],
     "e2eTestPaths": [
       "e2e/publicist.spec.ts"
     ],
-    "connectedDepartments": ["marketing", "social"],
+    "connectedDepartments": [
+      "marketing",
+      "social"
+    ],
     "connectedE2eTestPaths": [
       "e2e/marketing.spec.ts",
       "e2e/social.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [15, 21]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        15,
+        21
+      ]
     }
   },
   "social": {
     "name": "Social Media Department",
     "category": "department",
-    "aliases": ["social", "social-media", "social-department"],
+    "aliases": [
+      "social",
+      "social-media",
+      "social-department"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/social"
     ],
     "e2eTestPaths": [
       "e2e/social.spec.ts"
     ],
-    "connectedDepartments": ["marketing"],
+    "connectedDepartments": [
+      "marketing"
+    ],
     "connectedE2eTestPaths": [
       "e2e/marketing.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [10, 11, 12, 14]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        10,
+        11,
+        12,
+        14
+      ]
     }
   },
   "licensing": {
     "name": "Licensing Department",
     "category": "department",
-    "aliases": ["licensing", "licensing-department"],
+    "aliases": [
+      "licensing",
+      "licensing-department"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/licensing"
     ],
     "e2eTestPaths": [
       "e2e/licensing.spec.ts"
     ],
-    "connectedDepartments": ["legal", "finance"],
+    "connectedDepartments": [
+      "legal",
+      "finance"
+    ],
     "connectedE2eTestPaths": [
       "e2e/legal.spec.ts",
       "e2e/finance-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [31, 37]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        31,
+        37
+      ]
     }
   },
   "merch": {
     "name": "Art & Merch Dept",
     "category": "department",
-    "aliases": ["merch", "merchandise", "art-merch"],
+    "aliases": [
+      "merch",
+      "merchandise",
+      "art-merch"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/merchandise"
     ],
     "e2eTestPaths": [
       "e2e/merch.spec.ts"
     ],
-    "connectedDepartments": ["creative", "finance"],
+    "connectedDepartments": [
+      "creative",
+      "finance"
+    ],
     "connectedE2eTestPaths": [
       "e2e/creative-studio.spec.ts",
       "e2e/finance-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [32, 33, 36]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        32,
+        33,
+        36
+      ]
     }
   },
   "registration": {
     "name": "Registration Center",
     "category": "department",
-    "aliases": ["registration", "registration-center"],
+    "aliases": [
+      "registration",
+      "registration-center"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/registration"
     ],
     "e2eTestPaths": [
       "e2e/publishing.spec.ts"
     ],
-    "connectedDepartments": ["publishing", "legal"],
+    "connectedDepartments": [
+      "publishing",
+      "legal"
+    ],
     "connectedE2eTestPaths": [
       "e2e/publishing.spec.ts",
       "e2e/legal.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [34, 35, 48]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        34,
+        35,
+        48
+      ]
     }
   },
   "security": {
     "name": "Security Agent",
     "category": "department",
-    "aliases": ["security", "security-agent"],
+    "aliases": [
+      "security",
+      "security-agent"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/security"
     ],
     "e2eTestPaths": [
       "e2e/privacy-settings.spec.ts"
     ],
-    "connectedDepartments": ["observability"],
+    "connectedDepartments": [
+      "observability"
+    ],
     "connectedE2eTestPaths": [
       "e2e/observability.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [43]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        43
+      ]
     }
   },
   "workflow": {
     "name": "Workflow Builder",
     "category": "tool",
-    "aliases": ["workflow", "workflow-builder", "workflows"],
+    "aliases": [
+      "workflow",
+      "workflow-builder",
+      "workflows"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/workflow"
     ],
@@ -324,18 +512,30 @@
       "e2e/workflow.spec.ts",
       "e2e/workflow-strategic-goal.spec.ts"
     ],
-    "connectedDepartments": ["boardroom"],
+    "connectedDepartments": [
+      "boardroom"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [47]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        47
+      ]
     }
   },
   "audio-analyzer": {
     "name": "Audio Analyzer",
     "category": "tool",
-    "aliases": ["audio-analyzer", "audio", "analyzer", "audio-system", "audio-systems", "mega-test-audio", "MegaTestAudioLoop"],
+    "aliases": [
+      "audio-analyzer",
+      "audio",
+      "analyzer",
+      "audio-system",
+      "audio-systems",
+      "mega-test-audio",
+      "MegaTestAudioLoop"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/tools/AudioAnalyzer.test.tsx",
       "packages/renderer/src/modules/tools/AudioAnalyzer.interaction.test.tsx",
@@ -388,94 +588,140 @@
       "Main-process audio file security, symlink and path traversal handling",
       "Python forensic/fidelity dependency health via ffprobe/librosa/numpy"
     ],
-    "connectedDepartments": ["creative", "marketing", "distribution", "publishing", "legal"],
+    "connectedDepartments": [
+      "creative",
+      "marketing",
+      "distribution",
+      "publishing",
+      "legal"
+    ],
     "connectedE2eTestPaths": [
       "e2e/creative-studio.spec.ts",
       "e2e/marketing.spec.ts",
       "e2e/distribution-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V3_B_TOOLS_MENU.md": [9],
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [26, 37],
-      "MEGA_STRESS_TEST_V11.md": [113]
+      "MEGA_STRESS_TEST_V3_B_TOOLS_MENU.md": [
+        9
+      ],
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        26,
+        37
+      ],
+      "MEGA_STRESS_TEST_V11.md": [
+        113
+      ]
     }
   },
   "knowledge": {
     "name": "Knowledge Base",
     "category": "tool",
-    "aliases": ["knowledge", "knowledge-base"],
+    "aliases": [
+      "knowledge",
+      "knowledge-base"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/knowledge"
     ],
     "e2eTestPaths": [
       "e2e/knowledge.spec.ts"
     ],
-    "connectedDepartments": ["boardroom"],
+    "connectedDepartments": [
+      "boardroom"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [40]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        40
+      ]
     }
   },
   "memory": {
     "name": "Memory Agent",
     "category": "tool",
-    "aliases": ["memory", "memory-agent"],
+    "aliases": [
+      "memory",
+      "memory-agent"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/memory"
     ],
     "e2eTestPaths": [
       "e2e/memory-agent.spec.ts"
     ],
-    "connectedDepartments": ["boardroom"],
+    "connectedDepartments": [
+      "boardroom"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [38, 41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        38,
+        41
+      ]
     }
   },
   "observability": {
     "name": "Command Center",
     "category": "tool",
-    "aliases": ["observability", "command-center"],
+    "aliases": [
+      "observability",
+      "command-center"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/observability"
     ],
     "e2eTestPaths": [
       "e2e/observability.spec.ts"
     ],
-    "connectedDepartments": ["security"],
+    "connectedDepartments": [
+      "security"
+    ],
     "connectedE2eTestPaths": [
       "e2e/privacy-settings.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [44]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        44
+      ]
     }
   },
   "settings": {
     "name": "Settings",
     "category": "tool",
-    "aliases": ["settings", "preferences"],
+    "aliases": [
+      "settings",
+      "preferences"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/settings"
     ],
     "e2eTestPaths": [
       "e2e/navigation.spec.ts"
     ],
-    "connectedDepartments": ["dashboard"],
+    "connectedDepartments": [
+      "dashboard"
+    ],
     "connectedE2eTestPaths": [
       "e2e/navigation.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [45]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        45
+      ]
     }
   },
   "dashboard": {
     "name": "HQ Dashboard",
     "category": "project",
-    "aliases": ["dashboard", "hq", "projects"],
+    "aliases": [
+      "dashboard",
+      "hq",
+      "projects"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/dashboard"
     ],
@@ -483,19 +729,29 @@
       "e2e/navigation.spec.ts",
       "e2e/visual-qa.spec.ts"
     ],
-    "connectedDepartments": ["boardroom", "workflow"],
+    "connectedDepartments": [
+      "boardroom",
+      "workflow"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts",
       "e2e/workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [4, 42]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        4,
+        42
+      ]
     }
   },
   "boardroom": {
     "name": "Boardroom HQ",
     "category": "project",
-    "aliases": ["boardroom", "boardroom-hq", "swarm"],
+    "aliases": [
+      "boardroom",
+      "boardroom-hq",
+      "swarm"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/boardroom"
     ],
@@ -504,78 +760,392 @@
       "e2e/boardroom-real-user-scenario.spec.ts",
       "e2e/chat-interaction.spec.ts"
     ],
-    "connectedDepartments": ["workflow", "creative", "marketing"],
+    "connectedDepartments": [
+      "workflow",
+      "creative",
+      "marketing"
+    ],
     "connectedE2eTestPaths": [
       "e2e/workflow.spec.ts",
       "e2e/creative-studio.spec.ts",
       "e2e/marketing.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [14, 41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        14,
+        41
+      ]
     }
   },
   "founders": {
     "name": "Founders Checkout",
     "category": "project",
-    "aliases": ["founders", "founders-checkout", "founders-portal", "checkout"],
+    "aliases": [
+      "founders",
+      "founders-checkout",
+      "founders-portal",
+      "checkout"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/founders"
     ],
     "e2eTestPaths": [
       "e2e/founders-program.spec.ts"
     ],
-    "connectedDepartments": ["finance"],
+    "connectedDepartments": [
+      "finance"
+    ],
     "connectedE2eTestPaths": [
       "e2e/finance-workflow.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [29]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        29
+      ]
     }
   },
   "onboarding": {
     "name": "Onboarding",
     "category": "project",
-    "aliases": ["onboarding", "curriculum"],
+    "aliases": [
+      "onboarding",
+      "curriculum"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/onboarding"
     ],
     "e2eTestPaths": [
       "e2e/detroit-techno-onboarding.spec.ts"
     ],
-    "connectedDepartments": ["dashboard"],
+    "connectedDepartments": [
+      "dashboard"
+    ],
     "connectedE2eTestPaths": [
       "e2e/navigation.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [42]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        42
+      ]
     }
   },
   "mobile-remote": {
     "name": "Mobile Remote",
     "category": "tool",
-    "aliases": ["mobile-remote", "remote", "controller"],
+    "aliases": [
+      "mobile-remote",
+      "remote",
+      "controller"
+    ],
     "unitTestPaths": [
       "packages/renderer/src/modules/mobile-remote"
     ],
     "e2eTestPaths": [
       "e2e/mobile-remote.spec.ts"
     ],
-    "connectedDepartments": ["boardroom"],
+    "connectedDepartments": [
+      "boardroom"
+    ],
     "connectedE2eTestPaths": [
       "e2e/boardroom-swarm.spec.ts"
     ],
     "megaStressTestRoutines": {
-      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [41]
+      "MEGA_STRESS_TEST_V4_DEPARTMENTS.md": [
+        41
+      ]
     }
   },
   "api-endpoints": {
     "name": "API Endpoints Gauntlet",
     "category": "tool",
-    "aliases": ["api", "api-endpoints", "apis"],
-    "unitTestPaths": [],
+    "aliases": [
+      "api",
+      "api-endpoints",
+      "apis",
+      "endpoints",
+      "rest-api"
+    ],
+    "unitTestPaths": [
+      "packages/firebase/src/functions/api/__tests__",
+      "packages/firebase/src/__tests__",
+      "packages/firebase/src/functions/webhooks/__tests__",
+      "packages/firebase/src/functions/creative/gateway.test.ts",
+      "packages/firebase/src/functions/security/arcjet.test.ts",
+      "packages/firebase/src/subscription/subscriptionDefaults.test.ts"
+    ],
     "e2eTestPaths": [],
+    "connectedDepartments": [
+      "distribution",
+      "creative",
+      "finance",
+      "billing"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/distribution-workflow.spec.ts",
+      "e2e/finance-workflow.spec.ts"
+    ],
+    "coverageChecklist": [
+      "Endpoint inventory matches manifest (endpoint-inventory.test.ts) \u2014 no silent drift",
+      "Auth: every non-health endpoint rejects missing/invalid Firebase ID token",
+      "CRUD: track + distribution create/read/update/delete round-trip",
+      "queryAnalytics + getProfile return shaped ApiResponse with requestId",
+      "health endpoint responds without auth",
+      "Arcjet rate-limit/deny path enforced",
+      "Stripe + webhook dispatcher signatures verified"
+    ],
+    "manualBrowserRoutes": [],
+    "megaStressTestRoutines": {}
+  },
+  "context-controls": {
+    "name": "Context Controls (Right Bar)",
+    "category": "rightbar",
+    "aliases": [
+      "context-controls",
+      "context",
+      "studio-controls",
+      "right-context"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/core/components/RightPanel.test.tsx",
+      "packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/right-panel.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/creative-studio.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "project-assets": {
+    "name": "Project Assets (Right Bar)",
+    "category": "rightbar",
+    "aliases": [
+      "project-assets",
+      "assets",
+      "asset-panel"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/core/components/RightPanel.test.tsx",
+      "packages/renderer/src/core/components/right-panel/AssetsPanel.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/right-panel.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative",
+      "distribution",
+      "merch"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/creative-persistence.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "artifacts-panel": {
+    "name": "Artifacts (Right Bar)",
+    "category": "rightbar",
+    "aliases": [
+      "artifacts",
+      "artifacts-panel",
+      "artifact"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/core/components/RightPanel.test.tsx",
+      "packages/renderer/src/core/components/right-panel/ArtifactsPanel.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/right-panel.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative"
+    ],
+    "connectedE2eTestPaths": [],
+    "megaStressTestRoutines": {}
+  },
+  "omni-agent": {
+    "name": "Omni Agent (Right Bar)",
+    "category": "rightbar",
+    "aliases": [
+      "omni-agent",
+      "omni",
+      "omni-panel",
+      "right-agent",
+      "agent-panel"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/core/components/RightPanel.test.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/right-panel.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative",
+      "marketing"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/agent-flows.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "creative-toolbar": {
+    "name": "Creative Studio Top Toolbar",
+    "category": "topbar",
+    "aliases": [
+      "creative-toolbar",
+      "canvas-toolbar",
+      "creative-studio-toolbar",
+      "studio-toolbar"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/creative-studio.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/creative.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "design-toolbar": {
+    "name": "Design Top Toolbar",
+    "category": "topbar",
+    "aliases": [
+      "design-toolbar"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/modules/design/components/DesignToolbar.tsx"
+    ],
+    "e2eTestPaths": [],
+    "connectedDepartments": [
+      "creative",
+      "merch"
+    ],
+    "connectedE2eTestPaths": [],
+    "megaStressTestRoutines": {}
+  },
+  "agent-toolbar": {
+    "name": "Agent Top Toolbar",
+    "category": "topbar",
+    "aliases": [
+      "agent-toolbar"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/modules/agent/components/AgentToolbar.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/agent-flows.spec.ts"
+    ],
     "connectedDepartments": [],
     "connectedE2eTestPaths": [],
+    "megaStressTestRoutines": {}
+  },
+  "marketing-toolbar": {
+    "name": "Marketing Top Toolbar",
+    "category": "topbar",
+    "aliases": [
+      "marketing-toolbar"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/modules/marketing/components/MarketingToolbar.tsx"
+    ],
+    "e2eTestPaths": [
+      "e2e/marketing.spec.ts"
+    ],
+    "connectedDepartments": [
+      "marketing"
+    ],
+    "connectedE2eTestPaths": [],
+    "megaStressTestRoutines": {}
+  },
+  "chain-aesthetic": {
+    "name": "Aesthetic Continuity (Preference \u2192 Creative)",
+    "category": "continuity",
+    "aliases": [
+      "chain-aesthetic",
+      "aesthetic-chain",
+      "color-chain",
+      "puke-green"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/services/memory",
+      "packages/renderer/src/core/store/slices/profileSlice.ts"
+    ],
+    "e2eTestPaths": [
+      "e2e/detroit-techno-onboarding.spec.ts",
+      "e2e/memory-agent.spec.ts"
+    ],
+    "connectedDepartments": [
+      "creative",
+      "brand",
+      "merch",
+      "onboarding"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/creative-studio.spec.ts",
+      "e2e/brand.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "chain-longitudinal-finance": {
+    "name": "Longitudinal Finance Continuity (Spend History \u2192 Insight)",
+    "category": "continuity",
+    "aliases": [
+      "chain-finance",
+      "longitudinal-finance",
+      "spend-history",
+      "sponsor-chain"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/modules/finance",
+      "packages/renderer/src/services/memory"
+    ],
+    "e2eTestPaths": [
+      "e2e/finance-workflow.spec.ts"
+    ],
+    "connectedDepartments": [
+      "finance",
+      "marketing",
+      "road"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/memory-agent.spec.ts"
+    ],
+    "megaStressTestRoutines": {}
+  },
+  "chain-identity": {
+    "name": "Artist Identity Continuity (Profile \u2192 All Agents)",
+    "category": "continuity",
+    "aliases": [
+      "chain-identity",
+      "identity-chain",
+      "profile-propagation"
+    ],
+    "unitTestPaths": [
+      "packages/renderer/src/core/store/slices/profileSlice.ts",
+      "packages/renderer/src/services/agent/memory"
+    ],
+    "e2eTestPaths": [
+      "e2e/memory-agent.spec.ts"
+    ],
+    "connectedDepartments": [
+      "brand",
+      "creative",
+      "marketing",
+      "publicist",
+      "legal"
+    ],
+    "connectedE2eTestPaths": [
+      "e2e/brand.spec.ts",
+      "e2e/marketing.spec.ts"
+    ],
     "megaStressTestRoutines": {}
   }
 }
