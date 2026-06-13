@@ -44,7 +44,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
  * When Google ships model updates, change THIS object and everything adapts.
  */
 export const NANO_BANANA_CAPABILITIES = {
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION]: {
+    'gemini-3-pro-image-preview': {
         tier: 'pro' as const,
         displayName: 'Nano Banana Pro',
         maxResolution: '4K',
@@ -58,7 +58,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'always_on',
     },
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST]: {
+    'gemini-3.1-flash-image-preview': {
         tier: 'fast' as const,
         displayName: 'Nano Banana 2',
         maxResolution: '4K',
@@ -72,7 +72,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'minimal',
     },
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.LEGACY]: {
+    'gemini-2.5-flash-image': {
         tier: 'legacy' as const,
         displayName: 'Nano Banana',
         maxResolution: '1K',
