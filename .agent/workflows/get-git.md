@@ -69,7 +69,8 @@ If safe to proceed, execute `/issue sync` to:
 **Safety Check:** After pushing code or verifying repo status, you MUST check the health of the GitHub Actions CI pipeline. We do not tolerate red 'X' marks on `main`.
 
 1. Use the GitHub CLI (`gh run list --status failure --branch main`) or MCP tools to check for any recent failed CI workflow runs.
-2. If a failed run is detected, fetch the logs to diagnose the failure.
+   - **Fallback:** If `gh run list` fails due to an authentication error (e.g. `HTTP 401: Bad credentials`), you MUST fall back to running the full test suite locally (`npm test -- --run` and `npm run typecheck`) to ensure the codebase is green.
+2. If a failed run is detected (or local tests fail), fetch the logs to diagnose the failure.
 3. Automatically initiate a fix cycle to resolve the CI failure, verify locally, and push the fix to restore the green checkmark.
 
 **Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues or CI pipelines.**

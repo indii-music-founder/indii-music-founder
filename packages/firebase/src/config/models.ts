@@ -15,9 +15,9 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
         GENERATION: 'gemini-3-pro-image-preview',
         /** Nano Banana 2 — fast + quality, grounding, 4K */
-        FAST: 'gemini-3-pro-image-preview',
+        FAST: 'gemini-3.1-flash-image-preview',
         /** Nano Banana OG — legacy, high-volume / low-latency */
-        LEGACY: 'gemini-3-pro-image-preview',
+        LEGACY: 'gemini-2.5-flash-image',
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
