@@ -4812,11 +4812,14 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in CreativeAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-DISTRIBUTION: Phase C Skills Gap Analysis for distribution
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED (6d36bfd)
 - **Severity:** 🟢 LOW
 - **Module:** agents/distribution
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the distribution agent but are currently missing: check_dsp_delivery_status, validate_metadata_readiness.
 - **Fix Direction:** Implement these tools natively in DistributionAgent.ts or as Layer 3 execution scripts.
+- **Fix:** Implemented `check_dsp_delivery_status` and `validate_metadata_readiness` in `DistributionTools.ts` and added schema bindings to `DistributionAgent.ts`. Updated unit test for distribution agent to reflect tool count change.
+- **Files:** `packages/renderer/src/services/agent/tools/DistributionTools.ts`, `packages/renderer/src/services/agent/definitions/DistributionAgent.ts`, `packages/renderer/src/services/agent/__tests__/DistributionAgent.integration.test.ts`
+- **UX Impact:** Distribution Agent now possesses native tools for checking DSP delivery status and validating metadata readiness.
 
 ### ISSUE-GAP-LEGAL: Phase C Skills Gap Analysis for legal
 - **Status:** 🟡 IN PROGRESS (Agent A)
@@ -4826,11 +4829,13 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in LegalAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-LICENSING: Phase C Skills Gap Analysis for licensing
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/licensing
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the licensing agent but are currently missing: search_sync_opportunities, calculate_sync_fee_estimate.
 - **Fix Direction:** Implement these tools natively in LicensingAgent.ts or as Layer 3 execution scripts.
+- **Fix:** Implemented search_sync_opportunities and calculate_sync_fee_estimate natively in LicensingAgent.ts with mock data and estimates. Also updated the corresponding test file to verify the two tools.
+- **Files:** `packages/renderer/src/services/agent/definitions/LicensingAgent.ts`, `packages/renderer/src/services/agent/definitions/LicensingAgent.test.ts`
 
 ### ISSUE-GAP-MARKETING: Phase C Skills Gap Analysis for marketing
 - **Status:** 🟡 IN PROGRESS (Agent A)
@@ -4854,7 +4859,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in PublicistAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-E2E-RIGHT-PANEL-1: Timeout rendering Context Controls for Creative Director
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should dynamically render Context Controls panel for Creative Director' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
