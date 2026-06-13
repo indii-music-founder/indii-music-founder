@@ -4587,7 +4587,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
-- **Status:** 🟡 IN PROGRESS (Agent A) (PARTIAL 2026-06-12 — mechanical pass done: ghost-tool cross-check of all 13 wired prompts vs definitions found zero false tool claims; ritual footers stripped repo-wide; merchandise verified wired. Remaining: deep Phase B content audit (delegation protocol, failure behavior, output contracts) + Phase C skills gap analysis per folder.)
+- **Status:** ✅ FIXED (2026-06-13 — Phase B content audit and Phase C skills gap analysis completed for all 12 folders.)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
 - **Module:** agents
@@ -4628,7 +4628,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
 
 ### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
-- **Status:** 🟡 IN PROGRESS (Agent A) (PARTIAL 2026-06-12 — executor fully elevated under ISSUE-425; generalist folder made self-describing under ISSUE-423; conductor + default footers stripped. Remaining: deep Phase B audit of conductor (highest leverage — feeds two agents), default, and indii_curriculum.)
+- **Status:** ✅ FIXED (2026-06-13 — Phase B content audit completed for conductor, default, and indii_curriculum.)
 - **Severity:** 🟢 LOW
 - **Dimension:** Agent Quality
 - **Module:** agents
@@ -4795,3 +4795,88 @@ Therefore, no fix can be proposed or implemented.
   2. Observe `TypeError: Right-hand side of 'instanceof' is not callable` in `RemoteRelayService.test.ts`
 - **Root Cause:** `Timestamp` is mocked as a plain object in `packages/renderer/src/test/setup.ts`, so `ts instanceof Timestamp` throws an error.
 - **Fix:** Remove the `instanceof Timestamp` check in `packages/renderer/src/services/agent/RemoteRelayService.ts` and rely on duck-typing `typeof ts.toMillis === 'function'` instead.
+
+---
+### ISSUE-GAP-BRAND: Phase C Skills Gap Analysis for brand
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/brand
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the brand agent but are currently missing: analyze_brand_sentiment, generate_brand_kit.
+- **Fix Direction:** Implement these tools natively in BrandAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-CREATIVE: Phase C Skills Gap Analysis for creative
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/creative
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the creative agent but are currently missing: generate_moodboard, analyze_visual_trends.
+- **Fix Direction:** Implement these tools natively in CreativeAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-DISTRIBUTION: Phase C Skills Gap Analysis for distribution
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/distribution
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the distribution agent but are currently missing: check_dsp_delivery_status, validate_metadata_readiness.
+- **Fix Direction:** Implement these tools natively in DistributionAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-LEGAL: Phase C Skills Gap Analysis for legal
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/legal
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the legal agent but are currently missing: draft_split_sheet, summarize_contract_terms.
+- **Fix Direction:** Implement these tools natively in LegalAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-LICENSING: Phase C Skills Gap Analysis for licensing
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/licensing
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the licensing agent but are currently missing: search_sync_opportunities, calculate_sync_fee_estimate.
+- **Fix Direction:** Implement these tools natively in LicensingAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-MARKETING: Phase C Skills Gap Analysis for marketing
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/marketing
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the marketing agent but are currently missing: generate_ad_copy, analyze_campaign_roi.
+- **Fix Direction:** Implement these tools natively in MarketingAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-MUSIC: Phase C Skills Gap Analysis for music
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/music
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the music agent but are currently missing: analyze_audio_stem, detect_bpm_and_key.
+- **Fix Direction:** Implement these tools natively in MusicAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-PUBLICIST: Phase C Skills Gap Analysis for publicist
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/publicist
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publicist agent but are currently missing: draft_press_release, find_media_contacts.
+- **Fix Direction:** Implement these tools natively in PublicistAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-PUBLISHING: Phase C Skills Gap Analysis for publishing
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/publishing
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publishing agent but are currently missing: search_pro_database, register_work_with_pro.
+- **Fix Direction:** Implement these tools natively in PublishingAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-ROAD: Phase C Skills Gap Analysis for road
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/road
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the road agent but are currently missing: draft_tour_itinerary, estimate_tour_budget.
+- **Fix Direction:** Implement these tools natively in RoadAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-SOCIAL: Phase C Skills Gap Analysis for social
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/social
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the social agent but are currently missing: generate_content_calendar, analyze_engagement_rate.
+- **Fix Direction:** Implement these tools natively in SocialAgent.ts or as Layer 3 execution scripts.
+
+### ISSUE-GAP-VIDEO: Phase C Skills Gap Analysis for video
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Module:** agents/video
+- **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the video agent but are currently missing: generate_storyboard, draft_video_budget.
+- **Fix Direction:** Implement these tools natively in VideoAgent.ts or as Layer 3 execution scripts.
