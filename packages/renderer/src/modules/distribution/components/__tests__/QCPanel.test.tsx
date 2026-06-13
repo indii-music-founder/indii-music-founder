@@ -89,7 +89,7 @@ describe('QCPanel', () => {
 
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
         fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
-        fireEvent.change(screen.getByPlaceholderText(/US-XXX/i), { target: { value: 'USABC2600001' } });
+        fireEvent.change(screen.getByPlaceholderText(/US-000/i), { target: { value: 'USABC2600001' } });
         fireEvent.click(screen.getByText('Gen CID CSV'));
 
         await waitFor(() => {
